@@ -1,0 +1,113 @@
+# Interstate 2.0 — Final T1 Candidate List
+
+**Rubric version**: v1.2 (15 dimensions, 150-point scale)
+**Date**: 2026-05-07
+
+## Decision Framework
+
+Four criteria must be met for T1 designation:
+- **A** Score ≥ 26/150 in v1.2 rubric (OR strategic override — see below)
+- **B** Corridor length ≥ 200 miles
+- **C** Serves a clear national strategic function (not primarily regional/local)
+- **D** OR fills a critical geographic gap that no other T1 corridor serves
+
+**Strategic override** applies when a corridor clearly meets C/D but scores below 26 due to data gaps (e.g., I-95 has no agricultural score because it runs through dense urban corridor — that's correct data, but C4=0 understates its strategic value).
+
+---
+
+## Confirmed T1 — Existing Interstates (12 corridors)
+
+| Route | Score | Miles | Key strategic value |
+|---|---|---|---|
+| **I-80** | 38.7 | 5,833 | Northern transcontinental; USMCA=9; Offutt AFB/STRATCOM; Corn Belt |
+| **I-10** | 37.9 | 4,941 | Southern transcontinental; USMCA=9; Fort Bliss; Gulf ag exports |
+| **I-5** | 36.0 | 2,779 | West Coast spine; San Diego/Tijuana USMCA=8.5; Camp Pendleton |
+| **I-35** | 33.8 | 3,347 | Laredo #1 US-MX crossing USMCA=10; Fort Hood; Great Plains grain C4=10 |
+| **I-90** | 32.8 | 6,180 | Northern tier; Malmstrom+Minot ICBM B4=9; Northern wheat C4=8.5 |
+| **I-94** | 29.3 | 3,236 | Chicago-Detroit-Minneapolis; Ambassador Bridge US-CA; industrial corridor |
+| **I-25** | 28.0 | 2,126 | FE Warren ICBM+USSTRATCOM B4=8.5; Fort Carson; Raton NM crossing |
+| **I-70** | 27.3 | 4,341 | Fort Riley; Kansas wheat belt; Baltimore-Denver east-west backbone |
+| **I-40** | 26.7 | 5,133 | Southern mid-country; Fort Campbell; Oklahoma wheat; I-40 at target (V/C 0.84) |
+| **I-15** | 26.7 | 2,882 | LA–LV–SLC–Montana; only W interior N-S connector; Nellis AFB |
+| **I-75** ★ | 23.7 | 3,551 | **STRATEGIC OVERRIDE** — East interior spine (Miami→Detroit); only corridor through SE manufacturing belt; I-75/I-285 Atlanta is #1 ATRI cluster |
+| **I-95** ★ | 21.2 | 4,000 | **STRATEGIC OVERRIDE** — East Coast spine (Miami→Houlton); no alternative for Boston-Washington megalopolis; 9 ATRI top-50 locations |
+
+★ Strategic override: scores below 26/150 due to data gaps (C4=0 for urban corridors is correct data, not missing data), but clearly national strategic arteries by any other measure.
+
+**Not T1 (reclassified):**
+- **I-19** (125 miles): T1 Spur. Too short for standalone T1 designation. Nogales strategic value is real; reclassify as "T1 connector spur" attached to I-10.
+- **I-29** (1,499 miles, score 26.7): T1 Borderline. Red River Valley/Pembina ND corridor is strategically important for agricultural exports and US-Canada trade but primarily regional. Recommend T2 with explicit agricultural export designation in standards.
+
+---
+
+## Proposed T1 — New Corridor Upgrades (3 corridors)
+
+| Route | Score | Full miles | B1 | Key gap it fills |
+|---|---|---|---|---|
+| **US-287 → I-287** | 35.5 | ~1,400 | 10.0 | Central plains: I-25/I-35 gap; FE Warren ICBM; TX Panhandle → WY → MT-Canada; Mexico-Canada central route |
+| **US-2 → Northern Tier** | 33.5 | ~2,600 | 10.0 | Northern Tier: only route across MT/ND/MN/WI border belt; Malmstrom+Minot approach; Red River Valley |
+| **US-83 → I-83** | 27.0 | ~2,000 | 2.8* | Eagle Pass TX (#4 US-MX crossing, fastest growing); Great Plains grain spine; south TX→Canada alternate |
+
+*US-83 B1=2.8 reflects its partial overlap with I-35's service area in some states; the Northern Plains segments have genuine isolation.
+
+---
+
+## T1 Extension — Partial Build Completion (1 corridor)
+
+| Route | Current miles | Target miles | Status |
+|---|---|---|---|
+| **I-69** (US-69 alignment) | 363 (in TIGER) | ~2,400 | Partially designated and under construction. Gulf-to-Midwest (Laredo/Houston → Indianapolis → Detroit). Connects three T1 corridors (I-10, I-70, I-94). When complete, clearly T1. |
+
+---
+
+## Final T1 Network (16 corridors)
+
+**Confirmed existing (12)**: I-80, I-10, I-5, I-35, I-90, I-94, I-25, I-70, I-40, I-15, I-75★, I-95★  
+**Proposed new (3)**: US-287/I-287, US-2/Northern Tier, US-83/I-83  
+**Extension (1)**: I-69 completion  
+
+**Total T1 miles**: ~54,000 (existing) + ~6,000 (proposed new) = ~60,000 miles
+
+---
+
+## What's NOT T1 and Why
+
+| Corridor | Score | Why not T1 |
+|---|---|---|
+| I-19 | 27.3 | 125 miles — spur, not arterial |
+| I-29 | 26.7 | Regional; T2 with ag designation |
+| I-285 Atlanta | 19.0 | T2 connector doing T1 work; upgrade candidate for Atlanta relief |
+| I-110 | 19.0 | Urban connector; congestion-driven score, not strategic |
+| I-880 | 15.0 | Local connector; no national strategic value |
+| I-84 | 18.0 | Two separate routes (OR and CT); neither nationally critical |
+
+---
+
+## Geographic Coverage Check
+
+After the 16-corridor T1 network:
+
+| Gap zone | Covered? |
+|---|---|
+| Northern Tier (MT/ND border) | YES — US-2/Northern Tier upgrade |
+| Central Plains (I-25/I-35 gap) | YES — US-287/I-287 upgrade |
+| East Coast (ME to FL) | YES — I-95 |
+| West Coast (WA to CA) | YES — I-5 |
+| Gulf Coast (FL to TX) | YES — I-10 |
+| Northern transcontinental | YES — I-80, I-90 |
+| Southern transcontinental | YES — I-10, I-40 |
+| Great Plains N-S | YES — I-35 (east), I-25 (west), US-287 (central) |
+| East interior N-S | YES — I-75 |
+| Western interior N-S | YES — I-15, I-25 |
+| Mexico-Canada direct | YES — I-35 (Laredo-Duluth), US-287 (Eagle Pass-Montana) |
+| **Remaining gap** | I-70/Pacific connection — US-50 upgrade still needed |
+
+---
+
+## The I-70/Pacific Gap (Open Issue)
+
+I-70 terminates at I-15 in Utah and requires T2 (I-15) to reach I-5. US-50 (B1=8.3) fills this alignment (SLC → Reno → Sacramento) but scored only 17.3/150 because A4/B4/C4 designations aren't in the CSV yet. US-50 should be evaluated for T1 upgrade once:
+1. Its agricultural (Central California Valley) and military (Sierra Army Depot, Hawthorne Depot) scores are added
+2. Its role as the only coast-to-coast route between I-80 (north) and I-40 (south) is captured in B1
+
+Preliminary recommendation: US-50 as T1 Tier 1B (lower priority than the three proposed new T1s above, but on the roadmap).
