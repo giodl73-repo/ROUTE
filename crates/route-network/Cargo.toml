@@ -13,6 +13,7 @@ geo-types  = { workspace = true }
 rstar      = { workspace = true }
 petgraph      = { workspace = true }
 ordered-float = { workspace = true }
+minilp        = { workspace = true }
 serde      = { workspace = true }
 rayon      = { workspace = true }
 thiserror  = { workspace = true }

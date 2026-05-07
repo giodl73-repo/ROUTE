@@ -26,6 +26,14 @@ rstar      = "0.12"
 petgraph      = "0.6"
 ordered-float = "4"
 
+# Optimization
+minilp        = "0.2"   # pure Rust LP solver — investment allocation, multi-constraint portfolio
+
+# Graph partitioning (deferred — add to route-network when gap analysis phase begins)
+# metis-core = { git = "https://github.com/giodl73-repo/METIS-CORE.git" }
+# [patch.crates-io]
+# metis-core = { path = "../metis-core" }  # local development override
+
 # Data handling
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
