@@ -112,24 +112,65 @@ fn main() -> Result<()> {
         }
     };
 
-    // Load manifest
-    let manifest_path = cli.manifest
-        .unwrap_or_else(route_data::Manifest::default_path);
+    // Load manifest — check data/manifest.json in project root first, then ~/.route/manifest.json
+    let manifest_path = cli.manifest.clone().unwrap_or_else(|| {
+        let local = std::path::PathBuf::from("data/manifest.json");
+        if local.exists() { local } else { route_data::Manifest::default_path() }
+    });
 
     match cli.command {
-        Commands::Fetch { force, year } => {
-            println!("route fetch — year {year}");
+        Commands::Fetch { force, year: _ } => {
+            println!("route fetch");
             let manifest = route_data::Manifest::load(&manifest_path)
-                .context("loading manifest")?;
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            println!("  manifest: {} sources", manifest.sources.len());
             route_data::fetch::fetch_all(&manifest, force)?;
             println!("fetch complete.");
         }
 
         Commands::Build { interstate_only } => {
-            println!("route build — reading NHS shapefile…");
-            // TODO: load from manifest cache path; extract .shp from .zip
-            println!("  [stub] NHS shapefile parsing not yet wired to manifest paths.");
-            println!("  run: cargo build, then manually provide shp path via route build --shp <path>");
+            println!("route build");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+
+            let zip_path = manifest.cache_path("tiger-primary-roads");
+            if !zip_path.exists() {
+                anyhow::bail!(
+                    "TIGER primary roads not cached — run `route fetch` first.\n  expected: {}",
+                    zip_path.display()
+                );
+            }
+
+            let extract_dir = manifest.cache_dir.join("tiger-primary-roads");
+            println!("  extracting → {}", extract_dir.display());
+            let shp_path = route_data::fetch::extract_shp(&zip_path, &extract_dir)?;
+            println!("  shapefile: {}", shp_path.display());
+
+            println!("  parsing road segments…");
+            let segments = route_data::nhs::read_nhs_shapefile(&shp_path, !interstate_only)
+                .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
+
+            let interstate_count = segments.iter().filter(|s| s.route_id.starts_with('I')).count();
+            println!("  segments: {} total, {} interstate", segments.len(), interstate_count);
+
+            let hpms: Vec<route_data::HpmsRecord> = Vec::new();
+            let (graph, report) = route_network::build_graph(segments, &hpms);
+            graph.print_build_report(&report);
+
+            // Write graph summary to cache
+            std::fs::create_dir_all(&manifest.cache_dir)?;
+            let route_ids = graph.interstate_ids();
+            let summary = serde_json::json!({
+                "nodes": graph.graph.node_count(),
+                "edges": graph.graph.edge_count(),
+                "routes": graph.route_index.len(),
+                "interstates": route_ids.len(),
+                "interstate_ids": &route_ids,
+            });
+            let cache_path = manifest.cache_dir.join("graph.json");
+            std::fs::write(&cache_path, serde_json::to_string_pretty(&summary)?)?;
+            println!("  graph summary → {}", cache_path.display());
+            println!("build complete. Interstate routes: {:?}", &route_ids[..route_ids.len().min(10)]);
         }
 
         Commands::Score { designation, estimated, proposed } => {

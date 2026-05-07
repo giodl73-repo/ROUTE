@@ -18,3 +18,4 @@ route-map     = { path = "../route-map" }
 route-report  = { path = "../route-report" }
 clap          = { workspace = true }
 anyhow        = { workspace = true }
+serde_json    = { workspace = true }

@@ -10,15 +10,22 @@ pub fn fetch_all(manifest: &Manifest, force: bool) -> Result<()> {
         .context("creating cache directory")?;
 
     for (name, source) in &manifest.sources {
-        let dest = manifest.cache_dir.join(&source.filename);
-        if dest.exists() && !force {
-            println!("  [skip] {name} — already cached at {}", dest.display());
+        // Skip sources with no URL or placeholder URLs
+        if source.url.is_empty() {
+            println!("  [skip] {name} — no URL (manual source)");
             continue;
         }
-        println!("  [fetch] {name} from {}", source.url);
+
+        let dest = manifest.cache_dir.join(&source.filename);
+        if dest.exists() && !force {
+            println!("  [skip] {name} — already cached ({} bytes)", dest.metadata().map(|m| m.len()).unwrap_or(0));
+            continue;
+        }
+        println!("  [fetch] {name}");
+        println!("          {}", source.url);
         download(&source.url, &dest)
             .with_context(|| format!("downloading {name}"))?;
-        println!("  [ok]    {name} → {}", dest.display());
+        println!("  [ok]    {} → {} bytes", name, dest.metadata().map(|m| m.len()).unwrap_or(0));
     }
     Ok(())
 }

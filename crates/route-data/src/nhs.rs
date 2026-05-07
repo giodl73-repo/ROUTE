@@ -27,9 +27,13 @@ pub struct NhsSegment {
     pub geometry: LineString<f64>,
 }
 
-/// Read all NHS segments from a .shp file extracted from the FHWA NHS shapefile zip.
-/// Returns segments sorted by route_id + state for deterministic ordering.
-/// Filters to nhs_type == 2 (Interstate) by default — pass `all_nhs = true` to include all.
+/// Read road segments from a .shp file.
+/// Handles two formats:
+///   - FHWA NHS shapefile: fields ROUTE_ID, STATE_CODE, NHS_TYPE, MILES
+///   - TIGER Primary Roads: fields FULLNAME, RTTYP, LINEARID (no state, no miles)
+///
+/// TIGER RTTYP codes: 'I' = Interstate, 'U' = US Route, 'S' = State, 'C' = County, etc.
+/// When `all_nhs = false`, only RTTYP='I' (interstates) are returned.
 pub fn read_nhs_shapefile(
     shp_path: &std::path::Path,
     all_nhs: bool,
@@ -42,18 +46,39 @@ pub fn read_nhs_shapefile(
     for (idx, result) in reader.iter_shapes_and_records().enumerate() {
         let (shape, record) = result.map_err(|e| NhsError::Shapefile(e.to_string()))?;
 
-        let route_id = get_string_field(&record, "ROUTE_ID")
-            .ok_or(NhsError::MissingField("ROUTE_ID"))?;
-        let state = get_string_field(&record, "STATE_CODE")
-            .ok_or(NhsError::MissingField("STATE_CODE"))?;
-        let nhs_type = get_numeric_field(&record, "NHS_TYPE").unwrap_or(1.0) as u8;
-        let length_miles = get_numeric_field(&record, "MILES").unwrap_or(0.0);
+        // Detect format by presence of ROUTE_ID (FHWA) vs FULLNAME (TIGER)
+        let (route_id, state, nhs_type) = if record.get("ROUTE_ID").is_some() {
+            // FHWA NHS format
+            let rid = get_string_field(&record, "ROUTE_ID")
+                .ok_or(NhsError::MissingField("ROUTE_ID"))?;
+            let st = get_string_field(&record, "STATE_CODE").unwrap_or_default();
+            let nt = get_numeric_field(&record, "NHS_TYPE").unwrap_or(1.0) as u8;
+            (rid, st, nt)
+        } else {
+            // TIGER Primary Roads format
+            let rttyp = get_string_field(&record, "RTTYP").unwrap_or_default();
+            let fullname = get_string_field(&record, "FULLNAME").unwrap_or_default();
+            // Convert TIGER fullname to route_id: "I- 80" → "I80", "I-80" → "I80"
+            let rid = tiger_name_to_route_id(&fullname, &rttyp);
+            // TIGER has no state field in the national file
+            let nt: u8 = if rttyp == "I" { 2 } else { 1 };
+            (rid, String::new(), nt)
+        };
 
+        // Filter: nhs_type 2 = Interstate; TIGER rttyp 'I' also maps to nhs_type 2
         if !all_nhs && nhs_type != 2 {
             continue;
         }
 
+        // Skip records with empty/unknown route IDs
+        if route_id.is_empty() || route_id == "UNKNOWN" {
+            continue;
+        }
+
         let geometry = shape_to_linestring(shape, idx)?;
+        // Compute length from geometry (degrees → approx miles at mid-latitude)
+        let length_miles = get_numeric_field(&record, "MILES")
+            .unwrap_or_else(|| approx_length_miles(&geometry));
 
         segments.push(NhsSegment {
             route_id,
@@ -66,6 +91,41 @@ pub fn read_nhs_shapefile(
 
     segments.sort_by(|a, b| a.route_id.cmp(&b.route_id).then(a.state.cmp(&b.state)));
     Ok(segments)
+}
+
+/// Convert TIGER FULLNAME to a normalised route ID.
+/// "I- 80" → "I80", "Interstate 80" → "I80", "I-405" → "I405"
+fn tiger_name_to_route_id(fullname: &str, rttyp: &str) -> String {
+    if rttyp != "I" {
+        return "UNKNOWN".into();
+    }
+    // Strip "I-", "I- ", "Interstate " and extract the number
+    let trimmed = fullname
+        .replace("Interstate", "")
+        .replace("I-", "")
+        .replace("I ", "")
+        .trim()
+        .to_string();
+    // Extract leading digits (route number may have letter suffix like "I-80E")
+    let num: String = trimmed.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+    if num.is_empty() { "UNKNOWN".into() } else { format!("I{num}") }
+}
+
+/// Approximate segment length in miles from geographic coordinates.
+/// Uses flat-earth approximation: good enough for short segments.
+fn approx_length_miles(line: &LineString<f64>) -> f64 {
+    const DEG_LAT_MILES: f64 = 69.0;
+    let coords = &line.0;
+    if coords.len() < 2 { return 0.0; }
+    let mut total = 0.0;
+    for w in coords.windows(2) {
+        let dlat = (w[1].y - w[0].y) * DEG_LAT_MILES;
+        let mid_lat = (w[0].y + w[1].y) / 2.0;
+        let deg_lon_miles = DEG_LAT_MILES * mid_lat.to_radians().cos();
+        let dlon = (w[1].x - w[0].x) * deg_lon_miles;
+        total += (dlat * dlat + dlon * dlon).sqrt();
+    }
+    total
 }
 
 fn shape_to_linestring(
