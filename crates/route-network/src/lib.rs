@@ -17,3 +17,5 @@ pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, Upgra
 pub use coverage::{compute_coverage, compute_pop_coverage, CoverageResult, PopCoverageResult, CountyGap};
 pub mod connectivity;
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
+pub mod diamond;
+pub use diamond::{find_t1_intersections, find_intersection, analyze_diamond, DiamondResult, T1Intersection};

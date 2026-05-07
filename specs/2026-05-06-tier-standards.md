@@ -92,6 +92,7 @@ Communities currently >30 miles from any interstate on-ramp are the primary targ
 | Standard | Specification |
 |---|---|
 | **Diamond k-connectivity** | k ≥ 3 at all T1/T1 intersections (3 independent paths within 50-mile zone) |
+| **Express freight flyovers** | At each T1/T1 diamond: **dedicated express freight flyover connections** (physically separated from GP lanes, no intermediate exits, access-controlled). These are distinct from the diamond connector roads. Connector roads handle general traffic redundancy; flyovers provide freight-only through-capacity that cannot be captured by local traffic growth. Connector roads fill with local traffic over time — this is expected and acceptable; flyovers must remain freight-dedicated permanently. |
 | **Resilience spurs** | Emergency egress every **50 miles** on rural segments (connection to US highway network) |
 | **Climate hardening** | All T1 segments in FEMA SFHA must achieve 500-year flood protection or elevated roadbed |
 | **Recovery target** | T1 corridor closure: 80% throughput restored within 4 hours via alternates |

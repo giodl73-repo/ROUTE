@@ -159,6 +159,29 @@ C-D roads exist in fragments today (approaches to major interchanges). I2.0 make
 
 **The diamond concept**: instead of a single intersection node, create a distributed intersection zone spanning approximately 50 miles in each direction, with multiple independent cross-connection points. Any single connection can fail; the others maintain T1/T1 transfer capacity.
 
+**The local traffic capture problem**: any connector road built within 50 miles of a major T1/T1 interchange will attract local and regional traffic as the surrounding area grows. The north Omaha connector road built as a freight bypass becomes the preferred Fremont-to-Omaha commute route within 10 years. This is not a failure of the design — it is the correct behavior for a public road. But it means the diamond connector roads are NOT a permanent freight resilience solution. They will fill with local traffic; the freight capacity will erode.
+
+**The I2.0 solution — express freight flyovers**: at every T1/T1 diamond, the primary freight resilience mechanism must be **dedicated express freight flyovers** — not connector roads but grade-separated, access-controlled through-connections between the two T1 express freight lanes. These flyovers:
+- Have no intermediate exits (access-controlled: freight terminals only)
+- Are physically separated from all GP and connector traffic
+- Cannot be captured by local traffic growth because they are legally restricted
+- Connect directly from T1 express freight lane (corridor A) to T1 express freight lane (corridor B)
+
+The diamond connector roads still provide value — they handle general traffic redundancy when the core interchange fails. But for freight, the flyovers are what guarantee through-capacity survives local traffic growth. The connector roads are public infrastructure; the flyovers are freight-dedicated infrastructure.
+
+**Design anatomy of a fully-built T1/T1 diamond:**
+```
+  [Express freight flyover A→B]  ← no exits, freight only, grade-separated
+  [Express freight flyover B→A]  ← permanent dedicated capacity
+
+  [Diamond connector 1]          ← general traffic + local trucks
+  [Core interchange]             ← general traffic, deteriorates with growth
+  [Diamond connector 2]          ← general traffic + local trucks
+
+  Both connector roads WILL fill with local traffic over time.
+  Freight resilience lives on the flyovers, not the connectors.
+```
+
 ### The 15 T1/T1 Intersections by Priority
 
 | # | Intersection | Node | SPF risk | Diamond needed |
