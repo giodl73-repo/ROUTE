@@ -1,0 +1,134 @@
+# ROUTE Scoring Anchors — config/scoring.toml
+#
+# Runtime-configurable scoring anchors for all 12 dimensions.
+# Edit this file and re-run `route score` to update scores without recompiling.
+# Three-point linear interpolation: anchor_0 → score 0, anchor_5 → score 5, anchor_10 → score 10.
+# Values above anchor_10 are clamped to 10.0.
+#
+# Update this file after each calibration pass (route calibrate) if anchors need rescaling.
+# Bump [meta].version when anchors change; prior corpus entries record the version they were scored under.
+
+[meta]
+version = "v1.0"
+rubric_version = "v1.0"
+
+# ── Band A: Flow ──────────────────────────────────────────────────────────────
+
+[a1]
+# Throughput Gap — 90th-percentile segment AADT
+# Low score = well below capacity (free-flow). High score = chronic congestion.
+anchor_0  = 5_000      # rural free-flow; well under capacity
+anchor_5  = 50_000     # moderate urban; approaching capacity in peaks
+anchor_10 = 150_000    # chronic LOS E/F; major bottleneck corridor
+
+[a2]
+# Freight Intensity — annual freight value in $B (FAF5 zone-traversal estimate)
+# Low = minimal freight. High = top-tier national freight corridor.
+anchor_0  = 2.0        # negligible commodity flow
+anchor_5  = 40.0       # significant regional freight
+anchor_10 = 200.0      # top-tier national corridor (comparable to I-10 at Laredo)
+
+[a3]
+# Speed Reliability — Planning Time Index (95th-pct travel time / free-flow travel time)
+# PTI = 1.0 means perfectly reliable. PTI = 2.0 means 95th-pct trip takes twice free-flow.
+anchor_0  = 1.05       # highly reliable; near free-flow at 95th percentile
+anchor_5  = 1.40       # moderate unreliability; freight scheduling impact
+anchor_10 = 2.20       # severe unreliability; JIT supply chains disrupted
+
+# ── Band B: Network ───────────────────────────────────────────────────────────
+
+[b1]
+# Redundancy — detour penalty miles (added miles via best alternate full route)
+# Low score = good redundancy. High score = single point of failure.
+anchor_0  = 20.0       # minimal detour; strong redundancy
+anchor_5  = 120.0      # significant detour; some redundancy
+anchor_10 = 350.0      # no viable alternative; full corridor is single POF
+
+[b2]
+# Network Centrality — normalized betweenness centrality (0.0–1.0 range across corpus)
+# Computed after route score-all; estimated until then.
+# Anchors applied to percentile rank within corpus distribution.
+anchor_0  = 0.05       # peripheral; low cascade effect
+anchor_5  = 0.40       # regional connector
+anchor_10 = 0.85       # spine route; failure cascades nationally
+
+[b3]
+# Port/Border Access
+# Scoring is stepped, not linear; see score_b3() in route-score.
+# port_terminus (within 30mi of top-25 port by tonnage) → 10.0
+# border_crossing (major US-CA or US-MX crossing) → 8.0
+# nearest_top25_port_miles used for continuous scoring otherwise
+anchor_0  = 300.0      # >300 miles from any major port/border
+anchor_5  = 100.0      # within 100 miles
+anchor_10 = 0.0        # port terminus (stepped override)
+
+# ── Band C: People ────────────────────────────────────────────────────────────
+
+[c1]
+# Population Reach — total population within 50-mile buffer
+anchor_0  = 300_000     # sparsely populated corridor
+anchor_5  = 5_000_000   # mid-size metro region
+anchor_10 = 25_000_000  # major coastal/urban megaregion
+
+[c2]
+# Rural Connectivity — composite of pct_rural_in_buffer + max_rural_interchange_gap_miles
+# Scored as: 0.6 * rural_share_score + 0.4 * interchange_gap_score
+# Rural share anchors (pct_rural_in_buffer, 0.0–1.0):
+[c2.rural_share]
+anchor_0  = 0.05        # primarily urban
+anchor_5  = 0.45        # mixed urban/rural
+anchor_10 = 0.85        # predominantly rural; primary access corridor
+
+# Interchange gap anchors (miles):
+[c2.interchange_gap]
+anchor_0  = 10.0        # frequent interchange; good rural on-ramp access
+anchor_5  = 40.0        # significant gaps; some rural communities underserved
+anchor_10 = 100.0       # extreme gaps; corridor passes through but doesn't serve
+
+[c3]
+# Economic Opportunity Access — gdp_per_capita_relative (buffer ÷ national)
+# Inverted: lower regional GDP/capita → higher opportunity value of connectivity
+# gdp_per_capita_relative = 1.0 means equal to national average
+anchor_0  = 1.30        # well above national average; connectivity of limited marginal value
+anchor_5  = 0.85        # somewhat below national average
+anchor_10 = 0.50        # severely below national average; connectivity has high opportunity value
+
+# ── Band D: Future ────────────────────────────────────────────────────────────
+
+[d1]
+# Climate Resilience — primary: max_consecutive_sfha_miles (longest contiguous flood segment)
+# High score = high exposure = investment needed for hardening
+[d1.consecutive_sfha]
+anchor_0  = 0.0         # no flood exposure
+anchor_5  = 15.0        # one or two significant river crossings in flood zone
+anchor_10 = 60.0        # extended coastal or floodplain exposure; operational risk
+
+# Secondary: fema_sfha_miles total (weighted 0.3 in composite with consecutive above)
+[d1.total_sfha]
+anchor_0  = 0.0
+anchor_5  = 40.0
+anchor_10 = 150.0
+
+[d2]
+# Multimodal Integration — composite of intermodal_hub_count + dcfc_per_100mi
+[d2.intermodal_hubs]
+anchor_0  = 0           # no intermodal freight hubs
+anchor_5  = 3           # adequate intermodal coverage
+anchor_10 = 8           # excellent intermodal integration
+
+[d2.dcfc_per_100mi]
+anchor_0  = 0.3         # EV corridor unviable (>33mi avg gap)
+anchor_5  = 1.5         # marginal EV viability
+anchor_10 = 4.0         # excellent EV corridor (avg gap <25mi)
+
+[d3]
+# Infrastructure Vintage — composite of pct_bridges_poor + mean_year_built
+[d3.bridges_poor]
+anchor_0  = 0.02        # <2% poor condition; well-maintained
+anchor_5  = 0.12        # 12% poor; maintenance backlog accumulating
+anchor_10 = 0.30        # 30%+ poor; systemic deferred maintenance
+
+[d3.mean_year_built]
+anchor_0  = 1995.0      # post-1990 construction; modern standards
+anchor_5  = 1970.0      # early-70s; approaching end of design life
+anchor_10 = 1955.0      # original Eisenhower-era; significant age risk

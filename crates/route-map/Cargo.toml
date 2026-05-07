@@ -1,0 +1,16 @@
+[package]
+name = "route-map"
+description = "Corridor map rendering — SVG construction + PNG rasterization"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+route-network = { path = "../route-network" }
+route-score   = { path = "../route-score" }
+geo-types     = { workspace = true }
+resvg         = { workspace = true }
+tiny-skia     = { workspace = true }
+thiserror     = { workspace = true }
+anyhow        = { workspace = true }

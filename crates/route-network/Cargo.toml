@@ -1,0 +1,18 @@
+[package]
+name = "route-network"
+description = "Highway graph construction and network metrics (betweenness, redundancy)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+route-data = { path = "../route-data" }
+geo        = { workspace = true }
+geo-types  = { workspace = true }
+rstar      = { workspace = true }
+petgraph   = { workspace = true }
+serde      = { workspace = true }
+rayon      = { workspace = true }
+thiserror  = { workspace = true }
+anyhow     = { workspace = true }

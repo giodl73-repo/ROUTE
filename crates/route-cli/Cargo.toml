@@ -1,0 +1,20 @@
+[package]
+name = "route"
+description = "ROUTE CLI — Interstate 2.0 analysis pipeline"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "route"
+path = "src/main.rs"
+
+[dependencies]
+route-data    = { path = "../route-data" }
+route-network = { path = "../route-network" }
+route-score   = { path = "../route-score" }
+route-map     = { path = "../route-map" }
+route-report  = { path = "../route-report" }
+clap          = { workspace = true }
+anyhow        = { workspace = true }

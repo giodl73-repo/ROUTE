@@ -1,0 +1,46 @@
+[workspace]
+members = [
+    "crates/route-data",
+    "crates/route-network",
+    "crates/route-score",
+    "crates/route-map",
+    "crates/route-report",
+    "crates/route-cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Gio Della-Libera"]
+license = "MIT"
+
+[workspace.dependencies]
+# Geometry
+shapefile  = "0.6"
+geo        = "0.28"
+geo-types  = "0.7"
+rstar      = "0.12"
+
+# Graph analysis
+petgraph   = "0.6"
+
+# Data handling
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+csv        = "1"
+zip        = "2"
+toml       = "0.8"
+
+# CLI
+clap       = { version = "4", features = ["derive"] }
+
+# Rendering
+resvg      = "0.42"
+tiny-skia  = "0.11"
+
+# Utilities
+rayon      = "1.10"
+thiserror  = "2"
+anyhow     = "1"
+reqwest    = { version = "0.12", features = ["blocking"] }
