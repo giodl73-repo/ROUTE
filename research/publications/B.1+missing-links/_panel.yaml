@@ -1,12 +1,19 @@
 paper: B.1+missing-links
 title: "Missing Links: Gap Analysis of the US Interstate Network"
 venue: "Transportation Research Part A"
-stage: draft
-round: 0
+stage: revision
+round: 1
 content_mode: full
 writing_completed: true
-reviewers: []
-reviews: {}
+reviewers: [transport-geographer, rural-economist, transport-policy, network-scientist, equity-researcher]
+reviews:
+  transport-geographer: {score: 3, concern: "county centroid artifact must be quantified"}
+  rural-economist: {score: 3, concern: "causal claim for C3 needs care; freight value missing"}
+  transport-policy: {score: 3, concern: "political feasibility and budget context missing"}
+  network-scientist: {score: 2, concern: "Euclidean vs road distance; 1465 node count"}
+  equity-researcher: {score: 2, concern: "construction-era harm acknowledgment; transit-dependent pop"}
+avg_score: 2.6
+min_score: 2
 history:
   - stage: planned
     date: 2026-05-06

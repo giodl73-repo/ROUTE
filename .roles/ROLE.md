@@ -1,6 +1,6 @@
 # ROUTE — Role Index
 
-Three tiers of review roles. Read this before opening any role file.
+Four tiers of review roles. Read this before opening any role file.
 
 ---
 
@@ -53,3 +53,29 @@ Stakeholder lenses are used primarily during:
 - Corpus scoring (C2 Rural Connectivity, C3 Equity Access, D2 Multimodal Integration scores)
 - Gap analysis (which gap type affects which stakeholders most severely)
 - Interstate 2.0 feature selection (which features address which stakeholder needs)
+
+---
+
+## Panel reviewer roles (10 domain experts)
+
+Academic peer review panel for ROUTE research papers. These are transportation domain specialists — NOT the plugin's ML/AI reviewer database. Stored in `.roles/panel-reviewer/` for local override. Used by `panel:publication review` for domain-appropriate peer review.
+
+| File | Reviewer | Expertise |
+|---|---|---|
+| `panel-reviewer/R-T1.md` | Susan Hanson | Transport geography, spatial access, coverage methodology |
+| `panel-reviewer/R-T2.md` | David Neumark | Rural/labor economics, causal inference, benefit-cost |
+| `panel-reviewer/R-T3.md` | Robert Puentes | Federal highway policy, IIJA, implementation feasibility |
+| `panel-reviewer/R-T4.md` | Lada Adamic | Network science, graph algorithms, spatial networks |
+| `panel-reviewer/R-T5.md` | Angie Schmitt | Transportation equity, community impact, highway history |
+| `panel-reviewer/R-T6.md` | Lily Elefteriadou | Traffic engineering, HCM, highway capacity |
+| `panel-reviewer/R-T7.md` | Alan McKinnon | Freight economics, logistics, decarbonization |
+| `panel-reviewer/R-T8.md` | Mikhail Chester | Infrastructure resilience, climate adaptation |
+| `panel-reviewer/R-T9.md` | Ron Eberts | Rural access, agricultural logistics, USDA/RUCC |
+| `panel-reviewer/R-T10.md` | Jarrett Walker | Transit planning, coverage-vs-ridership, multimodal |
+
+**Paper-to-reviewer assignment guide:**
+- Gap analysis (B-track): R-T1 (geographer), R-T2 (rural economist), R-T3 (policy), R-T4 (network), R-T5 (equity)
+- Freight/throughput (C-track): R-T7 (freight), R-T6 (traffic eng), R-T2 (economist), R-T3 (policy), R-T8 (resilience)
+- Resilience (D-track): R-T8 (resilience), R-T4 (network), R-T1 (geographer), R-T6 (traffic eng), R-T3 (policy)
+- Design/investment (E-track): R-T3 (policy), R-T2 (economist), R-T7 (freight), R-T5 (equity), R-T9 (rural)
+- Transit (F-track): R-T10 (transit), R-T5 (equity), R-T1 (geographer), R-T9 (rural), R-T3 (policy)

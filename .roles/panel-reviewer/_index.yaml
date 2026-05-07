@@ -1,0 +1,86 @@
+# ROUTE Local Reviewer Index
+# Transportation domain reviewers for the ROUTE research module.
+# These extend the plugin's ML/AI reviewer database with domain-specific voices.
+# Format mirrors C:/Users/giodl/.claude/plugins/cache/panel-standalone/panel/2.2.0/.craft/roles/panel-reviewer/_index.yaml
+
+reviewers:
+
+  # Transportation Geography
+  R-T1:
+    name: Susan Hanson
+    slug: susan-hanson
+    category: transport-geography
+    affiliation: Clark University
+    expertise: [spatial-access, mobility, transport-geography, gender-transport, coverage-analysis]
+
+  # Rural / Regional Economics
+  R-T2:
+    name: David Neumark
+    slug: david-neumark
+    category: rural-economics
+    affiliation: UC Irvine
+    expertise: [labor-economics, rural-development, place-based-policy, benefit-cost, regional-economics]
+
+  # Transportation Policy
+  R-T3:
+    name: Robert Puentes
+    slug: robert-puentes
+    category: transport-policy
+    affiliation: Eno Center for Transportation
+    expertise: [federal-highway-policy, infrastructure-investment, urban-rural, freight-policy, multimodal]
+
+  # Network Science / Spatial Analysis
+  R-T4:
+    name: Lada Adamic
+    slug: lada-adamic
+    category: network-science
+    affiliation: Meta / University of Michigan
+    expertise: [network-analysis, graph-algorithms, spatial-networks, coverage, community-detection]
+
+  # Transportation Equity
+  R-T5:
+    name: Angie Schmitt
+    slug: angie-schmitt
+    category: transport-equity
+    affiliation: Independent (author, Right of Way)
+    expertise: [transport-equity, pedestrian-safety, community-impact, environmental-justice, access]
+
+  # Traffic Engineering
+  R-T6:
+    name: Lily Elefteriadou
+    slug: lily-elefteriadou
+    category: traffic-engineering
+    affiliation: University of Florida
+    expertise: [highway-capacity, level-of-service, HCM, freeway-operations, traffic-flow-theory]
+
+  # Freight Economics
+  R-T7:
+    name: Alan McKinnon
+    slug: alan-mckinnon
+    category: freight-economics
+    affiliation: Kühne Logistics University
+    expertise: [freight-transport, logistics, decarbonization, supply-chain, road-freight]
+
+  # Transportation Resilience / Climate
+  R-T8:
+    name: Mikhail Chester
+    slug: mikhail-chester
+    category: transport-resilience
+    affiliation: Arizona State University
+    expertise: [infrastructure-resilience, climate-adaptation, lifecycle-analysis, urban-systems, vulnerability]
+
+  # Rural Access / Agricultural Logistics
+  R-T9:
+    name: Ron Eberts
+    slug: ron-eberts
+    category: rural-access
+    affiliation: USDA Economic Research Service
+    expertise: [rural-economics, agricultural-logistics, farm-to-market, rural-policy, RUCC-classification]
+
+  # Transit / Multimodal
+  R-T10:
+    name: Jarrett Walker
+    slug: jarrett-walker
+    category: transit-planning
+    affiliation: Jarrett Walker + Associates
+    expertise: [transit-network-design, frequency, coverage-vs-ridership, bus-networks, multimodal-integration]
