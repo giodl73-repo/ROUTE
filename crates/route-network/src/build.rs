@@ -16,11 +16,11 @@ pub fn build_graph(
     let mut report = JoinReport::default();
     report.data_sparse_threshold = 3;
 
-    // Build HPMS lookup: (route_id, state) → HpmsRecord
-    let hpms_map: HashMap<(String, String), &HpmsRecord> = hpms
-        .iter()
-        .map(|r| ((normalise_route_id(&r.route_id), r.state.clone()), r))
-        .collect();
+    // Build HPMS lookup: route_id → aggregated values across all states
+    // TIGER national file has no state field, so join by route_id only.
+    // Aggregate: median AADT (not mean — avoids outlier states skewing), median IRI,
+    // modal lane count, mean pct_truck, modal speed_limit.
+    let hpms_map: HashMap<String, HpmsAgg> = aggregate_hpms_by_route(hpms);
 
     // Node deduplication: coord (snapped to NODE_SNAP_DEG grid) → NodeIndex
     let mut node_map: HashMap<(i64, i64), NodeIndex> = HashMap::new();
@@ -36,19 +36,19 @@ pub fn build_graph(
         let start_ni = get_or_create_node(&mut g, &mut node_map, coords[0]);
         let end_ni = get_or_create_node(&mut g, &mut node_map, *coords.last().unwrap());
 
-        // HPMS join
-        let key = (normalise_route_id(&seg.route_id), seg.state.clone());
-        let (aadt, pct_truck, iri, lane_count) = match hpms_map.get(&key) {
-            Some(h) => (h.aadt, h.pct_truck, h.iri, h.lane_count),
+        // HPMS join by route_id (national aggregation — no state field in TIGER)
+        let norm_id = normalise_route_id(&seg.route_id);
+        let (aadt, pct_truck, iri, lane_count, speed_limit) = match hpms_map.get(&norm_id) {
+            Some(h) => (h.aadt, h.pct_truck, h.iri, h.lane_count, h.speed_limit),
             None => {
                 report.hpms_failures += 1;
-                (None, None, None, None)
+                (None, None, None, None, None)
             }
         };
 
         let edge = HighwayEdge {
             id: edge_id,
-            route_id: normalise_route_id(&seg.route_id),
+            route_id: norm_id.clone(),
             state: seg.state.clone(),
             road_class: seg.road_class,
             geometry: seg.geometry,
@@ -59,7 +59,7 @@ pub fn build_graph(
             iri,
             tti: None,
             pti: None,
-            speed_limit: None,
+            speed_limit,
         };
 
         let ei = g.graph.add_edge(start_ni, end_ni, edge);
@@ -124,4 +124,66 @@ pub fn normalise_route_id(raw: &str) -> String {
         .filter(|c| c.is_alphanumeric())
         .collect::<String>()
         .to_uppercase()
+}
+
+/// Aggregated HPMS values for a single route across all states.
+#[derive(Debug)]
+pub struct HpmsAgg {
+    pub aadt: Option<u32>,
+    pub pct_truck: Option<f32>,
+    pub lane_count: Option<u8>,
+    pub iri: Option<f32>,
+    pub speed_limit: Option<u8>,
+}
+
+/// Aggregate HPMS records by route_id across all states.
+/// Uses median AADT (robust to outlier states), mean pct_truck, modal lane_count.
+pub fn aggregate_hpms_by_route(hpms: &[route_data::HpmsRecord]) -> HashMap<String, HpmsAgg> {
+    // Group records by normalised route_id
+    let mut groups: HashMap<String, Vec<&route_data::HpmsRecord>> = HashMap::new();
+    for r in hpms {
+        let id = normalise_route_id(&r.route_id);
+        groups.entry(id).or_default().push(r);
+    }
+
+    groups.into_iter().map(|(id, records)| {
+        let aadts: Vec<u32> = records.iter().filter_map(|r| r.aadt).collect();
+        let pcts: Vec<f32> = records.iter().filter_map(|r| r.pct_truck).collect();
+        let lanes: Vec<u8> = records.iter().filter_map(|r| r.lane_count).collect();
+        let iris: Vec<f32> = records.iter().filter_map(|r| r.iri).collect();
+        let speeds: Vec<u8> = records.iter().filter_map(|r| r.speed_limit).collect();
+
+        let agg = HpmsAgg {
+            aadt: median_u32(&aadts),
+            pct_truck: mean_f32(&pcts),
+            lane_count: mode_u8(&lanes),
+            iri: median_f32(&iris),
+            speed_limit: mode_u8(&speeds),
+        };
+        (id, agg)
+    }).collect()
+}
+
+fn median_u32(v: &[u32]) -> Option<u32> {
+    if v.is_empty() { return None; }
+    let mut s = v.to_vec(); s.sort();
+    Some(s[s.len() / 2])
+}
+
+fn median_f32(v: &[f32]) -> Option<f32> {
+    if v.is_empty() { return None; }
+    let mut s = v.to_vec(); s.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    Some(s[s.len() / 2])
+}
+
+fn mean_f32(v: &[f32]) -> Option<f32> {
+    if v.is_empty() { return None; }
+    Some(v.iter().sum::<f32>() / v.len() as f32)
+}
+
+fn mode_u8(v: &[u8]) -> Option<u8> {
+    if v.is_empty() { return None; }
+    let mut counts: HashMap<u8, usize> = HashMap::new();
+    for &x in v { *counts.entry(x).or_insert(0) += 1; }
+    counts.into_iter().max_by_key(|&(_, c)| c).map(|(k, _)| k)
 }
