@@ -6,6 +6,30 @@ Of 3,105 continental US counties, 1,595 (51.4\%) have their population centroid 
 
 However, the distribution is heavily population-weighted. Counties within the 30-mile threshold tend to be more densely populated (containing most major metropolitan areas), while gap counties are predominantly rural with low population density. Table~\ref{tab:coverage} presents the full coverage statistics.
 
+\subsubsection{Centroid Artifact Correction}
+
+A significant fraction of the apparent gap population reflects the \textit{county centroid artifact}: in geographically large counties (especially the western US), the Census internal point centroid falls in a remote area far from the county's population center, overstating the access deficit for most residents. Pima County, Arizona (pop. 1,042,393) contains Tucson on I-10, but the county centroid falls in the eastern Sonoran Desert 189 miles from the nearest graph interchange node --- not because Tucson residents lack interstate access, but because the county is 9,189 sq mi with population concentrated at one edge.
+
+We identify likely centroid-artifact counties using a geometric heuristic: land area $> 2{,}000$ sq mi AND gap distance $< 2.5 \times \sqrt{A_{\text{land}} / \pi}$ (the centroid distance is explainable by county scale alone). This identifies 136 artifact counties containing 17.7 million people.
+
+\begin{table}[h!]
+\centering
+\caption{Gap Population: Raw vs. Centroid-Corrected Estimate}
+\label{tab:corrected}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Estimate} & \textbf{Gap population} & \textbf{\% of US} \\
+\midrule
+Raw (county centroid, uncorrected) & 66,513,310 & 20.4\% \\
+Corrected (artifact counties removed) & 48,848,099 & 14.8\% \\
+\midrule
+\textbf{Conservative headline} & \textbf{$\sim$49M} & \textbf{$\sim$15\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The corrected figure ($\sim$49 million, $\sim$15\%) is our conservative headline. The uncorrected 66.5M/20.4\% is an upper bound. The centroid artifact is concentrated in the Rural West (Zone 4); Northern Tier and Appalachian gap estimates are largely unaffected. The gap is real and large under either estimate.
+
 \begin{table}[h!]
 \centering
 \caption{Interstate Coverage of Continental US Counties, 2023}
