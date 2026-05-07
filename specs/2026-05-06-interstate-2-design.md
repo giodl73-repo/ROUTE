@@ -522,10 +522,117 @@ route od-analysis --from X --to Y       # Full O-D analysis: path, PTI, incident
 
 ---
 
+## §13. Transit Integration
+
+Interstate 2.0 is not a transit system. But it creates the conditions under which an effective national transit layer becomes possible — and cheap — for the first time.
+
+### Why Transit Wasn't Possible Before I2.0
+
+A standard interstate interchange is organized entirely around vehicular throughput. Trucks, passenger cars, local delivery, and through-traffic compete for the same pavement. There is no space for a bus platform, no safe pedestrian zone, no commuter parking structure, no predictable zone for transit operations. The geometry prevents it.
+
+After I2.0 separation into express freight / GP / C-D road layers, the interchange node itself is freed of express freight and has predictable, lower-stress traffic patterns. **The T1/T1 diamond intersection core — where two primary arteries meet — becomes the most natural transit hub in the national network.**
+
+### T1/T1 Hubs — The Transit Backbone
+
+Each of the 9 priority diamond intersections hosts a **Tier 1 Transit Hub**:
+
+```
+T1/T1 Diamond Core (example: I-35 × I-80 at Omaha)
+
+[Express freight lanes bypass the core — trucks do not stop here]
+
+                ┌──────────────────────────────────────┐
+                │  TRANSIT HUB                         │
+                │  Park-and-ride: 2,000+ spaces        │
+                │  Intercity bus terminal: 8 platforms  │
+                │  Regional bus connections: 4+ routes  │
+                │  Rail connection: spur where available│
+                │  DC fast charging: 20 stations        │
+                │  Full service rest area               │
+                │  Freight dispatch center              │
+                └──────────────────────────────────────┘
+```
+
+**The hub is not a new idea — it is the natural result of the I2.0 highway investment.** The park-and-ride, the bus platforms, and the fast charging infrastructure are incremental additions to infrastructure that was already being built. The highway does the work; the transit facility captures the opportunity.
+
+### The Four-Tier Transit Hierarchy
+
+| Highway tier | Transit facility | Function |
+|---|---|---|
+| T1/T1 diamond hub (9) | **Tier 1 Transit Hub** — full intercity terminal, 2,000+ parking, rail spur where available | Long-distance intercity bus, regional connections, park-and-ride |
+| T1/T2 interchange (~50) | **Tier 2 Transit Stop** — 4 bus platforms, 500 parking spaces, regional routes | Regional intercity bus, suburb-to-hub connector |
+| T2/T3 interchange (~150) | **Tier 3 Transit Access** — bus stop, 100 parking spaces | Local and county routes connecting to T2 stop |
+| Resilience spur / rural interchange | **Rural Transit Node** — covered shelter, demand-responsive connection | Demand-responsive transit to nearest Tier 2 or 3 stop |
+
+### T1 Bus Corridors
+
+Once the managed GP express lanes achieve PTI ≤ 1.15 and the T1/T1 hubs provide boarding infrastructure, **every T1 corridor becomes an intercity bus corridor** — no additional highway infrastructure required. Buses run in GP express lanes between hubs at predictable 65 mph average speeds.
+
+**National I2.0 Bus Network (T1/T1 hub to hub):**
+
+| Route | Hubs served | Approx. travel time (I2.0) | Current Greyhound |
+|---|---|---|---|
+| I-80 Corridor | New York → Cleveland → Chicago → Omaha → Denver → SLC → SF | ~38 hours (managed) vs. 45+ today | 50+ hours with transfers |
+| I-90 Corridor | Boston → Albany → Buffalo → Cleveland → Chicago → Milwaukee → Minneapolis → Seattle | ~45 hours | No direct service |
+| I-10 Corridor | Jacksonville → New Orleans → Houston → San Antonio → El Paso → Tucson → LA | ~30 hours | 36+ hours with transfers |
+| I-35 Corridor | Minneapolis → Kansas City → Oklahoma City → Dallas → San Antonio → Laredo | ~18 hours | 22+ hours |
+| I-95 Corridor | Miami → Jacksonville → Richmond → DC → Philadelphia → New York → Boston | ~26 hours | 28 hours (existing) |
+| I-75 Corridor | Miami → Atlanta → Chattanooga → Lexington → Cincinnati → Detroit | ~14 hours | 16+ hours |
+| I-5 Corridor | San Diego → LA → Sacramento → Portland → Seattle | ~22 hours | 24+ hours |
+| I-40 Corridor | Wilmington NC → Nashville → Memphis → Little Rock → Oklahoma City → Albuquerque → Flagstaff → Barstow | ~28 hours | 32+ hours |
+
+**Key**: I2.0 bus times assume 65 mph average in GP express lanes. Current times reflect congestion and transfer penalties at facilities not designed for through-service.
+
+### Why This Works Where Rail Doesn't
+
+High-speed rail in the US requires:
+- Dedicated right-of-way (massive acquisition cost)
+- Grade-separated at-grade crossings (enormous civil engineering cost)
+- New station infrastructure in city centers (political and financial complexity)
+- Capital investment of $50–150M per mile for new HSR
+
+I2.0 intercity bus requires:
+- Existing highway right-of-way (already built)
+- Bus platforms at diamond hubs (already being built as part of the hub investment)
+- Fleet of over-the-road coaches ($500k–700k each; ~200 buses to serve the 8 T1 corridors at frequency)
+- **Total incremental transit investment: ~$2B** (hub platforms + fleet) on top of a $209B highway program
+
+This is not a replacement for rail in dense urban corridors (NYC–DC, LA–SF). It is intercity connectivity for the 80% of city pairs where rail will never be economically feasible — and where the bus was too slow and unreliable to be a real choice.
+
+### Transit and Equity (C3)
+
+The T1 bus corridor network specifically addresses the economic opportunity gap in C3 (Economic Opportunity Access):
+
+- Border communities on I-35 (Laredo, McAllen): connected to Dallas and beyond without car ownership
+- Rural agricultural communities within 20 miles of a T2 transit stop: connected to regional employment
+- Smaller metros not served by Amtrak (Omaha, Oklahoma City, Baton Rouge): connected to the national network via T1 hub
+- Transit-dependent travelers currently paying for car ownership they can't afford: freed from the automobile dependency that the current highway system enforces
+
+### Transit Integration in the CLI
+
+```
+route transit --hub <intersection>      # Show transit hub design for T1/T1 intersection
+route transit --corridors              # Map all T1 bus corridors and hub connections
+route transit --coverage --radius 50   # Population within 50 miles of a T1/T2 transit stop
+route od-analysis --from X --to Y --mode bus   # O-D analysis including transit option
+```
+
+### Transit Integration and the Research Module
+
+Transit integration adds **Track F** to the ROUTE research module:
+
+- **F.1** — T1/T1 as Transit Nodes: The Interstate 2.0 Passenger Layer
+- **F.2** — Intercity Bus Corridors: Travel Time, Coverage, and Equity on the T1 Network
+
+F.1's primary quantification: N million transit-dependent travelers brought within X miles of a Tier 1 or Tier 2 transit facility by I2.0 hub investment, at Y% of the cost of equivalent standalone transit infrastructure.
+
+---
+
 ## §12. Spec Amendment Log
 
 | Date | Amendment | Reason |
 |---|---|---|
 | 2026-05-06 | Initial spec | Synthesizes all design work from ROUTE session |
-| — | B.4 paper added to module | T1/T1 diamond intersection analysis warrants own paper |
-| — | §7 (Simulation Toolkit) added | Chaos simulation identified as critical missing capability |
+| 2026-05-06 | B.4 paper added to module | T1/T1 diamond intersection analysis warrants own paper |
+| 2026-05-06 | §7 (Simulation Toolkit) added | Chaos simulation identified as critical missing capability |
+| 2026-05-06 | §13 (Transit Integration) added | T1/T1 hubs enable intercity bus layer at near-zero incremental cost; Track F and papers F.1–F.2 added to module |

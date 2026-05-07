@@ -1,8 +1,8 @@
 ---
 module: route
 title: "Interstate 2.0: Data-Driven Analysis and Design of the US Highway Network"
-tracks: [A, B, C, D, E]
-papers: 11
+tracks: [A, B, C, D, E, F]
+papers: 13
 panel_score: ~
 panel_round: 0
 created: 2026-05-06
@@ -14,7 +14,7 @@ created: 2026-05-06
 
 The US chose highways. ROUTE answers: which ones matter, what's missing, and what does the next version look like?
 
-The module scores 227 existing interstate corridors to calibrate a measurement instrument (Track A), identifies structural gaps in the national network (Track B), quantifies the freight economics of those gaps (Track C), maps climate and incident exposure (Track D), and synthesizes the findings into a design specification for Interstate 2.0 (Track E).
+The module scores 227 existing interstate corridors to calibrate a measurement instrument (Track A), identifies structural gaps in the national network (Track B), quantifies the freight economics of those gaps (Track C), maps climate and incident exposure (Track D), synthesizes the findings into a design specification for Interstate 2.0 (Track E), and shows how the highway investment unlocks a passenger transit layer at near-zero incremental cost (Track F).
 
 ---
 
@@ -130,12 +130,31 @@ The country chose highways. This is the evidence for which ones to invest in nex
 | B.1 | K missing links with gap score ≥ 7.5; avg nearest-interstate X miles | Score proposed vs corpus distribution | Which proposed corridors to advance | No corridor above corpus 75th |
 | B.2 | M corridors at V/C > 0.85; top-10 ATRI cost $X billion | ATRI + HPMS AADT + lane count join | Bottleneck investment sequencing | ATRI ≠ A1 scores |
 | B.3 | N compound-exposure corridors; X% rural pop affected | Intersect B1 > 7.0 AND D1 > 6.0 | Resilience investment targeting | No compound corridors |
+| B.4 | 9 of 15 T1/T1 intersections k=1; diamond investment $4.5B total; NPV vs managed lanes | k-connectivity analysis on intersection subgraphs | Diamond investment priority | Connectivity already adequate |
 | C.1 | PTI on I-80: Z.Z; SLA window narrows from N to M hours | PTI model + managed lane simulation | Whether managed lanes justify cost | PTI data unavailable |
 | C.2 | Donner closure drops throughput Z%; I-69 adds W% HOU-CHI | Edmonds-Karp incident simulation | I-69 investment priority | Graph too fragmented |
 | D.1 | X corridor-miles SFHA; top-3 by max consecutive miles | FEMA NFHL polygon join | Climate adaptation investment order | Insufficient overlap |
 | D.2 | Top-5 closure annual cost $Y billion; break-even $Z billion | Freight value × closure × detour | Redundancy investment case | No closure frequency data |
 | E.1 | Managed lanes: transit −20%; PTI 1.8→1.15; NPV $X M/mi | Throughput + PTI simulation | Whether managed lanes are fundable | NPV negative |
 | E.2 | I2.0 portfolio: $X trillion cost, $Y trillion NPV; W% reliability gain | Investment LP on full corpus | National I2.0 investment plan | No optimal solution |
+| F.1 | N million transit-dependent travelers within X miles of T1/T2 hub; Y% of standalone transit cost | Hub coverage analysis + transit-dependent pop Census join | Whether hub investment justifies transit layer | Hub locations don't align with population |
+| F.2 | I2.0 bus corridor travel time vs. current best alternative on each T1; PTI benefit for bus passengers | PTI model applied to bus service; O-D pair analysis | Whether I2.0 bus is competitive with rail alternatives | Congestion still too high on GP lanes |
+
+---
+
+## Track F — Transit Integration
+
+**Theme**: The I2.0 highway investment unlocks a national passenger transit layer at near-zero incremental cost.
+
+**Chain**: F.1 establishes which T1/T1 hubs serve transit-dependent populations and quantifies the coverage gain → F.2 requires F.1's hub locations to compute realistic bus corridor travel times and compare them to existing alternatives.
+
+**Papers**:
+| Paper | Title | Stage | Score |
+|---|---|---|---|
+| F.1 | T1/T1 as Transit Nodes: The Interstate 2.0 Passenger Layer | planned | — |
+| F.2 | Intercity Bus Corridors: Travel Time, Coverage, and Equity on the T1 Network | planned | — |
+
+**Track arc**: Nine T1/T1 diamond hubs and ~50 T1/T2 regional stops create a transit network serving N million transit-dependent travelers — at a marginal hub investment of $2B on a $209B highway program. I2.0 intercity bus travel times are Y% faster than current equivalents on every T1 corridor, competitive with Amtrak on corridors where Amtrak exists and available on corridors where it does not.
 
 ---
 

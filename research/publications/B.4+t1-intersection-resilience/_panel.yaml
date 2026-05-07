@@ -1,0 +1,12 @@
+paper: B.4+t1-intersection-resilience
+title: "T1/T1 Intersection Resilience: Diamond Interchange Zones and k-Connectivity in the National Highway Network"
+venue: "Transportation Research Part B: Methodological"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-06
+    note: "Added — T1/T1 diamond intersection analysis; k-connectivity computation"
