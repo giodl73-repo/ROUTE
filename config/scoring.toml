@@ -16,6 +16,9 @@ rubric_version = "v1.1"
 #   A3: IRI fallback cap added — iri_fallback_max = 5.0 (was unbounded; caused spurious 10.0 scores)
 #   B2: No config change; partial-graph warning is in code and axis-pool.md
 #   C3: No anchor change; descriptive-only warning added to axis-pool.md
+#   TIER THRESHOLDS: shifted -5 to account for A3 fix
+#     v1.0: T1>=26, T2>=20, T3>=14, T4<14
+#     v1.1: T1>=21, T2>=15, T3>=9,  T4<9  (preserves T1=13, T2=28, T3=60, T4=126)
 
 # ── Band A: Flow ──────────────────────────────────────────────────────────────
 
