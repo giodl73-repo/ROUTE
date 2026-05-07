@@ -80,7 +80,7 @@ enum Commands {
 
     /// Render a corridor map to PNG
     Map {
-        /// Interstate designation
+        /// Interstate designation, OR "all" for the full tier mega-map
         designation: String,
         /// Output file (default: maps/{designation}.png)
         #[arg(long, short, value_name = "FILE")]
@@ -395,13 +395,57 @@ fn main() -> Result<()> {
         }
 
         Commands::Map { designation, output, color_by } => {
+            let norm = normalise_designation(&designation);
             let out = output.unwrap_or_else(|| {
-                let slug = designation.to_lowercase().replace('-', "");
+                let slug = if norm == "ALL" { "all-tiers".to_string() } else { norm.to_lowercase() };
                 PathBuf::from(format!("maps/{slug}.png"))
             });
-            println!("route map {designation} → {}", out.display());
-            println!("  [stub] renderer wired — graph load required first.");
-            let _ = color_by;
+            println!("route map {norm} → {}", out.display());
+
+            // Mega-map: all tiers at once
+            if norm == "ALL" {
+                let manifest = route_data::Manifest::load(&manifest_path)
+                    .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                let graph = load_graph(&manifest)?;
+                let scores = route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
+                println!("  building tier mega-map ({} routes, {} score entries)…",
+                    graph.route_ids().len(), scores.len());
+                let svg = route_map::build_megamap_svg(&graph, &scores)?;
+                std::fs::create_dir_all("maps")?;
+                route_map::svg_to_png(&svg, &out, 2400, 1350)?;
+                println!("  rendered mega-map: {} (2400×1350)", out.display());
+                println!("  T1 red · T2 orange · T3 gold · T4 gray");
+                return Ok(());
+            }
+
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+
+            let corridor = route_network::aggregate_corridor(&graph, &norm)
+                .ok_or_else(|| anyhow::anyhow!("Route '{}' not found in graph", norm))?;
+
+            // Score for color-by
+            let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
+
+            // Build SVG
+            let svg = route_map::build_svg(
+                &corridor,
+                &graph,
+                Some(&scores),
+                color_by.as_deref(),
+            )?;
+
+            // Create output directory
+            if let Some(parent) = out.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+
+            route_map::svg_to_png(&svg, &out, 1600, 900)?;
+            println!("  rendered: {} ({} segments, {:.0} miles)",
+                out.display(), corridor.edge_count, corridor.total_miles);
+            println!("  score: {:.1}/120  T90-PTI: {:.2}",
+                scores.total(), scores.a3.score);
         }
 
         Commands::Report { designation } => {
