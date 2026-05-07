@@ -5,6 +5,7 @@ members = [
     "crates/route-score",
     "crates/route-map",
     "crates/route-report",
+    "crates/route-sim",
     "crates/route-cli",
 ]
 resolver = "2"
@@ -28,6 +29,9 @@ ordered-float = "4"
 
 # Optimization
 minilp        = "0.2"   # pure Rust LP solver — investment allocation, multi-constraint portfolio
+
+# Simulation
+rand          = "0.8"   # reproducible RNG for chaos Monte Carlo
 
 # Graph partitioning (deferred — add to route-network when gap analysis phase begins)
 # metis-core = { git = "https://github.com/giodl73-repo/METIS-CORE.git" }

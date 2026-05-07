@@ -1,0 +1,18 @@
+name = "donner-closure"
+description = "I-80 Donner Pass closes 48h (winter storm). Freight cost and rerouting to I-40."
+fw_max_iter = 30
+fw_tolerance = 0.005
+report_corridors = ["I80", "I40", "I90", "I15"]
+
+[incident]
+name = "Donner Pass winter closure"
+affected_edges = []
+duration_hours = 48.0
+annual_occurrences = 50.0
+
+[incident.incident_type]
+kind = "Weather"
+weather_type = "SnowIce"
+
+[intervention]
+kind = "NoIncident"

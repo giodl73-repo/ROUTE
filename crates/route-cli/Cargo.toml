@@ -16,7 +16,9 @@ route-network = { path = "../route-network" }
 route-score   = { path = "../route-score" }
 route-map     = { path = "../route-map" }
 route-report  = { path = "../route-report" }
+route-sim     = { path = "../route-sim" }
 clap          = { workspace = true }
 anyhow        = { workspace = true }
 serde_json    = { workspace = true }
 csv           = { workspace = true }
+toml          = { workspace = true }

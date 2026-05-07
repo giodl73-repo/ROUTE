@@ -1,0 +1,20 @@
+name = "houston-surge"
+description = "Hurricane evacuation: 2.5M people evacuating Houston. I-69 relief corridor."
+fw_max_iter = 30
+fw_tolerance = 0.02
+report_corridors = ["I10", "I45", "I69", "I610"]
+
+[incident]
+name = "Houston hurricane evacuation demand surge"
+affected_edges = []
+duration_hours = 36.0
+annual_occurrences = 0.3
+
+[incident.incident_type]
+kind = "Weather"
+weather_type = "Hurricane"
+
+[intervention]
+kind = "ManagedLanes"
+corridor = "I69"
+added_lanes_per_direction = 0

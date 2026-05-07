@@ -1,0 +1,20 @@
+name = "atlanta-peak"
+description = "I-75 Atlanta AM peak. Tests whether 2 managed freight lanes reach PTI <= 1.15."
+fw_max_iter = 40
+fw_tolerance = 0.005
+report_corridors = ["I75", "I85", "I285", "I20"]
+
+[incident]
+name = "Atlanta AM peak demand surge"
+affected_edges = []
+duration_hours = 3.0
+annual_occurrences = 260.0
+
+[incident.incident_type]
+kind = "LaneClosure"
+remaining_fraction = 0.80
+
+[intervention]
+kind = "ManagedLanes"
+corridor = "I75"
+added_lanes_per_direction = 2

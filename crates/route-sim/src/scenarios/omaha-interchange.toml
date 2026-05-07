@@ -1,0 +1,19 @@
+name = "omaha-interchange"
+description = "I-35/I-80 Omaha interchange closes 48h. Diamond connector vs no-diamond."
+fw_max_iter = 25
+fw_tolerance = 0.01
+report_corridors = ["I35", "I80", "I29", "I680"]
+
+[incident]
+name = "Omaha I-35/I-80 interchange closure"
+affected_edges = []
+duration_hours = 48.0
+annual_occurrences = 3.0
+
+[incident.incident_type]
+kind = "Closure"
+
+[intervention]
+kind = "Diamond"
+intersection_name = "I35xI80-omaha"
+connector_capacity_vph = 1900.0

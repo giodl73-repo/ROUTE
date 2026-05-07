@@ -115,6 +115,12 @@ enum Commands {
         top: usize,
     },
 
+    /// Run traffic simulation — scenario, chaos, or intervention test
+    Sim {
+        #[command(subcommand)]
+        mode: SimMode,
+    },
+
     /// Compute highway network coverage — how far is anyone from an on-ramp?
     Coverage {
         /// Distance threshold in miles (default: 30)
@@ -154,6 +160,31 @@ enum GapType {
     Bottleneck,
     Resilience,
     Intermodal,
+}
+
+#[derive(clap::Subcommand, Clone, Debug)]
+enum SimMode {
+    /// Run a named scenario (donner-closure, atlanta-peak, omaha-interchange, houston-surge)
+    Scenario {
+        name: String,
+        /// Test the named I2.0 intervention for this scenario
+        #[arg(long)]
+        intervention: bool,
+    },
+    /// Monte Carlo chaos: random closures, measure outcome distribution
+    Chaos {
+        /// Number of iterations (default: 100)
+        #[arg(long, default_value_t = 100)]
+        iterations: usize,
+        /// Random seed (default: 42)
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Restrict to T1 corridors only
+        #[arg(long)]
+        t1_only: bool,
+    },
+    /// List available scenarios
+    List,
 }
 
 fn main() -> Result<()> {
@@ -679,6 +710,70 @@ fn main() -> Result<()> {
             }
         }
 
+        Commands::Sim { mode } => {
+            match mode {
+                SimMode::List => {
+                    println!("Available scenarios:");
+                    for name in route_sim::scenarios::available_scenarios() {
+                        println!("  {name}");
+                    }
+                    println!("\nUsage: route sim scenario <name> [--intervention]");
+                    println!("       route sim chaos [--iterations N] [--seed S] [--t1-only]");
+                }
+
+                SimMode::Scenario { name, intervention } => {
+                    println!("route sim scenario {name}{}",
+                        if intervention { " --intervention" } else { "" });
+
+                    let toml_str = route_sim::scenarios::load_scenario(&name)
+                        .ok_or_else(|| anyhow::anyhow!(
+                            "Unknown scenario '{}'. Run `route sim list` to see available scenarios.", name
+                        ))?;
+
+                    let mut scenario: route_sim::Scenario = toml::from_str(toml_str)
+                        .with_context(|| format!("parsing scenario {name}"))?;
+
+                    if !intervention {
+                        scenario.intervention = None;
+                    }
+
+                    let manifest = route_data::Manifest::load(&manifest_path)
+                        .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                    let graph = load_graph(&manifest)?;
+
+                    // Use AADT-based demand proxy (FAF5 not yet joined)
+                    let demand = build_demand_from_graph(&graph);
+                    println!("  demand pairs: {}", demand.len());
+
+                    println!("  running Wardrop equilibrium (Frank-Wolfe)…");
+                    let result = route_sim::run_scenario(&graph, &demand, &scenario);
+
+                    print_scenario_result(&result);
+                }
+
+                SimMode::Chaos { iterations, seed, t1_only } => {
+                    println!("route sim chaos --iterations {iterations} --seed {seed}{}",
+                        if t1_only { " --t1-only" } else { "" });
+
+                    let manifest = route_data::Manifest::load(&manifest_path)
+                        .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                    let graph = load_graph(&manifest)?;
+                    let demand = build_demand_from_graph(&graph);
+
+                    let config = route_sim::ChaosConfig {
+                        seed,
+                        iterations,
+                        t1_only,
+                        ..Default::default()
+                    };
+
+                    println!("  running {iterations} chaos iterations…");
+                    let result = route_sim::run_chaos(&graph, &demand, &config);
+                    print_chaos_result(&result);
+                }
+            }
+        }
+
         Commands::Calibrate => {
             println!("route calibrate");
             println!("  [stub] reads scored corpus from personas/axis-pool.md ledger.");
@@ -766,4 +861,90 @@ fn print_score_table(designation: &str, scores: &route_score::DimensionScores, a
     println!("│ Band D (Future)                      │ {:>5.1} │     │", scores.band_d());
     println!("│ TOTAL                                │ {:>5.1} │ /120│", scores.total());
     println!("└──────────────────────────────────────┴───────┴─────┘");
+}
+
+/// Build a simple demand matrix from HPMS AADT data in the graph.
+/// Proxy for FAF5-based O-D demand until FAF5 routing is implemented.
+fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_sim::demand::DemandMatrix {
+    use route_sim::demand::{demand_from_aadt, DemandParams};
+    let params = DemandParams::default();
+    let mut demand = Vec::new();
+
+    // Create O-D pairs from terminus nodes of each interstate
+    for route_id in g.interstate_ids() {
+        let edges = g.route_edges(&route_id);
+        if edges.len() < 2 { continue; }
+
+        // Use first and last edge endpoints as a crude O-D pair
+        if let (Some(&first_ei), Some(&last_ei)) = (edges.first(), edges.last()) {
+            if let (Some((s, _)), Some((_, t))) = (
+                g.graph.edge_endpoints(first_ei),
+                g.graph.edge_endpoints(last_ei),
+            ) {
+                let mean_aadt = edges.iter()
+                    .filter_map(|&ei| g.graph[ei].aadt.map(|a| a as f64))
+                    .sum::<f64>() / edges.len() as f64;
+                let mean_pct = edges.iter()
+                    .filter_map(|&ei| g.graph[ei].pct_truck)
+                    .sum::<f32>() / edges.len() as f32;
+
+                if mean_aadt > 0.0 {
+                    demand.push(demand_from_aadt(mean_aadt, mean_pct, &params, s, t));
+                }
+            }
+        }
+    }
+    demand
+}
+
+fn print_scenario_result(result: &route_sim::ScenarioResult) {
+    println!("\n=== {} ===", result.scenario_name);
+    println!("  Baseline:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
+        result.baseline.metrics.total_throughput_vph,
+        result.baseline.metrics.mean_pti,
+        result.baseline.metrics.freight_cost_per_hour_m);
+    println!("  Incident:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
+        result.incident.metrics.total_throughput_vph,
+        result.incident.metrics.mean_pti,
+        result.incident.metrics.freight_cost_per_hour_m);
+    println!("  Cost delta: +${:.2}M/hr  |  LOS-F edges: {}  |  T90: {:.1}h",
+        result.incident.freight_cost_delta_m,
+        result.incident.metrics.losf_edges,
+        result.incident.t90_hours.unwrap_or(0.0));
+
+    if let Some(ref int_result) = result.intervention {
+        println!("  Intervention: throughput {:.0} vph  |  PTI {:.2}  |  cost ${:.2}M/hr",
+            int_result.metrics.total_throughput_vph,
+            int_result.metrics.mean_pti,
+            int_result.metrics.freight_cost_per_hour_m);
+        let improvement = result.incident.metrics.freight_cost_per_hour_m
+            - int_result.metrics.freight_cost_per_hour_m;
+        println!("  Intervention saves: ${:.2}M/hr  PTI improvement: {:.2} → {:.2}",
+            improvement,
+            result.incident.metrics.mean_pti,
+            int_result.metrics.mean_pti);
+    }
+
+    // Corridor PTIs
+    if !result.incident.corridor_ptis.is_empty() {
+        println!("\n  Corridor PTIs (incident):");
+        let mut ptis: Vec<(&String, &f64)> = result.incident.corridor_ptis.iter().collect();
+        ptis.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
+        for (corridor, pti) in ptis {
+            let flag = if *pti > 1.3 { " ⚠" } else { "" };
+            println!("    {}: {:.2}{}", corridor, pti, flag);
+        }
+    }
+}
+
+fn print_chaos_result(result: &route_sim::ChaosResult) {
+    println!("\n=== Chaos Results ({} iterations) ===", result.iterations);
+    println!("  Mean freight cost delta: +${:.2}M/peak-hr", result.mean_freight_cost_delta_m);
+    println!("  P95 freight cost delta:  +${:.2}M/peak-hr", result.p95_freight_cost_delta_m);
+    println!("  Max freight cost delta:  +${:.2}M/peak-hr", result.max_freight_cost_delta_m);
+    println!("  Mean network PTI:        {:.2}", result.mean_network_pti);
+    println!("  Saturation fraction:     {:.1}%", result.saturation_fraction * 100.0);
+    if !result.worst_case_corridors.is_empty() {
+        println!("  Worst-case corridors:    {}", result.worst_case_corridors.join(", "));
+    }
 }
