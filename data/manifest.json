@@ -36,6 +36,20 @@
       "format": "csv",
       "year": 2024,
       "notes": "ATRI Top 100 Truck Bottleneck Report 2024 — hand-curated CSV at data/atri-bottlenecks.csv. No download URL (proprietary PDF); data extracted manually. See data/atri-bottlenecks.csv."
+    },
+    "census-gazetteer-counties": {
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2023_Gazetteer/2023_Gaz_counties_national.zip",
+      "filename": "2023_Gaz_counties_national.zip",
+      "format": "csvzip",
+      "year": 2023,
+      "notes": "Census Bureau 2023 Gazetteer — county internal point lat/lon + land area. No auth. 3,234 counties. Fields: USPS, GEOID, NAME, ALAND_SQMI, INTPTLAT, INTPTLONG."
+    },
+    "census-acs-county-pop": {
+      "url": "",
+      "filename": "acs_county_pop_2022.csv",
+      "format": "csv",
+      "year": 2022,
+      "notes": "ACS 5-year county population. Fetch via Census API (no auth): https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E&for=county:*&in=state:* — or use route fetch-acs command."
     }
   }
 }

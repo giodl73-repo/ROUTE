@@ -1,11 +1,113 @@
 /// Coverage analysis — how close is any population point to the highway network?
 ///
-/// Grids the continental US at configurable resolution, finds nearest interchange
-/// for each cell, reports coverage statistics by distance threshold.
+/// Two modes:
+///   1. County centroid (preferred): uses Census Gazetteer county centroids,
+///      optionally population-weighted. No ocean problem. Actionable county-level gaps.
+///   2. Geographic grid (fast proxy): 10-mile grid over bounding box.
+///      Includes ocean cells; use only as rough estimate.
 use crate::graph::HighwayGraph;
 use petgraph::graph::NodeIndex;
 
-/// Result of a coverage analysis run.
+/// Population-weighted coverage result (county centroid mode).
+#[derive(Debug)]
+pub struct PopCoverageResult {
+    pub total_counties: usize,
+    pub total_population: u64,
+    pub total_land_sqmi: f64,
+    // By distance threshold
+    pub counties_within_20mi: usize,
+    pub counties_within_30mi: usize,
+    pub counties_within_50mi: usize,
+    pub pop_within_20mi: u64,
+    pub pop_within_30mi: u64,
+    pub pop_within_50mi: u64,
+    pub land_within_20mi: f64,
+    pub land_within_30mi: f64,
+    pub land_within_50mi: f64,
+    // Gap counties (exceed threshold)
+    pub gap_counties: Vec<CountyGap>,
+    pub max_gap_miles: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct CountyGap {
+    pub geoid: String,
+    pub name: String,
+    pub state: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub nearest_miles: f64,
+    pub population: u64,
+    pub aland_sqmi: f64,
+}
+
+/// Compute population-weighted coverage using county centroids.
+pub fn compute_pop_coverage(
+    g: &HighwayGraph,
+    counties: &[route_data::CountyCentroid],
+    tier_filter: Option<&[&str]>,
+    threshold_miles: f64,
+) -> PopCoverageResult {
+    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+        .filter(|&ni| {
+            let node = &g.graph[ni];
+            if !node.is_interchange { return false; }
+            if let Some(filter) = tier_filter {
+                g.graph.edges(ni).any(|er| filter.iter().any(|&f| er.weight().route_id == f))
+            } else { true }
+        })
+        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .collect();
+
+    let mut result = PopCoverageResult {
+        total_counties: counties.len(),
+        total_population: counties.iter().map(|c| c.population).sum(),
+        total_land_sqmi: counties.iter().map(|c| c.aland_sqmi).sum(),
+        counties_within_20mi: 0, counties_within_30mi: 0, counties_within_50mi: 0,
+        pop_within_20mi: 0, pop_within_30mi: 0, pop_within_50mi: 0,
+        land_within_20mi: 0.0, land_within_30mi: 0.0, land_within_50mi: 0.0,
+        gap_counties: Vec::new(),
+        max_gap_miles: 0.0,
+    };
+
+    for county in counties {
+        let nearest = find_nearest_miles(&interchange_coords, county.lat, county.lon);
+        if nearest > result.max_gap_miles { result.max_gap_miles = nearest; }
+
+        if nearest <= 20.0 {
+            result.counties_within_20mi += 1;
+            result.pop_within_20mi += county.population;
+            result.land_within_20mi += county.aland_sqmi;
+        }
+        if nearest <= 30.0 {
+            result.counties_within_30mi += 1;
+            result.pop_within_30mi += county.population;
+            result.land_within_30mi += county.aland_sqmi;
+        }
+        if nearest <= 50.0 {
+            result.counties_within_50mi += 1;
+            result.pop_within_50mi += county.population;
+            result.land_within_50mi += county.aland_sqmi;
+        }
+        if nearest > threshold_miles {
+            result.gap_counties.push(CountyGap {
+                geoid: county.geoid.clone(),
+                name: county.name.clone(),
+                state: county.state.clone(),
+                lat: county.lat,
+                lon: county.lon,
+                nearest_miles: nearest,
+                population: county.population,
+                aland_sqmi: county.aland_sqmi,
+            });
+        }
+    }
+
+    result.gap_counties.sort_by(|a, b| b.nearest_miles.partial_cmp(&a.nearest_miles).unwrap());
+    result
+}
+
+/// Result of a geometric grid coverage analysis run.
 #[derive(Debug)]
 pub struct CoverageResult {
     pub total_cells: usize,
