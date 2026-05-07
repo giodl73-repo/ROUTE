@@ -26,3 +26,26 @@ US30,0.0,0.0,7.5,Lincoln Hwy; Corn Belt IA/NE/IN; no USMCA; no major military
 US50,0.0,0.0,0.0,I-70 Pacific gap; no USMCA or military data yet — update from FHWA
 US69,4.0,0.0,5.0,I-69 corridor; Gulf-to-Midwest trade potential; Arkansas ag
 US77,5.0,0.0,6.0,Laredo approach; south TX cotton/citrus
+# ── T2 Major Connectors ────────────────────────────────────────────────────────
+# B4 includes network strategic role (bridge/relief valve) as well as physical installations
+# Corridors that are the ONLY connection between multiple T1s get +1.5 on B4
+I65,0.0,8.0,7.0,Fort Campbell KY (101st Airborne); Mobile AL port; ONLY corridor connecting I-10/I-40/I-64/I-70/I-90 through south-central US; Anniston Army Depot
+I81,0.0,7.5,5.5,Quantico USMC; Shenandoah Valley ag; NETWORK: 35% of I-81 trucks are I-95 refugees — strategic I-95 relief valve
+I85,0.0,7.5,6.5,Fort Benning/Moore GA; Anniston Army Depot AL; NETWORK: SE manufacturing corridor Charlotte→Atlanta; bridges I-95 and I-20
+I64,0.0,6.5,5.5,Langley AFB VA; Redstone Arsenal AL; NETWORK: only E-W interstate through central Appalachians between I-70 and I-40
+I20,0.0,6.5,5.5,Dyess AFB TX; Barksdale AFB approach; SE ag cotton/soy; NETWORK: bridges I-95 Atlanta to I-10/I-35 Dallas
+I44,0.0,7.0,5.0,Fort Leonard Wood MO (Army Engineer School); McAlester Army Ammo OK; NETWORK: bridges I-35 to I-70 via OKC-Springfield-St Louis
+I69,4.0,5.5,6.0,Gulf-to-Midwest USMCA potential; ag soy/corn; NETWORK: future T1, currently primary HOU→IND→DET bridge
+I49,0.0,6.5,7.5,Barksdale AFB LA; Louisiana cotton/soy/sugarcane; AR rice/soy; NETWORK: only N-S interstate west of I-55 east of I-35 in deep south
+I77,0.0,6.5,5.0,Ft Jackson SC; NETWORK: bridges I-26 to I-70 through Appalachians; Charlotte→Cleveland
+I30,0.0,6.0,5.5,Red River Army Depot TX; AR ag; NETWORK: bridges I-35 Dallas to I-40 Little Rock
+I24,0.0,7.5,5.0,Fort Campbell KY (101st Airborne — #1 size); NETWORK: Nashville→Chattanooga→Knoxville bridge connecting I-65 to I-75/I-40
+I84,0.0,6.5,7.5,Mountain Home AFB ID; Hanford DOE nuclear WA; Snake River Valley potato/onion; NETWORK: only Portland→SLC connector
+I285,0.0,5.0,0.0,STRAHNET baseline; Atlanta metro distribution hub; no agricultural role
+# ── US Highway T2 upgrade candidates ──────────────────────────────────────────
+US30,0.0,5.0,7.5,Lincoln Hwy; Corn Belt IA/NE/IN; STRAHNET baseline; I-80 relief valve segments
+US412,0.0,5.0,7.0,Southern tier AR/MO/TN; Fort Smith AR approach; delta ag corridor; proposed I-412
+US6,0.0,5.0,6.0,Mid-country E-W IA/NE/CO; Iowa corn/soy; STRAHNET on portions; I-80 parallel
+# ── T1 adjacents needing scores ────────────────────────────────────────────────
+I285,0.0,5.0,0.0,Atlanta beltway; STRAHNET; no ag or border role; major freight hub
+I110,0.0,5.0,0.0,Pasadena CA + Biloxi MS urban connectors; STRAHNET; no ag
