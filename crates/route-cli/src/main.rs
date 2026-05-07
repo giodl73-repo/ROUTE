@@ -115,6 +115,29 @@ enum Commands {
         top: usize,
     },
 
+    /// Compute highway network coverage — how far is anyone from an on-ramp?
+    Coverage {
+        /// Distance threshold in miles (default: 30)
+        #[arg(long, default_value_t = 30.0)]
+        threshold: f64,
+        /// Grid resolution in miles (default: 10; use 5 for higher precision)
+        #[arg(long, default_value_t = 10.0)]
+        grid: f64,
+        /// Restrict to T1 corridors only
+        #[arg(long)]
+        t1_only: bool,
+        /// Show top N gap locations (default: 20)
+        #[arg(long, default_value_t = 20)]
+        top_gaps: usize,
+    },
+
+    /// Show tier standards for a given tier
+    Standards {
+        /// Tier to show (1, 2, 3, or 4)
+        #[arg(default_value_t = 1)]
+        tier: u8,
+    },
+
     /// Run rubric calibration pass — compute variance stats, flag retirement candidates
     Calibrate,
 }
@@ -447,6 +470,117 @@ fn main() -> Result<()> {
             println!("\n  Costs: widen=$10M/mi, US→Int=$30M/mi, SR→Int=$40M/mi, new=$75M/mi (rough FHWA ranges)");
             println!("  † Upgrade costs and throughput gains are order-of-magnitude estimates.");
             println!("  † Run `route score-all` to improve gain estimates with real AADT data.");
+        }
+
+        Commands::Coverage { threshold, grid, t1_only, top_gaps } => {
+            println!("route coverage --threshold {threshold}mi --grid {grid}mi{}",
+                if t1_only { " --t1-only" } else { "" });
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+
+            let t1_ids = vec!["I5","I10","I35","I40","I75","I80","I90","I95"];
+            let filter = if t1_only { Some(t1_ids.as_slice()) } else { None };
+
+            println!("  computing coverage ({} interchange nodes, {}mi grid)…",
+                graph.graph.node_indices().filter(|&ni| graph.graph[ni].is_interchange).count(),
+                grid);
+
+            let result = route_network::coverage::compute_coverage(&graph, filter, grid, threshold);
+
+            println!("\n┌──────────────────────────────────────────────────────┐");
+            println!("│  Coverage Analysis — {}mi threshold{}",
+                threshold, if t1_only { " (T1 only)" } else { "" });
+            println!("├──────────────────────────────────────────────────────┤");
+            println!("│  Grid cells analyzed:   {:>10}                   │", result.total_cells);
+            println!("│  Within 20 miles:       {:>9.1}%  ({} cells)       │",
+                result.pct_within_20mi, result.cells_within_20mi);
+            println!("│  Within 30 miles:       {:>9.1}%  ({} cells)       │",
+                result.pct_within_30mi, result.cells_within_30mi);
+            println!("│  Within 50 miles:       {:>9.1}%  ({} cells)       │",
+                result.pct_within_50mi, result.cells_within_50mi);
+            println!("│  Beyond {}mi threshold:  {:>9.1}%  ({} cells)       │",
+                threshold,
+                100.0 - result.pct_within_30mi,
+                result.total_cells - result.cells_within_30mi);
+            println!("│  Max gap (worst point): {:>9.1} miles               │", result.max_gap_miles);
+            println!("└──────────────────────────────────────────────────────┘");
+
+            if !result.gap_cells.is_empty() {
+                println!("\n  Top {} gap locations (>{}mi from any on-ramp):", top_gaps, threshold);
+                println!("  {:>8}  {:>9}  {:>8}  State", "Lat", "Lon", "Miles");
+                println!("  {}", "─".repeat(40));
+                let mut sorted = result.gap_cells.clone();
+                sorted.sort_by(|a, b| b.nearest_miles.partial_cmp(&a.nearest_miles).unwrap());
+                for cell in sorted.iter().take(top_gaps) {
+                    println!("  {:>8.2}  {:>9.2}  {:>7.1}mi  {}",
+                        cell.lat, cell.lon, cell.nearest_miles, cell.approx_state);
+                }
+                println!("\n  I2.0 coverage target: 99% within 30mi (T2+T3 combined)");
+                println!("  T3 rural spurs needed: ~{} locations", result.gap_cells.len());
+            }
+        }
+
+        Commands::Standards { tier } => {
+            match tier {
+                1 => {
+                    println!("=== TIER 1 — Primary Arteries ===");
+                    println!("PTI target:           ≤ 1.15 (freight lanes) / ≤ 1.30 (GP)");
+                    println!("Express freight lanes: 2 per direction, physically separated");
+                    println!("Design speed:         65 mph sustained");
+                    println!("EV charging:          ≥150kW DC fast, every 50 miles, 8+ chargers");
+                    println!("Truck EV:             ≥350kW at freight terminals");
+                    println!("Rest areas:           Every 100 miles, 50+ truck spaces, full service");
+                    println!("Transit hub:          8 platforms, 2,000 parking at T1/T1 diamonds");
+                    println!("Bus frequency:        ≤ 2 hours per direction");
+                    println!("Resilience spurs:     Every 50 miles (rural)");
+                    println!("Diamond k-connect:    k ≥ 3 at all T1/T1 intersections");
+                    println!("Climate hardening:    Full SFHA protection");
+                    println!("Intermodal spurs:     1 per state traversed");
+                    println!("Bridge target:        All fair+ by 2030");
+                    println!("C-D roads:            Required in all metros >500k");
+                }
+                2 => {
+                    println!("=== TIER 2 — Major Connectors ===");
+                    println!("PTI target:           ≤ 1.30");
+                    println!("Freight lanes:        None — truck-friendly design, no dedicated lanes");
+                    println!("Design speed:         65 mph");
+                    println!("EV charging:          ≥100kW DC fast, every 75 miles, 4+ chargers");
+                    println!("Truck EV:             ≥150kW at fuel stops");
+                    println!("Rest areas:           Every 150 miles, 20+ truck spaces, enhanced");
+                    println!("Transit stops:        4 platforms, 500 parking at T1/T2 interchanges");
+                    println!("Bus frequency:        ≤ 4 hours per direction");
+                    println!("Resilience spurs:     Every 75 miles (rural)");
+                    println!("Diamond k-connect:    k ≥ 2 at T2/T2 intersections");
+                    println!("Bridge target:        All fair+ by 2035");
+                    println!("Capacity expansion:   Only where V/C > 0.90 at peak");
+                }
+                3 => {
+                    println!("=== TIER 3 — Regional Feeders ===");
+                    println!("PTI target:           ≤ 1.50 (functional reliability)");
+                    println!("Freight lanes:        None — standard lanes, no corridor restrictions");
+                    println!("Design speed:         65 mph (55 mph acceptable mountainous)");
+                    println!("EV charging:          ≥50kW DC fast, every 100 miles, 2+ chargers");
+                    println!("Rest areas:           Every 200 miles, 10 truck spaces, basic");
+                    println!("Transit nodes:        Shelter + demand-responsive, 50-100 parking");
+                    println!("Bus:                  Demand-responsive, min 2 round trips/day");
+                    println!("Resilience spurs:     Every 100 miles (rural)");
+                    println!("Rural access spurs:   ≤10mi, for communities >5k pop >30mi from T1/T2/T3");
+                    println!("Bridge target:        All fair+ by 2040");
+                    println!("Coverage role:        Fill 30-mile coverage gaps");
+                }
+                4 => {
+                    println!("=== TIER 4 — Local Access ===");
+                    println!("Standard:             Maintenance and safety only. No expansion.");
+                    println!("Pavement:             IRI ≤ 170 (fair) by 2040");
+                    println!("Bridges:              All fair+ by 2045");
+                    println!("Safety:               Standard signing, guardrails, interchange lighting");
+                    println!("EV:                   Preserve rest area sites for future; no new requirement");
+                    println!("Transit:              None required");
+                    println!("Freight:              Posted restrictions only where bridge-specific");
+                }
+                _ => println!("Error: tier must be 1, 2, 3, or 4"),
+            }
         }
 
         Commands::Calibrate => {

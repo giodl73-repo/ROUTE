@@ -1,0 +1,87 @@
+# Interstate 2.0 Tier Standards — config/tier-standards.toml
+# Runtime-configurable tier feature specifications.
+# CLI commands (route coverage, route gap, route transit) load from here.
+
+[meta]
+version = "v1.0"
+spec = "specs/2026-05-06-tier-standards.md"
+
+# ── Coverage standards ────────────────────────────────────────────────────────
+
+[coverage]
+# Maximum distance (miles) from any interstate on-ramp — the access floor
+access_floor_miles = 30.0
+# Maximum distance from T1 or T2 on-ramp — freight and transit access
+freight_floor_miles = 50.0
+# Maximum distance from T2+ transit stop — economic opportunity access
+transit_floor_miles = 20.0
+# Agricultural land coverage — freight within harvest window
+ag_floor_miles = 25.0
+# Grid resolution for coverage computation (miles)
+grid_resolution_miles = 10.0
+
+# ── Tier 1 standards ──────────────────────────────────────────────────────────
+
+[tier1]
+pti_target = 1.15
+pti_gp_target = 1.30
+express_freight_lanes_per_dir = 2
+design_speed_mph = 65
+ev_passenger_spacing_miles = 50.0
+ev_passenger_min_kw = 150
+ev_truck_min_kw = 350
+rest_area_spacing_miles = 100.0
+rest_area_truck_spaces = 50
+transit_hub_bus_platforms = 8
+transit_hub_parking_spaces = 2000
+bus_frequency_hours = 2
+resilience_spur_spacing_miles = 50.0
+intermodal_spurs_per_state = 1
+cd_road_metro_threshold_pop = 500_000
+diamond_k_connectivity = 3
+bridge_target_year = 2030
+min_clearance_ft = 16.0
+
+# ── Tier 2 standards ──────────────────────────────────────────────────────────
+
+[tier2]
+pti_target = 1.30
+design_speed_mph = 65
+ev_passenger_spacing_miles = 75.0
+ev_passenger_min_kw = 100
+ev_truck_min_kw = 150
+rest_area_spacing_miles = 150.0
+rest_area_truck_spaces = 20
+transit_stop_bus_platforms = 4
+transit_stop_parking_spaces = 500
+bus_frequency_hours = 4
+resilience_spur_spacing_miles = 75.0
+diamond_k_connectivity = 2
+bridge_target_year = 2035
+min_clearance_ft = 14.5
+capacity_expansion_vc_threshold = 0.90
+
+# ── Tier 3 standards ──────────────────────────────────────────────────────────
+
+[tier3]
+pti_target = 1.50
+design_speed_mph = 65
+ev_passenger_spacing_miles = 100.0
+ev_passenger_min_kw = 50
+rest_area_spacing_miles = 200.0
+rest_area_truck_spaces = 10
+transit_node_parking_spaces = 75
+bus_daily_roundtrips_min = 2      # demand-responsive minimum
+rural_spur_trigger_pop = 5_000   # community population requiring spur consideration
+rural_spur_trigger_distance = 30.0  # miles from T1/T2/T3 on-ramp
+rural_spur_max_miles = 10.0       # maximum spur length
+bridge_target_year = 2040
+onramp_spacing_rural_max_miles = 20.0
+
+# ── Tier 4 standards ──────────────────────────────────────────────────────────
+
+[tier4]
+# Maintenance and safety only
+pavement_iri_max = 170            # poor→fair threshold; must achieve by 2040
+bridge_target_year = 2045
+# No EV, transit, freight, or capacity standards

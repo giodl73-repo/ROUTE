@@ -6,6 +6,7 @@ pub mod corridor;
 pub mod aggregate;
 pub mod flow;
 pub mod invest;
+pub mod coverage;
 
 pub use graph::{HighwayGraph, HighwayNode, HighwayEdge};
 pub use corridor::{Corridor, CorridorAttributes};
