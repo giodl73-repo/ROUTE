@@ -1,0 +1,81 @@
+\section{Priority Corridors}
+\label{sec:corridors}
+
+We evaluate 12 proposed interstate corridors against two criteria: coverage efficiency (gap population served per \$B of investment) and ROUTE composite score (strategic value beyond coverage alone). Table~\ref{tab:corridors} presents the full ranking.
+
+\subsection{Corridor Evaluation Methodology}
+
+For each proposed corridor, we estimate:
+
+\begin{itemize}
+\item \textbf{Alignment}: from published FHWA Future Interstate Study \citep{FHWA_FIS2000}, AASHTO proposed designations \citep{AASHTO2023}, and state LRTP proposals
+\item \textbf{Length}: approximate miles from proposed terminus to terminus
+\item \textbf{Gap counties served}: number of current gap counties that would fall within 30 miles of the proposed corridor alignment, using our HighwayGraph coverage model
+\item \textbf{Gap population served}: sum of gap-county populations brought within threshold
+\item \textbf{Upgrade type and cost}: greenfield (\$75M/mi), US highway upgrade (\$30M/mi), or partial build completion (\$20M/mi average)
+\item \textbf{Coverage efficiency}: gap population served ÷ estimated total cost in \$B
+\end{itemize}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}rrrr}
+\caption{Priority Proposed Corridors Ranked by Coverage Efficiency} \label{tab:corridors} \\
+\toprule
+\textbf{Corridor} & \textbf{Type} & \textbf{Miles} & \textbf{Cost (\$B)} & \textbf{Gap pop} & \textbf{Effic.} \\
+\midrule
+\endfirsthead
+\multicolumn{6}{c}{Table~\ref{tab:corridors} continued} \\
+\toprule
+\textbf{Corridor} & \textbf{Type} & \textbf{Miles} & \textbf{Cost (\$B)} & \textbf{Gap pop} & \textbf{Effic.} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+I-3 (Savannah–Detroit) & Greenfield/US upgrade & 1,050 & \$47B & 2,180,000 & 46K/\$B \\
+Northern Tier (US-2) & US highway upgrade & 2,500 & \$75B & 3,200,000 & 43K/\$B \\
+I-14 Gulf Coast & Partial build + upgrade & 1,300 & \$26B & 1,100,000 & 42K/\$B \\
+I-69 completion (TX–IN) & Partial build (500 mi gap) & 900 & \$18B & 750,000 & 42K/\$B \\
+Northern Maine Interstate & Greenfield & 280 & \$21B & 830,000 & 40K/\$B \\
+I-73 (Charlotte–Akron) & US highway upgrade & 435 & \$13B & 510,000 & 39K/\$B \\
+Appalachian Connector (WV) & Upgrade + new & 350 & \$17B & 620,000 & 36K/\$B \\
+I-57 northern extension & Partial build & 150 & \$5B & 170,000 & 34K/\$B \\
+Gulf Coast Interior (MS) & Greenfield & 300 & \$23B & 720,000 & 31K/\$B \\
+I-87 (ND–Canada) & US highway upgrade & 250 & \$8B & 230,000 & 29K/\$B \\
+Oregon Interior (US-97) & US highway upgrade & 430 & \$13B & 350,000 & 27K/\$B \\
+Southwest Connector (NM) & Greenfield & 350 & \$26B & 410,000 & 16K/\$B \\
+\textbf{12 corridors total} & & \textbf{8,295} & \textbf{\$292B} & \textbf{11,070,000} & \textbf{38K/\$B avg} \\
+
+\end{longtable}
+
+\textit{Efficiency = gap population served per \$B of investment. Costs are order-of-magnitude estimates; see data sources.}
+
+\subsection{Top Priority: I-3 (Savannah–Detroit)}
+
+The highest coverage efficiency corridor is I-3, proposed as a new interstate from Savannah, GA through Knoxville, TN, Lexington, KY and Toledo, OH to Detroit, MI. At 1,050 miles, it would cross the central Appalachians through existing river valley alignments (the Tennessee River valley, the Kentucky River valley, the Scioto River valley to the Ohio River) --- the only practical E-W crossing of the Appalachian spine in the 400-mile gap between I-40 and I-70.
+
+I-3 serves the Appalachian gap zone directly. The 66 gap counties of Kentucky, the 26 of West Virginia, and 42 of Tennessee that lack interstate access are all within its service area. We estimate 2,180,000 gap-county residents would move within the 30-mile threshold, at a coverage efficiency of 46,000 people per \$B of investment.
+
+Beyond coverage, I-3 serves the freight economics of the Appalachian corridor: coal, timber, and automotive parts move northward from Kentucky and Tennessee to the Great Lakes industrial base. The current routing requires detours of 150--200 miles around the Appalachian spine via I-64/I-77 or I-81/I-79.
+
+\subsection{Second Priority: Northern Tier (US-2 Alignment)}
+
+The US-2 corridor addresses the largest contiguous geographic gap in the continental US. Upgrading US-2 from Houlton, ME to Everett, WA to interstate standard would serve 3.2 million people currently in gap counties --- the highest absolute gap population of any single proposed corridor.
+
+The cost is high (\$75B for 2,500 miles of US highway upgrade to interstate standard) but the efficiency is competitive at 43,000 people per \$B, reflecting both the enormous population served and the relatively lower per-mile cost of upgrading an existing US highway rather than building greenfield.
+
+The Northern Tier corridor would be a T1 designation under the centrality-adjusted framework of \citet{ROUTE_A1}: irreplaceable (B1 score $\approx$ 9.5 along the northern tier), serving a zone with no parallel alternative, and connecting two coasts via a currently unconnected northern alignment.
+
+\subsection{I-14: Highest Immediate Impact for the Gulf South}
+
+I-14 (partially designated in Texas) is the most immediately actionable gap corridor. Approximately 400 miles are already under construction or designated in Texas; the remaining $\sim$900 miles through Louisiana, Mississippi, Alabama, and Georgia to connect with I-95 near Savannah represents a partial build completion at lower per-mile cost than greenfield.
+
+I-14 addresses the Rural Gulf South gap zone by providing an east-west corridor 100--150 miles north of I-10, finally closing the band between I-10 and I-20 that leaves 45 Louisiana parishes, 40 Mississippi counties, and portions of east Texas without interstate access.
+
+\subsection{Rural Access Spurs: The Type 3 Solution}
+
+For the 400+ Type 3 (Rural Isolation) gap counties --- sparse population, difficult terrain, no viable proposed interstate alignment --- we do not recommend new interstate construction. Instead, we recommend targeted rural access spurs: connector roads of $\leq 10$ miles linking communities to the nearest T2 or T3 corridor.
+
+Rural access spurs for the 100 highest-priority Type 3 communities (prioritized by population and C3 score) are estimated at \$1--5M each, for a total of \$100--500M --- a tiny fraction of the interstate corridor investment but one that brings the most isolated communities within range of the existing network.
+
+\subsection{Combined Coverage of 12 Priority Corridors}
+
+The 12 priority corridors would serve approximately 11.1 million gap-county residents --- bringing the total US population coverage from 79.6\% to approximately 83\%. Combined with rural access spurs, the I2.0 program targets 99\% coverage by 2040. The remaining 16\% gap after the 12 priority corridors reflects the most geographically isolated Type 3 counties where spur investment is more appropriate than full interstate construction.

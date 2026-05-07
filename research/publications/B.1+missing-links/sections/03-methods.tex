@@ -1,0 +1,50 @@
+\section{Data and Methods}
+
+\subsection{Coverage Analysis}
+
+\subsubsection{County Centroids}
+
+We use the US Census Bureau 2023 Gazetteer county file \citep{Census_TIGER2023} to obtain ``internal point'' coordinates for all 3,139 counties and county-equivalents in the 50 states and the District of Columbia. The internal point is the Census Bureau's computed population centroid, guaranteed to lie on land within the county boundary.
+
+We exclude Alaska (29 counties/boroughs) and Hawaii (5 counties) from the coverage analysis. Alaska's geography is incomparable to the continental US: 24 of 29 Alaskan boroughs/census areas have no road connection to the national highway system at all, and the nearest interstate to any Alaskan community is I-5 in Washington state, more than 1,400 miles away. Hawaii has no interstate-quality road. Including these counties would inflate the gap statistics without informing the continental US investment case. Our analysis covers 3,105 continental US counties.
+
+Population data comes from the American Community Survey 5-year estimates, 2022 vintage \citep{ACS2022}, accessed via the Census Bureau API. We join population to county centroids by GEOID. Total continental US population in the analysis: 330,035,426.
+
+\subsubsection{Highway Network}
+
+We use the ROUTE HighwayGraph \citep{ROUTE_CLI2026}: a directed graph constructed from the FHWA TIGER/Line 2023 Primary Roads national shapefile with HPMS 2018 attribute joins. The graph contains 12,421 edges, 12,011 nodes, and 723 named routes (227 interstates + 496 US highway segments). For coverage analysis, we identify all interchange nodes in the graph (nodes connecting $\geq$2 distinct routes): 1,465 interchange nodes in the full national graph.
+
+\subsubsection{Distance Computation}
+
+For each of the 3,105 continental US county centroids, we compute the Haversine distance to the nearest interchange node in the highway graph. This is the ``nearest on-ramp'' metric: the closest point at which a traveler could enter the interstate system from the county's population center.
+
+We report coverage at three thresholds: 20 miles (urban standard), 30 miles (rural access standard), and 50 miles (maximum reasonable rural commute range).
+
+\subsubsection{Limitations}
+
+The county centroid approach has known limitations for geographically large counties. Pima County, Arizona (9,189 sq mi) contains Tucson, which is directly on I-10, but the county centroid lies 189 miles from the nearest on-ramp because the centroid falls in the eastern Sonoran Desert. For these counties, the centroid measure overstates the access deficit for urban residents while understating it for the rural population in the county's eastern reaches. We address this limitation by noting affected counties and by supplementing the analysis with census-tract-level estimates where relevant.
+
+The interstate graph does not include every on-ramp --- only major interchange nodes where two or more routes meet. This understates coverage for corridors with frequent ramp spacing. We expect this effect to be small relative to the gaps we identify.
+
+\subsection{Gap Taxonomy}
+
+We classify gap counties into four types using a combination of geographic clustering (DBSCAN clustering on the gap county centroid coordinates with $\epsilon = 100$ miles, minimum cluster size 5 counties) and corridor analysis (whether a proposed interstate corridor would bring the county within threshold).
+
+\begin{description}
+\item[Type 1: T1 Geographic Gaps] Large contiguous zones with no Tier 1 interstate within 300 miles. Characterized by: B1 score $> 8$ on any nearby proposed corridor (indicating high redundancy need), USDA RUCC $\geq 7$ (deep rural), and geographic extent spanning multiple states.
+\item[Type 2: T2 Missing Links] Counties between T1 corridors that would be served by a T2 connector if one existed. Characterized by: gap distance 30--150 miles, nearest proposed corridor is T2-level (not T1-level), county population $> 10,000$.
+\item[Type 3: Rural Isolation] Sparse counties ($< 5,000$ population) in geographically difficult terrain (mountains, desert) with no viable proposed corridor. Long-term target for rural access spurs rather than new interstates.
+\item[Type 4: Economic Opportunity Gaps] Counties meeting any of the above types AND with C3 score $> 6.5$ in the ROUTE scoring framework (buffer GDP per capita $< 70\%$ of national average). These are the highest-priority counties for I2.0 investment because the infrastructure gap and the economic gap are co-located.
+\end{description}
+
+\subsection{Priority Corridor Ranking}
+
+For 12 proposed corridors drawn from the FHWA Future Interstate Study \citep{FHWA_FIS2000} and current AASHTO proposed designations \citep{AASHTO2023}, we estimate:
+
+\begin{itemize}
+\item \textbf{Coverage served}: number of gap counties that would fall within 30 miles if the corridor were added to the highway graph, and the associated gap population
+\item \textbf{Estimated cost}: alignment length × estimated cost per mile by upgrade type (greenfield: \$75M/mi; US highway upgrade: \$30M/mi; existing partial: \$20M/mi average)
+\item \textbf{Coverage efficiency}: gap population served per \$B of estimated investment
+\end{itemize}
+
+We score each proposed corridor against the ROUTE 12-dimensional rubric as a proposed corridor (scores marked estimated). The coverage efficiency ranking is the primary ordering; the corridor score provides secondary context for strategic value beyond coverage.
