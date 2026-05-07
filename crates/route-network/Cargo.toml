@@ -11,7 +11,8 @@ route-data = { path = "../route-data" }
 geo        = { workspace = true }
 geo-types  = { workspace = true }
 rstar      = { workspace = true }
-petgraph   = { workspace = true }
+petgraph      = { workspace = true }
+ordered-float = { workspace = true }
 serde      = { workspace = true }
 rayon      = { workspace = true }
 thiserror  = { workspace = true }

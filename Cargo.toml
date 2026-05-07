@@ -23,7 +23,8 @@ geo-types  = "0.7"
 rstar      = "0.12"
 
 # Graph analysis
-petgraph   = "0.6"
+petgraph      = "0.6"
+ordered-float = "4"
 
 # Data handling
 serde      = { version = "1", features = ["derive"] }

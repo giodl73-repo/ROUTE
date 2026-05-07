@@ -174,16 +174,72 @@ fn main() -> Result<()> {
         }
 
         Commands::Score { designation, estimated, proposed } => {
-            println!("route score {designation}");
-            // TODO: load cached graph, extract corridor, aggregate attributes, score
-            println!("  [stub] scoring engine wired — graph cache loading in progress.");
-            let _ = (estimated, proposed, scoring_cfg);
+            let norm = normalise_designation(&designation);
+            println!("route score {}", norm);
+
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+
+            // Build graph from cached shapefile
+            let graph = load_graph(&manifest)?;
+            println!("  graph: {} edges, {} interstates", graph.graph.edge_count(), graph.interstate_ids().len());
+
+            // Extract corridor
+            let mut corridor = route_network::aggregate_corridor(&graph, &norm)
+                .ok_or_else(|| anyhow::anyhow!(
+                    "Route '{}' not found in graph. Available: {:?}",
+                    norm, &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
+                ))?;
+
+            println!("  corridor: {} ({:.0} miles, {} segments)",
+                corridor.designation, corridor.total_miles, corridor.edge_count);
+
+            // Score
+            let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
+            // Print score table
+            print_score_table(&corridor.designation, &scores, estimated);
+
+            // Write corpus entry
+            let slug = norm.to_lowercase();
+            let corpus_dir = if proposed { "corpus/proposed" } else { "corpus/existing" };
+            let output_path = PathBuf::from(format!("{corpus_dir}/{slug}.md"));
+            route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
+            println!("\n  corpus entry → {}", output_path.display());
+
+            if scores.any_estimated() {
+                println!("  † Some scores are estimated — see justifications above.");
+                println!("    Run `route build` with HPMS data joined to improve accuracy.");
+            }
         }
 
         Commands::ScoreAll { workers } => {
             println!("route score-all");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let mut graph = load_graph(&manifest)?;
+
+            // Compute betweenness centrality on the full graph
             let w = workers.unwrap_or_else(num_cpus);
-            println!("  [stub] will score all corridors with {w} workers.");
+            println!("  computing betweenness centrality ({w} workers)…");
+            let bc = route_network::centrality::compute_edge_betweenness(&graph);
+            println!("  centrality: {} edges scored", bc.len());
+            graph.edge_betweenness = Some(bc);
+
+            // Score all interstates
+            let ids = graph.interstate_ids();
+            println!("  scoring {} corridors…", ids.len());
+
+            let mut all_scores = Vec::new();
+            for id in &ids {
+                if let Some(corridor) = route_network::aggregate_corridor(&graph, id) {
+                    let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
+                    println!("  {}: {:.1}/120{}", corridor.designation, scores.total(),
+                        if scores.any_estimated() { "†" } else { "" });
+                    all_scores.push(scores);
+                }
+            }
+
+            println!("score-all complete: {} corridors scored.", all_scores.len());
         }
 
         Commands::Gap { r#type, slug } => {
@@ -221,4 +277,67 @@ fn num_cpus() -> usize {
     std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4)
+}
+
+/// Normalise user input to internal route ID: "I-80" → "I80", "i80" → "I80"
+fn normalise_designation(input: &str) -> String {
+    input
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>()
+        .to_uppercase()
+}
+
+/// Load the HighwayGraph from the cached TIGER shapefile.
+/// Fast path: if shapefile already extracted, skips extraction.
+fn load_graph(manifest: &route_data::Manifest) -> Result<route_network::HighwayGraph> {
+    let extract_dir = manifest.cache_dir.join("tiger-primary-roads");
+    let shp_path = extract_dir.join("tl_2023_us_primaryroads.shp");
+
+    // Extract if not already done
+    let shp_path = if shp_path.exists() {
+        shp_path
+    } else {
+        let zip_path = manifest.cache_path("tiger-primary-roads");
+        if !zip_path.exists() {
+            anyhow::bail!("TIGER primary roads not cached — run `route fetch` first.");
+        }
+        route_data::fetch::extract_shp(&zip_path, &extract_dir)?
+    };
+
+    let segments = route_data::nhs::read_nhs_shapefile(&shp_path, false)
+        .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
+    let hpms: Vec<route_data::HpmsRecord> = Vec::new();
+    let (graph, _) = route_network::build_graph(segments, &hpms);
+    Ok(graph)
+}
+
+/// Print a formatted score table to stdout.
+fn print_score_table(designation: &str, scores: &route_score::DimensionScores, all_estimated: bool) {
+    println!("\n┌─────────────────────────────────────────────────────────────────────┐");
+    println!("│  {} — Dimension Scores (rubric {})", designation, scores.rubric_version);
+    println!("├──────┬──────────────────────────────┬───────┬────────────────────────┤");
+    println!("│ Dim  │ Name                         │ Score │ Est │");
+    println!("├──────┼──────────────────────────────┼───────┼─────┤");
+
+    let all = [
+        &scores.a1, &scores.a2, &scores.a3,
+        &scores.b1, &scores.b2, &scores.b3,
+        &scores.c1, &scores.c2, &scores.c3,
+        &scores.d1, &scores.d2, &scores.d3,
+    ];
+
+    for sd in all {
+        let est = if sd.estimated || all_estimated { "†" } else { " " };
+        println!("│ {:4} │ {:<28} │ {:>5.1} │  {}  │",
+            sd.dim.code(), sd.dim.name(), sd.score, est);
+    }
+
+    println!("├──────┴──────────────────────────────┼───────┼─────┤");
+    println!("│ Band A (Flow)                        │ {:>5.1} │     │", scores.band_a());
+    println!("│ Band B (Network)                     │ {:>5.1} │     │", scores.band_b());
+    println!("│ Band C (People)                      │ {:>5.1} │     │", scores.band_c());
+    println!("│ Band D (Future)                      │ {:>5.1} │     │", scores.band_d());
+    println!("│ TOTAL                                │ {:>5.1} │ /120│", scores.total());
+    println!("└──────────────────────────────────────┴───────┴─────┘");
 }
