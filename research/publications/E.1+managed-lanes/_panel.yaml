@@ -1,0 +1,12 @@
+paper: E.1+managed-lanes
+title: "Managed Freight Lanes: Throughput, Transit Time, and NPV"
+venue: "Transportation Research Part A"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-06
+    note: "Paper scaffolded — ROUTE module design"

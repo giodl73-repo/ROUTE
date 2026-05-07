@@ -1,0 +1,12 @@
+paper: C.2+national-max-flow
+title: "National Max-Flow: Capacity and Bottleneck Analysis of the Interstate Network"
+venue: "Transportation Science"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-06
+    note: "Paper scaffolded — ROUTE module design"
