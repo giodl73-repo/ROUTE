@@ -1,0 +1,20 @@
+\section{Introduction}
+
+Every major transit system publishes a schematic map. The London Underground's Harry Beck diagram, the Washington Metro's colored lines, Tokyo's layered rail network --- each reduces geographic complexity to a legible hierarchy: trunk lines carry the most riders at the highest frequency; branch lines connect to secondary destinations; local lines handle the last mile. The hierarchy is not merely aesthetic. It drives investment sequencing, capacity planning, and operational priority.
+
+The United States interstate highway system has no equivalent. The Federal Highway Administration classifies highways by functional class (Interstate, Other Freeway, Principal Arterial, etc.) and by National Highway System or Strategic Highway Network designation --- but these are binary flags, not a tiered hierarchy. A shipper routing freight from New York to Los Angeles and a commuter driving from a suburb to a regional center both use ``an interstate.'' The network provides no signal about which corridors are load-bearing spines and which are regional connectors.
+
+This matters for Interstate 2.0 planning. The United States faces an estimated \$1.2 trillion maintenance backlog on its highway infrastructure \citep{ASCE2021}. Federal investment decisions must prioritize. But priority requires a hierarchy --- a recognition that I-80 between Chicago and San Francisco occupies a different strategic position than I-110 in Pasadena. Without a tier classification, every corridor competes on equal footing, and investment follows political feasibility rather than network function.
+
+We derive a data-driven tier classification for the 227 interstate corridors in the ROUTE corpus. Our method scores each corridor on 12 dimensions --- throughput gap, freight intensity, network centrality, redundancy, population reach, rural connectivity, economic opportunity, climate resilience, multimodal integration, and infrastructure vintage --- using publicly available federal data. Betweenness centrality (B2) and freight value intensity (A2) emerge as the primary tiering signals. Natural break analysis of the joint B2/A2 distribution identifies four tiers, which we validate against STRAHNET designation and ATRI bottleneck frequency.
+
+The output is a schematic arterial map of the national interstate network --- a planning tool that makes the network's load-bearing structure visible for the first time.
+
+\subsection*{Contributions}
+
+\begin{enumerate}
+\item A 12-dimensional scoring of all 227 US interstate corridors from publicly available HPMS, FAF5, TIGER, and ATRI data
+\item A four-tier arterial classification derived from natural breaks in betweenness centrality and freight intensity
+\item Validation of the tier classification against existing federal designations and observed bottleneck patterns
+\item A schematic arterial map as a practical planning tool for Interstate 2.0 investment sequencing
+\end{enumerate}

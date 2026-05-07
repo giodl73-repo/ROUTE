@@ -1,0 +1,13 @@
+{
+  "default": "route",
+  "pluginRoot": "C:/Users/giodl/.claude/plugins/cache/panel-standalone/panel/2.2.0",
+  "gitStrategy": "auto-commit",
+  "projects": {
+    "route": {
+      "researchPath": "research",
+      "publicationsPath": "research/publications",
+      "projectName": "route",
+      "description": "Interstate 2.0 — highway corridor analysis, gap detection, freight reliability, and national network design"
+    }
+  }
+}
