@@ -11,20 +11,62 @@ pub enum NhsError {
     UnsupportedGeometry(usize),
 }
 
-/// A single segment record from the FHWA National Highway System shapefile.
-/// One NHS shapefile record = one homogeneous segment (same route, state, NHS type).
+/// Road classification — drives corpus entry type and scoring interpretation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RoadClass {
+    /// Existing interstate — score as-is
+    Interstate,
+    /// US numbered highway — score as upgrade candidate
+    UsHighway,
+    /// State highway — score as upgrade candidate (lower priority)
+    StateHighway,
+    /// Other
+    Other,
+}
+
+impl RoadClass {
+    pub fn from_rttyp(rttyp: &str) -> Self {
+        match rttyp {
+            "I" => RoadClass::Interstate,
+            "U" => RoadClass::UsHighway,
+            "S" => RoadClass::StateHighway,
+            _ => RoadClass::Other,
+        }
+    }
+
+    pub fn corpus_type(&self) -> &'static str {
+        match self {
+            RoadClass::Interstate => "existing-corridor",
+            RoadClass::UsHighway | RoadClass::StateHighway => "upgrade-candidate",
+            RoadClass::Other => "upgrade-candidate",
+        }
+    }
+
+    pub fn prefix(&self) -> &'static str {
+        match self {
+            RoadClass::Interstate => "I",
+            RoadClass::UsHighway => "US",
+            RoadClass::StateHighway => "SR",
+            RoadClass::Other => "",
+        }
+    }
+}
+
+/// A single segment record from a road shapefile (FHWA NHS or TIGER Primary Roads).
 #[derive(Debug, Clone)]
 pub struct NhsSegment {
-    /// Route identifier as in NHS shapefile, e.g. "I80", "I95"
+    /// Normalised route identifier, e.g. "I80", "US30", "SR97"
     pub route_id: String,
-    /// Two-letter state code
+    /// Two-letter state code (empty for TIGER national file)
     pub state: String,
-    /// NHS type code (1=NHS, 2=Interstate, 3=Intermodal connector, etc.)
-    pub nhs_type: u8,
-    /// Segment length in miles (from MILES field)
+    /// Road classification
+    pub road_class: RoadClass,
+    /// Segment length in miles
     pub length_miles: f64,
     /// Geometry in EPSG:4269 (NAD83 geographic)
     pub geometry: LineString<f64>,
+    // nhs_type kept for FHWA NHS format compatibility
+    pub nhs_type: u8,
 }
 
 /// Read road segments from a .shp file.
@@ -47,28 +89,32 @@ pub fn read_nhs_shapefile(
         let (shape, record) = result.map_err(|e| NhsError::Shapefile(e.to_string()))?;
 
         // Detect format by presence of ROUTE_ID (FHWA) vs FULLNAME (TIGER)
-        let (route_id, state, nhs_type) = if record.get("ROUTE_ID").is_some() {
+        let (route_id, state, nhs_type, road_class) = if record.get("ROUTE_ID").is_some() {
             // FHWA NHS format
             let rid = get_string_field(&record, "ROUTE_ID")
                 .ok_or(NhsError::MissingField("ROUTE_ID"))?;
             let st = get_string_field(&record, "STATE_CODE").unwrap_or_default();
             let nt = get_numeric_field(&record, "NHS_TYPE").unwrap_or(1.0) as u8;
-            (rid, st, nt)
+            let rc = if nt == 2 { RoadClass::Interstate } else { RoadClass::UsHighway };
+            (rid, st, nt, rc)
         } else {
-            // TIGER Primary Roads format
+            // TIGER Primary Roads format — includes interstates AND US routes
             let rttyp = get_string_field(&record, "RTTYP").unwrap_or_default();
             let fullname = get_string_field(&record, "FULLNAME").unwrap_or_default();
-            // Convert TIGER fullname to route_id: "I- 80" → "I80", "I-80" → "I80"
+            let rc = RoadClass::from_rttyp(&rttyp);
             let rid = tiger_name_to_route_id(&fullname, &rttyp);
-            // TIGER has no state field in the national file
-            let nt: u8 = if rttyp == "I" { 2 } else { 1 };
-            (rid, String::new(), nt)
+            let nt: u8 = match rc { RoadClass::Interstate => 2, _ => 1 };
+            (rid, String::new(), nt, rc)
         };
 
-        // Filter: nhs_type 2 = Interstate; TIGER rttyp 'I' also maps to nhs_type 2
-        if !all_nhs && nhs_type != 2 {
-            continue;
-        }
+        // Filter by road class
+        let include = match &road_class {
+            RoadClass::Interstate => true,
+            RoadClass::UsHighway => all_nhs,   // included when all_nhs=true
+            RoadClass::StateHighway => all_nhs,
+            RoadClass::Other => false,
+        };
+        if !include { continue; }
 
         // Skip records with empty/unknown route IDs
         if route_id.is_empty() || route_id == "UNKNOWN" {
@@ -76,13 +122,13 @@ pub fn read_nhs_shapefile(
         }
 
         let geometry = shape_to_linestring(shape, idx)?;
-        // Compute length from geometry (degrees → approx miles at mid-latitude)
         let length_miles = get_numeric_field(&record, "MILES")
             .unwrap_or_else(|| approx_length_miles(&geometry));
 
         segments.push(NhsSegment {
             route_id,
             state,
+            road_class,
             nhs_type,
             length_miles,
             geometry,
@@ -93,22 +139,43 @@ pub fn read_nhs_shapefile(
     Ok(segments)
 }
 
-/// Convert TIGER FULLNAME to a normalised route ID.
-/// "I- 80" → "I80", "Interstate 80" → "I80", "I-405" → "I405"
+/// Convert TIGER FULLNAME + RTTYP to a normalised route ID.
+/// Interstate: "I- 80" → "I80", "Interstate 80" → "I80"
+/// US Route:   "US Hwy 30" → "US30", "U.S. 101" → "US101"
+/// State:      "State Hwy 97" → "SR97"
 fn tiger_name_to_route_id(fullname: &str, rttyp: &str) -> String {
-    if rttyp != "I" {
-        return "UNKNOWN".into();
-    }
-    // Strip "I-", "I- ", "Interstate " and extract the number
-    let trimmed = fullname
+    // Strip common prefixes and extract the number portion
+    let stripped = fullname
         .replace("Interstate", "")
+        .replace("U.S.", "")
+        .replace("US Hwy", "")
+        .replace("US Highway", "")
+        .replace("US Rte", "")
+        .replace("State Hwy", "")
+        .replace("State Highway", "")
+        .replace("State Rte", "")
         .replace("I-", "")
         .replace("I ", "")
         .trim()
         .to_string();
-    // Extract leading digits (route number may have letter suffix like "I-80E")
-    let num: String = trimmed.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
-    if num.is_empty() { "UNKNOWN".into() } else { format!("I{num}") }
+
+    // Extract alphanumeric route number (e.g. "101", "30", "280A")
+    let num: String = stripped
+        .chars()
+        .skip_while(|c| !c.is_ascii_digit()) // skip any remaining prefix chars
+        .take_while(|c| c.is_ascii_alphanumeric())
+        .collect();
+
+    if num.is_empty() {
+        return "UNKNOWN".into();
+    }
+
+    match rttyp {
+        "I" => format!("I{num}"),
+        "U" => format!("US{num}"),
+        "S" => format!("SR{num}"),
+        _ => "UNKNOWN".into(),
+    }
 }
 
 /// Approximate segment length in miles from geographic coordinates.

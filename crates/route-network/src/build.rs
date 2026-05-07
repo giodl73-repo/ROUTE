@@ -50,14 +50,16 @@ pub fn build_graph(
             id: edge_id,
             route_id: normalise_route_id(&seg.route_id),
             state: seg.state.clone(),
+            road_class: seg.road_class,
             geometry: seg.geometry,
             length_miles: seg.length_miles,
             lane_count,
             aadt,
             pct_truck,
             iri,
-            tti: None, // joined separately from HPMS FPM
+            tti: None,
             pti: None,
+            speed_limit: None,
         };
 
         let ei = g.graph.add_edge(start_ni, end_ni, edge);

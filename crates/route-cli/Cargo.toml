@@ -19,3 +19,4 @@ route-report  = { path = "../route-report" }
 clap          = { workspace = true }
 anyhow        = { workspace = true }
 serde_json    = { workspace = true }
+csv           = { workspace = true }

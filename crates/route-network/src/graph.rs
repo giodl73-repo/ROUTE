@@ -16,9 +16,11 @@ pub struct HighwayNode {
 #[derive(Debug, Clone)]
 pub struct HighwayEdge {
     pub id: u64,
-    /// Normalised route identifier, e.g. "I80", "I95"
+    /// Normalised route identifier, e.g. "I80", "US30", "SR97"
     pub route_id: String,
     pub state: String,
+    /// Road classification — drives corpus entry type
+    pub road_class: route_data::RoadClass,
     pub geometry: LineString<f64>,
     pub length_miles: f64,
     pub lane_count: Option<u8>,
@@ -29,6 +31,8 @@ pub struct HighwayEdge {
     pub iri: Option<f32>,
     pub tti: Option<f32>,
     pub pti: Option<f32>,
+    /// Design speed (mph) — from HPMS when available
+    pub speed_limit: Option<u8>,
 }
 
 /// The national highway graph.
@@ -77,9 +81,19 @@ impl HighwayGraph {
 
     /// Interstate route IDs only (route_id starts with "I").
     pub fn interstate_ids(&self) -> Vec<String> {
+        self.route_ids().into_iter().filter(|id| id.starts_with('I')).collect()
+    }
+
+    /// US highway route IDs (route_id starts with "US").
+    pub fn us_highway_ids(&self) -> Vec<String> {
+        self.route_ids().into_iter().filter(|id| id.starts_with("US")).collect()
+    }
+
+    /// All upgrade candidate IDs (US highways + state routes).
+    pub fn upgrade_candidate_ids(&self) -> Vec<String> {
         self.route_ids()
             .into_iter()
-            .filter(|id| id.starts_with('I'))
+            .filter(|id| id.starts_with("US") || id.starts_with("SR"))
             .collect()
     }
 

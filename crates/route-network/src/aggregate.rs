@@ -13,6 +13,9 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
 
     let total_miles: f64 = edges.iter().map(|&ei| g.graph[ei].length_miles).sum();
     let edge_count = edges.len();
+    let is_upgrade = edges.first()
+        .map(|&ei| g.graph[ei].road_class != route_data::RoadClass::Interstate)
+        .unwrap_or(false);
 
     // States — collect from edges (may be empty for TIGER source)
     let mut states: Vec<String> = edges
@@ -27,13 +30,28 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
     // Termini — westernmost and easternmost nodes from geometry
     let termini = find_termini(g, edges);
 
-    // AADT aggregation (from HPMS join, may all be None)
+    // AADT and lane aggregation
     let aadts: Vec<f64> = edges
         .iter()
         .filter_map(|&ei| g.graph[ei].aadt.map(|a| a as f64))
         .collect();
-
     let (p90_aadt, mean_aadt) = percentile_and_mean(&aadts);
+
+    let lane_counts: Vec<f32> = edges
+        .iter()
+        .filter_map(|&ei| g.graph[ei].lane_count.map(|l| l as f32))
+        .collect();
+    let mean_lane_count = mean_f32(&lane_counts);
+
+    let speed_limits: Vec<f32> = edges
+        .iter()
+        .filter_map(|&ei| g.graph[ei].speed_limit.map(|s| s as f32))
+        .collect();
+    let mean_speed_limit = mean_f32(&speed_limits);
+
+    // Throughput capacity: lane_count × 1,900 pcph × 24h (rough daily capacity)
+    let daily_capacity = mean_lane_count.map(|l| l as f64 * 1_900.0 * 24.0);
+    let vc_ratio_p90 = p90_aadt.zip(daily_capacity).map(|(v, c)| (v / c) as f32);
 
     let pct_trucks: Vec<f32> = edges
         .iter()
@@ -73,8 +91,13 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         find_parallel_route(g, route_id, edges);
 
     let attrs = CorridorAttributes {
+        is_upgrade_candidate: is_upgrade,
         p90_aadt,
         mean_aadt,
+        daily_capacity,
+        vc_ratio_p90,
+        mean_speed_limit,
+        mean_lane_count,
         annual_freight_value_b: None, // FAF5 join required
         mean_pct_truck,
         p90_pti,

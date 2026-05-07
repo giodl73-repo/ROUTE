@@ -7,7 +7,7 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-route-data = { path = "../route-data" }
+route-data    = { path = "../route-data" }
 geo        = { workspace = true }
 geo-types  = { workspace = true }
 rstar      = { workspace = true }

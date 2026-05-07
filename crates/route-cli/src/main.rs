@@ -31,9 +31,22 @@ enum Commands {
 
     /// Parse NHS shapefile, join attributes, build and cache the HighwayGraph
     Build {
-        /// Filter to interstate-only routes (default: true)
-        #[arg(long, default_value_t = true)]
-        interstate_only: bool,
+        /// Include US highways and state roads (upgrade candidates) in addition to interstates
+        #[arg(long)]
+        all_roads: bool,
+        /// Path to HPMS CSV (from route fetch-hpms or manual download)
+        #[arg(long, value_name = "FILE")]
+        hpms: Option<PathBuf>,
+    },
+
+    /// Fetch HPMS traffic data from FHWA geo.dot.gov (no registration required)
+    FetchHpms {
+        /// Output file (default: data/cache/hpms_2018.csv)
+        #[arg(long, value_name = "FILE")]
+        output: Option<PathBuf>,
+        /// Fetch only these states (comma-separated, e.g. CA,NV,UT)
+        #[arg(long, value_name = "STATES")]
+        states: Option<String>,
     },
 
     /// Score one corridor against the 12-dimension pool
@@ -128,49 +141,102 @@ fn main() -> Result<()> {
             println!("fetch complete.");
         }
 
-        Commands::Build { interstate_only } => {
-            println!("route build");
+        Commands::Build { all_roads, hpms: hpms_path } => {
+            println!("route build{}", if all_roads { " --all-roads" } else { "" });
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
 
-            let zip_path = manifest.cache_path("tiger-primary-roads");
-            if !zip_path.exists() {
-                anyhow::bail!(
-                    "TIGER primary roads not cached — run `route fetch` first.\n  expected: {}",
-                    zip_path.display()
-                );
-            }
-
-            let extract_dir = manifest.cache_dir.join("tiger-primary-roads");
-            println!("  extracting → {}", extract_dir.display());
-            let shp_path = route_data::fetch::extract_shp(&zip_path, &extract_dir)?;
-            println!("  shapefile: {}", shp_path.display());
+            let shp_path = ensure_shapefile(&manifest)?;
 
             println!("  parsing road segments…");
-            let segments = route_data::nhs::read_nhs_shapefile(&shp_path, !interstate_only)
+            let segments = route_data::nhs::read_nhs_shapefile(&shp_path, all_roads)
                 .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
 
             let interstate_count = segments.iter().filter(|s| s.route_id.starts_with('I')).count();
-            println!("  segments: {} total, {} interstate", segments.len(), interstate_count);
+            let us_count = segments.iter().filter(|s| s.route_id.starts_with("US")).count();
+            println!("  segments: {} total  ({} interstate, {} US highway)",
+                segments.len(), interstate_count, us_count);
 
-            let hpms: Vec<route_data::HpmsRecord> = Vec::new();
+            // Load HPMS if provided
+            let hpms = if let Some(ref path) = hpms_path {
+                println!("  loading HPMS: {}", path.display());
+                route_data::hpms::read_hpms_csv(path)?
+            } else {
+                // Try default cache location
+                let default = manifest.cache_dir.join("hpms_2018.csv");
+                if default.exists() {
+                    println!("  auto-loading HPMS: {}", default.display());
+                    route_data::hpms::read_hpms_csv(&default)?
+                } else {
+                    println!("  no HPMS data — run `route fetch-hpms` to get traffic data");
+                    Vec::new()
+                }
+            };
+
+            if !hpms.is_empty() {
+                println!("  HPMS records: {}", hpms.len());
+            }
+
             let (graph, report) = route_network::build_graph(segments, &hpms);
             graph.print_build_report(&report);
 
-            // Write graph summary to cache
             std::fs::create_dir_all(&manifest.cache_dir)?;
             let route_ids = graph.interstate_ids();
+            let all_ids = graph.route_ids();
             let summary = serde_json::json!({
                 "nodes": graph.graph.node_count(),
                 "edges": graph.graph.edge_count(),
-                "routes": graph.route_index.len(),
+                "routes": all_ids.len(),
                 "interstates": route_ids.len(),
                 "interstate_ids": &route_ids,
             });
             let cache_path = manifest.cache_dir.join("graph.json");
             std::fs::write(&cache_path, serde_json::to_string_pretty(&summary)?)?;
             println!("  graph summary → {}", cache_path.display());
-            println!("build complete. Interstate routes: {:?}", &route_ids[..route_ids.len().min(10)]);
+            println!("build complete. {} interstates, {} total routes.", route_ids.len(), all_ids.len());
+            if !hpms.is_empty() {
+                println!("  HPMS joined — A1/A2/A3 scores will use real traffic data.");
+            }
+        }
+
+        Commands::FetchHpms { output, states } => {
+            let out = output.unwrap_or_else(|| PathBuf::from("data/cache/hpms_2018.csv"));
+            println!("route fetch-hpms → {}", out.display());
+            println!("  source: FHWA geo.dot.gov ArcGIS REST (2018 HPMS, no registration)");
+
+            std::fs::create_dir_all(out.parent().unwrap_or(std::path::Path::new(".")))?;
+
+            if let Some(state_filter) = states {
+                // Fetch only specified states
+                let filter: Vec<&str> = state_filter.split(',').map(str::trim).collect();
+                let mut all: Vec<route_data::HpmsRecord> = Vec::new();
+                for (abbr, name) in route_data::STATE_CODES {
+                    if filter.iter().any(|f| f.eq_ignore_ascii_case(abbr)) {
+                        print!("  [hpms] {abbr}… ");
+                        match route_data::hpms_fetch::fetch_state_hpms(abbr, name) {
+                            Ok(recs) => { println!("{} segments", recs.len()); all.extend(recs); }
+                            Err(e)   => println!("FAILED — {e}"),
+                        }
+                    }
+                }
+                // Write subset CSV
+                let mut wtr = csv::Writer::from_path(&out)?;
+                wtr.write_record(["STATE","ROUTE_ID","AADT","PCT_TRUCK","LANE_COUNT","IRI"])?;
+                for r in &all {
+                    wtr.write_record(&[
+                        r.state.clone(), r.route_id.clone(),
+                        r.aadt.map(|v|v.to_string()).unwrap_or_default(),
+                        r.pct_truck.map(|v|format!("{v:.4}")).unwrap_or_default(),
+                        r.lane_count.map(|v|v.to_string()).unwrap_or_default(),
+                        r.iri.map(|v|format!("{v:.1}")).unwrap_or_default(),
+                    ])?;
+                }
+                wtr.flush()?;
+                println!("  wrote {} records", all.len());
+            } else {
+                route_data::fetch_all_hpms(&out)?;
+            }
+            println!("fetch-hpms complete. Run `route build` to join.");
         }
 
         Commands::Score { designation, estimated, proposed } => {
@@ -288,26 +354,36 @@ fn normalise_designation(input: &str) -> String {
         .to_uppercase()
 }
 
-/// Load the HighwayGraph from the cached TIGER shapefile.
-/// Fast path: if shapefile already extracted, skips extraction.
-fn load_graph(manifest: &route_data::Manifest) -> Result<route_network::HighwayGraph> {
+/// Ensure the TIGER shapefile is extracted; return path to .shp file.
+fn ensure_shapefile(manifest: &route_data::Manifest) -> Result<std::path::PathBuf> {
     let extract_dir = manifest.cache_dir.join("tiger-primary-roads");
     let shp_path = extract_dir.join("tl_2023_us_primaryroads.shp");
+    if shp_path.exists() {
+        return Ok(shp_path);
+    }
+    let zip_path = manifest.cache_path("tiger-primary-roads");
+    if !zip_path.exists() {
+        anyhow::bail!("TIGER primary roads not cached — run `route fetch` first.");
+    }
+    println!("  extracting shapefile…");
+    route_data::fetch::extract_shp(&zip_path, &extract_dir)
+}
 
-    // Extract if not already done
-    let shp_path = if shp_path.exists() {
-        shp_path
+/// Load the HighwayGraph from cached TIGER + optional HPMS.
+fn load_graph(manifest: &route_data::Manifest) -> Result<route_network::HighwayGraph> {
+    let shp_path = ensure_shapefile(manifest)?;
+    // Always load all road classes — US highways needed for upgrade-candidate scoring
+    let segments = route_data::nhs::read_nhs_shapefile(&shp_path, true)
+        .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
+
+    // Auto-load HPMS if cached
+    let hpms_path = manifest.cache_dir.join("hpms_2018.csv");
+    let hpms = if hpms_path.exists() {
+        route_data::hpms::read_hpms_csv(&hpms_path).unwrap_or_default()
     } else {
-        let zip_path = manifest.cache_path("tiger-primary-roads");
-        if !zip_path.exists() {
-            anyhow::bail!("TIGER primary roads not cached — run `route fetch` first.");
-        }
-        route_data::fetch::extract_shp(&zip_path, &extract_dir)?
+        Vec::new()
     };
 
-    let segments = route_data::nhs::read_nhs_shapefile(&shp_path, false)
-        .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
-    let hpms: Vec<route_data::HpmsRecord> = Vec::new();
     let (graph, _) = route_network::build_graph(segments, &hpms);
     Ok(graph)
 }

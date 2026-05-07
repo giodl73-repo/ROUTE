@@ -20,11 +20,24 @@ pub struct Corridor {
 /// Fields marked with their primary dimension use in comments.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CorridorAttributes {
+    // ── Classification ────────────────────────────────────────────────────────
+    /// Whether this is an upgrade candidate (US/state highway) vs existing interstate
+    pub is_upgrade_candidate: bool,
+
     // ── Band A: Flow ──────────────────────────────────────────────────────────
     /// 90th-percentile segment AADT (length-weighted) — primary A1 input
     pub p90_aadt: Option<f64>,
     /// Mean AADT across all segments (context only; not used in A1 scoring)
     pub mean_aadt: Option<f64>,
+    /// Theoretical capacity: mean_lane_count × 1,900 pcph × 24h (veh/day)
+    /// Used for V/C ratio when lane count is known
+    pub daily_capacity: Option<f64>,
+    /// Volume/capacity ratio at 90th-pct AADT — direct congestion measure
+    pub vc_ratio_p90: Option<f32>,
+    /// Mean posted speed limit (mph) — from HPMS when available
+    pub mean_speed_limit: Option<f32>,
+    /// Mean lane count across segments — determines throughput capacity
+    pub mean_lane_count: Option<f32>,
     /// Annual freight value in $B, FAF5 zone-traversal estimate — primary A2 input
     /// Always estimated: true in v1.0 (zone-traversal approximation)
     pub annual_freight_value_b: Option<f64>,
