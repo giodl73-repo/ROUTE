@@ -63,11 +63,38 @@ pub struct D3Anchors {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct A3Anchors {
+    pub anchor_0: f64,
+    pub anchor_5: f64,
+    pub anchor_10: f64,
+    /// v1.1: IRI fallback is capped at this value (default 5.0).
+    /// IRI measures pavement roughness, not speed reliability — using it as a
+    /// proxy for PTI will systematically overstate unreliability on rough-but-
+    /// uncongested rural corridors.
+    #[serde(default = "default_iri_fallback_max")]
+    pub iri_fallback_max: f64,
+}
+
+fn default_iri_fallback_max() -> f64 { 5.0 }
+
+impl A3Anchors {
+    pub fn score_pti(&self, pti: f64) -> f64 {
+        let map = AnchorMap { anchor_0: self.anchor_0, anchor_5: self.anchor_5, anchor_10: self.anchor_10 };
+        map.score(pti)
+    }
+    pub fn score_iri_fallback(&self, iri: f32) -> f64 {
+        // IRI proxy: rough but capped — never exceeds iri_fallback_max
+        let raw = (iri as f64 / 3.0).min(10.0);
+        raw.min(self.iri_fallback_max)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct ScoringConfig {
     pub meta: ConfigMeta,
     pub a1: AnchorMap,
     pub a2: AnchorMap,
-    pub a3: AnchorMap,
+    pub a3: A3Anchors,
     pub b1: AnchorMap,
     pub b2: AnchorMap,
     pub b3: AnchorMap,  // used only for distance fallback; stepped logic in score_b3

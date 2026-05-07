@@ -9,8 +9,13 @@
 # Bump [meta].version when anchors change; prior corpus entries record the version they were scored under.
 
 [meta]
-version = "v1.0"
-rubric_version = "v1.0"
+version = "v1.1"
+rubric_version = "v1.1"
+
+# v1.1 changes (2026-05-07):
+#   A3: IRI fallback cap added — iri_fallback_max = 5.0 (was unbounded; caused spurious 10.0 scores)
+#   B2: No config change; partial-graph warning is in code and axis-pool.md
+#   C3: No anchor change; descriptive-only warning added to axis-pool.md
 
 # ── Band A: Flow ──────────────────────────────────────────────────────────────
 
@@ -31,9 +36,13 @@ anchor_10 = 200.0      # top-tier national corridor (comparable to I-10 at Lared
 [a3]
 # Speed Reliability — Planning Time Index (95th-pct travel time / free-flow travel time)
 # PTI = 1.0 means perfectly reliable. PTI = 2.0 means 95th-pct trip takes twice free-flow.
+# PRIMARY source: FHWA Freight Performance Measures (PTI data by corridor)
+# FALLBACK: IRI proxy — capped at iri_fallback_max (v1.1 amendment: was unbounded,
+#   caused I-80 to score 10.0 with no PTI data; IRI is pavement roughness not speed reliability)
 anchor_0  = 1.05       # highly reliable; near free-flow at 95th percentile
 anchor_5  = 1.40       # moderate unreliability; freight scheduling impact
 anchor_10 = 2.20       # severe unreliability; JIT supply chains disrupted
+iri_fallback_max = 5.0 # v1.1: IRI fallback capped — "moderate unreliable" floor when no PTI
 
 # ── Band B: Network ───────────────────────────────────────────────────────────
 
@@ -89,6 +98,13 @@ anchor_10 = 100.0       # extreme gaps; corridor passes through but doesn't serv
 # Economic Opportunity Access — gdp_per_capita_relative (buffer ÷ national)
 # Inverted: lower regional GDP/capita → higher opportunity value of connectivity
 # gdp_per_capita_relative = 1.0 means equal to national average
+#
+# IMPORTANT (v1.1 amendment): C3 is DESCRIPTIVE, not causal.
+# High C3 score means the corridor serves a region with below-average current GDP per capita.
+# It does NOT mean the corridor CAUSED the economic disadvantage or that building it WILL
+# cause economic improvement. Correlation with economic gaps is real (r=0.41 in B.1 corpus)
+# but causal claims require identification strategies (see Michaels 2008, Chandra 2000).
+# Use C3 to identify where coverage gaps and economic gaps co-locate; do not infer causality.
 anchor_0  = 1.30        # well above national average; connectivity of limited marginal value
 anchor_5  = 0.85        # somewhat below national average
 anchor_10 = 0.50        # severely below national average; connectivity has high opportunity value

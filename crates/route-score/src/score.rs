@@ -154,7 +154,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
     if let Some(pti) = attrs.p90_pti {
         ScoredDimension {
             dim: Dimension::A3SpeedReliability,
-            score: cfg.a3.score(pti as f64),
+            score: cfg.a3.score_pti(pti as f64),
             justification: format!(
                 "90th-percentile Planning Time Index {pti:.2} (1.0=perfectly reliable; \
                  mean TTI {:.2}).",
@@ -164,14 +164,19 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             estimated: false,
         }
     } else if let Some(iri) = attrs.mean_iri {
-        // IRI fallback — weakest on congested urban segments
-        let iri_proxy_score = (iri as f64 / 3.0).min(10.0); // rough proxy
+        // IRI fallback — capped at iri_fallback_max (v1.1: was unbounded, caused spurious 10.0 scores)
+        // IRI measures pavement roughness, not speed reliability; this proxy understates
+        // congestion-driven unreliability on smooth urban corridors and overstates
+        // it on rough rural corridors.
+        let capped_score = cfg.a3.score_iri_fallback(iri);
         ScoredDimension {
             dim: Dimension::A3SpeedReliability,
-            score: iri_proxy_score,
+            score: capped_score,
             justification: format!(
-                "PTI unavailable; IRI proxy used (mean IRI {iri:.1} m/km). \
-                 Score is approximate — IRI does not capture congestion-driven unreliability."
+                "PTI unavailable; IRI proxy used, capped at {:.1} (mean IRI {iri:.1} m/km). \
+                 IRI does not capture congestion-driven unreliability. \
+                 Run route fetch-hpms to get FHWA Freight Performance Measures data.",
+                cfg.a3.iri_fallback_max
             ),
             sources: vec!["FHWA HPMS 2023".into()],
             estimated: true,

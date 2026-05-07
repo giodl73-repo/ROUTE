@@ -1,16 +1,16 @@
 ---
-name: ROUTE Axis Pool v1.0
+name: ROUTE Axis Pool v1.1
 slug: axis-pool
 type: spec
 status: draft
-rubric_version: v1.0
+rubric_version: v1.1
 author: human
 created: 2026-05-06
-updated: 2026-05-06
+updated: 2026-05-07
 sources: []
 ---
 
-# ROUTE Axis Pool v1.0
+# ROUTE Axis Pool v1.1
 
 The 12 candidate dimensions for scoring interstate corridors. This is the scoring instrument plus the ledger that tracks how each dimension performs across the corpus.
 
@@ -26,14 +26,14 @@ The 12 candidate dimensions for scoring interstate corridors. This is the scorin
 |---|---|---|---|
 | A1 | Throughput Gap | Current volume vs. designed capacity; congestion severity across route miles | Low — high variance expected |
 | A2 | Freight Intensity | Average daily truck volume; commodity value density per corridor mile | Low — high variance expected |
-| A3 | Speed Reliability | Average speed vs. design speed; day-to-day variance | Medium — may correlate strongly with A1 |
+| A3 | Speed Reliability | Travel time reliability (PTI primary; IRI fallback **capped at 5.0**, not full scale) | Medium — may correlate strongly with A1; IRI proxy is a weak fallback |
 
 ### Band B — Network
 
 | Dim | Name | Definition | Retirement risk |
 |---|---|---|---|
 | B1 | Redundancy | Count and quality of parallel interstate-quality alternatives within 50 miles | Low — high geographic variance |
-| B2 | Network Centrality | Betweenness centrality proxy: how many routes depend on this corridor; cascade effect if closed | Medium — hard to operationalize; may collapse into B1 |
+| B2 | Network Centrality | Brandes betweenness centrality on national graph. **Marked estimated (†) on partial graph — only stable after `route score-all` on full 227-corridor network. Do not use B2 for inter-corridor comparison until score-all completes.** | Medium — partial-graph scores are misleading; requires full national graph |
 | B3 | Port/Border Access | Connectivity to top-tier ports or major border crossings at termini | Low — binary-ish; will differentiate clearly |
 
 ### Band C — People
@@ -42,7 +42,7 @@ The 12 candidate dimensions for scoring interstate corridors. This is the scorin
 |---|---|---|---|
 | C1 | Population Reach | Total population within 50 miles of corridor centerline | Low — high variance |
 | C2 | Rural Connectivity | % of corridor through agricultural/rural land; rural communities with no close alternative | Low — high variance |
-| C3 | Equity Access | % of 50-mile buffer population in low-income or tribal census tracts | Medium — may correlate with C2 |
+| C3 | Economic Opportunity Access | Buffer GDP per capita relative to national average. **Descriptive only — measures current economic conditions, not access-caused outcomes. Correlation with economic disadvantage is strong (r = 0.41 in B.1 corpus) but not causal; do not use C3 scores as evidence that corridors cause economic improvement.** | Low — high variance; BEA data reliable |
 
 ### Band D — Future
 
@@ -62,13 +62,13 @@ Tracks how each dimension performs across the scored corpus. Updated after every
 |---|---|---|---|---|---|---|---|---|
 | A1 | Throughput Gap | 0 | — | — | — | — | — | candidate |
 | A2 | Freight Intensity | 0 | — | — | — | — | — | candidate |
-| A3 | Speed Reliability | 0 | — | — | — | A1? | — | candidate |
+| A3 | Speed Reliability | 0 | — | — | — | A1? | IRI fallback capped 5.0 (v1.1) | candidate |
 | B1 | Redundancy | 0 | — | — | — | — | — | candidate |
-| B2 | Network Centrality | 0 | — | — | — | — | B1? | candidate |
+| B2 | Network Centrality | 0 | — | — | — | — | B1? | partial-graph warning explicit (v1.1) | candidate |
 | B3 | Port/Border Access | 0 | — | — | — | — | — | candidate |
 | C1 | Population Reach | 0 | — | — | — | — | — | candidate |
 | C2 | Rural Connectivity | 0 | — | — | — | — | C3? | candidate |
-| C3 | Equity Access | 0 | — | — | — | — | C2? | candidate |
+| C3 | Economic Opportunity Access | 0 | — | — | — | — | C2? | renamed + descriptive-only note (v1.1) | candidate |
 | D1 | Climate Resilience | 0 | — | — | — | — | — | candidate |
 | D2 | Multimodal Integration | 0 | — | — | — | — | — | candidate |
 | D3 | Infrastructure Vintage | 0 | — | — | — | — | — | candidate |
@@ -85,9 +85,12 @@ None yet.
 
 ## Changelog
 
-| Date | Change | Rubric version |
-|---|---|---|
-| 2026-05-06 | Initial 12-dimension pool established | v1.0 |
+| Date | Change | Rubric version | Triggered by |
+|---|---|---|---|
+| 2026-05-06 | Initial 12-dimension pool established | v1.0 | Initial design |
+| 2026-05-07 | **A3**: IRI fallback capped at 5.0 (was unbounded, caused I-80 A3=10.0 with no PTI data — clearly wrong) | v1.1 | score-all run revealed IRI proxy misfiring |
+| 2026-05-07 | **B2**: Partial-graph warning made explicit in definition and ledger — do not compare B2 scores until score-all completes | v1.1 | Post-scoring analysis |
+| 2026-05-07 | **C3**: Renamed Equity Access → Economic Opportunity Access; added "descriptive only, not causal" warning; B.1 review (rural economist) surfaced causal overclaim risk | v1.1 | B.1 Round 1 review, R-T2 |
 
 ---
 
@@ -111,11 +114,11 @@ Each parliament voice has 3–4 preferred dimensions they're most likely to argu
 |---|---|---|---|---|
 | Eisenhower | B2 Network Centrality | B1 Redundancy | B3 Port/Border | D1 Climate Resilience |
 | Moses | A1 Throughput Gap | A2 Freight Intensity | D3 Infrastructure Vintage | — |
-| Foxx | C3 Equity Access | C1 Population Reach | C2 Rural Connectivity | — |
+| Foxx | C3 Economic Opportunity | C1 Population Reach | C2 Rural Connectivity | — |
 | Freight Economist | A2 Freight Intensity | B3 Port/Border | A1 Throughput Gap | B2 Network Centrality |
 | Traffic Engineer | A1 Throughput Gap | A3 Speed Reliability | D3 Infrastructure Vintage | B1 Redundancy |
 | Climate Engineer | D1 Climate Resilience | D2 Multimodal Integration | B1 Redundancy | — |
-| Rural Advocate | C2 Rural Connectivity | C3 Equity Access | B1 Redundancy | C1 Population Reach |
+| Rural Advocate | C2 Rural Connectivity | C3 Economic Opportunity | B1 Redundancy | C1 Population Reach |
 
 Designed contentions:
 - **A1 (Throughput Gap)**: Moses, Freight Economist, Traffic Engineer all want it → high-conflict dimension
