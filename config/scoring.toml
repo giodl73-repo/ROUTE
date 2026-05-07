@@ -9,15 +9,22 @@
 # Bump [meta].version when anchors change; prior corpus entries record the version they were scored under.
 
 [meta]
-version = "v1.1"
-rubric_version = "v1.1"
+version = "v1.2"
+rubric_version = "v1.2"
 
-# v1.1 changes (2026-05-07):
-#   A3: IRI fallback cap added — iri_fallback_max = 5.0 (was unbounded; caused spurious 10.0 scores)
-#   B2: No config change; partial-graph warning is in code and axis-pool.md
-#   C3: No anchor change; descriptive-only warning added to axis-pool.md
-#   TIER THRESHOLDS: shifted -5 to account for A3 fix
-#     v1.0: T1>=26, T2>=20, T3>=14, T4<14
+# v1.2 changes (2026-05-07):
+#   A3: BPR-estimated PTI added as primary path when V/C computable from HPMS
+#       PTI_bpr = 1 + 0.15 × (V/C_peak × 1.15)^4; V/C_peak = p90_aadt × 0.09 / (lanes/2 × 2300)
+#       This replaces IRI as the primary fallback; IRI cap at 5.0 remains as last resort
+#   A4: International Trade Corridor (NEW) — USMCA freight flow potential, 0-10
+#   B4: Military/Strategic Designation (NEW) — STRAHNET + military base proximity, 0-10
+#   C4: Agricultural Export Access (NEW) — grain belt + export terminal proximity, 0-10
+#   Score range: 150 (was 120). Tier thresholds scaled proportionally:
+#     v1.2: T1>=26, T2>=19, T3>=11, T4<11
+#
+# v1.1 changes (preserved for reference):
+#   A3: IRI fallback cap added — iri_fallback_max = 5.0
+#   TIER THRESHOLDS: T1>=21, T2>=15, T3>=9 (now superseded by v1.2)
 #     v1.1: T1>=21, T2>=15, T3>=9,  T4<9  (preserves T1=13, T2=28, T3=60, T4=126)
 
 # ── Band A: Flow ──────────────────────────────────────────────────────────────
@@ -151,3 +158,39 @@ anchor_10 = 0.30        # 30%+ poor; systemic deferred maintenance
 anchor_0  = 1995.0      # post-1990 construction; modern standards
 anchor_5  = 1970.0      # early-70s; approaching end of design life
 anchor_10 = 1955.0      # original Eisenhower-era; significant age risk
+
+# ── A4: International Trade Corridor ──────────────────────────────────────────
+[a4]
+# USMCA trade corridor designation + border crossing O-D value
+# Primary data: FHWA border crossing AADT, USMCA corridor list
+# Score 0: No meaningful border crossing traffic served
+# Score 5: Serves top-20 US-Mexico or US-Canada border crossing
+# Score 10: Serves top-5 crossing (Laredo TX, El Paso TX, San Diego CA/Tijuana, Detroit MI, Blaine WA)
+# Note: currently scored from hard-coded USMCA corridor list + geometry proximity
+anchor_0  = 0.0
+anchor_5  = 5.0    # threshold for "significant" trade corridor designation
+anchor_10 = 10.0   # top-5 border crossing corridor
+
+# ── B4: Military/Strategic Designation ────────────────────────────────────────
+[b4]
+# STRAHNET designation (5.0 base) + major military installation proximity
+# Score 0: Not STRAHNET, no major installation within 30 miles
+# Score 5: STRAHNET-designated (most T1/T2 corridors)
+# Score 8: STRAHNET + serves significant military base
+# Score 10: STRAHNET + critical strategic installation (nuclear command, major port)
+anchor_0  = 0.0
+anchor_5  = 5.0    # STRAHNET baseline
+anchor_10 = 10.0   # STRAHNET + highest strategic value
+
+# ── C4: Agricultural Export Access ────────────────────────────────────────────
+[c4]
+# Agricultural production value in buffer + proximity to export terminals
+# Primary export terminals: Houston TX (Gulf), Portland OR/Tacoma WA (Pacific NW),
+#   New Orleans LA (Mississippi), Baltimore MD (East Coast)
+# Score 0: No significant agricultural production; no export route role
+# Score 5: Serves significant ag production; reasonable export terminal access
+# Score 10: Primary export corridor for major production zone (Great Plains wheat/beef,
+#            Corn Belt, California Central Valley, Pacific NW timber)
+anchor_0  = 0.0
+anchor_5  = 5.0    # significant agricultural role
+anchor_10 = 10.0   # dominant export corridor

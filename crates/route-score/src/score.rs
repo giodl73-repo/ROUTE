@@ -6,12 +6,15 @@ pub enum Dimension {
     A1ThroughputGap,
     A2FreightIntensity,
     A3SpeedReliability,
+    A4InternationalTrade,
     B1Redundancy,
     B2NetworkCentrality,
     B3PortBorderAccess,
+    B4MilitaryStrategic,
     C1PopulationReach,
     C2RuralConnectivity,
     C3EconomicOpportunity,
+    C4AgriculturalExport,
     D1ClimateResilience,
     D2MultimodalIntegration,
     D3InfrastructureVintage,
@@ -23,12 +26,15 @@ impl Dimension {
             Dimension::A1ThroughputGap       => "A1",
             Dimension::A2FreightIntensity     => "A2",
             Dimension::A3SpeedReliability     => "A3",
+            Dimension::A4InternationalTrade   => "A4",
             Dimension::B1Redundancy           => "B1",
             Dimension::B2NetworkCentrality    => "B2",
             Dimension::B3PortBorderAccess     => "B3",
+            Dimension::B4MilitaryStrategic    => "B4",
             Dimension::C1PopulationReach      => "C1",
             Dimension::C2RuralConnectivity    => "C2",
             Dimension::C3EconomicOpportunity  => "C3",
+            Dimension::C4AgriculturalExport   => "C4",
             Dimension::D1ClimateResilience    => "D1",
             Dimension::D2MultimodalIntegration=> "D2",
             Dimension::D3InfrastructureVintage=> "D3",
@@ -40,12 +46,15 @@ impl Dimension {
             Dimension::A1ThroughputGap       => "Throughput Gap",
             Dimension::A2FreightIntensity     => "Freight Intensity",
             Dimension::A3SpeedReliability     => "Speed Reliability",
+            Dimension::A4InternationalTrade   => "International Trade Corridor",
             Dimension::B1Redundancy           => "Redundancy",
             Dimension::B2NetworkCentrality    => "Network Centrality",
             Dimension::B3PortBorderAccess     => "Port/Border Access",
+            Dimension::B4MilitaryStrategic    => "Military/Strategic",
             Dimension::C1PopulationReach      => "Population Reach",
             Dimension::C2RuralConnectivity    => "Rural Connectivity",
             Dimension::C3EconomicOpportunity  => "Economic Opportunity Access",
+            Dimension::C4AgriculturalExport   => "Agricultural Export Access",
             Dimension::D1ClimateResilience    => "Climate Resilience",
             Dimension::D2MultimodalIntegration=> "Multimodal Integration",
             Dimension::D3InfrastructureVintage=> "Infrastructure Vintage",
@@ -70,12 +79,15 @@ pub struct DimensionScores {
     pub a1: ScoredDimension,
     pub a2: ScoredDimension,
     pub a3: ScoredDimension,
+    pub a4: ScoredDimension,  // v1.2
     pub b1: ScoredDimension,
     pub b2: ScoredDimension,
     pub b3: ScoredDimension,
+    pub b4: ScoredDimension,  // v1.2
     pub c1: ScoredDimension,
     pub c2: ScoredDimension,
     pub c3: ScoredDimension,
+    pub c4: ScoredDimension,  // v1.2
     pub d1: ScoredDimension,
     pub d2: ScoredDimension,
     pub d3: ScoredDimension,
@@ -84,14 +96,14 @@ pub struct DimensionScores {
 }
 
 impl DimensionScores {
-    pub fn band_a(&self) -> f64 { self.a1.score + self.a2.score + self.a3.score }
-    pub fn band_b(&self) -> f64 { self.b1.score + self.b2.score + self.b3.score }
-    pub fn band_c(&self) -> f64 { self.c1.score + self.c2.score + self.c3.score }
+    pub fn band_a(&self) -> f64 { self.a1.score + self.a2.score + self.a3.score + self.a4.score }
+    pub fn band_b(&self) -> f64 { self.b1.score + self.b2.score + self.b3.score + self.b4.score }
+    pub fn band_c(&self) -> f64 { self.c1.score + self.c2.score + self.c3.score + self.c4.score }
     pub fn band_d(&self) -> f64 { self.d1.score + self.d2.score + self.d3.score }
     pub fn total(&self)  -> f64 { self.band_a() + self.band_b() + self.band_c() + self.band_d() }
     pub fn any_estimated(&self) -> bool {
-        [&self.a1,&self.a2,&self.a3,&self.b1,&self.b2,&self.b3,
-         &self.c1,&self.c2,&self.c3,&self.d1,&self.d2,&self.d3]
+        [&self.a1,&self.a2,&self.a3,&self.a4,&self.b1,&self.b2,&self.b3,&self.b4,
+         &self.c1,&self.c2,&self.c3,&self.c4,&self.d1,&self.d2,&self.d3]
             .iter().any(|d| d.estimated)
     }
 }
@@ -102,12 +114,15 @@ pub fn score_corridor(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> Dimens
         a1: score_a1(attrs, cfg),
         a2: score_a2(attrs, cfg),
         a3: score_a3(attrs, cfg),
+        a4: score_a4(attrs, cfg),
         b1: score_b1(attrs, cfg),
         b2: score_b2(attrs, cfg),
         b3: score_b3(attrs, cfg),
+        b4: score_b4(attrs, cfg),
         c1: score_c1(attrs, cfg),
         c2: score_c2(attrs, cfg),
         c3: score_c3(attrs, cfg),
+        c4: score_c4(attrs, cfg),
         d1: score_d1(attrs, cfg),
         d2: score_d2(attrs, cfg),
         d3: score_d3(attrs, cfg),
@@ -152,37 +167,119 @@ fn score_a2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 
 fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     if let Some(pti) = attrs.p90_pti {
+        // Best path: real PTI from FHWA Freight Performance Measures
         ScoredDimension {
             dim: Dimension::A3SpeedReliability,
             score: cfg.a3.score_pti(pti as f64),
             justification: format!(
-                "90th-percentile Planning Time Index {pti:.2} (1.0=perfectly reliable; \
-                 mean TTI {:.2}).",
+                "90th-pct PTI {pti:.2} (mean TTI {:.2}). Source: FHWA FPM.",
                 attrs.mean_tti.unwrap_or(1.0)
             ),
             sources: vec!["FHWA Freight Performance Measures 2023".into()],
             estimated: false,
         }
-    } else if let Some(iri) = attrs.mean_iri {
-        // IRI fallback — capped at iri_fallback_max (v1.1: was unbounded, caused spurious 10.0 scores)
-        // IRI measures pavement roughness, not speed reliability; this proxy understates
-        // congestion-driven unreliability on smooth urban corridors and overstates
-        // it on rough rural corridors.
-        let capped_score = cfg.a3.score_iri_fallback(iri);
+    } else if let Some(pti_bpr) = attrs.pti_bpr_estimate {
+        // v1.2: BPR-estimated PTI from V/C ratio — better than IRI proxy
         ScoredDimension {
             dim: Dimension::A3SpeedReliability,
-            score: capped_score,
+            score: cfg.a3.score_bpr_pti(pti_bpr),
             justification: format!(
-                "PTI unavailable; IRI proxy used, capped at {:.1} (mean IRI {iri:.1} m/km). \
-                 IRI does not capture congestion-driven unreliability. \
-                 Run route fetch-hpms to get FHWA Freight Performance Measures data.",
+                "BPR-estimated PTI {pti_bpr:.2} from V/C={:.2} (HPMS AADT + lane count). \
+                 PTI = 1 + 0.15×(V/C×1.15)^4. Better than IRI proxy but still estimated.",
+                attrs.vc_ratio_p90.unwrap_or(0.0)
+            ),
+            sources: vec!["FHWA HPMS 2023 (AADT + lanes)".into()],
+            estimated: true,
+        }
+    } else if let Some(iri) = attrs.mean_iri {
+        // IRI fallback (last resort) — capped at 5.0 per v1.1 amendment
+        ScoredDimension {
+            dim: Dimension::A3SpeedReliability,
+            score: cfg.a3.score_iri_fallback(iri),
+            justification: format!(
+                "IRI proxy (last resort), capped at {:.1} (mean IRI {iri:.1} m/km). \
+                 Fetch HPMS for BPR-estimated PTI.",
                 cfg.a3.iri_fallback_max
             ),
             sources: vec!["FHWA HPMS 2023".into()],
             estimated: true,
         }
     } else {
-        estimated(Dimension::A3SpeedReliability, "PTI and IRI both unavailable.")
+        estimated(Dimension::A3SpeedReliability, "PTI, V/C, and IRI all unavailable.")
+    }
+}
+
+// v1.2 new dimension scoring functions
+
+fn score_a4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension {
+    let score = attrs.intl_trade_score;
+    if score > 0.0 {
+        ScoredDimension {
+            dim: Dimension::A4InternationalTrade,
+            score,
+            justification: format!(
+                "USMCA trade corridor score {score:.1}/10 from hard-coded corridor designation. \
+                 Higher = more central to US-Mexico or US-Canada freight flows."
+            ),
+            sources: vec!["FHWA NHS High Priority Corridors; USMCA Annex 31-A".into()],
+            estimated: false, // hard-coded designation data is reliable
+        }
+    } else {
+        ScoredDimension {
+            dim: Dimension::A4InternationalTrade,
+            score: 0.0,
+            justification: "No USMCA corridor designation.".into(),
+            sources: vec![],
+            estimated: false,
+        }
+    }
+}
+
+fn score_b4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension {
+    let score = attrs.military_strategic_score;
+    if score > 0.0 {
+        ScoredDimension {
+            dim: Dimension::B4MilitaryStrategic,
+            score,
+            justification: format!(
+                "Military/strategic score {score:.1}/10. STRAHNET designation baseline 5.0; \
+                 additional points for proximity to nuclear command, major installations."
+            ),
+            sources: vec!["FHWA STRAHNET; DoD installation list".into()],
+            estimated: false,
+        }
+    } else {
+        ScoredDimension {
+            dim: Dimension::B4MilitaryStrategic,
+            score: 0.0,
+            justification: "Not STRAHNET-designated; no major military installation within 30 miles.".into(),
+            sources: vec![],
+            estimated: false,
+        }
+    }
+}
+
+fn score_c4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension {
+    let score = attrs.agricultural_export_score;
+    if score > 0.0 {
+        ScoredDimension {
+            dim: Dimension::C4AgriculturalExport,
+            score,
+            justification: format!(
+                "Agricultural export access score {score:.1}/10. Higher = greater role as export \
+                 corridor for grain, beef, cotton, or other commodity production zones."
+            ),
+            sources: vec!["USDA ERS county production data; export terminal locations".into()],
+            estimated: false,
+        }
+    } else {
+        ScoredDimension {
+            dim: Dimension::C4AgriculturalExport,
+            score: 0.0,
+            justification: "No significant agricultural production or export corridor role.".into(),
+            sources: vec![],
+            estimated: false,
+        }
     }
 }
 

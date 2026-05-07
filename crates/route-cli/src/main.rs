@@ -223,6 +223,9 @@ fn main() -> Result<()> {
         if local.exists() { local } else { route_data::Manifest::default_path() }
     });
 
+    // Initialize strategic designation data from CSV (no-op if file not found)
+    route_network::strategic::init_designations(std::path::Path::new("data"));
+
     match cli.command {
         Commands::Fetch { force, year: _ } => {
             println!("route fetch");
@@ -392,7 +395,7 @@ fn main() -> Result<()> {
             for id in &ids {
                 if let Some(corridor) = route_network::aggregate_corridor(&graph, id) {
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
-                    println!("  {}: {:.1}/120{}", corridor.designation, scores.total(),
+                    println!("  {}: {:.1}/150{}", corridor.designation, scores.total(),
                         if scores.any_estimated() { "†" } else { "" });
                     all_scores.push(scores);
                 }
@@ -1012,9 +1015,9 @@ fn print_score_table(designation: &str, scores: &route_score::DimensionScores, a
     println!("├──────┼──────────────────────────────┼───────┼─────┤");
 
     let all = [
-        &scores.a1, &scores.a2, &scores.a3,
-        &scores.b1, &scores.b2, &scores.b3,
-        &scores.c1, &scores.c2, &scores.c3,
+        &scores.a1, &scores.a2, &scores.a3, &scores.a4,
+        &scores.b1, &scores.b2, &scores.b3, &scores.b4,
+        &scores.c1, &scores.c2, &scores.c3, &scores.c4,
         &scores.d1, &scores.d2, &scores.d3,
     ];
 
@@ -1029,7 +1032,7 @@ fn print_score_table(designation: &str, scores: &route_score::DimensionScores, a
     println!("│ Band B (Network)                     │ {:>5.1} │     │", scores.band_b());
     println!("│ Band C (People)                      │ {:>5.1} │     │", scores.band_c());
     println!("│ Band D (Future)                      │ {:>5.1} │     │", scores.band_d());
-    println!("│ TOTAL                                │ {:>5.1} │ /120│", scores.total());
+    println!("│ TOTAL                                │ {:>5.1} │ /150│", scores.total());
     println!("└──────────────────────────────────────┴───────┴─────┘");
 }
 

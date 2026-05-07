@@ -90,6 +90,24 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
     let (nearest_parallel_miles, detour_penalty_miles) =
         find_parallel_route(g, route_id, edges);
 
+    // BPR-estimated PTI from V/C ratio (v1.2 A3 improvement)
+    // PTI_bpr = 1 + 0.15 × (V/C_peak × 1.15)^4
+    // V/C_peak = p90_aadt × K_factor / (lanes_per_dir × peak_cap_pcphpl)
+    let pti_bpr_estimate = p90_aadt.zip(mean_lane_count).map(|(aadt, lanes)| {
+        let lanes_per_dir = (lanes / 2.0).max(1.0) as f64;
+        let peak_cap = lanes_per_dir * 2_300.0; // pcph per direction at LOS E
+        let k_factor = 0.09; // peak hour as fraction of daily
+        let vc_peak = (aadt * k_factor) / peak_cap;
+        let pti = 1.0 + 0.15 * (vc_peak * 1.15_f64).powi(4);
+        pti.min(5.0).max(1.0) as f32
+    });
+
+    // v1.2 strategic dimensions from hard-coded reference data
+    use crate::strategic::{usmca_corridor_score, military_strategic_score, agricultural_export_score};
+    let intl_trade_score = usmca_corridor_score(route_id);
+    let military_strategic_score_val = military_strategic_score(route_id);
+    let agricultural_export_score_val = agricultural_export_score(route_id);
+
     let attrs = CorridorAttributes {
         is_upgrade_candidate: is_upgrade,
         p90_aadt,
@@ -98,7 +116,7 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         vc_ratio_p90,
         mean_speed_limit,
         mean_lane_count,
-        annual_freight_value_b: None, // FAF5 join required
+        annual_freight_value_b: None,
         mean_pct_truck,
         p90_pti,
         mean_tti,
@@ -106,23 +124,28 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         nearest_parallel_miles,
         detour_penalty_miles,
         betweenness_centrality,
-        port_terminus_flag: false,       // port data join required
+        port_terminus_flag: false,
         nearest_top25_port_miles: None,
         border_crossing_flag: false,
-        pop_within_50mi: None,           // Census join required
+        pop_within_50mi: None,
         rural_pop_within_50mi: None,
         pct_rural_in_buffer: None,
         max_rural_interchange_gap_miles,
-        corridor_gdp_b: None,            // BEA join required
+        corridor_gdp_b: None,
         gdp_per_capita_relative: None,
         pct_pop_below_poverty: None,
-        fema_sfha_miles: None,           // FEMA join required
+        fema_sfha_miles: None,
         max_consecutive_sfha_miles: None,
         intermodal_hub_count: 0,
         dcfc_per_100mi: None,
-        bridge_count: 0,                 // NBI join required
+        bridge_count: 0,
         pct_bridges_poor: None,
         mean_year_built: None,
+        // v1.2 new fields
+        intl_trade_score,
+        pti_bpr_estimate,
+        military_strategic_score: military_strategic_score_val,
+        agricultural_export_score: agricultural_export_score_val,
     };
 
     Some(Corridor {

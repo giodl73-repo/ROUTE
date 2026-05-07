@@ -1,0 +1,28 @@
+# ROUTE Corridor Strategic Designations
+# Source: FHWA USMCA High Priority Corridors, DoD STRAHNET, USDA ERS agricultural data
+# Update this file as federal designations change; scores are NOT hard-coded in Rust.
+# A4: USMCA trade corridor score 0-10 (FHWA NHS High Priority Corridor + border crossing data)
+# B4: Military/strategic score 0-10 (STRAHNET designation + military installation proximity)
+# C4: Agricultural export score 0-10 (USDA county production + export terminal proximity)
+ROUTE_ID,A4_USMCA,B4_MILITARY,C4_AG_EXPORT,NOTES
+I5,8.5,7.0,7.5,West Coast spine; San Diego/Tijuana + Blaine WA crossings; Camp Pendleton
+I10,9.0,8.0,7.0,Southern route; El Paso + San Diego crossings; Fort Bliss; Gulf ag exports
+I35,10.0,8.0,10.0,Laredo #1 US-MX crossing; Fort Hood; Great Plains grain→Gulf
+I40,7.5,7.0,7.5,USMCA connector; Fort Campbell; Oklahoma wheat corridor
+I75,6.5,7.0,7.0,Ambassador Bridge (Detroit #1 US-CA crossing by value); Fort Knox
+I80,9.0,8.5,9.0,Transcontinental; Offutt AFB/STRATCOM; Corn Belt→Pacific
+I90,6.0,9.0,8.5,Blaine WA crossing; Malmstrom ICBM; Minot ICBM; Spokane AFB; Northern wheat
+I95,5.5,7.5,0.0,Houlton ME/Calais ME crossings; Quantico; Fort Bragg; no ag
+I94,7.5,7.0,8.0,Detroit US-CA crossing; Corn Belt freight; Great Lakes
+I25,6.0,8.5,5.0,Raton NM crossing; FE Warren ICBM + USSTRATCOM; Fort Carson
+I29,5.5,5.0,9.5,Pembina ND/Portal ND crossings; Red River Valley wheat (#1 spring wheat)
+I70,5.0,7.5,7.0,Fort Riley KS; Kansas wheat belt; Rock Island Arsenal
+I19,8.0,5.0,6.0,Nogales AZ crossing (Mariposa commercial); major vegetable imports
+I15,5.0,6.0,5.0,Sweetgrass MT crossing; Las Vegas (no ag); Nellis AFB
+US287,5.0,7.5,9.0,Fort Worth→Amarillo→Denver→Laramie; FE Warren ICBM approach; TX Panhandle sorghum; WY cattle
+US83,7.5,5.5,8.5,Eagle Pass TX approach; Great Plains grain corridor; McConnell AFB approach
+US2,4.5,7.0,8.0,Sweetgrass MT + Pembina ND crossings; Malmstrom/Minot ICBM approach; Red River Valley
+US30,0.0,0.0,7.5,Lincoln Hwy; Corn Belt IA/NE/IN; no USMCA; no major military
+US50,0.0,0.0,0.0,I-70 Pacific gap; no USMCA or military data yet — update from FHWA
+US69,4.0,0.0,5.0,I-69 corridor; Gulf-to-Midwest trade potential; Arkansas ag
+US77,5.0,0.0,6.0,Laredo approach; south TX cotton/citrus

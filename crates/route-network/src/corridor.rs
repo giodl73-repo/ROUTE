@@ -97,6 +97,22 @@ pub struct CorridorAttributes {
     pub pct_bridges_poor: Option<f32>,
     /// Length-weighted mean bridge construction year — D3
     pub mean_year_built: Option<f32>,
+
+    // ── v1.2 New Dimensions ───────────────────────────────────────────────────
+    /// A4 International Trade Corridor — USMCA designation score 0–10
+    /// 10 = primary Laredo/El Paso/San Diego corridor; 5 = secondary crossing
+    pub intl_trade_score: f64,
+
+    /// BPR-estimated PTI from V/C ratio — better A3 fallback than IRI
+    /// PTI_bpr = 1 + 0.15 × (V/C_peak × 1.15)^4  where V/C_peak = p90_aadt × 0.09 / (lanes/2 × 2300)
+    /// None if insufficient data (AADT or lane count missing)
+    pub pti_bpr_estimate: Option<f32>,
+
+    /// B4 Military/Strategic Designation — STRAHNET + military base proximity 0–10
+    pub military_strategic_score: f64,
+
+    /// C4 Agricultural Export Access — grain belt + export terminal proximity 0–10
+    pub agricultural_export_score: f64,
 }
 
 impl CorridorAttributes {

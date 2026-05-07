@@ -7,6 +7,9 @@ pub mod aggregate;
 pub mod flow;
 pub mod invest;
 pub mod coverage;
+pub mod connectivity;
+pub mod diamond;
+pub mod strategic;
 
 pub use graph::{HighwayGraph, HighwayNode, HighwayEdge};
 pub use corridor::{Corridor, CorridorAttributes};
@@ -15,7 +18,6 @@ pub use aggregate::aggregate_corridor;
 pub use flow::{corridor_max_flow, FlowResult};
 pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
 pub use coverage::{compute_coverage, compute_pop_coverage, CoverageResult, PopCoverageResult, CountyGap};
-pub mod connectivity;
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
-pub mod diamond;
 pub use diamond::{find_t1_intersections, find_intersection, analyze_diamond, DiamondResult, T1Intersection};
+pub use strategic::{usmca_corridor_score, military_strategic_score, agricultural_export_score, init_designations, load_designations};

@@ -1,20 +1,29 @@
 ---
-name: ROUTE Axis Pool v1.1
+name: ROUTE Axis Pool v1.2
 slug: axis-pool
 type: spec
 status: draft
-rubric_version: v1.1
+rubric_version: v1.2
 author: human
 created: 2026-05-06
 updated: 2026-05-07
 sources: []
 ---
 
-# ROUTE Axis Pool v1.1
+# ROUTE Axis Pool v1.2
 
-The 12 candidate dimensions for scoring interstate corridors. This is the scoring instrument plus the ledger that tracks how each dimension performs across the corpus.
+The **15** candidate dimensions for scoring interstate corridors (12 original + 3 added in v1.2).
 
-**Status**: Candidate — all 12 are live until the first calibration pass (after 20+ existing corridors scored). The calibration pass may retire correlated or low-variance dimensions and bump the rubric version. Prior scores are locked at the version they were scored under.
+**v1.2 additions**: A4 (International Trade Corridor), B4 (Military/Strategic Designation), C4 (Agricultural Export Access). These address gaps identified when US-287 (central plains Mexico-Canada corridor) scored only 14.0/120 despite B1=10.0 — the rubric was blind to strategic value not reflected in current traffic.
+
+**Score range**: 0–150 (was 0–120). Tier thresholds scaled proportionally:
+- v1.2: T1≥26, T2≥19, T3≥11, T4<11 (≈same percentiles as v1.1 21/15/9/9)
+
+**A3 fix (v1.2)**: IRI proxy replaced by BPR-estimated PTI when V/C ratio is computable from HPMS AADT + lane count. IRI fallback cap remains 5.0 but BPR-PTI path is now available.
+
+**Status**: Candidate — all 15 dimensions live until the first calibration pass.
+
+**Forward-only**: v1.1 scores locked at 120-point scale. v1.2 scores use 150-point scale.
 
 ---
 
@@ -26,7 +35,8 @@ The 12 candidate dimensions for scoring interstate corridors. This is the scorin
 |---|---|---|---|
 | A1 | Throughput Gap | Current volume vs. designed capacity; congestion severity across route miles | Low — high variance expected |
 | A2 | Freight Intensity | Average daily truck volume; commodity value density per corridor mile | Low — high variance expected |
-| A3 | Speed Reliability | Travel time reliability (PTI primary; IRI fallback **capped at 5.0**, not full scale) | Medium — may correlate strongly with A1; IRI proxy is a weak fallback |
+| A3 | Speed Reliability | Travel time reliability. **v1.2: BPR-estimated PTI from V/C ratio when HPMS AADT+lanes available; IRI fallback capped 5.0.** PTI = 1 + 0.15×(V/C×1.15)^4 | Medium — BPR estimate better than IRI proxy; still estimated without real PTI data |
+| **A4** | **International Trade Corridor** | USMCA trade corridor designation. Does this corridor serve primary US-Mexico or US-Canada freight flows? Scored from: FHWA border crossing AADT, USMCA corridor designations, O-D distance reduction vs. alternatives. | Low — highly variable; US-287 (B1=10, but missed without A4) is primary motivation |
 
 ### Band B — Network
 
@@ -35,6 +45,7 @@ The 12 candidate dimensions for scoring interstate corridors. This is the scorin
 | B1 | Redundancy | Count and quality of parallel interstate-quality alternatives within 50 miles | Low — high geographic variance |
 | B2 | Network Centrality | Brandes betweenness centrality on national graph. **Marked estimated (†) on partial graph — only stable after `route score-all` on full 227-corridor network. Do not use B2 for inter-corridor comparison until score-all completes.** | Medium — partial-graph scores are misleading; requires full national graph |
 | B3 | Port/Border Access | Connectivity to top-tier ports or major border crossings at termini | Low — binary-ish; will differentiate clearly |
+| **B4** | **Military/Strategic Designation** | STRAHNET designation + proximity to major military installations. Captures strategic importance not reflected in commercial traffic metrics. STRAHNET = 5.0 baseline; nuclear missile command, major Army/Navy/Air Force bases within 30 miles = +2.0–5.0. | Low — STRAHNET designation is stable federal data |
 
 ### Band C — People
 
@@ -43,6 +54,7 @@ The 12 candidate dimensions for scoring interstate corridors. This is the scorin
 | C1 | Population Reach | Total population within 50 miles of corridor centerline | Low — high variance |
 | C2 | Rural Connectivity | % of corridor through agricultural/rural land; rural communities with no close alternative | Low — high variance |
 | C3 | Economic Opportunity Access | Buffer GDP per capita relative to national average. **Descriptive only — measures current economic conditions, not access-caused outcomes. Correlation with economic disadvantage is strong (r = 0.41 in B.1 corpus) but not causal; do not use C3 scores as evidence that corridors cause economic improvement.** | Low — high variance; BEA data reliable |
+| **C4** | **Agricultural Export Access** | Does this corridor serve a major agricultural production zone with access to export infrastructure? Scored from: USDA county agricultural production value in buffer, proximity to grain export terminals (Houston, Portland OR, New Orleans, Baltimore, Long Beach). Captures why US-287 matters even with low population: Great Plains wheat/beef export route to Gulf ports AND Pacific Northwest ports. | Low — USDA county agricultural data available; high variance across corridors |
 
 ### Band D — Future
 
@@ -88,9 +100,12 @@ None yet.
 | Date | Change | Rubric version | Triggered by |
 |---|---|---|---|
 | 2026-05-06 | Initial 12-dimension pool established | v1.0 | Initial design |
-| 2026-05-07 | **A3**: IRI fallback capped at 5.0 (was unbounded, caused I-80 A3=10.0 with no PTI data — clearly wrong) | v1.1 | score-all run revealed IRI proxy misfiring |
-| 2026-05-07 | **B2**: Partial-graph warning made explicit in definition and ledger — do not compare B2 scores until score-all completes | v1.1 | Post-scoring analysis |
-| 2026-05-07 | **C3**: Renamed Equity Access → Economic Opportunity Access; added "descriptive only, not causal" warning; B.1 review (rural economist) surfaced causal overclaim risk | v1.1 | B.1 Round 1 review, R-T2 |
+| 2026-05-07 | **A3**: IRI fallback capped at 5.0; **B2**: partial-graph warning explicit; **C3**: renamed + descriptive-only note | v1.1 | score-all run + B.1 peer review |
+| 2026-05-07 | **A4** International Trade Corridor: USMCA freight flow potential | v1.2 | US-287 scored 14.0 despite B1=10.0 — rubric blind to strategic value |
+| 2026-05-07 | **A3** upgraded: BPR-estimated PTI from V/C ratio when HPMS data available | v1.2 | User request: fix speed data |
+| 2026-05-07 | **B4** Military/Strategic Designation: STRAHNET + military base proximity | v1.2 | User request: military access dimension |
+| 2026-05-07 | **C4** Agricultural Export Access: grain belt + export terminal proximity | v1.2 | User request: agricultural dimension; US-287 central plains corridor |
+| 2026-05-07 | Score range: 12 dims × 10 = 120 → 15 dims × 10 = 150; tier thresholds scaled | v1.2 | 3 new dimensions added |
 
 ---
 
