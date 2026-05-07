@@ -26,7 +26,9 @@ venv/
 
 # Large data files (not committed)
 data/raw/
-data/*.csv
+data/cache/
+# Keep committed data files (atri-bottlenecks.csv, scores-all.csv)
+data/hpms_*.csv
 data/*.geojson
 data/*.shp
 data/*.gdb
