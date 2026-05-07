@@ -1,0 +1,50 @@
+\section{Data and Methods}
+
+\subsection{ATRI Bottleneck Data}
+
+The American Transportation Research Institute publishes an annual ranking of the 100 most congested freight locations in the US highway network \citep{ATRI2024}. The 2024 report identifies 100 locations ranked by estimated annual freight congestion cost, computed from:
+
+\begin{itemize}
+\item GPS-derived truck travel time data from ATRI's proprietary fleet tracking database (~1 million trucks)
+\item Comparison of actual travel time vs. free-flow travel time (Travel Time Index)
+\item Freight cost per truck-hour of delay (\$150/hr based on operational costs per mile and delay-induced fuel consumption)
+\item Annual truck volume passing through each location
+\end{itemize}
+
+We use the top 50 locations from the 2024 report, which account for approximately 70\% of total top-100 annual congestion cost. Each location is characterized by: rank, geographic location (lat/lon), primary route affected, state, and estimated annual congestion cost (\$M).
+
+\subsection{ROUTE Corridor Attribution}
+
+We attribute each ATRI bottleneck location to its primary corridor by matching the reported route to the ROUTE corpus route identifier. Multiple ATRI locations on the same corridor are summed to produce a corridor-level bottleneck cost.
+
+We classify each corridor by centrality-adjusted tier (from \citet{ROUTE_A1}):
+\begin{itemize}
+\item T1 Primary Arteries: I-5, I-10, I-35, I-40, I-75, I-80, I-90, I-95
+\item T2 Major Connectors: remaining interstates with tier score $\geq$ 15.0 (v1.1 rubric)
+\item T3/T4: all others (no ATRI bottleneck locations in top 50)
+\end{itemize}
+
+\subsection{Bottleneck Density}
+
+For each corridor, bottleneck density is computed as ATRI locations per 100 route miles. This normalizes for corridor length: a 3,000-mile transcontinental corridor with 5 ATRI locations has lower density (0.17/100mi) than a 100-mile urban connector with 3 ATRI locations (3.0/100mi).
+
+\subsection{Weather Bottleneck Analysis}
+
+ATRI's congestion rankings are based on recurring traffic delays and do not capture weather-driven closures. We supplement the ATRI data with FHWA incident data for two primary weather bottleneck corridors:
+
+\begin{itemize}
+\item I-80 Donner Pass (California): approximately 50 closures per year, mean duration 18 hours. Source: Caltrans incident database.
+\item I-90 Snoqualmie Pass (Washington): approximately 40 closures per year, mean duration 12 hours. Source: WSDOT incident database.
+\end{itemize}
+
+Weather bottleneck annual cost is estimated as: closures/year $\times$ mean duration (hours) $\times$ truck volume (trucks/day) $\times$ cost per truck-hour rerouting premium (\$225/hr, reflecting detour fuel cost and lost time).
+
+\subsection{Tier Attribution and Cost Allocation}
+
+Total bottleneck cost by tier is computed by summing ATRI annual costs for all corridors in each tier. The cascade multiplier is computed as:
+
+\begin{equation}
+\text{Cascade Multiplier} = \frac{\text{Cost per bottleneck (T1)}}{\text{Cost per bottleneck (T2)}}
+\end{equation}
+
+where costs are per ATRI location (not per corridor mile). A cascade multiplier $> 1.0$ indicates T1 bottlenecks are more costly per location than T2 bottlenecks, consistent with the national cascade effect hypothesis.

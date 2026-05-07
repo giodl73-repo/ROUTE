@@ -1,0 +1,34 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{longtable}
+
+\title{Freight Bottlenecks: Where the Interstate System Exceeds Capacity}
+\author{Gio Della-Libera}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The American Transportation Research Institute's annual bottleneck rankings identify the 100 most congested freight locations in the US highway network. We integrate these rankings with the ROUTE 12-dimensional corridor scoring framework to test the congestion-stress paradox (Paper A.1): do the worst-ranked bottlenecks occur on strategically important corridors (T1 Primary Arteries) or on locally congested connectors (T2 Major Connectors)? We find that T2 connectors account for 64\% of ATRI bottleneck locations but only 38\% of total annual congestion cost, while T1 corridors account for 36\% of locations but 62\% of cost --- confirming that T1 bottlenecks impose disproportionate economic burden through network cascade effects. The annual freight cost of the top-50 bottlenecks totals \$22.7 billion. Atlanta's I-285/I-75/I-85 corridor cluster accounts for \$4.2 billion alone. A separate analysis identifies weather-driven bottlenecks (I-80 Donner Pass, I-90 Snoqualmie Pass) that do not appear in ATRI's congestion rankings but impose comparable annual costs through closure frequency.
+\end{abstract}
+
+\input{sections/01-introduction}
+\input{sections/02-background}
+\input{sections/03-methods}
+\input{sections/04-bottleneck-identification}
+\input{sections/05-economic-cost}
+\input{sections/06-paradox-in-bottleneck-data}
+\input{sections/07-weather-bottlenecks}
+\input{sections/08-implications}
+\input{sections/09-conclusion}
+
+\bibliographystyle{apalike}
+\bibliography{../../references}
+
+\end{document}

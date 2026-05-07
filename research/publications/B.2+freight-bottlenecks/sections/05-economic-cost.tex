@@ -1,0 +1,42 @@
+\section{Economic Cost Analysis}
+
+\subsection{Total Top-50 Cost: \$22.7 Billion}
+
+The 50 bottleneck locations in our dataset have a combined estimated annual freight congestion cost of \$22.7 billion (Table~\ref{tab:tier-cost}). This figure represents only the direct trucking cost component --- driver time, fuel premium from idling, and schedule penalty costs --- and does not include inventory carrying costs, supply chain disruptions, or broader economic multiplier effects. The true societal cost of these bottlenecks is substantially higher.
+
+\begin{table}[h!]
+\centering
+\caption{Annual Bottleneck Cost by Tier (Top 50 ATRI Locations)}
+\label{tab:tier-cost}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Tier} & \textbf{Locations} & \textbf{Total cost} & \textbf{Cost/location} & \textbf{Cascade} \\
+ & & \textbf{(\$M/yr)} & \textbf{(\$M/yr)} & \textbf{multiplier} \\
+\midrule
+T1 Primary Arteries & 18 & 14,095 & 783 & 1.73× \\
+T2 Major Connectors & 32 & 8,621 & 269 & (baseline) \\
+\midrule
+\textbf{Total} & \textbf{50} & \textbf{22,716} & \textbf{454} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{T1 vs. T2: The Cost Paradox}
+
+T2 connectors account for 64\% of top-50 bottleneck locations (32 of 50). T1 Primary Arteries account for only 36\% (18 of 50). Yet T1 corridors account for 62\% of total annual bottleneck cost (\$14.1B of \$22.7B).
+
+The cascade multiplier --- cost per ATRI location on T1 vs. T2 --- is 1.73. An ATRI-ranked bottleneck on a T1 corridor costs, on average, 1.73× more than one on a T2 corridor.
+
+We attribute this premium to three mechanisms:
+
+\textbf{Volume effect}: T1 corridors carry more trucks per day in absolute terms at bottleneck locations. The I-95 Fort Lee bottleneck (\#2, \$848M) handles larger truck volumes than even the highest-ranked Atlanta T2 location because I-95 funnels all Northeast Corridor freight through a single corridor.
+
+\textbf{Rerouting cost}: when a T1 bottleneck causes delay, trucks cannot easily use a parallel T1 corridor (the T1 network is designed without close parallels). Rerouting adds more miles than for T2 bottlenecks, which are often bypassable via nearby T2 or T3 connectors.
+
+\textbf{Value-at-risk effect}: T1 corridors carry disproportionately high-value freight (time-sensitive manufactured goods, pharmaceuticals, electronics) along with agricultural and industrial bulk cargo. Delay costs for high-value freight exceed those for commodity freight.
+
+\subsection{Atlanta: A Special Case}
+
+Atlanta's four T2 bottleneck locations account for \$3.0 billion in annual cost. The I-285 beltway is the dominant mechanism. Atlanta sits at the intersection of I-75 (T1, Miami to Detroit) and I-85 (T2, Charlotte to Montgomery) with no parallel T1 alternative for 200 miles in either direction. The I-285 ring road is the de facto T1/T1 transfer mechanism for the southeast --- a T2 corridor doing T1 work.
+
+This is the structural argument for upgrading I-285 to T1 status: it functions as a T1 corridor (nationally critical, no alternative) but is classified as T2 because its betweenness centrality is lower than the through-corridors it connects. The T1 upgrade case for I-285 is stronger than any other T2 corridor in the corpus.

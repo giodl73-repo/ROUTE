@@ -1,0 +1,45 @@
+\section{Background}
+
+\subsection{ATRI Bottleneck Methodology}
+
+The American Transportation Research Institute has published annual truck bottleneck rankings since 2011 \citep{ATRI2011}. The methodology uses GPS data from commercial fleet vehicles to compute Travel Time Index (TTI) and Planning Time Index (PTI) at specific highway locations. Locations are ranked by estimated annual freight congestion cost, computed as:
+
+\begin{equation}
+\text{Annual Cost} = \text{Truck Volume} \times \text{Delay Hours} \times \text{Cost per Truck-Hour}
+\end{equation}
+
+where truck volume is from HPMS AADT data, delay hours are derived from GPS-observed travel time vs. free-flow travel time, and cost per truck-hour is based on ATRI's operational cost per mile survey (\$150/hr in 2024) \citep{ATRI_costs2024}.
+
+The ATRI rankings are the most widely used operational measure of freight network performance in the US. They are cited in FHWA performance reports, state transportation plans, and congressional testimony. They measure \textit{recurring} congestion only; episodic closures (weather, accidents, construction) are not captured.
+
+\subsection{HCM Capacity and Level of Service}
+
+Highway capacity in the US is defined by the Highway Capacity Manual (HCM), now in its seventh edition \citep{HCM7}. For basic freeway segments, capacity is approximately 2,300 passenger car equivalents per hour per lane (pcphpl) under ideal conditions. The V/C ratio (volume to capacity) determines Level of Service (LOS):
+
+\begin{itemize}
+\item LOS A--C (V/C $<$ 0.75): free flow
+\item LOS D (V/C 0.75--0.90): approaching capacity, minor disruptions cause delays
+\item LOS E (V/C 0.90--1.00): near capacity, any incident causes breakdown
+\item LOS F (V/C $>$ 1.00): oversaturated; queuing and stop-and-go conditions
+\end{itemize}
+
+The ROUTE A1 (Throughput Gap) dimension uses 90th-percentile segment AADT as a proxy for V/C ratio. Corridors with A1 $\geq$ 6.0 correspond approximately to peak-period LOS D or E.
+
+\subsection{Freight Economics of Delay}
+
+The economic cost of highway delay for freight trucks consists of:
+
+\begin{itemize}
+\item \textbf{Driver cost}: lost productive driving time (\$0.42/hr labor component)
+\item \textbf{Fuel cost}: idling and reduced-speed fuel consumption (\$0.38/hr)
+\item \textbf{Equipment cost}: truck depreciation during non-revenue time (\$0.28/hr)
+\item \textbf{Schedule penalty}: late delivery costs, appointment rescheduling (\$0.58/hr average)
+\end{itemize}
+
+ATRI's 2024 operational cost survey estimates the total cost of one hour of truck delay at \$150. For time-sensitive freight (pharmaceuticals, electronics, JIT automotive parts), the schedule penalty component can be 5--10× higher, making delay costs for these commodity classes exceed \$500/hr per truck.
+
+\subsection{Prior Bottleneck Research}
+
+Several prior studies have characterized the relationship between highway congestion and freight costs. \citet{Schrank2021} estimates the total annual cost of traffic congestion at \$179 billion, of which approximately 25\% (\$45B) is attributable to truck freight. The TTI Urban Mobility Report provides metropolitan-level estimates but does not decompose by strategic tier or corridor.
+
+The ROUTE contribution is to connect bottleneck geography to network structure: not just where the bottlenecks are, but whether they are on corridors the national network can afford to have congested.
