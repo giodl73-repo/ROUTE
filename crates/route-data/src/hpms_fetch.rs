@@ -42,19 +42,22 @@ struct Feature {
     attributes: FeatureAttributes,
 }
 
+/// Actual field names from geo.dot.gov (all lowercase).
+/// route_signing codes: 2=Interstate, 3=US Route, 4=State Route
+/// route_number: the numeric route number (65 for I-65, 30 for US-30)
 #[derive(Debug, Deserialize)]
 struct FeatureAttributes {
-    #[serde(rename = "ROUTE_ID", alias = "Route_ID")]
-    route_id: Option<String>,
-    #[serde(rename = "AADT", alias = "Aadt")]
+    route_number: Option<i64>,
+    /// 2=Interstate, 3=US Route, 4=State Route
+    route_signing: Option<i64>,
     aadt: Option<f64>,
-    #[serde(rename = "IRI", alias = "Iri")]
+    /// Combination truck AADT count (NOT a percentage)
+    aadt_combination: Option<f64>,
     iri: Option<f64>,
-    #[serde(rename = "THROUGH_LANES", alias = "Through_Lanes")]
     through_lanes: Option<f64>,
-    /// PCT_COMBINATION = heavy truck percentage (0–100 in HPMS)
-    #[serde(rename = "PCT_COMBINATION", alias = "Pct_Combination")]
-    pct_combination: Option<f64>,
+    speed_limit: Option<f64>,
+    /// f_system=1 → Interstate principal arterial
+    f_system: Option<i64>,
 }
 
 /// Fetch HPMS data for one state and return a list of HpmsRecords.
@@ -64,7 +67,10 @@ pub fn fetch_state_hpms(
     state_name: &str,
 ) -> Result<Vec<HpmsRecord>> {
     let url = BASE_URL.replace("{STATE}", state_name);
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .user_agent("ROUTE/1.0 highway-analysis")
+        .build()?;
     let mut all: Vec<HpmsRecord> = Vec::new();
     let mut offset = 0usize;
 
@@ -72,8 +78,13 @@ pub fn fetch_state_hpms(
         let response = client
             .get(&url)
             .query(&[
-                ("where", "1=1"),
-                ("outFields", "ROUTE_ID,AADT,IRI,THROUGH_LANES,PCT_COMBINATION"),
+                // Simple filter: only records with AADT populated
+                // Route type filtering done in Rust after fetch
+                // f_system = 1 → Interstate principal arterials only (Phase 1)
+                // route_signing = 2/3/4 filters cause server 500s on this ArcGIS instance
+                // Phase 2: f_system <= 2 adds Other Freeways (US routes on controlled-access)
+                ("where", "f_system = 1 AND aadt IS NOT NULL"),
+                ("outFields", "route_number,route_signing,aadt,aadt_combination,iri,through_lanes,speed_limit,f_system"),
                 ("f", "json"),
                 ("resultRecordCount", "1000"),
                 ("resultOffset", &offset.to_string()),
@@ -93,18 +104,30 @@ pub fn fetch_state_hpms(
         let count = parsed.features.len();
         for feat in parsed.features {
             let a = feat.attributes;
-            let route_id = match a.route_id {
-                Some(r) if !r.trim().is_empty() => normalise_hpms_route_id(&r),
-                _ => continue,
+
+            // Build normalised route_id from route_signing + route_number
+            // route_signing: 2=Interstate, 3=US Route, 4=State Route
+            let route_id = match (a.route_signing, a.route_number) {
+                (Some(2), Some(n)) if n > 0 => format!("I{n}"),
+                (Some(3), Some(n)) if n > 0 => format!("US{n}"),
+                (Some(4), Some(n)) if n > 0 => format!("SR{n}"),
+                _ => continue, // skip unsigned/county/municipal roads
             };
+
+            // pct_truck = aadt_combination / aadt (both are counts)
+            let pct_truck = match (a.aadt_combination, a.aadt) {
+                (Some(comb), Some(total)) if total > 0.0 => Some((comb / total) as f32),
+                _ => None,
+            };
+
             all.push(HpmsRecord {
                 state: state_abbr.to_string(),
                 route_id,
                 aadt: a.aadt.map(|v| v as u32),
-                // HPMS PCT_COMBINATION is 0–100; store as proportion 0.0–1.0
-                pct_truck: a.pct_combination.map(|v| (v / 100.0) as f32),
+                pct_truck,
                 lane_count: a.through_lanes.map(|v| v as u8),
                 iri: a.iri.map(|v| v as f32),
+                speed_limit: a.speed_limit.map(|v| v as u8),
             });
         }
 
@@ -137,7 +160,7 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
 
     // Write to CSV
     let mut wtr = csv::Writer::from_path(output_path)?;
-    wtr.write_record(["STATE", "ROUTE_ID", "AADT", "PCT_TRUCK", "LANE_COUNT", "IRI"])?;
+    wtr.write_record(["STATE", "ROUTE_ID", "AADT", "PCT_TRUCK", "LANE_COUNT", "IRI", "SPEED_LIMIT"])?;
     for r in &all_records {
         wtr.write_record(&[
             r.state.clone(),
@@ -146,6 +169,7 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
             r.pct_truck.map(|v| format!("{v:.4}")).unwrap_or_default(),
             r.lane_count.map(|v| v.to_string()).unwrap_or_default(),
             r.iri.map(|v| format!("{v:.1}")).unwrap_or_default(),
+            String::new(), // speed_limit not yet stored on HpmsRecord from fetch
         ])?;
     }
     wtr.flush()?;

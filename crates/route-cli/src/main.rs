@@ -248,6 +248,7 @@ fn main() -> Result<()> {
                         r.pct_truck.map(|v|format!("{v:.4}")).unwrap_or_default(),
                         r.lane_count.map(|v|v.to_string()).unwrap_or_default(),
                         r.iri.map(|v|format!("{v:.1}")).unwrap_or_default(),
+                        String::new(), // speed_limit
                     ])?;
                 }
                 wtr.flush()?;
