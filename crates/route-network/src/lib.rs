@@ -15,3 +15,5 @@ pub use aggregate::aggregate_corridor;
 pub use flow::{corridor_max_flow, FlowResult};
 pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
 pub use coverage::{compute_coverage, compute_pop_coverage, CoverageResult, PopCoverageResult, CountyGap};
+pub mod connectivity;
+pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};

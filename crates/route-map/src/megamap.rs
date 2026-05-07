@@ -81,11 +81,41 @@ pub fn build_megamap_svg(graph: &HighwayGraph, scores: &std::collections::HashMa
         }
     }
 
-    // Labels
+    // T1 upgrade candidates — dashed lines with candidate colors
+    // US-2 (Northern Tier): white dashed — the biggest missing T1
+    // I-69 alignment (US-69): orange dashed
+    // I-3 alignment (proposed Savannah-Detroit): yellow dashed
+    let upgrade_candidates: &[(&str, &str)] = &[
+        ("US2",  "#ffffff"),   // Northern Tier — white (highest priority)
+        ("US30", "#fbbf24"),   // Lincoln Hwy — amber (I-80 parallel)
+        ("US69", "#fb923c"),   // I-69 corridor — orange
+        ("US6",  "#a78bfa"),   // Mid-country — purple
+    ];
+    s += "<!-- T1 upgrade candidates (dashed) -->\n";
+    for (route_id, color) in upgrade_candidates {
+        for ei in graph.graph.edge_indices() {
+            let edge = &graph.graph[ei];
+            if edge.route_id != *route_id { continue; }
+            let pts: Vec<(f64,f64)> = edge.geometry.0.iter()
+                .filter(|c| c.x > -125.0&&c.x < -66.0&&c.y > 24.0&&c.y < 50.0)
+                .map(|c| view.project_to_pixel(&proj,c.x,c.y)).collect();
+            if pts.len() < 2 { continue; }
+            let p: String = pts.iter().map(|(x,y)| format!("{x:.1},{y:.1}")).collect::<Vec<_>>().join(" ");
+            // Dashed: upgrade candidate not yet built to interstate standard
+            s += &format!("<polyline points=\"{p}\" stroke=\"{color}\" stroke-width=\"2.5\" fill=\"none\" opacity=\"0.75\" stroke-linecap=\"round\" stroke-dasharray=\"8,5\"/>\n");
+        }
+    }
+
+    // Labels — larger and more readable
     for (route_id, label) in T1_ROUTES {
         if let Some((lx,ly)) = midpoint(graph, route_id, &proj, &view) {
             let c = t1_color(route_id);
-            s += &format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"38\" height=\"16\" rx=\"4\" fill=\"{c}\" fill-opacity=\"0.95\"/>\n<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"10\" font-weight=\"bold\" fill=\"white\" text-anchor=\"middle\">{label}</text>\n",lx-19.0,ly-12.0,ly-1.0);
+            // Outer glow
+            s += &format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"64\" height=\"26\" rx=\"5\" fill=\"{c}\" fill-opacity=\"0.18\"/>\n", lx-32.0, ly-20.0);
+            // Filled pill
+            s += &format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"60\" height=\"22\" rx=\"5\" fill=\"{c}\" fill-opacity=\"0.92\"/>\n", lx-30.0, ly-18.0);
+            // Text
+            s += &format!("<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"13\" font-weight=\"bold\" fill=\"white\" text-anchor=\"middle\">{label}</text>\n", ly-2.0);
         }
     }
 
@@ -95,19 +125,40 @@ pub fn build_megamap_svg(graph: &HighwayGraph, scores: &std::collections::HashMa
     s += "<text x=\"36\" y=\"70\" font-family=\"Arial,sans-serif\" font-size=\"13\" fill=\"#8b949e\">Centrality-adjusted tier classification  ROUTE v1.1  227 corridors</text>\n";
     s += "<text x=\"36\" y=\"88\" font-family=\"Arial,sans-serif\" font-size=\"11\" fill=\"#6e7681\">T1 arteries in signature colors  T2/T3/T4 graded gray  TIGER 2023</text>\n";
 
-    // Legend
-    let ly = H-64.0;
-    s += &format!("<rect x=\"0\" y=\"{ly}\" width=\"{W}\" height=\"64\" fill=\"#010409\"/>\n");
+    // Upgrade candidate labels
+    let upgrade_labels: &[(&str, &str, &str)] = &[
+        ("US2",  "#ffffff", "US-2 ★T1★"),
+        ("US30", "#fbbf24", "US-30"),
+        ("US69", "#fb923c", "US-69/I-69"),
+    ];
+    for (route_id, color, label) in upgrade_labels {
+        if let Some((lx,ly_pt)) = midpoint(graph, route_id, &proj, &view) {
+            // Dashed outline pill for upgrade candidates
+            s += &format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"70\" height=\"22\" rx=\"5\" fill=\"none\" stroke=\"{color}\" stroke-width=\"1.5\" stroke-dasharray=\"4,3\" opacity=\"0.85\"/>\n", lx-35.0, ly_pt-18.0);
+            s += &format!("<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"11\" font-weight=\"bold\" fill=\"{color}\" text-anchor=\"middle\" opacity=\"0.9\">{label}</text>\n", ly_pt-2.0);
+        }
+    }
+
+    // Legend — two rows: T1 top, tiers + upgrades bottom
+    let ly = H-80.0;
+    s += &format!("<rect x=\"0\" y=\"{ly}\" width=\"{W}\" height=\"80\" fill=\"#010409\"/>\n");
+    // T1 corridor colors — top row
     for (i,(rid,label)) in T1_ROUTES.iter().enumerate() {
         let x = 24.0 + i as f64 * 290.0;
         let c = t1_color(rid);
-        s += &format!("<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"44\" height=\"9\" rx=\"2\" fill=\"{c}\"/>\n<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"12\" fill=\"#c9d1d9\">{label}</text>\n",ly+14.0,x+50.0,ly+24.0);
+        s += &format!("<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"44\" height=\"10\" rx=\"2\" fill=\"{c}\"/>\n<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"13\" fill=\"#e2e8f0\">{label}</text>\n",ly+14.0,x+52.0,ly+25.0);
     }
+    // Tier shades + upgrade candidates — bottom row
     for (i,(c,label)) in [("#64748b","T2 Major Connectors"),("#475569","T3 Regional Feeders"),("#1e293b","T4 Local Access")].iter().enumerate() {
-        let x = 24.0 + i as f64 * 380.0;
-        s += &format!("<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"30\" height=\"6\" rx=\"1\" fill=\"{c}\"/>\n<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"11\" fill=\"#8b949e\">{label}</text>\n",ly+44.0,x+36.0,ly+51.0);
+        let x = 24.0 + i as f64 * 340.0;
+        s += &format!("<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"32\" height=\"7\" rx=\"1\" fill=\"{c}\"/>\n<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"11\" fill=\"#8b949e\">{label}</text>\n",ly+46.0,x+38.0,ly+54.0);
     }
-    s += &format!("<text x=\"{:.0}\" y=\"{:.0}\" font-family=\"Arial,sans-serif\" font-size=\"10\" fill=\"#484f58\" text-anchor=\"end\">github.com/giodl73-repo/ROUTE</text>\n",W-16.0,ly+51.0);
+    // Upgrade candidates in legend
+    for (i,(c,label)) in [("#ffffff","US-2 — T1 upgrade (Northern Tier)"),("#fbbf24","US-30/I-69 — proposed T1")].iter().enumerate() {
+        let x = 1050.0 + i as f64 * 570.0;
+        s += &format!("<line x1=\"{x:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{c}\" stroke-width=\"2\" stroke-dasharray=\"6,4\" opacity=\"0.75\"/>\n<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" font-size=\"11\" fill=\"{c}\" opacity=\"0.85\">{label}</text>\n",ly+50.0,x+38.0,ly+50.0,x+44.0,ly+54.0);
+    }
+    s += &format!("<text x=\"{:.0}\" y=\"{:.0}\" font-family=\"Arial,sans-serif\" font-size=\"10\" fill=\"#484f58\" text-anchor=\"end\">github.com/giodl73-repo/ROUTE  ·  B1 scores confirm US-2 as highest-priority T1 upgrade (B1=10.0)</text>\n",W-16.0,ly+70.0);
     s += "</svg>";
     Ok(s)
 }
