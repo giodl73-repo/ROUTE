@@ -1,0 +1,41 @@
+\section{The Arterial Map}
+
+\subsection{Design Principles}
+
+A schematic arterial map of the national interstate system follows directly from the tier classification. We adopt the following design conventions, modeled on the principles of transit schematic cartography \citep{Ovenden2015}:
+
+\begin{itemize}
+\item \textbf{Line weight}: T1 Primary Arteries are rendered at 4pt; T2 Major Connectors at 2.5pt; T3 Regional Feeders at 1.5pt; T4 Local Access at 0.75pt. The visual weight difference makes the hierarchy immediately legible.
+\item \textbf{Color}: T1 corridors use a distinctive color per route (following transit convention); lower tiers use progressively lighter shades of gray. Color assignment follows the geographic direction of the corridor: east-west routes in blue-spectrum colors, north-south in green-spectrum.
+\item \textbf{Geometry}: we retain approximate geographic geometry (unlike pure schematic transit maps) because the highway network's geography is relevant to its function. We apply a moderate simplification (Douglas-Peucker at 0.05$^\circ$ tolerance) to reduce visual clutter.
+\item \textbf{Interchange nodes}: all T1/T1 intersections are marked with a circular node; T1/T2 intersections with a smaller node. T3/T4 intersections are not marked.
+\end{itemize}
+
+\subsection{The Eight Primary Arteries}
+
+The eight T1 corridors constitute the national arterial system (Figure~\ref{fig:arterial-map}):
+
+\begin{itemize}
+\item \textbf{I-90 (Boston--Seattle)}: The northern transcontinental artery. 3,085 miles. Serves the Great Lakes industrial corridor, the northern Plains agricultural region, and the Pacific Northwest tech-and-port economy. No close parallel for most of its length.
+\item \textbf{I-80 (Teaneck--San Francisco)}: The middle transcontinental artery. 2,909 miles. The highest-volume freight route between the Northeast and California. Crosses the Sierra Nevada at Donner Pass --- the system's highest-profile single point of failure, closing approximately 50 days per year.
+\item \textbf{I-40 (Barstow--Wilmington NC)}: The southern mid-country artery. 2,554 miles. Primary alternate to I-80 for southern routing; primary route for Southeast-to-Southwest freight.
+\item \textbf{I-10 (Santa Monica--Jacksonville)}: The southern transcontinental artery. 2,460 miles. Carries the highest truck volumes of any transcontinental route, driven by Gulf Coast port access and US-Mexico border crossing traffic west of El Paso.
+\item \textbf{I-95 (Miami--Houlton ME)}: The East Coast spine. 1,919 miles. Serves the largest concentration of US population of any single corridor; highest aggregate economic value per corridor mile.
+\item \textbf{I-75 (Miami--Sault Ste. Marie)}: The Eastern interior spine. 1,786 miles. Primary corridor for Midwest automotive freight to Southeast markets.
+\item \textbf{I-35 (Laredo--Duluth)}: The central spine. 1,568 miles. Critical for US-Mexico trade (Laredo is the highest-volume US-Mexico land crossing); agricultural corridor for Great Plains freight northward.
+\item \textbf{I-5 (San Diego--Blaine WA)}: The West Coast spine. 1,381 miles. Serves three major port cities (San Diego, Los Angeles/Long Beach, Portland/Seattle) and the Pacific agriculture corridor.
+\end{itemize}
+
+\subsection{What the Map Shows That Current FHWA Maps Don't}
+
+The arterial map makes three things visible that the FHWA functional class map does not:
+
+\textbf{First, the load-bearing structure.} Every interstate on the FHWA map is the same width. The arterial map immediately shows where the national network's weight is concentrated --- and where it is not. The northern Great Plains, for instance, has no T1 corridor; the closest is I-90 to the north and I-80 to the south, 400--500 miles apart.
+
+\textbf{Second, the single points of failure.} The arterial map makes structurally unreplaced T1 corridors visible. Donner Pass on I-80 has no T1 parallel. The stretch of I-10 through coastal Louisiana has no inland interstate alternate. The I-35 bridge across the Missouri River at Kansas City is the only T1 crossing of the Missouri for 300 miles in either direction. These are not visible on the FHWA map.
+
+\textbf{Third, the gap geography.} Large regions of the map have no T1 or T2 corridor within reach. The Appalachian corridor (West Virginia, eastern Kentucky, western Virginia) has no east-west T1 or T2 route. The Northern Great Plains (Montana, Wyoming, the Dakotas) has T3 and T4 coverage only. The Gulf Coast between Houston and Tampa has no T1 corridor parallel to I-10. These gaps are the design targets for Interstate 2.0.
+
+\subsection{Comparison to STRAHNET Map}
+
+The STRAHNET network map shows all 61,000 STRAHNET miles at uniform weight. The arterial map conveys the same strategic intent --- corridors important for national movement --- at a fraction of the complexity, with the added benefit of showing relative importance rather than binary designation. A planner using the arterial map can immediately identify which STRAHNET corridors are T1 (structurally critical) and which are T3 (locally important but nationally redundant).

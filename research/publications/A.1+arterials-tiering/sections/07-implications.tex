@@ -1,0 +1,56 @@
+\section{Implications for Interstate 2.0}
+
+\subsection{Investment Sequencing by Tier}
+
+The tier classification provides a principled basis for Interstate 2.0 investment sequencing. Rather than competing all 227 corridors equally for a fixed budget, investment can be structured around the tier hierarchy: Tier 1 corridors receive the full Interstate 2.0 feature set; Tier 2 corridors receive a curated subset; Tier 3 and 4 corridors receive maintenance and access improvements only.
+
+Table~\ref{tab:i2-features} shows the feature-to-tier assignment we recommend.
+
+\begin{table}[h!]
+\centering
+\caption{Interstate 2.0 Feature Set by Tier}
+\label{tab:i2-features}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Feature} & \textbf{T1} & \textbf{T2} & \textbf{T3} & \textbf{T4} \\
+\midrule
+Managed freight lanes (dedicated, separated) & \checkmark & --- & --- & --- \\
+Intermodal freight hub integration & \checkmark & \checkmark & --- & --- \\
+EV charging corridor ($\leq$50 mi DC fast charge) & \checkmark & \checkmark & --- & --- \\
+Resilience hardening (flood/climate exposure) & \checkmark & \checkmark & (targeted) & --- \\
+Enhanced rest areas ($\leq$100 mi, full service) & \checkmark & \checkmark & --- & --- \\
+Truck platooning infrastructure & \checkmark & --- & --- & --- \\
+Shared transit facilities (park-and-ride) & \checkmark & \checkmark & (targeted) & --- \\
+Rural connectivity spurs & --- & --- & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tier 1 Investment Case}
+
+The eight T1 Primary Arteries span approximately 17,662 combined miles (approximately 36\% of the interstate total). At a managed freight lane construction cost of approximately \$10--15 million per mile (two added managed lanes on an existing right-of-way) \citep{FHWA_CostStudy}, the full T1 managed lane investment is approximately \$177--265 billion --- well within the range of a 10-year federal highway authorization.
+
+The case for this investment rests on three findings from our analysis:
+
+\textbf{Throughput}: T1 corridors carry a disproportionate fraction of national freight ton-miles (A.2 will quantify this precisely once FAF5 attribution is complete). Managed lanes on T1 corridors increase capacity by approximately 50\% per corridor (one added lane pair at 1,900 pcph $\times$ 24h = 45,600 vpd additional capacity), with greatest impact at the identified bottleneck segments.
+
+\textbf{Reliability}: current Planning Time Index values on T1 urban segments exceed 1.8 in several locations (Chicago, Atlanta, Los Angeles), making consistent shipper commitments impossible. Managed lanes with physical separation from passenger traffic target PTI $\leq$ 1.15, enabling 48-hour commitment windows on transcontinental lanes currently requiring 80+ hours of buffer.
+
+\textbf{Resilience}: several T1 corridors traverse structurally unreplaced segments (Donner Pass, Gulf Coast, Missouri River crossings). Targeted resilience hardening at these locations --- elevated roadbeds in flood zones, redundant structural crossings at mountain passes, redundant alignment at bridge chokepoints --- provides national resilience benefits that accrue to the entire network.
+
+\subsection{The Congestion-Stress Paradox as a Policy Warning}
+
+The congestion-stress paradox (Section~4.2) has direct policy implications. Federal funding programs that allocate based on traffic volume, congestion metrics, or cost-effectiveness ratios computed from AADT will systematically favor urban beltways and connectors over transcontinental arteries. The \$110 billion IIJA road funding, distributed partly through performance metrics tied to system performance and pavement condition, may exhibit precisely this bias.
+
+The tier classification provides a corrective: a simple first filter on investment eligibility that ensures T1 corridors are considered before T2 corridors, regardless of their congestion metrics. An urban beltway at LOS F is a local problem; a transcontinental artery at LOS D is a national problem.
+
+\subsection{Tier 4 and the Rural Access Gap}
+
+The 133 Tier 4 corridors account for approximately 37\% of route miles but serve primarily urban distribution and short-distance trips. However, their value for rural access is poorly captured by our current scoring. Several T4 corridors are the \textit{only} interstate within 50 miles for significant rural populations. This motivates the rural connectivity analysis in Track B (B.1 Missing Links), which will identify where T4 corridors provide irreplaceable rural access despite their low strategic tier.
+
+\subsection{Limitations}
+
+This paper derives tier assignments from 2018 HPMS data with partial state coverage. Corridors in states without HPMS response (particularly I-10 in Texas, I-81 in Virginia) receive estimated scores. The tier assignment of these corridors should be treated as provisional until full HPMS coverage is obtained. Additionally, our betweenness centrality computation uses a simplified Brandes implementation; a full implementation with proper predecessor tracking and highway-specific edge weighting (freight volume rather than distance) may shift some boundary cases between T1 and T2.
+
+These limitations are addressed in A.2 (rubric calibration) and C.2 (national max-flow), which will provide improved B2 centrality scores based on freight-weighted graph analysis.

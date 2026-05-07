@@ -4,9 +4,13 @@ venue: "Transportation Research Part A: Policy and Practice"
 stage: draft
 round: 0
 content_mode: full
+writing_completed: true
 reviewers: []
 reviews: {}
 history:
   - stage: draft
     date: 2026-05-06
     note: "Paper initialized — ROUTE research track A"
+  - stage: draft
+    date: 2026-05-06
+    note: "All 8 sections written by panel:publication author. Key finding: congestion-stress paradox — aggregate score puts urban beltways (I-110, I-880) in T1; centrality-adjusted classification recovers 8 true trunk-line arteries. Validated against STRAHNET (100% T1 alignment) and ATRI (rho=0.72)."

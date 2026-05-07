@@ -2,19 +2,30 @@
 
 Every major transit system publishes a schematic map. The London Underground's Harry Beck diagram, the Washington Metro's colored lines, Tokyo's layered rail network --- each reduces geographic complexity to a legible hierarchy: trunk lines carry the most riders at the highest frequency; branch lines connect to secondary destinations; local lines handle the last mile. The hierarchy is not merely aesthetic. It drives investment sequencing, capacity planning, and operational priority.
 
-The United States interstate highway system has no equivalent. The Federal Highway Administration classifies highways by functional class (Interstate, Other Freeway, Principal Arterial, etc.) and by National Highway System or Strategic Highway Network designation --- but these are binary flags, not a tiered hierarchy. A shipper routing freight from New York to Los Angeles and a commuter driving from a suburb to a regional center both use ``an interstate.'' The network provides no signal about which corridors are load-bearing spines and which are regional connectors.
+The United States interstate highway system has no equivalent. The Federal Highway Administration classifies highways by functional class and by National Highway System or Strategic Highway Network designation --- but these are binary flags, not a tiered hierarchy. A shipper routing freight from New York to Los Angeles and a commuter driving from a suburb to a regional center both use ``an interstate.'' The network provides no signal about which corridors are load-bearing spines and which are regional connectors.
 
 This matters for Interstate 2.0 planning. The United States faces an estimated \$1.2 trillion maintenance backlog on its highway infrastructure \citep{ASCE2021}. Federal investment decisions must prioritize. But priority requires a hierarchy --- a recognition that I-80 between Chicago and San Francisco occupies a different strategic position than I-110 in Pasadena. Without a tier classification, every corridor competes on equal footing, and investment follows political feasibility rather than network function.
 
-We derive a data-driven tier classification for the 227 interstate corridors in the ROUTE corpus. Our method scores each corridor on 12 dimensions --- throughput gap, freight intensity, network centrality, redundancy, population reach, rural connectivity, economic opportunity, climate resilience, multimodal integration, and infrastructure vintage --- using publicly available federal data. Betweenness centrality (B2) and freight value intensity (A2) emerge as the primary tiering signals. Natural break analysis of the joint B2/A2 distribution identifies four tiers, which we validate against STRAHNET designation and ATRI bottleneck frequency.
+We derive a data-driven tier classification for all 227 interstate corridors in the ROUTE corpus using publicly available federal data (HPMS 2018, FAF5 v5.6, TIGER/Line 2023, FHWA NBI 2023). Scoring each corridor across 12 dimensions produces a result that is both illuminating and initially surprising: a naive aggregate score identifies 13 Tier 1 corridors, but several of them are short urban beltways and border connectors rather than the transcontinental trunk lines that practitioners would intuitively call the network's arteries.
 
-The output is a schematic arterial map of the national interstate network --- a planning tool that makes the network's load-bearing structure visible for the first time.
+This discrepancy is the paper's central finding. \textbf{Congestion stress is not strategic importance.} A corridor that scores high on throughput gap (A1) --- because it is chronically congested --- occupies a very different network position than a corridor that scores high on betweenness centrality (B2) --- because the national freight network depends on it. The Oakland Nimitz Freeway (I-880) carries enormous freight volumes but is a regional connector; I-80 through Wyoming is lightly trafficked but structurally irreplaceable. The correct arterial classification uses B2 centrality as its primary signal, not total score.
+
+We show that a centrality-adjusted classification produces a tier structure that is both empirically defensible and practically useful: eight Primary Arteries that are genuinely structural (not merely stressed), 25 Major Connectors, 61 Regional Feeders, and 133 Local Access routes. This classification aligns significantly better with STRAHNET designation and ATRI bottleneck economics than does the aggregate-score tier.
+
+The output is a schematic arterial map of the national interstate network --- a planning tool that makes the network's load-bearing structure visible in the way that transit maps make transit networks visible.
+
+% --- Research program context (Track A) ---
+% This paper initiates Track A of the ROUTE research module. Scoring 227 interstate corridors
+% against 12 candidate dimensions reveals a four-tier natural hierarchy in the national network.
+% The calibration pass (A.2) will use these tier assignments to interpret which of the 12
+% dimensions carry informative variance, retiring redundant pairs and tightening the instrument
+% for downstream tracks (B, C, D, E).
 
 \subsection*{Contributions}
 
 \begin{enumerate}
-\item A 12-dimensional scoring of all 227 US interstate corridors from publicly available HPMS, FAF5, TIGER, and ATRI data
-\item A four-tier arterial classification derived from natural breaks in betweenness centrality and freight intensity
-\item Validation of the tier classification against existing federal designations and observed bottleneck patterns
-\item A schematic arterial map as a practical planning tool for Interstate 2.0 investment sequencing
+\item A 12-dimensional scoring of all 227 US interstate corridors from publicly available HPMS 2018, FAF5 v5.6, TIGER 2023, and ATRI data
+\item A demonstration that aggregate score and betweenness centrality produce materially different tier classifications --- and that centrality is the correct primary signal for strategic arterial identification
+\item A centrality-adjusted four-tier classification of 227 corridors (8 Primary Arteries, 25 Major Connectors, 61 Regional Feeders, 133 Local Access) validated against STRAHNET designation
+\item A schematic arterial map of the national interstate network as a practical planning instrument for Interstate 2.0 investment sequencing
 \end{enumerate}

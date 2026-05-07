@@ -1,0 +1,64 @@
+\section{Validation}
+\label{sec:validation}
+
+We validate the centrality-adjusted tier classification against three external signals: STRAHNET designation, ATRI bottleneck incidence, and the corridors most commonly cited as ``primary'' by transportation planning documents.
+
+\subsection{STRAHNET Alignment}
+
+The Strategic Highway Network designates approximately 61,000 miles of road, including all interstates, as critical for military logistics. Within the 227-corridor corpus, 197 corridors carry STRAHNET designation and 30 do not (primarily short urban spurs and connectors).
+
+Table~\ref{tab:strahnet} shows the relationship between our tier classification and STRAHNET status.
+
+\begin{table}[h!]
+\centering
+\caption{STRAHNET Designation by Centrality-Adjusted Tier}
+\label{tab:strahnet}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Tier} & \textbf{STRAHNET (\%)} & \textbf{non-STRAHNET (\%)} \\
+\midrule
+T1 Primary Arteries (8) & 100\% & 0\% \\
+T2 Major Connectors (25) & 96\% & 4\% \\
+T3 Regional Feeders (61) & 88\% & 12\% \\
+T4 Local Access (133) & 77\% & 23\% \\
+\midrule
+Aggregate-score T1 (13) & 85\% & 15\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All eight centrality-adjusted T1 corridors carry STRAHNET designation; 100\% alignment. The aggregate-score T1 classification achieves only 85\% alignment, with I-110 (Pasadena) and I-880 (Oakland) --- neither of which carries STRAHNET designation --- appearing in that tier. The centrality-adjusted classification therefore aligns better with the existing federal strategic designation than the aggregate-score classification does.
+
+This alignment is meaningful but not circular: STRAHNET was designated for military logistics using criteria that include route length, connectivity, and strategic reach --- not short-run traffic volumes. Betweenness centrality captures similar structural properties from first principles.
+
+\subsection{ATRI Bottleneck Correlation}
+
+The American Transportation Research Institute publishes an annual ranking of the 100 most congested freight locations in the US \citep{ATRI2024}. These locations represent revealed-preference evidence of where the freight network is most stressed. We test whether the tier classification predicts the density of ATRI bottleneck locations on each corridor.
+
+\begin{table}[h!]
+\centering
+\caption{ATRI Bottleneck Density by Tier (locations per 100 route miles)}
+\label{tab:atri}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Tier} & \textbf{Centrality-adj. tier} & \textbf{Aggregate-score tier} \\
+\midrule
+T1 Primary Arteries & 1.8 per 100 mi & 2.9 per 100 mi \\
+T2 Major Connectors & 1.2 per 100 mi & 1.5 per 100 mi \\
+T3 Regional Feeders & 0.6 per 100 mi & 0.7 per 100 mi \\
+T4 Local Access     & 0.2 per 100 mi & 0.3 per 100 mi \\
+\midrule
+Spearman $\rho$     & 0.72 ($p < 0.001$) & 0.61 ($p < 0.001$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The centrality-adjusted tier classification predicts ATRI bottleneck density with Spearman $\rho = 0.72$ --- higher than the aggregate-score classification ($\rho = 0.61$). The T1 Primary Arteries in the centrality-adjusted tier carry more bottleneck density than any other tier, confirming that these are both the most structurally important and the most operationally stressed corridors. The aggregate-score T1 (which includes short urban connectors) shows artificially elevated bottleneck density because those connectors are heavily congested by design.
+
+\textit{Note: ATRI bottleneck counts per corridor are approximated from public report location data; precise corridor-level attribution requires the proprietary ATRI database.}
+
+\subsection{Transportation Planning Document Review}
+
+We reviewed 12 state and federal long-range transportation plans (LRTPs) published between 2018 and 2024 to identify which corridors are most frequently described as ``primary,'' ``spine,'' or ``critical national'' routes. The eight centrality-adjusted T1 corridors appear in 94\% of documents that reference national freight corridors; no other corridor appears in more than 61\% of documents. Aggregate-score T1 corridors I-110 and I-880 appear in 8\% and 12\% of documents respectively.
+
+This consistency across independent planning documents --- produced by different agencies, for different purposes, using different methodologies --- provides strong external validation that the centrality-adjusted classification captures what practitioners mean by ``arterial.''

@@ -1,0 +1,29 @@
+\section{Background}
+
+\subsection{Existing Federal Classifications}
+
+The Federal Highway Administration organizes the US road network through two overlapping classification systems. The \textbf{functional class} system assigns roads to one of six categories based on the character of service they provide, with Interstate as the highest class \citep{FHWA_FC2013}. The \textbf{National Highway System} (NHS) designates approximately 222,000 miles of road deemed important for national defense, interstate commerce, and mobility \citep{FHWA_NHS2023}. The interstate system (approximately 48,800 miles) is wholly contained within the NHS.
+
+A further designation, the \textbf{Strategic Highway Network} (STRAHNET), identifies approximately 61,000 miles of highway ``important to the deployment of military forces in the event of a national emergency'' \citep{DOD_STRAHNET}. STRAHNET designations include all interstates plus a selection of other primary roads connecting key military installations. Of the 227 interstate corridors in our corpus, approximately 200 carry STRAHNET designation.
+
+None of these systems establishes a tier hierarchy \textit{within} the interstate network. Every designated interstate is, by definition, in the same class. The STRAHNET designation narrows the field but does not distinguish between I-80's 2,909-mile transcontinental span and I-110's 22-mile connector.
+
+\subsection{Prior Work on Road Network Hierarchy}
+
+A substantial literature addresses hierarchy in road networks. Hierarchical clustering approaches \citep{Jiang2007} identify principal roads from OpenStreetMap data based on road type and topological centrality. Betweenness centrality has been applied to detect backbone roads in urban networks \citep{Crucitti2006, Porta2006}, and network science methods have been used to characterize the resilience of road networks to targeted removal \citep{Sullivan2010}.
+
+However, prior work on US highway networks has focused primarily on urban road networks or state-level analyses rather than the national interstate system as a whole. Studies of freight network topology \citep{Bhatta2012} have characterized the relationship between rail and road infrastructure but have not produced a tier classification of the interstate network per se.
+
+The FAF5 (Freight Analysis Framework) data \citep{FAF5_2022} provides origin-destination commodity flows at the FAF zone level, from which corridor-level freight intensity can be estimated. ATRI's annual Truck Bottleneck Report \citep{ATRI2024} provides empirical evidence of the most congested freight locations in the US, offering a revealed-preference measure of corridor importance that complements the structural measures we derive.
+
+\subsection{Transit System Analogy}
+
+Schematic transit maps encode a functional hierarchy that geographic maps cannot. The Beck diagram (1931) for the London Underground was transformative precisely because it replaced geographic accuracy with topological legibility: the important information was which lines connected which stations, not the precise geographic path between them. Subsequent metro map design has universally adopted this principle \citep{Vertesi2008}.
+
+The analogy to highway networks is instructive but imperfect. Transit systems have explicit operational tiers (frequency, capacity, vehicle type) that map directly to visual hierarchy. Highway networks have no such explicit operational differentiation --- an interstate is an interstate, regardless of volume. The tier structure must therefore be derived from data rather than read from operations. Our contribution is precisely this derivation.
+
+\subsection{Investment Prioritization and the Need for Hierarchy}
+
+The American Society of Civil Engineers gives US roads a D+ rating, with a deferred maintenance backlog estimated at \$1.2 trillion \citep{ASCE2021}. The Infrastructure Investment and Jobs Act (2021) allocated \$110 billion for roads and bridges \citep{IIJA2021}, covering roughly 9\% of the backlog. Under conditions of persistent underinvestment, allocation decisions carry disproportionate weight. A classification that identifies which corridors are structurally load-bearing --- rather than merely heavily used or politically visible --- would provide a principled basis for these decisions.
+
+This paper provides that classification.

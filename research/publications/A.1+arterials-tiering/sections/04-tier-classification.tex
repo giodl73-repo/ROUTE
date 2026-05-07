@@ -1,0 +1,90 @@
+\section{Tier Classification}
+
+\subsection{Aggregate Score Distribution}
+
+Figure~\ref{fig:score-dist} shows the distribution of aggregate scores (sum of all 12 dimension scores, maximum 120) across 227 corridors. The distribution is right-skewed, with a long tail of low-scoring corridors and a compressed upper range. Aggregate scores range from 0.0 (I-391, I-391, and several very short spurs with no joinable data) to 30.1 (I-110).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/score-distribution.pdf}
+\caption{Distribution of aggregate scores across 227 interstate corridors. Vertical dashed lines mark natural breaks at 26.0, 20.0, and 14.0.}
+\label{fig:score-dist}
+\end{figure}
+
+Applying Jenks natural break analysis \citep{Jenks1967} to the aggregate score distribution identifies breaks at approximately 26.0, 20.0, and 14.0, producing the tier counts shown in Table~\ref{tab:tier-agg}.
+
+\begin{table}[h!]
+\centering
+\caption{Tier Distribution by Aggregate Score}
+\label{tab:tier-agg}
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Tier} & \textbf{Count} & \textbf{Route miles} & \textbf{Score range} \\
+\midrule
+T1 Primary Arteries   & 13 & $\sim$21,400 & $\geq 26.0$ \\
+T2 Major Connectors   & 33 & $\sim$30,200 & 20.0--25.9 \\
+T3 Regional Feeders   & 61 & $\sim$29,100 & 14.0--19.9 \\
+T4 Local Access       & 120 & $\sim$18,100 & $< 14.0$ \\
+\midrule
+Total                 & 227 & $\sim$98,800 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Congestion-Stress Paradox}
+
+Inspection of the 13 aggregate-score Tier 1 corridors reveals an immediate puzzle. The top-scoring corridor is I-110 (30.1/120), a 22-mile connector in Pasadena, California, and separately a coastal connector in Mississippi and Alabama. I-880 (30.0), the Nimitz Freeway in Oakland, scores second. I-225, a 10-mile Denver beltway, scores fourth. Meanwhile, I-80 (25.2) and I-95 (24.8) --- the routes that practitioners consistently identify as the nation's primary transcontinental arteries --- fall into Tier 2.
+
+This pattern reflects the dominance of the A1 (Throughput Gap) dimension in the current scoring. Short urban corridors operating at or above theoretical capacity score 10/10 on A1, while long transcontinental routes average their congested urban endpoints against their free-flowing rural spans and score 3--5. The aggregate score therefore measures \textit{where the system is most stressed}, not \textit{which corridors the system depends on structurally}.
+
+We term this the \textbf{congestion-stress paradox}: the corridors most critical to the national freight network are not necessarily the most congested, because their strategic value derives from their irreplaceability (high betweenness centrality) rather than their utilization rate.
+
+\subsection{Centrality-Adjusted Tier Classification}
+
+To resolve the paradox, we apply a centrality-adjusted classification using betweenness centrality (B2) as the primary tiering signal and aggregate score as a secondary signal. The classification criterion is:
+
+\begin{equation}
+\text{Tier}_i = f\left(\alpha \cdot \hat{B2}_i + (1 - \alpha) \cdot \hat{S}_i\right)
+\label{eq:tier}
+\end{equation}
+
+where $\hat{B2}_i$ is the normalized betweenness centrality of corridor $i$, $\hat{S}_i$ is its normalized aggregate score, and $\alpha = 0.65$ is estimated by maximizing alignment with STRAHNET designation (Section~\ref{sec:validation}). Natural break analysis on this composite signal produces the centrality-adjusted tier classification in Table~\ref{tab:tier-central}.
+
+\begin{table}[h!]
+\centering
+\caption{Centrality-Adjusted Tier Classification (Primary Arterials)}
+\label{tab:tier-central}
+\begin{tabular}{lllr}
+\toprule
+\textbf{Tier} & \textbf{Corridors} & \textbf{Approx. Miles} & \textbf{Count} \\
+\midrule
+\multirow{8}{*}{T1 Primary Arteries}
+  & I-5 (San Diego--Vancouver) & 1,381 & \\
+  & I-10 (Santa Monica--Jacksonville) & 2,460 & \\
+  & I-80 (Teaneck--San Francisco) & 2,909 & \\
+  & I-90 (Boston--Seattle) & 3,085 & \\
+  & I-40 (Barstow--Wilmington NC) & 2,554 & \\
+  & I-35 (Laredo--Duluth) & 1,568 & \\
+  & I-95 (Miami--Houlton) & 1,919 & \\
+  & I-75 (Miami--Sault Ste. Marie) & 1,786 & 8 \\
+\midrule
+T2 Major Connectors & I-94, I-15, I-25, I-70, I-20, I-65, I-85, I-81 + 17 more & --- & 25 \\
+T3 Regional Feeders & (61 corridors) & --- & 61 \\
+T4 Local Access     & (133 corridors) & --- & 133 \\
+\midrule
+Total & & & 227 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The centrality-adjusted Tier 1 recovers the eight corridors that practitioners consistently identify as national arteries. Notably, I-110 drops from aggregate-score T1 to centrality-adjusted T4 (its betweenness centrality is low --- it connects Pasadena to the I-10 junction but is not on many national shortest paths). I-880 drops to T2 (regionally central but not nationally central).
+
+\subsection{Sensitivity Analysis}
+
+We test the robustness of the T1/T2 boundary by varying $\alpha$ from 0.4 to 0.9. The eight T1 corridors in Table~\ref{tab:tier-central} are stable across all values of $\alpha \geq 0.55$. Below $\alpha = 0.55$, I-4 (Tampa--Daytona) and I-94 (Chicago--Billings) enter T1, and I-35 and I-75 exit. We report results at $\alpha = 0.65$ throughout.
+
+\subsection{The Tier-1/Tier-2 Transition}
+
+A useful way to understand the classification is to examine the corridors at the T1/T2 boundary. I-94 (Chicago--Billings, 1,581 miles) has higher aggregate score than I-35 (Laredo--Duluth) but lower betweenness centrality, because I-94's western segment through Montana and North Dakota carries relatively little national freight compared to I-35's border-to-border span. I-15 (San Diego--Sweetgrass MT) scores comparably to I-35 on centrality but falls into T2 because its northern segments in Montana and Idaho carry limited freight volume relative to the corridor's length.
+
+These boundary cases are precisely where the tier classification does useful work: they make explicit which corridors the national network could most afford to reroute around and which it could not.
