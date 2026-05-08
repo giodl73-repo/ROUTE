@@ -811,6 +811,182 @@ pub fn hou_chi_i69() -> OdCorridor {
     c
 }
 
+// ── Additional corridors ──────────────────────────────────────────────────────
+
+/// Chicago → Los Angeles via I-80 (I-80/I-88 to I-80, ~2,020 miles)
+pub fn chi_la() -> OdCorridor {
+    OdCorridor {
+        name: "CHI→LA (I-80 midwest transcontinental)".into(),
+        origin: "Chicago, IL".into(),
+        destination: "Los Angeles, CA".into(),
+        fixed_overhead_hours: 3.0,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "Chicago south approach".into(), miles: 60.0, base_vc: 1.05,
+                free_flow_mph: 65.0, incident_prob: 0.20, incident_delay_mean_hours: 1.4,
+                incident_delay_std_hours: 0.9, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "IL/IA/NE rural I-80".into(), miles: 840.0, base_vc: 0.28,
+                free_flow_mph: 75.0, incident_prob: 0.05, incident_delay_mean_hours: 2.5,
+                incident_delay_std_hours: 1.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.25 },
+            CorridorSegment { name: "WY/UT rural I-80".into(), miles: 560.0, base_vc: 0.22,
+                free_flow_mph: 75.0, incident_prob: 0.06, incident_delay_mean_hours: 3.0,
+                incident_delay_std_hours: 2.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.20 },
+            CorridorSegment { name: "Donner Pass (Sierra Nevada)".into(), miles: 65.0, base_vc: 0.80,
+                free_flow_mph: 55.0, incident_prob: 0.103, incident_delay_mean_hours: 18.0,
+                incident_delay_std_hours: 12.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.72 },
+            CorridorSegment { name: "Bay Area → I-5 south".into(), miles: 280.0, base_vc: 0.65,
+                free_flow_mph: 70.0, incident_prob: 0.08, incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.60 },
+            CorridorSegment { name: "LA approach".into(), miles: 50.0, base_vc: 1.30,
+                free_flow_mph: 65.0, incident_prob: 0.25, incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+        ],
+    }
+}
+
+/// Miami → New York via I-95 (1,280 miles — the most important single corridor for perishables)
+pub fn mia_nyc() -> OdCorridor {
+    OdCorridor {
+        name: "MIA→NYC (I-95 Southeast spine)".into(),
+        origin: "Miami, FL".into(),
+        destination: "New York City, NY".into(),
+        fixed_overhead_hours: 2.5,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "Miami metro (I-95)".into(), miles: 50.0, base_vc: 1.25,
+                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.5,
+                incident_delay_std_hours: 1.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "I-95 FL/GA rural".into(), miles: 380.0, base_vc: 0.48,
+                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.42 },
+            CorridorSegment { name: "I-95 SC/NC/VA".into(), miles: 440.0, base_vc: 0.55,
+                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 1.1,
+                incident_delay_std_hours: 0.7, managed_lane_bypasses_incident: false, managed_lane_vc: 0.48 },
+            CorridorSegment { name: "DC/Baltimore corridor".into(), miles: 200.0, base_vc: 1.15,
+                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.6,
+                incident_delay_std_hours: 1.1, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "NJ/NYC approach".into(), miles: 100.0, base_vc: 1.30,
+                free_flow_mph: 60.0, incident_prob: 0.25, incident_delay_mean_hours: 1.4,
+                incident_delay_std_hours: 0.9, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+        ],
+    }
+}
+
+/// Seattle → Chicago via I-90 (2,060 miles — Pacific NW to Midwest)
+pub fn sea_chi() -> OdCorridor {
+    OdCorridor {
+        name: "SEA→CHI (I-90 Northern Tier)".into(),
+        origin: "Seattle, WA".into(),
+        destination: "Chicago, IL".into(),
+        fixed_overhead_hours: 3.0,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "Seattle metro (I-90)".into(), miles: 30.0, base_vc: 1.10,
+                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "Snoqualmie Pass (Cascades)".into(), miles: 80.0, base_vc: 0.75,
+                free_flow_mph: 55.0, incident_prob: 0.085, incident_delay_mean_hours: 12.0,
+                incident_delay_std_hours: 8.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.68 },
+            CorridorSegment { name: "Eastern WA/ID/MT I-90".into(), miles: 480.0, base_vc: 0.30,
+                free_flow_mph: 80.0, incident_prob: 0.05, incident_delay_mean_hours: 2.5,
+                incident_delay_std_hours: 1.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.25 },
+            CorridorSegment { name: "WY/SD rural I-90".into(), miles: 760.0, base_vc: 0.22,
+                free_flow_mph: 80.0, incident_prob: 0.04, incident_delay_mean_hours: 2.0,
+                incident_delay_std_hours: 1.2, managed_lane_bypasses_incident: false, managed_lane_vc: 0.18 },
+            CorridorSegment { name: "MN/WI I-90 to Chicago".into(), miles: 460.0, base_vc: 0.45,
+                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
+            CorridorSegment { name: "Chicago south approach".into(), miles: 60.0, base_vc: 1.05,
+                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+        ],
+    }
+}
+
+/// Dallas → New York via I-30/I-40/I-81 (1,580 miles)
+pub fn dal_nyc() -> OdCorridor {
+    OdCorridor {
+        name: "DAL→NYC (I-30/I-40/I-81 energy-to-finance corridor)".into(),
+        origin: "Dallas, TX".into(),
+        destination: "New York City, NY".into(),
+        fixed_overhead_hours: 3.0,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "Dallas metro".into(), miles: 40.0, base_vc: 1.20,
+                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.5,
+                incident_delay_std_hours: 1.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "I-30 TX/AR".into(), miles: 340.0, base_vc: 0.45,
+                free_flow_mph: 75.0, incident_prob: 0.05, incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
+            CorridorSegment { name: "TN/VA I-40/I-81".into(), miles: 580.0, base_vc: 0.50,
+                free_flow_mph: 70.0, incident_prob: 0.07, incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.44 },
+            CorridorSegment { name: "I-81/I-78 PA/NJ".into(), miles: 400.0, base_vc: 0.75,
+                free_flow_mph: 65.0, incident_prob: 0.12, incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.65 },
+            CorridorSegment { name: "NYC approach (I-95/GWB)".into(), miles: 80.0, base_vc: 1.35,
+                free_flow_mph: 55.0, incident_prob: 0.28, incident_delay_mean_hours: 1.6,
+                incident_delay_std_hours: 1.1, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+        ],
+    }
+}
+
+/// Los Angeles → Seattle via I-5 (1,140 miles — Pacific Coast spine)
+pub fn la_sea() -> OdCorridor {
+    OdCorridor {
+        name: "LA→SEA (I-5 Pacific Coast)".into(),
+        origin: "Los Angeles, CA".into(),
+        destination: "Seattle, WA".into(),
+        fixed_overhead_hours: 2.5,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "LA metro (I-5)".into(), miles: 50.0, base_vc: 1.30,
+                free_flow_mph: 65.0, incident_prob: 0.25, incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "I-5 Central Valley CA".into(), miles: 380.0, base_vc: 0.50,
+                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.45 },
+            CorridorSegment { name: "Siskiyou Pass (OR border)".into(), miles: 80.0, base_vc: 0.70,
+                free_flow_mph: 55.0, incident_prob: 0.065, incident_delay_mean_hours: 6.0,
+                incident_delay_std_hours: 4.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.65 },
+            CorridorSegment { name: "I-5 OR/WA".into(), miles: 440.0, base_vc: 0.45,
+                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
+            CorridorSegment { name: "Seattle metro (I-5)".into(), miles: 30.0, base_vc: 1.10,
+                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.68 },
+        ],
+    }
+}
+
+/// Atlanta → Chicago via I-65 (730 miles — already fast; shows where relay adds little)
+pub fn atl_chi() -> OdCorridor {
+    OdCorridor {
+        name: "ATL→CHI (I-65 Southeast-Midwest spine)".into(),
+        origin: "Atlanta, GA".into(),
+        destination: "Chicago, IL".into(),
+        fixed_overhead_hours: 2.0,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "Atlanta metro (I-75/I-285)".into(), miles: 40.0, base_vc: 1.30,
+                free_flow_mph: 65.0, incident_prob: 0.28, incident_delay_mean_hours: 1.8,
+                incident_delay_std_hours: 1.2, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "I-65 AL/TN/KY".into(), miles: 540.0, base_vc: 0.42,
+                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.38 },
+            CorridorSegment { name: "I-65 IN to Chicago".into(), miles: 150.0, base_vc: 0.65,
+                free_flow_mph: 70.0, incident_prob: 0.08, incident_delay_mean_hours: 1.1,
+                incident_delay_std_hours: 0.7, managed_lane_bypasses_incident: false, managed_lane_vc: 0.58 },
+        ],
+    }
+}
+
 /// Full comparison across all driver modes and lane types.
 #[derive(Debug, Serialize)]
 pub struct OdComparison {
