@@ -1,12 +1,41 @@
 paper: D.1+climate-exposure
 title: "Climate Exposure in the Interstate System: FEMA Flood Zones and 2050 Projections"
 venue: "Nature Climate Change"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - chester
+  - hanson
+  - eberts
+  - puentes
+  - mckinnon
+scores:
+  chester: 3
+  hanson: 3
+  eberts: 3
+  puentes: 3
+  mckinnon: 2
+avg_score: 2.8
+min_score: 2
+reviews:
+  round1:
+    - reviewer: chester
+      file: reviews/REVIEW-chester.md
+    - reviewer: hanson
+      file: reviews/REVIEW-hanson.md
+    - reviewer: eberts
+      file: reviews/REVIEW-eberts.md
+    - reviewer: puentes
+      file: reviews/REVIEW-puentes.md
+    - reviewer: mckinnon
+      file: reviews/REVIEW-mckinnon.md
+  synthesis: reviews/SYNTHESIS.md
+  revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. avg_score=2.8/4; min_score=2/4 (McKinnon). P1.1 blocking: composite metric category error (winter closure proxy not comparable to SFHA metric). P1.2: subsidence gap in 2050 projections. P1.3: NFHL coverage completeness unreported."

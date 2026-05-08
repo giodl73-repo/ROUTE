@@ -1,12 +1,53 @@
 paper: B.4+t1-intersection-resilience
 title: "T1/T1 Intersection Resilience: Diamond Interchange Zones and k-Connectivity in the National Highway Network"
 venue: "Transportation Research Part B: Methodological"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: adamic
+    name: Lada Adamic
+    role: network-scientist
+    score: 2
+    score_max: 4
+  - slug: elefteriadou
+    name: Lily Elefteriadou
+    role: traffic-engineer
+    score: 3
+    score_max: 4
+  - slug: chester
+    name: Mikhail Chester
+    role: transport-resilience
+    score: 3
+    score_max: 4
+  - slug: mckinnon
+    name: Alan McKinnon
+    role: freight-economist
+    score: 3
+    score_max: 4
+  - slug: puentes
+    name: Robert Puentes
+    role: transport-policy
+    score: 3
+    score_max: 4
+reviews:
+  round1:
+    mean_score: 2.8
+    panel_decision: revision
+    blocking_items: 1
+    important_items: 7
+    files:
+      - reviews/REVIEW-adamic.md
+      - reviews/REVIEW-elefteriadou.md
+      - reviews/REVIEW-chester.md
+      - reviews/REVIEW-mckinnon.md
+      - reviews/REVIEW-puentes.md
+      - reviews/SYNTHESIS.md
+      - reviews/REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Added — T1/T1 diamond intersection analysis; k-connectivity computation"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: k-connectivity validation (Adamic 2/4). 7 P2 items. Revision required before re-review."

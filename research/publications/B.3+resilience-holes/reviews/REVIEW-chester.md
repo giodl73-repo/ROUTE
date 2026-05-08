@@ -1,0 +1,35 @@
+---
+reviewer: Mikhail Chester
+persona: Mikhail Chester — Professor of Civil, Environmental and Sustainable Engineering, Arizona State University; Director, Metis Center for Infrastructure and Sustainable Engineering; specialist in infrastructure resilience, lifecycle assessment, and climate adaptation
+round: 1
+date: 2026-05-07
+score: 3/4
+---
+
+> **Note:** This is an AI-generated simulated review, written by Claude in the voice of a named-expert persona. It is not an actual review by the named person and does not reflect their views or endorsement.
+
+## Overall
+
+The compound resilience hole concept is genuinely important and this paper is the first rigorous operationalization of it in the transportation infrastructure literature. The B1×D1 product metric is elegant — it captures the non-additive character of compound risk in a way that practitioners can immediately use for prioritization. The Donner Pass case study is detailed enough to be credible and the NPV arithmetic is correct. My score of 3/4 reflects my agreement with the conceptual framework and the investment case logic, paired with serious concern about the 2050 projection methodology. The NOAA SLR → SFHA recalculation pathway is described as a projection but functions as an assertion. Before this paper can claim that "Gulf Coast I-10 D1 will rise to 9.1 by 2050," it needs to show the calculation — the intermediate steps from NOAA SLR scenarios to revised SFHA boundaries to revised D1 scores. Without this, the 2050 priority reordering claim (Gulf Coast overtaking Donner) is not publishable.
+
+## What Works
+
+The compound exposure concept is the paper's central contribution and it is well-defined. The formal characterization in Section 3 (high B1 AND high D1 simultaneously) cleanly separates compound exposure from the two single-dimension cases. The counterfactual framing in Section 2.4 — high B1/low D1 vs. low B1/high D1 vs. high B1/high D1 — is the clearest pedagogical explanation of why compound risk is not additive that I have seen in the transportation literature.
+
+The NPV superiority argument for compound investments (Section 3) is structurally correct. The key insight — that a project addressing both B1 and D1 simultaneously (the Donner tunnel) has higher NPV than two separate projects addressing each dimension alone — is true as a matter of NPV arithmetic and the paper shows it clearly in Table 3. The US-50 alternate upgrade vs. snowshed hardening vs. tunnel comparison is exactly the right triple-comparison structure.
+
+The PROTECT program reform recommendation (Section 6.2) is the paper's most immediately actionable policy contribution. Adding B1×D1 compound score as a required criterion in PROTECT grant evaluation does not require statutory change and would redirect grant allocation toward the corridors where compound exposure makes investment most efficient. This should be the paper's lead policy recommendation.
+
+The phased investment program (Section 5.3) is realistic. The observation that the Donner tunnel requires dedicated authorization outside the PROTECT formula program is honest and important — it tells practitioners what the path actually requires rather than pretending existing programs can fund it.
+
+## What Doesn't Work
+
+**The 2050 D1 projection methodology is asserted, not demonstrated.** Section 6.4 states that Gulf Coast I-10's D1 score will rise from 8.4 to 9.1 by 2050, and Section 4.2 states that Donner's D1 will rise from 7.8 to 8.5. These are presented as projections based on NOAA SLR scenarios and IPCC RCP 4.5 precipitation-intensity projections. But the paper does not show the calculation chain. NOAA SLR scenarios project sea level at tide gauge stations. Converting this to SFHA boundary changes requires hydraulic modeling that is scenario-specific, terrain-specific, and structure-specific. Converting SFHA boundary changes to D1 score changes requires the ROUTE rubric's scoring methodology applied to the new boundaries. This is a four-step calculation chain that the paper treats as if it were a single lookup table. Either (a) show the intermediate steps with explicit assumptions at each step, including uncertainty ranges, or (b) reframe the 2050 numbers as illustrative scenarios rather than projections. The priority order instability claim (Section 6.4) depends entirely on these numbers being credible — and they are not credible without the methodology.
+
+**The lifecycle cost frame is missing.** The NPV analysis in Section 3 computes 30-year NPV of avoided disruption costs at a 7% discount rate. This is appropriate for a benefit-cost analysis. But the paper does not account for the ongoing maintenance and operating costs of the investment alternatives. A Donner freight tunnel requires continuous ventilation, lighting, and emergency response systems — roughly $20-40M/year for a 12-15 mile tunnel at this specification. Over 30 years at 7%, this is $240-480M in present value terms. The snowshed hardening alternative has its own maintenance costs (~$5M/year). Table 3 presents costs as capital costs only; it should add a row for present value of O&M costs to give a complete lifecycle cost picture. The tunnel likely still wins the NPV comparison, but the margin narrows.
+
+**The D1 scoring for multi-event corridors conflates frequency and severity.** The paper uses D1 scores that incorporate both closure frequency (events per year) and projected climate trajectory. But Donner's 50 closures/year and Gulf Coast I-10's 8 closures/year are very different risk profiles: Donner has high-frequency, short-duration events (mean 18 hours); Gulf Coast has low-frequency, long-duration events (mean 36+ hours for hurricane surge). The D1 score should distinguish between these profiles because the investment responses differ: Donner's frequency-driven D1 calls for infrastructure that eliminates exposure (tunnel); Gulf Coast's severity-driven D1 calls for infrastructure that reduces inundation depth (roadway elevation). The current D1 scoring blends these into a single score that may misrepresent which investment type is appropriate.
+
+## The Question I'd Push On
+
+The paper's core claim is that compound exposure investments dominate single-dimension investments in NPV. This is shown for Donner Pass, where the tunnel's $15.8B NPV exceeds the sum of the single-dimension alternatives. But is this true for the full compound exposure portfolio? For Gulf Coast I-10, the compound investment is hardening + alternate designation ($2.9B), which I read as addressing D1 primarily and B1 secondarily. The B1 component (designating I-20 as a freight alternate) is relatively cheap ($0.8B). How much of Gulf Coast's NPV comes from the D1 fix and how much from the B1 fix? If the D1 fix dominates (as I suspect for a corridor where I-20 already functions as an alternate), then Gulf Coast I-10 is not really a compound investment story — it's a D1 investment that happens to also include a cheap B1 fix. The paper needs to show the B1/D1 NPV decomposition for each corridor to validate the compound investment claim beyond the Donner case.

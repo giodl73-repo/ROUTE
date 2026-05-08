@@ -1,13 +1,48 @@
 paper: B.2+freight-bottlenecks
 title: "Freight Bottlenecks: Where the Interstate System Exceeds Capacity"
-venue: "Transportation Research Part B"
-stage: draft
-round: 0
+venue: "Transportation Research Record (TRR)"
+stage: revision
+round: 1
 content_mode: full
 writing_completed: true
-reviewers: []
-reviews: {}
+reviewers:
+  - mckinnon
+  - elefteriadou
+  - puentes
+  - neumark
+  - adamic
+reviews:
+  mckinnon:
+    score: 3
+    date: 2026-05-07
+    primary_concern: "ATRI omits queue spillback/secondary incidents; cascade multiplier third mechanism unverified"
+  elefteriadou:
+    score: 3
+    date: 2026-05-07
+    primary_concern: "PTI targets not HCM-grounded; V/C computation method unspecified; I-95 PTI uncited"
+  puentes:
+    score: 3
+    date: 2026-05-07
+    primary_concern: "No IIJA funding path; Donner Pass cost unsourced; I-285 upgrade bottleneck relocation risk"
+  neumark:
+    score: 2
+    date: 2026-05-07
+    primary_concern: "No cost-reduction counterfactual; cascade multiplier not identified; weather cost unvalidated"
+  adamic:
+    score: 3
+    date: 2026-05-07
+    primary_concern: "Cascade multiplier lacks propagation theory; Spearman rho spatially dependent; I-285 graph computation missing"
+avg_score: 2.8
+min_score: 2
+p1_items: 2
+p2_items: 5
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: draft
+    date: 2026-05-07
+    note: "Writing completed — all 9 sections authored"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel complete — avg 2.8/4, min 2/4 (Neumark). Blocked on cost-reduction counterfactual and cascade multiplier formalization."

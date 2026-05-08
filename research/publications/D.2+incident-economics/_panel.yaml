@@ -1,12 +1,41 @@
 paper: D.2+incident-economics
 title: "The Economics of Corridor Closures: Freight Cost and Redundancy Value"
 venue: "Transportation Research Part E"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - mckinnon
+  - neumark
+  - chester
+  - puentes
+  - elefteriadou
+scores:
+  mckinnon: 3
+  neumark: 2
+  chester: 3
+  puentes: 3
+  elefteriadou: 3
+avg_score: 2.8
+min_score: 2
+reviews:
+  round1:
+    - reviewer: mckinnon
+      file: reviews/REVIEW-mckinnon.md
+    - reviewer: neumark
+      file: reviews/REVIEW-neumark.md
+    - reviewer: chester
+      file: reviews/REVIEW-chester.md
+    - reviewer: puentes
+      file: reviews/REVIEW-puentes.md
+    - reviewer: elefteriadou
+      file: reviews/REVIEW-elefteriadou.md
+  synthesis: reviews/SYNTHESIS.md
+  revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. avg_score=2.8/4; min_score=2/4 (Neumark). P1.1 blocking: $6.2B point estimate has no confidence interval or sensitivity analysis. P1.2: lognormal duration assumption unvalidated. P1.3: demand suppression adjustment absent for weather corridors."

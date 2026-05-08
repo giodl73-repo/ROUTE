@@ -1,12 +1,35 @@
 paper: E.2+i2-framework
 title: "Interstate 2.0: A Design Framework for Throughput, Resilience, and Shared Transit"
 venue: "Journal of Transport Geography"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - robert-puentes
+  - alan-mckinnon
+  - david-neumark
+  - mikhail-chester
+  - angie-schmitt
+scores:
+  robert-puentes: 2
+  alan-mckinnon: 3
+  david-neumark: 3
+  mikhail-chester: 3
+  angie-schmitt: 3
+avg_score: 2.8
+min_score: 2
+reviews:
+  robert-puentes: reviews/REVIEW-puentes.md
+  alan-mckinnon: reviews/REVIEW-mckinnon.md
+  david-neumark: reviews/REVIEW-neumark.md
+  mikhail-chester: reviews/REVIEW-chester.md
+  angie-schmitt: reviews/REVIEW-schmitt.md
+synthesis: reviews/SYNTHESIS.md
+revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. 5 reviewers. avg 2.8/4. 4 P1 blocking items."

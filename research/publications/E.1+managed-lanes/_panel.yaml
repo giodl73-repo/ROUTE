@@ -1,12 +1,41 @@
 paper: E.1+managed-lanes
 title: "Managed Freight Lanes: Throughput, Transit Time, and NPV"
 venue: "Transportation Research Part A"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - elefteriadou
+  - mckinnon
+  - neumark
+  - puentes
+  - adamic
+scores:
+  elefteriadou: 2
+  mckinnon: 3
+  neumark: 3
+  puentes: 3
+  adamic: 3
+avg_score: 2.8
+min_score: 2
+reviews:
+  round1:
+    - reviewer: elefteriadou
+      file: reviews/REVIEW-elefteriadou.md
+    - reviewer: mckinnon
+      file: reviews/REVIEW-mckinnon.md
+    - reviewer: neumark
+      file: reviews/REVIEW-neumark.md
+    - reviewer: puentes
+      file: reviews/REVIEW-puentes.md
+    - reviewer: adamic
+      file: reviews/REVIEW-adamic.md
+  synthesis: reviews/SYNTHESIS.md
+  revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. avg_score=2.8/4; min_score=2/4 (Elefteriadou). P1.1 blocking: 2,400 pcphpl capacity claim does not account for access-point geometry or mountain-corridor grade corrections. P1.2: freight demand growth rate (1.8%/yr) unsourced; no NPV sensitivity table. P1.3: tolling model (voluntary vs. mandatory) unspecified; uptake rate unmodeled."

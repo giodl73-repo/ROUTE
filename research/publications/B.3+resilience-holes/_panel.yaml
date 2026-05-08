@@ -1,12 +1,22 @@
 paper: B.3+resilience-holes
 title: "Resilience Holes: Compound Exposure in the National Highway Network"
 venue: "Transportation Research Record (TRR)"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers: [chester, mckinnon, elefteriadou, puentes, hanson]
+reviews:
+  chester: {score: 3, concern: "2050 D1 projection methodology not shown; lifecycle O&M cost missing"}
+  mckinnon: {score: 2, concern: "$1.6B/yr Donner estimate inadequately justified; no sensitivity table"}
+  elefteriadou: {score: 2, concern: "waiting cost rate error ($225/hr should be ~$91/hr); cost double-counting risk"}
+  puentes: {score: 3, concern: "PROTECT reform needs implementation timeline; 49 USC citation needs verification"}
+  hanson: {score: 3, concern: "community populations absent; B1 geographic sensitivity unexplained"}
+avg_score: 2.6
+min_score: 2
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. 5 reviewers: Chester (transport-resilience), McKinnon (freight-economist), Elefteriadou (traffic-engineer), Puentes (transport-policy), Hanson (transport-geographer). Mean 2.6/4. P1 blocking items: correct waiting cost rate (Donner NPV revised to ~$11.6B), add NPV sensitivity table, show 2050 D1 projection methodology, add PROTECT reform implementation pathway."

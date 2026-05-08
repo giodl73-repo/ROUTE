@@ -1,12 +1,53 @@
 paper: C.1+od-freight-reliability
 title: "Freight Reliability on the NY–LA and Houston–Chicago Corridors: Capacity, Bottlenecks, and the Interstate 2.0 Case"
 venue: "Transportation Research Part B: Methodological"
-stage: draft
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: mckinnon
+    name: Alan McKinnon
+    role: freight-economist
+    score: 3
+    score_max: 4
+  - slug: elefteriadou
+    name: Lily Elefteriadou
+    role: traffic-engineer
+    score: 2
+    score_max: 4
+  - slug: neumark
+    name: David Neumark
+    role: rural-economist
+    score: 3
+    score_max: 4
+  - slug: puentes
+    name: Robert Puentes
+    role: transport-policy
+    score: 3
+    score_max: 4
+  - slug: hanson
+    name: Susan Hanson
+    role: transport-geographer
+    score: 3
+    score_max: 4
+reviews:
+  round1:
+    mean_score: 2.8
+    panel_decision: revision
+    blocking_items: 1
+    important_items: 8
+    files:
+      - reviews/REVIEW-mckinnon.md
+      - reviews/REVIEW-elefteriadou.md
+      - reviews/REVIEW-neumark.md
+      - reviews/REVIEW-puentes.md
+      - reviews/REVIEW-hanson.md
+      - reviews/SYNTHESIS.md
+      - reviews/REVISION-PLAN.md
 history:
   - stage: draft
     date: 2026-05-06
     note: "Paper initialized — ROUTE research track C"
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: BPR-based PTI at V/C 1.86 extrapolates beyond calibrated range (Elefteriadou 2/4). 8 P2 items. Revision required before re-review."

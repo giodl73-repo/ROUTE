@@ -1,17 +1,17 @@
 paper: B.1+missing-links
 title: "Missing Links: Gap Analysis of the US Interstate Network"
-venue: "Transportation Research Part A"
-stage: recheck
-round: 1
+venue: "Transportation Research Record (TRR)"
+stage: revision
+round: 2
 content_mode: full
 writing_completed: true
-reviewers: [transport-geographer, rural-economist, transport-policy, network-scientist, equity-researcher]
+reviewers: [puentes, schmitt, walker, eberts, neumark]
 reviews:
-  transport-geographer: {score: 3, concern: "county centroid artifact must be quantified"}
-  rural-economist: {score: 3, concern: "causal claim for C3 needs care; freight value missing"}
-  transport-policy: {score: 3, concern: "political feasibility and budget context missing"}
-  network-scientist: {score: 2, concern: "Euclidean vs road distance; 1465 node count"}
-  equity-researcher: {score: 2, concern: "construction-era harm acknowledgment; transit-dependent pop"}
+  puentes: {score: 3, concern: "budget context and NEPA timeline absent; feasibility-adjusted ranking missing"}
+  schmitt: {score: 2, concern: "equity framing structurally incomplete; displacement risk absent; no-vehicle data missing"}
+  walker: {score: 2, concern: "highway access conflated with mobility access; transit-dependent population absent"}
+  eberts: {score: 3, concern: "RUCC code accuracy; agricultural freight underweighted in corridor rankings"}
+  neumark: {score: 3, concern: "causal language for C3 correlation must be corrected; cost bands too narrow"}
 avg_score: 2.6
 min_score: 2
 history:
@@ -21,3 +21,6 @@ history:
   - stage: draft
     date: 2026-05-07
     note: "All 8 sections written. Primary: 66.5M (20.4%) in counties >30mi from interstate. Four gap zones. 12 priority corridors: I-3 (46K pop/$B), Northern Tier (43K), I-14 (42K), I-69 (42K). Gap counties 41% higher C3. Combined 12 corridors: 79.6% to 83.0%."
+  - stage: revision
+    date: 2026-05-07
+    note: "Round 2 panel review complete. 5 new reviewers: Puentes (transport-policy), Schmitt (transport-equity), Walker (transit-planning), Eberts (rural-access), Neumark (rural-economist). Mean 2.6/4. P1 items: causal language correction, no-vehicle data, displacement risk acknowledgment, access terminology precision."
