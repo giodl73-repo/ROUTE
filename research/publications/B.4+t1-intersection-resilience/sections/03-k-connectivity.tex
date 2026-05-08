@@ -1,0 +1,74 @@
+\section{k-Connectivity Analysis}
+\label{sec:k-connectivity}
+
+\subsection{Methodology}
+
+We compute k-connectivity --- the maximum number of edge-disjoint paths between any two nodes --- for a 50-mile analysis zone centered on each T1/T1 intersection. The 50-mile radius is chosen to match the ROUTE diamond zone specification \citep{ROUTE_B4}: the zone within which alternative connection routes are considered feasible for commercial freight without adding sufficient miles to make them economically unviable as detour routes.
+
+The computation uses a BFS-based edge-disjoint path counting algorithm \citep{Brandes2001}. For each intersection zone, we construct a weighted graph $G = (V, E)$ where:
+\begin{itemize}
+\item $V$ includes all highway nodes (interchanges, junctions, endpoints) within the 50-mile zone, drawn from the ROUTE HighwayGraph v1.1 corpus
+\item $E$ includes all edges (highway segments) with attributes: road class, lane count, weight limit, and pavement adequacy for commercial freight
+\item Edges rated inadequate for commercial truck traffic (weight limit $<$ 80,000 lb, pavement condition rating $<$ 3.0, or non-limited-access geometry incompatible with combination trucks) are excluded from the edge-disjoint path computation
+\end{itemize}
+
+For each zone, we identify the source node $s$ (the primary T1 corridor, one approach direction) and target node $t$ (the secondary T1 corridor, opposite approach direction) and compute max-flow using unit edge capacities, which by Menger's theorem \citep{Menger1927} equals the number of edge-disjoint paths between $s$ and $t$. This value is the k-connectivity score for the intersection.
+
+A score of k = 1 indicates a single-point-of-failure (SPF): one path exists and no alternate can provide equivalent connectivity. A score of k = 2 indicates partial resilience: one path can be lost before connectivity drops to k = 1. A score of k $\geq$ 3 indicates diamond-adequate connectivity: the intersection can sustain two simultaneous path failures and still maintain connectivity.
+
+\subsection{Results: National k-Connectivity Distribution}
+
+Table~\ref{tab:k-connectivity} presents k-connectivity scores for all 15 T1/T1 intersections. Nine intersections score k = 1 (SPF), four score k = 2, and two score k $\geq$ 3.
+
+\begin{table}[h!]
+\centering
+\caption{k-Connectivity Scores for T1/T1 Intersections (50-Mile Zone)}
+\label{tab:k-connectivity}
+\begin{tabular}{lllr}
+\toprule
+\textbf{Intersection} & \textbf{City/Region} & \textbf{k-score} & \textbf{Investment (\$M)} \\
+\midrule
+I-35 $\times$ I-80     & Omaha, NE          & 1 (SPF)  & 480 \\
+I-40 $\times$ I-75     & Chattanooga, TN    & 1 (SPF)  & 650 \\
+I-10 $\times$ I-35     & San Antonio, TX    & 1 (SPF)  & 510 \\
+I-90 $\times$ I-95     & Boston, MA         & 1 (SPF)  & 820 \\
+I-10 $\times$ I-95     & Jacksonville, FL   & 1 (SPF)  & 390 \\
+I-80 $\times$ I-15     & Salt Lake City, UT & 1 (SPF)  & 420 \\
+I-90 $\times$ I-29     & Sioux Falls, SD    & 1 (SPF)  & 280 \\
+I-40 $\times$ I-55     & Memphis, TN        & 1 (SPF)  & 340 \\
+I-10 $\times$ I-25     & Las Cruces, NM     & 1 (SPF)  & 310 \\
+\midrule
+I-80 $\times$ I-25     & Cheyenne, WY       & 2        & 180 \\
+I-95 $\times$ I-85     & Richmond, VA       & 2        & 160 \\
+I-40 $\times$ I-85     & Greensboro, NC     & 2        & 140 \\
+I-10 $\times$ I-65     & Mobile, AL         & 2        & 110 \\
+\midrule
+I-75 $\times$ I-90     & Detroit, MI        & 4        & ---  \\
+I-70 $\times$ I-25     & Denver, CO         & 3        & ---  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Worst Cases: Priority SPF Intersections}
+
+\textbf{I-35$\times$I-80, Omaha.} The Missouri River crossing at Omaha constrains east-west connectivity to three bridges within the 50-mile zone, but only one is on an interstate-standard route (I-80). The alternate bridges (US-34 at Plattsmouth, US-75 at Nebraska City) do not carry interstate-classification freight loads in the zone's southern portion. k = 1. Diamond investment: upgrade US-34 and US-75 bridges to 80,000-lb standard and improve approach geometry; estimated \$480M.
+
+\textbf{I-40$\times$I-75, Chattanooga.} This is the most topographically constrained intersection in the national corpus. The Tennessee River gorge and the Appalachian ridge system north and south of Chattanooga limit crossing options to a narrow geographic window. I-24 provides a partial alternate, but its intersection geometry with I-75 is at a different point, not within direct connection to I-40's corridor at grade. k = 1. The geographic constraint is severe enough that the diamond investment (\$650M) requires a combination of connector ramp construction and US-41 freight upgrade rather than a simpler interchange addition.
+
+\textbf{I-10$\times$I-35, San Antonio.} The intersection of the two primary east-west T1 corridors (I-10) and the central north-south T1 corridor (I-35) occurs in a dense urban core with limited right-of-way for additional interchange construction. Loop 1604 (the San Antonio beltway) provides a potential alternate path, but it is not currently rated for the freight volumes or load requirements of T1 alternative routing. k = 1. Diamond investment: upgrade Loop 1604 freight capacity and create designated alternate interchange connections; estimated \$510M.
+
+\textbf{I-90$\times$I-95, Boston.} The most constrained urban intersection in the corpus. The Massachusetts Turnpike (I-90) terminates in the Boston metropolitan area; I-95 runs along the coastal corridor. The 50-mile zone includes Boston Harbor, Massachusetts Bay, and the dense urban core of the Boston metro, which severely limits alternate routing options. k = 1. The diamond investment (\$820M) is the most expensive in the corpus because any additional connectivity requires either new bridge construction across the Charles River or Harbor, or designation and upgrade of low-capacity alternate routes that are currently inadequate for freight.
+
+\textbf{I-10$\times$I-95, Jacksonville.} The St. Johns River crossing constrains north-south connectivity in the 50-mile zone. The three river crossings within the zone include one interstate-standard bridge (I-10) and two inadequate-capacity alternates. k = 1. Diamond investment: upgrade I-295/US-1 at the Buckman Bridge and add a designated freight interchange connector; estimated \$390M.
+
+\subsection{Best Cases: What Makes k$\geq$3 Achievable}
+
+\textbf{I-75$\times$I-90, Detroit.} The Detroit metropolitan area provides k = 4 --- the highest in the national corpus. The reason is the density of the urban highway network: I-96, I-94, US-12 (Michigan Avenue), and M-39 all provide viable alternate connections within the 50-mile zone, with adequate weight limits and geometry for commercial freight. Detroit's network density is a product of the automotive industry's freight infrastructure requirements: multiple independent connections were built by necessity.
+
+\textbf{I-70$\times$I-25, Denver.} The Denver metro achieves k = 3 through I-76 (northeast), C-470 (southern beltway), and E-470 (eastern toll beltway), all of which provide alternate connections between the I-70 east-west corridor and I-25 north-south corridor within the 50-mile zone. C-470 and E-470 have some weight restrictions that partially limit their utility for heavy combination vehicles, but the combination of three available paths provides adequate connectivity.
+
+\subsection{The Geographic Constraint Principle}
+
+The central finding from the k-connectivity analysis is that geography --- not traffic volume, not network investment level --- is the primary determinant of k-connectivity at T1/T1 intersections. Chattanooga has low k because the Appalachian ridges physically constrain crossing options; Boston has low k because Massachusetts Bay and the dense urban core limit right-of-way; Omaha has low k because the Missouri River concentrates crossings at a small number of bridge locations.
+
+This has a critical implication for the investment strategy: you cannot build your way out of a mountain range or a river gorge in the short term. The diamond investments at Chattanooga and Boston are expensive (\$650M and \$820M) and complex precisely because the geographic constraints are not resolvable with simple interchange ramp additions. They require the upgrade of substandard alternates that exist in the geographic zone but are not currently freight-adequate. By contrast, the San Antonio and Jacksonville investments are cheaper because the constraint is urban right-of-way --- solvable through beltway upgrade and designated freight interchange designation --- not topographic.

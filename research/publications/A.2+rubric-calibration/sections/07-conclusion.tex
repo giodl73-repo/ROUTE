@@ -1,0 +1,23 @@
+\section{Conclusion}
+
+A scoring rubric calibrated only on congestion, freight volume, and network topology will systematically misclassify corridors whose strategic value derives from what they carry --- not how much of it. I-35 carries \$200+ billion in annual US-Mexico trade through Laredo. I-90 passes through the two Air Force bases responsible for the nation's ICBM deterrent. I-80 is the primary axis of the Corn Belt, connecting America's agricultural heartland to both Pacific and Gulf export ports. None of these facts appear in HPMS traffic counts or betweenness centrality calculations.
+
+The v1.2 rubric correction --- three new data-driven dimensions sourced from FHWA USMCA corridor designations, DoD STRAHNET, and USDA agricultural production data --- places these corridors where they belong: at the top of the national strategic tier. It also correctly demotes short urban connectors (I-110, I-880) from T1 status, resolving the congestion-stress paradox documented in Paper A.1.
+
+\subsection*{The Forward-Only Protocol}
+
+Every rubric version lock creates a commitment: scores computed under v1.0 will never be retroactively rescored to v1.1 or v1.2 standards. This protects the integrity of the corpus. A corridor that scored 25.2/120 under v1.0 was not wrong --- it correctly captured what the v1.0 rubric measured. The rubric improved; the score accurately recorded what was measured at that time.
+
+The version lock also prevents the data from being corrupted by rubric changes. If we rescored v1.0 corridors under v1.2, the v1.0 scores would be irretrievable. Keeping them frozen at v1.0/v1.1 enables the A.2 analysis itself: the comparison in Table~\ref{tab:before-after} is only possible because v1.0 and v1.1 scores were preserved.
+
+\subsection*{What Remains for Future Calibration}
+
+Three dimensions remain candidates for retirement or redefinition in a future v1.3 calibration:
+
+\textbf{A3 (Speed Reliability)}: The BPR-estimated PTI is better than the IRI proxy but still not the real PTI from FHWA Freight Performance Measures. When real PTI data is obtained, A3 will need to be re-scored for all 227 corridors. Expected effect: corridors with high urban V/C ratios (Atlanta I-75, NJ I-95) will score higher; rural corridors with currently-zero BPR estimates will improve modestly.
+
+\textbf{B2 (Network Centrality)}: All B2 scores are marked estimated on a partial directed graph. Full Brandes implementation on the complete national graph (once all 50-state HPMS data is available) will produce stable B2 scores. Expected effect: strategic trunk lines (I-80, I-35, I-90) will score higher; urban connectors will score lower --- reinforcing the v1.2 correction.
+
+\textbf{C4 (Agricultural Export Access)}: Currently sourced from hand-curated corridor designations. USDA ERS county agricultural production data, when fetched and joined, will enable data-driven C4 computation. Expected effect: corridors through major production zones (Nebraska I-80, Kansas I-70, Mississippi I-55) will have quantitatively justified C4 scores rather than judgment-based ones.
+
+The rubric is not finished. It is calibrating.

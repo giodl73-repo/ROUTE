@@ -1,0 +1,28 @@
+\section{Introduction}
+
+The highest-criticality nodes in the national freight network are not the bottlenecks analyzed in Paper B.2 --- those are high-cost but geographically distributed across dozens of locations on multiple corridors. The highest-criticality nodes are the T1/T1 intersections: the 15 points where two Tier 1 Primary Arteries cross. At these nodes, disruption is simultaneously disruption of two T1 corridors. The consequences cascade across both corridor networks and all O-D pairs that depend on either.
+
+The current design of T1/T1 intersections is a single interchange --- one physical structure connecting the two corridors at one point. This means that a single failure event (structural failure, catastrophic incident, earthquake, or bridge strike) can disrupt both T1 corridors simultaneously at their point of connection. If the failure requires a multi-day closure, freight on both T1s is denied their primary intersection point for the duration. Because T1 corridors are by definition the routes with the highest national freight throughput and the fewest adequate alternates (high B1 scores), this is not a local disruption. It is a national freight network disruption at the point of maximum criticality.
+
+This paper analyzes the k-connectivity of T1/T1 intersections --- the number of edge-disjoint paths available to freight traversing the intersection zone. A single interchange provides k = 1: one path, one failure point. The diamond concept \citep{ROUTE_B1} proposes distributing the intersection across a 50-mile zone with multiple independent connection points, targeting k $\geq$ 3: three edge-disjoint paths such that any two can be simultaneously destroyed without eliminating connectivity.
+
+\subsection*{The Single Point of Failure Problem}
+
+Of the 15 T1/T1 intersections in the national network, 9 currently have k = 1 in the 50-mile analysis zone --- meaning a single structural failure or extended closure at the primary interchange leaves no interstate-standard alternate for connecting the two T1 corridors \citep{ROUTE_diamond}. Four have k = 2 (partial resilience). Only 2 have k $\geq$ 3 (adequate connectivity by I2.0 standards). The distribution is heavily skewed toward the most vulnerable configuration because T1/T1 intersections tend to occur at geographic constrictions: mountain passes, river crossings, or dense urban cores where the same geographic feature that makes a location a natural intersection also constrains the availability of alternate paths.
+
+The 9 single-point-of-failure intersections are not uniformly distributed by geography or freight impact. The worst cases --- I-35$\times$I-80 at Omaha, I-40$\times$I-75 at Chattanooga, I-10$\times$I-35 at San Antonio, I-90$\times$I-95 at Boston, and I-10$\times$I-95 at Jacksonville --- each represent nodes where closure would simultaneously affect two corridors with no adequate k = 1 bypass available within 50 miles. These five intersections are the priority targets for diamond investment.
+
+\subsection*{The Diamond Solution}
+
+A diamond interchange zone is not a specific infrastructure design but an architectural principle: distribute the intersection of two T1 corridors across a 50-mile geographic zone by developing multiple independent connection points --- direct interchange connectors at the primary node, plus at least two additional connector routes (upgraded US highways, new limited-access segments, or additional interchange development at nearby T1/T1 proximity points) that together achieve k $\geq$ 3 edge-disjoint connectivity \citep{ROUTE_B4}.
+
+The total investment to achieve diamond-standard connectivity at all 9 priority T1/T1 intersections is estimated at \$4.5 billion. This is not primarily construction of new roads --- most diamond solutions involve upgrading existing US highway alternates to adequate freight standards and adding interchange ramps. The \$4.5 billion figure compares favorably with \$27 billion estimated for managed freight lanes on I-75 Atlanta alone \citep{ROUTE_E1}: the diamond program costs one-sixth as much as a single managed lane corridor and delivers resilience improvements at all 9 highest-criticality nodes in the network.
+
+\subsection*{Contributions}
+
+\begin{enumerate}
+\item First systematic k-connectivity analysis of all 15 T1/T1 intersections in the national highway network using Brandes BFS-based edge-disjoint path counting
+\item Identification of 9 single-point-of-failure T1/T1 intersections and 5 extreme-priority diamond investment targets
+\item Characterization of the geographic constraint principle: mountain and water barriers create worse connectivity risk than traffic volume, and cannot be engineered away without long-horizon infrastructure development
+\item Investment comparison demonstrating that diamond intersection resilience (\$4.5B total) is the highest NPV resilience investment per dollar in the I2.0 program
+\end{enumerate}

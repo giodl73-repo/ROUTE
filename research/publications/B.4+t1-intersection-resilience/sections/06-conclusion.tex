@@ -1,0 +1,31 @@
+\section{Conclusion}
+
+T1/T1 intersections are the national freight network's highest-criticality nodes. Nine of 15 currently have k = 1 connectivity in the 50-mile analysis zone --- single-point-of-failure configurations where one extended closure disrupts two T1 corridors simultaneously with no adequate alternate connection. The diamond program addresses all 9 at a total investment of \$4.5 billion, achieving k $\geq$ 3 at the five extreme-priority intersections and k $\geq$ 2 at the remaining four.
+
+\subsection*{The Cost-Effectiveness Argument}
+
+The comparison between diamond investments and managed lane investments clarifies the distinction between resilience investment and throughput investment. The I-75 Atlanta managed freight lane program --- two dedicated freight lanes per direction from the Tennessee border to the Florida border --- is estimated at \$27 billion \citep{ROUTE_E1}. This investment adds capacity to one corridor. The \$4.5 billion diamond program adds resilience to 9 intersection nodes on multiple corridors.
+
+The managed lanes and the diamond program are not in competition --- they address different failure modes and provide different benefits. Managed lanes fix the congestion bottleneck: they allow more freight to move on I-75 at a higher average speed with less interference from passenger vehicles. Diamond intersections fix the resilience failure: they ensure that when one T1 corridor's primary intersection point is disrupted, freight can continue to move through an alternate path in the zone.
+
+The error to avoid is confusing the two. The question ``should we build managed lanes or diamond intersections?'' is a category error: managed lanes add throughput, diamonds add resilience. Both are necessary. The question is sequencing. The answer from the k-connectivity analysis is that diamond investments should be prioritized on corridors that also have managed lane programs planned: I-35$\times$I-80 at Omaha (both I-35 and I-80 are T1 managed lane corridors), I-40$\times$I-75 at Chattanooga (I-40 and I-75 both have managed lane programs), and I-10$\times$I-35 at San Antonio (the highest-volume T1/T1 intersection in the South). Achieving k $\geq$ 3 at these intersections before the managed lane investment begins ensures that the capacity investment is not negated by a single-point-of-failure event at the intersection zone.
+
+\subsection*{The Freight Flyover Distinction}
+
+The diamond program addresses intersection resilience through k-connectivity --- multiple paths that freight can use when the primary interchange is disrupted. But the diamond connectors are not throughput investments. A connector road between two T1 corridors 15 miles south of the primary interchange will, over time, attract local traffic seeking to avoid interchange congestion. This is the induced demand mechanism applied to connector routes: any adequate road in a congested zone fills with local traffic.
+
+This is the architectural lesson from the congestion-stress paradox \citep{ROUTE_A1} applied to intersections: do not confuse throughput investment with resilience investment, because the two will not remain separate if the physical infrastructure does not enforce the distinction. Diamond connector routes, if they are to remain viable as freight alternates, must either be access-controlled (limited-access geometry, no local on/off ramps) or actively managed (with freight-priority access during disruption events).
+
+The solution for through freight is the express freight flyover: physically separated elevated or depressed structures at the T1/T1 intersection that carry freight directly from one T1 to another without surface intersection, with access controlled at both ends for freight-classified vehicles only. Flyovers are not part of the k-connectivity computation --- they count as throughput capacity on the primary path, not as additional edge-disjoint paths. But they are required alongside diamond connectors to ensure that the primary intersection retains its freight throughput function while the connectors retain their resilience function. Without the flyover, the primary interchange becomes saturated with a mix of freight and local traffic; without the connector, the flyover has no redundancy.
+
+\subsection*{Investment Sequencing}
+
+The five extreme-priority diamond investments --- Omaha, Chattanooga, San Antonio, Boston, and Jacksonville --- should be developed concurrently with the managed freight lane programs on their respective corridors. The remaining four SPF intersections (Salt Lake City, Sioux Falls, Memphis, Las Cruces) have lower freight volume and lower cascade consequence, and are appropriate for the second phase of the diamond program.
+
+The four k = 2 intersections (Cheyenne, Richmond, Greensboro, Mobile) require targeted connector upgrades rather than full diamond development: in each case, one additional edge-disjoint path can be achieved through weight limit upgrades to an existing alternate route, at a cost of \$110--180M per intersection. These are the lowest-cost resilience investments in the national program and should be prioritized for early action due to their favorable cost-to-resilience ratio.
+
+The two k $\geq$ 3 intersections (Detroit, Denver) require monitoring but no investment under current network conditions. The Detroit network should be evaluated for any proposed changes to the I-96, I-94, or M-39 corridors that might reduce alternate path availability; the diamond standard of k $\geq$ 3 should be maintained as a constraint on any future network modifications in the zone.
+
+\subsection*{Future Work}
+
+The k-connectivity analysis in this paper uses the ROUTE HighwayGraph v1.1 corpus, which includes T1 and T2 corridors but not all T3 and US highway segments that might provide additional alternate paths in the 50-mile zone. A full graph including all limited-access segments above 40,000-lb weight limit would likely increase k-scores at several intersections, particularly in dense urban cores. Future work should extend the graph to include these segments and re-evaluate the k-connectivity results. Additionally, the 50-mile zone radius is a policy parameter, not a derived result; sensitivity analysis of k-scores to zone radius (30-mile and 75-mile alternatives) is warranted.

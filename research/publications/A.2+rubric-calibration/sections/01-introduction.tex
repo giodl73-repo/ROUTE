@@ -1,0 +1,19 @@
+\section{Introduction}
+
+A scoring rubric is a hypothesis. The 12 dimensions of the ROUTE v1.0 rubric --- throughput gap, freight intensity, speed reliability, redundancy, network centrality, port/border access, population reach, rural connectivity, economic opportunity, climate resilience, multimodal integration, and infrastructure vintage --- embodied a specific claim about what makes an interstate corridor strategically important. Scoring 227 corridors against this rubric tests the claim empirically.
+
+The test revealed three types of problems. First, a dimension measured the wrong thing: the A3 (Speed Reliability) fallback used IRI (pavement roughness) as a proxy for travel time reliability, systematically producing maximum scores for corridors with no travel time data --- I-80 scored A3=10.0 with no Planning Time Index data, which was clearly wrong for a corridor with rural Wyoming and Nevada segments. Second, a dimension was structurally incomplete: B2 (Network Centrality) was computed on a partial graph, making its scores unstable and incomparable across corridors. Third, three strategic dimensions were entirely absent: the rubric had no mechanism to recognize that I-35 serves the \#1 US-Mexico border crossing, that I-90 passes through the nation's ICBM fields, or that I-80 bisects the Corn Belt that exports to both Pacific and Gulf ports.
+
+These problems had a concrete consequence: the v1.0 and v1.1 rubrics classified I-110 (a 22-mile Pasadena connector) above I-80 (the northern transcontinental) in the tier rankings. The congestion-stress paradox --- documented in Paper A.1 --- was real but its resolution required more than a centrality adjustment. The strategic dimensions (v1.2) corrected the classification.
+
+This paper documents the calibration process: what the corpus revealed, how each amendment was triggered, and what the before-after comparison shows for key corridors. It serves as the source record for the rubric's current state and its known limitations.
+
+\subsection*{Contributions}
+
+\begin{enumerate}
+\item Documentation of the v1.0 → v1.1 → v1.2 rubric evolution: triggers, changes, and effects
+\item Empirical demonstration that three IRI/centrality/missing-dimension errors caused systematic T1 misclassification
+\item Introduction of three data-driven strategic dimensions (A4, B4, C4) sourced from FHWA USMCA corridors, DoD STRAHNET, and USDA agricultural data
+\item A before-after score comparison for all 8 centrality-adjusted T1 corridors and 3 proposed new T1 corridors
+\item Forward-only versioning protocol: prior scores locked at the rubric version they were computed under
+\end{enumerate}
