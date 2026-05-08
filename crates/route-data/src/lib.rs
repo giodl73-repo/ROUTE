@@ -15,5 +15,5 @@ pub use nbi::NbiRecord;
 pub use faf5::Faf5Record;
 pub use manifest::Manifest;
 pub use census::{CountyCentroid, read_county_gazetteer, fetch_acs_population, join_population,
-                 fetch_acs_income, join_income, NATIONAL_MEDIAN_HHI_2022};
+                 fetch_acs_income, join_income, join_rucc, NATIONAL_MEDIAN_HHI_2022};
 pub use fema::{fetch_all_sfha_counts, FemaSfhaResult, T1_BBOXES, CorridorBbox};

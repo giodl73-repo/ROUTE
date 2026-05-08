@@ -2214,6 +2214,15 @@ fn load_acs_counties_for_scoring(
         let _ = route_data::join_income(&mut counties, &inc_path);
     }
 
+    // Join RUCC rural codes if cached (for C2 rural_share scoring)
+    let rucc_path = manifest.cache_dir.join("rucc_2013.csv");
+    if rucc_path.exists() {
+        let joined = route_data::join_rucc(&mut counties, &rucc_path).unwrap_or(0);
+        if joined > 0 {
+            // RUCC joined — rural_pop computation will now use real rural classification
+        }
+    }
+
     Some(counties)
 }
 

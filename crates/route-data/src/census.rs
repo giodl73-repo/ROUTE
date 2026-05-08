@@ -115,6 +115,30 @@ pub fn fetch_acs_population(output_path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Join RUCC codes onto county centroids by GEOID.
+/// CSV format: GEOID, RUCC, POP, DENSITY (from route or USDA data)
+pub fn join_rucc(counties: &mut Vec<CountyCentroid>, rucc_csv: &Path) -> Result<usize> {
+    use std::collections::HashMap;
+    let mut rdr = csv::Reader::from_path(rucc_csv)?;
+    let mut map: HashMap<String, u8> = HashMap::new();
+    for result in rdr.records() {
+        let rec = result?;
+        if rec.len() >= 2 {
+            let geoid = rec[0].to_string();
+            let rucc: u8 = rec[1].parse().unwrap_or(9);
+            map.insert(geoid, rucc);
+        }
+    }
+    let mut joined = 0;
+    for county in counties.iter_mut() {
+        if let Some(&rucc) = map.get(&county.geoid) {
+            county.rucc = rucc;
+            joined += 1;
+        }
+    }
+    Ok(joined)
+}
+
 /// Join ACS population data onto county centroids by GEOID.
 pub fn join_population(counties: &mut Vec<CountyCentroid>, pop_csv: &Path) -> Result<usize> {
     use std::collections::HashMap;
