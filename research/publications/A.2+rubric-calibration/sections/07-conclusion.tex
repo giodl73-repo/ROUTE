@@ -10,6 +10,10 @@ Every rubric version lock creates a commitment: scores computed under v1.0 will 
 
 The version lock also prevents the data from being corrupted by rubric changes. If we rescored v1.0 corridors under v1.2, the v1.0 scores would be irretrievable. Keeping them frozen at v1.0/v1.1 enables the A.2 analysis itself: the comparison in Table~\ref{tab:before-after} is only possible because v1.0 and v1.1 scores were preserved.
 
+\subsection*{Protocol Gap: Dimension Count}
+
+The calibration pass documented here identifies that 3 new dimensions were needed; however, the MODULE.md quantification contract called for $\leq$9 dimensions surviving calibration, and the v1.2 rubric now has 15 dimensions (12 original + 3 new). Dimension retirement --- reducing from 15 to $\leq$12 --- is deferred to the v1.3 calibration cycle once full HPMS data is available for all 50 states.
+
 \subsection*{What Remains for Future Calibration}
 
 Three dimensions remain candidates for retirement or redefinition in a future v1.3 calibration:

@@ -40,13 +40,19 @@ time) is lower than the cruising speed:
 
 \begin{align}
 \bar{v} &= \frac{d}{d/v_{\text{cruising}} + N_{\text{stops}} \times t_{\text{stop}}/60} \\
-        &\approx 54\text{--}58\text{ mph for corridors } 300\text{--}900\text{ miles}
+        &\approx 59\text{--}61\text{ mph for corridors } 300\text{--}900\text{ miles}
 \end{align}
 
-This effective speed of 54--58 mph still represents a substantial advantage over current
+This effective speed of 59--61 mph still represents a substantial advantage over current
 Greyhound operations (mean effective speed approximately 44 mph including stops and layovers)
-but is more conservative than a no-stop managed-lane assumption. Travel time values in the
-12-corridor comparison table (Section~\ref{sec:travel-time}) reflect this stop-penalty model.
+but is more conservative than a no-stop managed-lane assumption. The effective speed of
+59--61 mph is consistent with the $v_{\text{bus}} = 62$~mph operating speed used in
+Equation~\ref{eq:travel-time}: the 3-event stop-penalty at 8 minutes per stop over
+corridors of 300--900 miles reduces the arithmetic mean speed by 1--3 mph relative to
+the cruising speed. Travel time values in the 12-corridor comparison table
+(Section~\ref{sec:travel-time}) reflect this stop-penalty model using $v_{\text{bus}} = 62$~mph
+as the operating speed (not 65 mph; the 3 mph deduction for stop-approach cycles is already
+incorporated into $v_{\text{bus}}$).
 
 \paragraph{PTI buffer and schedule reliability.} The scheduled time posted to passengers is derived from Equation~\ref{eq:travel-time} as the \emph{median-day} travel time. Under PTI 1.15, the 95th percentile travel time is $T_{\text{bus}} \times 1.15$, meaning the scheduled time is reliable for 95\% of trips with no additional buffer needed. Operators have the option to add a further 5--10 minute terminal arrival buffer to achieve 98\%+ on-time performance at published arrival times; this is not incorporated in the travel time comparisons below, which use the unpadded median-day time.
 

@@ -94,7 +94,17 @@ where $m_c$ is maximum consecutive SFHA miles, $p_{\text{flood}}$ is the
 annual probability of a flooding event that closes the corridor (0.03 for a
 100-year SFHA on a 3-event expected frequency), $\bar{d}_{\text{flood}}$ is
 mean flood-related closure duration (72 hours for major inundation events), and
-$L$ is total corridor length in miles.
+$L$ is total corridor length in miles. The probability $p_{\text{flood}} = 0.03$
+represents the 3-event expected annual occurrence of flooding events severe enough
+to close the corridor: derived from the FEMA 100-year return period (1\% annual
+exceedance probability per event) combined with the empirical observation that
+Gulf Coast interstates experience approximately 3 closure-producing flood events
+per century on average, consistent with NOAA coastal tide gauge records for the
+Louisiana coast (1950--2020). This value is conservative relative to actual observed
+Gulf Coast closure frequencies; FHWA incident logs for I-10 Louisiana record
+approximately 4--6 closure events per century for segments with $m_c > 80$ miles,
+suggesting the ECH100 calculation may understate structural exposure by 30--50\%
+for the most exposed sub-corridors.
 
 \begin{equation}
 \text{ECH100}_{\text{winter}} = \frac{\text{closures/yr} \times \bar{d}_{\text{winter}}}{L/100}

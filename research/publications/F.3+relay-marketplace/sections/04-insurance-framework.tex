@@ -42,6 +42,10 @@ Mode 2 introduces an independent contractor relay driver layer analogous to Lyft
 
 Mode 2 addresses a supply constraint inherent in Mode 1: a 40-driver employed workforce services the hub's average load, but cannot accommodate surge periods (pre-holiday freight peaks, weather rerouting, port congestion relief) when hub throughput might triple. The Mode 2 IC layer provides elastic surge capacity; platform-registered IC drivers in the hub's catchment area receive push notifications for available surge shifts at premium pay rates.
 
+\subsubsection*{AB5 Constraint: Mode 2 Is Legally Inoperative in ABC-Test States}
+
+Mode 2 faces a significant legal constraint in California, Massachusetts, and New Jersey under ABC-test independent contractor classification laws (California Labor Code \S~2775, enacted as AB5 and modified by Proposition 22 for certain app-based platforms). Under California's \textit{Dynamex} ABC test (2018), relay drivers performing work ``within the usual course of business'' of the hub operator --- i.e., the core relay service --- cannot qualify as independent contractors. Los Angeles and Sacramento relay hubs, two critical nodes on the NY--LA corridor, are in California. Mode 2 is therefore \textbf{legally inoperative at the most important western hubs}. Mode 1 (W-2 hub employment) is the only legally durable model in ABC-test states and should be the default design; Mode 2 is viable as a supplement only in at-will employment states without analogous IC classification requirements. Any relay marketplace launch plan must route Mode 2 deployment away from California, Massachusetts, and New Jersey until FMCSA rulemaking or federal preemption provides a durable legal basis.
+
 \subsubsection*{Insurance Architecture Under Mode 2}
 
 Mode 2 insurance is more complex than Mode 1 because the IC driver is not a W-2 employee and therefore cannot be covered by the hub operator's workers' compensation policy. The proposed framework has three components, drawn from the regulatory model established for Transportation Network Companies (TNCs) under state-level gig worker insurance laws:

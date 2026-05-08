@@ -48,3 +48,7 @@ Total bottleneck cost by tier is computed by summing ATRI annual costs for all c
 \end{equation}
 
 where costs are per ATRI location (not per corridor mile). A cascade multiplier $> 1.0$ indicates T1 bottlenecks are more costly per location than T2 bottlenecks, consistent with the national cascade effect hypothesis.
+
+\subsection{BPR Function Validity Caveat}
+
+The Bureau of Public Roads (BPR) volume-to-capacity function, which underlies HCM LOS estimation and the ROUTE A1 scoring, is well-calibrated for V/C $\leq$ 1.0 (LOS A--E). For bottleneck locations where the estimated V/C exceeds 1.3 (LOS F breakdown with active queuing), delay costs derived from the BPR function are conservative lower bounds: the BPR formula underestimates delay in hypercongested conditions because it does not model queue propagation. For such locations --- which include several Atlanta T2 nodes and the I-95 Fort Lee interchange --- the ATRI GPS-derived travel time measurements serve as the primary cost estimate and are not subject to this limitation. Readers should interpret cost figures for locations at estimated V/C $>$ 1.3 as minimum estimates; actual delay at sustained LOS F may exceed these values.

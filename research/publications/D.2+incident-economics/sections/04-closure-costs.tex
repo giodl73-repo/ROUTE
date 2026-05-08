@@ -2,7 +2,7 @@
 
 Table~\ref{tab:closure-costs} presents the top-15 corridors in the ROUTE corpus by
 estimated annual freight disruption cost. The five highest-cost corridors account for
-\$5.4 billion per year --- 87\% of the top-15 total of \$6.2 billion.
+\$5.1 billion per year (after demand suppression correction; pre-suppression: \$5.4 billion) --- approximately 82\% of the top-15 total of \$6.2 billion.
 
 \subsection{Donner Pass (I-80): \$2.4 Billion per Year}
 
@@ -147,10 +147,12 @@ Rank & Corridor & Freq & Dur & Trucks & B1 & Annual \\
 14 & I-64 Hampton Roads (VA)       &  8 &  6 &  8,500 & 2.80 & 0.10 \\
 15 & I-25 Raton Pass (NM/CO)       & 18 &  7 &  3,000 & 3.50 & 0.10 \\
 \midrule
-\multicolumn{6}{l}{\textbf{Top-5 total}} & \textbf{5.40} \\
+\multicolumn{6}{l}{\textbf{Top-5 total}$^{\dagger}$} & \textbf{5.10} \\
 \multicolumn{6}{l}{\textbf{Top-15 total}} & \textbf{6.15} \\
 \bottomrule
 \end{tabular}
+\par\smallskip
+\noindent\footnotesize{$^{\dagger}$Total reflects demand suppression adjustment $\phi(d)$; pre-suppression total is \$5.4B (see Section~\ref{sec:sensitivity}).}
 \end{table}
 
 \subsection{Sensitivity Analysis}
@@ -178,8 +180,8 @@ $+$30\% (high)         & \$5.5B & \$6.9B & \$8.3B \\
 \end{tabular}
 \end{table}
 
-The central estimate (\$5.4B) is robust to single-parameter perturbation: varying
-either the cost rate or frequency alone shifts the total by less than 25\%. The
+The central estimate (\$5.1B, after demand suppression correction) is robust to single-parameter perturbation: varying
+either the cost rate or frequency alone shifts the total by less than 25\%. The pre-suppression figure is \$5.4B. The
 simultaneous low case (\$2.9B/yr) and simultaneous high case (\$8.3B/yr) bracket
 a 2.9:1 uncertainty range; the central estimate is approximately the geometric
 mean of this range. The Donner Pass contribution (\$2.4B central) is the most

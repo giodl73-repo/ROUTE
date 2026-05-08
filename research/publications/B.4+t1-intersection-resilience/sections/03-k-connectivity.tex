@@ -116,3 +116,13 @@ The five confirmed intersections account for 63\% of the total portfolio NPV (\$
 \$14.0B). The remaining 10 intersections use graph-computed k values; sensitivity testing
 shows that if any single intersection is misclassified from k=1 to k=2, the portfolio NPV
 changes by less than 5\%.
+
+\textit{Note on intersection sets:} The 15 T1/T1 intersections enumerated in
+Table~\ref{tab:k-connectivity} constitute the full national graph of T1 corridor crossings;
+the 9 single-point-of-failure (SPF) intersections identified computationally include all
+nodes at which k = 1. The five intersections in Table~\ref{tab:k-manual} above are the
+Phase~1 and Phase~2 investment priorities from \S\ref{sec:investment}, selected by
+$B2_{\text{product}}$ score --- not simply the first five from the k-connectivity table.
+Readers comparing the two tables should note that the investment priority ordering (Atlanta,
+Jacksonville, Toledo, Richmond, Sacramento) reflects freight betweenness weighting and may
+differ from a purely topological ordering of SPF intersections.
