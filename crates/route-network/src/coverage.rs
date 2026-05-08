@@ -324,6 +324,38 @@ pub fn corridor_pop_within_50mi(
     (total_pop, rural_pop)
 }
 
+/// Return references to all counties within 50 miles of a corridor's interchange nodes.
+/// Used for C3 income-weighted scoring. Deduplicates by GEOID.
+pub fn counties_within_50mi<'a>(
+    g: &HighwayGraph,
+    route_id: &str,
+    counties: &'a [route_data::CountyCentroid],
+) -> Vec<&'a route_data::CountyCentroid> {
+    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+        .filter(|&ni| {
+            let node = &g.graph[ni];
+            if !node.is_interchange { return false; }
+            g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .collect();
+
+    if interchange_coords.is_empty() {
+        return Vec::new();
+    }
+
+    let mut seen: HashSet<&str> = HashSet::new();
+    let mut result = Vec::new();
+    for county in counties {
+        if seen.contains(county.geoid.as_str()) { continue; }
+        if find_nearest_miles(&interchange_coords, county.lat, county.lon) <= 50.0 {
+            seen.insert(&county.geoid);
+            result.push(county);
+        }
+    }
+    result
+}
+
 /// Very rough state assignment from lat/lon (bounding box approximation).
 fn approx_state(lat: f64, lon: f64) -> String {
     // Simplified bounding boxes for the most gap-prone states

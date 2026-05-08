@@ -143,6 +143,9 @@ enum Commands {
     /// Fetch ACS county population from Census API (no auth required)
     FetchAcs,
 
+    /// Fetch ACS county median household income from Census API (B19013, no auth required)
+    FetchAcsIncome,
+
     /// Fetch FEMA NFHL SFHA feature counts for T1 corridor bounding boxes (D1 dimension)
     FetchFema {
         /// Output file (default: data/cache/fema_sfha_counts.csv)
@@ -493,8 +496,14 @@ fn main() -> Result<()> {
             // Compute betweenness centrality on the full graph
             let w = workers.unwrap_or_else(num_cpus);
             println!("  computing betweenness centrality ({w} workers)…");
-            let bc = route_network::centrality::compute_edge_betweenness(&graph);
-            println!("  centrality: {} edges scored", bc.len());
+            let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
+            println!("  centrality: {} edges scored", bc_raw.len());
+            // Normalize using P95 to prevent outlier junction edges from compressing the distribution
+            let mut vals_sorted: Vec<f64> = bc_raw.values().cloned().collect();
+            vals_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
+            let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
+            let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
             graph.edge_betweenness = Some(bc);
 
             // Load ACS population once for all corridors
@@ -762,6 +771,18 @@ fn main() -> Result<()> {
             route_data::fetch_acs_population(&out)?;
             println!("  saved → {}", out.display());
             println!("  run `route fetch` to get county gazetteer, then `route coverage` for population-weighted analysis.");
+        }
+
+        Commands::FetchAcsIncome => {
+            println!("route fetch-acs-income — Census ACS B19013 median household income");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            std::fs::create_dir_all(&manifest.cache_dir)?;
+            let out = manifest.cache_dir.join("acs_county_income_2022.csv");
+            route_data::fetch_acs_income(&out)?;
+            println!("  saved → {}", out.display());
+            println!("  national median HHI 2022: $74,580 (used as C3 baseline)");
+            println!("  run `route score-all` to apply C3 scores.");
         }
 
         Commands::FetchFema { output } => {
@@ -1159,9 +1180,22 @@ fn main() -> Result<()> {
             println!("route calibrate — rubric calibration pass (v1.3)");
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            let graph = load_graph(&manifest)?;
+            let mut graph = load_graph(&manifest)?;
             let ids = graph.interstate_ids();
             println!("  scoring {} corridors for calibration…", ids.len());
+
+            // Compute betweenness centrality so B2 is populated (same as score-all)
+            println!("  computing betweenness centrality…");
+            let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
+            println!("  centrality: {} edges scored", bc_raw.len());
+            // Normalize using P95 (not max) to prevent outlier edges from compressing distribution
+            // A single hyper-central junction edge can be 100× larger than trunk route edges
+            let mut vals_sorted: Vec<f64> = bc_raw.values().cloned().collect();
+            vals_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
+            let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
+            let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
+            graph.edge_betweenness = Some(bc);
 
             // Load ACS population once for C1/C2 wiring
             let acs_counties = load_acs_counties_for_scoring(&manifest);
@@ -2174,6 +2208,12 @@ fn load_acs_counties_for_scoring(
         let _ = route_data::join_population(&mut counties, &pop_path);
     }
 
+    // Join ACS median household income if cached (for C3 scoring)
+    let inc_path = manifest.cache_dir.join("acs_county_income_2022.csv");
+    if inc_path.exists() {
+        let _ = route_data::join_income(&mut counties, &inc_path);
+    }
+
     Some(counties)
 }
 
@@ -2193,6 +2233,23 @@ fn join_acs_population_to_corridor(
             attrs.pop_within_50mi = Some(pop);
             attrs.rural_pop_within_50mi = Some(rural_pop);
             attrs.pct_rural_in_buffer = Some(rural_share);
+
+            // C3: compute median income relative to national median
+            // Use population-weighted median HHI across counties in the 50-mile buffer
+            let near_counties: Vec<_> = route_network::counties_within_50mi(graph, route_id, &counties);
+            if !near_counties.is_empty() {
+                let total_pop_w: u64 = near_counties.iter().map(|c| c.population).sum();
+                if total_pop_w > 0 {
+                    let weighted_hhi: f64 = near_counties.iter()
+                        .map(|c| c.median_hhi as f64 * c.population as f64)
+                        .sum::<f64>() / total_pop_w as f64;
+                    if weighted_hhi > 0.0 {
+                        let relative = (weighted_hhi / route_data::NATIONAL_MEDIAN_HHI_2022 as f64) as f32;
+                        attrs.gdp_per_capita_relative = Some(relative);
+                    }
+                }
+            }
+
             println!(
                 "  C1 population (50mi buffer): {:>12} ({:.1}% rural)",
                 pop,

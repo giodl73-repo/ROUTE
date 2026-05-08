@@ -20,6 +20,8 @@ pub struct CountyCentroid {
     pub lon: f64,
     /// ACS population (joined separately; 0 if not yet joined)
     pub population: u64,
+    /// ACS median household income (B19013_001E, joined separately; 0 if not joined)
+    pub median_hhi: u64,
     /// USDA rural-urban continuum code (1–9; ≥4 = rural; 0 = not assigned)
     pub rucc: u8,
 }
@@ -64,6 +66,7 @@ pub fn read_county_gazetteer(path: &Path) -> Result<Vec<CountyCentroid>> {
         counties.push(CountyCentroid {
             state, geoid, name, aland_sqmi, lat, lon,
             population: 0,
+            median_hhi: 0,
             rucc: 0,
         });
     }
@@ -137,3 +140,74 @@ pub fn join_population(counties: &mut Vec<CountyCentroid>, pop_csv: &Path) -> Re
     }
     Ok(joined)
 }
+
+/// Fetch ACS 5-year county median household income from Census API.
+/// Table B19013_001E. Writes to output_path as CSV: GEOID, NAME, MEDIAN_HHI
+pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
+    let url = "https://api.census.gov/data/2022/acs/acs5\
+               ?get=NAME,B19013_001E&for=county:*&in=state:*";
+
+    println!("  fetching ACS county median household income (B19013)…");
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .user_agent("ROUTE/1.0 highway-analysis")
+        .build()?;
+
+    let text = client.get(url).send()
+        .context("fetching ACS income")?
+        .text()
+        .context("reading ACS income response")?;
+
+    let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(&text)
+        .context("parsing ACS income JSON")?;
+
+    let mut wtr = csv::Writer::from_path(output_path)
+        .with_context(|| format!("creating {}", output_path.display()))?;
+    wtr.write_record(["GEOID", "NAME", "MEDIAN_HHI"])?;
+
+    let mut written = 0usize;
+    for row in rows.iter().skip(1) {
+        if row.len() < 4 { continue; }
+        let name = row[0].as_str().unwrap_or("").to_string();
+        // Negative values (-666666666) mean suppressed/unavailable — treat as 0
+        let hhi: u64 = row[1].as_str()
+            .and_then(|s| s.parse::<i64>().ok())
+            .map(|v| v.max(0) as u64)
+            .unwrap_or(0);
+        let state_fips = row[2].as_str().unwrap_or("");
+        let county_fips = row[3].as_str().unwrap_or("");
+        let geoid = format!("{state_fips}{county_fips}");
+        wtr.write_record(&[geoid, name, hhi.to_string()])?;
+        written += 1;
+    }
+    wtr.flush()?;
+    println!("  wrote {written} county income records");
+    Ok(())
+}
+
+/// Join ACS income data onto county centroids by GEOID.
+pub fn join_income(counties: &mut Vec<CountyCentroid>, income_csv: &Path) -> Result<usize> {
+    use std::collections::HashMap;
+    let mut rdr = csv::Reader::from_path(income_csv)?;
+    let mut map: HashMap<String, u64> = HashMap::new();
+    for result in rdr.records() {
+        let rec = result?;
+        if rec.len() >= 3 {
+            let geoid = rec[0].to_string();
+            let hhi: u64 = rec[2].parse().unwrap_or(0);
+            map.insert(geoid, hhi);
+        }
+    }
+    let mut joined = 0;
+    for county in counties.iter_mut() {
+        if let Some(&hhi) = map.get(&county.geoid) {
+            county.median_hhi = hhi;
+            joined += 1;
+        }
+    }
+    Ok(joined)
+}
+
+/// National median household income 2022 (ACS 5-year, B19013_001E national estimate).
+/// Used to compute gdp_per_capita_relative for C3 scoring.
+pub const NATIONAL_MEDIAN_HHI_2022: u64 = 74_580;

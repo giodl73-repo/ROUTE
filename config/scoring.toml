@@ -76,12 +76,20 @@ anchor_5  = 120.0      # significant detour; some redundancy
 anchor_10 = 350.0      # no viable alternative; full corridor is single POF
 
 [b2]
-# Network Centrality — normalized betweenness centrality (0.0–1.0 range across corpus)
-# Computed after route score-all; estimated until then.
-# Anchors applied to percentile rank within corpus distribution.
-anchor_0  = 0.05       # peripheral; low cascade effect
-anchor_5  = 0.40       # regional connector
-anchor_10 = 0.85       # spine route; failure cascades nationally
+# Network Centrality — normalized betweenness centrality (max-normalized, P90 per corridor)
+# After max-normalization, values range 0.0–1.0 where 1.0 = most central single edge.
+# Corridor P90 edge betweenness:
+#   Trunk routes (I-80, I-95): typically 0.30–0.70 after max-norm
+#   Regional connectors: 0.05–0.30
+#   Peripheral spurs: < 0.05
+# Anchors calibrated to max-normalized P90 distribution:
+# Empirically calibrated from observed corridor P90 betweenness distribution (v1.3):
+#   Spine routes (I-80, I-95): P90 ≈ 0.045–0.060  → target B2 = 8–10
+#   Regional connectors (I-64, I-70 east): P90 ≈ 0.010–0.020 → target B2 = 3–5
+#   Peripheral spurs (I-180, I-380): P90 ≈ 0.001–0.003 → target B2 = 0–1
+anchor_0  = 0.0002     # peripheral; essentially no national routing through here
+anchor_5  = 0.012      # regional connector; moderate cascade effect
+anchor_10 = 0.055      # spine route; failure cascades nationally
 
 [b3]
 # Port/Border Access

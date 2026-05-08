@@ -77,10 +77,16 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         .collect();
     let mean_tti = mean_f32(&ttis);
 
-    // Betweenness centrality — from pre-computed values if available
+    // Betweenness centrality — P90 of corridor edges (not mean)
+    // Mean dilutes long rural corridors: I-80's rural WY/NE edges have near-zero
+    // betweenness but its Chicago/Bay Area segments are highly central.
+    // P90 captures the "spine" sections without extreme-outlier sensitivity.
     let betweenness_centrality = g.edge_betweenness.as_ref().and_then(|bc| {
-        let vals: Vec<f64> = edges.iter().filter_map(|ei| bc.get(ei)).cloned().collect();
-        mean_f64(&vals)
+        let mut vals: Vec<f64> = edges.iter().filter_map(|ei| bc.get(ei)).cloned().collect();
+        if vals.is_empty() { return None; }
+        vals.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let p90_idx = ((vals.len() as f64 * 0.90) as usize).min(vals.len() - 1);
+        Some(vals[p90_idx])
     });
 
     // Interchange gap — longest gap between interchange nodes in miles
