@@ -551,11 +551,39 @@ fn main() -> Result<()> {
                     .collect();
                 println!("  building T1 regional map for {norm} ({} score entries)…",
                     scores_f32.len());
+
+                // Load relay hubs and resolve coordinates for the map.
+                // t1_hub_coordinates() returns the canonical lat/lon table; we join
+                // against load_hubs() so only hubs that actually exist in the TOML
+                // (or built-in defaults) are shown.
+                let data_dir = std::path::PathBuf::from("data");
+                let hubs = route_sim::load_hubs(&data_dir, false);
+                let coord_table = route_map::t1_hub_coordinates();
+                // Build owned (lat, lon, name) tuples for hubs that have coordinates.
+                let hub_pts: Vec<(f64, f64, String)> = hubs.iter()
+                    .filter_map(|hub| {
+                        // Match hub name against the coordinate table (TOML name is the
+                        // prefix before any parenthetical suffix in hub.rs defaults).
+                        coord_table.iter()
+                            .find(|(_, _, table_name, _)| {
+                                hub.name.starts_with(table_name.as_str())
+                                    || table_name.starts_with(hub.name.as_str())
+                            })
+                            .map(|(lat, lon, _, _)| (*lat, *lon, hub.name.clone()))
+                    })
+                    .collect();
+                // Build the &str slice expected by build_t1_corridor_svg.
+                let hub_slice: Vec<(f64, f64, &str)> = hub_pts.iter()
+                    .map(|(lat, lon, name)| (*lat, *lon, name.as_str()))
+                    .collect();
+                let hub_arg = if hub_slice.is_empty() { None } else { Some(hub_slice.as_slice()) };
+                println!("  relay hubs loaded: {}", hub_slice.len());
+
                 let svg = route_map::build_t1_corridor_svg(
                     &graph,
                     &norm,
                     &scores_f32,
-                    None, // hub_coords — no hardcoded hubs in CLI for now
+                    hub_arg,
                 )?;
                 if let Some(parent) = out.parent() {
                     std::fs::create_dir_all(parent)?;

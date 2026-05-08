@@ -104,6 +104,30 @@ fn hub_coords() -> HashMap<&'static str, (f64, f64)> {
     m
 }
 
+/// Public coordinate table for all 12 relay hub cities.
+///
+/// Returns `(lat, lon, name, is_confirmed)` for each hub.
+/// Confirmed hubs are the 9 T1/T1 diamond intersections;
+/// proposed hubs are the 3 missing-link candidates.
+/// Callers can use this to build the `hub_coords` slice for
+/// `build_t1_corridor_svg`.
+pub fn t1_hub_coordinates() -> Vec<(f64, f64, String, bool)> {
+    vec![
+        (41.60, -87.35, "Gary/Chicago, IL".to_string(),  true),
+        (33.75, -84.39, "Atlanta, GA".to_string(),        true),
+        (42.36, -71.06, "Boston, MA".to_string(),         true),
+        (47.61,-122.33, "Seattle, WA".to_string(),        true),
+        (38.58,-121.49, "Sacramento, CA".to_string(),     true),
+        (29.42, -98.49, "San Antonio, TX".to_string(),    true),
+        (30.33, -81.66, "Jacksonville, FL".to_string(),   true),
+        (41.66, -83.56, "Toledo, OH".to_string(),         true),
+        (37.54, -77.43, "Richmond, VA".to_string(),       true),
+        (37.69, -97.34, "Wichita, KS".to_string(),        false),
+        (29.76, -95.37, "Houston, TX".to_string(),         false),
+        (45.78,-108.50, "Billings, MT".to_string(),        false),
+    ]
+}
+
 /// Load relay hubs from TOML file; returns empty vec on any error (file optional).
 fn load_relay_hubs(hubs_path: &std::path::Path) -> Vec<RelayHub> {
     let Ok(text) = std::fs::read_to_string(hubs_path) else { return vec![]; };

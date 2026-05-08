@@ -199,3 +199,42 @@ transfer_pct = 100.0
 daily_bus_services = 8
 avg_leg_miles = 520
 notes = "Mountain West / Northern Tier hub; requires I-92; serves MT/WY/ID agricultural freight"
+
+[[hubs]]
+name = "Los Angeles, CA"
+corridors = ["I-5", "I-10", "I-405"]
+status = "proposed"
+primary_aadt = 300_000   # I-405 near LAX: highest AADT in national network
+secondary_aadt = 220_000  # I-10 Santa Monica freeway
+primary_truck_pct = 8.0   # lower truck % due to passenger dominance
+secondary_truck_pct = 8.0
+transfer_pct = 20.0  # only trucks explicitly routing between corridors transfer
+daily_bus_services = 48  # major transit hub; Amtrak/bus connections
+avg_leg_miles = 380  # shorter legs due to port proximity
+notes = "Closes SoCal hub gap; nearest hub is Sacramento (400mi); I-710 port connector; highest AADT in national network but lower truck %; Phase 2 priority after I-710 connector upgrade"
+
+# LA Hub Analysis:
+# The LA metro hub serves three distinct freight functions:
+#   1. Port of Los Angeles/Long Beach drayage: I-710 connector (B.5 paper) funnels
+#      container freight from the nation's busiest port complex (~9M TEUs/yr) onto I-5
+#      and I-10. The hub requires the I-710 connector upgrade (B.5 recommendation) to
+#      operate at full drayage-relay capacity; without it, the I-710/I-5 interchange
+#      is the binding bottleneck.
+#   2. CA Central Valley produce (I-5 north): Perishable freight from the San Joaquin
+#      Valley (50%+ of US fruit/vegetable production) stages through LA before
+#      distributing to the Southwest desert markets on I-10. Relay here would shorten
+#      the Fresno-Phoenix leg (currently one long HOS stretch) into two managed segments.
+#   3. Desert Southwest (I-10 east): Phoenix, Tucson, El Paso, and USMCA traffic flows
+#      originate or terminate in the LA Basin. The I-10/I-5 junction near downtown LA
+#      (or the I-5/I-405 near Norwalk) is the natural T-point for these flows.
+#
+# Hub gap context: Nearest confirmed T1/T1 diamond hub is Sacramento (400mi north).
+# SoCal is the largest regional freight market in the western US with no relay hub.
+# The I-5/I-10 junction downtown or the I-5/I-405 at Norwalk are the two candidate
+# sites; Norwalk has more available land for a cab pool + service bays.
+#
+# Staffing note: Despite highest AADT in the network, truck % is 8% (vs. 12-22% at
+# inland hubs) due to extreme passenger vehicle dominance. Daily truck throughput at
+# primary is ~24,000 (300k × 8%) — comparable to Gary/Chicago (85k × 12% = 10,200)
+# but with lower transfer rate (20% vs 100%) due to corridor specialization.
+# Net relay-eligible trucks: ~4,800/day — still the largest SoCal relay volume.
