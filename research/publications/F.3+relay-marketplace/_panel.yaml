@@ -1,0 +1,17 @@
+paper: F.3+relay-marketplace
+title: "The Relay Marketplace: Platform Design for 48-Hour National Freight and the AV Transition"
+venue: "Management Science"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-07
+    note: "Spawned from SLA matrix simulation and user insight: relay is the Layer 0
+           enabler of I2.0 — $40M captures 90%+ of the SLA improvement from $121B.
+           The marketplace (driver matching, HOS handoff, load custody) is the critical
+           missing infrastructure. Paper also covers AV transition: managed lanes are
+           the AV runway; relay hubs become AV handoff points. Coordination failure
+           is the core economic problem, not economics."
