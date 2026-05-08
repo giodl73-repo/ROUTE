@@ -26,5 +26,7 @@ pub use metrics::{SimMetrics, corridor_pti, network_throughput, freight_cost_del
 pub use assignment::{wardrop_equilibrium, FlowState};
 pub use incident::{IncidentSpec, apply_incident, restore_incident};
 pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork,
-             DriverMode, run_od_simulation, run_od_simulation_with_driver,
+             DriverMode, Intervention, InterventionBenchmark, InterventionResult,
+             run_od_simulation, run_od_simulation_with_driver,
+             run_intervention_stack, apply_interventions,
              ny_la_corridor, hou_chi_current, hou_chi_i69};

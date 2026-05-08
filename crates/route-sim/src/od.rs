@@ -75,7 +75,255 @@ pub struct TripResult {
     pub managed_lanes: bool,
 }
 
-/// Driving configuration — solo, team, or relay network.
+/// An I2.0 intervention that modifies corridor segment parameters.
+/// Each intervention is independent and stackable.
+#[derive(Debug, Clone)]
+pub enum Intervention {
+    /// Dedicated freight-only lanes at V/C 0.70 (no passenger induced demand).
+    /// Eliminates congestion surges; improves segment speeds to design speed.
+    ManagedFreightLanes,
+
+    /// Driver relay stations at T1 hubs (~500-mile intervals).
+    /// Eliminates mandatory HOS rest stops. Truck runs 24/7.
+    DriverRelay { stations: usize, swap_minutes: f64 },
+
+    /// Second driver in cab. Co-driver sleeps in berth while truck moves.
+    TeamDrivers,
+
+    /// Donner Pass hardening: early warning system + preemptive closure protocols.
+    /// Reduces closure probability by 50%; mean duration 18h→12h.
+    DonnerHardening,
+
+    /// Donner freight tunnel: bypasses the mountain pass entirely.
+    /// Eliminates all weather-closure risk on Donner segment.
+    DonnerTunnel,
+
+    /// Diamond interchange upgrades at k=1 nodes (Atlanta, Jacksonville, Chicago).
+    /// Reduces incident probability at major interchange bottlenecks by 60%.
+    DiamondInterchanges,
+
+    /// Intelligent routing: real-time V2I incident alerts.
+    /// Trucks reroute or hold at relay stations before encountering incidents.
+    /// Reduces incident delay by 40% (earlier warning = shorter delay absorbed).
+    IntelligentRouting,
+
+    /// Platooning: 2-4 truck convoys with V2V communication.
+    /// Reduces aerodynamic drag 20-25%, increases effective speed by 2-3 mph on rural segments.
+    Platooning,
+}
+
+impl Intervention {
+    pub fn label(&self) -> &str {
+        match self {
+            Self::ManagedFreightLanes  => "Managed freight lanes",
+            Self::DriverRelay { .. }   => "Driver relay network",
+            Self::TeamDrivers          => "Team drivers (2-person)",
+            Self::DonnerHardening      => "Donner hardening",
+            Self::DonnerTunnel         => "Donner tunnel",
+            Self::DiamondInterchanges  => "Diamond interchanges",
+            Self::IntelligentRouting   => "Intelligent routing (V2I)",
+            Self::Platooning           => "Truck platooning",
+        }
+    }
+
+    pub fn capex_label(&self) -> &str {
+        match self {
+            Self::ManagedFreightLanes  => "$121B (7 T1 corridors)",
+            Self::DriverRelay { .. }   => "$40M (8 relay stations)",
+            Self::TeamDrivers          => "$0 (operational change)",
+            Self::DonnerHardening      => "$800M (snowshed + warning)",
+            Self::DonnerTunnel         => "$4B (12-mile tunnel)",
+            Self::DiamondInterchanges  => "$930M (Phase 1: ATL/JAX/TOL)",
+            Self::IntelligentRouting   => "$200M (V2I hardware + software)",
+            Self::Platooning           => "$50M (V2V + platooning systems)",
+        }
+    }
+}
+
+/// Apply one or more interventions to a corridor, returning the modified corridor
+/// and the driver mode implied by the interventions.
+pub fn apply_interventions(
+    base: &OdCorridor,
+    interventions: &[Intervention],
+) -> (OdCorridor, DriverMode) {
+    let mut corridor = base.clone();
+    let mut driver_mode = DriverMode::Solo;
+    let mut relay_stations = 0usize;
+    let mut relay_swap_min = 20.0f64;
+
+    for intervention in interventions {
+        match intervention {
+            Intervention::ManagedFreightLanes => {
+                for seg in &mut corridor.segments {
+                    // Switch all segments to managed lane V/C
+                    seg.base_vc = seg.managed_lane_vc;
+                    // No congestion surge events on access-controlled lanes
+                }
+            }
+            Intervention::DriverRelay { stations, swap_minutes } => {
+                relay_stations = *stations;
+                relay_swap_min = *swap_minutes;
+                driver_mode = DriverMode::Relay {
+                    stations: relay_stations,
+                    swap_minutes: relay_swap_min,
+                };
+            }
+            Intervention::TeamDrivers => {
+                if driver_mode == DriverMode::Solo {
+                    driver_mode = DriverMode::Team;
+                }
+            }
+            Intervention::DonnerHardening => {
+                for seg in &mut corridor.segments {
+                    if seg.name.contains("Donner") {
+                        seg.incident_prob *= 0.50;          // 50% fewer closures
+                        seg.incident_delay_mean_hours *= 0.67; // 18h→12h mean
+                    }
+                }
+            }
+            Intervention::DonnerTunnel => {
+                for seg in &mut corridor.segments {
+                    if seg.name.contains("Donner") {
+                        seg.incident_prob = 0.0;  // tunnel bypasses all weather risk
+                        seg.managed_lane_bypasses_incident = true;
+                        // Tunnel also eliminates grade: slightly faster
+                        seg.free_flow_mph = 65.0;
+                    }
+                }
+            }
+            Intervention::DiamondInterchanges => {
+                // Diamond interchanges at major bottleneck nodes reduce incident prob 60%
+                for seg in &mut corridor.segments {
+                    if seg.name.contains("interchange") || seg.name.contains("metro")
+                       || seg.name.contains("approach") || seg.name.contains("bypass") {
+                        seg.incident_prob *= 0.40; // k≥3 means trucks reroute around incidents
+                        seg.incident_delay_mean_hours *= 0.60; // shorter delays with alternates
+                    }
+                }
+            }
+            Intervention::IntelligentRouting => {
+                // V2I alerts let trucks avoid or prepare for incidents
+                // 40% reduction in experienced delay (can hold at relay station or take early alternate)
+                for seg in &mut corridor.segments {
+                    seg.incident_delay_mean_hours *= 0.60;
+                }
+            }
+            Intervention::Platooning => {
+                // 2-3 mph effective speed gain on rural/highway segments from reduced drag
+                for seg in &mut corridor.segments {
+                    if seg.base_vc < 0.60 {  // only effective on free-flowing segments
+                        seg.free_flow_mph *= 1.035; // ~3.5% speed increase
+                    }
+                }
+            }
+        }
+    }
+
+    // If relay was set with specifics, update
+    if matches!(driver_mode, DriverMode::Relay { .. }) {
+        driver_mode = DriverMode::Relay {
+            stations: relay_stations,
+            swap_minutes: relay_swap_min,
+        };
+    }
+
+    (corridor, driver_mode)
+}
+
+/// Run a single intervention stack and return the distribution.
+pub fn run_intervention_stack(
+    base: &OdCorridor,
+    interventions: &[Intervention],
+    n_trips: usize,
+    seed: u64,
+) -> TransitDistribution {
+    let (corridor, driver) = apply_interventions(base, interventions);
+    run_od_simulation_with_driver(&corridor, false, &driver, n_trips, seed)
+}
+
+/// Benchmark all interventions individually + in combination.
+pub struct InterventionBenchmark {
+    pub corridor_name: String,
+    pub baseline: TransitDistribution,
+    pub results: Vec<InterventionResult>,
+}
+
+pub struct InterventionResult {
+    pub label: String,
+    pub capex: String,
+    pub dist: TransitDistribution,
+    pub p95_delta_hours: f64,  // vs baseline (negative = improvement)
+    pub pct_under_48h: f64,
+    pub sla_achieved: bool,
+}
+
+impl InterventionBenchmark {
+    pub fn run(corridor: &OdCorridor, n_trips: usize, seed: u64) -> Self {
+        let relay_count = ((corridor.total_miles() / 500.0).ceil() as usize).max(1);
+
+        // Define all single interventions to test
+        let singles: Vec<(&str, &str, Vec<Intervention>)> = vec![
+            ("Baseline (Solo/GP)", "$0", vec![]),
+            ("Managed lanes only", "$121B", vec![Intervention::ManagedFreightLanes]),
+            ("Team drivers only", "$0", vec![Intervention::TeamDrivers]),
+            ("Driver relay only", "$40M", vec![
+                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
+            ]),
+            ("Intelligent routing only", "$200M", vec![Intervention::IntelligentRouting]),
+            ("Diamond interchanges", "$930M", vec![Intervention::DiamondInterchanges]),
+            ("Donner hardening", "$800M", vec![Intervention::DonnerHardening]),
+            ("Donner tunnel", "$4B", vec![Intervention::DonnerTunnel]),
+            ("Platooning", "$50M", vec![Intervention::Platooning]),
+            // Combinations
+            ("Relay + Managed lanes", "$121B+$40M", vec![
+                Intervention::ManagedFreightLanes,
+                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
+            ]),
+            ("Relay + Managed + Donner tunnel", "$125B", vec![
+                Intervention::ManagedFreightLanes,
+                Intervention::DonnerTunnel,
+                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
+            ]),
+            ("Relay + Diamonds + Routing", "$1.2B", vec![
+                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
+                Intervention::DiamondInterchanges,
+                Intervention::IntelligentRouting,
+            ]),
+            ("Full I2.0 stack", "$126B+$1.2B", vec![
+                Intervention::ManagedFreightLanes,
+                Intervention::DonnerTunnel,
+                Intervention::DiamondInterchanges,
+                Intervention::IntelligentRouting,
+                Intervention::Platooning,
+                Intervention::DriverRelay { stations: relay_count, swap_minutes: 15.0 },
+            ]),
+        ];
+
+        let baseline_dist = run_intervention_stack(corridor, &[], n_trips, seed);
+        let baseline_p95 = baseline_dist.p95_hours;
+
+        let results = singles.into_iter().enumerate().map(|(i, (label, capex, interventions))| {
+            let dist = run_intervention_stack(corridor, &interventions, n_trips, seed + i as u64);
+            let delta = dist.p95_hours - baseline_p95;
+            let pct = dist.pct_under_48h;
+            let sla = dist.p95_hours <= 48.0;
+            InterventionResult {
+                label: label.to_string(),
+                capex: capex.to_string(),
+                dist,
+                p95_delta_hours: delta,
+                pct_under_48h: pct,
+                sla_achieved: sla,
+            }
+        }).collect();
+
+        InterventionBenchmark {
+            corridor_name: corridor.name.clone(),
+            baseline: baseline_dist,
+            results,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq)]
 pub enum DriverMode {
     /// Single driver: mandatory 10h rest stop after every 11h driving.
