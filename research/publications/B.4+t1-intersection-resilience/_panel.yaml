@@ -1,7 +1,7 @@
 paper: B.4+t1-intersection-resilience
 title: "T1/T1 Intersection Resilience: Diamond Interchange Zones and k-Connectivity in the National Highway Network"
 venue: "Transportation Research Part B: Methodological"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -59,6 +59,7 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: k-connectivity validation (Adamic 2/4). 7 P2 items. Revision required before re-review."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Round 1 recheck complete. P1.1 resolved: Section 3.5 manual validation of top-5 intersections accepted by Adamic (3/4). Mean score 3.0/4. Paper advanced to ready for venue submission (Transportation Research Part B: Methodological)."
+

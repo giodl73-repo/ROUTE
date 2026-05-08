@@ -1,7 +1,7 @@
 paper: C.2+national-max-flow
 title: "National Max-Flow: Capacity and Bottleneck Analysis of the Interstate Network"
 venue: "Transportation Science"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -59,6 +59,7 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: single-commodity max-flow may misidentify binding constraints vs. multi-commodity reality (Adamic 2/4). 7 P2 items including I-69 NPV sensitivity table and max-flow utilization ratio. Revision required before re-review."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Round 1 recheck complete. P1.1 resolved: Section 3.6 two-class commodity sensitivity accepted by Adamic (3/4). Mean score 3.0/4. Paper advanced to ready for venue submission (Transportation Science)."
+

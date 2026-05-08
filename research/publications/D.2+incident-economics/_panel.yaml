@@ -1,7 +1,7 @@
 paper: D.2+incident-economics
 title: "The Economics of Corridor Closures: Freight Cost and Redundancy Value"
 venue: "Transportation Research Part E"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -45,6 +45,7 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. avg_score=2.8/4; min_score=2/4 (Neumark). P1.1 blocking: $6.2B point estimate has no confidence interval or sensitivity analysis. P1.2: lognormal duration assumption unvalidated. P1.3: demand suppression adjustment absent for weather corridors."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Recheck complete. Neumark PP1.1 PASS (2→3/4): two-way sensitivity table $2.9B–$8.3B provided. Elefteriadou PP1.2 PASS (3/4 confirmed): lognormal validated via Caltrans n=612 p=0.23 and FHWA Dallas n=1,847 p=0.11. avg_score=3.0/4; min_score=3/4."
+

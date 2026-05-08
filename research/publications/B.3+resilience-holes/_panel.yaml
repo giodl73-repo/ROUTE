@@ -1,7 +1,7 @@
 paper: B.3+resilience-holes
 title: "Resilience Holes: Compound Exposure in the National Highway Network"
 venue: "Transportation Research Record (TRR)"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -60,6 +60,7 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers: Chester (transport-resilience), McKinnon (freight-economist), Elefteriadou (traffic-engineer), Puentes (transport-policy), Hanson (transport-geographer). Mean 2.6/4. P1 blocking items: correct waiting cost rate (Donner NPV revised to ~$11.6B), add NPV sensitivity table, show 2050 D1 projection methodology, add PROTECT reform implementation pathway."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Recheck complete. PP2.4 resolved: waiting cost corrected $225/hr -> $91/hr idle; D1 benefit $700M -> $400M/yr; NPV $15.8B -> $12.1B; CBR 5.75 -> 4.0:1. PP2.5 resolved: ROUTE_D1 citation added to 02-background.tex; cross-track dependency documented. Elefteriadou PASS-WITH-NOTE (3/4), McKinnon PASS-WITH-NOTE (3/4). Mean score 3.0/4. Paper advances to ready."
+

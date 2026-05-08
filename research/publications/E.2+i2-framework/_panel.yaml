@@ -1,7 +1,7 @@
 paper: E.2+i2-framework
 title: "Interstate 2.0: A Design Framework for Throughput, Resilience, and Shared Transit"
 venue: "Journal of Transport Geography"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -34,9 +34,10 @@ history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
-  - stage: revision
+  - stage: submit
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers. avg 2.8/4. 4 P1 blocking items."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Recheck complete. Neumark PASS-WITH-NOTE (PP1.1 resolved; capital timing framing P3). Puentes PASS-WITH-NOTE, score raised 2→3 (PP1.1 resolved; legislative pathway acknowledgment P2). Revised avg 3.0/4. Paper advances to ready."
+

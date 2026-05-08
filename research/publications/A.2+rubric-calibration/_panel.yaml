@@ -1,7 +1,7 @@
 paper: A.2+rubric-calibration
 title: "Rubric Calibration: Which 12 Dimensions Actually Differentiate Interstate Corridors"
 venue: "Transportation Research Record (TRR)"
-stage: ready
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -47,6 +47,7 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel complete — avg 2.8/4, min 2/4 (Neumark). Blocked on external validation, B2-conditioned independence caveat, BPR-to-PTI path."
-  - stage: ready
+  - stage: submit
     date: 2026-05-07
     note: "Recheck passed — Neumark PASS (PP1.1 external validation: STRAHNET rho=0.81, ATRI rho=0.72, 94% state plan reference; anchor stability ±25% no T1 changes). Avg rises 2.8→3.0, min rises 2→3."
+
