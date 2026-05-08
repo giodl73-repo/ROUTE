@@ -1197,10 +1197,15 @@ fn main() -> Result<()> {
             let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
             graph.edge_betweenness = Some(bc);
 
-            // Load ACS population once for C1/C2 wiring
+            // Load ACS population once for C1/C2/C3 wiring
             let acs_counties = load_acs_counties_for_scoring(&manifest);
             if acs_counties.is_some() {
-                println!("  ACS population data loaded — C1/C2 will use real values");
+                println!("  ACS population data loaded — C1/C2/C3 will use real values");
+            }
+            // Load ports for B3 scoring
+            let ports = load_ports();
+            if !ports.is_empty() {
+                println!("  {} port/border locations loaded — B3 will use real values", ports.len());
             }
 
             // Collect per-dimension scores for all corridors
@@ -1220,9 +1225,13 @@ fn main() -> Result<()> {
 
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
-                    // Join ACS population for C1/C2
+                    // Join ACS population for C1/C2/C3
                     if acs_counties.is_some() {
                         join_acs_population_to_corridor(&manifest, &graph, id, &mut corridor.attributes);
+                    }
+                    // Join port access for B3
+                    if !ports.is_empty() {
+                        join_port_access_to_corridor(&graph, id, &mut corridor.attributes, &ports);
                     }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
@@ -2217,13 +2226,77 @@ fn load_acs_counties_for_scoring(
     // Join RUCC rural codes if cached (for C2 rural_share scoring)
     let rucc_path = manifest.cache_dir.join("rucc_2013.csv");
     if rucc_path.exists() {
-        let joined = route_data::join_rucc(&mut counties, &rucc_path).unwrap_or(0);
-        if joined > 0 {
-            // RUCC joined — rural_pop computation will now use real rural classification
-        }
+        let _ = route_data::join_rucc(&mut counties, &rucc_path);
     }
 
     Some(counties)
+}
+
+/// Load ports.csv (top 25 ports + major border crossings) for B3 scoring.
+fn load_ports() -> Vec<PortLocation> {
+    let path = std::path::Path::new("data/ports.csv");
+    if !path.exists() { return Vec::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    rdr.records()
+        .filter_map(|r| r.ok())
+        .filter_map(|rec| {
+            if rec.len() < 5 { return None; }
+            let lat: f64 = rec[1].parse().ok()?;
+            let lon: f64 = rec[2].parse().ok()?;
+            let rank: u32 = rec[3].parse().ok()?;
+            let is_border = rec[4].contains("border");
+            Some(PortLocation { lat, lon, rank, is_border })
+        })
+        .collect()
+}
+
+struct PortLocation { lat: f64, lon: f64, rank: u32, is_border: bool }
+
+/// Compute B3 fields: port terminus flag, border crossing flag, nearest port distance.
+fn join_port_access_to_corridor(
+    graph: &route_network::HighwayGraph,
+    route_id: &str,
+    attrs: &mut route_network::CorridorAttributes,
+    ports: &[PortLocation],
+) {
+    if ports.is_empty() { return; }
+
+    // Get terminus nodes (degree-1 interchange nodes on this route)
+    let node_coords: Vec<(f64, f64)> = graph.graph.node_indices()
+        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
+        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+        .collect();
+    if node_coords.is_empty() { return; }
+
+    fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+        let r = 3_958.8_f64;
+        let dlat = (lat2 - lat1).to_radians();
+        let dlon = (lon2 - lon1).to_radians();
+        let a = (dlat / 2.0).sin().powi(2)
+            + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+        r * 2.0 * a.sqrt().asin()
+    }
+
+    let mut min_dist = f64::MAX;
+    let mut terminus_flag = false;
+    let mut border_flag = false;
+
+    for port in ports {
+        for &(px, py) in &node_coords {
+            let d = haversine(py, px, port.lat, port.lon);
+            if d < min_dist { min_dist = d; }
+            if d <= 30.0 {
+                if port.is_border { border_flag = true; }
+                else { terminus_flag = true; }
+            }
+        }
+    }
+
+    attrs.port_terminus_flag = terminus_flag;
+    attrs.border_crossing_flag = border_flag;
+    if min_dist < f64::MAX {
+        attrs.nearest_top25_port_miles = Some(min_dist as f32);
+    }
 }
 
 /// Join ACS population onto a single corridor's CorridorAttributes.
