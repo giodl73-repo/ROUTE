@@ -124,6 +124,41 @@ daily_bus_services = 16
 avg_leg_miles = 440
 notes = "Mid-Atlantic connector; I-95/I-85 diverge; serves SE to NE corridor"
 
+# ── Hub operational model ──────────────────────────────────────────────────────
+# Three relay modes operate simultaneously at each hub:
+#   driver_relay:  cab + trailer continue together; only driver changes (15-20 min)
+#   trailer_relay: trailer moves forward with fresh cab; original cab enters service bay (8-10 min)
+#   cross_dock:    freight transfers between trailers for consolidation (30-60 min)
+#
+# Pipeline timing (trailer_relay mode):
+#   Truck arrives → driver exits → cab decouples trailer → trailer to staging
+#   House cab (from pool, pre-serviced) → couples trailer → fresh driver boards → departs
+#   Original cab → service bay → OBD check + fuel + PM if scheduled → returns to cab pool
+#
+# "Freight shows up 5 minutes before" scenario:
+#   Shipper notifies hub → hub dispatches bobtail pickup → trailer retrieved
+#   Pre-trip + seal verify at receiving dock → staged for next available cab
+#   Total time freight-ready → rolling: 35 minutes (vs 4-6 hours current)
+#
+# Cab pool: hub maintains 15-20 house cabs (owned or leased from carriers)
+#   Carrier's cab entering service → house cab takes trailer forward
+#   Carrier credited for house cab miles; pays maintenance fee (~$85/visit)
+#   Same model as rental car agency — no waiting for specific vehicle
+#
+# Digital handoff: e-BOL (electronic Bill of Lading) travels with trailer
+#   When cab decouples: e-BOL stays with trailer ID
+#   When new cab couples: e-BOL automatically loads to RDU display
+#   Chain of custody is digital; no paperwork; FMCSA e-BOL rule (2023) enables this
+
+[hub_operations]
+driver_relay_minutes = 20       # target driver swap time
+trailer_relay_minutes = 10      # target trailer-only swap (cab rotates to service)
+service_bay_hours = 4           # cab PM service time (overnight rotation)
+cab_pool_per_1000_trucks = 1.5  # house cabs maintained per 1000 daily truck-through
+fuel_fill_minutes = 10          # automated fueling during swap
+pm_interval_engine_hours = 500  # cab preventive maintenance interval (~3 weeks at relay pace)
+maintenance_cost_per_visit_usd = 85  # hub charges carrier per service visit
+
 # ── Proposed hubs (missing link corridors) ────────────────────────────────────
 
 [[hubs]]
