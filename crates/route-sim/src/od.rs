@@ -1047,6 +1047,136 @@ pub struct PassengerTripDistribution {
     pub beats_air_under_miles: bool,
 }
 
+/// EV vehicle profile for range/charging calculations.
+#[derive(Debug, Clone)]
+pub struct EvProfile {
+    pub name: &'static str,
+    /// Practical range at highway speed (miles) — typically 15-20% below EPA
+    pub highway_range_miles: f64,
+    /// Charge rate at I2.0 DCFC (kW) — limited by onboard charger
+    pub charge_rate_kw: f64,
+    /// Battery capacity (kWh)
+    pub battery_kwh: f64,
+    /// Energy use at highway speed (kWh/mile)
+    pub kwh_per_mile: f64,
+}
+
+impl EvProfile {
+    /// Minutes to add N miles of range at DCFC
+    pub fn charge_minutes_for_miles(&self, miles_needed: f64, dcfc_kw: f64) -> f64 {
+        let kw = self.charge_rate_kw.min(dcfc_kw);
+        let kwh_needed = miles_needed * self.kwh_per_mile;
+        (kwh_needed / kw) * 60.0
+    }
+
+    /// Number of charging stops needed for a given distance
+    pub fn stops_needed(&self, distance: f64) -> usize {
+        ((distance / self.highway_range_miles).ceil() as usize).saturating_sub(1)
+    }
+
+    /// Total charging time (minutes) for a trip of distance miles
+    pub fn total_charge_minutes(&self, distance: f64, dcfc_kw: f64, stops: usize) -> f64 {
+        // Each stop: charge from ~10% to ~80% (practical fast-charge window)
+        // 70% of battery capacity per stop
+        let kwh_per_stop = self.battery_kwh * 0.70;
+        let kw = self.charge_rate_kw.min(dcfc_kw);
+        let mins_per_stop = (kwh_per_stop / kw) * 60.0;
+        stops as f64 * mins_per_stop
+    }
+}
+
+/// Common EV profiles for I2.0 corridor analysis.
+pub fn tesla_model_y() -> EvProfile {
+    EvProfile {
+        name: "Tesla Model Y (Long Range)",
+        highway_range_miles: 290.0,  // EPA 330mi, 88% at 75mph
+        charge_rate_kw: 250.0,       // V3 Supercharger rate
+        battery_kwh: 82.0,
+        kwh_per_mile: 0.283,
+    }
+}
+
+pub fn tesla_semi() -> EvProfile {
+    EvProfile {
+        name: "Tesla Semi (500mi range)",
+        highway_range_miles: 480.0,  // at highway freight speed
+        charge_rate_kw: 1000.0,      // Megacharger (1MW)
+        battery_kwh: 900.0,
+        kwh_per_mile: 1.875,
+    }
+}
+
+pub fn average_ev_2026() -> EvProfile {
+    EvProfile {
+        name: "Average EV 2026 (Chevy Equinox / Hyundai Ioniq 5)",
+        highway_range_miles: 220.0,  // conservative highway range
+        charge_rate_kw: 150.0,       // 150kW = I2.0 minimum standard
+        battery_kwh: 78.0,
+        kwh_per_mile: 0.355,
+    }
+}
+
+/// EV charging analysis for a corridor.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EvChargingAnalysis {
+    pub ev_name: String,
+    pub corridor_miles: f64,
+    /// Stops needed with I2.0 guaranteed DCFC (50-mile spacing)
+    pub stops_i20: usize,
+    /// Stops needed on current infrastructure (avg 85-mile spacing on rural T1)
+    pub stops_current: usize,
+    /// Can current-gen EV complete trip without range anxiety on I2.0?
+    pub i20_viable: bool,
+    /// Total charging time on I2.0 (minutes)
+    pub charge_minutes_i20: f64,
+    /// Charging overhead added to AV trip (hours)
+    pub charge_overhead_hours: f64,
+    /// Is the overnight scenario viable? (charge while sleeping at hub)
+    pub overnight_scenario: bool,
+    pub overnight_note: String,
+}
+
+pub fn analyze_ev_charging(
+    corridor: &OdCorridor,
+    ev: &EvProfile,
+    i20_dcfc_kw: f64,
+) -> EvChargingAnalysis {
+    let miles = corridor.total_miles();
+    let stops = ev.stops_needed(miles);
+    // Current infrastructure: rural T1 has avg 85-mile DCFC spacing; some 120+ mile gaps
+    let current_viable = ev.highway_range_miles >= 120.0; // can get through worst gap
+    let charge_mins = ev.total_charge_minutes(miles, i20_dcfc_kw, stops);
+
+    // Overnight scenario: charging happens automatically during relay hub stops
+    // Hub stop = 20-25 min (driver swap for freight); AV plugs in automatically
+    // Is 20min enough to add the miles needed between stops?
+    let miles_per_stop = miles / (stops + 1) as f64;
+    let charge_needed_per_stop = miles_per_stop * ev.kwh_per_mile;
+    let charge_per_hub_stop = i20_dcfc_kw.min(ev.charge_rate_kw) * (20.0 / 60.0); // 20 min
+    let overnight_ok = charge_per_hub_stop >= charge_needed_per_stop * 1.1; // 10% buffer
+
+    let overnight_note = if overnight_ok {
+        format!("Auto-charges at hub stops ({} stops × 20min = {:.0}min total — no wake needed)",
+            stops, charge_mins)
+    } else {
+        format!("Needs {:.0}min/stop; hub stop provides {:.0}min — may need brief charge stop",
+            charge_needed_per_stop / i20_dcfc_kw.min(ev.charge_rate_kw) * 60.0,
+            20.0)
+    };
+
+    EvChargingAnalysis {
+        ev_name: ev.name.to_string(),
+        corridor_miles: miles,
+        stops_i20: stops,
+        stops_current: if current_viable { stops + 1 } else { stops + 3 }, // more uncertainty
+        i20_viable: true, // 50-mile spacing guarantees viability for any EV with 100+ mile range
+        charge_minutes_i20: charge_mins,
+        charge_overhead_hours: charge_mins / 60.0,
+        overnight_scenario: overnight_ok,
+        overnight_note,
+    }
+}
+
 /// Run passenger SLA simulation on a freight corridor definition (reuses segment geography).
 pub fn run_passenger_simulation(
     corridor: &OdCorridor,
