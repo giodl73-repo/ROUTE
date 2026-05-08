@@ -1,0 +1,46 @@
+\section{The Container Model: Truck Standardization for Relay Interoperability}
+\label{sec:container-model}
+
+\subsection{Malcolm McLean's Problem and Its Analog}
+
+On April 26, 1956, the Ideal-X sailed from Newark Harbor carrying 58 aluminum containers of cargo stacked on its deck \citep{Levinson2006}. Malcolm McLean, who owned the Ideal-X, had spent the preceding decade watching longshoremen load cargo break-bulk: each item handled individually, tallied separately, stored separately, and retrieved separately at the destination. The system was labor-intensive, damage-prone, theft-susceptible, and incompatible with scale. McLean's insight was not that containers were stronger or cheaper than crates --- they were not, initially --- but that \textit{the interface mattered more than the vessel}. If every ship, truck, and rail car used the same corner fittings, twist-locks, and dimensional standards, then any container could move on any vessel without negotiation, custom handling, or carrier-specific equipment.
+
+The ISO container standard that followed McLean's commercial proof-of-concept reduced global shipping costs by an estimated 40--60\% over the subsequent three decades and enabled the containerized global supply chain \citep{Levinson2006}. The mechanism was not improved vessel technology or better cranes. It was interoperability: the guarantee that a container loaded at a factory in Shenzhen would fit, without modification, on a vessel operated by any shipping company, transferred to any rail car, and mounted on any chassis driven by any trucker at the destination port. The interface abstraction --- identical at every node --- eliminated the bespoke handling that made break-bulk expensive.
+
+The relay marketplace faces an identical interface problem. Today, a relay driver arriving at an Atlanta hub to take over a truck from a departing driver encounters a cab that may be configured for the departing driver's body size, mirror settings, and preferred display layout. The ELD is registered to the originating carrier's USDOT number. The pre-trip inspection is specific to the departing driver's CDL number. The load documentation --- bill of lading, hazmat placards, temperature logs --- is in the originating carrier's proprietary format. Every one of these interface mismatches requires time to resolve. At 20 minutes of resolution time per handoff, across 5 handoffs on a NY--LA relay run, 100 minutes of the relay time advantage is consumed by interface friction. The relay marketplace needs McLean's insight: the interface must be standardized independently of the carrier.
+
+\subsection{The Relay Display Unit: Specification}
+
+The Relay Display Unit (RDU) is a five-component standardized truck interface, specified as a condition of relay hub access, analogous to the way Uber mandates smartphone compatibility as a condition of driver network access. The five components are:
+
+\subsubsection*{1. Standardized Touchscreen (10-inch fixed-mount)}
+
+A 10-inch touchscreen mounted at a standardized dashboard position (center-right, within sightline of seated driver, no head rotation required) displays the relay job briefing: load manifest, route waypoints, next hub ETA, and contact number for load owner's dispatch. The display standard is open (HTTP-accessible via the marketplace platform API) so any carrier's load management system can populate it. The driver does not need to access the originating carrier's proprietary system; the platform translates.
+
+\subsubsection*{2. Driver Profile RFID}
+
+Every registered relay driver carries an RFID card (or NFC-enabled phone) containing their CDL number, biometric seat/mirror settings (seat height, backrest angle, mirror azimuth for driver and passenger sides), preferred temperature, and display language. On RFID card presentation, the truck executes a profile load in 90 seconds: seat and mirrors adjust automatically, climate control sets to preference, and the RDU display loads the relay driver's job. The 90-second profile load is the relay equivalent of an airline pilot's cockpit setup: the aircraft is the same, but the interface reconfigures to the operator within defined parameters.
+
+\subsubsection*{3. ELD Relay Handoff Mode}
+
+The ELD enters ``relay handoff mode'' when the truck arrives at a certified relay terminal. In relay handoff mode, the ELD: (a) records Driver A's end-of-duty time and location; (b) transmits the load's HOS-to-date (hours driven by the load on this trip, not the driver) to the marketplace platform; (c) receives Driver B's credentials and remaining HOS availability from the platform; and (d) initiates Driver B's ELD session with the inherited load data. The inter-carrier ELD handoff is an API transaction, not a paper process. The FMCSA rulemaking defines the data fields; the platform provides the API.
+
+\subsubsection*{4. Condensed 5-Item Pre-Trip (OBD Pre-Validated)}
+
+The standard 49 CFR Part 396 pre-trip inspection requires 20--30 minutes and covers 35+ inspection points. For a relay handoff, the truck has been operating continuously for the prior 6--7 hours under a qualified CDL driver; its mechanical condition is known from that operation. OBD-II continuous diagnostics capture brake pressure, tire inflation, engine fault codes, and lighting status in real time. The RDU relay pre-trip presents 5 items for physical verification by the incoming driver: coupling security, trailer seal integrity (visual), load securement (for open loads), fifth-wheel latch, and emergency brake test (3-second application). The OBD system pre-validates the remaining 30+ items from live sensor data and displays a green/yellow/red status on the RDU. A green OBD status plus 5-item physical check constitutes a complete relay pre-trip inspection. Total time: 8--12 minutes.
+
+\subsubsection*{5. Simplified Load Custody Record}
+
+At each relay handoff, the platform generates and records: timestamp, GPS coordinates of the relay terminal, Driver A's CDL number and carrier USDOT, Driver B's CDL number and hub operator USDOT (or carrier USDOT in Mode 1), trailer seal number, OBD status snapshot, and load temperature (for temperature-controlled loads). The custody record is blockchain-timestamped and accessible to the shipper, load owner, and FMCSA through the platform's compliance API. This is superior to the current solo-driver model, where no handoff record exists because there is no handoff.
+
+\subsection{Mandate as a Condition of Hub Access}
+
+The RDU standard does not require federal mandate. It requires that relay hub operators, as a condition of marketplace participation, require RDU-compliant trucks. This is the Uber model: Uber did not petition the government to mandate smartphones; it made smartphones a condition of driver network access. Within 24 months of Uber's launch, the smartphone-equipped driver population was large enough to make Uber viable, and the market for non-smartphone drivers effectively collapsed.
+
+The relay marketplace's mechanism is analogous. Tier 1 hubs operate as access-controlled facilities (Section~\ref{sec:hub-slot}); trucks without RDU compliance are not assigned relay slots. As the relay marketplace grows and relay-slot access becomes economically valuable, the fleet incentive to retrofit RDU compliance increases. Retrofit cost is modest: the standardized touchscreen and RFID reader is a \$800--\$1,200 hardware installation; the ELD relay handoff mode is a firmware update to any ELD certified under the FMCSA ELD mandate \citep{FMCSA_HOS2022}, which already covers 98\% of commercial vehicles. The 5-item pre-trip and OBD integration require no hardware beyond what most 2023+ Class 8 trucks already carry. Full RDU compliance for existing fleet trucks is achievable for under \$2,000 per truck.
+
+\subsection{The AV Roadmap Embedded in the RDU}
+
+The RDU is not merely a relay interoperability layer. It is, by design, 70\% of the autonomous vehicle onboard interface. The standardized software API, the OBD pre-validation, the GPS-integrated route display, and the RFID driver identity layer are all components that autonomous vehicle systems require for remote monitoring handoff and human-in-loop interventions. A relay hub configured to accept RDU handoffs is, with modest additional investment, a node where an AV truck can receive a remote operator monitoring handoff (the AV system transfers from one monitoring cell to the next), a hub technician can perform the condensed pre-trip (replacing the departing relay driver's 5-item check), and an urban delivery driver can board for the city segment (replacing the relay driver's destination leg).
+
+The relay-to-AV transition is not a discontinuity; it is a gradient. Relay hubs built today to RDU specification can be converted to AV handoff nodes in 2032--2035 with \$500,000--\$1,000,000 in additional technology investment per hub: charging infrastructure for battery-electric AV trucks, V2I communication equipment, and remote operations monitoring workstations. The \$5 million relay hub built today becomes a \$6 million AV-capable node in 10 years. The alternative --- building relay infrastructure to a non-AV-compatible standard and retrofitting later --- is both more expensive and more disruptive.

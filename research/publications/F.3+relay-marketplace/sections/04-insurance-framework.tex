@@ -1,0 +1,65 @@
+\section{Insurance Framework: Mode 1 and Mode 2 Relay Driver Coverage}
+\label{sec:insurance}
+
+\subsection{The CDL Driver Risk Profile}
+
+Before specifying the relay insurance architecture, it is essential to establish the actuarial baseline for CDL commercial drivers --- the population from which relay drivers are drawn. CDL holders are the most stringently screened driver population in US transportation:
+
+\begin{itemize}
+  \item \textbf{Medical qualification}: DOT physical examination required every 24 months by a certified Medical Examiner; examination covers vision, hearing, blood pressure, neurological status, sleep apnea screening, and 14 disqualifying medical conditions \citep{FMCSA_HOS2022}.
+  \item \textbf{Drug and alcohol testing}: Pre-employment controlled substances test; random testing pool at minimum 50\% annual rate (DOT random selection); post-accident testing within 8 hours (drugs) and 2 hours (alcohol) of any DOT-reportable accident; return-to-duty and follow-up testing following any violation \citep{FMCSA_HOS2022}.
+  \item \textbf{Motor vehicle record}: Pre-employment MVR check; annual MVR review by employer; disqualifying violations include major traffic offenses (reckless driving, leaving accident scene, DUI) with lifetime or 10-year CDL disqualification for repeat offenders.
+  \item \textbf{FMCSA Pre-Employment Screening Program (PSP)}: Employers may access a driver's 3-year accident history and 5-year inspection history through FMCSA's PSP database before hiring.
+\end{itemize}
+
+This screening regime produces accident rates substantially below the general driver population. FMCSA crash data show a fatal crash involvement rate for large trucks of approximately 1.7 per 100 million vehicle miles traveled (VMT) \citep{FMCSA_HOS2022}. The relay driver sub-population --- regional drivers operating on known routes, in familiar weather conditions, during daylight hours, with predictable shift schedules --- has even lower expected accident rates than long-haul solo drivers who accumulate fatigue over multi-day trips. This actuarial advantage is the foundation of the relay insurance case: relay drivers are not a novel risk class requiring premium loading; they are a subset of the best-screened driver population in the country.
+
+\subsection{Mode 1: Hub Operator W-2 Employment}
+
+Mode 1 is the operationally immediate model. The relay hub operator employs 30--50 relay drivers as W-2 employees on a regional shift schedule. Each driver works within a defined geographic radius of the hub (typically 40--60 miles from their home to the hub), drives assigned relay segments (hub to next hub or hub to shipper/receiver for shorter legs), and returns to the hub at the end of their shift. Mode 1 mirrors the Amazon Delivery Service Partner (DSP) model and the FedEx Ground independent service provider model: a neutral intermediary employs a driver workforce that serves multiple carriers' loads.
+
+The insurance architecture under Mode 1 is straightforward and maps to existing legal frameworks:
+
+\subsubsection*{Workers' Compensation (Hub Operator)}
+
+The hub operator, as the W-2 employer, carries standard workers' compensation coverage for all employed relay drivers. Injury during relay operations (including on-road accidents) is covered as occupational injury. Workers' comp premium is a function of driver payroll and the commercial trucking NCCI class code; at current market rates, this is approximately \$3.50--\$5.00 per \$100 of driver wages. For a hub employing 40 drivers at \$58,000 annual salary each, workers' comp premium is approximately \$81,000--\$116,000 per year.
+
+\subsubsection*{Commercial Auto Liability (Primary: Carrier; Secondary: Hub)}
+
+Under federal law, the motor carrier (the entity holding the USDOT operating authority for the load) is the primary insured for third-party liability while the vehicle is in commercial operation \citep{FMCSA_HOS2022}. FMCSA requires a minimum of \$750,000 in commercial auto liability for carriers hauling property in interstate commerce. This coverage travels with the load, not the driver. When a relay driver (employed by the hub operator) is operating a carrier's truck under a relay assignment, the carrier's commercial auto policy is primary for any third-party bodily injury or property damage claim arising from the relay operation. This is not a novel legal principle; it mirrors the existing legal structure for owner-operators (leased-on contractors) operating under a motor carrier's authority.
+
+\subsubsection*{Hub Umbrella Policy (Gap Coverage)}
+
+The hub operator carries a \$5 million umbrella policy covering claims that exceed the carrier's \$750,000 primary limit, claims arising from hub operations (not on-road driving), and claims where the primary carrier's policy is disputed or in litigation. The umbrella is not a primary coverage layer; it is a gap-filler for the edge cases where primary coverage is ambiguous. At actuarial rates for a CDL-driver workforce with the screening profile above, a \$5 million umbrella for a 40-driver hub costs approximately \$35,000--\$60,000 per year.
+
+\subsubsection*{Embedded Premium in Hub Swap Fee}
+
+The total insurance cost for Mode 1 relay operations --- workers' comp, umbrella, and administrative overhead --- is approximately \$2--\$5 per relay swap. The hub operator embeds this cost in the swap fee (see Section~\ref{sec:marketplace} for fee structure). Carriers paying the swap fee receive relay service with no incremental insurance burden; their existing commercial auto policy provides primary coverage for on-road operations as it does for any driver operating under their authority. The insurance architecture is invisible to the carrier: they pay a swap fee and receive a fully insured relay service.
+
+\subsection{Mode 2: Independent Contractor Gig Layer}
+
+Mode 2 introduces an independent contractor relay driver layer analogous to Lyft's or Uber's driver model, but adapted for commercial freight operations. Mode 2 drivers are CDL holders --- retired truckers, younger drivers building hours, semi-retired professionals, or regional operators who want shift work without full-time employment --- who register on the relay platform, verify their CDL status and drug testing currency, and accept relay shift assignments within their home radius.
+
+Mode 2 addresses a supply constraint inherent in Mode 1: a 40-driver employed workforce services the hub's average load, but cannot accommodate surge periods (pre-holiday freight peaks, weather rerouting, port congestion relief) when hub throughput might triple. The Mode 2 IC layer provides elastic surge capacity; platform-registered IC drivers in the hub's catchment area receive push notifications for available surge shifts at premium pay rates.
+
+\subsubsection*{Insurance Architecture Under Mode 2}
+
+Mode 2 insurance is more complex than Mode 1 because the IC driver is not a W-2 employee and therefore cannot be covered by the hub operator's workers' compensation policy. The proposed framework has three components, drawn from the regulatory model established for Transportation Network Companies (TNCs) under state-level gig worker insurance laws:
+
+\textbf{OAC Rider (On-App Commercial Rider)}: The IC relay driver carries a commercial auto rider (\$150/month estimated cost) on their personal vehicle insurance policy that extends coverage to commercial relay operations. This rider is analogous to the TNC personal vehicle rider that Lyft and Uber drivers carry; it bridges the gap between the driver's personal policy (which excludes commercial activity) and the carrier's commercial policy (which requires a named driver or does not cover IC operators).
+
+\textbf{Platform Gap Coverage ``While Relay-Engaged''}: The relay marketplace platform provides gap insurance covering the IC driver's relay operations from the moment they receive a relay assignment through the moment they complete the relay handoff at the destination hub. This ``relay-engaged period'' is defined by analogy to Lyft's ``Period 2/3'' on-trip coverage: the driver is engaged in a compensated, platform-mediated relay operation. Gap coverage provides: (a) commercial auto liability to \$1 million while relay-engaged; (b) occupational accident coverage (non-W-2 equivalent of workers' comp) for the driver; (c) cargo damage coverage for loads under the driver's custody during relay-engaged period.
+
+\textbf{FMCSA Rulemaking Requirement}: The Mode 2 framework requires FMCSA to define the ``relay engagement period'' as a regulatory category for HOS and insurance purposes. Without this definition, an IC relay driver is in regulatory limbo: not on personal duty (they're operating a commercial vehicle for compensation), not on a named carrier's payroll (they're IC), and not covered by the hub operator's workers' comp (they're not W-2). The rulemaking task is modest --- define ``relay-engaged'' as a regulatory status, specify the insurance requirements for relay-engaged IC drivers, and specify the platform's obligations --- but it cannot be accomplished without a formal FMCSA rulemaking. This is an 18--24 month regulatory process \citep{FMCSA_HOS2022}.
+
+\subsection{Mode Sequencing: Mode 1 Launches, Mode 2 Scales}
+
+The practical consequence of Mode 2's FMCSA rulemaking requirement is a sequencing mandate: Mode 1 can launch immediately, using existing regulatory frameworks; Mode 2 requires the rulemaking. The relay marketplace launches on Mode 1. During the 18--24 month rulemaking period, Mode 1 hubs build operational track record, driver pool depth, and carrier relationships. When the Mode 2 rulemaking is complete, the IC gig layer activates as a surge and expansion mechanism, not as the primary driver supply model.
+
+This sequencing is prudent risk management. If the Mode 2 rulemaking encounters obstacles (adverse court decisions on gig worker classification, congressional opposition, state-level conflicts), Mode 1 relay operations continue uninterrupted. The Mode 1 business case is fully self-sustaining (Section~\ref{sec:marketplace}); Mode 2 provides scale, not survival.
+
+\subsection{Load Security Under Relay}
+
+Shippers raising load security objections to relay operations --- ``who touched my load between Driver A and Driver B?'' --- are raising a concern that the relay platform actually resolves better than the current solo-driver model. Under relay, the load custody record (Section~\ref{sec:container-model}) documents every handoff: driver identity, timestamp, GPS location, trailer seal number, and OBD status. The chain of custody is complete and machine-readable. Under the current solo long-haul model, no handoff record exists because there is no handoff --- but the trailer sits unmonitored at a truck stop for 10 hours per HOS cycle, with no one documenting who approached it.
+
+For regulated loads (pharmaceutical, alcohol, tobacco, firearms), the relay terminal can require a licensed agent to be present at the handoff, analogous to a customs officer at a bonded warehouse. This is, in fact, a \textit{higher} security posture than the current model. The relay platform can offer a ``high-security relay'' tier for loads requiring witnessed handoff, with premium pricing that covers the cost of the licensed agent.

@@ -1,0 +1,86 @@
+\section{Marketplace Design: Platform Architecture and Mechanism}
+\label{sec:marketplace}
+
+\subsection{The Coordination Stack}
+
+The relay marketplace is a four-sided platform. The four sides are: (1) load owners (shippers, 3PLs, and broker intermediaries posting loads); (2) carriers (truck operators seeking relay service for active loads); (3) hub operators (facility operators providing dock capacity and Mode 1 relay driver pools); and (4) relay drivers (Mode 1 W-2 employees and Mode 2 IC gig drivers available for relay shifts). Each side of the platform has a distinct interface, pricing mechanism, and participation incentive. The marketplace achieves value by reducing coordination cost across all four sides simultaneously; removing any one side collapses the value proposition.
+
+The platform's core transaction --- the relay slot --- is a composite good: a dock space, a relay driver, an ELD handoff, and an insurance clearance, bundled into a single booking event. The atomization of this bundle into its component parts (book dock separately; hire driver separately; clear insurance separately; manage ELD handoff separately) is precisely the coordination overhead that currently makes relay impractical. The marketplace bundles the components and sells the composite.
+
+\subsection{The Slot Exchange}
+
+The slot exchange is the market mechanism by which carriers acquire relay slots and hub operators allocate dock capacity. It operates as a real-time combinatorial auction with advance booking windows differentiated by carrier tier (Section~\ref{sec:hub-slot}). The exchange's key design features are:
+
+\subsubsection*{Advance Booking and Real-Time Allocation}
+
+Tier 1 carriers submit relay requests 24 hours in advance via API integration (the carrier's TMS pushes a relay request when a load is dispatched from origin). The exchange confirms slot assignment within 60 seconds, including driver assignment from the hub's Mode 1 pool. Tier 2 carriers submit day-before requests through the carrier portal; confirmation is issued within 4 hours. Tier 3 spot requests arrive in real time and are allocated to the next available dock and driver using a first-available queue.
+
+\subsubsection*{Demand-Responsive Pricing}
+
+The exchange implements yield management pricing analogous to airline dynamic fares. Base rate: \$100 per relay swap (midpoint of \$75--\$150 range). At hub utilization above 80\%, Tier 3 spot rates rise to 1.5x--2.5x base. At hub utilization below 40\% (off-peak nights, low-season periods), the exchange offers discounted standby rates to attract volume. The dynamic pricing signal serves two functions: it optimizes hub utilization by spreading demand toward off-peak windows, and it generates the revenue premium in peak periods that funds hub operator infrastructure investment.
+
+\subsubsection*{The 15-Minute Grace Protocol}
+
+If a relay driver assigned to a slot fails to report within 15 minutes of the truck's arrival, the exchange activates the backup protocol: (a) the hub operator's Mode 1 driver pool dispatches an available driver within 5 minutes (the primary dispatch); (b) if no Mode 1 driver is available, the exchange broadcasts a Mode 2 push notification to IC drivers within a 30-minute radius offering a premium surge rate (1.5x--2.0x standard IC rate); (c) if no driver responds within 10 additional minutes, the carrier is offered a 60-minute delay at no additional charge, with guaranteed slot preservation. The 15-minute grace protocol is the relay marketplace's equivalent of an airline's ground handler standby crew: insurance against driver no-show that the carrier does not have to manage.
+
+\subsection{The Hub Operator Model}
+
+The hub operator is the critical institutional innovation in the relay marketplace architecture. It is not a carrier; it does not own loads or trucks. It is not a broker; it does not match shippers to carriers. It is a facility operator and labor provider: it owns or leases the relay hub infrastructure, employs the Mode 1 relay driver workforce, and sells relay capacity to carriers on a per-swap basis. The closest industry analogs are:
+
+\begin{itemize}
+  \item \textbf{Airport ground handlers} (Swissport, Menzies Aviation, dnata): operate across carrier relationships at fixed facilities, providing standardized services (ramp, baggage, fueling) to multiple airlines under hub contracts
+  \item \textbf{Amazon Delivery Service Partners}: employ driver workforces for Amazon's final-mile delivery, without owning the loads or the delivery routing technology
+  \item \textbf{BNSF crew change facilities}: maintain a qualified train crew pool at fixed division points, deploying crews to any train arriving at the division point regardless of the originating locomotive's crew
+\end{itemize}
+
+The hub operator model is franchise-compatible: a national relay marketplace platform (the technology and standards layer) can license the hub operator model to regional facility operators, similar to the way McDonald's licenses a restaurant model to franchisees. The platform provides: the slot exchange software, the ELD handoff API, the insurance framework, the driver verification system, and the marketplace brand. The hub operator provides: the physical facility, the Mode 1 driver workforce, and the local operational management. Revenue sharing between platform and hub operator is a commercial negotiation; a 70/30 split (hub operator retaining 70\% of swap fee revenue) is consistent with marketplace-to-operator splits in comparable industry structures (airport ground handling, franchise food service).
+
+\subsection{Settlement and Financial Architecture}
+
+Settlement in the relay marketplace is a three-party transaction:
+
+\begin{enumerate}
+  \item \textbf{Carrier to Platform}: The carrier pays the swap fee (\$100 base) per relay event, billed against a pre-funded account or credit facility. API-integrated carriers (Tier 1, Tier 2) are billed automatically on relay confirmation; spot carriers (Tier 3) pre-authorize payment on slot request. Settlement cycle: daily, via ACH.
+  \item \textbf{Platform to Hub Operator}: The platform remits 70\% of the swap fee to the hub operator within 24 hours of relay completion, after insurance clearance confirmation. Disputed swaps (driver no-show, vehicle damage, HOS violation) are held pending resolution through the marketplace's dispute protocol.
+  \item \textbf{Hub Operator to Relay Driver}: Mode 1 relay drivers are paid on a standard payroll cycle (bi-weekly). Mode 2 IC drivers are paid within 48 hours of relay completion, similar to Lyft/Uber's instant pay model. The platform provides a unified driver earnings dashboard for IC drivers managing multiple hub relationships.
+\end{enumerate}
+
+The financial architecture creates aligned incentives at every level: carriers pay only for completed relays (no upfront commitment risk); hub operators receive payment within 24 hours (low working capital requirement); relay drivers receive rapid payment (attractive for IC gig workers who depend on liquidity). The platform, as the clearinghouse, bears counterparty risk on both sides and prices that risk into the platform fee (the 30\% retained from the swap fee).
+
+\subsection{Load Matching as the Larger Opportunity}
+
+The relay swap is the gateway transaction, but it is not the marketplace's most valuable long-run offering. The more transformative opportunity is \textit{load matching}: the relay platform's position as the clearing house for all relay-enabled loads on a corridor creates a unique informational advantage for spot freight matching.
+
+Consider the information the relay platform holds at any moment: every truck in transit on the corridor, its current location, its next hub ETA, its remaining HOS capacity after the hub relay, its load type and weight, and its delivery appointment. This is, functionally, the order book for spot freight capacity on the corridor. A shipper with a same-day load need --- a pharmaceutical cold chain that must move immediately, a just-in-time automotive component for a line-down situation --- can see exactly which relay-enabled trucks have capacity after their next hub swap, and offer a spot rate to redirect the truck's next leg to the shipper's facility.
+
+This is not a feature of the relay marketplace; it is a structural consequence of the relay platform's position. The platform knows what no individual carrier can know: the full set of available relay capacity on the corridor, in real time. Monetizing this informational advantage through a spot load matching layer creates a revenue stream that dwarfs the swap fee business. At \$250--\$500 per spot match (the current rate charged by digital freight brokers like Convoy and Uber Freight for expedited loads), and assuming 10--15\% of relay throughput generates a spot match event, the load matching revenue on the Atlanta hub alone is \$718,500--\$2,155,500 per day, exceeding swap fee revenue by 25--75\%. The relay marketplace becomes, over time, the dominant freight routing intelligence layer on the T1 corridor network.
+
+\subsection{Revenue Summary}
+
+Table~\ref{tab:revenue} summarizes the relay marketplace revenue model at Atlanta hub scale.
+
+\begin{table}[ht]
+\centering
+\caption{Atlanta hub relay marketplace revenue model (annual, at 28,740 trucks/day)}
+\label{tab:revenue}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Revenue Stream} & \textbf{Annual Revenue} & \textbf{Notes} \\
+\midrule
+Swap fees (base) & \$1,049M & \$100/swap $\times$ 28,740 trucks/day \\
+Surge premium (avg.\ 5\% of swaps at 1.5x) & \$26M & Peak period upside \\
+Mode 2 IC premium margin & \$8M & Platform margin on IC driver surge \\
+High-security relay tier & \$12M & Pharma/regulated loads, \$200 premium \\
+Load matching (10\% of swaps) & \$262M & \$250/match floor rate \\
+\midrule
+\textbf{Total platform revenue} & \textbf{\$1,357M} & \\
+Hub operator share (70\%) & \$950M & \\
+Platform retained (30\%) & \$407M & \\
+\midrule
+Hub operating cost & \$5.5M & 50 drivers + staff + facility + tech \\
+\textbf{Hub net margin} & \textbf{\$945M} & Payback on \$5M capex: 2 days \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Atlanta hub at full scale is an extraordinarily profitable infrastructure asset. Even at 10\% of projected volume --- the realistic first-year ramp --- the hub generates \$94.5 million in net margin against \$5 million in capex. This is not a marginal infrastructure investment dependent on government subsidy; it is a high-return private infrastructure opportunity that will attract capital once the regulatory framework and the first-mover risk are resolved. The government's role is the regulatory enabler (NFRZ designation, FMCSA rulemaking), not the capital provider.

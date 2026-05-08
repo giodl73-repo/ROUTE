@@ -1,0 +1,167 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\subsection{The Container Parallel}
+
+Malcolm McLean did not invent cargo boxes. Wooden crates, barrels, and pallets had been moving
+cargo for centuries before April 26, 1956. What McLean invented was the \textit{interface
+standard}: the specification that made any container interchangeable with any vessel, any crane,
+and any chassis, without negotiation, without custom handling, and without carrier-specific
+equipment. The value was not in the box; it was in the standardization. Once every ship used
+the same corner fittings, the cargo logistics industry reorganized around the interface, and
+global shipping costs fell 40--60\% over the subsequent three decades \citep{Levinson2006}.
+
+The relay marketplace is McLean's insight applied to the American trucking industry. Relay
+driving is not new. The value is not in the concept; UPS, BNSF, and FedEx Ground have been
+executing relay operations internally for decades. What does not exist is the interface standard
+that makes any relay driver interchangeable with any truck, any load, and any carrier --- the
+RDU specification, the standardized ELD handoff API, the hub slot system, and the insurance
+framework that travels with the driver rather than the carrier. Without these standards,
+every relay arrangement is bespoke, bilateral, and costly. With them, any carrier can relay
+any load through any hub using any available relay driver from the pooled workforce, at a
+known cost per swap, with known insurance coverage, on a known schedule.
+
+The 65-year gap between the interstate system's completion and the relay marketplace is not
+evidence that relay is impractical. It is evidence that coordination problems do not solve
+themselves. McLean's containerization required shipping companies to agree on corner fittings
+before any individual ship could recoup the investment in container cranes. The relay
+marketplace requires FMCSA to define three regulatory terms before any individual hub operator
+can recoup the investment in relay infrastructure. The parallel is exact.
+
+\subsection{What the Rulemaking Needs to Say}
+
+The regulatory work required to launch the relay marketplace is modest in scope, precedented
+in form, and achievable within the standard FMCSA rulemaking timeline of 18--24 months.
+Three regulatory definitions are required:
+
+\begin{enumerate}
+  \item \textbf{Relay terminal (49 CFR Part 395, new \S 395.XX)}: A ``relay terminal'' is a
+  FMCSA-designated facility at which a motor carrier may transfer a commercial vehicle from
+  one qualified CDL driver to another without initiating a new trip for purposes of Hours of
+  Service recordkeeping. A relay terminal must be: (a) physically fixed, with dock facilities
+  and driver rest amenities; (b) operated by a licensed relay terminal operator holding a
+  commercial auto umbrella policy of not less than \$5 million; (c) equipped with an FMCSA-
+  certified relay ELD handoff system compliant with the relay API specification. Relay
+  terminals are approved by FMCSA upon application; approval constitutes NFRZ status under
+  IIJA \S 167 \citep{FMCSA_HOS2022}.
+
+  \item \textbf{Relay pre-trip inspection (49 CFR Part 396, amendment)}: At an approved relay
+  terminal, a driver receiving a commercial vehicle from a departing driver may perform a
+  condensed relay pre-trip inspection in lieu of the standard 396.11 pre-trip, provided that:
+  (a) the vehicle's OBD system returns a green status (no active fault codes, brake pressure
+  $\geq$ specification, tire inflation within 10\% of specification, lighting circuit intact) on
+  the relay terminal's diagnostic interface; (b) the incoming driver physically verifies the
+  5-item relay checklist (coupling security, trailer seal, load securement, fifth-wheel latch,
+  emergency brake). A green OBD status plus 5-item physical verification constitutes a complete
+  pre-trip inspection for Hours of Service and liability purposes.
+
+  \item \textbf{Relay engagement period (49 CFR Part 395, new \S 395.YY, and 49 CFR Part 387
+  amendment for Mode 2)}: A ``relay engagement period'' begins when a licensed relay platform
+  confirms an IC relay driver's assignment to a specific relay slot and ends when the driver
+  completes the relay handoff at the destination terminal. During the relay engagement period,
+  the relay platform's gap insurance coverage applies as primary for IC driver occupational
+  injury and secondary for third-party auto liability (with the load carrier's commercial auto
+  policy as primary). The relay engagement period definition is the regulatory analog to the
+  Transportation Network Company ``Period 2/3'' coverage framework established under state TNC
+  insurance laws.
+\end{enumerate}
+
+With these three definitions in place, the relay marketplace can launch commercially. No new
+statute is required. No highway construction is required. No new enforcement mechanism is
+required --- the FMCSA's existing ELD audit infrastructure and carrier compliance program
+covers relay terminals under the same framework it applies to any motor carrier operation.
+The regulatory investment is three definitions in two existing CFR parts. The commercial
+investment is \$5 million per hub, with payback in days.
+
+\subsection{What Builds First}
+
+The sequencing of relay marketplace development follows a four-step initialization order,
+from least to most capital-intensive:
+
+\textbf{Step 1: FMCSA Rulemaking NPRM (2025--2026, \$0 capital}.
+FMCSA issues an NPRM defining relay terminal, relay pre-trip, and relay engagement period.
+The comment period surfaces carrier, insurer, and driver organization input. The rule is
+finalized in 2027.
+
+\textbf{Step 2: Technology Stack (2025--2026, \$5--15 million}.
+The relay platform technology --- slot exchange, ELD handoff API, driver verification system,
+insurance clearance, settlement --- is built by a private technology company (or carrier
+consortium) in advance of the rulemaking's finalization. The technology does not require the
+rule to be operational; it requires the rule to be commercially deployed at scale. A beta
+network of 3--5 hubs on one corridor (NY--LA, starting with Chicago and Denver as the first
+two hubs) validates the technology before national rollout.
+
+\textbf{Step 3: Pilot Hub Network (2026--2028, \$25--40 million}.
+Five hubs on the NY--LA corridor --- approximately every 400 miles: Chicago (I-80/I-90 junction),
+Des Moines (I-80), North Platte (I-80), Salt Lake City (I-80/I-15), and Reno (I-80) ---
+provide a 2,800-mile relay-capable corridor. These hubs operate under Mode 1 (W-2 relay
+drivers) using the beta regulatory framework. Each hub costs \$5 million; total corridor
+investment is \$25 million. Hub revenue from day one provides operating capital.
+
+\textbf{Step 4: National Network Expansion (2028--2032, \$200--400 million}.
+Following regulatory finalization and pilot hub validation, the relay marketplace operator
+(or a hub operator franchise network) expands to all T1 diamond hub locations designated by
+the ROUTE tier analysis \citep{ROUTE_E1}: Atlanta (I-75/I-85/I-20), Dallas (I-35/I-45/I-20),
+Kansas City (I-70/I-35), Memphis (I-40/I-55/I-240), and additional T1 nodes. Mode 2 IC gig
+layer activates following FMCSA Mode 2 rulemaking. The national relay marketplace is
+operational by 2030 on the primary T1 corridors, with expansion to T2 corridors by 2032.
+
+\subsection{Relay as Layer 0 of Interstate 2.0}
+
+The Interstate 2.0 framework \citep{ROUTE_E2} describes a \$253 billion infrastructure
+upgrade program --- managed freight lanes, T1 diamond hubs, Donner Pass hardening, and AV
+design standards --- as the long-run investment case for American freight competitiveness.
+The relay marketplace is Layer 0 of that program: the institutional infrastructure that must
+exist before physical infrastructure can fully function.
+
+A T1 diamond hub without a relay marketplace is a rest area. With a relay marketplace, it is
+the node of a continuous-operation freight network. Managed freight lanes without relay driver
+pools at the hub nodes deliver PTI improvement but not the 48-hour SLA that requires near-
+continuous truck operation. AV trucking without relay hubs (as AV handoff nodes) requires
+a parallel infrastructure investment in AV-specific terminals that duplicates what relay hubs
+already provide.
+
+The ROUTE simulation \citep{ROUTE_C1} is unambiguous: relay alone captures 90\% of the
+freight reliability improvement that the full \$121 billion managed-lane program delivers,
+at 0.02\% of the cost. This is not an argument against managed lanes --- it is an argument for
+sequencing. Relay in 2027. Managed lanes in 2032. AV deployment in 2035. The relay marketplace
+buys the 15 years of lead time that highway construction requires. It is not a substitute for
+Interstate 2.0; it is the down payment.
+
+\subsection{Summary of Policy Recommendations}
+
+\begin{enumerate}
+  \item \textbf{FMCSA}: Issue NPRM defining relay terminal, relay pre-trip, and relay
+  engagement period under 49 CFR Parts 395, 396, and 387. Finalize within 24 months.
+
+  \item \textbf{FHWA/USDOT}: Issue NFRZ designation authority under IIJA \S 167, designating
+  approved relay terminals as NFRZ facilities with priority NHPP funding eligibility and
+  coordination status. The NFRZ designation removes the first-mover investment risk for
+  private hub operators.
+
+  \item \textbf{State DOTs}: Coordinate with FMCSA on relay terminal permitting. Relay
+  terminals require commercial zoning, stormwater management, and commercial vehicle access
+  road permits; state expedited review for NFRZ-designated facilities reduces the permitting
+  timeline by 12--18 months.
+
+  \item \textbf{FMCSA (AV)}: In the relay terminal rulemaking, include a future-compatibility
+  provision specifying that relay terminal AV upgrade standards (V2I, charging, monitoring
+  workstations) are eligible for the same NFRZ coordination status as Mode 1/2 relay
+  operations. This avoids a second rulemaking cycle when AV deployment reaches commercial
+  scale on T1 managed lanes.
+
+  \item \textbf{Industry}: Tier 1 carriers (J.B. Hunt, Werner, Amazon Freight, Schneider,
+  XPO) should form a relay terminal consortium to fund the pilot hub network (\$25 million
+  across 5--7 Tier 1 carriers), signal demand to hub operators, and provide operational
+  data for the FMCSA rulemaking comment period. The relay marketplace's business case is
+  strongest for large carriers whose fleets generate sufficient volume to benefit from
+  reserved Tier 1 slots and whose technology organizations can integrate the relay platform
+  API at scale.
+\end{enumerate}
+
+The relay marketplace is not a moonshot. It is a commercial platform for a service that the
+market would have built decades ago if the regulatory framework and the first-mover coordination
+mechanism had existed. McLean did not wait for governments to mandate containerization; he
+built a container vessel, proved the economics, and watched the industry reorganize around
+the interface standard. The relay marketplace starts the same way: one corridor, five hubs,
+a working platform. The rest follows.

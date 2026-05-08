@@ -1,0 +1,77 @@
+\section{The Hub Slot System: Airport Gate Model for Relay Capacity Allocation}
+\label{sec:hub-slot}
+
+\subsection{The Airport Gate Analogy}
+
+An airport gate slot is the fundamental unit of airport capacity allocation. A gate slot defines a time window (e.g., 2:15--2:45 PM), a physical gate (e.g., Gate B7), and an aircraft category (narrow-body, wide-body). Airlines bid for gate slots at congested airports, trade slots on secondary markets, and lose slots if utilization falls below minimum use requirements. The slot system solves a specific resource allocation problem: a finite set of physical gates must serve a heterogeneous set of aircraft with different arrival times, service times, and connecting flow requirements, without creating bottlenecks that cascade through the schedule.
+
+The relay hub faces an identical allocation problem. A relay hub has a finite number of dock spaces (bays where a relay handoff can occur simultaneously). Each dock has an average dwell time determined by the relay pre-trip protocol (8--12 minutes), driver boarding and departure (3--5 minutes), and administrative documentation (2--3 minutes) --- a total average dwell of 15--20 minutes per relay event. This dwell time determines the hub's throughput capacity, which is deterministic from the dock count. The slot system allocates this capacity across the carrier population using a three-tier reservation hierarchy that balances throughput efficiency, carrier relationship stability, and small-carrier access.
+
+\subsection{Capacity Mathematics: The Atlanta Hub}
+
+The ROUTE simulation designates the Atlanta T1 diamond hub (I-75/I-85/I-20 intersection) as the highest-throughput relay node on the eastern network, processing an estimated 28,740 trucks per day in bidirectional flow \citep{ROUTE_E1}. The capacity calculation proceeds as follows:
+
+\begin{align*}
+\text{Dwell time per relay event} &= 20 \text{ minutes (design assumption)} \\
+\text{Relay events per dock per hour} &= 60/20 = 3 \text{ events/dock/hour} \\
+\text{Operating hours} &= 24 \text{ hours/day} \\
+\text{Relay events per dock per day} &= 3 \times 24 = 72 \text{ events/dock/day} \\
+\text{Required docks} &= 28{,}740 \text{ trucks/day} \div 72 \text{ events/dock/day} = 399 \text{ docks}
+\end{align*}
+
+The 399-dock figure is the minimum number of dock spaces required for single-relay throughput at Atlanta volumes. In practice, not every truck requires a relay at every hub (some loads are under 500 miles; some trucks enter the hub only to refuel), and not every relay event occupies a dedicated dock (some drivers perform a walking handoff in the parking area for quick exchanges). Assuming 65\% of trucks require a dock-based relay event and 35\% use parking-area quick exchanges, the dock requirement reduces to 259 dock spaces. Rounding up for safety margin: approximately 300 dedicated relay docks, corresponding to a facility footprint of 35--40 acres (consistent with a major truck stop or distribution center).
+
+For a first-phase hub --- a smaller facility serving a corridor pilot --- the Atlanta math scales proportionally. A 750-dock-capable facility would handle the full 28,740-truck flow with headroom for growth; a 150-dock pilot facility handles 10,800 trucks per day, adequate for a proof-of-concept on a single corridor with 3,000--4,000 trucks per day of relay demand.
+
+Hub revenue at Atlanta-scale: \$100 swap fee $\times$ 28,740 trucks/day = \$2.874 million per day, or \$1.049 billion per year. Hub operating cost: 50 W-2 relay drivers $\times$ \$58,000/year + 20 operations staff $\times$ \$55,000/year + facility lease/mortgage \$1.2M/year + technology \$500k/year + insurance \$250k/year = \$5.55 million per year. Net hub margin: \$1.043 billion per year at Atlanta-scale. Hub capex: \$5 million for a 150-dock pilot facility. Payback period: 5 days at Atlanta revenue; less than 2 weeks on the lowest-volume T1 corridor (SEA--CHI with approximately 4,200 trucks/day).
+
+These economics are exceptional by any infrastructure standard: a relay hub is more profitable than a fuel distribution depot, a toll road, or a distribution center of comparable footprint. The profitability stems from the fact that the product --- driver labor and coordination --- is consumed immediately and does not require inventory, perishability management, or return logistics. The hub's input (relay driver labor) and output (load transit continuation) are the same transaction. This is the economic structure of a professional services marketplace, not a warehouse.
+
+\subsection{Three-Tier Carrier Classification}
+
+The slot system allocates dock capacity across three carrier tiers based on committed volume and operational continuity. Table~\ref{tab:tiers} summarizes the tier specifications.
+
+\begin{table}[ht]
+\centering
+\caption{Hub slot system: carrier tier specifications}
+\label{tab:tiers}
+\begin{tabular}{p{2.5cm}p{3cm}p{3.5cm}p{4cm}}
+\toprule
+\textbf{Tier} & \textbf{Volume Threshold} & \textbf{Slot Access} & \textbf{Pricing} \\
+\midrule
+Tier 1 Alliance & $>$500 trucks/day through hub & Reserved slots booked 24 hours in advance; guaranteed dock on arrival; priority processing in surge periods & Negotiated annual contract rate; 10--15\% discount vs.\ spot; SLA guarantee \\
+Tier 2 Registered & 10--500 trucks/day & Day-before booking window; standby queue at $>$90\% hub utilization; dock confirmed 4 hours pre-arrival & Standard published rate; no SLA guarantee; standby compensation if delayed $>$45 min \\
+Tier 3 Spot & $<$10 trucks/day or one-off & Queue for open slots; no advance reservation; first-available dock & Surge-priced: 1.0x--2.5x standard rate; no queue time guarantee \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Tier 1: Alliance Carriers}
+
+Tier 1 carriers commit to a minimum monthly volume through the hub and sign annual service agreements. In exchange, they receive: reserved dock slots prebooked 24 hours in advance (reducing their operational uncertainty); a dedicated driver pool tier (the hub operator assigns senior relay drivers with the carrier's preferred safety and handling standards); direct API integration for real-time load tracking; and guaranteed dock capacity during hub surge periods. Tier 1 carriers for a mature national relay marketplace would include J.B. Hunt, Werner Enterprises, Amazon Freight, XPO Logistics, and Schneider National --- carriers with fleets exceeding 10,000 tractors that generate predictable, high-volume relay demand \citep{FHWA_freight2023}.
+
+The Tier 1 reserved slot represents a property right with economic value. Slots can be traded within the Tier 1 consortium on a secondary market (analogous to airport gate slot secondary trading at congested hubs). A Tier 1 carrier that reduces volume below threshold in a given month forfeits the corresponding slots to the Tier 2 standby queue, creating a dynamic incentive for volume commitment accuracy.
+
+\subsubsection*{Tier 2: Registered Carriers}
+
+Tier 2 is the backbone of relay marketplace volume. Registered carriers --- those who have completed the marketplace onboarding process (CDL pool verification, insurance confirmation, RDU compliance certification) but do not meet Tier 1 volume thresholds --- book slots in the day-before window. Day-before booking provides enough demand signal for the hub operator to staff appropriately; the 4-hour confirmation window gives carriers operational certainty for dispatch planning. At 90\% hub utilization, Tier 2 carriers enter a standby queue and are dispatched to the next available dock; if the wait exceeds 45 minutes, the hub pays a standby compensation fee (\$50--\$75) to the carrier, creating a financial incentive for accurate utilization management on the hub's side.
+
+\subsubsection*{Tier 3: Spot Market}
+
+Tier 3 provides access for carriers that use the hub infrequently: a regional carrier diverting to the hub due to weather; an owner-operator making a one-time long-haul run; a Canadian carrier crossing the border for a single load. Tier 3 carries surge pricing to allocate scarce remaining capacity efficiently. Surge pricing serves two functions: it generates additional revenue during peak periods that subsidizes the Tier 2 standby compensation, and it creates an incentive for frequent spot users to graduate to Tier 2 registration (where pricing is lower and availability is guaranteed).
+
+\subsection{Small Carrier Advantage: The Counterintuitive Finding}
+
+A common objection to the hub slot system is that it disadvantages small carriers: large Tier 1 carriers get reserved slots and priority, while small operators queue. This objection inverts the actual comparison. The relevant baseline is not ``small carrier with relay marketplace'' versus ``large carrier with relay marketplace'' --- it is ``small carrier with relay marketplace'' versus ``small carrier without relay marketplace.''
+
+Without the relay marketplace, a 3-truck carrier doing a Salt Lake City to Atlanta run has exactly one option: solo long-haul. The solo driver earns \$1,456 per 2,800-mile trip, drives 11 hours per day under HOS, and delivers in 5.5 days \citep{FMCSA_HOS2022}. The 3-truck operator cannot maintain a Salt Lake City driver pool to enable relay, cannot negotiate with Atlanta hub operators for driver access, and has no organizational scale to manage the HOS compliance complexity of a multi-driver relay arrangement. The relay option is simply unavailable.
+
+With the relay marketplace, the 3-truck carrier pays the Tier 3 spot rate at the relay hubs on the SLC--ATL corridor, accesses the hub operator's relay driver pool on demand, and delivers in 28 hours at a total driver cost of \$1,050. The carrier does not need its own driver pool in SLC, Denver, Kansas City, or St. Louis. It buys driver-hours from the hub operator's pooled workforce, the same workforce that serves J.B. Hunt and Amazon Freight. The small carrier's relay capability is, at the Tier 3 level, equivalent to the large carrier's Tier 1 capability: a functioning relay for every load, on any corridor where the hub network exists.
+
+The argument that relay marketplaces advantage large carriers is structurally identical to the argument that credit card networks advantage large merchants. Credit card network economies of scale benefit large merchants (lower interchange rates) at the margin, but the network enables every merchant to accept cards --- a capability the smallest merchant could not achieve alone. The relay marketplace provides the 3-truck operator with relay capability they could not build, at a cost premium (Tier 3 vs.\ Tier 1 pricing) that is small relative to the relay efficiency gain. The net effect is that the relay marketplace reduces effective barriers to entry into long-haul freight for small carriers.
+
+\subsection{Barriers to Entry in Hub Operation}
+
+Hub operation itself has barriers to entry worth examining. The first hub on a corridor requires the largest capital commitment relative to initial demand: \$5 million for a 150-dock pilot facility before carrier volumes are proven. This is a first-mover investment that deters private capital without a demand signal. The appropriate policy response --- NFRZ designation under IIJA (Section~\ref{sec:why-relay-fails}) --- provides that signal. The second hub on the same corridor, built by a competing operator with demonstrated demand as evidence, faces substantially lower capital risk.
+
+At maturity, hub operation is a natural oligopoly: most major truck corridors support 2--3 relay hubs per corridor (spaced 400--500 miles apart for the 7-hour relay shift), and most corridor segments support 1--2 hub operators competing for dock allocation. This is the structure of airport ground handling, where 2--3 ground handlers typically compete at major airports. Regulation of hub operator market power --- analogous to DOT slot reallocation authority at slot-controlled airports --- is warranted if single-hub operators emerge in thin-market corridors. The NFRZ designation framework should include a provision for hub operator market conduct review if a corridor has fewer than 2 competing hub operators within 50 miles.

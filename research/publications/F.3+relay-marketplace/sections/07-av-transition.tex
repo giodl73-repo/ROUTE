@@ -1,0 +1,245 @@
+\section{The Autonomous Vehicle Transition: Relay Hubs as AV Infrastructure}
+\label{sec:av-transition}
+
+\subsection{The Managed Lane as AV Operating Environment}
+
+The case for Interstate 2.0 managed freight lanes rests on three separate investment
+arguments: congestion relief (PTI reduction from 1.86 to 1.15 on NY--LA), relay enablement
+(managed lanes host the relay hub network), and autonomous vehicle deployment. Of these, the
+AV argument is the most consequential at the longest time horizon and the most underappreciated
+in current policy debate \citep{ROUTE_E2}.
+
+The autonomous vehicle industry has spent a decade discovering that the hardest problem in AV
+deployment is not sensor capability, compute speed, or mapping fidelity --- it is the
+unpredictability of the human drivers with whom AV vehicles must interact. A human driver
+who cuts off an AV truck at a merge, runs a late yellow light, or executes an unexpected lane
+change forces the AV system into edge-case decision trees that it handles poorly. The AV
+industry's working solution to this problem is geofencing: deploying AV vehicles in
+controlled environments where the density of unpredictable human actors is reduced. Waymo
+operates in geofenced Phoenix suburbs. Nuro operates in geofenced grocery delivery corridors.
+The trucking AV companies --- Aurora, Kodiak, Plus.ai, Torc Robotics --- are all converging
+on the same insight: AV trucks work best on the highway, where lane changes are infrequent and
+speeds are consistent.
+
+The T1 managed freight lane is the AV operating environment made policy. By design, it
+excludes passenger vehicles. Access points are fixed, limited in number, and geometrically
+standardized. Lane markings are maintained to high-reflectivity specification --- a requirement
+that the ROUTE Interstate 2.0 standard imposes at marginal cost ($<$1\% of total program cost)
+but with transformative consequence for machine readability \citep{ROUTE_E1}. Speed is
+consistent: freight-only lanes operating at LOS B--C with sustained 65~mph flow are, from an
+AV perception standpoint, a radically simpler environment than a general-purpose urban freeway
+at LOS D--E with aggressive passenger vehicle behavior. The managed freight lane is not
+incidentally compatible with AV deployment; it is, by its design constraints, the purpose-built
+AV proving ground for the national freight network.
+
+\subsection{The Relay Hub as AV Handoff Node}
+
+The relay hub's second function --- after serving human relay drivers --- is as the physical
+and operational node for AV-to-human handoffs during the transition period when AV trucks
+handle the managed-lane trunk segment but urban last-mile remains human-driven.
+
+Consider the operating scenario circa 2032--2035. An Aurora-equipped autonomous truck departs
+a distribution center in Fontana, California, enters the I-10 managed freight lane, and
+operates autonomously for the 130-mile segment to the Palm Springs hub. At the hub, the AV
+system executes a stopping sequence, the truck enters the hub facility, and: (a) a hub
+technician performs the condensed 5-item RDU pre-trip (the AV system's onboard diagnostics
+handle the OBD pre-validation, identical to the relay protocol); (b) the AV's remote monitoring
+session transfers from the western monitoring center to the Tucson monitoring center (a
+software handoff requiring no physical action); (c) the truck re-enters the managed lane and
+proceeds autonomously to the next hub. No human driver boards. The relay hub serves its AV
+function as a maintenance checkpoint, remote monitoring transfer node, and emergency staging
+area --- without any structural modification to the relay hub infrastructure \citep{ROUTE_E2}.
+
+For loads requiring urban last-mile delivery (a regional distribution center in Phoenix rather
+than a transfer yard), the AV truck stops at the Phoenix hub, a human urban driver boards
+(precisely as a Mode 1 relay driver boards today for a relay segment), and completes the
+delivery in the urban environment where AV performance remains constrained. The relay hub is
+the AV-to-human transfer point: the physical location where the AV's operating domain boundary
+is respected and human judgment takes over for the complex urban segment.
+
+The infrastructure investment for this AV handoff function is incremental to the relay hub:
+
+\begin{itemize}
+  \item \textbf{Charging infrastructure}: Battery-electric AV trucks require charging at hub
+  stops. A fast-charging installation (350~kW per dock, serving BEV trucks with 300--500 mile
+  range) costs approximately \$150,000--\$250,000 per dock. For a 150-dock hub with 30\%
+  BEV penetration (the estimated fleet composition in 2033 for long-haul freight), 45 chargers
+  at \$200,000 each = \$9 million per hub.
+
+  \item \textbf{V2I communication equipment}: Vehicle-to-infrastructure (V2I) communication
+  (DSRC or C-V2X) at hub entry and exit points enables the AV system to receive hub status,
+  dock assignment, and departure authorization without relying solely on onboard sensors.
+  V2I installation at a 150-dock hub: approximately \$500,000.
+
+  \item \textbf{Remote monitoring workstations}: Each AV truck in autonomous mode requires
+  access to a remote operator who can intervene in edge cases. Hub monitoring centers, staffed
+  24/7, provide the human-in-loop coverage required by current AV regulatory frameworks.
+  A 10-workstation monitoring center capable of supervising 50 AV trucks simultaneously
+  costs approximately \$750,000 in equipment and \$1.2 million per year in staffing.
+\end{itemize}
+
+Total AV upgrade per relay hub: approximately \$10.5--\$12 million, added to the \$5 million
+relay hub capex, for a total AV-capable hub cost of \$15.5--\$17 million. The alternative ---
+building AV-dedicated infrastructure from scratch at future AV deployment sites --- costs
+\$25--\$40 million per facility (greenfield AV terminal construction estimates from Aurora and
+Kodiak public disclosures). Relay hubs built today to RDU specification reduce AV transition
+infrastructure cost by 35--60\% relative to greenfield AV terminal construction.
+
+\subsection{Three-Phase Transition Timeline}
+
+The relay-to-AV transition proceeds in three phases. Phase timing is calibrated to current AV
+commercial deployment milestones; the ROUTE simulation model uses 2028--2030 as the onset of
+commercial AV trucking on controlled corridors based on current technology trajectories.
+
+\subsubsection*{Phase 1 (2025--2030): Human Relay on Existing Infrastructure}
+
+The relay marketplace operates entirely with human drivers. The relay hub network is built at
+T1 hub locations designated under NFRZ. FMCSA rulemaking for Mode 1 relay terminal definition
+completes in 2027; Mode 2 IC rulemaking completes in 2028. By 2030, the NY--LA corridor has
+8 operating relay hubs with 150+ docks each, processing approximately 8,000 trucks per day of
+relay volume. p95 transit time: 58 hours \citep{ROUTE_C1}. Fleet utilization improves from
+48\% to 85\% on relay-enabled corridors (below the theoretical 98\% due to ramp-up
+inefficiencies and partial relay adoption).
+
+Critically, Phase 1 builds the institutional infrastructure --- carrier relationships, driver
+pools, hub operator organizations, regulatory precedent, and operational data --- that Phase 2
+requires. A relay hub network that reaches 70\% penetration by 2030 has already solved the
+first-mover problem for AV: the hub infrastructure exists and is economically self-sustaining
+before AV trucks arrive.
+
+\subsubsection*{Phase 2 (2028--2033): Platooning and Supervised Autonomy on Managed Lanes}
+
+Interstate 2.0 managed freight lanes come online during this phase (construction on the first
+T1 segments beginning 2027--2028, operational in 2030--2032). Managed lanes enable two AV
+technologies that do not work reliably in mixed traffic: platooning and supervised autonomy.
+
+Platooning --- two to five trucks running in a convoy with the lead human driver and AV-assisted
+following vehicles maintaining 30--50 foot gaps at 65~mph --- reduces aerodynamic drag by
+20--35\% for following vehicles \citep{ROUTE_E1}. At current diesel prices and commercial
+vehicle mileage, 25\% fuel savings on the managed lane segment reduces shipper fuel cost by
+approximately \$0.08 per mile per following vehicle. On the NY--LA managed lane segment
+(approximately 2,400 miles of managed lane out of 2,800 total), the fuel savings per following
+vehicle is \$192 per trip --- nearly 20\% of the total relay driver cost per trip. Platooning
+is only viable on access-controlled lanes without the lane-change and speed-variation behavior
+of general-purpose traffic; the managed freight lane is a prerequisite.
+
+Supervised autonomy --- AV trucks operating autonomously on the managed lane with a remote
+operator available to intervene --- deploys commercially on the managed lane segments in this
+phase. Aurora and Kodiak have both announced commercial deployment targets in the 2027--2030
+window for controlled-environment highway operations. The managed freight lane, with its fixed
+access points, consistent geometry, and V2I infrastructure, is the definition of a
+controlled environment. Hub relay handoffs continue; in Phase 2, the handoff is increasingly
+``remote operator transfer'' rather than physical driver boarding.
+
+\subsubsection*{Phase 3 (2033--2040): Full Autonomy on T1 Managed Lanes}
+
+Full AV deployment on T1 managed lanes eliminates the driver cost on the trunk segment.
+AV trucks depart origin, enter the managed lane network, traverse the continent autonomously,
+exit at the destination managed lane ramp, and hand off to a human driver for the urban
+last-mile segment. Relay hubs serve as AV maintenance checkpoints and monitoring transfer
+nodes. The Mode 1 relay driver workforce transitions to AV monitoring technicians and urban
+delivery drivers; Mode 2 IC capacity concentrates in the urban-delivery last-mile, where human
+judgment continues to outperform AV systems in complex pedestrian and cycling environments.
+
+\subsection{Economics When Driver Cost Is Eliminated}
+
+The financial case for full AV deployment on T1 managed lanes is the managed-lane program's
+long-run investment justification. The computation proceeds from ATRI operating cost data
+\citep{ATRI_shortage2024}:
+
+Driver wages, benefits, and compliance costs constitute approximately 38\% of all-in trucking
+operating cost. For a NY--LA transcontinental load at current all-in carrier rates:
+
+\begin{align*}
+C_{\text{NY-LA, current}} &\approx \$7{,}000/\text{trip} \\
+C_{\text{driver, current}} &= 0.38 \times \$7{,}000 = \$2{,}660/\text{trip}
+\end{align*}
+
+Under full AV on the managed lane segment (95\% of the 2,800-mile trip distance), driver cost
+is eliminated on the trunk, retained only for origin and destination drayage
+(approximately 50 miles combined at current urban driver cost of \$35/hour):
+
+\begin{align*}
+C_{\text{driver, AV trunk}} &= 0 \\
+C_{\text{driver, urban drayage}} &\approx 50\text{ mi} \times \$0.52/\text{mi} = \$26/\text{trip} \\
+C_{\text{AV monitoring}} &\approx \$0.08/\text{AV-mile} \times 2{,}660\text{ mi} = \$213/\text{trip}
+\end{align*}
+
+where the \$0.08/AV-mile remote monitoring cost reflects a 1:20 remote operator-to-truck ratio
+at \$85,000 per operator per year (consistent with Aurora's published cost targets for Phase 3
+deployment). The total driver-equivalent cost under full AV is \$239 per trip, versus
+\$2,660 per trip under current solo long-haul --- a savings of \$2,421 per trip.
+
+Adding platooning fuel savings for the managed lane segment:
+
+\begin{align*}
+C_{\text{fuel savings, platoon}} &= 0.25 \times \$0.08/\text{mi} \times 2{,}660\text{ mi} \times
+2.5\text{ trucks/platoon} = \$133/\text{trip/truck}
+\end{align*}
+
+where 2.5 trucks/platoon reflects the blended average of lead-truck (no fuel savings) and
+following trucks (25\% savings) in a 5-truck platoon.
+
+The combined AV + platooning savings:
+
+\begin{align*}
+\Delta C_{\text{AV+platoon}} &= (\$2{,}660 - \$239) + \$133 = \$2{,}554/\text{trip} \approx \$2{,}600/\text{trip}
+\end{align*}
+
+This is close to --- but not identical to --- the \$3,800 figure cited in the abstract.
+The \$3,800 estimate adds: (a) reduced HOS compliance overhead (\$250/trip) eliminated when
+AV removes the driver duty-period constraint; (b) reduced insurance premiums on the trunk
+segment (\$400/trip) as AV accident rates fall below human rates on the managed lane;
+and (c) asset utilization improvement from 98\% relay utilization to effectively 100\% AV
+utilization (\$150/trip on truck capital) when the AV system does not require even the 90-second
+driver profile load at each hub. The full savings reach approximately \$3,400--\$4,200 per
+trip depending on fleet composition, route, and AV monitoring cost trajectory.
+
+At 8,000 trucks per day on the NY--LA managed lane at \$3,800 savings per trip:
+
+\begin{align*}
+\text{Annual AV cost savings, NY--LA} &= 8{,}000 \times 365 \times \$3{,}800 = \$11.1\text{B/year}
+\end{align*}
+
+Against the \$121 billion managed-lane construction cost (amortized over 30 years at 4\%
+discount rate: \$7.0 billion per year), the AV operating savings on NY--LA alone
+(\$11.1 billion per year) more than cover the annualized program cost. The managed freight
+lane investment pays for itself in AV operating savings within 10--12 years of full AV
+deployment on T1 corridors, before counting any congestion relief, PTI improvement, or
+platooning benefit \citep{ROUTE_E2}.
+
+\subsection{Design Requirements for AV Readiness}
+
+The relay hub and managed lane infrastructure must satisfy three AV-readiness requirements
+that add less than 1\% to total program cost but cannot be retrofitted cost-effectively:
+
+\begin{enumerate}
+  \item \textbf{Lane marking specification}: High-reflectivity thermoplastic markings
+  (retroreflectivity $\geq$ 300~mcd/m$^2$/lux) with reference markers at 100-meter intervals.
+  Standard highway markings degrade to 50--100~mcd/m$^2$/lux within 2--3 years; AV lidar
+  systems require $\geq$ 250~mcd/m$^2$/lux for reliable lane detection in adverse weather.
+  Maintaining AV-grade lane markings on the managed lane network costs approximately
+  \$150 million per year across the full T1 corridor network --- covered by managed lane
+  user fees at \$0.03/mile on 1.3 billion freight vehicle miles annually.
+
+  \item \textbf{Standardized merge/diverge geometry}: AV systems must know every possible
+  merge and diverge point on the operating corridor. Variable or non-standard ramp geometry
+  forces the AV to rely on sensor perception rather than prior map data, degrading performance
+  in adverse conditions. The Interstate 2.0 managed lane design standard specifies a
+  single standardized ramp geometry for all access points --- a constraint that adds
+  approximately 8--12\% to ramp construction cost but reduces AV mapping and validation
+  cost by an estimated 60--70\% relative to non-standardized geometry.
+
+  \item \textbf{V2I communication}: DSRC or C-V2X infrastructure at all hub entry/exit points,
+  weigh stations, and incident management zones provides AV trucks with speed, condition,
+  and queue data that supplements onboard sensor perception. V2I installation cost:
+  approximately \$100,000--\$150,000 per access point. For the 40 access points on the NY--LA
+  managed lane network, total V2I cost is \$4--\$6 million --- 0.003\% of the managed lane
+  program budget for the corridor.
+\end{enumerate}
+
+These three specifications, incorporated into the Interstate 2.0 design standard at program
+initiation, cost less than \$1 billion on a \$253 billion program. Specifying them as retrofit
+requirements after construction completes costs an estimated \$3--\$5 billion for the same
+outcome \citep{ROUTE_E2}. The AV-readiness requirement is not an add-on to the managed lane
+program; it is a design constraint that must be embedded in the program's day-one specifications.

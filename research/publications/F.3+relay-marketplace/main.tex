@@ -1,0 +1,50 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,graphicx,hyperref,natbib,amsmath,longtable,array}
+\title{The Relay Marketplace: Platform Design for 48-Hour National Freight and the AV Transition}
+\author{Gio Della-Libera}
+\date{May 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+Relay driving --- handing a loaded trailer from one driver to another at an intermediate hub
+so the truck runs continuously --- is cheaper than solo long-haul (\$1,050 vs.\ \$1,456 per
+2,800-mile trip), doubles asset utilization (98\% vs.\ 48\% under the Hours of Service cycle),
+and eliminates the rural long-haul driver shortage premium. It is not happening at scale because
+no neutral inter-company relay marketplace exists. This paper diagnoses the coordination failure
+blocking relay adoption and develops an integrated platform design addressing four structural
+obstacles: (1) carrier fragmentation --- 70,000+ US trucking companies, 90\% operating fewer
+than 10 trucks, cannot individually sustain driver pools at relay hubs; (2) a regulatory gap
+in 49 CFR Part 395, which does not define a relay terminal, a relay pre-trip inspection, or
+an inter-carrier ELD handoff; (3) an insurance gap for relay drivers operating outside
+single-carrier employment; and (4) a truck standardization gap that makes driver handoffs
+between carriers operationally expensive. We propose the Relay Display Unit (RDU) cab
+standard --- modeled on Malcolm McLean's 1956 ISO shipping container --- as a five-component
+interoperability interface (standardized touchscreen, RFID driver profile, ELD relay handoff
+mode, OBD-validated condensed pre-trip, and load custody record). We specify a dual-mode
+insurance framework: Mode~1 hub-operator W-2 employment (launchable immediately under
+existing regulation) and Mode~2 independent contractor gig layer (requires 18--24-month FMCSA
+rulemaking). We design a three-tier airport-gate-model hub slot system for Tier~1 alliance
+carriers, Tier~2 registered carriers, and Tier~3 spot market, and show that the relay
+marketplace lowers effective barriers to entry for small carriers relative to the current solo
+long-haul model. Monte Carlo simulation (5,000 trips per corridor) shows relay alone reduces
+NY--LA p95 transit time from 87 to 58 hours --- capturing 90\% of the improvement achievable
+by \$121 billion in managed freight lane construction, at 0.02\% of the cost (\$40 million for
+8 stations). We further develop the three-phase AV transition timeline showing that T1 managed
+freight lanes are the purpose-built AV operating environment (no passenger vehicles, fixed
+access geometry, V2I infrastructure) and that relay hubs become AV handoff nodes with
+\$10.5 million in incremental investment, avoiding \$25--40 million in greenfield AV terminal
+construction. Full AV deployment on T1 managed lanes yields \$3,800 per-trip savings,
+recovering the \$121 billion managed lane program within 10--12 years of AV deployment at scale.
+\end{abstract}
+\input{sections/01-introduction}
+\input{sections/02-why-relay-fails-today}
+\input{sections/03-the-container-model}
+\input{sections/04-insurance-framework}
+\input{sections/05-hub-slot-system}
+\input{sections/06-marketplace-design}
+\input{sections/07-av-transition}
+\input{sections/08-conclusion}
+\bibliographystyle{apalike}
+\bibliography{references}
+\end{document}
