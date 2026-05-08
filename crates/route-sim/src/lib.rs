@@ -27,7 +27,8 @@ pub use assignment::{wardrop_equilibrium, FlowState};
 pub use incident::{IncidentSpec, apply_incident, restore_incident};
 pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork,
              DriverMode, Intervention, InterventionBenchmark, InterventionResult,
+             PassengerMode, PassengerTripDistribution, run_passenger_simulation,
              run_od_simulation, run_od_simulation_with_driver,
              run_intervention_stack, apply_interventions,
              ny_la_corridor, hou_chi_current, hou_chi_i69,
-             chi_la, mia_nyc, sea_chi, dal_nyc, la_sea, atl_chi};
+             chi_la, mia_nyc, sea_chi, dal_nyc, la_sea, atl_chi, ny_chi};

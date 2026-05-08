@@ -964,6 +964,29 @@ pub fn la_sea() -> OdCorridor {
     }
 }
 
+/// New York → Chicago via I-80/I-90 (790 miles — the overnight AV sweet spot)
+pub fn ny_chi() -> OdCorridor {
+    OdCorridor {
+        name: "NY→CHI (I-80/I-90 overnight corridor)".into(),
+        origin: "New York City, NY".into(),
+        destination: "Chicago, IL".into(),
+        fixed_overhead_hours: 2.0,
+        hos_driving_hours: 11.0,
+        hos_rest_hours: 10.0,
+        segments: vec![
+            CorridorSegment { name: "NJ/PA urban I-80".into(), miles: 120.0, base_vc: 0.92,
+                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment { name: "PA/OH/IN rural I-80/I-90".into(), miles: 560.0, base_vc: 0.35,
+                free_flow_mph: 75.0, incident_prob: 0.04, incident_delay_mean_hours: 0.8,
+                incident_delay_std_hours: 0.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.30 },
+            CorridorSegment { name: "Chicago south approach".into(), miles: 80.0, base_vc: 1.05,
+                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+        ],
+    }
+}
+
 /// Atlanta → Chicago via I-65 (730 miles — already fast; shows where relay adds little)
 pub fn atl_chi() -> OdCorridor {
     OdCorridor {
@@ -984,6 +1007,160 @@ pub fn atl_chi() -> OdCorridor {
                 free_flow_mph: 70.0, incident_prob: 0.08, incident_delay_mean_hours: 1.1,
                 incident_delay_std_hours: 0.7, managed_lane_bypasses_incident: false, managed_lane_vc: 0.58 },
         ],
+    }
+}
+
+// ── Passenger corridors ───────────────────────────────────────────────────────
+
+/// Passenger travel model — different from freight:
+/// - Bus speed: 55 mph average (stops, acceleration, boarding)
+/// - Personal AV: 75 mph sustained on managed lane
+/// - No HOS rest stops for AV (automated driving)
+/// - Stops at every T1/T2 hub (bus) vs relay-only (freight)
+#[derive(Debug, Clone, Copy)]
+pub enum PassengerMode {
+    /// Intercity express bus with relay driver at T1 hubs
+    /// Competitive with Amtrak on medium corridors
+    ExpressBus,
+    /// Autonomous personal vehicle on managed lane
+    /// Driver sleeps/works; takes over at urban exit
+    AutonomousVehicle,
+    /// Current Amtrak benchmark (for comparison)
+    Amtrak { schedule_hours: f64, reliability_pti: f64 },
+}
+
+/// Passenger trip result.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PassengerTripDistribution {
+    pub mode: String,
+    pub corridor: String,
+    pub distance_miles: f64,
+    pub p50_hours: f64,
+    pub p95_hours: f64,
+    pub pti: f64,
+    pub free_flow_hours: f64,
+    /// Cost per passenger ($)
+    pub cost_per_passenger: f64,
+    /// Amtrak schedule for comparison (hours)
+    pub amtrak_hours: Option<f64>,
+    /// Competitive with air? (air typically 6h total door-to-door for 500-mile corridors)
+    pub beats_air_under_miles: bool,
+}
+
+/// Run passenger SLA simulation on a freight corridor definition (reuses segment geography).
+pub fn run_passenger_simulation(
+    corridor: &OdCorridor,
+    mode: PassengerMode,
+    n_trips: usize,
+    seed: u64,
+    amtrak_hours: Option<f64>,
+) -> PassengerTripDistribution {
+    use rand::SeedableRng;
+    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let miles = corridor.total_miles();
+
+    let elapsed_times: Vec<f64> = (0..n_trips).map(|_| {
+        match mode {
+            PassengerMode::ExpressBus => {
+                // Bus at 55 mph effective, relay driver at T1 hubs
+                // More stops than freight: boarding time adds ~5 min per hub stop
+                let relay_stations = ((miles / 400.0).ceil() as usize).max(1);
+                let mut drive_hours = 0.0f64;
+                let mut delay = 0.0f64;
+
+                for seg in &corridor.segments {
+                    let vc = {
+                        let v = rng.gen_range(0.80..=1.15f64);
+                        let surge = if rng.gen_bool(0.08) { 1.30 } else { 1.0 };
+                        // Bus uses managed lane where available
+                        seg.managed_lane_vc * v * surge
+                    };
+                    let ff = seg.miles / 55.0_f64.min(seg.free_flow_mph);
+                    drive_hours += bpr_time(ff, vc.min(1.3));
+                    if !seg.managed_lane_bypasses_incident && rng.gen_bool(seg.incident_prob * 0.5) {
+                        // Bus can reroute faster than trucks; half the delay
+                        delay += sample_lognormal(
+                            seg.incident_delay_mean_hours * 0.5,
+                            seg.incident_delay_std_hours * 0.5,
+                            &mut rng,
+                        ).max(0.05);
+                    }
+                }
+                // Relay driver swaps + passenger boarding overhead
+                let swap_overhead = relay_stations as f64 * (20.0 + 8.0) / 60.0; // 28 min/stop
+                let terminal_overhead = 1.5; // boarding at origin + alighting at destination
+                drive_hours + delay + swap_overhead + terminal_overhead
+            }
+
+            PassengerMode::AutonomousVehicle => {
+                // AV at 75 mph on managed lane — no HOS stops, no driver fatigue
+                // Occasional slowdown: construction, weather, sensor limitation zone
+                let mut drive_hours = 0.0f64;
+                let mut delay = 0.0f64;
+
+                for seg in &corridor.segments {
+                    let base_speed = 75.0_f64.min(seg.free_flow_mph * 1.1);
+                    let vc = seg.managed_lane_vc * rng.gen_range(0.90..=1.05f64);
+                    let ff = seg.miles / base_speed;
+                    drive_hours += bpr_time(ff, vc.min(1.0)); // AV disengages above V/C 1.0
+
+                    // AV encounters: severe weather (must slow to 45mph), sensor degradation
+                    if rng.gen_bool(seg.incident_prob * 0.3) {
+                        // AV slows but doesn't stop; partial delay
+                        delay += rng.gen_range(0.1..0.5_f64);
+                    }
+                    // Donner/mountain pass: AV may need to slow; no closure because hardened
+                    if seg.name.contains("Donner") || seg.name.contains("Pass") {
+                        drive_hours *= 1.05; // 5% speed reduction for grade/weather caution
+                    }
+                }
+                // AV overhead: managed lane entry/exit (hub junction)
+                let hub_stops = ((miles / 500.0).ceil() as usize).max(0);
+                let hub_overhead = hub_stops as f64 * 0.1; // 6 minutes per hub junction
+                let terminal_overhead = 0.5; // park and walk at destination
+                drive_hours + delay + hub_overhead + terminal_overhead
+            }
+
+            PassengerMode::Amtrak { schedule_hours, reliability_pti } => {
+                // Amtrak: scheduled time × PTI variance
+                let variance = rng.gen_range(0.85..=(reliability_pti * 1.1));
+                schedule_hours * variance
+            }
+        }
+    }).collect();
+
+    let mut sorted = elapsed_times.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let n = sorted.len() as f64;
+    let p50 = sorted[(0.50 * (n - 1.0)) as usize];
+    let p95 = sorted[(0.95 * (n - 1.0)) as usize];
+    let ff = match mode {
+        PassengerMode::ExpressBus => miles / 55.0 + 1.5,
+        PassengerMode::AutonomousVehicle => miles / 75.0 + 0.5,
+        PassengerMode::Amtrak { schedule_hours, .. } => schedule_hours,
+    };
+    let cost = match mode {
+        PassengerMode::ExpressBus => miles * 0.12,       // $0.12/mile
+        PassengerMode::AutonomousVehicle => miles * 0.18 + 15.0, // $0.18/mi fuel+wear + managed lane toll
+        PassengerMode::Amtrak { .. } => miles * 0.15,    // Amtrak avg
+    };
+    let mode_label = match mode {
+        PassengerMode::ExpressBus => "Express bus (relay)",
+        PassengerMode::AutonomousVehicle => "AV personal vehicle",
+        PassengerMode::Amtrak { .. } => "Amtrak (current)",
+    };
+
+    PassengerTripDistribution {
+        mode: mode_label.to_string(),
+        corridor: corridor.name.clone(),
+        distance_miles: miles,
+        p50_hours: p50,
+        p95_hours: p95,
+        pti: p95 / ff,
+        free_flow_hours: ff,
+        cost_per_passenger: cost,
+        amtrak_hours,
+        beats_air_under_miles: p95 <= 6.0 && miles <= 600.0, // air ~6h door-to-door
     }
 }
 
