@@ -1,0 +1,17 @@
+paper: C.4+empty-backhaul-relay
+title: "Empty Miles and Load Matching: The Relay Marketplace as National Freight Optimizer"
+venue: "Transportation Research Part E (Logistics and Transportation Review)"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-07
+    note: "Spawned from relay hub simulation findings. The load-matching function of the
+           relay hub generates more economic value ($135B/yr in empty-mile reduction)
+           than the driver-matching function. National empty-mile rate from 35% to ~20%
+           via scheduled pre-matching; benchmarked against UPS/FedEx closed-network
+           performance. Structural flow imbalance analysis identifies highest-value hub
+           siting corridors. Track C extension of relay marketplace work."
