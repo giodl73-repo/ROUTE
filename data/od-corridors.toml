@@ -1,0 +1,213 @@
+# O-D Corridor definitions for route od and route interventions commands.
+# Each corridor is a named list of segments with traffic and incident parameters.
+#
+# Segment fields:
+#   name:                    human-readable label
+#   miles:                   segment length (miles)
+#   base_vc:                 baseline V/C ratio (HPMS AADT / design capacity)
+#   free_flow_mph:           posted/design speed (mph)
+#   incident_prob:           probability a given trip experiences a major incident here
+#   incident_delay_mean_h:   mean delay when incident occurs (hours, lognormal)
+#   incident_delay_std_h:    std dev of delay (hours)
+#   managed_lane_bypasses:   if true, managed lane avoids incident (e.g. Donner tunnel)
+#   managed_lane_vc:         V/C on managed freight lanes (target: 0.70)
+#
+# Sources: HPMS 2018; Caltrans District 3 closure logs; FHWA incident database;
+#          ATRI bottleneck report 2024; WSDOT closure data
+
+# ── Freight corridors ─────────────────────────────────────────────────────────
+
+[corridor.ny_la]
+name = "NY→LA (I-80 Northern Transcontinental)"
+origin = "New York City, NY"
+destination = "Los Angeles, CA"
+fixed_overhead_hours = 4.0   # fueling (3 stops × 45min) + inspection + loading
+hos_driving_hours = 11.0
+hos_rest_hours = 10.0
+
+[[corridor.ny_la.segments]]
+name = "NJ/PA urban (I-95→I-78→I-80)"
+miles = 120.0
+base_vc = 0.92
+free_flow_mph = 65.0
+incident_prob = 0.18
+incident_delay_mean_h = 1.2
+incident_delay_std_h = 0.8
+managed_lane_bypasses = false
+managed_lane_vc = 0.70
+
+[[corridor.ny_la.segments]]
+name = "PA/OH/IN rural I-80"
+miles = 560.0
+base_vc = 0.35
+free_flow_mph = 70.0
+incident_prob = 0.04
+incident_delay_mean_h = 0.8
+incident_delay_std_h = 0.5
+managed_lane_bypasses = false
+managed_lane_vc = 0.30
+
+[[corridor.ny_la.segments]]
+name = "Chicago metro bypass (I-80/I-90)"
+miles = 80.0
+base_vc = 1.05
+free_flow_mph = 65.0
+incident_prob = 0.20
+incident_delay_mean_h = 1.8
+incident_delay_std_h = 1.2
+managed_lane_bypasses = false
+managed_lane_vc = 0.68
+
+[[corridor.ny_la.segments]]
+name = "IL/IA/NE/WY rural I-80"
+miles = 1100.0
+base_vc = 0.28
+free_flow_mph = 75.0
+incident_prob = 0.06
+incident_delay_mean_h = 3.5
+incident_delay_std_h = 2.0
+managed_lane_bypasses = false
+managed_lane_vc = 0.25
+
+[[corridor.ny_la.segments]]
+name = "Donner Pass (Sierra Nevada, I-80)"
+miles = 65.0
+base_vc = 0.80
+free_flow_mph = 55.0
+# 50 closures/yr × 18h mean / 8760h/yr = 10.3% per-trip closure probability
+incident_prob = 0.103
+incident_delay_mean_h = 18.0
+incident_delay_std_h = 12.0
+managed_lane_bypasses = true   # managed lane = freight tunnel
+managed_lane_vc = 0.72
+
+[[corridor.ny_la.segments]]
+name = "Bay Area approach (I-80→I-580, Emeryville)"
+miles = 90.0
+base_vc = 1.15
+free_flow_mph = 65.0
+incident_prob = 0.22
+incident_delay_mean_h = 1.5
+incident_delay_std_h = 1.0
+managed_lane_bypasses = false
+managed_lane_vc = 0.70
+
+[[corridor.ny_la.segments]]
+name = "Bay Area→I-5 (cross CA via I-580/I-5)"
+miles = 350.0
+base_vc = 0.65
+free_flow_mph = 70.0
+incident_prob = 0.08
+incident_delay_mean_h = 1.0
+incident_delay_std_h = 0.6
+managed_lane_bypasses = false
+managed_lane_vc = 0.60
+
+[[corridor.ny_la.segments]]
+name = "LA approach (I-5/I-405 metro)"
+miles = 50.0
+base_vc = 1.30
+free_flow_mph = 65.0
+incident_prob = 0.25
+incident_delay_mean_h = 1.2
+incident_delay_std_h = 0.8
+managed_lane_bypasses = false
+managed_lane_vc = 0.70
+
+# ── HOU→CHI (current 3-hop) ───────────────────────────────────────────────────
+
+[corridor.hou_chi_current]
+name = "HOU→CHI (I-45→I-35→I-55, current 3-hop)"
+origin = "Houston, TX"
+destination = "Chicago, IL"
+fixed_overhead_hours = 3.0
+hos_driving_hours = 11.0
+hos_rest_hours = 10.0
+
+[[corridor.hou_chi_current.segments]]
+name = "Houston metro (I-45)"
+miles = 60.0
+base_vc = 1.10
+free_flow_mph = 65.0
+incident_prob = 0.18
+incident_delay_mean_h = 1.4
+incident_delay_std_h = 0.9
+managed_lane_bypasses = false
+managed_lane_vc = 0.70
+
+[[corridor.hou_chi_current.segments]]
+name = "I-45 Houston→Dallas"
+miles = 240.0
+base_vc = 0.55
+free_flow_mph = 75.0
+incident_prob = 0.06
+incident_delay_mean_h = 1.0
+incident_delay_std_h = 0.6
+managed_lane_bypasses = false
+managed_lane_vc = 0.50
+
+[[corridor.hou_chi_current.segments]]
+name = "Dallas interchange (I-45/I-35 merge)"
+miles = 30.0
+base_vc = 1.35
+free_flow_mph = 60.0
+incident_prob = 0.28
+incident_delay_mean_h = 1.8
+incident_delay_std_h = 1.2
+managed_lane_bypasses = false
+managed_lane_vc = 0.70
+
+[[corridor.hou_chi_current.segments]]
+name = "I-35 Dallas→Oklahoma City"
+miles = 210.0
+base_vc = 0.60
+free_flow_mph = 75.0
+incident_prob = 0.08
+incident_delay_mean_h = 2.5
+incident_delay_std_h = 1.5
+managed_lane_bypasses = false
+managed_lane_vc = 0.55
+
+[[corridor.hou_chi_current.segments]]
+name = "I-35 OKC→Kansas City"
+miles = 340.0
+base_vc = 0.45
+free_flow_mph = 75.0
+incident_prob = 0.05
+incident_delay_mean_h = 0.8
+incident_delay_std_h = 0.5
+managed_lane_bypasses = false
+managed_lane_vc = 0.40
+
+[[corridor.hou_chi_current.segments]]
+name = "St. Louis interchange (I-44/I-55/I-70 complex)"
+miles = 40.0
+base_vc = 0.95
+free_flow_mph = 60.0
+incident_prob = 0.15
+incident_delay_mean_h = 1.2
+incident_delay_std_h = 0.8
+managed_lane_bypasses = false
+managed_lane_vc = 0.68
+
+[[corridor.hou_chi_current.segments]]
+name = "I-55 St. Louis→Chicago"
+miles = 300.0
+base_vc = 0.50
+free_flow_mph = 70.0
+incident_prob = 0.05
+incident_delay_mean_h = 0.8
+incident_delay_std_h = 0.5
+managed_lane_bypasses = false
+managed_lane_vc = 0.45
+
+[[corridor.hou_chi_current.segments]]
+name = "Chicago south approach (I-55)"
+miles = 50.0
+base_vc = 1.05
+free_flow_mph = 65.0
+incident_prob = 0.18
+incident_delay_mean_h = 1.3
+incident_delay_std_h = 0.9
+managed_lane_bypasses = false
+managed_lane_vc = 0.70

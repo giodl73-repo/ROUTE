@@ -1,0 +1,9 @@
+corridor_slug,train_name,scheduled_hours,reliability_pti,on_time_pct,notes
+ny_chi,Lake Shore Limited,18.0,1.50,60,"NYC→Chicago; daily; 60% on-time 2023 (Amtrak OTP data)"
+la_sea,Coast Starlight,35.5,1.50,50,"LA→Seattle; daily; notoriously unreliable; 50% OTP"
+mia_nyc,Silver Star,30.0,1.50,75,"Miami→NYC; daily via Richmond; 75% OTP (I-95 corridor best)"
+sea_chi,Empire Builder,46.0,1.50,65,"Seattle→Chicago; daily; BNSF freight conflicts; 65% OTP"
+ny_la,Southwest Chief,67.0,1.50,55,"NYC→LA via Albuquerque; 3-day train; 55% OTP"
+chi_la,Southwest Chief,43.0,1.50,55,"Chicago→LA leg of Southwest Chief; 55% OTP"
+ny_chi_empire,Empire State (partial),5.0,1.20,85,"NYC→Albany only; higher frequency higher OTP"
+mia_orl,Silver Star (partial),4.5,1.25,80,"Miami→Orlando segment; shorter = more reliable"

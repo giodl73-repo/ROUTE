@@ -1,0 +1,85 @@
+# EV vehicle profiles for I2.0 charging analysis.
+# Loaded by `route ev-analysis`.
+#
+# highway_range_miles: practical range at 75 mph (typically 85-90% of EPA rating)
+# charge_rate_kw:      onboard charger limit (vehicle-side constraint)
+# battery_kwh:         usable battery capacity
+# kwh_per_mile:        energy consumption at highway speed
+#
+# Sources: EPA vehicle range ratings; manufacturer specifications;
+#          NREL fleet testing data 2024
+
+[[vehicles]]
+slug = "avg_ev_2026"
+name = "Average EV 2026"
+examples = ["Chevrolet Equinox EV", "Hyundai Ioniq 5", "Ford Mustang Mach-E"]
+highway_range_miles = 220.0
+charge_rate_kw = 150.0      # most affordable EVs top out at 150kW
+battery_kwh = 78.0
+kwh_per_mile = 0.355
+vehicle_class = "passenger"
+notes = "Conservative estimate for mid-range 2026 EVs; I2.0 150kW minimum standard fully utilized"
+
+[[vehicles]]
+slug = "tesla_model_y"
+name = "Tesla Model Y Long Range"
+examples = ["Model Y Long Range AWD"]
+highway_range_miles = 290.0  # EPA 330mi × 88% at 75mph
+charge_rate_kw = 250.0       # V3 Supercharger (NACS)
+battery_kwh = 82.0
+kwh_per_mile = 0.283
+vehicle_class = "passenger"
+notes = "Most common EV in US fleet; NACS connector; 250kW charge rate unlocked 2023"
+
+[[vehicles]]
+slug = "tesla_model_3"
+name = "Tesla Model 3 Long Range"
+examples = ["Model 3 Long Range RWD"]
+highway_range_miles = 310.0  # EPA 358mi × 87%
+charge_rate_kw = 250.0
+battery_kwh = 82.0
+kwh_per_mile = 0.264
+vehicle_class = "passenger"
+notes = "Higher efficiency than Model Y; same charge rate"
+
+[[vehicles]]
+slug = "rivian_r1t"
+name = "Rivian R1T (Max Pack)"
+examples = ["R1T Max Pack"]
+highway_range_miles = 280.0  # EPA 328mi × 85% at highway
+charge_rate_kw = 200.0
+battery_kwh = 149.0
+kwh_per_mile = 0.532
+vehicle_class = "truck"
+notes = "Work truck / light freight; lower efficiency due to weight"
+
+[[vehicles]]
+slug = "tesla_semi"
+name = "Tesla Semi (500mi range)"
+examples = ["Tesla Semi Production"]
+highway_range_miles = 480.0  # at loaded highway speed
+charge_rate_kw = 1000.0      # Megacharger (1MW); requires I2.0 freight terminal
+battery_kwh = 900.0
+kwh_per_mile = 1.875
+vehicle_class = "class8_freight"
+notes = "Class 8 truck; 1MW Megacharger; I2.0 freight terminals target 350kW minimum (1MW at major hubs)"
+
+[[vehicles]]
+slug = "freightliner_ecascadia"
+name = "Freightliner eCascadia"
+examples = ["eCascadia 440 Mile Range"]
+highway_range_miles = 400.0
+charge_rate_kw = 400.0       # CCS DC charging
+battery_kwh = 720.0
+kwh_per_mile = 1.800
+vehicle_class = "class8_freight"
+notes = "Daimler/Freightliner Class 8; CCS connector; competitor to Tesla Semi"
+
+# I2.0 charging infrastructure standards (for reference)
+[infrastructure]
+t1_passenger_dcfc_kw = 150      # minimum DCFC at T1 rest areas (passenger)
+t1_freight_dcfc_kw = 350        # minimum DCFC at T1 freight terminals
+t1_freight_megacharger_kw = 1000 # target at major T1/T1 hubs (Megacharger equivalent)
+t1_spacing_miles = 50           # maximum DCFC spacing on T1 corridors
+t2_passenger_dcfc_kw = 100      # T2 standard
+t2_spacing_miles = 75           # T2 maximum spacing

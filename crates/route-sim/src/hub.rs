@@ -6,13 +6,84 @@
 /// get a "remote operator" handoff rather than a physical driver.
 ///
 /// Staffing drivers = f(truck_volume, leg_hours, shift_hours, utilization)
+///
+/// Data source: data/relay-hubs.toml (loaded at runtime)
 use serde::{Serialize, Deserialize};
+use std::path::Path;
+
+/// TOML deserialization structures for relay-hubs.toml
+#[derive(Debug, Deserialize)]
+struct HubsFile {
+    hubs: Vec<HubRecord>,
+}
+
+#[derive(Debug, Deserialize)]
+struct HubRecord {
+    name: String,
+    corridors: Vec<String>,
+    status: String,
+    primary_aadt: u32,
+    secondary_aadt: Option<u32>,
+    primary_truck_pct: f64,
+    secondary_truck_pct: Option<f64>,
+    transfer_pct: f64,
+    daily_bus_services: f64,
+    avg_leg_miles: f64,
+    #[allow(dead_code)]
+    notes: Option<String>,
+}
+
+impl HubRecord {
+    fn daily_truck_volume(&self) -> f64 {
+        let primary = self.primary_aadt as f64 * (self.primary_truck_pct / 100.0)
+            * (self.transfer_pct / 100.0);
+        let secondary = self.secondary_aadt.unwrap_or(0) as f64
+            * (self.secondary_truck_pct.unwrap_or(0.0) / 100.0)
+            * (self.transfer_pct / 100.0);
+        primary + secondary
+    }
+}
+
+/// Load relay hubs from data/relay-hubs.toml, falling back to built-in defaults.
+pub fn load_hubs(data_dir: &Path, confirmed_only: bool) -> Vec<RelayHub> {
+    let path = data_dir.join("relay-hubs.toml");
+    if path.exists() {
+        match std::fs::read_to_string(&path)
+            .and_then(|s| toml::from_str::<HubsFile>(&s).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)))
+        {
+            Ok(file) => {
+                return file.hubs.into_iter()
+                    .filter(|h| !confirmed_only || h.status == "confirmed")
+                    .map(|h| {
+                        let daily_truck_volume = h.daily_truck_volume();
+                        RelayHub {
+                            name: h.name,
+                            corridors: h.corridors,
+                            status: h.status,
+                            daily_truck_volume,
+                            daily_bus_services: h.daily_bus_services,
+                            avg_leg_miles: h.avg_leg_miles,
+                            avg_leg_hours: h.avg_leg_miles / 65.0,
+                        }
+                    })
+                    .collect();
+            }
+            Err(e) => {
+                eprintln!("warning: could not parse {}: {e} — using built-in defaults", path.display());
+            }
+        }
+    }
+    // Fall back to built-in defaults
+    if confirmed_only { t1_diamond_hubs() } else { let mut h = t1_diamond_hubs(); h.extend(proposed_hubs()); h }
+}
 
 /// A relay hub at a T1/T1 or major T1/T2 intersection.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RelayHub {
     pub name: String,
     pub corridors: Vec<String>,
+    /// "confirmed" or "proposed" (proposed = corridor not yet built)
+    pub status: String,
     /// Trucks per day in each direction (each direction needs a fresh driver)
     pub daily_truck_volume: f64,
     /// Bus services per day (intercity express on managed lanes)
@@ -27,6 +98,7 @@ impl RelayHub {
     pub fn new(
         name: &str,
         corridors: Vec<&str>,
+        status: &str,
         daily_truck_volume: f64,
         daily_bus_services: f64,
         avg_leg_miles: f64,
@@ -34,6 +106,7 @@ impl RelayHub {
         RelayHub {
             name: name.to_string(),
             corridors: corridors.into_iter().map(String::from).collect(),
+            status: status.to_string(),
             daily_truck_volume,
             daily_bus_services,
             avg_leg_miles,
@@ -128,13 +201,12 @@ pub struct HubStaffing {
 /// - Both directions count (2× directional flow)
 pub fn t1_diamond_hubs() -> Vec<RelayHub> {
     vec![
-        // Chicago/Gary: I-80/I-90 — highest volume hub in national network
-        // I-80 AADT at Gary: ~85,000; I-90 ~65,000; truck fraction 12%+ (industrial)
         RelayHub::new(
             "Gary/Chicago, IL (I-80/I-90)",
             vec!["I-80", "I-90"],
+            "confirmed",
             daily_trucks(85_000, 12.0) + daily_trucks(65_000, 12.0),
-            48.0,  // 48 bus services/day (24 each direction, 2 routes)
+            48.0,
             440.0,
         ),
         // Atlanta: I-75/I-85 — highest truck volume T1/T1 in Southeast
@@ -144,6 +216,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Atlanta, GA (I-75/I-85)",
             vec!["I-75", "I-85"],
+            "confirmed",
             daily_trucks(280_000, 22.0) * 0.30 + daily_trucks(190_000, 18.0) * 0.30,
             36.0,
             440.0,
@@ -152,6 +225,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Boston, MA (I-95/I-90)",
             vec!["I-95", "I-90"],
+            "confirmed",
             daily_trucks(85_000, 8.0),
             24.0,
             400.0,
@@ -160,6 +234,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Seattle, WA (I-5/I-90)",
             vec!["I-5", "I-90"],
+            "confirmed",
             daily_trucks(75_000, 9.0),
             24.0,
             460.0,
@@ -168,6 +243,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Sacramento, CA (I-5/I-80)",
             vec!["I-5", "I-80"],
+            "confirmed",
             daily_trucks(65_000, 9.0),
             20.0,
             430.0,
@@ -176,6 +252,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "San Antonio, TX (I-10/I-35)",
             vec!["I-10", "I-35"],
+            "confirmed",
             daily_trucks(80_000, 14.0),  // USMCA truck fraction higher
             20.0,
             480.0,
@@ -184,6 +261,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Jacksonville, FL (I-10/I-95)",
             vec!["I-10", "I-95"],
+            "confirmed",
             daily_trucks(60_000, 9.0),
             16.0,
             420.0,
@@ -192,6 +270,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Toledo, OH (I-75/I-90)",
             vec!["I-75", "I-90"],
+            "confirmed",
             daily_trucks(55_000, 12.0),  // high truck fraction: auto parts
             12.0,
             420.0,
@@ -200,6 +279,7 @@ pub fn t1_diamond_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Richmond, VA (I-95/I-85)",
             vec!["I-95", "I-85"],
+            "confirmed",
             daily_trucks(65_000, 10.0),
             16.0,
             440.0,
@@ -214,6 +294,7 @@ pub fn proposed_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Wichita, KS (proposed I-31/I-29S)",
             vec!["I-31 (proposed)", "I-29S (proposed)"],
+            "proposed",
             daily_trucks(28_000, 10.0),  // lower initial volume; new corridor
             8.0,
             480.0,
@@ -222,6 +303,7 @@ pub fn proposed_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Houston, TX (I-10/I-69 on completion)",
             vec!["I-10", "I-69 (proposed)"],
+            "proposed",
             daily_trucks(70_000, 12.0),
             20.0,
             460.0,
@@ -230,6 +312,7 @@ pub fn proposed_hubs() -> Vec<RelayHub> {
         RelayHub::new(
             "Billings, MT (I-90/I-92 proposed)",
             vec!["I-90", "I-92 (proposed)"],
+            "proposed",
             daily_trucks(20_000, 8.0),
             8.0,
             520.0,

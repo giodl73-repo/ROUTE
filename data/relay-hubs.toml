@@ -1,0 +1,166 @@
+# Relay hub definitions for the I2.0 driver relay network.
+# Loaded at runtime by `route hub-staff`.
+#
+# truck_aadt: HPMS annual average daily traffic on the primary corridor at this hub
+# truck_pct:  fraction of AADT that is commercial trucks (from FHWA VTRIS)
+# transfer_pct: fraction of trucks that transfer between corridors at this hub
+#               (vs. passing through without a driver swap need)
+# Sources: HPMS 2018; FHWA VTRIS 2022; ATRI bottleneck data 2024
+
+[[hubs]]
+name = "Gary/Chicago, IL"
+corridors = ["I-80", "I-90"]
+status = "confirmed"
+primary_aadt = 85_000
+secondary_aadt = 65_000
+primary_truck_pct = 12.0
+secondary_truck_pct = 12.0
+transfer_pct = 100.0   # through-hub node; most trucks swap here
+daily_bus_services = 48
+avg_leg_miles = 440
+notes = "Highest-volume T1/T1 hub nationally; I-80/I-90 merge at Gary IN"
+
+[[hubs]]
+name = "Atlanta, GA"
+corridors = ["I-75", "I-85"]
+status = "confirmed"
+primary_aadt = 280_000
+secondary_aadt = 190_000
+primary_truck_pct = 22.0
+secondary_truck_pct = 18.0
+transfer_pct = 30.0   # 30% of trucks transfer; majority continue on same corridor
+daily_bus_services = 36
+avg_leg_miles = 440
+notes = "Southeast anchor; I-285 ring serves as diamond zone; ATRI top-10 bottleneck"
+
+[[hubs]]
+name = "Boston, MA"
+corridors = ["I-95", "I-90"]
+status = "confirmed"
+primary_aadt = 85_000
+secondary_aadt = 0
+primary_truck_pct = 8.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 24
+avg_leg_miles = 400
+notes = "NE terminus hub; I-95/Mass Pike junction; existing Logan Express precedent"
+
+[[hubs]]
+name = "Seattle, WA"
+corridors = ["I-5", "I-90"]
+status = "confirmed"
+primary_aadt = 75_000
+secondary_aadt = 0
+primary_truck_pct = 9.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 24
+avg_leg_miles = 460
+notes = "Pacific NW hub; I-5/I-90 at Bellevue; USMCA Canada border connection"
+
+[[hubs]]
+name = "Sacramento, CA"
+corridors = ["I-5", "I-80"]
+status = "confirmed"
+primary_aadt = 65_000
+secondary_aadt = 0
+primary_truck_pct = 9.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 20
+avg_leg_miles = 430
+notes = "West Coast E-W/N-S transfer; east of Donner Pass; Port of Oakland feeder"
+
+[[hubs]]
+name = "San Antonio, TX"
+corridors = ["I-10", "I-35"]
+status = "confirmed"
+primary_aadt = 80_000
+secondary_aadt = 0
+primary_truck_pct = 14.0   # higher: USMCA truck fraction on I-35
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 20
+avg_leg_miles = 480
+notes = "USMCA gateway; I-35 Laredo corridor ($277B annual trade); highest A4 score"
+
+[[hubs]]
+name = "Jacksonville, FL"
+corridors = ["I-10", "I-95"]
+status = "confirmed"
+primary_aadt = 60_000
+secondary_aadt = 0
+primary_truck_pct = 9.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 16
+avg_leg_miles = 420
+notes = "Florida gateway; I-10 terminus; k=1 SPF — diamond Phase 1 priority"
+
+[[hubs]]
+name = "Toledo, OH"
+corridors = ["I-75", "I-90"]
+status = "confirmed"
+primary_aadt = 55_000
+secondary_aadt = 0
+primary_truck_pct = 12.0   # automotive parts corridor
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 12
+avg_leg_miles = 420
+notes = "Great Lakes manufacturing hub; I-75/I-90; auto parts JIT supply chain"
+
+[[hubs]]
+name = "Richmond, VA"
+corridors = ["I-95", "I-85"]
+status = "confirmed"
+primary_aadt = 65_000
+secondary_aadt = 0
+primary_truck_pct = 10.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 16
+avg_leg_miles = 440
+notes = "Mid-Atlantic connector; I-95/I-85 diverge; serves SE to NE corridor"
+
+# ── Proposed hubs (missing link corridors) ────────────────────────────────────
+
+[[hubs]]
+name = "Wichita, KS"
+corridors = ["I-31 (proposed)", "I-29S (proposed)"]
+status = "proposed"
+primary_aadt = 28_000   # estimated at corridor opening; new build
+secondary_aadt = 0
+primary_truck_pct = 10.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 8
+avg_leg_miles = 480
+notes = "Great Plains anchor; I-31/I-29S intersection; agricultural freight hub; USDA grain belt"
+
+[[hubs]]
+name = "Houston, TX"
+corridors = ["I-10", "I-69"]
+status = "proposed"
+primary_aadt = 70_000
+secondary_aadt = 0
+primary_truck_pct = 12.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 20
+avg_leg_miles = 460
+notes = "Gulf Coast gateway; requires I-69 completion; Port of Houston feeder"
+
+[[hubs]]
+name = "Billings, MT"
+corridors = ["I-90", "I-92 (proposed)"]
+status = "proposed"
+primary_aadt = 20_000   # estimated; sparse Northern Tier
+secondary_aadt = 0
+primary_truck_pct = 8.0
+secondary_truck_pct = 0.0
+transfer_pct = 100.0
+daily_bus_services = 8
+avg_leg_miles = 520
+notes = "Mountain West / Northern Tier hub; requires I-92; serves MT/WY/ID agricultural freight"

@@ -1081,9 +1081,13 @@ fn main() -> Result<()> {
         }
 
         Commands::HubStaff { include_proposed } => {
-            let mut hubs = route_sim::t1_diamond_hubs();
-            if include_proposed {
-                hubs.extend(route_sim::proposed_hubs());
+            let data_dir = std::path::PathBuf::from("data");
+            let confirmed_only = !include_proposed;
+            let hubs = route_sim::load_hubs(&data_dir, confirmed_only);
+            if hubs.is_empty() {
+                eprintln!("No hubs loaded — check data/relay-hubs.toml");
+            } else {
+                println!("Loaded {} hubs from data/relay-hubs.toml", hubs.len());
             }
             let net = route_sim::compute_network_summary(&hubs);
             print_hub_staffing(&net, include_proposed);
