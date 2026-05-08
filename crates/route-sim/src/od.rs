@@ -544,6 +544,44 @@ impl TransitDistribution {
     pub fn sla_hours(&self) -> f64 { self.commitment_window_hours }
 }
 
+/// Apply seasonal incident probability modifiers to a corridor.
+/// month: 1=January ... 12=December
+pub fn apply_seasonal(corridor: &OdCorridor, month: u8) -> OdCorridor {
+    if month == 0 || month > 12 { return corridor.clone(); }
+    let mut c = corridor.clone();
+    let is_winter = matches!(month, 11 | 12 | 1 | 2 | 3 | 4);
+    let is_holiday = matches!(month, 10 | 11 | 12);
+    let is_harvest = matches!(month, 9 | 10 | 11);
+    let is_construction = matches!(month, 6 | 7 | 8);
+
+    for seg in &mut c.segments {
+        let name_lower = seg.name.to_lowercase();
+        // Mountain pass winter closures
+        if is_winter && (name_lower.contains("donner") || name_lower.contains("pass")
+            || name_lower.contains("snoqualmie") || name_lower.contains("siskiyou")) {
+            seg.incident_prob *= 2.4;
+            seg.incident_prob = seg.incident_prob.min(0.60);
+        } else if !is_winter && (name_lower.contains("donner") || name_lower.contains("pass")) {
+            seg.incident_prob *= 0.25;
+        }
+        // Holiday freight surge at urban bottlenecks
+        if is_holiday && (name_lower.contains("urban") || name_lower.contains("metro")
+            || name_lower.contains("approach") || name_lower.contains("interchange")) {
+            seg.base_vc = (seg.base_vc * 1.20).min(1.5);
+        }
+        // Harvest surge on rural corridors
+        if is_harvest && (name_lower.contains("rural") || name_lower.contains("i-35")
+            || name_lower.contains("i-55")) {
+            seg.base_vc = (seg.base_vc * 1.15).min(1.2);
+        }
+        // Summer construction
+        if is_construction && (name_lower.contains("urban") || name_lower.contains("approach")) {
+            seg.incident_prob = (seg.incident_prob * 1.20).min(0.45);
+        }
+    }
+    c
+}
+
 /// Run Monte Carlo and return distribution statistics.
 pub fn run_od_simulation(
     corridor: &OdCorridor,

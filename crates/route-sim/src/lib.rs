@@ -28,7 +28,7 @@ pub use assignment::{wardrop_equilibrium, FlowState};
 pub use incident::{IncidentSpec, apply_incident, restore_incident};
 pub use hub::{RelayHub, HubStaffing, NetworkSummary,
               load_hubs, t1_diamond_hubs, proposed_hubs, compute_network_summary};
-pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork, load_corridor,
+pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork, load_corridor, apply_seasonal,
              DriverMode, Intervention, InterventionBenchmark, InterventionResult,
              PassengerMode, PassengerTripDistribution, run_passenger_simulation,
              EvProfile, EvChargingAnalysis, analyze_ev_charging,

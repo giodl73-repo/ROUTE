@@ -15,6 +15,45 @@
 # Sources: HPMS 2018; Caltrans District 3 closure logs; FHWA incident database;
 #          ATRI bottleneck report 2024; WSDOT closure data
 
+# ── Seasonal modifiers ───────────────────────────────────────────────────────
+# Applied as multipliers on base incident_prob per segment.
+# month_idx: 1=Jan ... 12=Dec
+# peak_multiplier: multiply incident_prob during peak season
+# off_multiplier: multiply incident_prob during off season
+# Example: Donner Pass base incident_prob=0.103; winter peak ×2.4 = 0.247
+
+[[seasonal.mountain_winter]]
+name = "Mountain pass winter closures"
+applies_to_segments_containing = ["Donner", "Snoqualmie", "Siskiyou", "Pass", "Homestake"]
+peak_months = [11, 12, 1, 2, 3, 4]      # Nov–Apr
+off_months  = [5, 6, 7, 8, 9, 10]       # May–Oct
+peak_multiplier = 2.4   # Donner: 0.103 → 0.247 in winter
+off_multiplier  = 0.25  # Donner: 0.103 → 0.026 in summer
+
+[[seasonal.holiday_surge]]
+name = "Holiday freight surge (Oct–Dec)"
+applies_to_segments_containing = ["urban", "metro", "approach", "bypass", "interchange"]
+peak_months = [10, 11, 12]
+off_months  = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+peak_multiplier = 1.45  # V/C spikes 40%+ in urban bottlenecks
+off_multiplier  = 1.0
+
+[[seasonal.harvest_surge]]
+name = "Grain/produce harvest surge (Sep–Nov)"
+applies_to_segments_containing = ["rural", "I-35", "I-55", "I-80"]
+peak_months = [9, 10, 11]
+off_months  = [12, 1, 2, 3, 4, 5, 6, 7, 8]
+peak_multiplier = 1.25  # additional truck volume from harvest logistics
+off_multiplier  = 0.9
+
+[[seasonal.summer_construction]]
+name = "Summer road construction season (Jun–Aug)"
+applies_to_segments_containing = ["urban", "approach"]
+peak_months = [6, 7, 8]
+off_months  = [9, 10, 11, 12, 1, 2, 3, 4, 5]
+peak_multiplier = 1.20  # lane closures for resurfacing; adds incident delays
+off_multiplier  = 1.0
+
 # ── Freight corridors ─────────────────────────────────────────────────────────
 
 [corridor.ny_la]
