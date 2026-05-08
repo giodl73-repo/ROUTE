@@ -1,0 +1,56 @@
+\section{Empty Mile Anatomy}
+\label{sec:anatomy}
+
+\subsection{The Structural Causes of 35\% Empty}
+
+The 35\% national deadhead rate is not a single phenomenon. It is the aggregate of three structurally distinct causes, each requiring a different intervention. Understanding which cause dominates in which corridor type is a precondition for assessing where relay hub pre-matching provides the largest reduction.
+
+\subsubsection{Broker Market Friction}
+
+The spot freight market operates through load boards---DAT Freight, Truckstop.com, and since 2017, digital freight brokers including Uber Freight and Convoy. A driver who delivers to an unfamiliar destination and seeks a return load must: (1) call or log into a load board; (2) search available loads by origin, destination, and trailer type; (3) negotiate rate with the broker or shipper; (4) confirm load details and obtain load tender; and (5) complete the booking. The median clock time for this sequence is 30--60 minutes under favorable conditions---more when loads are scarce, when rate negotiation extends, or when the load board's top results require calls to brokers who have already placed their freight.
+
+This 30--60 minute search overhead is expensive. At \$225 per truck-hour \citep{ATRI_costs2024}, 45 minutes of search time costs \$169 per driver---approximately 5\% of a typical long-haul load revenue. The broker commission on a successfully placed spot load runs 15--20\% of the load revenue. Together, friction costs can consume 20--25\% of the load value before the truck moves a mile. At these cost levels, some drivers and small carriers rationally choose to run empty rather than incur the overhead of an unfavorable return load. The broker friction drives deadhead by making the return load economically marginal.
+
+\subsubsection{Carrier Network Siloing}
+
+Large-fleet truckload carriers manage their own load boards internally. Dedicated private fleets---which account for approximately 40\% of truck-miles---operate by definition outside the spot market; their empty miles result from network imbalances that the carrier cannot arbitrage because they would require accepting loads for competing shippers. Private fleet drivers returning from a customer delivery in Atlanta have no mechanism to accept a load from an unrelated shipper, even when that load is available at the same terminal, because the truck is committed to the private fleet's operational model.
+
+LTL carriers (UPS Freight, FedEx Freight, XPO, Old Dominion) face a different variant of siloing: their hub-and-spoke architecture requires equipment to return to service centers rather than accepting origin-to-destination loads available at delivery points. An LTL driver completing a linehaul run to Phoenix must return to Albuquerque empty even if Phoenix has available truckload freight, because the truck belongs to the LTL network topology, not the spot market.
+
+\subsubsection{Corridor Flow Imbalance}
+
+The third cause is structural and cannot be fully corrected by market design: some corridors are inherently unidirectional in their commodity flow. The grain corridor on I-29---from the Canadian border through North Dakota, South Dakota, Iowa, and Kansas City---moves agricultural commodities outbound year-round. The inbound commodity flow is consumer goods and manufactured products, which weigh less and cube out sooner, meaning that even when matching inbound loads are available they do not fill the return truck. The result is a structural empty rate above 40\% on the inbound leg that no market mechanism can fully close---the commodities moving in both directions are mismatched in density, weight, and timing.
+
+Table~\ref{tab:imbalance} shows estimated flow imbalance ratios for selected corridors based on FAF5 Origin-Destination data \citep{FAF5_2023}. The outbound/inbound tonnage ratio (values $> 1.0$ indicate more outbound freight) drives the structural floor on the empty rate in the imbalanced direction.
+
+\begin{table}[h]
+\centering
+\caption{Estimated Corridor Flow Imbalance Ratios and Structural Empty-Mile Floors}
+\label{tab:imbalance}
+\begin{tabular}{lccc}
+\toprule
+Corridor & Outbound/Inbound & Structural Empty Floor & Dominant Commodity \\
+\midrule
+I-29 (ND--KS) & 1.8 & 44\% (inbound) & Grain, livestock outbound \\
+I-10 (LA--CA, westbound) & 0.6 & 40\% (eastbound) & Container imports, LA port \\
+I-95 (NYC--Miami, southbound) & 1.4 & 29\% (northbound) & Consumer goods southbound \\
+I-80 (Chicago--SF, westbound) & 1.2 & 17\% (eastbound) & Mixed industrial \\
+I-40 (Memphis--Albuquerque) & 0.9 & 10\% (both) & Near-balanced \\
+I-35 (Dallas--KC) & 1.1 & 9\% (both) & Near-balanced \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Broker Market Structure}
+
+The US freight brokerage market generated approximately \$88 billion in revenue in 2023, handling an estimated 30--35\% of all truckload freight \citep{FHWA_freight2023}. The top 10 brokers---C.H. Robinson, Echo Global Logistics, Coyote Logistics, Transplace, Uber Freight, Convoy (now acquired), XPO Logistics Brokerage, Total Quality Logistics, Worldwide Express, and MoLo Solutions---account for approximately 60\% of brokered volume. The remaining 40\% is handled by approximately 20,000 smaller brokers.
+
+Broker commissions run 15--20\% of the load value on spot freight. On a \$2,500 load (the approximate average for a long-haul truckload in 2023 \citep{DAT_spotrates2023}), the broker retains \$375--\$500. The carrier receives \$2,000--\$2,125 from which it must cover all operating costs including driver wages, fuel, and equipment depreciation. At \$225/hr of fully-loaded truck cost \citep{ATRI_costs2024} and an average load duration of 12 hours of drive time, the all-in cost to the carrier is approximately \$2,700 for a loaded 720-mile haul---meaning many spot loads are marginally profitable or loss-making at current rates, driving further incentive to deadhead rather than accept undersized return loads.
+
+\subsection{Why Existing Load-Matching Platforms Fall Short}
+
+Uber Freight and Convoy represented a genuine improvement over telephone-based brokering: algorithmic rate quoting, digital load tenders, GPS-based tracking, and same-day payment. Convoy's internal research claimed a 30\% reduction in empty miles among carriers on its platform \citep{ROUTE_C3}. But both platforms share the reactive architecture of traditional brokering: the truck must be at or near origin before the matching algorithm can run, because carrier availability---the truck's current location, HOS clock, and trailer type---is not known far enough in advance to run a pre-match.
+
+The fundamental limitation is the absence of arrival scheduling data. A spot broker matching algorithm knows: (1) load origin and destination; (2) driver approximate location (from ELD/GPS); (3) driver HOS availability. It does not know when the driver will complete the current delivery, because the delivery duration is uncertain. The relay hub changes this: because the hub is a planned waypoint with scheduled arrival windows, the arrival time is known within 2--4 hours before the truck leaves its previous origin.
+
+This advance scheduling information is the input that makes bipartite pre-matching feasible. The difference between 30--60 minute reactive matching and 5--10 minute predictive matching is not algorithmic sophistication---the algorithms are roughly equivalent. The difference is the information window: 0 hours of advance notice (broker) versus 4--8 hours (relay hub).

@@ -1,0 +1,57 @@
+\section{Benchmark Calibration}
+\label{sec:benchmark}
+
+\subsection{The UPS/FedEx Closed-Network Benchmark}
+
+United Parcel Service and FedEx Ground operate the two most efficient large-scale ground freight networks in the United States. UPS's 2023 Sustainability Report discloses a ground network empty-mile rate of approximately 8\%---achieved through full closed-loop network control: every trailer movement is pre-assigned within the network before departure, return movements carry packages from UPS's own sorting centers, and the algorithm optimizes globally across the entire trailer fleet rather than locally at each terminal.
+
+FedEx Ground achieves a comparable rate (approximately 9\%) through a similar architecture: a hub-and-spoke network with planned linehaul runs, trailers assigned to return trips before outbound departure, and a driver settlement system that monetizes return loads explicitly. Neither company buys or sells freight on the spot market; their networks are closed in the sense that all freight originates from their own customer base.
+
+This closed-network architecture is the source of the 8--9\% empty rate, not algorithmic superiority per se. The matching problem is solved by controlling supply (trailers) and demand (packages) within the same enterprise. UPS does not need a bipartite matching algorithm because it owns both sides of the market. The question for relay hub design is: how much of the UPS efficiency gain is attributable to closed-loop control (unavailable to open-market trucking) versus advance scheduling information (available to the relay hub)?
+
+\subsection{Decomposing the Efficiency Gap}
+
+The gap between 8\% (UPS) and 35\% (national average) is 27 percentage points. We decompose this gap into three components:
+
+\begin{enumerate}
+  \item \textbf{Structural flow imbalance} (irreducible): Approximately 5--8 percentage points of empty miles are structural---they result from commodity flow asymmetry that no matching system can eliminate. UPS and FedEx face this too but manage it by adjusting trailer and package flows at the network level; an open-market relay hub cannot.
+
+  \item \textbf{Network control premium} (partially recoverable): Approximately 8--10 percentage points reflect the value of full network control---the ability to assign trailers to return trips before they depart, to modify routing mid-haul, and to refuse freight that would create imbalance. The relay hub achieves partial network control within its node: it controls which trucks receive which loads at the hub, but cannot control which trucks arrive or what loads are available. Estimated recovery: 50--60\% of this component, or 4--6 percentage points.
+
+  \item \textbf{Information friction} (largely recoverable): Approximately 9--14 percentage points reflect pure information friction---the 30--60 minute search overhead, the absence of advance scheduling, the broker commission disincentive. The relay hub's 4--8 hour advance window eliminates the search overhead for hub-transiting trucks. Estimated recovery: 70--80\% of this component, or 7--11 percentage points.
+\end{enumerate}
+
+Total estimated recovery: 11--17 percentage points, implying a relay hub empty-mile rate of 18--24\% for hub-transiting trucks. The national average improvement depends on the fraction of truck-miles that transit relay hubs, which we estimate at 40--55\% of long-haul TL miles on the top 20 T1/T2 corridors. Applying the improvement only to hub-transiting trucks, the national empty-mile rate falls from 35\% to approximately 20--22\%.
+
+\subsection{Why the Relay Hub Cannot Match UPS}
+
+Three structural differences prevent an open-market relay hub from achieving the UPS benchmark:
+
+\textbf{Carrier siloing}: Private fleet trucks (40\% of truck-miles) cannot accept spot loads from the relay hub marketplace without violating their operational commitments. Even if a private fleet truck arrives at a relay hub with 8 hours of HOS remaining and the hub has an ideal return load available, the private fleet carrier has no contractual mechanism to accept it. This siloing imposes a hard floor on the match-eligible truck population.
+
+\textbf{Driver home-base preferences}: Owner-operators and independent contractors weigh home-base proximity heavily in load selection. A driver based in Memphis will accept a load from Chicago to Atlanta (toward home) at a lower rate than an equivalent load from Chicago to Seattle (away from home). The relay hub objective function includes a home-base preference term ($\beta$ in Equation~\ref{eq:objective}), but satisfying this preference reduces the match quality on the revenue dimension. The UPS network does not have this constraint because drivers operate on fixed relay routes with planned home cycles.
+
+\textbf{Load tender lead time}: Some shippers do not tender loads until 2--4 hours before pickup---less than the relay hub's 4--8 hour advance window. Short-lead tenders reduce the pool of pre-matchable loads. In the UPS system, all freight is known at origin scan; lead times for the matching algorithm are 12--24 hours.
+
+\subsection{The 20\% Target}
+
+The relay hub target of 20\% empty (versus 35\% national baseline) is calibrated as follows:
+
+\begin{align}
+  \text{Baseline empty rate} &= 35\% \notag \\
+  - \text{Information friction recovery} &= 9\% \notag \\
+  - \text{Network control partial recovery} &= 5\% \notag \\
+  + \text{Siloing constraint add-back} &= +1\% \notag \\
+  \hline
+  \text{Target empty rate (hub-transiting trucks)} &\approx 22\% \notag
+\end{align}
+
+Applied to the full long-haul truck population (hub-transiting fraction 50\%):
+
+\begin{equation}
+  r_{\text{national}} = 0.50 \times 22\% + 0.50 \times 35\% = 28.5\%
+\end{equation}
+
+At 50\% hub penetration, the national rate falls to approximately 28--29\%. At 70\% penetration (top 20 corridors fully deployed), the national rate falls to approximately 24--25\%. The headline figure of 20\% assumes 85--90\% penetration on eligible long-haul truck-miles---achievable over a 10--15 year deployment horizon once the relay hub network reaches its planned scale \citep{ROUTE_C1}.
+
+We report the conservative 20\% target in the economic analysis (Section~\ref{sec:economic}) as the medium-term achievable benchmark, with the range 18--22\% reflecting uncertainty in hub penetration rates and carrier uptake.

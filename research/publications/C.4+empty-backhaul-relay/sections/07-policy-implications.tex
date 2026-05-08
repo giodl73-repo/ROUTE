@@ -1,0 +1,44 @@
+\section{Policy Implications}
+\label{sec:policy}
+
+\subsection{Relay Terminal Designation Enables Load Matching}
+
+The relay hub load-matching function does not exist without the physical relay terminal. The terminal provides: (1) a convergence point where trucks from multiple corridors arrive within predictable windows; (2) trailer interchange infrastructure (drop lots, coupling lanes) that makes the swap rapid enough to preserve driver HOS; (3) a communications environment (high-bandwidth connectivity, GPS, ELD integration) that enables real-time data collection for the matching algorithm.
+
+The policy implication is that relay terminal designation in the Federal-Aid Highway Program creates load-matching infrastructure as a byproduct. A terminal designated under a Relay Hub program (analogous to the existing Truck Parking Safety Improvement Act program for overnight parking) would qualify for NHPP funding on the grounds of freight throughput improvement---the load-matching function, quantified at \$113--\$135 billion per year, provides the benefit-cost ratio that justifies designation.
+
+FHWA should explicitly recognize load matching as a co-benefit of relay terminal investment in the benefit-cost guidance for INFRA grant applications. The current guidance requires applicants to quantify congestion reduction, safety improvement, and air quality benefits; it does not include a methodology for empty-mile reduction. Adding such a methodology would make relay terminal applications more competitive under INFRA without requiring new authorization.
+
+\subsection{Electronic Bill of Lading as Prerequisite}
+
+The relay hub matching algorithm requires machine-readable load information at the time the match is computed---4--8 hours before the truck arrives. Today, approximately 40\% of truck freight still moves on paper bills of lading. A paper BOL cannot be queried by a matching algorithm; the load tender must be rekeyed into a digital system before it is matchable, adding friction that negates the advance scheduling advantage.
+
+The Infrastructure Investment and Jobs Act (IIJA) authorized \$25 million for electronic BOL (e-BOL) pilot programs \citep{IIJA2021}. The pilot scope is insufficient to drive industry-wide adoption. FMCSA should propose a regulatory standard for machine-readable e-BOL under 49 CFR Part 373 (Bills of Lading) that requires electronic tendering for any shipment moving through a federally designated relay terminal. This is a narrow application---it applies only to loads entering the relay hub marketplace, not to the full freight market---and is justified by the federal interest in the matching platform's public goods benefits (carbon reduction, congestion reduction, safety).
+
+\subsection{FMCSA Data Sharing}
+
+The relay hub matching algorithm is more effective when it can access carrier data that is currently siloed: driver HOS clocks, trailer location, cargo status, and home-base preference. FMCSA's Motor Carrier Management Information System (MCMIS) and the ELD mandate (49 CFR Part 395) already require carriers to collect this data. The data is not shared with load-matching platforms because no regulatory mechanism requires or enables sharing.
+
+FMCSA should authorize a voluntary data-sharing program for carriers participating in federally designated relay hub networks. Participating carriers would share (de-identified) truck arrival schedules, trailer availability, and HOS status with the hub scheduler in exchange for priority lane access at the terminal. The program is voluntary---it does not require new mandates---and the exchange (data for priority access) creates a market incentive for participation.
+
+Sensitive carrier data (customer identity, freight value, shipper relationships) would remain proprietary and excluded from the sharing protocol. The shared data set is limited to the operational parameters required for matching: truck type, arrival window, HOS remaining, and home-base corridor. This data set is already disclosed to FMCSA via ELD reporting; the hub sharing program extends disclosure to the terminal scheduler, not to competitors.
+
+\subsection{Algorithm Architecture Comparison}
+
+The relay hub matching architecture differs from existing commercial platforms in three respects relevant to policy:
+
+\begin{enumerate}
+  \item \textbf{No broker commission}: The hub matching function is a public facility, analogous to a port authority's berth scheduling system. No commission is extracted; the matching algorithm is a public good funded through hub operating fees (comparable to truck parking fees at existing rest areas). The elimination of the 15--20\% broker commission is itself a \$44--59 billion per year efficiency gain embedded in the \$135 billion headline figure.
+
+  \item \textbf{Pre-match, not post-delivery}: Commercial platforms (Uber Freight, DAT) match after delivery; the hub matches before arrival. This distinction is the source of the 5--10 minute latency advantage and the elimination of driver detention time.
+
+  \item \textbf{Open API}: The hub matching platform should publish an open API to allow integration with TMS (Transportation Management Systems) used by large shippers and carriers. Open API architecture prevents the hub from becoming a proprietary marketplace (which would attract broker-equivalent commission expectations) and ensures that load-matching benefits are broadly accessible.
+\end{enumerate}
+
+Convoy's 2022 bankruptcy and the subsequent acquisition of its technology assets by Amazon illustrate the risk of private, VC-funded load-matching platforms: the network effect that makes them valuable also makes them fragile when growth stalls. A publicly operated hub marketplace, funded through terminal fees and authorized by FMCSA, is more durable because it does not require profit extraction from the matching function.
+
+\subsection{Hub Siting for Maximum Empty-Mile Reduction}
+
+The corridors with the highest structural flow imbalance (Section~\ref{sec:anatomy}, Table~\ref{tab:imbalance}) generate the largest empty-mile savings per hub. Hub siting decisions should weight flow imbalance explicitly. Current FHWA INFRA and IIJA freight program guidance does not include empty-mile reduction as a criterion for hub siting; it focuses on congestion and safety at the hub location itself.
+
+Recommended policy change: FHWA should add an ``empty-mile reduction potential'' metric to the INFRA application scoring rubric, defined as the outbound/inbound commodity flow imbalance ratio on the two primary corridors serving the hub, weighted by truck AADT. This metric is computable from FAF5 data \citep{FAF5_2023} and HPMS \citep{HPMS2018} without additional data collection. Hubs on I-29, I-10, and I-95 would score highest on this metric; their siting would therefore be prioritized above hubs on balanced corridors (I-70, I-40) where flow matching already reduces empty rates to near-baseline levels.

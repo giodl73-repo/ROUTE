@@ -1,0 +1,43 @@
+\section{Introduction}
+\label{sec:introduction}
+
+The US freight infrastructure debate has concentrated, appropriately, on the trunk corridor problem: I-80 over Donner Pass, the missing I-69 link between Houston and Chicago, the I-10 capacity constraint through Phoenix. These are real bottlenecks on multi-thousand-mile corridors that move an estimated \$9 trillion in freight annually \citep{FAF5_2023}. The Interstate 2.0 program addresses them with managed freight lanes, relay terminals, and intermodal integration points.
+
+But the trunk corridor analysis has a blind spot: it begins after the port gate. The container ship that docks at Long Beach, the RORO vessel unloading vehicles at Baltimore, the tanker offloading crude at the Houston Ship Channel---each generates truck freight that must traverse a short, intensely congested approach road before it reaches the first T1 or T2 interstate. These port connector segments are 5--20 miles long. They are too short to register as independent corridors in the FHWA tier analysis. They do not appear in ATRI's Annual Top Freight Bottleneck list because ATRI scores bottlenecks by absolute delay in truck-hours per day, and a 10-mile segment---even at V/C 1.5---accumulates less absolute delay than a 50-mile congested segment.
+
+But the economic logic is inverted. A 10-mile port connector at V/C 1.5 does not merely inconvenience freight---it throttles the entire port's throughput. Every truck that cannot exit the port gate on schedule displaces the next truck waiting to enter. Port congestion cascades backward into vessel demurrage, container dwell time, and shipper inventory cost in ways that trunk corridor congestion does not. A two-hour delay on a port connector imposes costs---vessel waiting time at \$30,000 to \$80,000 per day \citep{BTS_airfreight2023}, terminal storage fees, driver detention---that far exceed the direct cost of the delay.
+
+This paper makes three arguments. First: port connector segments are the systemic weak point in the US freight network for at least five major ports, and the weakness is structural, not marginal. Second: the existing classification system (T1, T2, T3 functional classes; ATRI bottleneck ranking by absolute delay) systematically excludes port connectors from the investment priority list because they are scored by the wrong metric. Third: a dedicated ``port connector'' classification standard---designed for drayage peak demand rather than 24-hour average daily traffic---would reallocate approximately \$20--50 billion of NHPP and IIJA freight investment to the segments with the highest throughput return per dollar.
+
+\subsection{Scope and Definitions}
+
+A \textbf{port connector} as defined in this paper is the primary approach road from a major US port gate to the nearest T1 or T2 interstate interchange. It includes: the on-port gate approach roads, the immediate access road off the port property, and the connector segment from the port exit to the first interstate interchange. In most cases, this segment ranges from 3 to 18 miles.
+
+The ten ports analyzed in this paper are the top US container ports by 2022 twenty-foot equivalent unit (TEU) volume, as reported by the Bureau of Transportation Statistics Port Performance Freight Statistics Program \citep{BTS_airfreight2023}: LA/Long Beach, NY/NJ, Savannah, Houston, Seattle/Tacoma, Baltimore, Norfolk (Virginia International Terminals), Charleston, Miami, and Oakland.
+
+We exclude non-container ports (bulk commodity, liquid bulk, break-bulk) from the primary analysis because their truck-trip generation patterns differ substantially from container ports; the Laredo land border is analyzed separately as a representative case of a different port connector class---land port of entry (LPOE) connectors.
+
+\subsection{Research Questions}
+
+\begin{enumerate}
+  \item \textbf{Congestion baseline}: What V/C ratio do the top ten US port connectors exhibit at peak hour, and how does this compare to the worst-ranked T1 bottlenecks?
+  \item \textbf{Failure mode taxonomy}: What are the distinct failure modes of port connectors (capacity failure, classification failure, resilience failure, jurisdictional fragmentation)?
+  \item \textbf{USMCA border case}: What is the border delay cost at Laredo, and what is the NPV of a dedicated truck lane on the I-35 connector?
+  \item \textbf{Investment case}: What is the per-connector upgrade cost and NPV, and what aggregate throughput improvement does a \$20--50 billion portfolio produce?
+\end{enumerate}
+
+\subsection{Findings Preview}
+
+Seven of ten port connector segments operate at V/C $> 1.2$ at peak hour. The I-710 Long Beach Freeway (LA/Long Beach port connector) operates at V/C 1.5+, handles 40\% of US container imports, and carries 35,000 trucks per day on an 11-mile undivided segment. The Laredo I-35 connector generates an estimated \$10.8 billion per year in border delay cost from 16,000 trucks per day crossing with 2--4 hour average wait times. Savannah's I-16/I-95 connector will reach its binding capacity constraint by 2028 at current growth, but investment lead times are 7--10 years, meaning the decision window is now. A portfolio of port connector investments totaling \$20--50 billion would increase national import/export freight throughput by approximately 15\% at a cost per throughput-unit 40--60\% lower than equivalent T1 managed-lane expansion \citep{ROUTE_B1, ROUTE_B2}.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+  \item The first systematic V/C analysis of the top ten US port connectors using HPMS data adjusted for drayage peak demand profiles.
+  \item A failure mode taxonomy for port connectors (four failure modes: capacity, classification, resilience, jurisdictional) applied to each of the ten ports.
+  \item The Laredo USMCA border delay quantification: \$10.8 billion per year in delay cost from a single connector, with an investment case for a dedicated truck lane.
+  \item A proposed ``port connector'' classification standard defined by drayage peak demand and a V/C $\leq 0.85$ at the 95th-percentile peak hour as the design target.
+  \item A project NPV ranking of port connector investments under USDOT TIGER/INFRA benefit-cost methodology.
+\end{enumerate}
+
+Section~\ref{sec:taxonomy} develops the port connector taxonomy and baseline data. Section~\ref{sec:vc} analyzes V/C ratios across the ten ports. Section~\ref{sec:laredo} presents the Laredo case study. Section~\ref{sec:savannah} analyzes Savannah's growth trajectory. Section~\ref{sec:investment} develops the investment case. Section~\ref{sec:i2} discusses I2.0 integration. Section~\ref{sec:conclusion} concludes with policy recommendations.

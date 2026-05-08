@@ -1,0 +1,59 @@
+\section{Relay Hub as Matching Platform}
+\label{sec:platform}
+
+\subsection{The Information Advantage}
+
+A relay hub at Chicago serves trucks arriving on I-80 from the east, I-90 from the northeast, I-55 from the south, and I-88 from the west. Each truck's arrival is known to within a 2--4 hour window from the moment it leaves its previous origin or previous relay point. The hub scheduler receives: (1) a manifest of arriving trucks with estimated arrival times, origin corridors, and trailer types; (2) a continuous feed of available load tenders from shippers and freight brokers within a 400-mile catchment; (3) driver HOS remaining clocks, updated via electronic logging device API.
+
+This information set is qualitatively different from what a spot broker possesses. The broker learns of a truck's availability when the driver calls in---typically within 30 minutes of delivery completion. The relay hub scheduler learns of a truck's availability 4--8 hours before arrival, which is precisely the time required to: (a) compute a bipartite matching over the arriving truck population and the available load inventory; (b) confirm the match with the shipper or freight broker tendering the load; (c) stage the outbound load at the hub for immediate coupling; and (d) notify the arriving driver of the assignment before the trailer is uncoupled.
+
+The operational implication is that a driver pulling into a relay hub can receive a return load assignment before disconnecting from the inbound trailer. If the outbound trailer is pre-staged and pre-loaded, the driver's dwell time at the hub is reduced to approximately 30 minutes (pre-trip inspection, fuel, mandatory break if HOS requires). Compare this to the broker scenario: 30--60 minutes of search, 30--45 minutes of negotiation and confirmation, and an indeterminate wait for the outbound trailer to be loaded. The relay hub's information advantage compresses the entire sequence to the time required for the driver's mandatory break.
+
+\subsection{Bipartite Matching Formulation}
+
+Let $T = \{t_1, t_2, \ldots, t_m\}$ be the set of trucks arriving at the relay hub in the next operational window (4--8 hours), and let $L = \{l_1, l_2, \ldots, l_n\}$ be the set of available loads tendered within the catchment area. Each truck $t_i$ has attributes: arrival time $a_i$, departure readiness time $d_i = a_i + \delta$ (where $\delta$ is the minimum dwell time, approximately 30 minutes), HOS remaining $h_i$, trailer type $\tau_i \in \{\text{dry van, reefer, flatbed, tanker}\}$, and home-base preference $b_i$.
+
+Each load $l_j$ has attributes: origin $o_j$ (within catchment), destination $s_j$, distance $r_j$, weight $w_j$, commodity type $c_j$, trailer type requirement $\tau_j^*$, pickup ready time $p_j$, and delivery deadline $e_j$.
+
+A feasible assignment $(t_i, l_j)$ exists if and only if:
+\begin{align}
+  \tau_i &= \tau_j^* \label{eq:trailer} \\
+  d_i &\leq p_j + \epsilon \label{eq:timing} \\
+  h_i &\geq r_j / v_{\text{avg}} + \delta_{\text{safety}} \label{eq:hos} \\
+  d_i + r_j / v_{\text{avg}} &\leq e_j \label{eq:deadline}
+\end{align}
+
+where $\epsilon$ is a pickup timing tolerance (typically 2 hours), $v_{\text{avg}}$ is average speed (65 mph long-haul), and $\delta_{\text{safety}}$ is an HOS safety buffer (1 hour). The matching objective function is:
+
+\begin{equation}
+  \max \sum_{(t_i, l_j) \in M} \left[ \alpha \cdot r_j + \beta \cdot \text{home}(t_i, s_j) - \gamma \cdot |a_i - p_j| \right]
+  \label{eq:objective}
+\end{equation}
+
+where $\alpha$ weights loaded miles (revenue), $\beta$ weights home-base alignment (driver preference, reduces future empty), $\gamma$ penalizes timing mismatch, and $M$ is the set of feasible assignments. The parameters $\alpha, \beta, \gamma$ are calibrated to carrier and driver preference distributions from survey data.
+
+This is a standard assignment problem solvable by the Hungarian algorithm in $O(n^3)$ time for $n = \min(m, |L|)$ \citep{Kuhn1955}. At hub scale (500--5,000 trucks per day, 4--8 hour window), the problem size is 100--2,000 trucks per matching cycle. At $O(n^3)$, the computation takes under 1 second for $n = 2,000$ on commodity hardware---well within the 5--10 minute latency target.
+
+\subsection{Hub Arrival Rate Parameterization}
+
+The relay hub scheduler receives truck arrivals as a stochastic process. We model arrivals as a Poisson process with rate $\lambda$ (trucks per hour), parameterized from FHWA HPMS truck AADT data \citep{HPMS2018} adjusted for the fraction of long-haul trucks that would use a relay hub. For a hub on I-80 at Chicago:
+
+\begin{itemize}
+  \item I-80 AADT at the hub: approximately 45,000 vehicles per day \citep{HPMS2018}
+  \item Truck fraction: 26\% (approximately 11,700 trucks per day)
+  \item Long-haul TL fraction eligible for relay: approximately 40\% of trucks (4,680 trucks per day)
+  \item Arrival rate $\lambda \approx 195$ trucks per hour (24-hour distribution)
+  \item Peak-hour arrival rate $\lambda_{\text{peak}} \approx 340$ trucks per hour (7 am--10 am, 5 pm--8 pm)
+\end{itemize}
+
+Load availability $\mu$ (loads per hour available for matching) is estimated from FAF5 commodity flow data \citep{FAF5_2023} within a 400-mile radius of the hub. The Chicago hub catchment includes: Indianapolis, Detroit, Milwaukee, Minneapolis, St.\ Louis, Kansas City, Louisville, and Cincinnati. FAF5 data indicate approximately 28,000 loaded truck movements per day originate from within this catchment, of which an estimated 30--40\% are moved via spot market mechanisms accessible to hub matching (the remainder are private fleet, dedicated contract, or rail). This yields $\mu \approx 350$--470 available loads per hour at peak.
+
+\subsection{Match Rate as a Function of Hub Throughput}
+
+The match rate $\rho = \lambda / \mu$ determines the probability that an arriving truck can be matched to an outbound load. When $\rho < 1$ (loads exceed trucks), every arriving truck can in principle be matched. When $\rho > 1$ (trucks exceed loads), the match rate degrades---some trucks will depart empty regardless of the algorithm's quality.
+
+The Chicago hub parameterization yields $\rho \approx 0.42$--0.56 (far below 1.0), indicating that the bottleneck is truck volume, not load availability. There are substantially more available loads than arriving eligible trucks. This is the favorable regime for pre-matching: the algorithm selects the best match from a rich choice set rather than rationing scarce loads.
+
+At smaller hubs---a relay point on I-29 in Fargo, ND---the arithmetic reverses. Truck arrivals are lower (approximately 800--1,200 trucks per day on I-29), and available loads within a 400-mile catchment of Fargo are also lower, but the flow imbalance creates a structural surplus of outbound grain loads relative to available truck capacity. In this regime, the hub pre-matching adds value by surfacing available return loads that would otherwise go unfilled (and be moved by adding trucks to the road), not by assigning trucks that would otherwise deadhead.
+
+The match rate as a function of hub throughput follows a logistic curve: rapid improvement from 35\% toward 20\% empty as throughput increases from 500 to 2,000 trucks per day, then diminishing returns above 2,000 trucks per day as structural flow imbalance becomes the binding constraint rather than information friction.

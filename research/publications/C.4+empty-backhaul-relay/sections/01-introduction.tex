@@ -1,0 +1,43 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Every day, approximately 3.5 million commercial trucks operate on US highways. On any given day, 35 percent of those trucks are running empty---not waiting for a load, not between customers, but physically moving down the road burning fuel, generating emissions, consuming driver hours, and producing zero revenue \citep{ATRI_costs2024}. This is the trucking industry's most expensive open secret, known to every dispatcher and ignored by most infrastructure planners. The deadhead mile---or empty backhaul---is the dominant efficiency failure of the largest freight sector in the world's largest economy.
+
+The arithmetic is not subtle. US trucking generates approximately \$900 billion in annual revenue \citep{BLS_trucking2023}. A 35 percent empty-mile rate means \$315 billion in operating costs---fuel, driver wages, truck depreciation, insurance---is incurred to move trucks that carry nothing. The cost does not appear as a line item on any freight bill, but it is priced into every loaded rate, every shipper contract, and every terminal fee. Empty miles are not a problem the industry has chosen to ignore; they are a problem the industry has not had the information architecture to solve at scale.
+
+The Interstate 2.0 relay hub architecture, proposed in \citet{ROUTE_F3} as a mechanism for driver shift management and intermodal integration, has a second function that has received less attention: it is a natural load-matching platform. A relay terminal at Chicago knows, to within a 4--8 hour window, which trucks will arrive from which origin corridors, what loads are available within a 400-mile catchment, and what the driver's hours-of-service clock shows at drop. This advance scheduling information is precisely what spot freight brokers lack. The broker matching problem is reactive---a truck arrives, the driver calls a board, and a 30--60 minute search begins. The relay hub matching problem is predictive---the assignment can be computed before the truck parks.
+
+This paper quantifies the value of that advance information. We formulate the relay hub as a bipartite matching platform, model the load-matching function using queueing theory, and estimate the national empty-mile reduction achievable through relay hub deployment on the top 20 T1/T2 corridors identified in the ROUTE corpus. We calibrate the upper bound of efficiency against the 8 percent empty rate achieved by UPS and FedEx on their closed managed networks---and argue that the relay hub can reach approximately 20 percent by providing coordinated pre-matching without requiring closed-network control.
+
+\subsection{The Scale of the Problem}
+
+The 35 percent national empty-mile figure \citep{ATRI_costs2024} masks substantial corridor-level variation. Long-haul truckload carriers on balanced O-D pairs operate at roughly 28--30 percent empty. On corridors with structural commodity flow imbalance---where substantially more freight moves in one direction than the other---empty rates can exceed 45 percent. The LA-to-New York direction carries 40 percent more outbound manufactured goods than the return direction receives in container import cargo suitable for truck haul; the result is a structural imbalance that drives empty backhauling on one of the highest-volume freight lanes in the country.
+
+The existing broker and load-board infrastructure does not solve this problem because it operates at the wrong time scale and with insufficient advance information. DAT Freight and Transportation, the largest US load board, matches approximately 250,000 loads per day with an average search time of 30--60 minutes per match. Uber Freight and Convoy digitize the same process with better UI and reduced friction, but the fundamental constraint---trucks arrive before loads are confirmed---remains. The relay hub inverts this sequence.
+
+\subsection{Research Questions}
+
+This paper addresses four questions:
+
+\begin{enumerate}
+  \item \textbf{Mechanism}: What is the precise information advantage of the relay hub over spot broker markets, and how does bipartite pre-matching exploit it?
+  \item \textbf{Efficiency boundary}: What is the achievable empty-mile rate given relay hub pre-matching, and why does the UPS/FedEx benchmark define the ceiling rather than the floor?
+  \item \textbf{Economic magnitude}: What is the aggregate efficiency gain from a 15-percentage-point reduction in the national empty-mile rate, and how does it distribute across carriers, shippers, and corridors?
+  \item \textbf{Carbon accounting}: What is the emissions reduction associated with the estimated empty-mile improvement, expressed per revenue ton-mile?
+\end{enumerate}
+
+\subsection{Findings Preview}
+
+The results are stated at the outset. Relay hub pre-matching reduces the national empty-mile rate from 35\% to approximately 18--22\%, generating \$113--\$135 billion per year in freight efficiency gains---a figure that exceeds the estimated capital cost of the managed-lane network that makes the relay hub architecture possible. Carbon reduction is approximately 45 million fewer empty truck-miles per day nationally, or roughly 16 billion fewer empty miles annually. Corridors with the highest structural flow imbalance generate disproportionate savings: I-29 (agricultural outbound dominates), I-10 (port import/export imbalance), and I-95 (manufactured goods southbound) are the primary efficiency targets. The load-matching function contributes more value per relay hub dollar than the driver-handoff function for which the architecture was originally designed.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+  \item A queueing-theoretic model of the relay hub as a freight clearing platform, parameterized from FHWA truck AADT data and FAF5 commodity flow data \citep{FAF5_2023}.
+  \item An empty-mile reduction curve as a function of hub throughput and catchment load density, calibrated against UPS/FedEx closed-network benchmarks.
+  \item Corridor-level ranking by empty-mile reduction potential, using commodity flow imbalance as the structural driver of deadhead rate.
+  \item Economic valuation of the aggregate efficiency gain (\$113--\$135 billion/year) and its distribution across the carrier and shipper populations.
+  \item A carbon accounting framework linking empty-mile reduction to trucking sector emission intensity, expressed in tons of CO$_2$ per revenue ton-mile.
+\end{enumerate}
+
+Section~\ref{sec:anatomy} analyzes the structural causes of the 35\% empty-mile rate. Section~\ref{sec:platform} develops the relay hub as a bipartite matching platform. Section~\ref{sec:benchmark} calibrates the efficiency frontier against UPS/FedEx performance. Section~\ref{sec:economic} quantifies the aggregate efficiency gain. Section~\ref{sec:carbon} reports carbon and capacity implications. Section~\ref{sec:policy} draws policy implications for relay terminal designation and data sharing. Section~\ref{sec:conclusion} concludes.

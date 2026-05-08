@@ -1,0 +1,44 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\subsection{The Relay Hub as National Freight Exchange}
+
+This paper has argued that the Interstate 2.0 relay hub is not primarily a driver logistics facility. It is a national freight exchange that happens to require physical infrastructure. The load-matching function---bipartite pre-matching of arriving trucks against available loads using 4--8 hours of advance scheduling information---generates \$113--\$135 billion per year in freight efficiency gains by reducing the national empty-mile rate from 35\% to approximately 20\%.
+
+This finding inverts the conventional framing of the relay hub concept. In the literature on relay trucking \citep{ROUTE_F3, ROUTE_C3}, the hub's value has been described in terms of driver welfare (shorter runs, predictable home time), hours-of-service compliance (shorter hauls reduce HOS pressure), and congestion reduction (fewer trucks held at rest areas). These are real benefits. But they are second-order compared to the load-matching function, which produces a recurring economic return an order of magnitude larger than any driver welfare improvement.
+
+The analogy is apt: the relay hub is to freight routing what the stock exchange is to capital allocation. The exchange does not itself create value; it provides the information architecture (price discovery, order matching, settlement) that allows value-creating transactions to occur efficiently. The 35\% national empty-mile rate is evidence that the freight market's current information architecture fails at exactly the point where the exchange function is most needed: the moment of delivery, when a truck's next load should be assigned.
+
+\subsection{Summary of Findings}
+
+The four research questions posed in Section~\ref{sec:introduction} are answered as follows:
+
+\begin{enumerate}
+  \item \textbf{Mechanism}: The relay hub's information advantage is 4--8 hours of advance truck arrival scheduling. This window enables bipartite pre-matching before delivery completion, eliminating the 30--60 minute post-delivery search and the 15--20\% broker commission.
+
+  \item \textbf{Efficiency boundary}: The achievable empty-mile rate for hub-transiting trucks is approximately 22\%. The UPS/FedEx 8--9\% benchmark reflects closed-network control that an open-market hub cannot replicate; the gap is attributable to carrier siloing, driver home-base preferences, and short-lead load tenders. The national aggregate rate falls to 20\% at 85--90\% hub penetration.
+
+  \item \textbf{Economic magnitude}: \$113--\$135 billion per year in aggregate freight efficiency, comprising \$72 billion in operating cost avoidance and \$63 billion in revenue recovery on previously empty miles. The top 10 T1/T2 corridors account for approximately \$63 billion of the total; the remainder accrues on regional and secondary corridors.
+
+  \item \textbf{Carbon accounting}: 5.8 MMT CO$_2$ per year in absolute emission reduction; approximately 12--15\% improvement in carbon intensity (grams CO$_2$ per revenue ton-mile). The capacity equivalent is 855 billion additional ton-miles---a 15\% increase in effective freight capacity---achieved without new trucks, new roads, or new weight limits.
+\end{enumerate}
+
+\subsection{Limitations}
+
+Several limitations apply to the quantitative estimates in this paper. First, the 35\% national empty-mile baseline from ATRI \citep{ATRI_costs2024} covers commercial for-hire trucking; private fleet rates are estimated separately and the aggregate is sensitive to the private/for-hire split assumed. Second, the 20\% target requires 85--90\% hub penetration---a deployment assumption that depends on carrier participation rates not yet observed in any comparable program. Third, the economic gain calculation assumes constant freight demand; in practice, lower freight rates (from passed-through efficiency gains) will stimulate additional freight volume, partially offsetting the per-ton carbon intensity improvement.
+
+Fourth, the flow imbalance data underlying Table~\ref{tab:corridors} is drawn from FAF5 \citep{FAF5_2023}, which uses modeled commodity flows rather than direct observation at the corridor level. Corridor-level empty-mile rates in the table are estimates with uncertainty bounds of approximately $\pm$5 percentage points.
+
+\subsection{Next Steps}
+
+Three extensions would strengthen the claims made here:
+
+\begin{enumerate}
+  \item \textbf{Pilot data}: A relay hub pilot program on a single imbalanced corridor (I-29 or I-10) for 12--24 months would provide observed empty-mile reduction data to replace the modeled estimates. The IIJA's \$8 billion freight program funding includes mechanisms for this type of pilot.
+
+  \item \textbf{Carrier behavioral model}: The hub matching model in Section~\ref{sec:platform} assumes carriers accept the assigned load if the feasibility constraints are satisfied. In practice, carrier acceptance rates depend on rate, destination, and driver preference in ways not fully captured by the objective function in Equation~\ref{eq:objective}. A discrete choice model of carrier load-acceptance behavior would improve the match rate estimates.
+
+  \item \textbf{Network effects}: The model treats each hub in isolation. At scale, relay hubs on the same corridor form a network with path dependencies: a load matched at Chicago may generate a new empty leg at Indianapolis that is itself matchable at the Indianapolis hub. A network-level simulation would capture these second-order effects, likely increasing the estimated efficiency gain.
+\end{enumerate}
+
+The case for the relay hub as a national freight exchange rests on the proposition that 35\% empty miles is not an equilibrium---it is a market failure sustained by information architecture that predates digital logistics. The relay hub resolves that failure. The \$135 billion annual efficiency gain is the value of fixing it.

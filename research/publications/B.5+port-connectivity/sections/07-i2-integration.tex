@@ -1,0 +1,44 @@
+\section{Interstate 2.0 Integration}
+\label{sec:i2}
+
+\subsection{The Port Connector as the I2.0 On-Ramp}
+
+Interstate 2.0 managed freight lanes on trunk T1 corridors are designed to operate at high speed (65--70 mph) with geometric consistency (12-foot lanes, 10-foot shoulders, limited access interchanges). The value proposition is that a truck entering the managed lane at one relay terminal can travel to the next relay terminal with predictable transit times and no mixing with slower traffic. The managed-lane system is, in effect, a premium freight highway that charges for the certainty premium it provides.
+
+A port connector that enters the managed-lane network at V/C 1.5 breaks this value proposition immediately. A truck exiting the Port of Long Beach at 6:00~am in the I2.0 managed-lane network faces a 45-minute crawl on the I-710 before it can enter the managed lane at the I-710/I-405 junction. The managed-lane reliability that the shipper paid for begins at the I-405 interchange; the 45-minute port connector delay is invisible to the managed-lane performance metric and cannot be SLA-committed. Port connector congestion leaks into the managed-lane performance envelope.
+
+The I2.0 system design should therefore treat the port connector as the first segment of the managed-lane corridor for performance guarantee purposes. This has two operational implications:
+
+\begin{enumerate}
+  \item \textbf{V/C standard consistency}: The I2.0 managed-lane design target is V/C $\leq 0.85$ at the 95th-percentile peak hour. Port connectors serving I2.0-designated corridors should be required to meet the same V/C standard. A port connector at V/C 1.5 is not a T1 bottleneck---it is an I2.0 bottleneck that happens to be 11 miles long.
+
+  \item \textbf{Drayage optimization integration}: The relay hub load-matching platform (Section~\ref{sec:anatomy} of the companion paper \citep{ROUTE_C3}) can integrate port gate scheduling data to optimize drayage sequencing on the port connector. If the load-matching algorithm knows that 400 trucks will arrive from the port between 9:00--10:00~am, it can sequence the gate releases to spread departures across a 2-hour window---reducing the peak-hour demand on the connector from 14,000 trucks/hour to 8,000--9,000 trucks/hour without adding any capacity. This operational smoothing can reduce V/C on the I-710 from 1.52 to approximately 1.15 at no infrastructure cost, as a short-term measure while physical improvements proceed through the NEPA process.
+\end{enumerate}
+
+\subsection{Drayage Optimization as Demand Management}
+
+Port drayage involves two classes of truck movement: live-load moves (truck arrives at port, loads a container, departs immediately) and street-turn moves (truck arrives with an empty container, exchanges for a loaded outbound container at the terminal). The latter requires less dwell time and generates half the number of connector trips per container move.
+
+The Georgia Ports Authority, Port of Long Beach, and Port of New York/New Jersey all operate appointment systems that schedule truck gate arrivals in 30-minute windows. These appointment systems currently optimize for terminal throughput (reducing yard congestion), not connector throughput. Integrating appointment scheduling with real-time connector V/C monitoring would allow the terminal operator to smooth connector demand: when the V/C exceeds 1.1, the appointment system holds the next wave of outbound gate releases for 15--20 minutes, allowing the connector to clear.
+
+This demand management approach reduces peak connector V/C by approximately 20--25\% in simulation \citep{POLA_gate2023} without requiring physical infrastructure changes. It is a prerequisite for I2.0 integration because it provides the real-time demand signal that the managed-lane control system needs to manage entry onto the T1 corridor.
+
+\subsection{The I2.0 Port Connector Design Standard}
+
+An I2.0-compatible port connector must meet the following minimum standards, which we propose as the ``port connector'' classification criteria:
+
+\begin{itemize}
+  \item \textbf{Geometric standard}: Limited-access freeway standard (no at-grade intersections) for the full length of the connector; 12-foot lanes; 10-foot right shoulder; interchange access only (no continuous right-turn movements).
+  \item \textbf{V/C standard}: V/C $\leq 0.85$ at the 95th-percentile peak hour, measured using the adjusted port peak-hour methodology (Equation~\ref{eq:vc} above), not 24-hour AADT.
+  \item \textbf{Resilience standard}: At least one viable alternate connector route capable of handling 60\% of normal truck volumes in the event of primary connector closure; alternate route identified and signed.
+  \item \textbf{Data standard}: Real-time V/C monitoring with 5-minute update frequency, integrated with the port gate appointment system and the I2.0 managed-lane control system.
+  \item \textbf{NHS designation}: The connector must be on the National Highway System to qualify for NHPP funding and I2.0 program inclusion.
+\end{itemize}
+
+Currently, only two of the ten connectors analyzed in this paper meet all five criteria: the I-10/I-610 connector at Houston (meets geometric, NHS, and data standards but not V/C at peak) and the I-64 Norfolk connector (meets geometric and NHS standards but not V/C or resilience). The other eight connectors require significant investment to reach I2.0 compatibility.
+
+\subsection{Integration with Relay Hub Siting}
+
+The relay hub siting analysis in \citet{ROUTE_C1} identifies optimal hub locations based on truck AADT, flow imbalance, and HOS constraints. Port connectors introduce an additional siting criterion: hubs near major ports should be positioned to capture port-origin freight that would otherwise deadhead on the connector.
+
+A relay hub at Carson, CA (between the I-710 terminus and the I-405/I-710 interchange) would capture trucks exiting the Port of Long Beach and offer immediate load-matching for the inland haul. This hub location is not optimal under the standard flow-balance criterion (the LA metro is relatively balanced in freight flows), but it is highly valuable for reducing connector congestion: a truck that matches a load at the Carson hub before entering the I-710 peak-flow period can delay its departure by 2--3 hours, naturally smoothing the connector peak demand. The hub's load-matching function thus acts as demand management for the connector---a synergy not captured in either the relay hub analysis alone or the port connector analysis alone.

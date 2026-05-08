@@ -1,0 +1,23 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,graphicx,hyperref,natbib,amsmath}
+\title{Empty Miles and Load Matching:\\
+       The Relay Marketplace as National Freight Optimizer}
+\author{Gio Della-Libera}
+\date{May 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+Thirty-five percent of US truck miles run empty---a deadhead rate that represents \$315 billion in annual zero-revenue operating cost on a \$900 billion industry. The structural cause is threefold: broker market friction (30--60 minute search overhead, 15--20\% commission), carrier network siloing, and systematic corridor flow imbalance. The Interstate 2.0 relay hub architecture offers a structural remedy: a relay terminal that knows both truck arrivals and available loads in the 400-mile catchment window can execute bipartite pre-matching with 5--10 minute latency, before the delivering driver completes unloading. We model the relay hub as a freight clearing platform and estimate that deployment on the top 20 T1/T2 corridors reduces the national empty-mile rate from 35\% to approximately 18--22\%, benchmarked against the 8\% empty rate achieved by UPS and FedEx on their optimized closed networks. The economic gain is \$113--\$135 billion per year in freight efficiency---larger than the estimated \$121 billion managed-lane capital investment---with zero additional infrastructure cost beyond the relay terminal. Carbon reduction is proportional: 15 percentage points of empty-mile improvement yields approximately 45 million fewer empty truck-miles per day, reducing trucking sector emissions by approximately 12--15\% per revenue ton-mile. Corridors with structural flow imbalance (outbound/inbound ratio $> 1.5$) generate 2--3 times more empty-mile savings per hub than balanced corridors; I-29 (grain), I-10 (port), and I-95 (manufactured goods southbound) are primary targets. The relay hub marketplace, at scale, is more analogous to a national freight exchange than a dispatch system.
+\end{abstract}
+\input{sections/01-introduction}
+\input{sections/02-empty-mile-anatomy}
+\input{sections/03-relay-hub-platform}
+\input{sections/04-benchmark-calibration}
+\input{sections/05-economic-quantification}
+\input{sections/06-carbon-and-capacity}
+\input{sections/07-policy-implications}
+\input{sections/08-conclusion}
+\bibliographystyle{apalike}
+\bibliography{references}
+\end{document}
