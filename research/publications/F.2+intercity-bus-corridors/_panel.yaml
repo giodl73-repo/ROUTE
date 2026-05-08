@@ -1,7 +1,7 @@
 paper: F.2+intercity-bus-corridors
 title: "Intercity Bus Corridors: Travel Time, Coverage, and Equity on the Interstate 2.0 Network"
 venue: "Transport Policy"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
@@ -18,13 +18,19 @@ scores:
   alan-mckinnon: 3
 avg_score: 2.6
 min_score: 2
+recheck_scores:
+  jarrett-walker: 3
+recheck_avg: 2.8
 reviews:
   jarrett-walker: reviews/REVIEW-walker.md
   angie-schmitt: reviews/REVIEW-schmitt.md
   david-neumark: reviews/REVIEW-neumark.md
   robert-puentes: reviews/REVIEW-puentes.md
   alan-mckinnon: reviews/REVIEW-mckinnon.md
+rechecks:
+  jarrett-walker: reviews/RECHECK-walker.md
 synthesis: reviews/SYNTHESIS.md
+recheck_synthesis: reviews/RECHECK-SYNTHESIS.md
 revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
@@ -33,3 +39,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers. avg 2.6/4. 3 P1 blocking items. Key issues: 62 mph speed claim lacks stop penalty model; 24M demand model underdescribed."
+  - stage: ready
+    date: 2026-05-07
+    note: "Recheck complete. PP1.2 and PP2.2 resolved. Walker 2→3. Full panel avg 2.8/4. Neumark not rechecked (different concern set). P3 notes (mode-split sensitivity, calibration appendix) advisory."

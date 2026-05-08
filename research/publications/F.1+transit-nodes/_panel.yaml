@@ -1,7 +1,7 @@
 paper: F.1+transit-nodes
 title: "T1/T1 as Transit Nodes: The Interstate 2.0 Passenger Layer"
 venue: "Transportation Research Part A: Policy and Practice"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
@@ -18,13 +18,21 @@ scores:
   robert-puentes: 3
 avg_score: 2.8
 min_score: 2
+recheck_scores:
+  jarrett-walker: 3
+  angie-schmitt: 3
+recheck_avg: 3.0
 reviews:
   jarrett-walker: reviews/REVIEW-walker.md
   angie-schmitt: reviews/REVIEW-schmitt.md
   susan-hanson: reviews/REVIEW-hanson.md
   ron-eberts: reviews/REVIEW-eberts.md
   robert-puentes: reviews/REVIEW-puentes.md
+rechecks:
+  jarrett-walker: reviews/RECHECK-walker.md
+  angie-schmitt: reviews/RECHECK-schmitt.md
 synthesis: reviews/SYNTHESIS.md
+recheck_synthesis: reviews/RECHECK-SYNTHESIS.md
 revision_plan: reviews/REVISION-PLAN.md
 history:
   - stage: planned
@@ -33,3 +41,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers. avg 2.8/4. 3 P1 blocking items. Key issue: 30-mile catchment not operational for transit-dependent travelers."
+  - stage: ready
+    date: 2026-05-07
+    note: "Recheck complete. PP1.2 and PP2.1 resolved. Walker 2→3, Schmitt holds 3. Full panel avg 3.0/4. P3 notes (ACS B08101, §5311(f) foreground) advisory for next pass."

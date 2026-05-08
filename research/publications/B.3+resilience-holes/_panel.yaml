@@ -1,18 +1,58 @@
 paper: B.3+resilience-holes
 title: "Resilience Holes: Compound Exposure in the National Highway Network"
 venue: "Transportation Research Record (TRR)"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
-reviewers: [chester, mckinnon, elefteriadou, puentes, hanson]
+reviewers:
+  - slug: chester
+    name: Mikhail Chester
+    role: transport-resilience
+    score: 3
+    score_max: 4
+  - slug: mckinnon
+    name: Alan McKinnon
+    role: freight-economist
+    score: 3
+    score_max: 4
+    recheck: "2026-05-07 — PP2.4 + PP2.5 resolved; PASS-WITH-NOTE"
+  - slug: elefteriadou
+    name: Lily Elefteriadou
+    role: traffic-engineer
+    score: 3
+    score_max: 4
+    recheck: "2026-05-07 — PP2.4 resolved; PASS-WITH-NOTE"
+  - slug: puentes
+    name: Robert Puentes
+    role: transport-policy
+    score: 3
+    score_max: 4
+  - slug: hanson
+    name: Susan Hanson
+    role: transport-geographer
+    score: 3
+    score_max: 4
 reviews:
-  chester: {score: 3, concern: "2050 D1 projection methodology not shown; lifecycle O&M cost missing"}
-  mckinnon: {score: 2, concern: "$1.6B/yr Donner estimate inadequately justified; no sensitivity table"}
-  elefteriadou: {score: 2, concern: "waiting cost rate error ($225/hr should be ~$91/hr); cost double-counting risk"}
-  puentes: {score: 3, concern: "PROTECT reform needs implementation timeline; 49 USC citation needs verification"}
-  hanson: {score: 3, concern: "community populations absent; B1 geographic sensitivity unexplained"}
-avg_score: 2.6
-min_score: 2
+  round1:
+    mean_score: 2.6
+    panel_decision: revision
+    blocking_items: 2
+    files:
+      - reviews/REVIEW-chester.md
+      - reviews/REVIEW-mckinnon.md
+      - reviews/REVIEW-elefteriadou.md
+      - reviews/REVIEW-puentes-b3.md
+      - reviews/REVIEW-hanson.md
+      - reviews/SYNTHESIS.md
+      - reviews/REVISION-PLAN.md
+  recheck1:
+    mean_score: 3.0
+    panel_decision: ready
+    blocking_items: 0
+    files:
+      - reviews/RECHECK-elefteriadou.md
+      - reviews/RECHECK-mckinnon.md
+      - reviews/RECHECK-SYNTHESIS.md
 history:
   - stage: planned
     date: 2026-05-06
@@ -20,3 +60,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers: Chester (transport-resilience), McKinnon (freight-economist), Elefteriadou (traffic-engineer), Puentes (transport-policy), Hanson (transport-geographer). Mean 2.6/4. P1 blocking items: correct waiting cost rate (Donner NPV revised to ~$11.6B), add NPV sensitivity table, show 2050 D1 projection methodology, add PROTECT reform implementation pathway."
+  - stage: ready
+    date: 2026-05-07
+    note: "Recheck complete. PP2.4 resolved: waiting cost corrected $225/hr -> $91/hr idle; D1 benefit $700M -> $400M/yr; NPV $15.8B -> $12.1B; CBR 5.75 -> 4.0:1. PP2.5 resolved: ROUTE_D1 citation added to 02-background.tex; cross-track dependency documented. Elefteriadou PASS-WITH-NOTE (3/4), McKinnon PASS-WITH-NOTE (3/4). Mean score 3.0/4. Paper advances to ready."

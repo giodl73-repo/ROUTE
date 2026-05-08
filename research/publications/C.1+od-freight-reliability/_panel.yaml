@@ -1,7 +1,7 @@
 paper: C.1+od-freight-reliability
 title: "Freight Reliability on the NY–LA and Houston–Chicago Corridors: Capacity, Bottlenecks, and the Interstate 2.0 Case"
 venue: "Transportation Research Part B: Methodological"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
@@ -13,8 +13,9 @@ reviewers:
   - slug: elefteriadou
     name: Lily Elefteriadou
     role: traffic-engineer
-    score: 2
+    score: 3
     score_max: 4
+    recheck: "2026-05-07 — PP1.4 resolved; PASS-WITH-NOTE"
   - slug: neumark
     name: David Neumark
     role: rural-economist
@@ -44,6 +45,13 @@ reviews:
       - reviews/REVIEW-hanson.md
       - reviews/SYNTHESIS.md
       - reviews/REVISION-PLAN.md
+  recheck1:
+    mean_score: 3.0
+    panel_decision: ready
+    blocking_items: 0
+    files:
+      - reviews/RECHECK-elefteriadou.md
+      - reviews/RECHECK-SYNTHESIS.md
 history:
   - stage: draft
     date: 2026-05-06
@@ -51,3 +59,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: BPR-based PTI at V/C 1.86 extrapolates beyond calibrated range (Elefteriadou 2/4). 8 P2 items. Revision required before re-review."
+  - stage: ready
+    date: 2026-05-07
+    note: "Recheck complete. PP1.4 resolved: BPR calibration range limitation paragraph added to 03-methods.tex; NPMRDS probe data cited; PTI findings reframed as conservative lower bounds. Elefteriadou PASS-WITH-NOTE (3/4). Mean score 3.0/4. Paper advances to ready."

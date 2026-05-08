@@ -1,7 +1,7 @@
 paper: E.2+i2-framework
 title: "Interstate 2.0: A Design Framework for Throughput, Resilience, and Shared Transit"
 venue: "Journal of Transport Geography"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
@@ -11,13 +11,13 @@ reviewers:
   - mikhail-chester
   - angie-schmitt
 scores:
-  robert-puentes: 2
+  robert-puentes: 3
   alan-mckinnon: 3
   david-neumark: 3
   mikhail-chester: 3
   angie-schmitt: 3
-avg_score: 2.8
-min_score: 2
+avg_score: 3.0
+min_score: 3
 reviews:
   robert-puentes: reviews/REVIEW-puentes.md
   alan-mckinnon: reviews/REVIEW-mckinnon.md
@@ -26,6 +26,10 @@ reviews:
   angie-schmitt: reviews/REVIEW-schmitt.md
 synthesis: reviews/SYNTHESIS.md
 revision_plan: reviews/REVISION-PLAN.md
+rechecks:
+  david-neumark: reviews/RECHECK-neumark.md
+  robert-puentes: reviews/RECHECK-puentes.md
+recheck_synthesis: reviews/RECHECK-SYNTHESIS.md
 history:
   - stage: planned
     date: 2026-05-06
@@ -33,3 +37,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. 5 reviewers. avg 2.8/4. 4 P1 blocking items."
+  - stage: ready
+    date: 2026-05-07
+    note: "Recheck complete. Neumark PASS-WITH-NOTE (PP1.1 resolved; capital timing framing P3). Puentes PASS-WITH-NOTE, score raised 2→3 (PP1.1 resolved; legislative pathway acknowledgment P2). Revised avg 3.0/4. Paper advances to ready."
