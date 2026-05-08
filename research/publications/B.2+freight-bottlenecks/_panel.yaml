@@ -1,7 +1,7 @@
 paper: B.2+freight-bottlenecks
 title: "Freight Bottlenecks: Where the Interstate System Exceeds Capacity"
 venue: "Transportation Research Record (TRR)"
-stage: revision
+stage: submit
 round: 1
 content_mode: full
 writing_completed: true
@@ -43,6 +43,7 @@ history:
   - stage: draft
     date: 2026-05-07
     note: "Writing completed — all 9 sections authored"
-  - stage: revision
+  - stage: submit
     date: 2026-05-07
     note: "Round 1 panel complete — avg 2.8/4, min 2/4 (Neumark). Blocked on cost-reduction counterfactual and cascade multiplier formalization."
+
