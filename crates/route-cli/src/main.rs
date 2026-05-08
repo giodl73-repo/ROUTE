@@ -538,6 +538,34 @@ fn main() -> Result<()> {
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
 
+            // T1 primary corridors get a regional map showing T2/T3/T4 feeders.
+            const T1_PRIMARY: &[&str] = &["I5","I10","I35","I40","I75","I80","I90","I95"];
+            if T1_PRIMARY.contains(&norm.as_str()) {
+                let tier_scores = route_map::load_tier_scores(
+                    std::path::Path::new("data/scores-all.csv")
+                );
+                // Convert f64 scores to f32 for the T1 corridor map API.
+                let scores_f32: std::collections::HashMap<String, f32> = tier_scores
+                    .iter()
+                    .map(|(k, &v)| (k.clone(), v as f32))
+                    .collect();
+                println!("  building T1 regional map for {norm} ({} score entries)…",
+                    scores_f32.len());
+                let svg = route_map::build_t1_corridor_svg(
+                    &graph,
+                    &norm,
+                    &scores_f32,
+                    None, // hub_coords — no hardcoded hubs in CLI for now
+                )?;
+                if let Some(parent) = out.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                route_map::svg_to_png(&svg, &out, 1800, 1000)?;
+                println!("  rendered T1 regional map: {} (1800×1000)", out.display());
+                println!("  {norm} bold · surrounding T2/T3/T4 visible in region");
+                return Ok(());
+            }
+
             let corridor = route_network::aggregate_corridor(&graph, &norm)
                 .ok_or_else(|| anyhow::anyhow!("Route '{}' not found in graph", norm))?;
 
@@ -1054,19 +1082,32 @@ fn main() -> Result<()> {
         }
 
         Commands::Od { corridor, month } => {
+            let data_dir = std::path::PathBuf::from("data");
             let (corridors, trips, seed): (Vec<route_sim::OdCorridor>, usize, u64) = match corridor {
-                OdCorridorCmd::NyLa { trips, seed } =>
-                    (vec![route_sim::ny_la_corridor()], trips, seed),
-                OdCorridorCmd::HouChi { trips, seed } =>
-                    (vec![route_sim::hou_chi_current()], trips, seed),
-                OdCorridorCmd::HouChiI69 { trips, seed } =>
-                    (vec![route_sim::hou_chi_i69()], trips, seed),
-                OdCorridorCmd::All { trips, seed } =>
-                    (vec![
-                        route_sim::ny_la_corridor(),
-                        route_sim::hou_chi_current(),
-                        route_sim::hou_chi_i69(),
-                    ], trips, seed),
+                OdCorridorCmd::NyLa { trips, seed } => {
+                    let c = route_sim::load_corridor(&data_dir, "ny_la")
+                        .unwrap_or_else(route_sim::ny_la_corridor);
+                    (vec![c], trips, seed)
+                }
+                OdCorridorCmd::HouChi { trips, seed } => {
+                    let c = route_sim::load_corridor(&data_dir, "hou_chi_current")
+                        .unwrap_or_else(route_sim::hou_chi_current);
+                    (vec![c], trips, seed)
+                }
+                OdCorridorCmd::HouChiI69 { trips, seed } => {
+                    let c = route_sim::load_corridor(&data_dir, "hou_chi_i69")
+                        .unwrap_or_else(route_sim::hou_chi_i69);
+                    (vec![c], trips, seed)
+                }
+                OdCorridorCmd::All { trips, seed } => {
+                    let ny_la = route_sim::load_corridor(&data_dir, "ny_la")
+                        .unwrap_or_else(route_sim::ny_la_corridor);
+                    let hou_chi = route_sim::load_corridor(&data_dir, "hou_chi_current")
+                        .unwrap_or_else(route_sim::hou_chi_current);
+                    let hou_i69 = route_sim::load_corridor(&data_dir, "hou_chi_i69")
+                        .unwrap_or_else(route_sim::hou_chi_i69);
+                    (vec![ny_la, hou_chi, hou_i69], trips, seed)
+                }
             };
 
             // Apply seasonal modifiers if month specified
@@ -1119,24 +1160,31 @@ fn main() -> Result<()> {
         }
 
         Commands::EvAnalysis => {
-            print_ev_analysis();
+            let data_dir = std::path::PathBuf::from("data");
+            print_ev_analysis(&data_dir);
         }
 
         Commands::PassengerMatrix { trips, seed } => {
             println!("route passenger-matrix — what I2.0 unlocks for people ({trips} trips)\n");
-            print_passenger_matrix(trips, seed);
+            let data_dir = std::path::PathBuf::from("data");
+            print_passenger_matrix(trips, seed, &data_dir);
         }
 
         Commands::SlaMatrix { trips, seed } => {
             println!("route sla-matrix — national SLA commitment windows ({trips} trips)\n");
-            print_sla_matrix(trips, seed);
+            let data_dir = std::path::PathBuf::from("data");
+            print_sla_matrix(trips, seed, &data_dir);
         }
 
         Commands::Interventions { corridor, trips, seed } => {
+            let data_dir = std::path::PathBuf::from("data");
             let c = match corridor {
-                InterventionCorridorArg::NyLa   => route_sim::ny_la_corridor(),
-                InterventionCorridorArg::HouChi => route_sim::hou_chi_current(),
-                InterventionCorridorArg::HouI69  => route_sim::hou_chi_i69(),
+                InterventionCorridorArg::NyLa => route_sim::load_corridor(&data_dir, "ny_la")
+                    .unwrap_or_else(route_sim::ny_la_corridor),
+                InterventionCorridorArg::HouChi => route_sim::load_corridor(&data_dir, "hou_chi_current")
+                    .unwrap_or_else(route_sim::hou_chi_current),
+                InterventionCorridorArg::HouI69 => route_sim::load_corridor(&data_dir, "hou_chi_i69")
+                    .unwrap_or_else(route_sim::hou_chi_i69),
             };
             println!("route interventions — {trips} trips per scenario\n");
             let bench = route_sim::InterventionBenchmark::run(&c, trips, seed);
@@ -1334,25 +1382,21 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     println!("  The operational model is identical. The regulation is the gap.");
 }
 
-fn print_ev_analysis() {
-    use route_sim::{analyze_ev_charging, tesla_model_y, tesla_semi, average_ev_2026};
+fn print_ev_analysis(data_dir: &std::path::Path) {
+    use route_sim::analyze_ev_charging;
 
     let i20_dcfc_kw = 150.0; // T1 standard: 150kW minimum DCFC
 
     let corridors = vec![
-        route_sim::ny_chi(),
-        route_sim::la_sea(),
-        route_sim::mia_nyc(),
-        route_sim::atl_chi(),
-        route_sim::ny_la_corridor(),
-        route_sim::sea_chi(),
+        route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
+        route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
+        route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
+        route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
+        route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
+        route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
     ];
 
-    let evs = vec![
-        average_ev_2026(),
-        tesla_model_y(),
-        tesla_semi(),
-    ];
+    let evs = load_ev_profiles(data_dir);
 
     println!("route ev-analysis — I2.0 guaranteed DCFC (150kW every 50 miles on T1)\n");
     println!("Current T1 DCFC gap: rural segments have 80-120+ mile gaps (some 0 DCFC at all).");
@@ -1402,8 +1446,10 @@ fn print_ev_analysis() {
 
     println!("── The overnight AV scenario ─────────────────────────────────────────────");
     println!("  Tesla Model Y (290mi range) on NY→CHI (760mi):");
-    let ny_chi = route_sim::ny_chi();
-    let model_y = tesla_model_y();
+    let ny_chi = route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi);
+    let model_y = evs.iter().find(|e| e.highway_range_miles >= 280.0 && e.charge_rate_kw <= 250.0)
+        .cloned()
+        .unwrap_or_else(route_sim::tesla_model_y);
     let a = analyze_ev_charging(&ny_chi, &model_y, i20_dcfc_kw);
     println!("    Charging stops: {}", a.stops_i20);
     println!("    Total charge time: {:.0} minutes", a.charge_minutes_i20);
@@ -1418,14 +1464,23 @@ fn print_ev_analysis() {
     println!("  I2.0 standard (50-mile spacing) eliminates this completely.");
     println!();
     println!("  Freight Tesla Semi (480mi range, 1MW Megacharger):");
-    let semi = tesla_semi();
+    let semi = evs.iter().find(|e| e.charge_rate_kw >= 900.0)
+        .cloned()
+        .unwrap_or_else(route_sim::tesla_semi);
     let a2 = analyze_ev_charging(&ny_chi, &semi, 1000.0); // 1MW freight charger
     println!("    NY→CHI: {} charging stops, {:.0} min total charge time", a2.stops_i20, a2.charge_minutes_i20);
     println!("    {} at relay hubs (driver swap + charge simultaneously)", a2.overnight_note);
 }
 
-fn print_passenger_matrix(trips: usize, seed: u64) {
+fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
     use route_sim::{PassengerMode, run_passenger_simulation};
+
+    // Load Amtrak schedules from CSV; fall back to hardcoded values if file missing.
+    let amtrak = load_amtrak_schedules(data_dir);
+
+    let amtrak_hours = |slug: &str, fallback: Option<f64>| -> Option<f64> {
+        amtrak.get(slug).copied().or(fallback)
+    };
 
     // Corridors with Amtrak benchmarks (scheduled hours, reliability PTI)
     // PTI: 1.0 = perfectly on time; Amtrak long-distance PTI ~1.4-2.0
@@ -1434,15 +1489,24 @@ fn print_passenger_matrix(trips: usize, seed: u64) {
     // Threshold: air is competitive when door-to-door < 4h (flight < 1.5h + overhead 2.5h)
     // Below that, bus relay often wins on total door-to-door time AND cost
     let corridors: Vec<(route_sim::OdCorridor, Option<f64>, &str)> = vec![
-        (route_sim::ny_chi(),        Some(18.0), "Lake Shore Ltd 18h (60% on-time)"),
-        (route_sim::la_sea(),        Some(35.5), "Coast Starlight 53h p95 (50% on-time)"),
-        (route_sim::mia_nyc(),       Some(30.0), "Silver Star 45h p95 (75% on-time)"),
-        (route_sim::atl_chi(),       None,       "No direct Amtrak service"),
-        (route_sim::hou_chi_i69(),   None,       "No direct Amtrak"),
-        (route_sim::dal_nyc(),       None,       "No direct Amtrak"),
-        (route_sim::sea_chi(),       Some(46.0), "Empire Builder 69h p95 (65% on-time)"),
-        (route_sim::ny_la_corridor(),Some(67.0), "Southwest Chief 100h p95 (55% on-time)"),
-        (route_sim::chi_la(),        Some(43.0), "Southwest Chief 64h p95 (55% on-time)"),
+        (route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
+            amtrak_hours("ny_chi", Some(18.0)), "Lake Shore Ltd 18h (60% on-time)"),
+        (route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
+            amtrak_hours("la_sea", Some(35.5)), "Coast Starlight 53h p95 (50% on-time)"),
+        (route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
+            amtrak_hours("mia_nyc", Some(30.0)), "Silver Star 45h p95 (75% on-time)"),
+        (route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
+            amtrak_hours("atl_chi", None), "No direct Amtrak service"),
+        (route_sim::load_corridor(data_dir, "hou_chi_i69").unwrap_or_else(route_sim::hou_chi_i69),
+            amtrak_hours("hou_chi_i69", None), "No direct Amtrak"),
+        (route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
+            amtrak_hours("dal_nyc", None), "No direct Amtrak"),
+        (route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
+            amtrak_hours("sea_chi", Some(46.0)), "Empire Builder 69h p95 (65% on-time)"),
+        (route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
+            amtrak_hours("ny_la", Some(67.0)), "Southwest Chief 100h p95 (55% on-time)"),
+        (route_sim::load_corridor(data_dir, "chi_la").unwrap_or_else(route_sim::chi_la),
+            amtrak_hours("chi_la", Some(43.0)), "Southwest Chief 64h p95 (55% on-time)"),
     ];
 
     println!("{:<35} {:>6}  {:>10}  {:>12}  {:>12}  {:>14}  {:>10}",
@@ -1451,7 +1515,7 @@ fn print_passenger_matrix(trips: usize, seed: u64) {
         "", "", "(current)", "($0.12/mi)", "(~$0.18/mi)", "(est.)", "");
     println!("{}", "─".repeat(110));
 
-    for (corridor, amtrak_sched, amtrak_note) in &corridors {
+    for (corridor, amtrak_sched, _amtrak_note) in &corridors {
         let miles = corridor.total_miles();
 
         let bus = run_passenger_simulation(corridor, PassengerMode::ExpressBus,
@@ -1520,20 +1584,20 @@ fn print_passenger_matrix(trips: usize, seed: u64) {
     println!("  AV managed lane is the return of the overnight sleeper — in your own car.");
 }
 
-fn print_sla_matrix(trips: usize, seed: u64) {
+fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
     use route_sim::{Intervention, DriverMode, run_od_simulation_with_driver, apply_interventions};
 
-    // All corridors
+    // All corridors — loaded from od-corridors.toml, falling back to built-ins
     let corridors = vec![
-        route_sim::mia_nyc(),
-        route_sim::atl_chi(),
-        route_sim::hou_chi_i69(),
-        route_sim::hou_chi_current(),
-        route_sim::dal_nyc(),
-        route_sim::la_sea(),
-        route_sim::ny_la_corridor(),
-        route_sim::sea_chi(),
-        route_sim::chi_la(),
+        route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
+        route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
+        route_sim::load_corridor(data_dir, "hou_chi_i69").unwrap_or_else(route_sim::hou_chi_i69),
+        route_sim::load_corridor(data_dir, "hou_chi_current").unwrap_or_else(route_sim::hou_chi_current),
+        route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
+        route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
+        route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
+        route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
+        route_sim::load_corridor(data_dir, "chi_la").unwrap_or_else(route_sim::chi_la),
     ];
 
     let relay_interventions = |c: &route_sim::OdCorridor| {
@@ -1624,6 +1688,73 @@ fn print_sla_matrix(trips: usize, seed: u64) {
     println!("Relay only = $40M per corridor. Relay+Managed = +$121B program. Full stack = +Donner/Diamond/Routing.");
     println!("\nMarketplace note: relay captures 90%+ of the gain at 0.03% of the cost.");
     println!("The relay MARKETPLACE (driver matching, HOS handoff, load custody) is the critical enabler.");
+}
+
+/// Load Amtrak schedules from data/amtrak-schedules.csv.
+/// Returns corridor_slug -> scheduled_hours mapping.
+/// Falls back to empty HashMap if file not found or unparseable.
+fn load_amtrak_schedules(data_dir: &std::path::Path) -> std::collections::HashMap<String, f64> {
+    let path = data_dir.join("amtrak-schedules.csv");
+    let mut map = std::collections::HashMap::new();
+    let Ok(file) = std::fs::File::open(&path) else { return map; };
+    let mut rdr = csv::Reader::from_reader(file);
+    for result in rdr.records() {
+        let Ok(record) = result else { continue };
+        let slug = record.get(0).unwrap_or("").trim().to_string();
+        let hours: f64 = match record.get(2).unwrap_or("").trim().parse() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        if !slug.is_empty() {
+            map.entry(slug).or_insert(hours);
+        }
+    }
+    map
+}
+
+/// Local deserialization record for ev-profiles.toml (CLI-only; uses String for name).
+#[derive(serde::Deserialize)]
+struct EvProfileRecord {
+    name: String,
+    highway_range_miles: f64,
+    charge_rate_kw: f64,
+    battery_kwh: f64,
+    kwh_per_mile: f64,
+}
+
+#[derive(serde::Deserialize)]
+struct EvProfilesFile {
+    vehicles: Vec<EvProfileRecord>,
+}
+
+/// Load EV profiles from data/ev-profiles.toml.
+/// Falls back to the three built-in profiles if the file is missing or unparseable.
+fn load_ev_profiles(data_dir: &std::path::Path) -> Vec<route_sim::EvProfile> {
+    let path = data_dir.join("ev-profiles.toml");
+    if let Ok(text) = std::fs::read_to_string(&path) {
+        if let Ok(file) = toml::from_str::<EvProfilesFile>(&text) {
+            if !file.vehicles.is_empty() {
+                return file.vehicles.into_iter().map(|r| {
+                    // Box::leak turns an owned String into a &'static str for the lifetime of the
+                    // process. Acceptable in a CLI binary that doesn't free profiles at runtime.
+                    let name: &'static str = Box::leak(r.name.into_boxed_str());
+                    route_sim::EvProfile {
+                        name,
+                        highway_range_miles: r.highway_range_miles,
+                        charge_rate_kw: r.charge_rate_kw,
+                        battery_kwh: r.battery_kwh,
+                        kwh_per_mile: r.kwh_per_mile,
+                    }
+                }).collect();
+            }
+        }
+    }
+    // Fall back to built-in profiles
+    vec![
+        route_sim::average_ev_2026(),
+        route_sim::tesla_model_y(),
+        route_sim::tesla_semi(),
+    ]
 }
 
 fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {

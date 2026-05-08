@@ -422,3 +422,262 @@ pub fn build_megamap_svg_with_hubs(
     s += "</svg>";
     Ok(s)
 }
+
+// ── T1 Corridor Regional Map ───────────────────────────────────────────────────
+
+/// Tier classification for a route in the regional map context.
+fn regional_tier(route_id: &str, scores: &HashMap<String, f32>) -> u8 {
+    if is_t1_route(route_id) { return 1; }
+    let score = scores.get(route_id).cloned().unwrap_or(0.0) as f64;
+    if score >= T2_THRESHOLD { 2 }
+    else if score >= T3_THRESHOLD { 3 }
+    else { 4 }
+}
+
+/// Render a regional map centered on a specific T1 corridor.
+///
+/// Shows:
+/// - The T1 corridor in bold with its signature color
+/// - T2 corridors within the bounding box (medium weight)
+/// - T3/T4 corridors in the region (light gray)
+/// - Optional relay hub markers at T1/T1 intersections
+pub fn build_t1_corridor_svg(
+    graph: &HighwayGraph,
+    corridor_id: &str,
+    scores: &HashMap<String, f32>,
+    hub_coords: Option<&[(f64, f64, &str)]>,
+) -> Result<String> {
+    const CW: f64 = 1800.0;
+    const CH: f64 = 1000.0;
+
+    let proj = AlbersUS::new();
+
+    // ── Step 1: Compute bounding box of the T1 corridor ──────────────────────
+    let t1_edges = graph.route_edges(corridor_id);
+    if t1_edges.is_empty() {
+        anyhow::bail!("No edges found for corridor '{corridor_id}'");
+    }
+
+    let mut lon_min = f64::MAX;
+    let mut lon_max = f64::MIN;
+    let mut lat_min = f64::MAX;
+    let mut lat_max = f64::MIN;
+
+    for &ei in t1_edges {
+        let edge = &graph.graph[ei];
+        for c in &edge.geometry.0 {
+            // Skip Alaska/Hawaii outliers
+            if c.x < -125.0 || c.x > -66.0 || c.y < 24.0 || c.y > 50.0 { continue; }
+            if c.x < lon_min { lon_min = c.x; }
+            if c.x > lon_max { lon_max = c.x; }
+            if c.y < lat_min { lat_min = c.y; }
+            if c.y > lat_max { lat_max = c.y; }
+        }
+    }
+
+    if lon_min == f64::MAX {
+        anyhow::bail!("No valid CONUS coordinates for corridor '{corridor_id}'");
+    }
+
+    // ── Step 2: Add 20% padding ───────────────────────────────────────────────
+    let lon_span = (lon_max - lon_min).max(2.0);
+    let lat_span = (lat_max - lat_min).max(2.0);
+    let lon_pad = lon_span * 0.20;
+    let lat_pad = lat_span * 0.20;
+
+    let bb_lon_min = (lon_min - lon_pad).max(-125.0);
+    let bb_lon_max = (lon_max + lon_pad).min(-66.0);
+    let bb_lat_min = (lat_min - lat_pad).max(24.0);
+    let bb_lat_max = (lat_max + lat_pad).min(50.0);
+
+    // ── Step 3: Build a ViewTransform for this regional bounding box ─────────
+    // Project the four corners of the bbox through Albers, then fit to canvas.
+    let corners = [
+        proj.project(bb_lon_min, bb_lat_max), // NW
+        proj.project(bb_lon_max, bb_lat_max), // NE
+        proj.project(bb_lon_min, bb_lat_min), // SW
+        proj.project(bb_lon_max, bb_lat_min), // SE
+    ];
+    let ax_min = corners.iter().map(|c| c.0).fold(f64::MAX, f64::min);
+    let ax_max = corners.iter().map(|c| c.0).fold(f64::MIN, f64::max);
+    let ay_min = corners.iter().map(|c| c.1).fold(f64::MAX, f64::min);
+    let ay_max = corners.iter().map(|c| c.1).fold(f64::MIN, f64::max);
+
+    let regional_view = crate::projection::ViewTransform {
+        x_min: ax_min, x_max: ax_max,
+        y_min: ay_min, y_max: ay_max,
+        width: CW, height: CH,
+        padding: 60.0,
+    };
+
+    let t1_color_str = t1_color(corridor_id);
+    let t1_label = T1_ROUTES.iter().find(|(id, _)| *id == corridor_id)
+        .map(|(_, label)| *label)
+        .unwrap_or(corridor_id);
+
+    // Helper: project lon/lat → pixel, returns None if outside bbox
+    let to_px = |lon: f64, lat: f64| -> Option<(f64, f64)> {
+        if lon < bb_lon_min || lon > bb_lon_max || lat < bb_lat_min || lat > bb_lat_max { return None; }
+        Some(regional_view.project_to_pixel(&proj, lon, lat))
+    };
+
+    // Helper: collect projected points for a named route
+    let route_pts = |route_id: &str| -> Vec<Vec<(f64, f64)>> {
+        graph.route_edges(route_id)
+            .iter()
+            .map(|&ei| {
+                graph.graph[ei].geometry.0.iter()
+                    .filter_map(|c| to_px(c.x, c.y))
+                    .collect::<Vec<_>>()
+            })
+            .filter(|pts| pts.len() >= 2)
+            .collect()
+    };
+
+    let mut s = String::new();
+    s += &format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {CW} {CH}\" \
+         width=\"{CW}\" height=\"{CH}\">\n\
+         <rect width=\"{CW}\" height=\"{CH}\" fill=\"#0d1117\"/>\n"
+    );
+
+    // Helper: emit a polyline for all pts vectors in a route
+    let draw_route = |s: &mut String, segments: Vec<Vec<(f64, f64)>>, stroke: &str, width: f64, opacity: f64| {
+        for pts in segments {
+            if pts.len() < 2 { continue; }
+            let p: String = pts.iter().map(|(x,y)| format!("{x:.1},{y:.1}")).collect::<Vec<_>>().join(" ");
+            *s += &format!(
+                "<polyline points=\"{p}\" stroke=\"{stroke}\" stroke-width=\"{width}\" \
+                 fill=\"none\" opacity=\"{opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+            );
+        }
+    };
+
+    // ── Step 4: Draw all routes in region by tier (back-to-front) ────────────
+    // Collect all route IDs from the graph index (already deduplicated).
+    let all_route_ids = graph.route_ids();
+
+    // Pass 1: T4 (lightest)
+    for rid in &all_route_ids {
+        if rid.as_str() == corridor_id { continue; }
+        if regional_tier(rid, scores) != 4 { continue; }
+        let segs = route_pts(rid);
+        draw_route(&mut s, segs, "#1e293b", 0.8, 0.45);
+    }
+
+    // Pass 2: T3
+    for rid in &all_route_ids {
+        if rid.as_str() == corridor_id { continue; }
+        if regional_tier(rid, scores) != 3 { continue; }
+        let segs = route_pts(rid);
+        draw_route(&mut s, segs, "#475569", 1.2, 0.55);
+    }
+
+    // Pass 3: T2 + other T1 routes (medium weight)
+    for rid in &all_route_ids {
+        if rid.as_str() == corridor_id { continue; }
+        let tier = regional_tier(rid, scores);
+        if tier > 2 { continue; } // only T1 or T2
+        let segs = route_pts(rid);
+        if segs.is_empty() { continue; }
+        let (stroke, width, opacity) = if tier == 1 {
+            // Other T1 routes in the region — their signature color, medium weight
+            (t1_color(rid).to_string(), 2.5_f64, 0.65_f64)
+        } else {
+            ("#64748b".to_string(), 2.0_f64, 0.60_f64)
+        };
+        draw_route(&mut s, segs, &stroke, width, opacity);
+    }
+
+    // Pass 4: The T1 corridor — glow + bold stroke
+    s += &format!("<!-- T1 corridor: {corridor_id} -->\n");
+    for &ei in t1_edges {
+        let pts: Vec<(f64, f64)> = graph.graph[ei].geometry.0.iter()
+            .filter_map(|c| to_px(c.x, c.y))
+            .collect();
+        if pts.len() < 2 { continue; }
+        let p: String = pts.iter().map(|(x,y)| format!("{x:.1},{y:.1}")).collect::<Vec<_>>().join(" ");
+        // Glow halo
+        s += &format!(
+            "<polyline points=\"{p}\" stroke=\"{t1_color_str}\" stroke-width=\"14\" \
+             fill=\"none\" opacity=\"0.15\" stroke-linecap=\"round\"/>\n"
+        );
+        // Bold stroke
+        s += &format!(
+            "<polyline points=\"{p}\" stroke=\"{t1_color_str}\" stroke-width=\"5\" \
+             fill=\"none\" opacity=\"1.0\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+        );
+    }
+
+    // ── Step 5: Hub markers ───────────────────────────────────────────────────
+    if let Some(hubs) = hub_coords {
+        s += "<!-- Hub markers -->\n";
+        for &(lat, lon, name) in hubs {
+            let Some((px, py)) = to_px(lon, lat) else { continue; };
+            // Confirmed hub style (filled) — using T1 color
+            s += &format!(
+                "<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"10\" \
+                 fill=\"white\" opacity=\"0.9\"/>\n"
+            );
+            s += &format!(
+                "<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"8\" \
+                 fill=\"{t1_color_str}\" stroke=\"white\" stroke-width=\"2\" \
+                 opacity=\"0.95\"/>\n"
+            );
+            // Name label
+            let label_y = py + 22.0;
+            s += &format!(
+                "<text x=\"{px:.1}\" y=\"{label_y:.1}\" \
+                 font-family=\"Arial,sans-serif\" font-size=\"12\" font-weight=\"bold\" \
+                 fill=\"#e2e8f0\" text-anchor=\"middle\" opacity=\"0.9\">{name}</text>\n"
+            );
+        }
+    }
+
+    // ── Step 6: Title panel ───────────────────────────────────────────────────
+    s += &format!(
+        "<rect x=\"20\" y=\"20\" width=\"420\" height=\"80\" rx=\"6\" \
+         fill=\"#0d1117\" fill-opacity=\"0.92\" stroke=\"{t1_color_str}\" stroke-width=\"1.5\"/>\n\
+         <text x=\"36\" y=\"54\" font-family=\"Arial,sans-serif\" font-size=\"26\" \
+         font-weight=\"bold\" fill=\"{t1_color_str}\">{t1_label} Regional Map</text>\n\
+         <text x=\"36\" y=\"74\" font-family=\"Arial,sans-serif\" font-size=\"12\" \
+         fill=\"#8b949e\">T1 bold · T2/other T1 medium · T3/T4 gray  ROUTE v1.1</text>\n\
+         <text x=\"36\" y=\"90\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
+         fill=\"#6e7681\">TIGER 2023  ·  Albers Equal-Area Conic</text>\n"
+    );
+
+    // ── Step 7: Legend bar ────────────────────────────────────────────────────
+    let ly = CH - 50.0;
+    s += &format!("<rect x=\"0\" y=\"{ly}\" width=\"{CW}\" height=\"50\" fill=\"#010409\"/>\n");
+
+    // T1 swatch
+    s += &format!(
+        "<rect x=\"20\" y=\"{:.1}\" width=\"40\" height=\"10\" rx=\"2\" fill=\"{t1_color_str}\"/>\n\
+         <text x=\"66\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+         font-size=\"12\" fill=\"#e2e8f0\">{t1_label} (T1 primary)</text>\n",
+        ly + 10.0, ly + 20.0
+    );
+    // T2 swatch
+    s += &format!(
+        "<rect x=\"250\" y=\"{:.1}\" width=\"32\" height=\"7\" rx=\"1\" fill=\"#64748b\"/>\n\
+         <text x=\"288\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+         font-size=\"11\" fill=\"#8b949e\">T2 major connectors</text>\n",
+        ly + 11.0, ly + 20.0
+    );
+    // T3 swatch
+    s += &format!(
+        "<rect x=\"460\" y=\"{:.1}\" width=\"28\" height=\"5\" rx=\"1\" fill=\"#475569\"/>\n\
+         <text x=\"494\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+         font-size=\"11\" fill=\"#8b949e\">T3/T4 regional</text>\n",
+        ly + 12.0, ly + 20.0
+    );
+    // Watermark
+    s += &format!(
+        "<text x=\"{:.0}\" y=\"{:.0}\" font-family=\"Arial,sans-serif\" font-size=\"10\" \
+         fill=\"#484f58\" text-anchor=\"end\">ROUTE  ·  github.com/giodl73-repo</text>\n",
+        CW - 16.0, ly + 40.0
+    );
+
+    s += "</svg>";
+    Ok(s)
+}
