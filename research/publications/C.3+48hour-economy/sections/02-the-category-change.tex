@@ -1,0 +1,168 @@
+\section{The Category Change: Why 48 Hours Is Not ``3.6 Days Minus 2 Days''}
+\label{sec:category}
+
+The central argument of this paper requires a brief excursion into how logistics decisions
+are actually made. The economists' instinct is to think of transit time as a continuous
+variable: faster is better, and a 50\% improvement is worth 50\% of the benefit of a
+100\% improvement. This is approximately correct for pure speed preferences. It is
+completely wrong when transit time interacts with physical constraints.
+
+\subsection{Shelf Life as a Binary Constraint}
+
+A California strawberry has a shelf life of five to seven days when picked ripe and held
+at 34 degrees Fahrenheit \citep{USDA_NASS2023}. If the berry leaves Watsonville at 6:00 a.m.
+Monday, it arrives in New York at approximately 10:00 p.m. Thursday under current conditions ---
+roughly 88 hours, or 3.7 days. It has one to three days of shelf life remaining at the
+point of arrival. Retailers pay a discount price for a fruit that is already marginal.
+Many lots are composted.
+
+This is not a preference problem. A shipper who ``values'' faster transit more highly
+cannot get faster transit --- not reliably. The 87th-percentile commitment window for
+a solo driver on today's General Purpose interstate lanes is 87 hours \citep{ROUTE_C1}.
+That is the number a supply chain planner must build around: not the median, not the
+average, but the worst-case commitment time needed to guarantee 95\% on-time delivery.
+
+At 87 hours, the strawberry is marginal. At 48 hours, it is fresh. There is no intermediate
+option that unlocks a proportionally intermediate benefit. The economics are binary:
+the berry either arrives in time to be valuable, or it doesn't.
+
+The same logic applies across product categories. A biologic drug stable at 2--8 degrees
+Celsius for 72 hours \textit{cannot} travel 87 hours by refrigerated truck and arrive
+within specification. It can travel 48 hours and arrive with a 24-hour margin. Cold-chain
+pharmaceuticals do not fly because airlines are more convenient. They fly because there is
+no compliant truck option at current transit times.
+
+\subsection{The Cost Gap That Makes This Matter}
+
+The consequence of this binary constraint is that an enormous volume of freight pays a
+15--20$\times$ cost premium --- not because 15--20$\times$ faster service is worth 15--20$\times$
+the price, but because no cheaper alternative exists \citep{BTS_airfreight2023}.
+
+\begin{table}[h]
+\centering
+\caption{Air freight versus refrigerated truck cost by product category (NY--LA corridor)}
+\label{tab:cost_comparison}
+\begin{tabular}{lrrrl}
+\toprule
+Product Category & Air (\$/lb) & Truck (\$/lb) & Premium & Min. Transit (truck) \\
+\midrule
+Biologics / cold-chain drugs  & 8.00--15.00 & 0.80--1.50 & 10--12$\times$ & 48h (2--8\,\textdegree C) \\
+Premium produce (strawberries) & 3.00--5.00  & 0.35--0.60 & 8--10$\times$ & 48h (shelf life) \\
+Stone fruit / avocados         & 2.50--4.00  & 0.30--0.50 & 8$\times$       & 48h (ripe) \\
+Fashion / apparel samples      & 3.00--6.00  & 0.20--0.40 & 15$\times$      & 48h (market window) \\
+Electronics components         & 4.00--8.00  & 0.25--0.50 & 16$\times$      & 72h (acceptable) \\
+Pacific seafood (live/fresh)   & 5.00--10.00 & 0.40--0.70 & 12$\times$      & 36h (live), 48h (fresh) \\
+Industrial parts (emergency)   & 2.00--4.00  & 0.20--0.35 & 10$\times$      & 48h (line-stop cost) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+Table~\ref{tab:cost_comparison} is not a ranking of shipper preferences. It is a catalog of
+products that have no choice but to fly today. If the minimum viable truck transit time
+is 87 hours and the shelf life (or stability window, or market window) is 72 hours,
+the shipper pays the air premium. There is no alternative.
+
+Remove that constraint --- bring the reliable truck transit time below 48 hours ---
+and the economics change completely. Not incrementally. Completely.
+
+\subsection{The Simulation Results}
+
+The transit time estimates in this paper derive from a Monte Carlo simulation of 10,000
+coast-to-coast trips, implemented in the ROUTE corridor simulation model
+\citep{ROUTE_C1}.\footnote{The simulation models weather events, construction delays,
+incident frequencies, and Hours of Service compliance using historical FHWA incident data
+and NOAA weather records for the I-80 corridor. The model is calibrated against ATRI
+speed data for the NY--LA corridor \citep{ATRI_shortage2024}.}
+
+Four scenarios were simulated. Two differ in road infrastructure (current General Purpose
+lanes versus I2.0 managed freight lanes). Two differ in driver configuration (solo driver,
+team driving, and relay network). Table~\ref{tab:simulation} presents the results.
+
+\begin{table}[h]
+\centering
+\caption{Monte Carlo simulation results: 10,000 NY--LA trips}
+\label{tab:simulation}
+\begin{tabular}{llrrrl}
+\toprule
+Scenario & Infrastructure & p50 (h) & p75 (h) & p95 (h) & 48h SLA \\
+\midrule
+Solo driver    & GP lanes (today)    & 68.2 & 76.4 & 87.0 & Not achievable \\
+Solo driver    & I2.0 managed lanes  & 57.3 & 64.1 & 73.5 & Not achievable \\
+Team driving   & I2.0 managed lanes  & 34.1 & 38.6 & 43.8 & 99.5\% of trips \\
+Relay network  & I2.0 managed lanes  & 35.6 & 39.8 & 45.4 & 98.8\% of trips \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize Source: \citet{ROUTE_C1}. Relay capex: \$40M (8 stations $\times$ \$5M).} \\
+\end{tabular}
+\end{table}
+
+Two observations from Table~\ref{tab:simulation} are worth dwelling on.
+
+\textit{First}, managed lanes alone do not solve the problem for solo drivers. The p95 drops
+from 87 hours to 73.5 hours --- a meaningful improvement for shippers who can tolerate
+three-day transit, but not enough to cross the 48-hour threshold. The category change
+requires both managed lanes and driver relay.
+
+\textit{Second}, relay and team driving achieve nearly identical transit times (45.4 hours
+versus 43.8 hours at p95). But they have very different economics and workforce implications.
+Team driving requires two drivers to ride together for 41+ hours, competing for a single bunk
+and accumulating fatigue. The relay model assigns each driver one seven-hour leg and sends
+them home. The operational cost is similar; the workforce model is radically different.
+We return to this in Section~\ref{sec:relay}.
+
+\subsection{The Relay Network Design}
+
+The relay network for the New York--Los Angeles corridor consists of eight stations,
+positioned at the major interchange hubs that anchor the I-80 and I-76/I-70 corridor.
+Each station is co-located with an existing truck stop or industrial area at or near a
+T1-tier diamond interchange \citep{ROUTE_C2}, minimizing new land requirements.
+
+\begin{table}[h]
+\centering
+\caption{Relay station locations: NY--LA corridor}
+\label{tab:relay_stations}
+\begin{tabular}{lllrr}
+\toprule
+Station & Location & Highway Junction & Miles from NY & Leg (mi) \\
+\midrule
+1 & South Brunswick, NJ     & I-95 / NJ Tpke             &    45 &  45 \\
+2 & Cleveland, OH           & I-80 / I-77                &   460 & 415 \\
+3 & Chicago, IL             & I-80 / I-90                &   790 & 330 \\
+4 & Omaha, NE               & I-80 / I-29                & 1,260 & 470 \\
+5 & Salt Lake City, UT      & I-80 / I-15                & 1,980 & 720 \\
+6 & Reno, NV                & I-80 / US-395              & 2,400 & 420 \\
+7 & Sacramento, CA          & I-80 / I-5                 & 2,630 & 230 \\
+8 & Los Angeles (terminal)  & I-10 / I-5                 & 2,790 & 160 \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Average leg: 440 miles. Estimated drive time: 6.7 hours at 65 mph average.} \\
+\end{tabular}
+\end{table}
+
+The HOS arithmetic is straightforward. Under current Federal Motor Carrier Safety Administration
+rules, a solo driver may drive 11 hours within a 14-hour on-duty window, then must take a
+mandatory 10-hour rest break \citep{FHWA_freight2023}. A 2,790-mile trip at 60 miles per hour
+average requires 46.5 hours of driving. With mandatory rest stops, a solo driver completes
+the trip in 46.5 hours of driving plus at least 30 hours of mandatory rest --- a minimum
+of 76.5 hours, and more when weather, construction, and incident delay are included.
+The relay model eliminates all 30 mandatory rest hours. The truck moves continuously.
+
+\subsection{Why Managed Lanes Matter Even with Relay}
+
+A reader might ask: if the relay network eliminates 30 hours of rest stops, why are
+managed lanes necessary? The answer is Donner Pass.
+
+The I-80 corridor crosses the Sierra Nevada at Donner Pass, elevation 7,227 feet.
+FHWA records indicate approximately 50 full-closure events per year at this location ---
+snowstorms, jackknifed trucks, chain control enforcement \citep{FHWA_freight2023}.
+Each closure adds four to twelve hours to transcontinental transit. At 50 closures per year,
+this adds roughly six hours to the expected transit time on any given trip (50 closures
+$\times$ 8 hours average $\div$ 365 trips per year per lane). But it is not the mean
+effect that matters for supply chain planning; it is the tail. A shipper committing to
+a 48-hour SLA must plan for the worst 5\% of trips. Donner Pass closures are the primary
+driver of the gap between the relay p50 (35.6h) and p95 (45.4h).
+
+The I2.0 managed lane program on the Sierra Nevada segment includes a hardened alignment
+that bypasses the most closure-prone section --- either via tunnel or a lower-elevation
+alternate alignment. Without this, the relay network still reduces median transit time
+dramatically but cannot reliably hold p95 below 48 hours during winter months.
+The managed lanes and the relay network are complements, not substitutes.

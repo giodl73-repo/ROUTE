@@ -1,0 +1,103 @@
+\section{Introduction}
+
+Picture a refrigerated truck leaving a strawberry farm in Watsonville, California, at 6:00 on a Monday morning.
+The berries were picked overnight, cooled to 34 degrees, and loaded into a temperature-controlled trailer.
+The truck merges onto Interstate 2.0's managed freight lane at the Santa Cruz interchange and crosses
+the Sierra Nevada without delay --- the managed lane carries no passenger cars, no congestion, and no
+Donner Pass closure risk. At 2:00 p.m. in Salt Lake City, the truck pulls into a relay station at the
+junction of I-80 and I-15. The driver hands over the keys, signs the temperature log, and catches
+a repositioning truck back toward the Bay Area. A fresh driver boards and continues east.
+At 10:00 p.m. the truck reaches Denver. At 5:00 a.m. Tuesday, Kansas City.
+At noon Tuesday, Chicago. At 6:00 p.m. Tuesday, Cleveland.
+At midnight Tuesday --- 42 hours after leaving the farm --- the truck docks at a
+Hunts Point Market receiving bay in the Bronx.
+
+The berries have five days of shelf life remaining. They reach store shelves on Wednesday morning.
+A New York customer buys California strawberries on Thursday and throws away the ones that don't
+get eaten by Saturday. This is not an exceptional outcome. It is what the system produces
+every single trip.
+
+This is not a hypothetical. It is what a Monte Carlo simulation of 10,000 coast-to-coast trips
+shows is achievable 99.5\% of the time under Interstate 2.0 managed lanes with a driver relay
+network \citep{ROUTE_C1}. The 95th-percentile completion time is 45.4 hours. The median is
+under 38 hours. Relay drivers work one 400--500 mile leg --- roughly seven hours --- and are
+home for dinner. The truck never stops for federally mandated rest because no single driver
+works more than eight hours.
+
+The infrastructure required to achieve this is \$40 million: eight relay stations along
+the New York--Los Angeles corridor, each costing approximately \$5 million to build and equip.
+Against the \$253 billion Interstate 2.0 portfolio \citep{ROUTE_E2}, \$40 million is 0.02\%.
+This is not the expensive part of I2.0. It may be the most economically transformative part.
+
+\subsection*{The Problem This Paper Addresses}
+
+Infrastructure investment debates typically focus on construction cost. The managed freight
+lanes, tunnels, and hardened alignments that constitute I2.0's core program carry price tags
+in the tens of billions \citep{ROUTE_E1}. These investments are justified on traditional
+infrastructure grounds: reduced congestion, improved safety, better pavement condition,
+fewer bridge failures. These are real benefits with real dollar values.
+
+What traditional infrastructure economics misses is the categorical change in what becomes
+possible when transit time crosses a threshold. The difference between a 3.6-day coast-to-coast
+transit time and a 1.8-day coast-to-coast transit time is not a 50\% improvement in logistics
+efficiency. It is the difference between a product that must fly and a product that can truck.
+Air freight costs \$3--5 per pound \citep{BTS_airfreight2023}. Truck freight costs
+\$0.15--0.25 per pound \citep{FHWA_freight2023}. Products do not pay the 15--20$\times$ air
+premium because their shippers prefer speed. They pay it because they have no alternative.
+
+This paper quantifies what opens up when they have an alternative.
+
+\subsection*{Structure}
+
+Section~\ref{sec:category} establishes the category-change mechanism: why 48-hour transit is
+categorically different from 87-hour transit, and why the difference is measured in dollars
+per pound rather than hours per trip. We present the simulation results in detail, including
+the four scenarios tested and the relay network design.
+
+Section~\ref{sec:air} quantifies the air freight substitution market: the \$65 billion US
+domestic air cargo industry, the coast-to-coast fraction, and the estimated \$8 billion per
+year in freight cost that could shift from air to 48-hour refrigerated truck.
+
+Section~\ref{sec:fresh} examines the fresh food economy. California produces 83\% of US
+strawberries, 90\% of US avocados, and the majority of US stone fruit, wine, and Pacific
+seafood. Premium California produce flies to the East Coast today because four-day truck
+exceeds shelf life. At 48 hours, it doesn't have to.
+
+Section~\ref{sec:ecommerce} addresses e-commerce and pharmaceutical supply chains --- two
+sectors where inventory capital and supply chain velocity intersect. Amazon's 110-fulfillment-center
+strategy is a response to a transit time constraint. Pharmaceutical cold-chain biologics fly
+because refrigerated truck transit currently exceeds stability windows. Both constraints dissolve
+at 48 hours.
+
+Section~\ref{sec:relay} analyzes the relay driver economy. The relay model does not merely
+enable faster freight --- it creates a new occupational structure for trucking. Twenty thousand
+regional relay drivers, each working a seven-hour shift and sleeping at home, address the
+80,000-driver shortage more directly than any wage increase can.
+
+Section~\ref{sec:policy} develops the policy implications. The relay network is I2.0's
+Layer 0 --- foundational infrastructure that is nearly free, deployable before the managed
+lanes are built, and economically valuable on its own. We argue for federal designation of
+relay hub locations under the National Highway Freight Program and HOS regulatory clarification
+for relay operations.
+
+Section~\ref{sec:conclusion} concludes. The 48-hour corridor is not primarily a freight story.
+It is a story about which economic activities become possible and where jobs are created when
+the infrastructure supports them.
+
+\subsection*{Contributions}
+
+\begin{enumerate}
+\item A quantification of the air-freight-to-truck substitution opportunity on the
+      New York--Los Angeles corridor and parallel coast-to-coast routes, estimated at
+      \$8 billion per year in freight cost reduction, using Bureau of Transportation
+      Statistics air cargo data and FAF5 commodity flow records \citep{FAF5_2023,BTS_airfreight2023}
+\item An analysis of five distinct economic sectors --- air cargo, fresh produce, e-commerce,
+      pharmaceuticals, and trucking labor --- where 48-hour transit time creates categorical
+      rather than incremental improvements in economic viability
+\item A relay network design specification: 8 stations, 6 driver legs, \$40 million capital
+      cost, validated by Monte Carlo simulation to achieve a 45.4-hour 95th-percentile
+      transit time with 98.8\% probability of meeting a 48-hour service level agreement
+\item An economic case for the relay driver as a new occupational category in American freight:
+      20,000 regional jobs at \$58,000 per year, compatible with family obligations, solving
+      the structural workforce shortage that is the trucking industry's binding constraint
+\end{enumerate}

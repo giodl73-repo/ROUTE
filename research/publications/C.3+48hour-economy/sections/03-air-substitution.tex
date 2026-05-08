@@ -1,0 +1,155 @@
+\section{The Air Freight Substitution Market}
+\label{sec:air}
+
+The headline economic case for the 48-hour corridor is simple to state and requires care
+to estimate rigorously. The United States domestic air cargo market is approximately
+\$65 billion per year \citep{BTS_airfreight2023}. A substantial fraction of that market
+consists of goods that fly not because air is the optimal mode but because 87-hour truck
+is incompatible with the product's time requirements. If reliable 48-hour truck replaces
+air for those goods, the freight cost falls by 90\% or more. The question is how large
+that fraction is.
+
+\subsection{The Structure of Domestic Air Cargo}
+
+Bureau of Transportation Statistics data for 2023 record 8.7 billion ton-miles of domestic
+air cargo, valued at approximately \$65 billion in freight charges \citep{BTS_airfreight2023}.
+The five largest domestic air freight routes by ton-miles are all coast-to-coast or
+long-haul connections: Los Angeles -- New York, San Francisco -- New York, Los Angeles
+-- Chicago, Seattle -- New York, and Los Angeles -- Miami. Together, these five
+city-pairs and their near-parallels account for roughly 23\% of domestic air cargo
+ton-miles.
+
+The commodity mix on coast-to-coast air cargo lanes reflects the product categories where
+transit time is genuinely binding. FAF5 commodity flow data \citep{FAF5_2023} indicate the
+following approximate breakdown for NY--LA and parallel coast-to-coast routes:
+
+\begin{table}[h]
+\centering
+\caption{Commodity composition of coast-to-coast air cargo (\$15B estimated total)}
+\label{tab:air_commodities}
+\begin{tabular}{lrrrr}
+\toprule
+Commodity Class & Share & Est.\ Value & Air \$/lb & Truck \$/lb \\
+\midrule
+Pharmaceuticals \& biotech        & 30\% & \$4.5B & 8.00--15.00 & 0.80--1.50 \\
+Electronics \& semiconductors     & 25\% & \$3.8B & 4.00--8.00  & 0.25--0.50 \\
+Fashion \& apparel                & 15\% & \$2.3B & 3.00--6.00  & 0.20--0.40 \\
+Perishables (produce, seafood)    & 15\% & \$2.3B & 3.00--5.00  & 0.35--0.60 \\
+Industrial parts \& equipment     & 15\% & \$2.3B & 2.00--4.00  & 0.20--0.35 \\
+\midrule
+\textbf{Total}                    & \textbf{100\%} & \textbf{\$15.1B} & & \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Sources: \citet{BTS_airfreight2023}, \citet{FAF5_2023}. Shares are approximate.} \\
+\end{tabular}
+\end{table}
+
+The \$15 billion estimate for coast-to-coast air cargo is derived from the BTS corridor
+share analysis: the five largest coast-to-coast city pairs account for approximately
+23\% of domestic air freight ton-miles, but a higher share of freight value (because
+coast-to-coast shipments tend toward high-value goods). We estimate 22--25\% of the
+\$65 billion market, or approximately \$14--16 billion, on coast-to-coast corridors
+where I2.0 relay would offer a viable alternative.
+
+\subsection{What Stays on the Plane}
+
+Not all air cargo can or should shift to truck, even at 48-hour reliability.
+Three categories are excluded from the addressable market:
+
+\textit{Sub-24-hour urgency freight.} Human organs for transplant, blood products,
+emergency response materials, and certain time-critical industrial components
+(a parts-out airline waiting on an AOG shipment) require transit times under 12 hours.
+This category is genuinely time-sensitive and will remain on aircraft regardless of
+truck reliability. We estimate this at 10--15\% of coast-to-coast air cargo.
+
+\textit{Ultra-cold-chain pharmaceuticals.} mRNA vaccines and other products requiring
+storage at $-70$\,\textdegree C or colder cannot currently be transported in refrigerated
+truck containers for 48-hour transits. The cold chain equipment for these products is
+designed for short-duration, air-based logistics. This category (perhaps 5\% of air pharma
+volume) remains air-dependent regardless of transit time.
+
+\textit{Live animals and specialized cargo.} Live animals, certain hazardous materials,
+and cargo requiring in-flight monitoring remain on aircraft. Small category; included
+for completeness.
+
+Excluding these categories, approximately 75--80\% of coast-to-coast air cargo is
+\textit{technically} substitutable with 48-hour refrigerated truck. Whether shippers
+actually substitute depends on service reliability, carrier availability, and shipper
+inertia. We apply a conservative 60\% adoption rate, producing an addressable market
+of approximately \$9 billion.
+
+\subsection{The Cost Calculation}
+
+The freight cost saving from air-to-truck substitution depends on the price differential
+for each commodity class. Air freight averages approximately \$4 per pound on domestic
+routes, with higher rates for temperature-sensitive and high-value goods
+\citep{BTS_airfreight2023}. Refrigerated truck freight on a 2,790-mile haul costs
+approximately \$0.30--0.40 per pound, including the temperature-control premium
+\citep{FHWA_freight2023}.
+
+For the \$9 billion addressable market:
+
+\begin{equation}
+\text{Freight cost savings} = \$9\text{B} \times \left(1 - \frac{\$0.35}{\$4.00}\right) = \$9\text{B} \times 0.91 = \$8.2\text{B/year}
+\end{equation}
+
+\noindent
+This is a logistics cost transfer, not a GDP addition. Shippers save \$8.2 billion per year;
+airlines lose an equivalent revenue stream from lower-value cargo. The net effect on
+GDP depends on how the cost savings propagate through supply chains --- lower final goods
+prices, expanded market access for producers, and reduced inventory carrying costs all
+represent genuine economic gains beyond the raw logistics cost reduction.
+
+\begin{table}[h]
+\centering
+\caption{Air-to-truck substitution economics by commodity class}
+\label{tab:substitution}
+\begin{tabular}{lrrrr}
+\toprule
+Category & Volume (\$B) & Addressable & Air cost & Savings \\
+\midrule
+Pharmaceuticals \& biotech     & \$4.5B & 70\% = \$3.2B & \$10/lb  & \$2.9B \\
+Electronics \& semiconductors  & \$3.8B & 65\% = \$2.5B & \$5/lb   & \$2.3B \\
+Fashion \& apparel             & \$2.3B & 90\% = \$2.1B & \$4/lb   & \$1.9B \\
+Perishables                    & \$2.3B & 75\% = \$1.7B & \$4/lb   & \$1.5B \\
+Industrial parts               & \$2.3B & 70\% = \$1.6B & \$3/lb   & \$1.4B \\
+\midrule
+\textbf{Total (60\% adoption)} & \textbf{\$15.1B} & \textbf{\$9.1B} & & \textbf{\$8.2B} \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Truck cost assumed at \$0.35/lb (refrigerated). Sources: \citet{BTS_airfreight2023}, \citet{FHWA_freight2023}.} \\
+\end{tabular}
+\end{table}
+
+\subsection{The Parallel Corridor Multiplier}
+
+The \$8.2 billion annual savings estimate covers the New York--Los Angeles corridor and
+its direct parallels (NY--San Francisco, NY--Seattle, NY--Portland). It excludes the
+Chicago--Los Angeles corridor (I-80 west from Chicago), the Boston--Los Angeles corridor,
+and the entire Southeast--West Coast market. These parallel corridors would benefit from
+I2.0 relay networks on the same infrastructure, at minimal additional cost, because the
+relay stations are shared.
+
+Conservative estimates suggest the parallel corridors add 50--100\% to the addressable
+market. Total coast-to-coast air-to-truck substitution savings, including all major
+corridors, may reach \$12--16 billion per year at full adoption --- comparable in
+magnitude to the annual benefit stream estimated for the entire I2.0 managed lane
+program \citep{ROUTE_E1}.
+
+\subsection{A Note on Second-Order Effects}
+
+The \$8.2 billion in direct freight cost savings understates the total economic benefit
+for three reasons.
+
+\textit{Lower final goods prices.} Freight costs are embedded in the prices consumers pay.
+A 90\% reduction in shipping cost for California strawberries does not translate to a
+90\% reduction in the retail price of strawberries --- but it does translate to something.
+Lower logistics costs in competitive markets are partly passed through to consumers.
+
+\textit{Expanded producer markets.} The California strawberry farmer who currently cannot
+reach New York fresh gains a new market. This is not a freight cost saving; it is new
+revenue for the producer. We quantify this separately in Section~\ref{sec:fresh}.
+
+\textit{Inventory carrying cost reduction.} Products that must air-freight because truck
+transit is too slow also tend to be held at low inventory levels (because of the air
+freight cost). With 48-hour truck, safety stock can be higher and carrying cost per unit
+can be lower simultaneously. This inventory optimization benefit is real but difficult to
+estimate without shipper-level data; we note it as an unmeasured upside.

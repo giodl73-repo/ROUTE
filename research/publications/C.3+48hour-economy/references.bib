@@ -1,0 +1,195 @@
+% ==========================================================================
+% BIBLIOGRAPHY — C.3+48hour-economy
+% "The 48-Hour Corridor: Economic Opportunities Unlocked by I2.0 Transcontinental Freight"
+% Journal of Economic Perspectives
+% ==========================================================================
+
+% --------------------------------------------------------------------------
+% Internal cross-references (ROUTE research program)
+% --------------------------------------------------------------------------
+
+@unpublished{ROUTE_C1,
+  author = {Della-Libera, Gio},
+  title  = {Origin-Destination Freight Reliability on Interstate Corridors:
+             A Monte Carlo Simulation of NY--LA Transit Time},
+  year   = {2026},
+  note   = {ROUTE working paper C.1. Simulation of 10,000 trips under four
+             scenarios (solo/GP, solo/I2.0, team/I2.0, relay/I2.0).
+             Available: C:\textbackslash{}src\textbackslash{}route\textbackslash{}research\textbackslash{}publications\textbackslash{}C.1+od-freight-reliability}
+}
+
+@unpublished{ROUTE_C2,
+  author = {Della-Libera, Gio},
+  title  = {National Maximum Flow: Network Capacity Under Disruption},
+  year   = {2026},
+  note   = {ROUTE working paper C.2. T1 diamond hub classification and
+             k-connectivity analysis.}
+}
+
+@unpublished{ROUTE_E1,
+  author = {Della-Libera, Gio},
+  title  = {Managed Freight Lanes: Economic Case for Interstate 2.0 Priority Infrastructure},
+  year   = {2026},
+  note   = {ROUTE working paper E.1. Managed lane program economics; \$101B NPV estimate.}
+}
+
+@unpublished{ROUTE_E2,
+  author = {Della-Libera, Gio},
+  title  = {The Interstate 2.0 Framework: A Comprehensive Upgrade Plan for the US
+             Interstate Highway System},
+  year   = {2026},
+  note   = {ROUTE working paper E.2. Full I2.0 portfolio: \$253B program scope,
+             phasing, and investment sequencing.}
+}
+
+% --------------------------------------------------------------------------
+% Federal data sources
+% --------------------------------------------------------------------------
+
+@techreport{BTS_airfreight2023,
+  author      = {{Bureau of Transportation Statistics}},
+  title       = {Air Carrier Statistics (Form 41 Traffic): Domestic Air Cargo, 2023},
+  institution = {US Department of Transportation},
+  year        = {2023},
+  url         = {https://www.transtats.bts.gov/Tables.asp?QO_VQ=EFD},
+  note        = {T-100 Domestic Segment data. Total domestic air cargo: \$65B in freight
+                 charges; 8.7B ton-miles. Coast-to-coast corridor breakdown estimated
+                 from city-pair traffic data.}
+}
+
+@techreport{FHWA_freight2023,
+  author      = {{Federal Highway Administration}},
+  title       = {Freight Performance Measures: Truck Travel Time Statistics},
+  institution = {FHWA, US Department of Transportation},
+  year        = {2023},
+  url         = {https://ops.fhwa.dot.gov/freight/freight_analysis/perform_meas/},
+  note        = {Includes Hours of Service regulatory context (49 CFR Part 395),
+                 refrigerated truck cost estimates, and I-80 incident closure data
+                 (Donner Pass). Used for transit time baseline and cost benchmarks.}
+}
+
+@techreport{FAF5_2023,
+  author      = {{Bureau of Transportation Statistics} and {Federal Highway Administration}},
+  title       = {Freight Analysis Framework Version 5.6: Commodity Flow Data, 2023 Update},
+  institution = {BTS/FHWA, US Department of Transportation},
+  year        = {2023},
+  url         = {https://ops.fhwa.dot.gov/freight/freight_analysis/faf/},
+  note        = {Primary source for commodity-level coast-to-coast freight flows.
+                 Air cargo commodity breakdown estimated from FAF5 modal split by
+                 commodity code and corridor.}
+}
+
+@techreport{USDA_NASS2023,
+  author      = {{USDA National Agricultural Statistics Service}},
+  title       = {2023 State Agriculture Overview: California},
+  institution = {US Department of Agriculture},
+  year        = {2023},
+  url         = {https://www.nass.usda.gov/Quick_Stats/Ag_Overview/stateOverview.php?state=CALIFORNIA},
+  note        = {California total agricultural output: \$59B farm-gate value.
+                 Commodity-level production shares cited throughout Section 4.
+                 Shelf life estimates for perishables from USDA post-harvest guidance.}
+}
+
+@techreport{BLS_trucking2023,
+  author      = {{Bureau of Labor Statistics}},
+  title       = {Occupational Employment and Wage Statistics: Heavy and Tractor-Trailer
+                 Truck Drivers (SOC 53-3032)},
+  institution = {US Department of Labor},
+  year        = {2023},
+  url         = {https://www.bls.gov/oes/current/oes533032.htm},
+  note        = {Wage and employment data for trucking. Median annual wage, regional
+                 vs.\ long-haul premium, and health outcomes data for long-haul drivers.}
+}
+
+% --------------------------------------------------------------------------
+% Industry data sources
+% --------------------------------------------------------------------------
+
+@report{ATRI_shortage2024,
+  author      = {{American Transportation Research Institute}},
+  title       = {Trucking's Top Industry Issues: Driver Shortage Analysis, 2024},
+  institution = {ATRI},
+  year        = {2024},
+  url         = {https://truckingresearch.org/trucking-top-issues/},
+  note        = {Primary source for 80,000-driver shortage estimate; median driver age 55;
+                 21 nights/month average away from home. Signing bonus data
+                 (\$15,000--25,000 range) from same report. Turnover rate analysis.}
+}
+
+@report{PhRMA2023,
+  author      = {{Pharmaceutical Research and Manufacturers of America}},
+  title       = {2023 PhRMA Annual Membership Survey: US Pharmaceutical Industry
+                 Manufacturing and Logistics},
+  institution = {PhRMA},
+  year        = {2023},
+  url         = {https://www.phrma.org/resource-center/topics/manufacturing-supply-chain},
+  note        = {California biotech production figures; NJ/PA distribution hub data;
+                 cold-chain stability windows by drug class; air pharma freight
+                 cost estimates (\$8--15/kg domestic air).}
+}
+
+% --------------------------------------------------------------------------
+% Academic and policy references
+% --------------------------------------------------------------------------
+
+@article{Krugman1991,
+  author  = {Krugman, Paul},
+  title   = {Increasing Returns and Economic Geography},
+  journal = {Journal of Political Economy},
+  volume  = {99},
+  number  = {3},
+  pages   = {483--499},
+  year    = {1991},
+  doi     = {10.1086/261763},
+  note    = {Theoretical foundation for economic geography effects of
+             transportation cost reduction; agglomeration and specialization.}
+}
+
+@article{Donaldson2016,
+  author  = {Donaldson, Dave},
+  title   = {Railroads of the Raj: Estimating the Impact of Transportation Infrastructure},
+  journal = {American Economic Review},
+  volume  = {108},
+  number  = {4--5},
+  pages   = {899--934},
+  year    = {2018},
+  doi     = {10.1257/aer.20101199},
+  note    = {Causal identification of transportation infrastructure on economic
+             geography and trade flows. Methodology reference for transit time
+             to economic activity linkages.}
+}
+
+@article{Michaels2008,
+  author  = {Michaels, Guy},
+  title   = {The Effect of Trade on the Demand for Skill: Evidence from the Interstate
+             Highway System},
+  journal = {Review of Economics and Statistics},
+  volume  = {90},
+  number  = {4},
+  pages   = {683--701},
+  year    = {2008},
+  doi     = {10.1162/rest.90.4.683},
+  note    = {Labor market impacts of interstate highway system; skill demand
+             and regional wage effects. Precedent for labor impact analysis
+             of infrastructure investment.}
+}
+
+@techreport{IIJA2021,
+  title  = {Infrastructure Investment and Jobs Act (Bipartisan Infrastructure Law)},
+  number = {Public Law 117-58},
+  year   = {2021},
+  note   = {117th Congress. National Highway Freight Program reauthorization;
+            NHPP funding levels. Establishes legal framework cited in policy section.}
+}
+
+@article{Morrison1989,
+  author  = {Morrison, Steven A. and Winston, Clifford},
+  title   = {Enhancing the Performance of the Deregulated Air Transportation System},
+  journal = {Brookings Papers on Economic Activity: Microeconomics},
+  volume  = {1989},
+  pages   = {61--112},
+  year    = {1989},
+  doi     = {10.2307/2534712},
+  note    = {Airline hub-and-spoke economics; crew base model analogy for
+             relay driver network design.}
+}

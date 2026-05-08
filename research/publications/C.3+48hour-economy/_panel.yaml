@@ -1,0 +1,14 @@
+paper: C.3+48hour-economy
+title: "The 48-Hour Corridor: Economic Opportunities Unlocked by I2.0 Transcontinental Freight"
+venue: "Journal of Economic Perspectives"
+stage: planned
+round: 0
+content_mode: full
+reviewers: []
+reviews: {}
+history:
+  - stage: planned
+    date: 2026-05-07
+    note: "Spawned from OD simulation finding: relay + managed lanes achieves 48h NY-LA.
+           The paper quantifies what economic activity 48h enables that 3.6 days does not.
+           Core mechanism: air-to-truck freight substitution ($8B/yr addressable market)."

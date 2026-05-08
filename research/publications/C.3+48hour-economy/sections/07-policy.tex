@@ -1,0 +1,152 @@
+\section{Policy Implications: The Relay Network as I2.0 Layer Zero}
+\label{sec:policy}
+
+The economic cases in the preceding sections are unlocked by two distinct investments:
+the I2.0 managed lane program (\$253 billion portfolio, decade-scale construction timeline)
+and the relay station network (\$40 million for NY-LA, \$2 billion nationally, buildable
+in three to five years). These investments are complements, not substitutes. But they are
+not symmetric in urgency or in what they deliver independently.
+
+\subsection{What the Relay Network Delivers Without Managed Lanes}
+
+The simulation tested four scenarios, of which two are relevant to the policy sequence
+question: relay on current General Purpose lanes, and relay on I2.0 managed lanes.
+
+\begin{table}[h]
+\centering
+\caption{Relay performance with and without I2.0 managed lanes}
+\label{tab:relay_scenarios}
+\begin{tabular}{lrrrr}
+\toprule
+Scenario & p50 (h) & p75 (h) & p95 (h) & 48h SLA \\
+\midrule
+Relay / GP lanes (buildable now)   & 40.2 & 45.1 & 58.3 & $\approx$88\% \\
+Relay / I2.0 managed lanes         & 35.6 & 39.8 & 45.4 & 98.8\% \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Source: \citet{ROUTE_C1}. GP = General Purpose (current infrastructure).} \\
+\end{tabular}
+\end{table}
+
+The relay network on current infrastructure delivers an 88\% probability of meeting
+a 48-hour service level agreement. This is not sufficient for most commercial supply chains
+that require a 48-hour guarantee --- a carrier who promises 48-hour delivery and misses
+it 12\% of the time cannot sustain that promise. But it is dramatically better than the
+current solo/GP baseline (where 48-hour delivery is essentially never achievable), and
+it is good enough for less time-sensitive shipments that prefer 48-hour truck over 87-hour
+truck regardless of occasional misses.
+
+The practical implication: relay stations can be built today, on existing interstate
+infrastructure, and begin capturing a portion of the economic value described in this paper.
+They are not contingent on the managed lane program being complete. The managed lane program,
+when built, improves the relay SLA from 88\% to 98.8\% --- the difference between
+a ``best effort'' service and a commercial commitment window.
+
+This sequencing matters for policy. The federal government does not need to wait for the
+\$253 billion I2.0 program to be authorized and funded before beginning relay network
+development. The relay network is a distinct, smaller program that can proceed on a
+faster track.
+
+\subsection{Policy Recommendation 1: Designate National Freight Relay Zones}
+
+The Federal Highway Administration has authority under the National Highway Freight
+Program (established under the FAST Act, 2015, and continued under IIJA, 2021) to
+designate freight-critical facilities and fund infrastructure improvements at those
+facilities \citep{FHWA_freight2023}. We recommend that FHWA exercise this authority
+to designate a network of National Freight Relay Zones at T1 hub locations along
+the primary Interstate 2.0 corridors.
+
+The designation would accomplish three things. First, it would signal to the private
+sector that the relay hub locations are stable and investable, enabling carriers to
+begin planning relay operations without fear that the designated locations will change.
+Second, it would unlock National Highway Performance Program funding for station
+infrastructure --- access roads, utilities, truck pad construction, and basic facility
+development --- that reduces the private capital requirement for carriers. Third, it
+would establish a planning baseline for state DOTs to incorporate relay stations into
+their highway interchange improvement programs.
+
+The cost to the federal government of designation is zero. The cost of NHPP-funded
+station infrastructure at nine NY-LA locations is \$40 million --- already within the
+NHPP's annual allocation for freight-specific projects in the affected states.
+
+\subsection{Policy Recommendation 2: HOS Regulatory Clarification for Relay Operations}
+
+Current Hours of Service regulations were designed for solo and team driving.
+The relay model creates a new compliance question: when a driver hands off the truck
+at a relay station and is transported back to her home base as a non-driving passenger,
+does that count as on-duty time?
+
+Under current FMCSA regulations, a driver who is in a commercial vehicle but not driving
+is considered to be ``on duty'' unless she is in the sleeper berth. A relay driver
+returning home as a passenger in a repositioning truck would not be in a sleeper berth
+and would technically accumulate on-duty hours during the return trip --- potentially
+approaching HOS limits before her next driving shift \citep{FHWA_freight2023}.
+
+This is a compliance artifact, not a safety concern. A relay driver who has worked a
+seven-hour leg and then spent five hours as a passenger in a comfortable cab seat is
+not fatigued in any meaningful sense. FMCSA should issue a clarifying rule or guidance
+document that treats relay driver repositioning travel as off-duty time, provided the
+driver has no active driving or supervisory responsibilities during the return trip.
+This regulatory clarification costs nothing and removes a significant barrier to relay
+operation adoption by risk-averse carriers.
+
+The 30-minute break requirement is a related issue. Under current rules, a driver must
+take a 30-minute break after eight hours of cumulative on-duty time (not just driving time).
+A relay driver who works a seven-hour driving leg has not triggered this requirement, but
+if any pre-drive inspection, paperwork, or wait time at the relay station is included,
+the eight-hour clock may be close. FMCSA should clarify that the relay station changeover
+process does not trigger the 30-minute break requirement when the driving leg is under
+eight hours and the driver goes off-duty at the station.
+
+\subsection{Policy Recommendation 3: The Freight Network Operator Model}
+
+The relay network's full economic value requires coordination across carriers. The driver
+who boards the truck in Cleveland does not know or care which carrier owns the trailer.
+She is a relay driver; her job is to move the truck from Cleveland to Chicago. The trailer
+might belong to Werner, J.B. Hunt, or a California agricultural cooperative's private fleet.
+The relay system works only if the handoff at each station is seamless regardless of
+carrier identity.
+
+This is a coordination problem that individual carriers cannot solve unilaterally. No single
+carrier has enough volume to fill eight relay stations continuously; the economics require
+sharing the station infrastructure across carriers. The parallel to the airline industry is
+instructive: no individual airline could maintain a full hub operation at every airport.
+The shared infrastructure model --- airports owned and operated independently of airlines,
+with gate access sold on a per-use basis --- solved this coordination problem.
+
+We recommend that FHWA, in partnership with the Surface Transportation Board and FMCSA,
+develop a Freight Network Operator framework: a regulatory structure that authorizes neutral
+relay station operators to coordinate driver handoffs across carriers, maintain shared
+scheduling systems, and manage station infrastructure under common operational standards.
+The precedent exists in rail: trackage rights agreements allow freight railroads to use
+each other's infrastructure under regulatory supervision. The relay network needs a
+trucking equivalent.
+
+A freight network operator would be neither a carrier (it does not own freight) nor a
+broker (it does not arrange shipments). It is an infrastructure operator --- analogous
+to an airport authority or a port authority --- that provides the physical and
+organizational platform on which carriers operate. The legal framework for this entity
+does not currently exist in federal trucking regulation; creating it requires a rulemaking
+or statutory clarification.
+
+\subsection{The Cost-Benefit Summary}
+
+The policy package described above --- relay zone designation, HOS clarification, and
+freight network operator framework --- has a total federal direct cost of approximately
+\$40--50 million for the NY-LA pilot, or \$2 billion for a national network. The annual
+economic benefit from the five economic cases analyzed in this paper totals \$15--25 billion
+per year at full adoption.
+
+\begin{equation}
+\text{Benefit-cost ratio (NY-LA)} = \frac{\$15\text{B/yr} \times 20 \text{ yrs (NPV)}}{{\$253\text{B}} + \$0.04\text{B}} \approx 1.2\times
+\end{equation}
+
+The relay network alone, at \$40 million for the NY-LA corridor, has a benefit-cost ratio
+that is essentially unbounded in the first-year analysis: \$15 billion in annual benefits
+against \$40 million in infrastructure cost implies a payback period under three weeks.
+The capital constraint is not the relay stations. It is the managed lane program. The relay
+stations are the unlock mechanism --- nearly free, foundational, and deployable now.
+
+This is the core policy insight. The \$253 billion I2.0 program is the primary investment.
+Its economic return depends partly on the relay network making 48-hour SLA achievable and
+commercially reliable. The relay network is Layer 0 of I2.0 --- buildable first, at
+minimal cost, activating economic returns before the main program is complete.
