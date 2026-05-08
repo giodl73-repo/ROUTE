@@ -12,6 +12,7 @@
 ///   Equilibrium: no user can reduce their travel time by switching routes.
 ///   Implemented as iterative: all-or-nothing → BPR travel times → repeat.
 pub mod demand;
+pub mod hub;
 pub mod assignment;
 pub mod incident;
 pub mod chaos;
@@ -25,6 +26,8 @@ pub use chaos::{ChaosConfig, ChaosResult, run_chaos};
 pub use metrics::{SimMetrics, corridor_pti, network_throughput, freight_cost_delta};
 pub use assignment::{wardrop_equilibrium, FlowState};
 pub use incident::{IncidentSpec, apply_incident, restore_incident};
+pub use hub::{RelayHub, HubStaffing, NetworkSummary,
+              t1_diamond_hubs, proposed_hubs, compute_network_summary};
 pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork,
              DriverMode, Intervention, InterventionBenchmark, InterventionResult,
              PassengerMode, PassengerTripDistribution, run_passenger_simulation,
