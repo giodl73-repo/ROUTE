@@ -2,29 +2,55 @@
 paper: E.2+i2-framework
 review_type: recheck-synthesis
 round: 1
-date: 2026-05-07
-rechecked_reviewers: [neumark, puentes]
-pp_items_resolved: [PP1.1]
+date: 2026-05-08
+rechecked_reviewers:
+  - neumark
+  - puentes
+pp_items_resolved:
+  - PP1.1
 advance_to_ready: true
 ---
+> AI-generated simulated recheck synthesis. Not an actual review.
 
-> **Note:** AI-generated simulated recheck synthesis.
+## Recheck Summary
 
-## Summary of Recheck
+Both Round 1 reviewers who were rechecked pass. PP1.1 (NPV arithmetic reconciliation) is resolved for both.
 
-Two Round 1 reviewers rechecked the PP1.1 item (NPV reconciliation) that was the primary blocking concern for E.2. Both pass.
+| Reviewer | Item | Round 1 Score | Recheck Verdict | Recheck Score |
+|---|---|---|---|---|
+| Neumark | PP1.1 (NPV reconciliation) | 2/4 | PASS-WITH-NOTE | 3/4 |
+| Puentes | PP1.1 + investment sequencing | 2/4 | PASS-WITH-NOTE | 3/4 |
 
-**Neumark (PP1.1):** PASS-WITH-NOTE. The reconciliation table (Table 2, sec:npv-reconcile) satisfies his requirement that the $298B NPV claim be arithmetically traceable. He notes that the capital timing assumption is the primary uncertainty driver — a $52B spread between lower and upper bounds — and flags the current framing as understating how much work that assumption does. This is a P3 note for the next revision cycle, not a blocking item.
+## Score Update
 
-**Puentes (PP1.1 + legislative pathway):** PASS-WITH-NOTE, with score raised from 2/4 to 3/4. The NPV decomposition table resolves his blocking PP1.1 concern. On the legislative pathway question (his deeper Round 1 critique), he accepts that E.2 is a research synthesis paper rather than a policy implementation memo, and notes that the F-track papers are the appropriate venue for the federal authorization analysis. He asks for one sentence in the E.2 conclusion acknowledging the reauthorization requirement and cross-referencing companion materials — this is a P2 item for the next draft.
+| Reviewer | Round 1 | Recheck |
+|---|---|---|
+| Neumark | 2/4 | 3/4 (+1) |
+| Puentes | 2/4 | 3/4 (+1) |
+| McKinnon | 3/4 | 3/4 (unchanged) |
+| Chester | 3/4 | 3/4 (unchanged) |
+| Schmitt | 3/4 | 3/4 (unchanged) |
+
+**Previous avg**: 2.6/4 | **Previous min**: 2/4
+**Revised avg**: 3.0/4 | **Revised min**: 3/4
+
+## Key Substantive Changes
+
+Two corrections combined to resolve all blocking items:
+
+1. **NPV reconciliation table** (Table 2, sec:npv-reconcile): The $298B NPV is now arithmetically traceable through component annual benefits, the 12.41 annuity factor, gross PV, and capital timing adjustment. The $246B–$298B range is properly labeled — $246B conservative, $298B upper bound — with both endpoints reported.
+
+2. **Component 1 figures corrected to match E.1 revisions**: $12.7B/yr → $11.2B/yr; $86.4B → $74.8B NPV; 2.3:1 → 2.0:1 B/C. E.2 now cites E.1 figures consistently throughout. Portfolio total table updated to $228.9B NPV (ex-transit).
+
+3. **Investment sequencing clarified**: Relay network as Phase 0 (~$40M, no new federal authority required) positioned before managed lanes at $121B (Phase 2, reauthorization-dependent). This directly resolved Puentes' concern about the implicit $8.4B/yr federal authority claim.
 
 ## Outstanding Items (Non-Blocking)
 
 | Item | Reviewer | Priority | Description |
-|------|----------|----------|-------------|
-| Capital timing framing | Neumark | P3 | Present $246B and $298B as co-equal bounds; flag capital timing as Sensitivity S1 |
-| Legislative pathway acknowledgment | Puentes | P2 | One sentence in conclusion acknowledging federal authorization requirement; cross-ref to F-track |
+|---|---|---|---|
+| Abstract NPV framing | Neumark | P3 | Abstract should reflect revised portfolio NPV ($228.9B) and clarify $298B as upper bound of capital-timing range |
+| Abstract NPV framing | Puentes | P3 | Same — abstract should flag revised portfolio figure; reader who reads only abstract encounters upper-bound estimate as headline |
 
 ## Advance to "Ready"
 
-**Yes.** Both rechecked reviewers pass. The full Round 1 panel was: Neumark 3/4, Puentes 2→3/4, McKinnon 3/4, Chester 3/4, Schmitt 3/4. With Puentes raised to 3/4, the revised panel average is 3.0/4 with no score below 3/4. PP1.1 is resolved. The outstanding items are P2–P3 and do not block the paper from advancing to ready status.
+**Yes.** Both rechecked reviewers pass. Full Round 1 panel was: Neumark 2→3/4, Puentes 2→3/4, McKinnon 3/4, Chester 3/4, Schmitt 3/4. Revised avg 3.0/4; min score 3/4 across all five reviewers. PP1.1 is resolved. Outstanding items are P3 and do not block promotion.

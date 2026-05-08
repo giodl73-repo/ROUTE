@@ -1,7 +1,7 @@
 paper: B.3+resilience-holes
 title: "Resilience Holes: Compound Exposure in the National Highway Network"
 venue: "Transportation Research Record (TRR)"
-stage: submit
+stage: ready
 round: 1
 content_mode: full
 reviewers:
@@ -15,13 +15,13 @@ reviewers:
     role: freight-economist
     score: 3
     score_max: 4
-    recheck: "2026-05-07 — PP2.4 + PP2.5 resolved; PASS-WITH-NOTE"
+    recheck: "2026-05-08 — PP2.4 propagated to §01/§04/§05/§07; PP2.5 D1 citation confirmed; PASS-WITH-NOTE"
   - slug: elefteriadou
     name: Lily Elefteriadou
     role: traffic-engineer
     score: 3
     score_max: 4
-    recheck: "2026-05-07 — PP2.4 resolved; PASS-WITH-NOTE"
+    recheck: "2026-05-08 — PP2.4 propagation verified across all four sections; $1.3B consistent; PASS"
   - slug: puentes
     name: Robert Puentes
     role: transport-policy
@@ -62,5 +62,8 @@ history:
     note: "Round 1 panel review complete. 5 reviewers: Chester (transport-resilience), McKinnon (freight-economist), Elefteriadou (traffic-engineer), Puentes (transport-policy), Hanson (transport-geographer). Mean 2.6/4. P1 blocking items: correct waiting cost rate (Donner NPV revised to ~$11.6B), add NPV sensitivity table, show 2050 D1 projection methodology, add PROTECT reform implementation pathway."
   - stage: submit
     date: 2026-05-07
-    note: "Recheck complete. PP2.4 resolved: waiting cost corrected $225/hr -> $91/hr idle; D1 benefit $700M -> $400M/yr; NPV $15.8B -> $12.1B; CBR 5.75 -> 4.0:1. PP2.5 resolved: ROUTE_D1 citation added to 02-background.tex; cross-track dependency documented. Elefteriadou PASS-WITH-NOTE (3/4), McKinnon PASS-WITH-NOTE (3/4). Mean score 3.0/4. Paper advances to ready."
+    note: "Initial recheck. PP2.4 resolved in §03: waiting cost corrected $225/hr -> $91/hr idle; D1 benefit $700M -> $400M/yr; NPV $15.8B -> $12.1B; CBR 5.75 -> 4.0:1. PP2.5 resolved: ROUTE_D1 citation added to 02-background.tex. Post-write check found $1.3B not yet propagated to §01, §04, §05, §07."
+  - stage: ready
+    date: 2026-05-08
+    note: "Propagation recheck complete. $1.3B annual cost / $12.1B NPV / 4.0:1 CBR / 3.1yr payback verified consistent in §01 (introduction), §04 (tab:compound Donner row), §05 (investment sequencing D1-only ordering discussion), and §07 (conclusion key findings). No residual $1.6B figures. Elefteriadou PASS (3/4), McKinnon PASS-WITH-NOTE (3/4). Mean score 3.0/4. Paper stage: ready."
 

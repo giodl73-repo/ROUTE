@@ -1,14 +1,15 @@
 paper: F.3+relay-marketplace
 title: "The Relay Marketplace: Platform Design for 48-Hour National Freight and the AV Transition"
 venue: "Management Science"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
   - slug: neumark
     name: David Neumark
     persona: "Distinguished Professor of Economics, UC Irvine; labor economics, market structure"
-    score: 2
+    score: 3
+    recheck: "2026-05-08 — P1.1 resolved; per-ton-mile reframing + hub fee acknowledgment; PASS"
   - slug: adamic
     name: Lada Adamic
     persona: "Research Scientist, Meta AI; computational social science, platform design"
@@ -24,16 +25,32 @@ reviewers:
   - slug: schmitt
     name: Angie Schmitt
     persona: "Transportation journalist and author; transportation equity, labor, community impact"
-    score: 2
+    score: 3
+    recheck: "2026-05-08 — P1.2 resolved; AB5 subsection added; Mode 1 W-2 declared primary; PASS"
 reviews:
-  neumark: 2
-  adamic: 3
-  puentes: 3
-  mckinnon: 3
-  schmitt: 2
-score_mean: 2.6
-score_min: 2
-p1_items: 2
+  round1:
+    mean_score: 2.6
+    panel_decision: revision
+    blocking_items: 2
+    files:
+      - reviews/REVIEW-neumark.md
+      - reviews/REVIEW-adamic.md
+      - reviews/REVIEW-puentes.md
+      - reviews/REVIEW-mckinnon.md
+      - reviews/REVIEW-schmitt.md
+      - reviews/SYNTHESIS.md
+      - reviews/REVISION-PLAN.md
+  recheck1:
+    mean_score: 3.0
+    panel_decision: ready
+    blocking_items: 0
+    files:
+      - reviews/RECHECK-neumark.md
+      - reviews/RECHECK-schmitt.md
+      - reviews/RECHECK-SYNTHESIS.md
+score_mean: 3.0
+score_min: 3
+p1_items: 0
 p2_items: 8
 history:
   - stage: planned
@@ -50,3 +67,11 @@ history:
            requiring per-ton-mile reframing (Neumark) and Mode 2 gig labor classification
            under AB5/ABC-test (Schmitt/McKinnon). Eight P2 items. SYNTHESIS.md and
            REVISION-PLAN.md written."
+  - stage: ready
+    date: 2026-05-08
+    note: "Recheck complete. P1.1 resolved: hub fee paragraph added; relay $1,650 vs.
+           solo $1,456 per-trip acknowledged; per-ton-mile reframing and 98% vs. 48%
+           utilization argument established as primary economic case; Neumark PASS (3/4).
+           P1.2 resolved: AB5 subsection added; Dynamex ABC test cited; LA and Sacramento
+           hubs named as legally inoperative for Mode 2; Mode 1 W-2 declared primary model;
+           Schmitt PASS (3/4). Mean score 3.0/4. Paper advances to ready."

@@ -416,7 +416,7 @@ fn main() -> Result<()> {
                 }
                 // Write subset CSV
                 let mut wtr = csv::Writer::from_path(&out)?;
-                wtr.write_record(["STATE","ROUTE_ID","AADT","PCT_TRUCK","LANE_COUNT","IRI"])?;
+                wtr.write_record(["STATE","ROUTE_ID","AADT","PCT_TRUCK","LANE_COUNT","IRI","SPEED_LIMIT"])?;
                 for r in &all {
                     wtr.write_record(&[
                         r.state.clone(), r.route_id.clone(),
@@ -424,7 +424,7 @@ fn main() -> Result<()> {
                         r.pct_truck.map(|v|format!("{v:.4}")).unwrap_or_default(),
                         r.lane_count.map(|v|v.to_string()).unwrap_or_default(),
                         r.iri.map(|v|format!("{v:.1}")).unwrap_or_default(),
-                        String::new(), // speed_limit
+                        String::new(), // speed_limit placeholder
                     ])?;
                 }
                 wtr.flush()?;

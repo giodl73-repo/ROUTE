@@ -1,7 +1,7 @@
 paper: A.1+arterials-tiering
 title: "Interstate Arterials: Tiering the National Highway Network by Freight Volume and Network Centrality"
 venue: "Transportation Research Part A: Policy and Practice"
-stage: submit
+stage: ready
 round: 1
 content_mode: full
 writing_completed: true
@@ -16,6 +16,12 @@ recheck:
   date: 2026-05-07
   reviewers: [hanson, adamic]
   verdicts: {hanson: PASS, adamic: PASS-WITH-NOTE}
+  scores_after: {hanson: 3, adamic: 3, transport-policy: 3, traffic-engineer: 3, freight-economist: 3}
+recheck_r2:
+  date: 2026-05-08
+  reviewers: [hanson, adamic]
+  verdicts: {hanson: PASS, adamic: PASS}
+  items: [tier-label-corrections, abstract-tier-counts]
   scores_after: {hanson: 3, adamic: 3, transport-policy: 3, traffic-engineer: 3, freight-economist: 3}
 avg_score: 3.0
 min_score: 3
@@ -32,4 +38,6 @@ history:
   - stage: submit
     date: 2026-05-07
     note: "Recheck passed — Hanson PASS (P1.1 circularity broken; Section 5.3 doc-frequency as external calibration), Adamic PASS-WITH-NOTE (P1.2 directional-ranking claim + degree-node + STRAHNET + ATRI validations). Avg rises 2.8→3.0, min rises 2→3."
-
+  - stage: ready
+    date: 2026-05-08
+    note: "R2 post-write corrections recheck passed — Hanson PASS (I-110 T4→T2, I-880 T2→T3 tier labels corrected per scores-all.csv), Adamic PASS (abstract T3/T4 counts 80/114→61/133 corrected to match Table 2). Stage advances to ready."
