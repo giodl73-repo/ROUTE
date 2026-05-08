@@ -1,0 +1,57 @@
+\section{Introduction}
+
+The standard metric for highway investment prioritization is the volume-to-capacity ratio.
+V/C measures how close a corridor operates to its design capacity under peak-hour demand.
+The ATRI bottleneck rankings translate V/C stress into dollar cost using an average truck
+delay figure (\$150--225 per truck-hour), producing an estimate of the annual economic
+cost of recurring congestion. This framework is well-suited to the problem it was designed
+for: identifying where additional lane-miles would reduce chronic peak-hour delay.
+
+It is poorly suited to a different and complementary problem: identifying where corridor
+closures --- complete, unplanned interruptions to traffic flow --- impose freight costs that
+dwarf those of routine congestion. A congested I-285 Atlanta interchange that operates
+at 0.95 V/C and delays 22,000 trucks by 15 minutes per day imposes approximately
+\$1.2B in annual delay cost (\$225/hr $\times$ 0.25 hr $\times$ 22,000 trucks $\times$
+365 days). But a closed Donner Pass that interrupts 8,000 trucks per day for 18 hours,
+50 times per year, imposes a cost of approximately \$2.4B annually --- without ever
+appearing in a V/C-based bottleneck analysis, because V/C measures peak-hour flow,
+not episodic closure.
+
+The distinction matters for investment logic. Congestion relief investments (managed
+lanes, interchange reconstruction) reduce delay on corridors that are open but slow.
+Resilience investments (snowsheds, drainage reconstruction, flood barriers) reduce
+closure frequency on corridors that are intermittently unavailable. These are different
+assets, in different places, addressing different failure modes --- and the V/C framework
+systematically undercounts the economic case for resilience investment.
+
+This paper establishes a closure cost model for the 15 highest-risk corridors in the
+ROUTE corpus. The model combines: (1) closure frequency from historical incident databases;
+(2) closure duration distribution from the same sources; (3) freight volume (truck AADT)
+at the closure point; and (4) a rerouting-penalty computation that incorporates both the
+detour distance and the B1 isolation penalty \citep{ROUTE_B1} --- the degree to which
+a corridor lacks an adequate alternate. The key finding is that the corridors with the
+highest closure costs are not the most congested: \textbf{Donner Pass costs 4.2$\times$
+more per closure event than the Dallas interchange}, despite having a lower peak V/C at
+the pass itself, because the Donner B1 isolation penalty (detour = 550 miles via I-40
+Flagstaff) multiplies the per-hour cost of each closure.
+
+The companion concept introduced here is \textbf{redundancy value}: the economic value
+of having an adequate alternate route. Redundancy value is computed as the difference in
+closure cost between the current corridor configuration (existing alternates) and a
+counterfactual with an interstate-quality alternate. For Donner Pass, the redundancy
+value of a hypothetical I-70W (western Colorado to Sacramento) is \$1.9B per year.
+This figure directly answers the investment case question for alternate-route construction:
+at what cost does building a redundant route pay for itself?
+
+\subsection*{Contributions}
+
+\begin{enumerate}
+\item A closure cost model integrating frequency, duration, freight volume, and B1 isolation
+penalty --- the first such model applied systematically to the ROUTE corpus
+\item Quantification of the V/C--closure cost gap: the top-5 closure-cost corridors are
+not in the top-5 of any V/C-based bottleneck ranking
+\item Redundancy value computation for the top-10 high-closure corridors, establishing the
+economic floor for alternate route investment justification
+\item A compound investment case: corridors where hardening and redundancy investment are
+additive (not substitutable) and where neither alone captures the full available benefit
+\end{enumerate}

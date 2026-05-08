@@ -1,0 +1,67 @@
+\section{Investment Prioritization}
+\label{sec:investment}
+
+\subsection{Priority Metric: Betweenness Product Score}
+
+Prioritization of the 15 T1/T1 intersections uses the B2 product score: the product of the B2 corridor scores (betweenness centrality, normalized to the T1 corridor set) for the two intersecting T1 corridors. The B2 product captures joint consequence: a disruption at a T1/T1 intersection simultaneously degrades both corridors, and the combined freight impact is proportional to the product of their individual centrality scores rather than their sum \citep{Jenelius2010}. This follows from the independence of the two corridor failure modes: disruptions on I-75 and I-85 affect different O-D sets, and the loss of their connection point harms all O-D pairs that depend on both corridors jointly.
+
+The B2 product is computed from the ROUTE betweenness corpus \citep{ROUTE_B1, ROUTE_B3}: betweenness centrality scores for each T1 corridor are derived from the national freight O-D matrix, weighted by ATRI freight cost per hour \citep{ATRI_costs2024}. The product ranges from 0 (one corridor has zero freight betweenness, intersection is immaterial) to 1.0 (both corridors are the highest-betweenness routes in the national network simultaneously).
+
+\subsection{NPV Methodology}
+
+Net present value for each diamond interchange investment is computed as follows. Annual freight benefit is the product of: (1) daily freight volume at the intersection (commercial vehicles per day, from HPMS 2018 data \citep{FHWA_HPMS2023}); (2) ATRI all-in truck operating cost of \$225 per truck-hour \citep{ATRI_costs2024}; (3) average delay hours per vehicle per incident, estimated from FHWA incident duration data by intersection type; (4) annual incident frequency at k = 1 intersections (mean 8.4 incidents per year producing 4+ hour closures, from FHWA closure event database \citep{FHWA_freight2023}); and (5) the k-improvement factor: the fraction of incident-hours eliminated by diamond connectivity, estimated at 0.70 for intersections upgraded from k = 1 to k $\geq$ 3 (reflecting the share of disruption events where at least one zone alternate would have been available and adequate).
+
+\begin{equation}
+\text{Annual Benefit} = V_d \times C_h \times \bar{D} \times F_a \times \kappa
+\label{eq:benefit}
+\end{equation}
+
+where $V_d$ is daily commercial vehicle volume, $C_h$ is ATRI cost per truck-hour, $\bar{D}$ is mean delay hours per vehicle per incident, $F_a$ is annual incident frequency, and $\kappa$ is the k-improvement factor (0.70 for k = 1 $\rightarrow$ k $\geq$ 3). NPV is computed over 30 years at a 7\% discount rate \citep{IIJA2021}, deducting annualized capital cost (30-year amortization at 7\%) from annual freight benefit.
+
+\subsection{Full Portfolio Analysis}
+
+Table~\ref{tab:investment} presents the complete investment analysis for all 15 T1/T1 intersections. The nine k = 1 SPF intersections are ordered by B2 product score (highest priority first); the four k = 2 intersections follow; the two k $\geq$ 3 intersections require no investment.
+
+\begin{table}[h!]
+\centering
+\caption{T1/T1 Intersection Investment Analysis}
+\label{tab:investment}
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Intersection} & \textbf{Region} & \textbf{B2 prod.} & \textbf{k} & \textbf{Cost (\$M)} & \textbf{NPV (\$B)} & \textbf{B/C} \\
+\midrule
+I-75 $\times$ I-85   & Atlanta, GA       & 0.68 & 1 & 380 & 2.8 & 3.7 \\
+I-10 $\times$ I-95   & Jacksonville, FL  & 0.61 & 1 & 210 & 1.6 & 3.2 \\
+I-75 $\times$ I-90   & Toledo, OH        & 0.58 & 1 & 340 & 2.1 & 3.1 \\
+I-95 $\times$ I-85   & Richmond, VA      & 0.52 & 2 & 180 & 1.2 & 2.8 \\
+I-5  $\times$ I-80   & Sacramento, CA    & 0.49 & 2 & 220 & 1.4 & 2.5 \\
+I-90 $\times$ I-95   & Boston, MA        & 0.46 & 1 & 820 & 3.1 & 1.9 \\
+I-10 $\times$ I-35   & San Antonio, TX   & 0.43 & 1 & 510 & 1.9 & 1.9 \\
+I-80 $\times$ I-90   & Gary, IN          & 0.38 & 1 & 290 & 1.1 & 1.9 \\
+I-5  $\times$ I-90   & Seattle, WA       & 0.35 & 2 & 150 & 0.8 & 2.4 \\
+I-80 $\times$ I-35   & Des Moines, IA    & 0.31 & 1 & 310 & 0.9 & 1.5 \\
+I-5  $\times$ I-40   & Barstow, CA       & 0.27 & 1 & 260 & 0.7 & 1.4 \\
+I-10 $\times$ I-40   & Albuquerque, NM   & 0.24 & 2 & 130 & 0.5 & 1.9 \\
+I-10 $\times$ I-85   & Montgomery, AL    & 0.21 & 1 & 190 & 0.5 & 1.3 \\
+\midrule
+I-75 $\times$ I-90   & Detroit, MI       & 0.40 & 4 & ---  & ---  & --- \\
+I-5  $\times$ I-90   & Denver, CO        & 0.36 & 3 & ---  & ---  & --- \\
+\midrule
+\textbf{Portfolio total} & & & & \textbf{4,790} & \textbf{18.6} & \textbf{2.4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Priority Phase Analysis}
+
+\textbf{Phase 1 (2025--2028): Atlanta, Jacksonville, Toledo.} The three highest-B2-product intersections with k = 1 condition are the immediate investment priority. Combined capital cost: \$930 million. Combined NPV: \$6.5 billion. Aggregate B/C ratio: 3.4:1. Atlanta and Jacksonville are eligible for IIJA NHPP interchange funding; Toledo qualifies under both NHPP and the FHWA Safety Investment category due to its documented incident frequency at the partial cloverleaf node \citep{FHWA_interchange2019}. Phase 1 should be advanced as a package: single design contract covering all three zones with common geometry standards, accelerating design and reducing per-project overhead.
+
+\textbf{Phase 2 (2028--2032): Richmond, Sacramento, Boston, San Antonio.} Phase 2 addresses the next four priority intersections, including the two k = 2 cases (Richmond, Sacramento) where a single additional zone connection upgrades connectivity to k $\geq$ 3, and the two remaining k = 1 SPF cases with high B2 product scores (Boston, San Antonio). Combined capital cost: \$1.73 billion. Boston (\$820M) is the most expensive single investment in the portfolio due to the density and topographic constraints of the metropolitan area. San Antonio (\$510M) requires beltway upgrade and new right-of-way for Loop 1604 freight enhancement. The Phase 2 B/C ratios of 1.9--2.8:1 remain strongly positive.
+
+\textbf{Phase 3 (2032--2040): Remaining SPF and k=2 intersections.} The eight remaining intersections --- Gary IN, Des Moines, Barstow, Albuquerque, Seattle, Montgomery, and the two lower-B2-product k = 1 cases --- constitute Phase 3. Combined capital cost: \$2.13 billion. B/C ratios range from 1.3:1 to 1.9:1, positive but below the Phase 1 threshold. Phase 3 investment is justified on portfolio resilience grounds: completing the program eliminates all k = 1 conditions in the national T1/T1 matrix, a qualitative change in network resilience that is not captured by individual-intersection B/C ratios.
+
+\subsection{Comparison to Managed Lanes}
+
+Managed freight lane programs address throughput on linear corridor segments; diamond interchange zones address resilience at nodal junctions. The two investment types are complementary, not competing. However, the cost-efficiency comparison is instructive: the full 15-intersection diamond program (\$4.5 billion total) costs less than one-sixth of the managed freight lane program for I-75 Atlanta alone (\$27 billion for the Atlanta segment \citep{ROUTE_E1}). The diamond program delivers resilience improvements at all 15 highest-criticality nodes in the national network; the managed lane program delivers throughput improvements on one linear corridor.
+
+The sequencing implication is that diamond investments should precede or co-develop with managed lane investments on shared corridors. A managed lane investment on I-75 that is not accompanied by diamond zone investment at the I-75/I-85 Atlanta intersection leaves the new capacity vulnerable to a k = 1 disruption event at the most-traveled T1/T1 intersection in the Southeast. The correct sequence is: diamond investment first (resilience of the node), managed lane investment second (throughput of the approaches). This sequencing does not delay managed lane development --- both programs have multi-year design and permitting timelines --- but it ensures that the design of managed lanes coordinates with the design of zone connectors at the termini.

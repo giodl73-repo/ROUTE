@@ -1,0 +1,101 @@
+\section{Operator Economics and Route Viability}
+\label{sec:economics}
+
+\subsection{Cost and Revenue Structure}
+
+We apply the operating cost model from Section~\ref{sec:methods} to three representative corridors spanning the viability range: the highest-demand corridor (New York--Chicago), a medium-demand corridor (Dallas--Kansas City), and the most marginal corridor (Houston--Chicago via I-69).
+
+\paragraph{New York -- Chicago (780 miles, 2 buses per direction per day).}
+
+\emph{Daily operating cost:}
+\[
+  C_{\text{day}} = \$2.80/\text{mi} \times 780\,\text{mi} \times 2\,\text{buses} \times 2\,\text{directions} = \$8{,}736/\text{day}
+\]
+
+\emph{Daily revenue at \$0.12/mile fare and 100\% load factor:}
+\[
+  R_{\text{day}} = \$0.12/\text{mi} \times 780\,\text{mi} \times 50\,\text{seats} \times 2 \times 2 = \$18{,}720/\text{day}
+\]
+
+\emph{Break-even load factor:}
+\[
+  \lambda^* = \frac{\$8{,}736}{\$18{,}720} = 46.7\%
+\]
+
+At \$0.12/mile, the New York--Chicago T1 bus breaks even at a load factor of 46.7\%. This is a modest threshold: the Greyhound equivalent route (where service existed) historically ran at 55--65\% load factor despite its much longer and unreliable schedule, because the price point (\$0.09--0.11/mile economy) attracted price-sensitive travelers who had no alternative \citep{Schwieterman2019}. A T1 service at \$0.12/mile with dramatically better reliability is expected to achieve 60--70\% load factor at market equilibrium, yielding operating margins of 25--35\%.
+
+\emph{At \$0.14/mile fare:} Break-even load factor falls to 37.5\%, and operating margin at 60\% load factor rises to 60\%, suggesting substantial room for competitive pricing and still-profitable operation.
+
+\paragraph{Dallas -- Kansas City (490 miles, 2 buses per direction per day).}
+
+\emph{Daily operating cost:}
+\[
+  C_{\text{day}} = \$2.80 \times 490 \times 2 \times 2 = \$5{,}488/\text{day}
+\]
+
+\emph{Break-even at \$0.12/mile:}
+\[
+  \lambda^* = \frac{\$5{,}488}{\$0.12 \times 490 \times 50 \times 4} = \frac{\$5{,}488}{\$11{,}760} = 46.7\%
+\]
+
+Break-even load factor is distance-invariant in this model (cost and revenue scale proportionally with distance). The corridor-level viability question is therefore purely a demand question: can Dallas--Kansas City attract 47 passengers per bus? With Dallas MSA population 7.8 million and Kansas City MSA 2.3 million, and no current direct transit option, gravity model estimates (Equation~\ref{eq:gravity}) project 820,000 annual passengers at market equilibrium --- 450 passengers per round-trip bus-day across 4 daily departures, or 56\% load factor. This is above break-even at \$0.12/mile.
+
+\paragraph{Houston -- Chicago via I-69 (920 miles, 1 bus per direction per day).}
+
+\emph{Daily operating cost:}
+\[
+  C_{\text{day}} = \$2.80 \times 920 \times 1 \times 2 = \$5{,}152/\text{day}
+\]
+
+\emph{Break-even at \$0.12/mile:}
+\[
+  \lambda^* = \frac{\$5{,}152}{\$0.12 \times 920 \times 50 \times 2} = \frac{\$5{,}152}{\$11{,}040} = 46.7\%
+\]
+
+The I-69 corridor is marginal in the first years because (a) I-69 is not yet complete, reducing the T1 managed lane advantage on the northern segment, and (b) the 14.8-hour travel time, while dramatically better than the current 24+ hour alternative, is a long trip that will take time to achieve market penetration. First-year load factor is projected at 32--38\%, below break-even. This is the primary candidate for Essential Intercity Transportation designation.
+
+\subsection{The PTI-Reliability-Profitability Link}
+
+The break-even calculation above is static. The dynamic mechanism is more important: managed lane reliability converts a market that operators rationally avoid into one they compete for. Consider the comparative scenario:
+
+\begin{itemize}
+  \item \emph{Current I-80 (PTI 1.86):} Operator must pad schedule by $\geq$3 hours to deliver 95\% on-time reliability. Effective average speed 38--42 mph. Travel time 18--22 hours. Passenger willingness-to-pay for this service versus driving: low. Load factor: 35--45\% on a good day. Market: one Greyhound operator with no competition.
+
+  \item \emph{T1 I-80 (PTI 1.15):} Operator schedules 12.6 hours with 95\% on-time guarantee. Effective speed 62 mph. Passenger willingness-to-pay: materially higher; this service is faster than Amtrak and more affordable than air. Load factor: 60--70\% projected. Market: 3--5 operators competing on frequency and service quality.
+\end{itemize}
+
+The PTI improvement does not merely make existing service more efficient; it changes the competitive equilibrium from monopoly (one operator, unattractive service) to oligopoly (multiple operators, improving frequency and quality), which further drives ridership growth.
+
+\subsection{The Case for Essential Intercity Transportation Designation}
+
+Three of the 12 corridors are projected to be below break-even in the first 3 years: Houston--Chicago (I-69, pending completion), Atlanta--Dallas (new market, ramp-up risk), and Denver--Salt Lake City (mountain corridor with seasonality). For these corridors, we propose an Essential Intercity Transportation (EIT) designation modeled on Essential Air Service \citep{EAS_DOT2023}.
+
+The EAS program subsidizes air service to small communities at an average of \$175/passenger \citep{EAS_DOT2023}, recognizing that connectivity has public value beyond operator profitability. We propose EIT subsidies capped at \$15/passenger for marginal bus corridors, on the basis that:
+\begin{enumerate}
+  \item Bus infrastructure already exists (T1 managed lanes, T1/T2 hub platforms) --- the subsidy covers operating cost shortfall only, not capital.
+  \item The \$15/passenger cap is 8.6\% of the EAS average, reflecting the dramatically lower cost structure of bus versus air.
+  \item Communities served by EIT corridors score 6.5--8.5 on C3 (Economic Opportunity Access deficit) --- significantly above the corpus mean --- implying high social return per dollar of subsidy.
+\end{enumerate}
+
+For Houston--Chicago at a projected first-year load factor of 35\% (17.5 passengers per 50-seat bus):
+\[
+  \text{Daily EIT subsidy} = (\lambda^* - 0.35) \times R_{\text{max}} = (0.467 - 0.35) \times \$11{,}040/\text{day} = \$1{,}292/\text{day}
+\]
+\[
+  \text{Per-passenger subsidy} = \frac{\$1{,}292}{35\,\text{passengers/bus} \times 2\,\text{buses/day}} = \$18.46/\text{passenger}
+\]
+
+This is slightly above the \$15 cap in year one, reaching the cap by year two as ridership ramps to 40\% load factor. Total EIT program cost across 3 marginal corridors in the first 3 years is estimated at \$85--120 million --- less than the annual EAS appropriation for a single state-cluster \citep{EAS_DOT2023}.
+
+\subsection{Total Market and Industry Scale}
+
+At market equilibrium across all 12 corridors, the gravity model (Equation~\ref{eq:gravity}) projects:
+\begin{itemize}
+  \item 24 million annual passengers
+  \item \$3.1 billion in annual bus operator revenue (at blended \$0.13/mile average fare)
+  \item 38 bus operators (1--5 routes each), based on route-level profitability thresholds
+  \item 1,800 buses in regular T1 corridor service (50-seat coaches)
+  \item 12,000 direct jobs (drivers, maintenance, operations) in bus operator employment
+\end{itemize}
+
+These figures represent a material reconstruction of the US intercity bus industry, which currently employs approximately 24,000 workers across all intercity coach operations \citep{BTS_intermodal2023}. The T1 bus market would expand total intercity coach employment by approximately 50\%.

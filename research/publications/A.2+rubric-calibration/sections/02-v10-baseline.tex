@@ -1,0 +1,70 @@
+\section{v1.0 Baseline: Twelve Candidate Dimensions}
+\label{sec:v10-baseline}
+
+The v1.0 rubric organized twelve dimensions into four bands. Band A (Flow) captured corridor performance under demand: A1 (Throughput Gap), A2 (Freight Intensity), and A3 (Speed Reliability). Band B (Network) captured structural position: B1 (Redundancy), B2 (Network Centrality), and B3 (Port and Border Access). Band C (People) captured social and economic function: C1 (Population Reach), C2 (Rural Connectivity), and C3 (Economic Opportunity). Band D (Future) captured long-run exposure and investment horizon: D1 (Climate Resilience), D2 (Multimodal Integration), and D3 (Infrastructure Vintage). Each dimension was scored 0--10, for a maximum of 120 points.
+
+\subsection{Dimension Rationale}
+
+\textbf{A1 (Throughput Gap)} measured the gap between observed and theoretical capacity, derived from volume-to-capacity ratios in HPMS. A corridor scored high on A1 when congestion was severe and chronic. The theoretical rationale was that a corridor near capacity is a bottleneck: investment there relieves more freight delay per dollar than investment on an uncongested corridor.
+
+\textbf{A2 (Freight Intensity)} measured truck volume as a share of total AADT, weighted by segment length. A corridor with 30\% truck share across 500 miles scored higher than one with 30\% truck share across 20 miles. Ton-mile weighting was applied when FAF5 commodity flow data was available \citep{FAF5_2022}.
+
+\textbf{A3 (Speed Reliability)} measured Planning Time Index (PTI) --- the ratio of the 95th-percentile travel time to the free-flow travel time. A corridor scoring A3 = 10 was severely unreliable: a shipper must budget nearly twice the free-flow time to ensure on-time delivery. When PTI data was unavailable, an IRI (International Roughness Index) proxy was applied, interpreting pavement roughness as a correlate of travel time variability. This proxy decision would prove consequential.
+
+\textbf{B1 (Redundancy)} measured alternate-route adequacy as the inverse of isolation: a corridor scored B1 = 10 when closure produced a large detour with no interstate-standard alternate. This dimension was operationally straightforward: it required TIGER/Line route geometry and HPMS speed data for alternate routes.
+
+\textbf{B2 (Network Centrality)} measured Freeman betweenness centrality in the interstate network graph, normalized to the 0--10 scale against the corpus distribution. The theoretical motivation was sound: a corridor with high betweenness sits on more shortest paths between origin-destination pairs, meaning its closure disrupts more O-D demand simultaneously. The implementation was incomplete: v1.0 computed centrality on a partial graph using available TIGER/Line data for 31 states, producing unstable scores that would be flagged in v1.1 but not corrected until B2 stabilization work in v1.3.
+
+\textbf{B3 (Port and Border Access)} measured proximity and connectivity to maritime ports and international border crossings, using FHWA port connectivity data and CBP port-of-entry AADT. The dimension correctly identified that I-95 in New Jersey (Port of Newark) and I-5 near San Diego (Otay Mesa crossing) served critical trade infrastructure --- but it could not distinguish between a high-volume border crossing and a low-volume one of equal proximity.
+
+\textbf{C1 (Population Reach)} measured the population served within a defined buffer of the corridor, normalized to the national median. A corridor through the Northeast megalopolis scored high; a corridor through the Wyoming basin scored low. The dimension captured the access dimension of strategic value: how many people could use this corridor?
+
+\textbf{C2 (Rural Connectivity)} measured the proportion of the corridor serving counties below a rural population threshold, inversely weighted to reward corridors providing the primary connection for underserved areas. The rationale was that rural corridors with few alternatives are disproportionately important to the communities they serve.
+
+\textbf{C3 (Economic Opportunity)} measured median household income and GDP per capita in the counties served by the corridor, intended to capture whether the corridor connected high-productivity areas. In practice, this dimension tracked C1 closely: high-population areas are high-GDP areas.
+
+\textbf{D1 (Climate Resilience)} measured composite exposure to climate-driven disruption: FEMA Special Flood Hazard Area (SFHA) miles, historical closure frequency from FHWA incident data, and wildfire proximity from USFS burn zone records. A corridor with many SFHA miles and frequent documented closures scored high (more vulnerable). The dimension was signed for risk, not resilience: D1 = 10 meant high exposure, not high resilience.
+
+\textbf{D2 (Multimodal Integration)} measured proximity and connectivity to intermodal freight facilities: Class I railroad intermodal terminals, inland ports, and airport cargo hubs within defined buffer distances. The dimension rewarded corridors that functioned as links in multimodal supply chains.
+
+\textbf{D3 (Infrastructure Vintage)} measured the mean construction year of corridor segments weighted by lane-miles, interpreted as a proxy for deferred maintenance liability. Older infrastructure required more investment per mile to maintain; newer corridors had lower near-term investment risk.
+
+\subsection{The Congestion-Stress Paradox}
+
+Scoring 227 corridors against the v1.0 rubric produced one immediate anomaly: I-110 (the Pasadena Freeway, 22 miles from downtown Los Angeles to Pasadena) scored above I-80 (the northern transcontinental, 2,900 miles from San Francisco to Teaneck, NJ) in the T1 tier ranking. Table~\ref{tab:v10-paradox} shows the dimension-by-dimension comparison.
+
+\begin{table}[h!]
+\centering
+\caption{I-110 vs.\ I-80: Dimension-by-Dimension Comparison Under v1.0}
+\label{tab:v10-paradox}
+\begin{tabular}{lccl}
+\toprule
+\textbf{Dimension} & \textbf{I-110} & \textbf{I-80} & \textbf{Explanation} \\
+\midrule
+A1 (Throughput Gap)      & 9.5 & 4.0 & I-110 chronically congested; I-80 mostly rural \\
+A2 (Freight Intensity)   & 6.5 & 7.5 & I-80 higher ton-miles; I-110 local freight \\
+A3 (Speed Reliability)   & 8.0 & 10.0 & IRI proxy; I-80 rough pavement = high score \\
+B1 (Redundancy)          & 3.0 & 6.5 & I-110 has alternates; I-80 isolated in NV/WY \\
+B2 (Centrality)          & 2.0 & 7.0 & I-80 high betweenness; partial graph \\
+B3 (Port/Border)         & 4.5 & 4.0 & I-110 near Port of LA; I-80 near Oakland \\
+C1 (Population Reach)    & 8.5 & 5.0 & I-110 serves LA metro; I-80 rural sections \\
+C2 (Rural Connectivity)  & 1.0 & 5.0 & I-110 entirely urban; I-80 serves rural WY/NV \\
+C3 (Economic Opportunity)& 7.0 & 4.5 & LA metro GDP vs.\ Basin/Plains \\
+D1 (Climate Resilience)  & 4.0 & 5.0 & I-80 more flood/snow exposure \\
+D2 (Multimodal)          & 5.0 & 5.5 & Similar intermodal access \\
+D3 (Vintage)             & 3.0 & 3.5 & Both corridors aging \\
+\midrule
+\textbf{Total v1.0}      & \textbf{30.1} & \textbf{25.2} & I-110 ranked above I-80 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+I-110 beat I-80 by 4.9 points on the 120-point scale, earning T1 status while I-80 was classified T2. The cause was structural: two dimensions systematically favored congested urban corridors over rural strategic ones.
+
+A1 rewarded congestion. A corridor scores A1 = 9.5 not because it is strategically important but because it is overloaded. I-110 is chronically congested because 3.8 million people live in Pasadena and the adjacent LA metro and use it for commuting --- not because it carries national freight. I-80, mostly uncongested in Wyoming and Nevada, scored A1 = 4.0. The A1 logic was not wrong as a measure of congestion stress, but congestion stress is not the same as strategic importance.
+
+A3 compounded the error. I-80 scored A3 = 10.0 because the IRI proxy interpreted rough rural pavement in Wyoming as evidence of speed unreliability. I-80's rural segments have high IRI values (pavement roughness from heavy truck wear and freeze-thaw cycles) but are not speed-unreliable in the operational sense: trucks drive at posted speed limits without congestion delay. The proxy was measuring pavement condition, not travel time reliability.
+
+The diagnosis was precise: A3 IRI proxy systematically overscored rural strategic corridors (high IRI from wear and weather) and underscored urban congested corridors that, despite genuine unreliability from traffic, happened to have better-maintained pavement. The fix was targeted: cap the IRI fallback.
+
+Meanwhile, the true strategic differences between I-80 and I-110 --- I-80 carries 8 times the ton-miles, has 3 times the betweenness centrality (even on a partial graph), and is the only northern transcontinental; I-110 is a 22-mile intra-metropolitan connector with no national freight role --- were partially captured by B2 and A2, but not enough to overcome the A1/A3 distortions.

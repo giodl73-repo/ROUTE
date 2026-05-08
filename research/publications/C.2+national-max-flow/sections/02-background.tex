@@ -1,0 +1,30 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Max-Flow in Transportation Networks}
+
+The max-flow problem asks: given a directed graph with edge capacities, what is the maximum feasible flow from a designated source node to a designated sink node? The answer is given by the max-flow min-cut theorem \citep{FordFulkerson1956}: the maximum flow through the network equals the minimum total capacity of any cut that separates source from sink. In a transportation context, the minimum cut identifies the set of road segments whose combined capacity is the system's binding constraint---not the weakest single link in isolation, but the weakest cross-section of the entire network.
+
+Ford and Fulkerson's original augmenting-path algorithm \citep{FordFulkerson1956} finds max-flow by iteratively finding a path from source to sink and pushing flow along it. The algorithm terminates when no augmenting path exists. In the worst case, the number of iterations is proportional to the maximum flow value, which can be exponential in the edge capacities. Edmonds and Karp \citep{ROUTE_A1} modified the algorithm to select the shortest augmenting path (fewest edges, found via breadth-first search) at each iteration, reducing time complexity to $O(VE^2)$ where $V$ is the number of vertices and $E$ the number of edges. For the ROUTE graph ($V \approx 3{,}200$ nodes, $E \approx 48{,}000$ directed edges), this is tractable on commodity hardware and produces provably optimal results for the single-commodity formulation.
+
+Network flow methods have been applied to freight transportation since the 1970s. The foundational applications involved railway capacity planning, where the network topology is more constrained and the single-commodity assumption more defensible \citep{ROUTE_A2}. Highway network applications became practical with the availability of the TIGER/Line shapefile \citep{TIGER2023} and the Highway Performance Monitoring System \citep{HPMS2018}, which provide the edge-by-edge lane count and volume data needed to assign realistic capacities. Recent work has applied max-flow to resilience analysis---computing how much capacity is lost when a single edge or set of edges is removed---which is the direct precursor to the incident simulation in Section~\ref{sec:incident}.
+
+\subsection{National Freight Demand: FAF5}
+
+The Freight Analysis Framework version 5 (FAF5) is the FHWA's principal data product for national freight demand \citep{FAF5_2023}. FAF5 reports state-to-state and FAF-zone-to-FAF-zone commodity flows in annual tons and ton-miles, disaggregated by commodity type and mode. The highway assignment component of FAF5 routes those flows onto the physical network and produces estimated volumes by corridor segment, which serve as the empirical baseline against which max-flow computations can be validated.
+
+Key FAF5 findings relevant to this analysis: the top ten state-to-state flow pairs account for approximately 40 percent of all highway freight ton-miles, confirming that national throughput is heavily concentrated on a small number of corridors. Texas, California, Florida, and Illinois appear in eight of those ten pairs. FHWA projects truck freight volume growing at 1.8 percent per year through 2050, a rate that compounds to 42 percent above the 2023 baseline \citep{FHWA_freight2023}. At that growth rate and with no capacity additions, the three binding arcs identified in Section~\ref{sec:bottleneck} would all exceed their design capacities by 2031.
+
+\subsection{Bottleneck Literature: Economic vs.\ Network Bottlenecks}
+
+The ATRI (American Transportation Research Institute) publishes an annual list of the 100 most congested freight bottlenecks in the United States, ranked by truck delay cost \citep{ATRI_costs2024}. The ATRI list is an economic bottleneck ranking: it identifies locations where delay is most costly in dollar terms, which systematically favors high-volume urban interchange nodes over geographic chokepoints that constrain lower-volume but system-critical flows.
+
+The network bottleneck concept used in this paper is distinct. A network bottleneck is an arc (or cut set) whose capacity limits the maximum flow through the network regardless of what happens on other arcs. It is not necessarily the most congested arc by V/C or the most costly arc by delay. Donner Pass illustrates the distinction: it does not appear on the ATRI top-10 list because its volume is moderate relative to urban interchanges, but it is a national network bottleneck because it is the only interstate-standard crossing of the central Sierra Nevada and therefore lies on every minimum cut separating the Northeast from the Pacific Coast cluster. Removing Donner from the network removes 38 percent of Northeast-to-Pacific max-flow capacity with no inland substitute.
+
+The FHWA freight bottleneck report \citep{FHWA_freight2023} bridges the two frameworks by identifying both delay cost and throughput loss as relevant metrics, and by distinguishing between recurring bottlenecks (structural capacity deficits) and non-recurring bottlenecks (incidents that reduce capacity temporarily). This paper's incident simulation in Section~\ref{sec:incident} addresses the non-recurring case at national scale.
+
+\subsection{ROUTE Network Structure}
+
+The ROUTE graph classifies 227 corridors across four tiers \citep{ROUTE_A1,ROUTE_A2}: 16 T1 Primary Arteries (the essential long-haul backbone), 24 T2 Major Connectors, 60 T3 Regional Connectors, and 127 T4 Local Feeders. The T1 network carries the bulk of freight ton-miles and contains all three binding bottleneck arcs identified in this paper. T2 corridors provide the primary rerouting alternatives when T1 arcs fail; the incident simulation results in Section~\ref{sec:incident} depend critically on T2 capacity because the Donner and I-35 disruptions shift flow to T2 corridors (I-40 and the Memphis bypass) that are not designed for T1 volumes.
+
+Graph construction, edge capacity assignment, and cluster definition are described in detail in Section~\ref{sec:methods}.

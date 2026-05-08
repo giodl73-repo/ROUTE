@@ -1,0 +1,80 @@
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Graph Construction}
+
+The ROUTE directed graph is constructed from two primary sources: the US Census Bureau TIGER/Line 2023 Primary Roads shapefile \citep{TIGER2023}, which provides the physical geometry and route designation of the interstate network, and the Federal Highway Administration Highway Performance Monitoring System (HPMS) 2018 database \citep{HPMS2018}, which provides Annual Average Daily Traffic (AADT), lane count by direction, and segment-level capacity estimates for each classified highway segment.
+
+From these sources we construct a directed multigraph $G = (V, E)$ where:
+\begin{itemize}
+  \item $V$ is the set of interchange nodes and corridor endpoints, approximately 3,200 vertices.
+  \item $E$ is the set of directed road segments, approximately 48,000 directed edges (each physical segment represented as two antiparallel edges for each direction of travel).
+  \item Each edge $e \in E$ carries a capacity $c(e)$ in vehicles per day (vpd) and a travel cost $t(e)$ in hours, described below.
+\end{itemize}
+
+Edge capacity is derived from the design capacity formula adopted in ROUTE:
+\begin{equation}
+  c(e) = \text{lanes}(e) \times 2{,}300 \text{ pcphpl} \times 24 \text{ hr} \div \text{PCE}_\text{truck}
+\end{equation}
+where $\text{PCE}_\text{truck} = 2.0$ is the passenger car equivalent for heavy vehicles on level terrain (HCM 7th edition), and 2,300 pc/hr/lane is the HCM basic freeway segment capacity under ideal conditions. For a 4-lane facility (2 lanes each direction), this yields a design capacity of 110,400 pcphpl-equivalent vpd, or approximately 55,200 truck vpd. The Donner Pass segment (4 lanes, mountainous terrain, PCE = 2.5) yields a corrected design capacity of 44,160 truck vpd; however, the HPMS-reported AADT of 91,200 vpd is the observed all-vehicle count, which is used directly as the observed volume for V/C computation, with truck fraction applied separately.
+
+Travel cost for each edge is:
+\begin{equation}
+  t(e) = \frac{d(e)}{v_\text{ff}(e)} \times \text{PTI}(e)
+\end{equation}
+where $d(e)$ is segment length in miles, $v_\text{ff}(e)$ is the posted speed limit (65 or 70 mph on interstates), and $\text{PTI}(e)$ is the Planning Time Index from FHWA's National Performance Measurement Research Data Set (NPMRDS). The PTI-weighted cost captures the reliability premium a shipper must pay beyond free-flow travel time.
+
+\subsection{Demand Clustering}
+
+Eight major freight metro clusters are defined as source and sink terminals in the max-flow formulation, following the FAF5 zone structure \citep{FAF5_2023}:
+
+\begin{enumerate}
+  \item \textbf{Northeast}: New York/New Jersey, Philadelphia, Boston (FAF5 zones 241, 421, 251)
+  \item \textbf{Mid-Atlantic}: Baltimore, Washington DC, Richmond (FAF5 zones 212, 116, 511)
+  \item \textbf{Southeast}: Atlanta, Charlotte, Miami (FAF5 zones 131, 371, 121)
+  \item \textbf{Midwest}: Chicago, Detroit, Cleveland (FAF5 zones 171, 261, 391)
+  \item \textbf{Texas Gulf}: Houston, Dallas, San Antonio (FAF5 zones 481, 482, 484)
+  \item \textbf{Mountain West}: Denver, Salt Lake City, Phoenix (FAF5 zones 081, 491, 041)
+  \item \textbf{Pacific Northwest}: Seattle, Portland (FAF5 zones 531, 411)
+  \item \textbf{Southern California}: Los Angeles, San Diego (FAF5 zones 061, 062)
+\end{enumerate}
+
+For each cluster, the set of interstate on-ramp nodes within 50 miles of the cluster centroid is identified in $V$, and a virtual supersource (or supersink) node is added with infinite-capacity edges to each member node. This formulation aggregates within-cluster flows and focuses max-flow computation on inter-cluster corridors.
+
+The O-D demand matrix is taken from FAF5 state-to-state total truck tons for the 2022 base year. The top 10 state-to-state pairs account for 40 percent of all ton-miles \citep{FAF5_2023}; these pairs provide the primary validation targets for the max-flow results.
+
+\subsection{Edmonds-Karp Algorithm}
+
+The Edmonds-Karp algorithm \citep{FordFulkerson1956} finds the maximum flow from a source cluster $s$ to a sink cluster $t$ as follows:
+
+\begin{enumerate}
+  \item Initialize all edge flows $f(e) = 0$.
+  \item Find the shortest augmenting path from $s$ to $t$ in the residual graph $G_f$ using breadth-first search (BFS). The residual capacity of each forward edge is $c(e) - f(e)$; each backward (reverse) edge has residual capacity $f(e)$.
+  \item If no augmenting path exists, halt. The current flow $f$ is maximum.
+  \item Otherwise, let $P$ be the BFS augmenting path and $\delta = \min_{e \in P} c_f(e)$ be the bottleneck capacity of that path. Update flow: $f(e) \mathrel{+}= \delta$ for forward edges, $f(e) \mathrel{-}= \delta$ for reverse edges.
+  \item Return to step 2.
+\end{enumerate}
+
+Time complexity is $O(VE^2)$ \citep{FordFulkerson1956}. For the ROUTE graph ($V \approx 3{,}200$, $E \approx 48{,}000$), the worst-case operations are approximately $7.4 \times 10^{13}$, but in practice the algorithm converges in far fewer iterations because the graph is sparse and the augmenting paths are short relative to the graph diameter.
+
+Max-flow is computed for all 28 directed cluster pairs (8 choose 2, both directions). The minimum cut is identified by the set of saturated edges in the residual graph that separate the source-reachable from the sink-reachable components.
+
+\subsection{Incident Simulation}
+
+Incident simulation proceeds by edge removal: the segment(s) corresponding to the incident are removed from $G$, and max-flow is recomputed from scratch for all affected O-D pairs. Throughput loss is measured as:
+\begin{equation}
+  \Delta F_{st} = \frac{F_{st}^\text{baseline} - F_{st}^\text{incident}}{F_{st}^\text{baseline}} \times 100\%
+\end{equation}
+Rerouting cost is computed as the difference in travel cost between the baseline path and the incident-forced alternate path, multiplied by the displaced flow volume and the ATRI all-in truck operating cost of \$225 per hour \citep{ATRI_costs2024}.
+
+\subsection{Missing Link Analysis}
+
+Missing link analysis adds a proposed edge to $G$ with an estimated capacity derived from the planned lane count and terrain-adjusted PCE, then recomputes max-flow and measures the gain:
+\begin{equation}
+  \Delta F_{st}^\text{link} = \frac{F_{st}^\text{with link} - F_{st}^\text{baseline}}{F_{st}^\text{baseline}} \times 100\%
+\end{equation}
+The proposed edge cost (travel time) uses the alignment distance and a posted speed of 65 mph with PTI = 1.05 (managed-lane assumption).
+
+\subsection{Validation}
+
+Max-flow results are validated against FAF5 highway assignment volumes by corridor. The FAF5 highway assignment reports estimated freight vehicle volumes by route, which can be compared against the max-flow allocation by cluster pair. The validation focuses on the three binding arcs: if the model assigns those arcs to full capacity under baseline demand and FAF5 also shows those arcs at high utilization, the model is consistent with observed flow patterns. Segment-level validation statistics are reported in Section~\ref{sec:bottleneck}.

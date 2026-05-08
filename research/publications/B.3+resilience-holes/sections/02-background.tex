@@ -1,0 +1,38 @@
+\section{Background: Resilience in Transportation Networks}
+\label{sec:background}
+
+\subsection{Two Dimensions of Resilience}
+
+Transportation resilience research has historically addressed two distinct failure mechanisms. The first is structural: a network is resilient when it can reroute demand around a failed link without unacceptable cost. Berdica \citep{Berdica2002} defined link vulnerability as the susceptibility of a link to incidents that substantially reduce network serviceability; the key insight was that vulnerability is a network-level property, not a link-level one. A link is only vulnerable if its failure degrades the performance of the network as a whole. Mattsson and Jenelius \citep{Mattsson2015} extended this to a formal framework distinguishing link importance (the network degradation caused by link failure) from link exposure (the probability and intensity of failure-inducing events). A resilient network has either low importance for any individual link (high redundancy --- no single link matters much) or low exposure for important links.
+
+The second dimension is environmental: a network is resilient when its physical infrastructure withstands the events that cause closure. Flood-resilient bridges, snowshed protection on mountain passes, hurricane-resistant barrier walls, and wildfire-hardened drainage systems all address environmental exposure by reducing the probability and duration of closure events, conditional on an event occurring.
+
+These two dimensions are often treated as parallel investment priorities: federal resilience programs fund both alternate route development (structural) and infrastructure hardening (environmental). The ROUTE rubric operationalizes them as two separate dimensions: B1 measures structural isolation, and D1 measures environmental vulnerability.
+
+\subsection{The B1 Dimension: Structural Isolation}
+
+B1 is defined as the inverse of alternate-route adequacy. A corridor scores B1 = 0 when closure causes negligible network impact: adequate alternate routes exist at interstate standard, with detour distances below 100 additional miles and no freight-relevant grade restrictions. A corridor scores B1 = 10 when closure produces a national-scale freight disruption with no interstate-standard alternate: rerouting requires 200+ additional miles over routes not maintained for commercial vehicle traffic in relevant weather conditions.
+
+The B1 score is operationalized using the ROUTE corpus methodology \citep{ROUTE_B1}: for each corridor segment, the nearest alternate route is identified from TIGER/Line geometry, its interstate-standard adequacy is assessed (load ratings, grade restrictions, winter maintenance), and the detour penalty (miles, hours, freight cost) is computed using ATRI truck-hour operating costs \citep{ATRI_costs2024}. The result is a per-corridor B1 score that reflects how much of a single-point-of-failure role the corridor plays in the national network.
+
+Key B1 = 10 cases in the corpus are mountain passes and high-desert crossings where no parallel interstate exists: Donner Pass (I-80 Sierra Nevada), Snoqualmie Pass (I-90 Washington Cascades), and Homestake Pass (I-90 Montana Continental Divide). In each case, the alternate is a US highway not maintained for commercial freight during winter closure conditions --- the same conditions that trigger closure of the primary corridor.
+
+\subsection{The D1 Dimension: Environmental Vulnerability}
+
+D1 is a composite climate vulnerability score incorporating three exposure components: (1) FEMA National Flood Hazard Layer (NFHL) Special Flood Hazard Area miles as a share of total corridor miles, reflecting baseline flood exposure probability; (2) mean annual closure events from FHWA incident records and Caltrans/WSDOT/LADOTD operational logs \citep{Caltrans2023, FHWA_freight2023}; and (3) a climate trajectory adjustment reflecting whether the 2050 exposure under NOAA intermediate sea-level-rise and precipitation-intensity scenarios is substantially higher than the 2024 baseline \citep{FEMA_NFHL}.
+
+A corridor scores D1 = 0 when it has no FHWA SFHA miles, near-zero historical closure frequency, and no projected increase in 2050 exposure. It scores D1 = 10 when a majority of the corridor lies in high-hazard flood zones, annual closure frequency is high (50+ events/year), and 2050 projections show substantially elevated exposure. The score is signed for vulnerability, not resilience: higher D1 is worse.
+
+\subsection{Why Compound Exposure Is Not Additive}
+
+Zscheischler et al.\ \citep{Zscheischler2020} demonstrate in the context of climate systems that compound risks --- where multiple hazard dimensions co-occur --- produce impacts that exceed the sum of individual-dimension risks. The mechanism in transportation networks is straightforward: the value of redundancy depends on the alternate being usable, and the value of hardening depends on the primary corridor being the only path.
+
+Consider the counterfactuals:
+
+\textbf{High B1, low D1}: I-90 Homestake Pass (Montana Continental Divide). Structurally isolated (B1 = 7.8); rarely closes due to winter precipitation (D1 = 6.4). This corridor is a contingency risk: if it closes, freight has no good alternate. But it closes only 25 times per year, with moderate duration. Investment in this corridor is justified but not urgent.
+
+\textbf{Low B1, high D1}: I-95 South Carolina coast. Frequently exposed to hurricane surge and flooding (D1 = 6.8); well-connected with adequate alternates on US-17 and US-1 (B1 = 3.2). When I-95 South Carolina closes, freight reroutes with modest penalty. Infrastructure hardening investment here has local benefit but limited national-freight impact.
+
+\textbf{High B1, high D1}: I-80 Donner Pass. Structurally isolated (B1 = 8.3) and frequently closes (D1 = 7.8). When Donner closes, there is no adequate alternate. The 50 annual closures are not independently manageable events --- each one is a national-freight disruption. The compound condition makes each D1 event a B1 event simultaneously.
+
+The operational consequence is that compound exposure corridors produce disproportionate freight disruption cost per closure event. The data sources for this analysis are: ROUTE v1.2 corpus (227 corridors) \citep{ROUTE_A2}, Caltrans operational closure logs \citep{Caltrans2023}, FHWA incident database \citep{FHWA_freight2023}, and FEMA NFHL flood data \citep{FEMA_NFHL}.

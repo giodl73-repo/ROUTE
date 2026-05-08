@@ -1,0 +1,39 @@
+\section{Introduction}
+\label{sec:introduction}
+
+The US freight network is not a network in any robust topological sense. It is a set of radial spokes assembled over seven decades of incremental construction, with connectivity engineered for peacetime average demand rather than for reliability under stress. Two O-D pairs expose this structural weakness more clearly than any other: New York to Los Angeles, the northern transcontinental axis carrying the highest-value manufactured and consumer goods between the two largest metro economies; and Houston to Chicago, the Gulf-to-Midwest industrial spine linking petrochemical production to continental manufacturing. Together these corridors move an estimated 14 percent of total US freight value \citep{FHWA_freight2023}.
+
+Neither corridor can offer a shipper a credible service-level agreement today. The NY--LA route via I-80 terminates at a four-lane mountain pass that closes 50 times per year \citep{Caltrans2023}. The HOU--CHI corridor does not exist as a single designated route; freight traverses three separate interstates through two major interchange nodes, accumulating delay at each junction. This paper quantifies both problems with the same analytical framework: Planning Time Index, max-flow network analysis, and ATRI all-in cost accounting \citep{ATRI_costs2024}. It then applies an Interstate 2.0 scenario to each corridor to determine what investment would be required to offer a 48-hour delivery commitment.
+
+\subsection{Corridor Selection Rationale}
+
+NY--LA is the longest high-value O-D pair in the continental US at 2,800 miles via I-80. It connects the Port of New York/New Jersey---the largest container port on the East Coast---to the Los Angeles/Long Beach port complex---the largest on the West Coast. The corridor carries mixed freight including time-sensitive pharmaceuticals, consumer electronics, and automotive components, making reliability failures disproportionately costly. I-80 is the only all-weather northern transcontinental route; the I-40 alternate adds 310 miles and still requires transit through the southern Sierra Nevada approaches.
+
+HOU--CHI represents a different failure mode. Houston is the nation's petrochemical capital and a major industrial freight generator. Chicago is the largest rail and highway interchange hub in North America. A direct highway connection between them would rank among the most important freight arteries on the continent. None exists. The de facto route---I-45 to Dallas, I-35 to St.\ Louis, I-55 to Chicago---is 1,160 miles against a direct-line distance of approximately 920 miles, a 26-percent detour that compounds with bottleneck delay at Dallas and St.\ Louis interchange nodes.
+
+\subsection{Research Questions}
+
+This paper addresses four questions for each corridor:
+
+\begin{enumerate}
+  \item \textbf{Current throughput}: What is the maximum sustained flow the corridor can carry, and where is the binding constraint?
+  \item \textbf{Transit commitment}: What Planning Time Index does the corridor exhibit, and what SLA window does that PTI imply?
+  \item \textbf{Best alternate}: When the primary path fails, what is the best alternate route and what is the cost of diversion?
+  \item \textbf{I2.0 threshold}: What managed-lane specification is required to reduce PTI to 1.15 and enable a 48-hour SLA?
+\end{enumerate}
+
+\subsection{Findings}
+
+The results are stated upfront. Donner Pass is a national single point of failure: its closure imposes a \$9.9M-per-day detour cost on the NY--LA corridor, and no viable truck-standard alternate exists through the Sierra Nevada. The Bay Area approach on I-80 operates at V/C 1.86, already beyond design capacity. I-69 completion is the highest-value missing link for HOU--CHI: it would eliminate 290 miles of detour, bypass both interchange bottlenecks, and reduce transit time from two days to 1.5 days. Interstate 2.0 managed freight lanes on both corridors, combined with I-69 completion, would address an estimated \$8.2 billion in annual freight reliability costs \citep{ATRI_costs2024}.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+  \item A segment-by-segment capacity decomposition of the NY--LA corridor identifying the dual binding constraints (Donner Pass geographic, Bay Area congestion) and quantifying each independently.
+  \item A max-flow network formulation for the HOU--CHI O-D pair demonstrating that no single-corridor path exists and that the three-hop route compounds interchange delay multiplicatively.
+  \item PTI-based SLA analysis linking Planning Time Index to shipper commitment windows, translating infrastructure metrics into commercial terms.
+  \item Quantified I2.0 scenarios: the managed-lane specification and speed assumptions required to achieve PTI 1.15 and an economically viable 48-hour SLA on the transcontinental corridor.
+  \item Annualized reliability cost estimates grounded in ATRI's all-in truck cost model, providing a common currency for comparing NY--LA and HOU--CHI investment cases \citep{ROUTE_A1,ROUTE_A2}.
+\end{enumerate}
+
+Section~\ref{sec:background} provides regulatory and methodological background. Section~\ref{sec:methods} describes the data sources and analytical methods. Sections~\ref{sec:nyla} and~\ref{sec:houtochi} analyze each corridor in turn. Section~\ref{sec:i2scenario} applies the Interstate 2.0 scenario and presents the combined reliability cost estimate. Section~\ref{sec:conclusion} states policy implications and identifies the next extension of this analysis.

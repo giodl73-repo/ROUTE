@@ -1,0 +1,94 @@
+\section{Methods}
+
+\subsection{FEMA NFHL Corridor Overlay}
+
+For each of the 227 interstate corridors in the ROUTE v1.2 corpus, we extract the corridor
+centerline geometry from the TIGER/Line 2023 dataset \citep{ROUTE_A1}. We construct a 1-mile
+bilateral buffer (2-mile corridor envelope) using the GEOS library (PostGIS implementation),
+then intersect the buffered corridor against FEMA NFHL SFHA polygons retrieved via the FEMA
+Map Service Center REST API. The intersection produces, for each corridor:
+
+\begin{itemize}
+\item \textbf{Total SFHA miles}: sum of all buffered corridor miles that overlap any SFHA
+polygon, regardless of contiguity.
+\item \textbf{Maximum consecutive SFHA miles}: length of the longest contiguous run of
+SFHA exposure within the corridor buffer, measured along the corridor centerline after
+projecting SFHA polygon membership to 0.1-mile corridor segments.
+\end{itemize}
+
+The consecutive-miles metric is computed as the longest sequence of consecutive 0.1-mile
+segments for which the corridor buffer intersects an SFHA polygon. This operationalizes
+structural exposure: a corridor with 127 consecutive SFHA miles is one in which 127 miles
+of road, drainage infrastructure, and access roads are all within the 100-year flood plain
+simultaneously --- meaning the entire sub-corridor floods as a unit during a 100-year event.
+
+\subsection{D1 Composite Score Formula}
+
+The D1 score for flood-exposed corridors combines consecutive and total SFHA miles under a
+weighted formula calibrated to the ROUTE rubric version 1.2 \citep{ROUTE_D1}:
+
+\begin{equation}
+D1_{\text{flood}} = 0.7 \times f_c(m_c) + 0.3 \times f_t(m_t)
+\end{equation}
+
+where $m_c$ is maximum consecutive SFHA miles, $m_t$ is total SFHA miles, and $f_c$, $f_t$
+are piecewise-linear scoring functions anchored as follows:
+
+\begin{align}
+f_c(m_c) &= \begin{cases}
+0 & m_c = 0 \\
+5 & m_c = 15 \text{ mi} \\
+10 & m_c \geq 60 \text{ mi}
+\end{cases} \\[6pt]
+f_t(m_t) &= \begin{cases}
+0 & m_t = 0 \\
+5 & m_t = 40 \text{ mi} \\
+10 & m_t \geq 150 \text{ mi}
+\end{cases}
+\end{align}
+
+Values between anchor points are linearly interpolated. Values at or above the upper anchor
+receive a score of 10 (capped). The 70\%/30\% weighting reflects the greater investment
+significance of consecutive exposure: a corridor where 60+ consecutive miles are in the
+flood plain faces a qualitatively different hardening challenge than a corridor where the
+same 60 miles are fragmented across non-contiguous flood-zone segments.
+
+\subsection{Winter Closure Scoring}
+
+For corridors where the primary climate exposure mechanism is winter precipitation (snowpack,
+ice, avalanche) rather than flood zone location, we compute D1 using closure frequency data:
+
+\begin{equation}
+D1_{\text{winter}} = f_w\!\left(\text{closures/yr} \times \text{mean duration (hr)}\right)
+\end{equation}
+
+where $f_w$ maps annual closure-hours to a 0--10 score anchored on: 0 closure-hours $\to$ 0;
+450 closure-hours $\to$ 5; 900 closure-hours $\to$ 10. Donner Pass at 50 closures/yr $\times$
+18 hr mean = 900 closure-hours/yr maps to D1 = 7.8 after the calibration adjustment for the
+fact that winter closures are recoverable (hours to days) while flood closures may persist
+through a multi-day event.
+
+For corridors with dual exposure (e.g., I-5 Siskiyou with both wildfire smoke and winter
+precipitation), we score each mechanism separately and take the maximum, reflecting that the
+harder-to-mitigate mechanism drives investment needs.
+
+\subsection{2050 Projection Methodology}
+\label{sec:projections}
+
+We generate 2050 D1 projections for coastal corridors by applying NOAA Intermediate SLR
+(0.5m local-adjusted for Gulf Coast) to the 1/3 arc-second National Elevation Dataset. The
+procedure:
+
+\begin{enumerate}
+\item Extract elevation raster for a 5-mile corridor envelope.
+\item Apply projected SLR offset to the current-day SFHA inundation threshold (1\% annual
+exceedance elevation at each NFHL cross-section).
+\item Recompute SFHA polygon membership for each 0.1-mile corridor segment at the projected
+flood level.
+\item Recalculate $m_c$ and $m_t$ and apply the D1 formula to produce the 2050 projected score.
+\end{enumerate}
+
+Land subsidence is incorporated for Louisiana corridors (1.5 cm/yr median, equivalent to
++0.375m additional effective SLR by 2050 relative to the NOAA global figure) and Houston
+subsidence zone (0.8 cm/yr) using USGS InSAR-derived subsidence maps. This produces Gulf
+Coast effective local SLR of 0.875m by 2050 under the NOAA Intermediate global scenario.

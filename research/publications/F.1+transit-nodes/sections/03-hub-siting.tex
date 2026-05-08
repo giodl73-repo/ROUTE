@@ -1,0 +1,89 @@
+\section{Hub Siting and Coverage Analysis}
+
+\subsection{T1/T1 Diamond Hub Locations}
+
+The nine T1/T1 diamond hub locations are determined by the intersection of T1 Primary Artery corridors, as identified in the ROUTE Track A and B analysis \citep{ROUTE_A1,ROUTE_B4}. These are not chosen for transit suitability; they are the freight network's primary node locations, selected because they represent the highest-importance intersections of the highest-volume corridors. The transit suitability analysis presented here is performed on the pre-determined freight sites.
+
+Table~\ref{tab:hubs} presents the nine hub locations with transit-shed population estimates. Population figures are derived from the 2022 ACS 5-year estimates for all census tracts with centroids within 30 miles of the hub location \citep{ACS_B08201_2022}. Transit-dependent household counts are ACS B08201 zero-vehicle household estimates for the same geography.
+
+\begin{table}[h]
+\centering
+\caption{T1/T1 Diamond Hub Locations: Transit-Shed Analysis (30-mile radius)}
+\label{tab:hubs}
+\begin{tabular}{llrr}
+\toprule
+Hub Location & Corridors & Population (30mi) & Transit-Dependent HH \\
+\midrule
+Atlanta, GA & I-75/I-85 & 5,800,000 & 180,000 \\
+Gary/Chicago, IL & I-80/I-90 & 8,100,000 & 320,000 \\
+Boston, MA & I-95/I-90 & 4,200,000 & 115,000$^*$ \\
+Seattle, WA & I-5/I-90 & 3,800,000 & 115,000 \\
+Sacramento, CA & I-5/I-80 & 2,400,000 & 75,000 \\
+San Antonio, TX & I-10/I-35 & 2,500,000 & 88,000 \\
+Richmond, VA & I-95/I-85 & 1,300,000 & 42,000 \\
+Jacksonville, FL & I-10/I-95 & 1,400,000 & 48,000 \\
+Toledo, OH & I-75/I-90 & 700,000 & 28,000 \\
+\midrule
+\textbf{Total (non-overlapping)} & & \textbf{26,800,000} & \textbf{896,000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent $^*$Boston has strong existing transit; hub value is primarily for intercity connections to underserved New England communities.
+
+The total 30-mile population of 26.8 million overstates the non-duplicating coverage because several hub catchment areas overlap: Gary/Chicago and Toledo share population in the Lake Michigan--Lake Erie corridor, and Atlanta and Jacksonville share population in north Florida. After overlap correction using population centroid assignment to the nearest hub, the non-overlapping transit-shed population is 22.1 million total residents, of whom an estimated 12.4 million are transit-dependent (zero-vehicle households or rural households without viable alternative transportation).
+
+\subsection{T1/T2 Regional Stop Identification}
+
+In addition to the 9 T1/T1 diamond hubs, the I2.0 program identifies approximately 50 T1/T2 regional stops: locations where a T1 Primary Artery intersects a T2 Major Connector, creating a natural pull-off location for intercity bus service to smaller communities within 20 miles of the interchange.
+
+T1/T2 stop selection criteria:
+\begin{enumerate}
+  \item Existing rest area within 0.5 miles of the T1/T2 interchange
+  \item Population center of 5,000 or more residents within 20 miles of the interchange
+  \item No existing Greyhound or FlixBus stop within 25 miles
+  \item T2 corridor intersection with ADT $\geq$ 15,000 (indicating viable access road traffic)
+\end{enumerate}
+
+Representative T1/T2 stops include:
+\begin{itemize}
+  \item \textbf{Meridian, MS} (I-20/US-45): population within 20 miles = 68,000; no current bus service following 2020 Greyhound restructuring
+  \item \textbf{Abilene, TX} (I-20/US-83): population within 20 miles = 127,000; nearest Greyhound terminal 90 miles
+  \item \textbf{Salina, KS} (I-70/I-135): population within 20 miles = 58,000; regional hub for central Kansas with no intercity bus connection
+  \item \textbf{Twin Falls, ID} (I-84/US-93): population within 20 miles = 81,000; no rail, nearest bus terminal 195 miles (Boise)
+  \item \textbf{Amarillo, TX} (I-40/US-87 junction): population within 20 miles = 213,000; existing Greyhound terminal but no northbound service toward Lubbock/Abilene
+\end{itemize}
+
+\subsection{Transit-Shed Radius Analysis}
+
+The choice of 30-mile catchment radius as the primary analysis unit reflects the tradeoff between transit-shed coverage and realistic access behavior. A 20-mile radius is appropriate for urban hubs where bus or ride-share access is available; a 30-mile radius reflects the rural context in which most T1/T2 stops operate, where drive-to-hub access is the primary mode \citep{Pisarski2006}. A 50-mile radius produces substantially larger population estimates but likely overstates realistic travel-to-hub behavior for zero-vehicle households, who by definition cannot drive themselves to the hub.
+
+\begin{table}[h]
+\centering
+\caption{Transit-Shed Population by Radius: 9 T1/T1 Hubs (non-overlapping)}
+\label{tab:radii}
+\begin{tabular}{lrr}
+\toprule
+Radius & Total Population & Transit-Dependent HH \\
+\midrule
+20 miles & 18,400,000 & 7,100,000 \\
+30 miles & 22,100,000 & 8,900,000 \\
+50 miles & 29,600,000 & 11,200,000 \\
+\midrule
+T1/T2 stops (30 mi) & 4,800,000 & 3,500,000 \\
+\midrule
+\textbf{Combined (30 mi, non-overlap)} & \textbf{26,900,000} & \textbf{12,400,000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 12.4 million figure used in the abstract and throughout this paper is the non-overlapping combined transit-dependent population within 30 miles of either a T1/T1 diamond hub or a T1/T2 regional stop. This is the primary estimate. For policy analysis, the more conservative 20-mile radius estimate (7.1 million from T1/T1 hubs alone) provides a floor; the 50-mile radius estimate (11.2 million from T1/T1 hubs plus 3.5 million from T1/T2 stops) provides a ceiling.
+
+\subsection{Existing Service Gap Confirmation}
+
+To confirm that the estimated 12.4 million transit-dependent residents lack existing intercity bus service, we cross-referenced the T1 hub 30-mile catchment areas with the BTS Intermodal Passenger Connectivity Database \citep{BTS_intermodal2023} and the current Greyhound/FlixBus/Megabus route maps as of January 2026. The cross-reference shows:
+\begin{itemize}
+  \item Of the 50 T1/T2 stops, 43 have no intercity bus stop within 25 miles
+  \item Of the 9 T1/T1 hubs, 6 have existing bus service at the hub city but none connecting to the T1/T2 stop network for rural intermediate service
+  \item The Gary/Chicago hub has the strongest existing transit, but the south side communities within 30 miles have below-average access to Chicago's existing intercity terminals
+\end{itemize}

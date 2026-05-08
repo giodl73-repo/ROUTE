@@ -1,0 +1,64 @@
+\section{The 40 New City Pairs}
+
+\subsection{Definition and Selection Method}
+
+A ``new city pair'' is defined as an origin-destination pair satisfying three conditions:
+\begin{enumerate}
+  \item Both the origin city and destination city are within 30 miles of a T1/T1 hub or T1/T2 regional stop in the hub network
+  \item The pair currently has no direct intercity bus service with fewer than one transfer (i.e., either no service or service requiring two or more intermediate stops and bus changes)
+  \item The pair shows estimated annual demand of at least 5,000 one-way trips, calculated from the gravity model applied to the ACS household data and the FHWA origin-destination commercial traffic matrix \citep{ACS_B08201_2022,FHWA_freight2023}
+\end{enumerate}
+
+The second condition --- no current service with fewer than one transfer --- was verified against the January 2026 Greyhound, FlixBus, Megabus, and BoltBus route networks, cross-referenced with the BTS Intermodal Passenger Connectivity Database \citep{BTS_intermodal2023}. Service that operates seasonally or on charter basis is excluded; only scheduled fixed-route service qualifies.
+
+\subsection{The Economic Case for Bus Operator Entry}
+
+A key enabling condition for bus operator entry on new T1 hub city pairs is the managed freight lane PTI of 1.15. At current I-80 PTI of 1.86, transcontinental and long-distance bus scheduling is operationally impossible: a carrier cannot publish a reliable timetable when the corridor PTI implies that 10\% of trips will take 86\% longer than the scheduled time. The PTI 1.15 on managed lanes means that 95\% of trips arrive within 15\% of scheduled time --- a reliability threshold that allows carriers to publish and hold a timetable.
+
+The Gary to Seattle example illustrates this dependency. The T1 express bus on I-90 (Gary, IL to Seattle, WA) is a 28-hour trip at managed lane speeds. At current I-90 PTI of 1.62 (Chicago to Twin Falls segment), the 95th-percentile transit time is 45 hours --- unacceptable for published timetable service. At managed lane PTI 1.15, the 95th-percentile time is 32 hours: long, but schedulable. The managed lane investment makes the city pair viable; the hub infrastructure makes it accessible.
+
+\subsection{Representative New City Pairs}
+
+Table~\ref{tab:pairs} presents 20 representative new city pairs from the 40+ identified in the full analysis. Travel times are estimated at managed lane design speed (62 mph average, including HOS rest stops).
+
+\begin{table}[h]
+\centering
+\caption{Representative New City Pairs Enabled by T1 Hub Network}
+\label{tab:pairs}
+\begin{tabular}{llrll}
+\toprule
+Origin & Destination & Est. Travel Time & Current Service & Nearest Hub(s) \\
+\midrule
+Atlanta, GA & Jacksonville, FL & 7 hr & 2 transfers via Greyhound & Atlanta; Jacksonville \\
+Atlanta, GA & San Antonio, TX & 13 hr & No direct service & Atlanta; San Antonio \\
+Atlanta, GA & Richmond, VA & 10 hr & Greyhound (unreliable) & Atlanta; Richmond \\
+Jacksonville, FL & Richmond, VA & 11 hr & No direct service & Jacksonville; Richmond \\
+Jacksonville, FL & Toledo, OH & 16 hr & No direct service & Jacksonville; Toledo \\
+Toledo, OH & Richmond, VA & 9 hr & No direct service & Toledo; Richmond \\
+San Antonio, TX & Atlanta, GA & 12 hr & No direct service & San Antonio; Atlanta \\
+San Antonio, TX & Jacksonville, FL & 11 hr & No direct service & San Antonio; Jacksonville \\
+Sacramento, CA & Gary, IL & 32 hr & 2--3 transfers via Greyhound & Sacramento; Gary \\
+Sacramento, CA & Seattle, WA & 14 hr & FlixBus (limited) & Sacramento; Seattle \\
+Seattle, WA & Gary, IL & 28 hr & No viable bus option & Seattle; Gary \\
+Seattle, WA & Toledo, OH & 30 hr & No viable bus option & Seattle; Toledo \\
+Gary, IL & Richmond, VA & 12 hr & No direct service & Gary; Richmond \\
+Gary, IL & Jacksonville, FL & 18 hr & No direct service & Gary; Jacksonville \\
+Gary, IL & San Antonio, TX & 17 hr & Greyhound (2 transfers) & Gary; San Antonio \\
+Boston, MA & Toledo, OH & 13 hr & No direct service & Boston; Toledo \\
+Boston, MA & Richmond, VA & 8 hr & Megabus (limited) & Boston; Richmond \\
+Richmond, VA & Jacksonville, FL & 11 hr & Greyhound (unreliable) & Richmond; Jacksonville \\
+Sacramento, CA & San Antonio, TX & 22 hr & No direct service & Sacramento; San Antonio \\
+San Antonio, TX & Toledo, OH & 19 hr & No direct service & San Antonio; Toledo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Southeast Cluster: Highest Unmet Demand}
+
+The Southeast cluster --- Atlanta, Jacksonville, Richmond, and the T1/T2 stops along I-20 and I-95 in between --- represents the largest single concentration of unmet intercity bus demand in the hub network. Greyhound's post-2020 restructuring hit the Southeast disproportionately: many small and mid-size cities in Georgia, South Carolina, North Carolina, and Mississippi lost their only intercity bus connection \citep{Amtrak2023}. The T1 hub network, with diamond hubs in Atlanta and Jacksonville and approximately 12 T1/T2 regional stops along I-20 and I-95 in the region, creates the physical substrate for a Southeast intercity bus network that does not currently exist.
+
+The estimated combined annual demand for all Southeast cluster city pairs (Atlanta, Jacksonville, Richmond, plus T1/T2 stops) is 2.3 million one-way trips per year, based on the gravity model calibrated to pre-Greyhound-bankruptcy ridership data and current population estimates. At a 35-seat coach, average 70\% load factor, and 2 round trips per day per route, this demand supports approximately 180 buses per day across the Southeast hub network --- well above the threshold for viable scheduled operations.
+
+\subsection{The Transcontinental Tier: Reliability-Dependent City Pairs}
+
+The transcontinental pairs (Sacramento--Gary, Seattle--Gary, Seattle--Toledo) are categorically different from the Southeast cluster: they are not demand-constrained but reliability-constrained. Bus operators have not offered transcontinental scheduled service since the late 1990s because the PTI on I-80 and I-90 makes timetable commitment impossible. The managed freight lane reduces the PTI to the threshold at which transcontinental scheduling becomes operationally viable. These routes would serve a small but price-sensitive segment of long-distance travelers: students, military families, and low-income travelers for whom air travel is cost-prohibitive \citep{Pisarski2006}. The estimated annual demand on the Sacramento--Gary pair is 28,000 one-way trips --- sufficient for 2 weekly departures at a 50-seat coach, which is the minimum viable service frequency for published timetable operations.

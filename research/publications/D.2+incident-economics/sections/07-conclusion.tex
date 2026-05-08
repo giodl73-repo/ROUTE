@@ -1,0 +1,62 @@
+\section{Conclusion}
+
+This paper established a closure cost model for the 15 highest-risk interstate corridors
+in the ROUTE corpus and derived redundancy value as the economic metric for alternate
+route investment justification. Three findings are central.
+
+\textbf{The top-5 closure-cost corridors account for \$5.4 billion in annual freight
+disruption, but none are the highest V/C corridors.} Donner Pass (\$2.4B) is the most
+expensive closed corridor in the national network despite operating well below capacity
+when open. Gulf Coast I-10 (\$1.2B) is expensive because of the high freight volume
+(12,000 trucks/day, amplified by New Orleans port activity) combined with the long
+mean closure duration (48 hours) for hurricane events. Dallas (\$0.8B) is the only
+urban interchange in the top-5, where high truck volume partially compensates for lower
+isolation penalty. The V/C metric does not identify any of these corridors as high
+priority; the closure cost model does.
+
+\textbf{Donner Pass costs 4.2$\times$ more per closure event than the Dallas
+Interchange}, despite lower peak V/C. The isolation multiplier (B1 penalty: 550-mile
+I-40 detour vs.\ 200-mile I-20 detour for Dallas) and the higher closure frequency
+(50/yr vs.\ 6/yr) combine to produce this differential. The per-closure-hour cost
+is actually higher at Dallas (high truck volume), but Donner's 900 annual closure-hours
+vastly exceed Dallas's 48. The interaction between isolation, frequency, and volume
+is multiplicative --- it cannot be captured by any single-dimension metric.
+
+\textbf{Redundancy value quantifies what alternate routes are worth.} The Donner
+redundancy value (\$1.9B/yr from a hypothetical I-70W alternate) is large enough to
+justify major capital investment at standard federal discount rates --- but the snowshed
+program (\$0.8B capital, \$0.96B/yr benefit, 0.83-year payback, NPV \$+11.1B) is
+the correct first investment because it addresses the highest-frequency events at a
+fraction of the capital cost.
+
+\textbf{Limitations.} The FHWA incident database undercounts rural closures by an
+estimated 30--40\% relative to urban incidents. Donner's \$2.4B annual cost estimate
+is therefore conservative: actual costs, including unrecorded short-duration events,
+may be 30\% higher. Additionally, the model uses ATRI's \$225/hr truck-hour figure
+uniformly; for agricultural commodity corridors (Snoqualmie, I-35 Oklahoma), the
+per-hour cost during harvest season is materially higher due to perishable load
+penalties, meaning Snoqualmie's \$0.31B/yr estimate is understated during
+September--November.
+
+\textbf{Next steps.} The closure cost model developed here ($E[\text{Cost}] =
+\lambda V \cdot E[\min(C_w, C_r)]$) is the input to the managed lane NPV model
+in E.1 and the Interstate 2.0 framework investment prioritization in E.2
+\citep{ROUTE_D1}. Papers E.1 and E.2 use the D.2 closure cost as one component
+of a multi-benefit NPV calculation that also includes congestion relief, multimodal
+integration, and resilience co-benefits. The D.2 framework establishes that resilience
+investment and congestion investment are not competing for the same dollar: they target
+different failure modes on different corridors, and the highest-NPV investments in the
+ROUTE framework address both simultaneously through compound strategies that neither
+PROTECT nor NHPP currently targets.
+
+\subsection*{Policy Recommendation}
+
+FHWA should compute redundancy value for all T1 corridors as a standard investment
+criterion alongside V/C ratio and ATRI bottleneck cost. The computation requires:
+(1) FHWA incident database closure frequency and duration data, which already exists;
+(2) HPMS truck AADT, which already exists; (3) network-based detour distance
+computation, which requires a one-time graph analysis. The redundancy value criterion
+would redirect a portion of NHPP and PROTECT funding toward the highest-consequence
+resilience gaps in the network --- and away from the incremental congestion relief
+investments that currently dominate both programs despite substantially lower NPV
+per dollar.

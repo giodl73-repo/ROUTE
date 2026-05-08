@@ -1,0 +1,82 @@
+\section{The NY--LA Corridor}
+\label{sec:nyla}
+
+\subsection{Primary Route}
+
+The standard transcontinental truck route from New York to Los Angeles runs 2,800 miles via I-95 southbound to the I-78 junction in Newark, NJ; westbound on I-78 to I-287; north on I-287 to the I-80 western junction in Hackensack; then the full breadth of I-80 through New Jersey, Pennsylvania, Ohio, Indiana, Illinois, Iowa, Nebraska, Wyoming, Utah, Nevada, and California to the Bay Area; south on I-580 to I-238 and into the Bay Area interchange; and finally I-80 through Sacramento and over Donner Pass to connect with the I-80 approach into Reno and the western interstate network. The Bay Area portion requires a separate merge onto I-580 and I-80 Eastshore Freeway to reach the Sacramento-bound lanes toward Donner. Total: approximately 2,800 miles.
+
+\subsection{Segment-by-Segment Capacity Analysis}
+
+Table~\ref{tab:nyla_segments} presents the capacity profile for five representative segments along the NY--LA corridor. Segment definitions follow HPMS functional classification boundaries \citep{HPMS2018}.
+
+\begin{table}[ht]
+\centering
+\caption{NY--LA corridor segment capacity summary (I-80 primary route)}
+\label{tab:nyla_segments}
+\begin{tabular}{lrrrrl}
+\toprule
+Segment & Distance & Lanes & AADT & Design Cap. & V/C \\
+        & (mi)     &       & (vpd) & (vpd) & \\
+\midrule
+NJ/PA (I-80, Hackensack--Ohio line)    & 310 & 8 & 250,000 & 294,400 & 0.85 \\
+OH/IN/IL (I-80, Ohio--Chicago metro)  & 355 & 6 & 68,000  & 220,800 & 0.31 \\
+IA/NE/WY/NV (I-80, rural)            & 1,280 & 4 & 18,000 & 147,200 & 0.12 \\
+Bay Area approach (I-80/I-580)        & 30  & 8 & 276,000 & 148,000 & 1.86 \\
+Donner Pass (Sierra Nevada)           & 45  & 4 & 73,000  & 91,200  & 0.80 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textit{Notes}: Design capacity = lanes/2 $\times$ 2,300 pcphpl $\times$ 16 operating hours. Bay Area approach uses directional lane count of 4 and a 2,300 pcphpl base; actual capacity is further constrained by weave sections and interchange geometry. Donner Pass capacity computed at 4 lanes, 1,900 pcephpl at 4\% sustained grade per HCM 7 \citep{HCM7}.
+
+\subsubsection{NJ/PA Segment}
+
+The I-80 corridor through New Jersey and Pennsylvania operates with 8 lanes between the George Washington Bridge approaches and the Ohio state line. HPMS reports AADT of approximately 250,000 vpd near Hackensack, declining to 90,000 vpd near the Ohio border \citep{HPMS2018}. The peak V/C of 0.85 near the NJ approach places this segment at LOS D---approaching capacity in the peak direction but not yet a hard constraint. Freight trucks represent 9.2 percent of volume on this segment (VTRIS data), or approximately 23,000 trucks per day.
+
+\subsubsection{Ohio/Indiana/Illinois Flat Segment}
+
+I-80 through Ohio, Indiana, and Illinois operates well within capacity. AADT ranges from 45,000 to 90,000 vpd across this segment \citep{HPMS2018}, against a 6-lane design capacity of 220,800 vpd. V/C ratios of 0.31--0.55 place this segment firmly at LOS B--C. No capacity constraint exists on this segment. Freight represents 12--18 percent of volume due to I-80's role as the primary northern truck corridor.
+
+\subsubsection{Rural Segment (Iowa through Nevada)}
+
+The 1,280-mile rural segment from the Iowa state line to the Nevada/California border carries 15,000--25,000 vpd on a 4-lane cross-section \citep{HPMS2018}. V/C ratios of 0.12--0.17 make this segment uncongested under any foreseeable demand scenario. This segment is not a capacity constraint; it is, however, the segment most exposed to weather disruption in Wyoming (I-80 at Elk Mountain, 8,900 ft elevation) and to long recovery times given the absence of alternate routes.
+
+\subsubsection{Bay Area Approach: The Congestion Bottleneck}
+
+The 30-mile Bay Area approach on I-80 (Eastshore Freeway) and the I-580 connector is the most severe congestion bottleneck on the NY--LA corridor. HPMS records 276,000 vpd AADT on this segment against a design capacity of 148,000 vpd, yielding V/C = 1.86 \citep{HPMS2018}. This is not a rounding anomaly: the Bay Area approach operates above design capacity because demand is spread over more hours than the 16-hour operating assumption, and because interchange geometry at the I-80/I-580/I-880 junction reduces effective throughput below the lane-count-based theoretical maximum. V/C values above 1.0 are observed routinely on urban freeways where the demand curve exceeds capacity for multiple hours before latent demand shifts to adjacent periods.
+
+The V/C = 1.86 figure is load-bearing for the PTI computation. Applying Eq.~\ref{eq:bpr_pti} with V/C = 1.86:
+\begin{equation}
+  \text{PTI}_{\text{Bay Area}} = 1 + 0.15 \times (1.86 \times 1.15)^4 = 1 + 0.15 \times (2.139)^4 = 1 + 0.15 \times 20.9 = 4.13
+\end{equation}
+The Bay Area segment PTI of 4.13 is not corridor-level PTI; it is the local segment PTI. The corridor-level PTI is dominated by the worst-performing segment but is attenuated by the large share of corridor distance that is uncongested. A weighted corridor PTI of 1.86 is the FHWA FPM reported value for the I-80 NY--LA route \citep{FHWA_freight2023}, used as the authoritative figure throughout this paper.
+
+\subsubsection{Donner Pass: The Geographic Bottleneck}
+
+The Sierra Nevada crossing on I-80 at Donner Pass (elevation 7,057 ft) is the corridor's geographic constraint. The four-lane cross-section at a sustained 4-percent grade reduces effective capacity from the standard 2,300 pcphpl to 1,900 pcephpl per HCM 7 truck grade adjustment \citep{HCM7}:
+\begin{equation}
+  C_{\text{Donner}} = 2 \times 1{,}900 \times 24 = 91{,}200 \text{ vpd}
+\end{equation}
+At current AADT of approximately 73,000 vpd, Donner operates at V/C = 0.80---within capacity, but with no reserve for diversion traffic during alternate-route closures. During the 18--20 storm events per year that close the southern Sierra passes (US-50, CA-88), all diverted traffic must use Donner, which pushes demand toward or beyond capacity. The pass closes entirely approximately 50 times per year, with closures ranging from 2 hours (brief chain control events) to 72+ hours (major storm systems) \citep{Caltrans2023}. Mean closure duration is 18 hours.
+
+\subsection{Current Transit Time and PTI Implications}
+
+At HOS-legal operation with a single driver:
+\begin{equation}
+  T_{\text{transit}} = \frac{2{,}800 \text{ mi}}{55 \text{ mph}} \div 11 \text{ hr/day} = 50.9 \text{ hr} \div 11 = 4.6 \text{ days}
+\end{equation}
+A 4.5-day transit is standard in industry practice (allowing for minor delays and fuel/rest stops that slightly extend driving time above the pure arithmetic minimum).
+
+The PTI of 1.86 implies a 95th-percentile transit time of:
+\begin{equation}
+  T_{95} = 4.5 \text{ days} \times 1.86 = 8.4 \text{ days}
+\end{equation}
+No shipper quotes an 8.4-day window on a transcontinental load. In practice, the commercially meaningful SLA is a 95-percent on-time rate within a quoted window; working backwards from PTI 1.86, achieving 95-percent on-time on a 4.5-day transit requires quoting 8.4 days, or roughly 202 hours. Operationally, carriers quote 72--96 hours (3--4 days) and absorb the tail risk as service failures. The PTI formulation makes this latent unreliability explicit.
+
+In terms of hours: free-flow transit at 65 mph without congestion would take 43 hours (2,800 mi / 65 mph). With PTI 1.86, the 95th-percentile trip takes $43 \times 1.86 = 80$ hours, requiring an 80-hour buffer for a shipper seeking 95-percent confidence. A shipper offering a 48-hour SLA on this corridor currently achieves approximately 60-percent on-time performance.
+
+\subsection{Alternate Route Analysis}
+
+When Donner Pass closes, the sole truck-standard alternate is I-40 via the southern Sierra Nevada approach. I-40 runs from Barstow, CA to Needles, CA through the Mojave, then east across Arizona, New Mexico, and Texas. To use I-40 as a Donner alternate on an NY--LA trip, a driver must detour south from Reno or Sacramento to Barstow (approximately 290 miles additional), then west on I-40 to Los Angeles (155 miles from Barstow). Total detour relative to the Donner route: 310 miles. At 55 mph average, this adds 5.6 hours to transit, plus the time already lost to closure notification and rerouting.
+
+US-50 (Pony Express Route) and CA-88 (Carson Pass, elevation 8,574 ft) are not truck-standard routes---both have grade and width restrictions that prohibit Class 8 vehicles with double trailers. CA-120 (Tioga Pass, elevation 9,945 ft) closes from November through May and is not a viable freight alternate in any season due to geometric constraints. The effective alternative to Donner is I-40, and only I-40.

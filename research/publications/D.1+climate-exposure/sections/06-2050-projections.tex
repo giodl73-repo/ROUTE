@@ -1,0 +1,113 @@
+\section{2050 Climate Projections}
+\label{sec:projections}
+
+\subsection{NOAA Intermediate SLR Scenario (0.5m Global, 2050)}
+
+Under NOAA's Intermediate scenario, global mean sea level rises 0.5m by 2050 relative
+to a 2000 baseline \citep{NOAA_SLR2022}. Gulf Coast regional adjustments for land
+subsidence and ocean dynamics produce effective local SLR of 0.6--0.7m on the Louisiana
+coast and 0.5--0.55m on the Texas coast. Combined with the independent Louisiana
+subsidence rate (1.5 cm/yr over 25 years = 0.375m additional effective lowering of the
+land surface), the net effective exposure change for Gulf Coast Louisiana I-10 by 2050
+is 0.875--0.975m relative to the 2024 road surface elevation.
+
+We apply this effective SLR to the National Elevation Dataset (1/3 arc-second, 2023
+vintage) to compute 2050 SFHA overlay, rerunning the corridor intersection methodology
+from Section 3. The 2050 SFHA boundaries for 100-year flood events are expanded to
+incorporate the additional 0.875m water column added to current flood-stage elevations.
+
+\subsection{I-10 Gulf Coast Louisiana: 2024 vs. 2050}
+
+At 0.875m effective SLR + subsidence, the 1\% annual exceedance water surface elevation
+along the Louisiana reach of I-10 increases by 0.875m. Applying this to the NED elevation
+raster: the consecutive SFHA corridor increases from 127 miles to 189 miles, as segments
+that are currently marginally above the 100-year flood line (by 0.1--0.5m) fall below
+the projected 2050 flood stage. Total SFHA miles increase from 189 to 241. Applying
+the D1 formula with 2050 values: $f_c(189) = 10$ (above 60-mi anchor; extended calibration
+curve gives 9.8 at 189mi), $f_t(241) = 10$ (above 150-mi anchor; gives 9.9). D1 =
+$0.7 \times 9.8 + 0.3 \times 9.9 = 6.86 + 2.97 = 9.1$ (projected).
+
+This represents an increase of 0.7 D1 points (8.4 $\to$ 9.1) driven entirely by land
+subsidence and sea level rise. At a 9.1 score, Gulf Coast I-10 Louisiana is not merely
+the highest-exposure flood corridor --- it approaches the effective maximum of the D1
+scale. No hardening intervention that does not address the structural elevation deficit
+can reduce the 2050 score materially.
+
+\subsection{I-10 Gulf Coast Texas: 2024 vs. 2050}
+
+Texas Gulf Coast effective SLR (NOAA regional adjustment + Houston subsidence at 0.8
+cm/yr over 25 years = 0.2m additional): net effective exposure increase of 0.7m.
+Consecutive SFHA miles: 89 $\to$ 143 miles. Total SFHA miles: 147 $\to$ 198 miles.
+Projected D1 = $0.7 \times f_c(143) + 0.3 \times f_t(198)$. Applying the extended
+calibration: $f_c(143) = 9.5$, $f_t(198) = 9.9$. D1 = $0.7 \times 9.5 + 0.3 \times
+9.9 = 6.65 + 2.97 = 8.8$ (projected, from 7.8 in 2024).
+
+\subsection{I-95 Miami: 2024 vs. 2050}
+
+Miami Beach and Brickell/downtown Miami have among the highest rates of ``sunny day
+flooding'' (nuisance flooding at high tide) in the United States, reflecting the
+limestone karst geology that allows sea water to infiltrate upward through the substrate.
+NOAA's Miami regional SLR at Intermediate scenario: 0.53m by 2050. Combined with coastal
+aquifer response, effective 2050 flood stage increase along Miami I-95: 0.6m. Consecutive
+SFHA miles: 22 $\to$ 47 miles (the Biscayne Bay approaches and downtown Miami sections
+that are currently above the 100-year line fall below it). Total SFHA miles: 61 $\to$
+99 miles. Projected D1 = $0.7 \times f_c(47) + 0.3 \times f_t(99)$.
+$f_c(47) = 5 + 5 \times (47-15)/(60-15) = 5 + 3.56 = 8.56$; $f_t(99) = 5 + 5 \times
+(99-40)/(150-40) = 5 + 2.68 = 7.68$. D1 = $0.7 \times 8.56 + 0.3 \times 7.68 = 5.99 +
+2.30 = 7.5$ (projected, from 6.2 in 2024; +1.3 point increase).
+
+\subsection{Priority Order Shift: 2024 vs. 2050}
+
+Table~\ref{tab:2050-projections} compares 2024 and 2050 D1 scores for the top-10
+corridors under NOAA Intermediate SLR.
+
+\begin{table}[ht]
+\centering
+\caption{D1 climate exposure scores: 2024 (current) vs.\ 2050 projected under NOAA
+Intermediate SLR (0.5m global, 2050). Gulf Coast corridors incorporate land subsidence
+in the effective SLR figure. Winter corridors (Donner, Snoqualmie, Oklahoma) reflect
+storm intensity projections rather than SLR.}
+\label{tab:2050-projections}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Rank (2050) & Corridor & D1 (2024) & D1 (2050) & Change \\
+\midrule
+1 & I-10 Gulf Coast LA  & 8.4 & 9.1 & $+0.7$ \\
+2 & I-10 Gulf Coast TX  & 7.8 & 8.8 & $+1.0$ \\
+3 & I-80 Donner Pass    & 7.8 & 8.0 & $+0.2$ \\
+4 & I-35 Oklahoma       & 7.2 & 7.4 & $+0.2$ \\
+5 & I-95 Florida (Miami)& 6.2 & 7.5 & $+1.3$ \\
+6 & I-90 Snoqualmie     & 7.1 & 7.3 & $+0.2$ \\
+7 & I-5 Siskiyou        & 6.8 & 7.2 & $+0.4$ \\
+8 & I-10 Gulf Coast MS  & 6.5 & 7.0 & $+0.5$ \\
+9 & I-95 Baltimore      & 4.1 & 5.8 & $+1.7$ \\
+10 & I-90 Homestake MT  & 6.4 & 6.5 & $+0.1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 2024 priority order places Donner Pass (7.8) in a tie with Gulf Coast Texas (7.8),
+slightly below Gulf Coast Louisiana (8.4). By 2050 under Intermediate SLR, Gulf Coast
+Louisiana (9.1) and Gulf Coast Texas (8.8) pull away from Donner (8.0) and Snoqualmie
+(7.3). I-95 Miami shows the largest proportional increase (+1.3 points), rising from
+rank 6 to rank 5.
+
+The most striking entry is I-95 Baltimore (+1.7 points, rising from rank 11 to rank 9):
+the Chesapeake Bay coastal sections of I-95 near Baltimore, currently above the 100-year
+flood line by a small margin, fall below it by 2050 under NOAA Intermediate SLR, producing
+a step-change in SFHA overlay.
+
+\subsection{Infrastructure Lead Time and Authorization Urgency}
+
+Major corridor hardening --- roadway elevation, drainage reconstruction, flood barrier
+installation --- requires 8--12 years from congressional authorization to project completion,
+based on FHWA project delivery data for major highway reconstruction projects
+\citep{IIJA2021}. A project authorized in 2038 reaches completion in 2046--2050. To deliver
+Gulf Coast I-10 hardening before the 2050 exposure threshold is reached, authorization
+must occur by approximately 2038 --- twelve years from the time of this analysis.
+
+This lead time framing is not rhetorical. The current PROTECT program ($8.7B over five
+years) is insufficient in scale to fund Gulf Coast I-10 hardening (estimated \$18--25B
+for full-corridor elevation; see D.2 for cost detail). A separate authorization, at the
+scale of a Katrina-class infrastructure response, is required if the 2050 D1 = 9.1
+exposure is to be addressed before it materializes.

@@ -1,0 +1,95 @@
+\section{Background}
+
+\subsection{FEMA National Flood Hazard Layer}
+
+The FEMA National Flood Hazard Layer (NFHL) is the authoritative federal dataset defining
+flood zone designations across the United States \citep{FEMA_NFHL}. For the purposes of
+highway vulnerability assessment, the critical designation is the Special Flood Hazard Area
+(SFHA) --- the land subject to inundation by a flood with a 1\% annual probability of
+occurrence (the ``100-year flood''). SFHA zones include Zone A (riverine flood), Zone AE
+(detailed study areas with base flood elevations established), Zone AH (shallow flooding),
+Zone AO (sheet flow), and Zone VE (coastal areas with wave action). For corridor scoring,
+we treat all SFHA zone types equivalently, as each represents a 1\% annual inundation
+probability that would render the highway surface inaccessible.
+
+The NFHL is delivered via FEMA's Map Service Center API, which supports polygon overlay
+queries against arbitrary geographic buffers. We construct a 1-mile buffer on each side of
+each interstate centerline (2-mile total corridor envelope) and intersect against NFHL SFHA
+polygons to compute SFHA coverage in corridor miles. This buffer captures not just the
+roadway surface but also the drainage infrastructure and access roads that must remain
+operational for the corridor to function.
+
+A critical limitation of static NFHL data: maps reflect conditions at their last revision
+date, which varies significantly by county. In rapidly subsiding areas (coastal Louisiana,
+Houston subsidence zone), the effective flood zone is larger than the NFHL polygon suggests,
+because land has subsided since the last map revision. We address this through 2050 projection
+methodology (Section~\ref{sec:projections}).
+
+\subsection{NOAA Sea Level Rise Projections}
+
+NOAA's 2022 Sea Level Rise Technical Report provides regionally resolved SLR projections
+through 2100 under five scenarios \citep{NOAA_SLR2022}. For this analysis, we use two
+scenarios: the Intermediate scenario (0.5m global mean SLR by 2050, roughly corresponding
+to SSP2-4.5) and the High scenario (1.0m by 2050, corresponding to SSP5-8.5). NOAA's
+regional adjustments account for ocean dynamics, gravitational fingerprinting, and local
+land subsidence, producing spatially heterogeneous projections even under a single global
+scenario. Gulf Coast regions under the Intermediate scenario show 0.6--0.7m effective local
+SLR by 2050 due to additional land subsidence; the 0.5m global figure understates Gulf Coast
+exposure.
+
+These projections are used here to project SFHA expansion: we apply the projected SLR to
+current elevation data (1/3 arc-second National Elevation Dataset) and recompute SFHA
+polygon boundaries at projected water levels, producing 2050 corridor vulnerability scores.
+
+\subsection{Historical Closure Data}
+
+For winter precipitation and wildfire corridors, exposure cannot be captured by static
+flood-zone overlay. We use three sources of historical closure frequency data:
+
+\textbf{Caltrans District incident database} \citep{Caltrans2023}: California corridor
+closures, 2010--2022. Includes I-80 Donner Pass, I-5 Siskiyou Summit, US-50 Echo Summit.
+Reported in closure events per year with duration in hours. Donner Pass (I-80): 50 closures
+per year mean, 18 hour mean duration, maximum recorded closure 72+ hours (January 2019 storm).
+
+\textbf{WSDOT Incident Database}: Washington state corridors, 2012--2022. I-90 Snoqualmie
+Pass: 40 closures per year mean, 12 hour mean duration.
+
+\textbf{FHWA National Incident Database} \citep{FHWA_incident2022}: national coverage for
+major incidents (duration $\geq$ 2 hours). Used for I-35 Oklahoma tornado corridor, I-70
+Vail Pass, I-90 Homestake (Montana).
+
+\subsection{Climate--Transportation Literature}
+
+The relationship between climate exposure and transportation network performance has received
+growing attention since the 2005 Katrina disruption of Gulf Coast I-10, which caused an
+estimated \$1.5 billion in freight disruption costs \citep{FHWA_incident2022}.
+\citet{pregnolato2017impact} developed the first comprehensive framework for quantifying
+flood impacts on transport network accessibility, showing that accessibility loss is a
+superlinear function of inundation depth on critical network links. The FHWA vulnerability
+assessment framework \citep{FHWA_vulnerability2012} established a four-step methodology
+for identifying climate-vulnerable highway assets, but did not produce corridor-level
+exposure scores or investment prioritization guidance. The National Academies report on
+extreme weather and the transportation system \citep{NationalAcademies2016} identified sea
+level rise, extreme precipitation, and wildfire smoke as the three primary climate stressors
+for the interstate highway system, and called for standardized exposure metrics --- a call
+that remains unmet in federal investment criteria as of 2026.
+
+\subsection{Two Exposure Mechanisms: Flood vs. Winter/Fire}
+
+The D1 dimension synthesizes two structurally different exposure mechanisms. Flood exposure
+(Gulf Coast, Atlantic coastal corridors) is structural: the road is built in a location that
+is, with some annual probability, inundated. The metric is geometric --- how many miles of
+road lie within the flood plain. Winter precipitation and wildfire exposure, by contrast,
+is operational: the road is geographically above the flood plain, but weather conditions
+render it intermittently impassable. The metric is frequency-duration: how often does the
+road close and for how long.
+
+Combining these two mechanisms into a single D1 score requires a calibration that equates
+structural flood exposure with operational weather exposure. We anchor the calibration on
+Donner Pass: 50 closures per year averaging 18 hours each (900 annual closure-hours) maps
+to D1 = 7.8 under the operational exposure branch of the scoring function. Gulf Coast
+I-10's consecutive-SFHA overlay produces D1 = 8.4 under the structural exposure branch.
+This calibration implies that 127 consecutive SFHA miles is somewhat worse than 900 annual
+closure-hours --- a judgment anchored in the observation that flood exposure eliminates
+the corridor entirely during events that may recur annually, while Donner closures, though
+frequent, are recoverable within hours to days.

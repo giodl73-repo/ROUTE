@@ -1,0 +1,60 @@
+\section{Data and Methods}
+\label{sec:methods}
+
+\subsection{Data Sources}
+
+Segment-level traffic data are drawn from the Highway Performance Monitoring System (HPMS) Annual Average Daily Traffic (AADT) database \citep{HPMS2018}. HPMS provides lane counts, functional classification, and AADT for all NHS segments. Truck percentage is taken from FHWA's Vehicle Travel Information System (VTRIS) for segments with truck-specific loop detector data; for segments without VTRIS coverage, the FHWA national average of 8.4 percent trucks on rural interstates is applied. Donner Pass closure frequency and duration statistics are from Caltrans District 3 incident logs \citep{Caltrans2023}, which record gate closures on I-80 at the Kingvale chain control checkpoint from 2010 through 2022. Reliability cost estimates use ATRI's 2024 carrier cost model \citep{ATRI_costs2024}.
+
+\subsection{PTI Computation}
+
+PTI is estimated from HPMS AADT using the Bureau of Public Roads (BPR) volume-delay function \citep{HCM7}, adapted for a reliability context. The computation proceeds in three steps.
+
+First, peak-hour volume is estimated from AADT:
+\begin{equation}
+  V_{\text{peak}} = \text{AADT} \times 0.09
+  \label{eq:vpeak}
+\end{equation}
+The factor 0.09 corresponds to the K-factor (proportion of daily traffic occurring in the peak hour) for high-volume rural interstates. For urban segments the K-factor is 0.09--0.11; we apply 0.09 conservatively.
+
+Second, the volume-to-capacity ratio is computed:
+\begin{equation}
+  V/C = \frac{V_{\text{peak}}}{\text{lanes}/2 \times 2{,}300}
+  \label{eq:vc}
+\end{equation}
+where 2,300 passenger car equivalents per hour per lane (pcphpl) is the HCM 7 basic freeway segment capacity at 65 mph \citep{HCM7}. Directional lanes are used (total lanes divided by 2 for one direction).
+
+Third, PTI is estimated by applying the BPR function to a 90th-percentile demand day (the day that produces 90th-percentile AADT, which then yields a 95th-percentile travel time when combined with incident-induced delay):
+\begin{equation}
+  \text{PTI} = 1 + 0.15 \times \left( \frac{V_{\text{peak}} \times 1.15}{C} \right)^4
+  \label{eq:bpr_pti}
+\end{equation}
+The 1.15 multiplier on the numerator projects the 90th-percentile demand day to the demand level that, with incident superposition, produces 95th-percentile travel time. This formulation follows the FHWA FPM technical reference \citep{FHWA_freight2023}.
+
+\subsection{Max-Flow Network Model}
+
+The directed interstate graph is constructed with nodes at major interchanges (FHWA interchange density data) and edges representing interstate segments. Edge capacity is set to the segment capacity in vehicles per day: $C_{\text{edge}} = \text{lanes}/2 \times 2{,}300 \times 16$, where 16 is the daily operating hours (6~am to 10~pm for freight-significant volumes). The source node is the NYC metropolitan area (I-95 at Hackensack, NJ); the sink is the Los Angeles metropolitan area (I-405/I-10 junction).
+
+Maximum flow is computed using the Edmonds-Karp algorithm, a breadth-first-search implementation of the Ford-Fulkerson method with $O(VE^2)$ complexity \citep{ROUTE_A1}. For a network of the interstate graph's size (approximately 900 nodes, 1,400 directed edges), Edmonds-Karp converges in under one second.
+
+Incident simulation proceeds by removing the binding bottleneck edge from the graph (representing a full closure) and rerunning Edmonds-Karp. The resulting max-flow gives the network capacity with the bottleneck closed, and the shortest path from source to sink gives the forced-detour route.
+
+\subsection{Interstate 2.0 Scenario}
+
+The I2.0 scenario adds a dedicated managed-lane layer to the graph. Managed freight lanes are modeled as parallel edges with:
+\begin{itemize}
+  \item Speed: 65 mph sustained (vs.\ 55 mph average on general-purpose lanes at current demand)
+  \item Capacity: $V/C_{\text{managed}} = 0.70$ design target (uncongested flow at LOS B)
+  \item Access: freight-only; passenger vehicles excluded
+  \item PTI: computed using Eq.~\ref{eq:bpr_pti} with $V/C = 0.70$, yielding PTI = $1 + 0.15 \times (0.70 \times 1.15)^4 = 1.048 \approx 1.05$; a 1.15 target PTI is used throughout to allow for incident-induced variance not captured by the BPR model
+\end{itemize}
+
+Transit time under I2.0 is recomputed from distance, managed-lane speed, and HOS:
+\begin{equation}
+  T_{\text{I2.0}} = \frac{d}{v_{\text{managed}}} \div h_{\text{HOS}}
+  \label{eq:transit_i20}
+\end{equation}
+where $d$ is corridor distance in miles, $v_{\text{managed}} = 65$~mph, and $h_{\text{HOS}} = 11$~hr/day.
+
+\subsection{ROUTE Corpus}
+
+The ROUTE project has scored 227 existing interstate corridors against the v1.2 dimension rubric \citep{ROUTE_A2}, providing a calibrated reference distribution for Freight Intensity, Redundancy, Multimodal Integration, and Climate Resilience dimensions. The NY--LA and HOU--CHI corridors are positioned within this distribution to contextualize their scores. The corpus dimension means and standard deviations used for comparison are from the v1.2 scoring ledger.

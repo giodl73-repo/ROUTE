@@ -1,0 +1,86 @@
+\section{Incident Simulation}
+\label{sec:incident}
+
+Two incident scenarios are simulated: a multi-day Donner Pass closure and an I-35 Oklahoma corridor disruption. Both scenarios involve removing edges from $G$ and recomputing max-flow for the affected cluster pairs. The scenarios are chosen because they represent the two distinct failure modes identified in Section~\ref{sec:bottleneck}---geographic chokepoint failure (Donner) and urban corridor disruption (I-35)---and because historical data on closure frequency and duration are available to translate throughput loss into annual cost estimates \citep{ROUTE_C1}.
+
+\subsection{Scenario 1: Donner Pass Multi-Day Closure}
+
+\paragraph{Setup.} The Donner Pass segment of I-80 between Truckee, CA and Colfax, CA (approximately 6 miles of the most constrained segment at the Donner summit) is removed from $G$. The removed edge has design capacity 91,200 vpd (all vehicles), representing the physical chokepoint of the Sierra Nevada crossing. No other edge is modified.
+
+\paragraph{Max-flow recomputation.} With the Donner edge removed, the algorithm finds the next minimum cut separating the Northeast cluster from the Pacific Coast cluster. The residual network routes all NE-Pacific flow through the remaining three corridors:
+\begin{itemize}
+  \item I-40 (southern transcontinental): baseline V/C 0.52, absorbs 48,000 additional vpd, post-incident V/C = 0.84
+  \item I-90 (northern transcontinental): baseline V/C 0.31, absorbs 26,000 additional vpd, post-incident V/C = 0.49
+  \item Southern routes (I-10/I-20): absorb the residual increase, post-incident V/C rises modestly
+\end{itemize}
+
+The Northeast-to-Pacific max-flow drops from 320,000 vpd to 246,000 vpd, a reduction of 74,000 vpd or \textbf{23 percent}.
+
+\paragraph{I-40 saturation proximity.} The post-incident I-40 V/C of 0.84 is within 12,000 vpd of the practical saturation threshold (V/C $\approx$ 0.95 before throughput degradation begins). I-40 at V/C 0.84 does not cascade, but it has no reserve for secondary incidents. A concurrent weather event on I-40 (common in the Oklahoma-Texas Panhandle corridor during winter) or a separate incident on the I-40 corridor would push I-40 past saturation, creating a compound failure.
+
+\paragraph{Cost estimation.} Closure frequency and duration data from Caltrans \citep{ROUTE_C1} show an average of 50 closure events per year at Donner Pass, with a mean closure duration of 18 hours. Total suppressed freight-hours per year:
+\begin{equation}
+  74{,}000 \text{ vpd} \times 50 \text{ closures/yr} \times \frac{18 \text{ hr}}{24 \text{ hr/day}} = 2.775 \text{ million vehicle-days suppressed}
+\end{equation}
+Converting to truck-hours at the truck fraction (approximately 17 percent of I-80 Donner traffic):
+\begin{equation}
+  2.775 \text{ million vehicle-days} \times 0.17 \times 24 \text{ hr/day} = 11.3 \text{ million truck-hours suppressed}
+\end{equation}
+Valued at the ATRI all-in truck cost of \$225 per hour \citep{ATRI_costs2024}:
+\begin{equation}
+  11.3 \text{ million hr} \times \$225/\text{hr} = \$2.5\text{B/yr throughput suppression cost}
+\end{equation}
+The detour cost for the 74,000 vpd that reroutes via I-40 (adding 310 miles and approximately 4.7 hours at free-flow, but operating at V/C 0.84 with PTI $\approx$ 1.45):
+\begin{equation}
+  74{,}000 \text{ vpd} \times 0.17 \text{ truck fraction} \times 50 \text{ events} \times \frac{18}{24} \text{ days} \times 4.7 \text{ hr} \times 1.45 \text{ PTI} \times \$225/\text{hr} = \$0.9\text{B/yr}
+\end{equation}
+Total annualized Donner impact: \textbf{\$2.5B + \$0.9B = \$3.4B per year}. This estimate is conservative; it excludes shipments that cannot reroute (time-sensitive perishables, contractually committed deliveries) and models only the direct operating cost premium, not the downstream supply-chain disruption cost.
+
+\subsection{Scenario 2: I-35 Oklahoma Corridor Disruption}
+
+\paragraph{Setup.} The I-35 corridor through Oklahoma (approximately 300 miles from the Texas border near Gainesville to the Kansas border near Wichita) is removed from $G$. This segment spans a mix of 4-lane and 6-lane facility sections, with a combined design capacity of approximately 95,000 to 140,000 vpd depending on section. The removal represents a major multi-day disruption---a large bridge failure, catastrophic flooding, or similar extended-closure event.
+
+\paragraph{Max-flow recomputation.} With I-35 Oklahoma removed, the Texas Gulf-to-Midwest cluster pair loses its primary north-south spine. The residual network routes Texas Gulf flow eastward to Memphis via I-40 (adding 200 miles) and then north via I-55 to Chicago:
+\begin{itemize}
+  \item Texas Gulf $\to$ Midwest max-flow drops from 95,000 vpd to 65,000 vpd (\textbf{$-$31 percent})
+  \item Alternate path: I-40 east to Memphis, I-55 north to Chicago; adds approximately 200 miles and 3.7 hours at free-flow
+  \item I-40 V/C increases further from its already-elevated Donner-rerouted level
+\end{itemize}
+
+\paragraph{Compound failure scenario.} If both the Donner closure (Scenario 1) and the I-35 Oklahoma disruption (Scenario 2) occur simultaneously---a plausible winter scenario in which a Sierra Nevada storm closes Donner while an Oklahoma ice storm disrupts I-35---the compound effect on I-40 is severe:
+\begin{itemize}
+  \item Donner closure pushes I-40 V/C to 0.84 (48,000 additional vpd)
+  \item I-35 Oklahoma closure simultaneously diverts Texas Gulf-Midwest flow onto I-40 via Memphis
+  \item Combined I-40 additional load: approximately 70,000 vpd
+  \item I-40 post-compound V/C: $(0.52 \times c_\text{I-40} + 70{,}000) / c_\text{I-40} \approx 1.11$
+\end{itemize}
+V/C = 1.11 is a network failure condition: I-40 operates above design capacity, throughput degrades nonlinearly, and the queue propagates upstream into the Texas and New Mexico segments. At this point the national freight network has no T1-standard path between the Texas Gulf and either the Pacific Coast or the Midwest that is not itself saturated.
+
+\paragraph{I-35 incident cost.} Major incidents on I-35 through Oklahoma occur approximately six times per year at a duration exceeding 8 hours \citep{FHWA_freight2023}. For each such incident:
+\begin{equation}
+  30{,}000 \text{ vpd displaced} \times 0.20 \text{ truck fraction} \times 3.7 \text{ hr detour} \times \$225/\text{hr} = \$4.995\text{M/day}
+\end{equation}
+For an 8-hour event spanning approximately 0.33 days: approximately \$1.6M per incident. Annual cost for 6 incidents of 8+ hours: approximately \$10M/year in direct detour cost. Full closures of multiple days (bridge failure scenario) would scale this proportionally to duration.
+
+\begin{table}[ht]
+\centering
+\caption{Incident Simulation Results Summary}
+\label{tab:incidents}
+\begin{tabular}{lrrrl}
+\toprule
+Scenario & Throughput Loss & Displaced vpd & I-40 V/C & Annual Cost \\
+\midrule
+Donner Pass closure (multi-day) & 23\% NE-Pacific & 74,000 & 0.84 & \$3.4B/yr \\
+I-35 Oklahoma disruption & 31\% Gulf-Midwest & 30,000 & (indirect) & \$10M/yr (8-hr events) \\
+Compound (simultaneous) & cascade & 70,000 (I-40) & 1.11 & network failure \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Interpretation}
+
+The Donner simulation confirms the finding from C.1 \citep{ROUTE_C1}: Donner Pass is a national single point of failure for the NE-Pacific freight corridor. The 23 percent throughput loss is not an isolated corridor problem---it cascades to I-40, the backup for two separate corridor failures, and places I-40 in a fragile state from which any secondary disruption can produce network-level failure.
+
+The compound scenario is analytically important because it reveals a structural property of the network that individual O-D analysis obscures: the T2 network (I-40, I-55, the Memphis bypass) is the national resilience layer, and it has no spare capacity for simultaneous T1 failures. The I-40 corridor, designed and classified as a T2 connector, is being called upon to serve as the backup for two independent T1 failures simultaneously. This exceeds its design load.
+
+The investment implication follows directly from the max-flow minimum-cut theorem: adding capacity on I-40 does not increase the baseline max-flow (I-40 is not the minimum cut under baseline conditions), but it does increase the resilience of the system under incident conditions. Alternatively, removing the Donner binding constraint (by building I-70W as a Sierra Nevada alternate, analyzed in Section~\ref{sec:missing}) would prevent the Donner closure from cascading to I-40 at all.

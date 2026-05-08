@@ -1,0 +1,56 @@
+\section{Data and Methods}
+\label{sec:data}
+
+\subsection{HPMS Data and V/C Computation}
+
+Traffic volume and lane count data are drawn from the Highway Performance Monitoring System (HPMS) 2018 annual data submission \citep{FHWA_HPMS2023}. HPMS provides Annual Average Daily Traffic (AADT) at the segment level for all National Highway System routes, with segment lengths averaging 0.8--2.4 miles on urban T1 corridors and 3.0--12.0 miles on rural segments. For each T1 corridor, we identify the 90th-percentile segment by V/C ratio --- the segment that binds freight throughput at the corridor level and represents the design constraint for managed lane capacity addition.
+
+V/C ratios are computed from HPMS AADT using the standard peak-period conversion:
+
+\begin{equation}
+\text{V/C} = \frac{\text{AADT} \times K \times D}{N/2 \times C_{\text{lane}}}
+\label{eq:vc}
+\end{equation}
+
+where $K$ is the peak-hour factor (0.09 for urban T1 corridors; the fraction of daily volume occurring in the peak hour), $D$ is the directional split factor (0.55 for heavily directional peak periods), $N$ is total lane count in both directions, and $C_{\text{lane}}$ is the lane capacity in vehicles per hour per lane (2,300 vphpl for basic freeway segments at design speed $\geq$ 70 mph, per HCM7 \citep{HCM7}). This formulation yields the peak-hour, peak-direction V/C ratio at the binding segment, which is the relevant metric for LOS and PTI computation.
+
+\subsection{BPR-Based Planning Time Index}
+
+Planning Time Index (PTI) measures the reliability buffer required for on-time delivery at the 95th-percentile confidence level. We use the Bureau of Public Roads (BPR) volume-delay function to estimate travel time as a function of V/C:
+
+\begin{equation}
+t(V/C) = t_0 \left(1 + 0.15 \times \left(\frac{V}{C}\right)^4\right)
+\label{eq:bpr}
+\end{equation}
+
+where $t_0$ is free-flow travel time. PTI is defined as the ratio of the 95th-percentile travel time to free-flow travel time. We estimate the 95th-percentile V/C as $1.15 \times V/C_{\text{peak}}$, reflecting the ratio of peak incident conditions to average peak hour conditions based on FHWA incident frequency data \citep{FHWA_freight2023}. PTI under the BPR model is therefore:
+
+\begin{equation}
+\text{PTI}_{\text{BPR}} = 1 + 0.15 \times \left(V/C_{\text{peak}} \times 1.15\right)^4
+\label{eq:pti}
+\end{equation}
+
+For the managed lane condition, V/C is set to 0.70 (design standard for LOS B on managed lanes \citep{FHWA_ML2021}). PTI at V/C = 0.70: $1 + 0.15 \times (0.70 \times 1.15)^4 = 1 + 0.15 \times (0.805)^4 = 1 + 0.15 \times 0.420 = 1.063$. We apply a ceiling of 1.15 to account for access-point turbulence at managed lane entry/exit ramps, which generates residual variability not captured by the BPR model for uninterrupted flow segments. The 1.15 PTI target is therefore conservative relative to the BPR-predicted 1.06 value for a pure managed-lane environment.
+
+\subsection{ATRI Cost Model}
+
+Freight benefit computations use the American Transportation Research Institute (ATRI) operational cost model \citep{ATRI_costs2024}, which provides all-in trucking cost per hour including driver wages, fuel, maintenance, and overhead. The 2024 ATRI cost is \$225 per truck-hour for a Class 8 combination vehicle. This figure is applied to the delay differential between current peak-period travel time and managed-lane travel time on each corridor segment.
+
+The ATRI model is conservative in one respect relevant to this analysis: it captures carrier operating cost but not shipper opportunity cost (inventory carrying cost, contractual penalties for late delivery, and lost premium for time-sensitive freight). Shipper opportunity cost for time-sensitive freight has been estimated at 1.5--2.5$\times$ the carrier rate for pharmaceutical, perishable, and automotive JIT commodities \citep{ATRI_costs2024}. The NPV computations in Section~\ref{sec:npv} use the carrier cost only and therefore understate total freight benefit for corridors carrying high shares of time-sensitive commodities (notably I-95 and I-75, which serve pharmaceutical distribution and automotive assembly corridors, respectively).
+
+\subsection{Managed Lane Cost Estimate}
+
+Capital cost for managed freight lane construction is estimated from the FHWA managed lane cost database \citep{FHWA_ML2021}. The cost range is \$10--15 million per lane-mile, where the lower bound applies to rural corridor construction with available right-of-way and the upper bound applies to urban construction requiring right-of-way acquisition, noise barriers, and elevated structure through constrained corridors. The two-lane-per-direction standard (four new lanes total per corridor, plus access ramp construction at entry/exit points every 15--25 miles) is the design basis for all corridor cost estimates.
+
+Right-of-way costs are included in the per-lane-mile estimate for urban corridors. The I-95 NJ segment (\$14M/lane-mile) and I-85 Charlotte segment (\$14M/lane-mile) reflect the urban premium. I-90 rural segments (\$10M/lane-mile) reflect the lower-cost rural standard. Mixed corridors (I-10, I-80, I-35) with alternating urban and rural segments use a weighted average based on urban segment share.
+
+\subsection{Platooning Benefit Model}
+
+Platooning fuel savings are estimated using the Browand et al.\ \citep{Browand2004} aerodynamic drag model. At 65 mph and a 2-second following distance (achievable with V2X cooperative adaptive cruise control), trailing vehicles in a 2-truck platoon achieve 20--25\% fuel savings relative to solo operation. We apply a 25\% savings rate at full platooning penetration and a 30\% fleet penetration rate (the estimated share of T1 corridor freight volume operating in platoon-capable configurations by 2030, based on current FMCSA electronic logging device adoption trajectories). The per-mile fuel savings is:
+
+\begin{equation}
+S_{\text{fuel}} = \eta_p \times p_f \times c_f \times \frac{1}{\text{mpg}}
+\label{eq:platooning}
+\end{equation}
+
+where $\eta_p = 0.25$ is the aerodynamic savings factor, $p_f = 0.30$ is the fleet penetration rate, $c_f = \$3.40/\text{gallon}$ is the diesel price, and $1/\text{mpg} = 1/6.5$ gallons per mile is the loaded combination vehicle fuel consumption rate. This yields $S_{\text{fuel}} = 0.25 \times 0.30 \times 3.40 / 6.5 = \$0.039$ per corridor-mile per commercial vehicle, or approximately \$0.08 per trailing vehicle-mile in an active platoon.

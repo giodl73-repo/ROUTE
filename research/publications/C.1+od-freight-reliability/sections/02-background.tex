@@ -1,0 +1,44 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Hours-of-Service Regulations}
+
+Federal Hours-of-Service (HOS) regulations under 49 CFR Part 395 \citep{CFR_HOS} govern driver operating time and directly determine the relationship between distance and transit duration. The operative limits for property-carrying drivers are: 11 hours of driving time within a 14-hour on-duty window, a mandatory 10-hour off-duty rest period between windows, and a 70-hour cumulative limit over any 8-day rolling period. A driver operating at the legal maximum completes 11 driving hours per day, which at a sustained 65 mph translates to 715 miles per day. At the congestion-adjusted 55 mph average observed on long-haul interstate segments, the daily range falls to 605 miles.
+
+These constraints mean that no single-driver team can transit the NY--LA corridor (2,800 miles) in fewer than five days under HOS. Team driving---two drivers alternating---eliminates the rest constraint but is operationally expensive and uncommon for spot freight. The transit times computed throughout this paper assume single-driver operation at HOS limits unless otherwise noted.
+
+\subsection{Planning Time Index}
+
+The Planning Time Index (PTI) is the primary reliability metric used by the Federal Highway Administration's Freight Performance Measures program \citep{FHWA_freight2023}. PTI is defined as:
+
+\begin{equation}
+  \text{PTI} = \frac{T_{95}}{T_{\text{ff}}}
+  \label{eq:pti}
+\end{equation}
+
+where $T_{95}$ is the 95th-percentile travel time on the facility over the measurement period and $T_{\text{ff}}$ is the free-flow travel time (travel time at uncongested conditions, typically at off-peak speed). A PTI of 1.00 means the 95th-percentile trip takes exactly as long as the free-flow trip---perfect reliability. A PTI of 1.86 means a shipper must budget 86 percent more time than the free-flow trip to be confident of on-time delivery 95 percent of the time.
+
+PTI is commercially meaningful because it directly sets the minimum SLA buffer a shipper must carry. If free-flow transit is $T_{\text{ff}}$ hours, then to commit to on-time delivery with 95-percent confidence, the shipper must quote $T_{\text{ff}} \times \text{PTI}$ as the commitment window. A PTI of 1.86 on a 43-hour free-flow transcontinental trip requires an 80-hour commitment window---three-plus days of buffer. A PTI of 1.15 on the same trip requires a 50-hour window, enabling a 48-hour SLA with a 2-hour margin.
+
+\subsection{ATRI All-In Cost Model}
+
+The American Transportation Research Institute (ATRI) publishes annual operational cost estimates for commercial trucking \citep{ATRI_costs2024}. The all-in cost figure used throughout this paper is \$225 per truck-hour, which encompasses driver wages and benefits (\$89/hr at prevailing rates), fuel (\$72/hr at 7 mpg and \$3.25/gallon diesel), depreciation and maintenance (\$38/hr), insurance and permits (\$16/hr), and overhead (\$10/hr). This figure represents the cost of a truck-hour that generates no revenue---idle time in congestion, detour miles, or waiting at a closed pass. It is the marginal cost of unreliability.
+
+Annual reliability cost for a corridor is computed as:
+
+\begin{equation}
+  C_{\text{annual}} = D_{\text{avg}} \times V_{\text{trucks}} \times \$225 \times N_{\text{events}}
+  \label{eq:annual_cost}
+\end{equation}
+
+where $D_{\text{avg}}$ is mean delay per event in hours, $V_{\text{trucks}}$ is daily truck volume on the affected segment, and $N_{\text{events}}$ is the annual number of delay events.
+
+\subsection{Freight O-D Economics}
+
+NY--LA and HOU--CHI are foundational O-D pairs in the sense that their freight flows underpin large portions of the national production and consumption network. NY--LA moves apparel, electronics, pharmaceuticals, and consumer goods between the East Coast port gateway and the West Coast import complex---both directions carry high-value time-sensitive loads. HOU--CHI connects the Gulf's petrochemical and refined products base to the Midwest's automotive and agricultural manufacturing concentrations. FHWA commodity flow data indicate that chemicals, petroleum products, and motor vehicle parts together account for over 40 percent of HOU--CHI freight value \citep{FHWA_freight2023}.
+
+Both O-D pairs are also strategic from a resilience standpoint. The NY--LA corridor doubles as the northern land route for Department of Defense logistics under the Strategic Highway Network (STRAHNET) classification. The HOU--CHI corridor, once I-69 is complete, would link two of the three most critical nodes in the national strategic road network.
+
+\subsection{Prior Literature}
+
+FHWA's Freight Performance Measures (FPM) program has monitored PTI on the National Highway System since 2012, publishing annual corridor-level reliability reports \citep{FHWA_freight2023}. The I-80 Donner Pass closure literature is thinner: \citet{Caltrans2023} provides the most complete closure frequency and duration data from Caltrans District 3 incident records. Network flow analysis of the interstate system has been applied to disaster resilience by \citet{ROUTE_A1}, who use Edmonds-Karp max-flow on the HPMS graph to identify binding bottlenecks under simulated link failures. The PTI-to-SLA translation framework used here is an extension of \citet{ROUTE_A2}, who develop the commercial commitment window formulation for shipper-carrier contract analysis. Highway Capacity Manual 7th Edition \citep{HCM7} provides the volume-delay functions and level-of-service thresholds used in the capacity computations.

@@ -1,0 +1,54 @@
+\section{I2.0 Framework Design}
+
+The Interstate 2.0 framework organizes investment decisions into a three-tier design hierarchy. The hierarchy is not administrative convenience; it reflects the empirical tier structure revealed by the ROUTE corpus scoring, in which the dimension-space distribution of existing corridors shows a clear bimodal structure separating high-loading, high-connectivity T1 arteries from the broader T2 and T3 population \citep{ROUTE_A1,ROUTE_A2}.
+
+\subsection{Three-Tier Design Hierarchy}
+
+\textbf{Tier 1 Corridors (Primary Arteries)} receive the full I2.0 treatment: managed freight lanes, diamond interchange upgrades at all T1/T1 intersections, and compound exposure hardening where the risk threshold is met. The eight T1 corridors identified in Track A carry a disproportionate share of national freight: collectively more than 50\% of truck ton-miles on less than 12\% of interstate lane-miles \citep{ROUTE_A1}. Investment in T1 throughput and reliability produces the highest returns in the portfolio.
+
+\textbf{Tier 2 Corridors (Major Connectors)} receive selective investment: targeted widening where V/C exceeds 0.85, intermodal integration at identified terminal locations, and EV charging infrastructure at the DCFC spacing standard. T2 corridors are not candidates for managed freight lanes under current demand projections, but they carry freight essential to regional economies and require reliability improvements on specific bottleneck segments.
+
+\textbf{Missing Links (Proposed New Corridors)} receive new construction or full-standard upgrades where the ROUTE rubric score exceeds the T1 threshold but no T1-standard facility exists. These are the corridors where the gap map --- the empty regions in the dimension space of the corpus --- is most pronounced. New construction is the highest-capital, longest-horizon investment; it is undertaken only where the evidence from the rubric justifies it.
+
+\subsection{Tier 1 Design Standard}
+
+The Tier 1 design standard specifies the minimum performance requirements for a corridor to be designated a T1 Primary Artery in the post-I2.0 network:
+
+\begin{itemize}
+  \item \textbf{Managed lane PTI $\leq$ 1.15}: the Planning Time Index on the managed freight lane segment shall not exceed 1.15 at design-year demand. Current I-80 (Donner) PTI is 1.86 \citep{ROUTE_C1}; the managed lane design brings this to the standard.
+  \item \textbf{DCFC spacing $\leq$ 50 miles}: DC Fast Charging stations at all T1 rest areas, with spacing not to exceed 50 miles. This spacing eliminates range anxiety for all current Class 8 battery-electric trucks with EPA-certified range \citep{FHWA_NHS2023}.
+  \item \textbf{Rest area spacing $\leq$ 50 miles with truck parking}: Hours-of-Service compliance requires reliable, safe parking at legally mandated rest intervals. The FMCSA's 30-minute break requirement after 8 hours of driving, combined with typical average speeds of 55 mph on T1 corridors, implies that rest areas must be available every 44 miles or more frequently \citep{USDOT_FMCSA2022}.
+  \item \textbf{Diamond interchange at all T1/T1 intersections}: grade separation at all T1 arterial intersections eliminates the k=1 vulnerability identified in Track B \citep{ROUTE_B4}. A k=1 node has no alternate path; a single incident saturates the intersection and cascades into the adjacent corridor.
+  \item \textbf{Compound exposure hardening if D1 $> 6$ AND B1 $> 7$}: corridors scoring above threshold on both the climate exposure dimension (D1) and the structural fragility dimension (B1) receive targeted hardening: flood elevation, fire-resistant surface treatments, secondary drainage channels, and emergency access road improvements.
+\end{itemize}
+
+\subsection{Design Integration Across Components}
+
+A critical design principle is that I2.0 components are not modular additions --- they are designed to work together. The managed freight lane does not function at PTI 1.15 if it terminates at an at-grade intersection with arterial surface traffic. The diamond interchange does not deliver its full B/C without the managed lane directing freight flow through its geometry. The intermodal terminal does not attract investment without the certainty of PTI 1.15 on the approach corridor.
+
+Accordingly, I2.0 specifies an integration sequence:
+\begin{enumerate}
+  \item Managed lane design establishes the horizontal and vertical alignment.
+  \item Diamond interchange locations are sited at T1/T1 intersections, with managed lane termini integrated into the interchange geometry.
+  \item Intermodal terminal sites are selected within 2 miles of T1/T1 diamond locations, where the access road infrastructure is already funded by the interchange investment.
+  \item Transit hub facilities are sited at T1/T1 diamond locations, as specified in the F.1 transit layer paper.
+  \item EV charging is sited at T1 rest areas, which are coordinated with managed lane pull-off geometry.
+\end{enumerate}
+
+This integration sequence means the investment components produce complementary benefits, not additive ones. The total NPV of \$298 billion exceeds the sum of individual component NPVs because the interactions between components are positive.
+
+\subsection{The I-40 Exception}
+
+One T1 corridor does not receive managed freight lanes: I-40. I-40 is a T1 artery by freight intensity and national connectivity, but its demand profile differs from the other T1 corridors in a way that makes managed lane investment premature. On most I-40 segments between Barstow, CA and Oklahoma City, OK, the volume-to-capacity ratio is below 0.60 at current demand \citep{FHWA_HPMS2022}. Managed lanes on I-40 west of Albuquerque would operate below the minimum effective density for operational benefit. The Track C max-flow analysis confirms that I-40 is the relief valve corridor for the Donner closure scenario --- its value is in its availability, not in its daily throughput \citep{ROUTE_C2}. Accordingly, I-40 receives targeted investment in three areas: (1) compound exposure hardening on the segments with the highest D1 score (New Mexico and Arizona desert segments, which face flash flood and extreme heat risk), (2) intermodal terminal upgrades at Albuquerque and Amarillo, and (3) DCFC charging at all existing rest area locations.
+
+\subsection{Proposed New Corridors Meeting the T1 Threshold}
+
+The ROUTE rubric scores five proposed corridors above the T1 threshold of 26.0 (on the 15-dimension, 0--40 point scale):
+
+\begin{itemize}
+  \item \textbf{I-69} (Gulf Coast to Michigan via Indianapolis): 36.0 --- highest proposed corridor score; Gulf--Midwest freight importance and rural connectivity are the primary drivers \citep{ROUTE_B1}.
+  \item \textbf{I-31/US-287} (Amarillo TX to Montana): 35.5 --- military significance (B4), agricultural corridor connectivity (C3), and missing redundancy for I-25 and I-15 in the corridor's mid-section \citep{ROUTE_B1}.
+  \item \textbf{I-29S/US-83} (existing I-29 south extension to Texas Gulf): 33.0 --- high C3 (agricultural economy), high D1 (tornado corridor), and high freight intensity on existing US-83 segments \citep{ROUTE_B1}.
+  \item \textbf{I-92/US-2} (Great Northern: Seattle to Great Falls MT): 29.0 --- high C3 and rural connectivity; sole highway link for large segments of the northern tier \citep{ROUTE_B1}.
+  \item \textbf{I-70W/US-50} (Donner redundancy: Reno NV to Denver CO via US-50): 27.5, conditional on the Donner disruption scenario --- this corridor's value is primarily as a climate resilience hedge for the transcontinental trunk \citep{ROUTE_D2}.
+\end{itemize}

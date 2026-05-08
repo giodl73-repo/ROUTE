@@ -1,0 +1,78 @@
+\section{National Bottleneck Identification}
+\label{sec:bottleneck}
+
+\subsection{Methodology: Minimum Cut Identification}
+
+For each of the 28 directed O-D cluster pairs, the Edmonds-Karp algorithm produces both a max-flow value and a minimum cut: the set of edges whose combined capacity equals the max-flow and whose removal would disconnect the source cluster from the sink cluster. Edges that appear in the minimum cut for multiple O-D pairs are national bottlenecks in the strongest sense---they simultaneously bind multiple independent freight flows, and their removal degrades national throughput across a broad swath of origin-destination pairs.
+
+Three arcs appear in the minimum cut for four or more of the 28 cluster pairs: the I-95 Baltimore-Washington segment, the I-80 Donner Pass crossing, and the Dallas I-35/I-45 interchange complex. Together these three arcs constrain 71 percent of the national max-flow aggregate across all cluster pairs.
+
+\subsection{Arc 1: I-95 Baltimore-Washington}
+
+The I-95 Baltimore-Washington segment is the most severely constrained arc in the national network by the V/C metric. The facility carries 210,000 vpd on a six-lane (three lanes each direction) configuration between the Baltimore Beltway interchange and the Washington Capital Beltway. Design capacity for a 6-lane facility at PCE = 2.0 is:
+\begin{equation}
+  c_\text{design} = 3 \times 2{,}300 \times 24 \div 2.0 = 82{,}800 \text{ vpd per direction} = 165{,}600 \text{ vpd total}
+\end{equation}
+Observed volume of 210,000 vpd yields V/C = $210{,}000 / 165{,}600 = 1.27$ on a facility-wide basis; peak-hour directional V/C exceeds 2.1 in the peak direction during the morning and evening peaks \citep{HPMS2018}.
+
+This arc appears in the minimum cut for the Northeast-to-Southeast and Northeast-to-Midwest O-D pairs. It carries the concentrated output of the tri-state metropolitan area (New York, New Jersey, Pennsylvania) southbound and southwestbound, with no comparable interstate alternate. I-81 and I-77 provide parallel capacity west of the Appalachians but require 50 to 80 miles of additional travel for most Northeast originating freight, and their interchange with I-64 and I-40 creates secondary bottlenecks that partially offset the diversion benefit.
+
+The congestion cost on the Baltimore-Washington segment is estimated at \$1.4 billion per year \citep{ATRI_costs2024}, making it the most costly single arc in the national freight network by delay cost. The ATRI top-10 list consistently places the I-95 corridor in the Washington-Baltimore region among the highest-ranked locations.
+
+\subsection{Arc 2: I-80 Donner Pass}
+
+The I-80 Donner Pass crossing is a geographic chokepoint rather than a congestion bottleneck: it is not the most congested arc by V/C but is the binding constraint for the Northeast-to-Pacific cluster pair because no interstate-standard alternate exists through the central Sierra Nevada. I-80 carries 91,200 vpd at the Donner summit (Placer County, CA), which on a 4-lane facility (PCE = 2.5, mountainous terrain) yields an effective truck design capacity of approximately 44,160 truck vpd; including passenger vehicles, the all-vehicle design capacity is approximately 110,400 vpd at standard PCE = 2.0, giving an observed all-vehicle V/C of approximately 0.82 at peak season. However, the facility operates at or near physical closure conditions approximately 50 times per year due to winter weather \citep{ROUTE_C1}.
+
+The I-80 Donner crossing handles 38 percent of the Northeast-to-Pacific max-flow. I-40 handles 29 percent via the southern transcontinental route; I-90 handles 18 percent via the northern route; southern alternatives (I-10, I-20) account for the remaining 15 percent. This distribution means any closure of Donner creates a 38-percent capacity deficit in the NE-Pacific flow that cannot be fully absorbed by the other routes at their current capacities.
+
+The max-flow computation assigns the NE-to-Pacific cluster pair a baseline value of 320,000 vpd potential flow before Donner's capacity is the binding constraint; the effective realizable flow is 320,000 vpd only if Donner is unconstrained. The minimum cut through Donner plus any concurrent constraint on I-40 (which approaches capacity even at baseline) reduces realizable max-flow to the value computed in Section~\ref{sec:incident}.
+
+\subsection{Arc 3: Dallas I-35/I-45 Interchange Complex}
+
+The Dallas interchange complex, where I-35E and I-35W merge northbound and I-45 joins from the southeast, operates at sustained V/C of 1.9+ at peak periods \citep{HPMS2018,ATRI_costs2024}. This node is the only confluence point for Texas Gulf freight bound for the Midwest: I-35 is the sole T1-classified north-south spine through the central United States between the Mississippi River and the Rocky Mountains, and I-45 is the primary corridor from the Gulf Coast to the Dallas node. All Texas Gulf-to-Midwest flow that does not use the eastern detour through Memphis (adding 400 miles) must pass through this interchange.
+
+The interchange handles all of the Texas Gulf-to-Midwest cluster flow and appears in the minimum cut for that pair. It also appears in the minimum cut for Texas Gulf-to-Northeast flows routed through the Midwest transfer node. The effective capacity of the Dallas interchange complex is approximately 95,000 vpd in the northbound direction before the min-cut becomes the binding constraint.
+
+\subsection{Geographic Distribution and the Free-Flow Rural Segment Fallacy}
+
+Table~\ref{tab:top10arcs} presents the ten most constrained arcs nationally, ranked by the ratio $(c_\text{design} - v_\text{observed}) / c_\text{design}$, which is negative for over-capacity arcs and positive for under-utilized arcs. The three binding arcs all appear in the negative range.
+
+\begin{table}[ht]
+\centering
+\caption{Top 10 Nationally Constrained Arcs by V/C Ratio}
+\label{tab:top10arcs}
+\begin{tabular}{llrrr}
+\toprule
+Rank & Segment & Lanes & Observed vpd & V/C \\
+\midrule
+1 & I-95 Baltimore-Washington & 6 & 210,000 & 2.10+ \\
+2 & I-35/I-45 Dallas interchange & 8 & 280,000 & 1.90+ \\
+3 & I-405 Los Angeles (I-105 to I-10) & 10 & 374,000 & 1.87 \\
+4 & I-285 Atlanta (I-85 to I-75) & 8 & 255,000 & 1.59 \\
+5 & I-90/I-94 Chicago (I-290 to I-55) & 8 & 251,000 & 1.57 \\
+6 & I-80 Bay Area (Bay Bridge approach) & 6 & 190,000 & 1.44 \\
+7 & I-10 Houston (I-610 to I-45) & 12 & 341,000 & 1.42 \\
+8 & I-75 Atlanta (I-285 to I-675) & 6 & 178,000 & 1.35 \\
+9 & I-95 Baltimore-Washington (Balt. end) & 6 & 210,000 & 1.27 \\
+10 & I-80 Donner Pass (Placer County, CA) & 4 & 91,200 & 0.82 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The geographic concentration of bottlenecks in three distinct categories---coastal urban corridors, mountain pass crossings, and metropolitan interchange nodes---reflects the structural properties of the interstate network as a radial system designed for peacetime average demand rather than worst-case throughput. Coastal urban corridors (I-95 Baltimore, I-405 Los Angeles) carry high volumes because population and port activity concentrate at the coasts. Metropolitan interchange nodes (Dallas, Atlanta, Chicago) concentrate because those cities were the design targets of the original Eisenhower network.
+
+The mountain pass crossings present a distinct failure mode that V/C ratios alone do not reveal. I-80 through Wyoming and Nevada operates at V/C of 0.3 to 0.5 across hundreds of miles of rural freeway---apparently unconstrained by any standard capacity metric. Yet those rural segments are irrelevant to the max-flow computation: the binding constraint is Donner Pass at the western end of that corridor, and no amount of additional Wyoming freeway capacity can increase the flow that can reach the Pacific Coast. This is the free-flow rural segment fallacy: the utilization of upstream or downstream segments on a constrained corridor is not informative about system-level throughput. Flow through a network is determined by the minimum cut, not by average arc utilization. The practical implication is that investment on rural I-80 segments west of Cheyenne would produce zero gain in NE-Pacific max-flow; only widening Donner or building an alternate sierra crossing would expand that minimum cut.
+
+\subsection{National Max-Flow Summary}
+
+The national max-flow values by cluster pair, at baseline with all arcs present, are:
+\begin{itemize}
+  \item Northeast $\to$ Pacific Coast: 320,000 vpd (binding: Donner Pass)
+  \item Northeast $\to$ Southeast: 180,000 vpd (binding: I-95 Baltimore)
+  \item Texas Gulf $\to$ Midwest: 95,000 vpd (binding: Dallas interchange)
+  \item Texas Gulf $\to$ Northeast: 140,000 vpd (binding: Dallas interchange + I-95 Baltimore compound cut)
+  \item Southeast $\to$ Midwest: 210,000 vpd (binding: I-65/I-75 Louisville interchange)
+  \item Pacific Coast $\to$ Midwest: 175,000 vpd (binding: Donner Pass + I-80 Wyoming compound)
+\end{itemize}
+
+The national aggregate maximum capacity of 4.8 million commercial vehicles per day \citep{FHWA_freight2023} is the sum of directional max-flows across all cluster pairs weighted by the FAF5 demand matrix. The 7.2 million vehicles per day target for 2050 requires a 50 percent increase, achievable only through managed-lane additions on the binding arcs and completion of missing interstate links that bypass current bottlenecks.

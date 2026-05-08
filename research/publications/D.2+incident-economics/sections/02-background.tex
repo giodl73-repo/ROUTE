@@ -1,0 +1,87 @@
+\section{Background}
+
+\subsection{Closure Cost Literature}
+
+The economic impact of highway incidents has been studied primarily in the context of urban
+traffic management, where incident clearance time on a congested freeway creates a queue
+that imposes delay costs on following vehicles. \citet{Chin2004} developed an incident
+cost estimation framework for FHWA that computed the secondary delay cost of incidents
+on urban freeways as a function of incident severity, clearance time, and ambient V/C.
+\citet{Taylor2006} extended this framework to rural freeways, finding that rural incidents
+impose higher per-vehicle delay costs on average because traffic is more thinly spread
+across fewer alternates. Neither framework addresses the case of complete corridor closure
+with multi-hour duration and mandatory rerouting --- the dominant cost mechanism for
+weather-driven mountain pass closures.
+
+FHWA's incident cost estimation guide \citep{FHWA_incident2022} provides a national
+incident database covering reported closures of 2+ hours on interstate routes. This
+database is the primary data source for closure frequency in the current analysis. A
+key limitation: the FHWA database undercounts rural incidents relative to urban incidents
+by an estimated 30--40\%, because rural state DOTs have fewer automated incident detection
+systems and lower reporting compliance for short-duration events. Our Donner cost estimate
+is therefore conservative: actual closure frequency likely exceeds the 50 events/year
+Caltrans figure when minor closures (30--90 minutes) are included.
+
+\subsection{ATRI Cost Model}
+
+The American Transportation Research Institute's operational cost model \citep{ATRI_costs2024}
+provides the truck cost per hour used in this analysis. The 2024 figure is \$225 per
+truck-hour for a fully loaded Class 8 truck, comprising:
+
+\begin{itemize}
+\item Driver wages and benefits: approximately \$0.67 per mile, annualized to \$73/hr at
+55 mph average speed
+\item Fuel: approximately \$0.52 per mile (diesel at \$3.90/gal, 7.5 mpg) = \$28.60/hr
+\item Truck depreciation and finance: approximately \$0.18/mi = \$9.90/hr
+\item Insurance: approximately \$0.12/mi = \$6.60/hr
+\item Maintenance: approximately \$0.14/mi = \$7.70/hr
+\item Schedule disruption premium: approximately \$100/hr for loads subject to just-in-time
+delivery constraints or shipper detention fees
+\end{itemize}
+
+The \$225/hr figure is appropriate for T1 freight corridors where JIT scheduling is common.
+For lower-tier corridors with bulk commodity freight (grain, coal, lumber), the relevant
+figure is closer to \$150/hr, which omits the schedule disruption premium. We apply
+\$225/hr uniformly in this analysis, with the conservative note that bulk-commodity
+dominant corridors may have lower effective per-hour costs.
+
+\subsection{Rerouting Penalty}
+
+When a corridor closes, freight trucks must choose between waiting at the closure point
+or rerouting via an alternate. The rerouting decision depends on expected closure duration.
+For short closures ($<$2 hours), waiting is typically preferred. For long closures ($>$4
+hours on a mountain pass), rerouting via a multi-hundred-mile alternate is preferred.
+The rerouting cost is:
+
+\begin{equation}
+C_\text{reroute} = \$225/\text{hr} \times \frac{\text{detour miles}}{\text{avg speed
+(mph)}} + C_\text{detention}
+\end{equation}
+
+where $C_\text{detention}$ is any appointment-related delay cost incurred at the
+destination. For Donner (550-mile I-40 detour, average speed 60 mph including fuel
+stops): rerouting cost = \$225 $\times$ 9.17 hr = \$2,063 per truck + detention.
+
+\subsection{Waiting Penalty and JIT Supply Chains}
+
+The alternative to rerouting --- waiting at the closure --- also imposes cost. At \$225/hr,
+a truck waiting 18 hours at a Donner closure incurs \$4,050 in waiting cost plus driver
+rest requirements. For JIT loads (perishables, automotive parts, retail distribution),
+the delay may trigger shipper detention fees, missed unloading windows, or in extreme
+cases (fresh produce), cargo spoilage.
+
+\citet{Chin2004} estimated a ``waiting multiplier'' of 1.4--1.8 for JIT-sensitive loads:
+the true economic cost of a waiting truck exceeds the ATRI truck-hour figure by 40--80\%
+once shipper-side costs are included. We apply a waiting multiplier of 1.3 uniformly (conservative) in the closure cost model.
+
+\subsection{V/C Ratio vs. Closure Cost: Low Correlation}
+
+A preliminary analysis of V/C and annual closure cost across the ROUTE corpus reveals
+a Pearson correlation coefficient of $r = 0.31$ (95\% CI: 0.18--0.43). This low correlation
+confirms the intuition that the two metrics measure different phenomena. V/C measures
+throughput stress on an operating corridor. Closure cost measures disruption cost when
+the corridor ceases to operate. The most costly closures occur on corridors that are
+\textit{not} congested under normal operations --- mountain passes, rural gulf coast
+routes --- because these corridors have high isolation (B1) and high freight volume
+relative to capacity, but low peak V/C because they operate below capacity except in
+the rare events that close them entirely.

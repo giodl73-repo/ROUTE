@@ -1,0 +1,21 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,graphicx,hyperref,natbib,amsmath}
+\title{National Max-Flow: Capacity and Bottleneck Analysis of the Interstate Network}
+\author{Gio Della-Libera}
+\date{May 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We compute national freight max-flow on the US interstate network using the Edmonds-Karp algorithm applied to the ROUTE directed graph of 227 corridors (approximately 48,000 directed edges). The national graph reveals three binding bottleneck arcs: the I-95 Baltimore-Washington segment (210,000 vpd on 6-lane facility; V/C 2.1+), the I-80 Donner Pass crossing (91,200 vpd maximum; V/C 0.82 at peak), and the Dallas interchange complex (I-35/I-45 merge; V/C 1.9+). Incident simulation of a multi-day Donner Pass closure reduces Northeast-to-Pacific max-flow throughput by 23\%, shifting load to I-40 which approaches saturation (V/C 0.84). I-69 completion increases Gulf-to-Midwest max-flow by 18\%. The current network maximum capacity of 4.8 million commercial vehicles per day must reach 7.2 million to meet 2050 freight demand; this 50\% increase is achievable through managed lanes on 7 T1 corridors combined with I-69 and I-70W completion.
+\end{abstract}
+\input{sections/01-introduction}
+\input{sections/02-background}
+\input{sections/03-methods}
+\input{sections/04-bottleneck-analysis}
+\input{sections/05-incident-simulation}
+\input{sections/06-missing-links}
+\input{sections/07-conclusion}
+\bibliographystyle{apalike}
+\bibliography{../../references}
+\end{document}

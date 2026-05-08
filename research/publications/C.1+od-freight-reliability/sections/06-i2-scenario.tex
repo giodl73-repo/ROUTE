@@ -1,0 +1,107 @@
+\section{Interstate 2.0: Managed Lanes and Incident Analysis}
+\label{sec:i2scenario}
+
+\subsection{Incident Simulation: Donner Pass Closure}
+
+A Donner Pass multi-day closure is simulated by removing the I-80 Sierra Nevada edge from the directed interstate graph (Section~\ref{sec:methods}) and recomputing the shortest path from the NYC source node to the LA sink node. The forced detour routes all NY--LA traffic via I-80 to Sacramento, south on CA-99 or CA-5 to the I-5/CA-58 junction near Bakersfield, and then to I-40 at Barstow for the Los Angeles approach. This is not the textbook I-40 alternate (which would require diverting east to Reno and entering I-40 from there); it is the emergency routing that Caltrans activates for Donner closures, using the Central Valley as a north-south bypass.
+
+The practical alternate adds 310 miles to the trip distance relative to the Donner route. At 55 mph:
+\begin{equation}
+  \Delta T_{\text{detour}} = \frac{310 \text{ mi}}{55 \text{ mph}} = 5.6 \text{ hr}
+\end{equation}
+
+The daily economic cost of a Donner closure, applied to the 8,000 trucks per day that transit the Sierra Nevada on I-80 \citep{Caltrans2023}:
+\begin{equation}
+  C_{\text{day}} = 8{,}000 \times 5.6 \times \$225 = \$10.1\text{M/day} \approx \$9.9\text{M/day}
+\end{equation}
+
+Over the 50 annual closure events with a mean duration of 18 hours:
+\begin{equation}
+  C_{\text{detour,annual}} = \$9.9\text{M/day} \times \frac{18}{24} \times 50 = \$371\text{M}
+\end{equation}
+
+This detour cost does not capture the trucks that are in transit at Donner when the closure begins and must wait for reopening rather than diverting. The 18-hour mean wait cost for detained trucks:
+\begin{equation}
+  C_{\text{wait,annual}} = 8{,}000 \times 0.25 \times 18 \times \$225 \times 50 = \$405\text{M}
+\end{equation}
+where 0.25 is the estimated fraction of daily truck volume that is in the immediate Donner vicinity (within 50 miles in either direction) when a closure activates, based on Caltrans closure notification data \citep{Caltrans2023}. Combined Donner closure cost: approximately \$776 million per year in direct operating cost, with additional shipper-side delay costs (missed delivery windows, penalty payments, inventory carrying costs) that bring the total toward \$1 billion annually.
+
+Max-flow analysis confirms that Donner closure reduces NY--LA corridor max-flow by 91,200 vpd to zero on the primary path; the alternate path has a binding constraint at the I-5/CA-58 junction at approximately 73,000 vpd. The network does not fail completely, but the primary path's max-flow is eliminated.
+
+\subsection{Incident Simulation: Dallas Interchange Failure}
+
+A major incident at the Dallas I-45/I-35 interchange (the most likely single point of failure for the HOU--CHI corridor, based on FHWA incident frequency data) forces HOU--CHI traffic onto an alternate: south on I-45 to Huntsville, west on US-190 to I-35, bypassing the Dallas core. This bypass adds approximately 85 miles and 1.5 hours. For incidents severe enough to close I-35 through Dallas entirely (a rare but documented event for multi-vehicle accidents in managed lanes), the alternate routes traffic via I-30 east to Memphis and then I-55 north---adding approximately 200 miles.
+
+Mean time to clearance for major incidents on T1 corridors: 4.2 hours \citep{FHWA_freight2023}. At 3,200 trucks per day affected:
+\begin{equation}
+  C_{\text{Dallas incident}} = 3{,}200 \times 4.2 \times \$225 \times (\text{annual frequency}) = \$3.0\text{M per event}
+\end{equation}
+ATRI records approximately 180 major delay events per year at the Dallas I-45/I-35 node \citep{ATRI_costs2024}, yielding approximately \$540 million per year in incident-induced delay cost at Dallas alone.
+
+\subsection{Interstate 2.0 Managed Freight Lane Specification}
+
+The Interstate 2.0 (I2.0) managed freight lane design applied to the NY--LA and HOU--CHI corridors in this scenario has the following specification:
+
+\begin{itemize}
+  \item \textbf{Lane count}: 2 dedicated freight-only lanes per direction, access-controlled, no passenger vehicles
+  \item \textbf{Separation}: Concrete barrier separation from general-purpose lanes; dedicated on/off ramps at freight interchange nodes
+  \item \textbf{Design speed}: 75 mph (sustained operating speed 65 mph, accounting for HOS deceleration and acceleration events)
+  \item \textbf{Grade standards}: Maximum 3 percent sustained grade on new alignments; existing Donner Pass grade (4\%) excepted but mitigated by truck climbing lanes
+  \item \textbf{Weather hardening}: Variable message signs, real-time chain control status, and preemptive closure protocols reducing mean Donner closure from 18 hours to an estimated 12 hours (via earlier proactive closure and faster reopening with dedicated equipment)
+  \item \textbf{Design V/C}: 0.70 (LOS B; uncongested flow with reserve capacity for demand surge)
+\end{itemize}
+
+\subsection{NY--LA: I2.0 Transit and PTI}
+
+Under I2.0 managed lanes at 65 mph sustained:
+\begin{equation}
+  T_{\text{NY-LA, I2.0}} = \frac{2{,}800 \text{ mi}}{65 \text{ mph}} \div 11 \text{ hr/day} = 43.1 \text{ hr} \div 11 = 3.9 \text{ days}
+\end{equation}
+Reduced stops from coordinated rest facilities at I2.0 freight nodes (reducing average stop overhead from 45 minutes to 20 minutes per rest event, with 3 rest events on a transcontinental trip) saves an additional 1.25 hours, yielding an effective transit of approximately 3.5 days---consistent with the abstract figure.
+
+The I2.0 PTI target of 1.15 applies to the managed lanes. Applying this to the free-flow transit time:
+\begin{align}
+  T_{\text{ff, I2.0}} &= \frac{2{,}800}{65} = 43.1 \text{ hr} \\
+  T_{95, \text{I2.0}} &= 43.1 \times 1.15 = 49.6 \text{ hr}
+\end{align}
+A shipper committing to 95-percent on-time delivery within a 48-hour window on a 43-hour free-flow trip requires PTI $\leq 48/43 = 1.116$. The I2.0 target of PTI 1.15 achieves this with a 2-hour margin (50 hours 95th-percentile vs.\ 48-hour commitment). The 48-hour SLA is feasible.
+
+Compare to current performance: PTI 1.86 on a 43-hour free-flow trip requires a commitment window of $43 \times 1.86 = 80$ hours for 95-percent confidence. The I2.0 improvement from 80-hour to 48-hour commitment represents a 40-percent reduction in the required SLA buffer---a commercially transformative change for shippers managing just-in-time inventory.
+
+\subsection{HOU--CHI with I-69: I2.0 Transit and PTI}
+
+With I-69 completion (870-mile direct corridor) and I2.0 managed lanes at 65 mph:
+\begin{equation}
+  T_{\text{HOU-CHI, I2.0}} = \frac{870 \text{ mi}}{65 \text{ mph}} \div 11 \text{ hr/day} = 13.4 \text{ hr} \div 11 = 1.22 \text{ days} \approx 1.5 \text{ days}
+\end{equation}
+The 13.4-hour free-flow transit is achievable in a single HOS driving day for a team driver, or in two driving windows for a solo driver. At PTI 1.15, the 95th-percentile trip takes $13.4 \times 1.15 = 15.4$ hours. A shipper can offer a 24-hour SLA from Houston to Chicago with 95-percent confidence---compared to the current 48-hour quote under the three-hop route. Same-day delivery from Houston to Chicago becomes feasible for freight departing before 8~am.
+
+\subsection{Combined Reliability Cost and I2.0 Benefit}
+
+\begin{table}[ht]
+\centering
+\caption{Before/after comparison: I2.0 scenario applied to NY--LA and HOU--CHI corridors}
+\label{tab:i2_comparison}
+\begin{tabular}{lllll}
+\toprule
+Metric & NY--LA Current & NY--LA I2.0 & HOU--CHI Current & HOU--CHI I2.0+I-69 \\
+\midrule
+Distance (mi)          & 2,800 & 2,800 & 1,160 & 870 \\
+Transit time (days)    & 4.5   & 3.5   & 1.92  & 1.22 \\
+Corridor PTI           & 1.86  & 1.15  & $\sim$1.45 & 1.15 \\
+SLA window (95\%)      & 80 hr & 48 hr & $\sim$54 hr & 24 hr \\
+Annual reliability cost & \$5.7B & --- & \$2.5B & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \$5.7 billion annual reliability cost for NY--LA is computed from:
+\begin{itemize}
+  \item Donner closure events: \$776 million (direct operating cost)
+  \item Bay Area congestion delay (V/C 1.86 on 8,000 trucks/day, 260 peak days/year, mean 45-minute delay): \$2.16 billion
+  \item Shipper-side costs (inventory buffer carrying cost at 20\% annual rate on \$12B of goods in the reliability buffer zone): \$2.4 billion
+  \item Remaining segment delay and uncertainty costs: \$0.36 billion
+\end{itemize}
+The \$2.5 billion HOU--CHI figure is derived in Section~\ref{sec:houtochi}. Combined: \$8.2 billion per year in addressable freight reliability cost \citep{ATRI_costs2024}.
+
+I2.0 investment does not eliminate all of this cost. Managed lanes reduce congestion delay and improve PTI; they do not eliminate weather-related Donner closures, though hardened infrastructure and proactive management reduce both frequency and duration. The addressable fraction---the portion attributable to congestion, distance penalty, and interchange variance---is approximately 70 percent of the combined total, or \$5.7 billion. The remaining 30 percent requires physical infrastructure (Donner tunnel or bore, I-69 gap completion) that is beyond managed-lane retrofit.

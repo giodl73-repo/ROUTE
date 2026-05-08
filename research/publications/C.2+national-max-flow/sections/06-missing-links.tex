@@ -1,0 +1,87 @@
+\section{Missing Link Capacity Analysis}
+\label{sec:missing}
+
+Three missing interstate links are analyzed by adding proposed edges to $G$ and recomputing max-flow. The links are I-69 (Gulf Coast to Midwest), I-70 West (Utah to California), and the I-31/US-287 corridor (Texas Panhandle to Montana). For each link, we report the baseline max-flow gain, the incident-scenario resilience gain, a construction cost estimate, and an NPV assessment at both the 7 percent Office of Management and Budget (OMB) discount rate and the 5 percent social discount rate recommended in recent infrastructure literature \citep{IIJA2021}.
+
+\subsection{I-69: Texarkana to Indianapolis to Chicago}
+
+\paragraph{Corridor description.} I-69 is a designated but partially complete interstate spanning from Port Huron, Michigan to the Texas-Mexico border. The missing segments of most freight relevance---totaling approximately 400 miles---lie between Texarkana, AR/TX and Indianapolis, IN. These segments, when completed, would create a continuous T1 freight corridor from the Texas Gulf cluster to the Midwest cluster via a direct northeastern alignment, bypassing the Dallas interchange complex that currently binds all Texas Gulf-to-Midwest flow.
+
+\paragraph{Proposed edge parameters.} The missing I-69 segments are assigned an estimated design capacity based on a planned 4-lane (2 lanes each direction) interstate standard:
+\begin{equation}
+  c_\text{I-69} = 2 \times 2{,}300 \text{ pcphpl} \times 24 \text{ hr} \div 2.0 = 55{,}200 \text{ vpd}
+\end{equation}
+Terrain is flat to rolling (Arkansas, Tennessee, southwestern Indiana), so PCE = 2.0 is appropriate. The alignment follows the US-59/US-69 corridor with modest geometric improvements to meet interstate standards.
+
+\paragraph{Max-flow results.} Adding the I-69 edge to $G$:
+\begin{itemize}
+  \item Texas Gulf $\to$ Chicago max-flow before: 95,000 vpd (Dallas interchange binding)
+  \item Texas Gulf $\to$ Chicago max-flow after: \textbf{112,000 vpd} (+18 percent)
+  \item Mechanism: I-69 creates a direct path from the Texas Gulf cluster to Chicago that does not pass through the Dallas I-35/I-45 interchange; the minimum cut relocates from Dallas to the merged I-69/I-65 node near Indianapolis, which has substantially more capacity
+  \item Dallas interchange V/C: drops from 1.9+ to approximately 1.4 as I-69 routes a portion of the Gulf-Midwest flow away from the Dallas node
+\end{itemize}
+
+\paragraph{C.1 alignment.} The I-69 finding is consistent with the HOU-CHI corridor analysis in C.1 \citep{ROUTE_C1}, which found that I-69 completion reduces the HOU-CHI route distance by approximately 290 miles relative to the current three-corridor hop (I-45 to Dallas, I-35 to St.\ Louis, I-55 to Chicago). The national max-flow analysis confirms that this distance reduction also eliminates the two highest-variance interchange nodes (Dallas and St.\ Louis) from the minimum cut, which is the primary mechanism for the 18 percent max-flow gain. Distance reduction alone would not justify I-69 completion at this cost; it is the bypass of the binding constraint that produces the network-level return.
+
+The 18 percent max-flow gain also enables the PTI improvement analyzed in C.1: by removing Dallas and St.\ Louis from the I-69 routing, the PTI for HOU-CHI drops from 1.8--2.2 to approximately 1.35, which reduces the shipper commitment window from 80--100 hours to approximately 48 hours---the threshold at which a managed-lane SLA becomes commercially viable \citep{ROUTE_C1}.
+
+\paragraph{NPV analysis.} The construction cost estimate for the missing I-69 segments (approximately 400 miles through Arkansas, Tennessee, and Indiana) is approximately \$22 billion at a unit cost of \$55 million per mile (rural interstate new construction, 2025 dollars, inclusive of right-of-way). Benefits are computed from the 18 percent max-flow gain valued at ATRI truck costs:
+\begin{itemize}
+  \item Capacity gain: 17,000 additional vpd $\times$ 0.20 truck fraction $\times$ 1{,}000 miles $\times$ \$225/hr $\times$ 1 hr/70 mph $\approx$ \$110M/yr direct operating cost reduction
+  \item Reliability gain: Dallas V/C drops from 1.9 to 1.4; ATRI-estimated delay cost reduction at Dallas node: approximately \$480M/yr \citep{ATRI_costs2024}
+  \item Total annual benefit: approximately \$590M/yr
+  \item 30-year present value at 7\% discount: $\$590\text{M} \times 12.4 = \$7.3\text{B}$; NPV = \$7.3B $-$ \$22B = $-$\$14.7B (negative at 7\%)
+  \item 30-year present value at 5\% social discount: $\$590\text{M} \times 15.4 = \$9.1\text{B}$; NPV = \$9.1B $-$ \$22B = $-$\$12.9B (negative at 5\%)
+  \item Including freight growth at 1.8\%/yr: benefits compound to \$18B present value at 5\%; NPV approaches zero
+\end{itemize}
+NPV is negative at standard discount rates but approaches zero when freight growth is included and is positive under optimistic freight growth assumptions (2.5\%/yr) or if induced demand from the new corridor is credited. The corridor is not a slam-dunk NPV case, but it is the highest-impact missing link by max-flow analysis and its NPV is close enough to zero that resilience co-benefits (incident avoidance, military mobility per B.4 scoring \citep{IIJA2021}) are likely to tip the decision.
+
+\subsection{I-70 West: Cove Fort, UT to Sacramento, CA}
+
+\paragraph{Corridor description.} I-70 currently terminates at Cove Fort, UT, 170 miles south of Salt Lake City on I-15. No interstate highway crosses the Great Basin between I-80 (northern, via Elko NV) and I-40 (southern, via Barstow CA) --- a gap of approximately 500 miles in latitude. US-50 (``America's Loneliest Highway'') follows a US-50/Alt-50 alignment across Nevada that could support interstate standards with improvements. The proposed I-70W alignment runs approximately 700 miles from Cove Fort through Nevada to Sacramento or the Bay Area, providing an interstate-standard Sierra Nevada crossing via Donner's latitude without routing through Donner itself (the most plausible alignment crosses via Tioga Pass or a more northerly option, though precise alignment is a design decision outside this paper's scope).
+
+\paragraph{Proposed edge parameters.} Two design options are evaluated:
+\begin{itemize}
+  \item 2-lane option: capacity 27,600 vpd (minimal viable interstate)
+  \item 4-lane option: capacity 55,200 vpd
+\end{itemize}
+Terrain is high desert with mountain crossings; PCE = 2.0 applied to the desert sections, PCE = 2.5 to the Sierra Nevada crossing.
+
+\paragraph{Baseline max-flow gain.} Adding the 4-lane I-70W edge to $G$:
+\begin{itemize}
+  \item NE $\to$ Pacific max-flow before: 320,000 vpd (Donner binding)
+  \item NE $\to$ Pacific max-flow after: \textbf{335,000 vpd} (+4.7 percent)
+  \item The minimum cut moves from Donner alone to a combined cut: Donner + I-70W + I-90 Wyoming compound
+\end{itemize}
+The baseline gain of 4.7 percent is modest. I-70W at 4-lane capacity adds 55,200 vpd to the NE-Pacific corridor, but the minimum cut across the Sierra Nevada (Donner + I-70W combined) becomes 91,200 + 55,200 = 146,400 vpd, shifting the binding constraint westward to the Bay Area approach on I-80 (V/C 1.44 at baseline).
+
+\paragraph{Resilience gain under Donner closure.} I-70W's primary value is as a resilience asset. Under the Donner closure scenario from Section~\ref{sec:incident}:
+\begin{itemize}
+  \item Without I-70W: NE-Pacific max-flow drops from 320,000 to 246,000 vpd ($-$23\%); I-40 reaches V/C 0.84
+  \item With I-70W (4-lane): the Donner closure no longer removes 38\% of NE-Pacific capacity; I-70W absorbs 48,000 vpd of the diverted flow
+  \item NE-Pacific max-flow under Donner closure with I-70W: 292,000 vpd (only $-$9\% from baseline, vs. $-$23\% without I-70W)
+  \item I-40 V/C under compound scenario: 0.61 (vs. 0.84 without I-70W); no longer approaching saturation
+\end{itemize}
+I-70W reduces the Donner closure throughput loss from 23 percent to 9 percent and prevents the I-40 cascade that creates a compound failure risk. This is a quantified resilience benefit, not a soft claim.
+
+\paragraph{NPV analysis.} Construction cost estimate: \$21 billion (700 miles $\times$ \$30 million per mile for desert and mountain interstate, new construction). Annual resilience value:
+\begin{itemize}
+  \item Avoided Donner throughput loss: 74,000 vpd $\times$ 0.17 truck fraction $\times$ 50 events/yr $\times$ 18 hr mean duration $\times$ \$225/hr = \$2.5B/yr (see Section~\ref{sec:incident})
+  \item But I-70W does not eliminate all Donner losses (some flow still prefers I-40 at baseline); attributed resilience benefit: approximately \$1.8B/yr
+  \item 30-year PV at 5\%: \$1.8B $\times$ 15.4 = \$27.7B; NPV = \$27.7B $-$ \$21B = \textbf{+\$6.7B}
+\end{itemize}
+I-70W is NPV-positive at the 5 percent social discount rate when resilience benefits are credited. It is marginal at 7 percent. This result is sensitive to Donner closure frequency and duration; if climate change increases Sierra Nevada severe weather events (analyzed in the D-track), the resilience value grows.
+
+\subsection{I-31/US-287: Amarillo to Billings}
+
+\paragraph{Corridor description.} The US-287 corridor from Amarillo, TX through Lubbock, Amarillo, Raton Pass (NM), Pueblo (CO), Denver (CO), Cheyenne (WY), and Casper (WY) to Billings, MT represents the only plausible alignment for a T1 north-south corridor through the Central Plains west of the Mississippi. No classified T1 interstate exists in this corridor. I-25 serves Denver to Cheyenne; US-287 serves the segments south of Amarillo and north of Cheyenne. A continuous designation as I-31 would close a 1,200-mile gap in the T1 backbone.
+
+\paragraph{Max-flow results.}
+\begin{itemize}
+  \item Texas Gulf $\to$ Northern Plains (Billings/Casper cluster) max-flow gain: +8 percent
+  \item Primary mechanism: direct routing reduces reliance on the I-35/I-70 eastern detour for Montana-Texas flows
+\end{itemize}
+
+\paragraph{Military and resilience value.} I-31's primary score in the ROUTE rubric is not freight throughput but military mobility: the corridor passes through or near F.E.\ Warren Air Force Base (Cheyenne, WY), the ICBM command center for the Minuteman III force \citep{IIJA2021}. The B.4 scoring \citep{ROUTE_A1} assigns this corridor a military score of 10.0---the highest in the corpus---and a B1 resilience score of 10.0 (no current T1 in Central Plains). The freight max-flow gain of 8 percent is secondary to these strategic values.
+
+NPV analysis for I-31 is deferred to the B.4 and strategic-mobility analysis; freight NPV alone at 8 percent gain does not justify the estimated \$35 billion construction cost (1,200 miles through mixed terrain at \$29 million per mile).

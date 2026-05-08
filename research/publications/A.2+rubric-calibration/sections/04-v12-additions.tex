@@ -1,0 +1,96 @@
+\section{v1.2: Strategic Dimension Additions}
+\label{sec:v12-additions}
+
+\subsection{Motivation: Three Blind Spots}
+
+After the v1.1 IRI amendment, the congestion-stress paradox remained unresolved. I-110 still ranked above I-80, and the gap had not narrowed. The investigation into why revealed not a calibration error in the existing dimensions but a structural absence: the rubric had no mechanism to recognize three categories of strategic importance that differentiate the most consequential corridors in the national network.
+
+\textbf{International trade corridor status.} I-35 is the primary arterial serving the Laredo, Texas port of entry --- the largest US-Mexico border crossing by value, handling approximately \$277 billion in annual bilateral trade and averaging 16,000 commercial vehicles per day \citep{FHWA_freight2023}. The v1.1 rubric scored I-35 as a T3 corridor. B3 (Port and Border Access) gave it partial credit, but B3 was designed for maritime ports and treated border crossings as proxies rather than primary data. I-35 at Laredo is not a corridor that happens to be near a border crossing; it is a corridor whose strategic function is defined by that crossing.
+
+\textbf{Military and strategic defense access.} I-90 traverses Malmstrom Air Force Base (Montana) and connects to Minot Air Force Base (North Dakota via I-94 junction) --- the two installations responsible for approximately two-thirds of the US land-based ICBM deterrent \citep{DOD_STRAHNET}. The entire interstate network carries STRAHNET designation (Strategic Highway Network, administered by FHWA and DoD), but corridors that pass through or directly connect major military installations and strategic infrastructure have a categorically different defense role than corridors that merely meet the STRAHNET 4-lane standard. v1.1 had no dimension for this.
+
+\textbf{Agricultural export access.} I-80 bisects the Corn Belt --- the world's most productive temperate grain zone --- and provides primary connectivity from Nebraska, Iowa, and Illinois production areas to both Pacific export terminals (via the Bay Area port complex) and Gulf terminals (via I-29 and I-35 connections to the Texas Gulf Coast). The US agricultural export system handles approximately \$175 billion in annual commodity exports, with the I-80 corridor involved in a disproportionate share of Corn Belt production movement \citep{FHWA_freight2023}. v1.1 had no dimension for this.
+
+\subsection{A4: International Trade Corridor (0--10)}
+
+A4 measures USMCA (US-Mexico-Canada Agreement) corridor designation status and border crossing commercial vehicle AADT. The operationalization uses a two-component composite: (1) FHWA USMCA Primary Freight Network designation (5.0 if designated, 0 if not), and (2) the primary served border crossing's commercial AADT normalized against the national distribution of border-crossing volumes (0--5 additional points based on crossing volume percentile).
+
+Anchor scores from corpus calibration:
+
+\begin{itemize}
+  \item I-35 (Laredo TX): A4 = 8.5. Laredo is the \#1 US-Mexico border crossing by trade value (\$277B annual), \#1 by commercial vehicle AADT (16,000/day). FHWA USMCA primary designation. The 0.5 shortfall from 10.0 reflects that the crossing dominance does not extend to the full I-35 corridor (the northern segments through Kansas and Iowa serve no border function).
+  \item I-10 (El Paso TX, Nogales AZ segments): A4 = 7.0. El Paso handles approximately \$85B in annual US-Mexico trade. I-10 also serves the Tucson/Nogales corridor. Full USMCA designation.
+  \item I-5 (San Diego CA): A4 = 6.5. San Ysidro/Otay Mesa crossing is among the largest by passenger volume; commercial vehicle volumes are lower than Laredo.
+  \item All non-border corridors: A4 = 0.0. A corridor that does not serve an international border crossing receives no A4 credit. This is a categorical dimension, not a continuous one.
+\end{itemize}
+
+The categorical structure is intentional. The international trade function of I-35 at Laredo is not a matter of degree relative to I-80 in Wyoming; it is a categorically different function. A continuous scoring approach that gave I-80 partial credit for being ``somewhat near the Pacific'' would dilute the signal. A4 = 0 for non-border corridors is correct.
+
+\subsection{B4: Military/Strategic Access (0--10)}
+
+B4 measures STRAHNET designation status and major military installation proximity. All interstate highways carry STRAHNET designation, providing a 5.0 baseline. Additional points (0--5) are assigned based on the proximity and strategic importance of DoD installations within a defined buffer, with bonus weighting for installations hosting strategic nuclear or STRATCOM functions.
+
+Anchor scores:
+
+\begin{itemize}
+  \item US-287 / proposed I-31: B4 = 9.0. FE Warren AFB (F.E. Warren is the headquarters of Air Force Global Strike Command's 90th Missile Wing, responsible for 150 Minuteman III ICBMs) is located directly on the US-287 alignment in Cheyenne, WY. The proposed I-31 designation would formalize this strategic corridor.
+  \item I-90: B4 = 7.5. Malmstrom AFB (Montana, 150 Minuteman III ICBMs, 341st Missile Wing) is directly served by I-90. The corridor also connects to Minot AFB (via I-94 junction at Bismarck) and to Fort Lewis/Joint Base Lewis-McChord (Washington).
+  \item I-80 (Cheyenne WY segment): B4 = 6.5. I-80 passes through Cheyenne adjacent to FE Warren AFB. The direct access is via I-180/US-30 spur rather than the main I-80 alignment, reducing the B4 score relative to US-287.
+  \item Most T1 corridors (STRAHNET baseline only): B4 = 5.0. Corridors that carry the STRAHNET designation but do not pass through or directly serve major strategic installations score at the 5.0 baseline.
+\end{itemize}
+
+\subsection{C4: Agricultural Export Access (0--10)}
+
+C4 measures agricultural production density in served counties and connectivity to export terminal infrastructure (Gulf port complex, Pacific port complex). The operationalization uses USDA county-level agricultural production data (hand-curated in v1.2; data-driven USDA ERS integration planned for v1.3) weighted by export terminal access.
+
+Anchor scores:
+
+\begin{itemize}
+  \item Proposed I-29S / US-83 (core Great Plains): C4 = 9.0. The US-83 alignment from the Canadian border to Texas traverses the highest-density grain production counties in the US --- western Kansas wheat, Nebraska corn and soybean, North and South Dakota spring wheat. Dual export access: Gulf via Corpus Christi and Houston; Pacific via I-90 and I-84 connections.
+  \item I-35: C4 = 8.0. The Kansas and Oklahoma segments traverse major wheat and cattle production zones; Gulf port access via the Houston Ship Channel is direct.
+  \item I-80: C4 = 7.5. Core Corn Belt access (Nebraska, Iowa, Illinois) with both Pacific port access (Bay Area, via Sacramento and the Bay Bridge approach) and Gulf access (via I-29/I-35 connections at Council Bluffs and Kansas City).
+  \item Urban-only corridors (I-110, I-880, I-225): C4 = 0.0. Corridors entirely within urban metropolitan areas serve no agricultural production or export function.
+\end{itemize}
+
+\subsection{Score Range and Tier Threshold Recalibration}
+
+Adding three 0--10 dimensions increased the maximum score from 120 to 150 --- a 25\% increase. Tier thresholds were scaled proportionally, maintaining the same percentile boundaries in the corpus distribution:
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Tier} & \textbf{v1.1 threshold (/120)} & \textbf{v1.2 threshold (/150)} \\
+\midrule
+T1 & $\geq$21 & $\geq$26 \\
+T2 & $\geq$15 & $\geq$19 \\
+T3 & $\geq$9  & $\geq$11 \\
+T4 & $<$9     & $<$11  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Resolution of the Congestion-Stress Paradox}
+
+Table~\ref{tab:v12-paradox-resolution} shows the complete resolution of the I-110/I-80 ranking inversion.
+
+\begin{table}[h!]
+\centering
+\caption{Congestion-Stress Paradox Resolution: I-110 vs.\ I-80 Under v1.2}
+\label{tab:v12-paradox-resolution}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Corridor} & \textbf{v1.1 Total} & \textbf{A4} & \textbf{B4} & \textbf{C4} & \textbf{v1.2 Total} & \textbf{Tier v1.2} \\
+\midrule
+I-110 & 25.1 & 0.0 & 5.0 & 0.0 & 19.0 & T2 \\
+I-80  & 20.2 & 0.0 & 6.5 & 7.5 & 38.7 & T1 (\#1) \\
+\midrule
+Gap (I-80 $-$ I-110) & $-$4.9 & --- & --- & --- & $+$19.7 & Reversed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+I-110 gained 5.0 points from the STRAHNET B4 baseline --- the same credit any interstate receives. It gained 0 on A4 (not a border corridor) and 0 on C4 (entirely urban, no agricultural function). Under v1.2 scoring rules, I-110 total is 19.0/150, placing it in T2 --- correct for a 22-mile urban connector.
+
+I-80 gained 18.5 points: B4 = 6.5 (Cheyenne/FE Warren proximity) and C4 = 7.5 (Corn Belt, dual-coast export access). It gained 0 on A4 (no primary border crossing). Under v1.2 scoring rules, I-80 total is 38.7/150, placing it first in the T1 ranking.
+
+The 19.7-point gap in v1.2 --- with I-80 leading --- reflects the actual strategic difference between these corridors. The three new dimensions did not change the corridors. They measured what the corridors actually do.

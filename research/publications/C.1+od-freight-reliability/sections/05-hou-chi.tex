@@ -1,0 +1,82 @@
+\section{The Houston--Chicago Corridor}
+\label{sec:houtochi}
+
+\subsection{The Missing Direct Corridor}
+
+Houston and Chicago are the third- and second-largest freight-generating metro areas in the United States, respectively \citep{FHWA_freight2023}. No T1 interstate corridor connects them directly. The Interstate Highway System as built provides no single-designation route between the Texas Gulf Coast and the Great Lakes industrial region. A driver departing Houston for Chicago must assemble a route from three separate corridors: I-45 northbound to Dallas, I-35 northbound through the Texas panhandle to Kansas City and St.\ Louis, and I-55 northbound to Chicago. The total route distance is approximately 1,160 miles. The straight-line distance between Houston and Chicago is 940 miles; a highway alignment following the Texas--Arkansas--Missouri corridor would cover approximately 920 miles via the I-69 alignment.
+
+The 240-mile distance penalty---from 920 miles direct to 1,160 miles via the three-hop route---is not the primary cost. The primary cost is the two mandatory interchange nodes at Dallas and St.\ Louis, each of which introduces delay variance that compounds across the corridor.
+
+\subsection{The Three-Hop Route}
+
+\subsubsection{Segment 1: I-45, Houston to Dallas (240 miles)}
+
+I-45 is a 4--6 lane corridor running from Galveston and Houston northward through Corsicana to the Dallas metro. HPMS records AADT of 140,000--180,000 vpd on the Houston-side urban segments, declining to 60,000--80,000 vpd on the rural central Texas section \citep{HPMS2018}. The corridor is adequate in rural segments but begins to show urban congestion at the Dallas approach, where I-45 becomes I-45/US-75 in the Dallas suburban ring. Transit time from the Houston port district to downtown Dallas: approximately 4.4 hours at 55 mph average (240 miles / 55 mph).
+
+\subsubsection{Segment 2: I-35, Dallas to St.\ Louis (620 miles)}
+
+This segment is the most capacity-constrained portion of the route. I-35 through Dallas operates at V/C 1.9+ at peak, making it one of ATRI's top-10 bottleneck segments nationally \citep{ATRI_costs2024}. The Dallas interchange where I-45 traffic merges onto I-35 northbound is the first high-variance node. ATRI's 2024 Bottleneck Report ranks the I-35/I-45/I-30 interchange in Dallas as a top-8 bottleneck nationally by cost per truck per year. From the Dallas interchange, I-35 runs north through Oklahoma City (a secondary congestion point at the I-40/I-35 interchange), Wichita, and Kansas City, where I-35 terminates and traffic transitions to I-70 eastbound and then I-55 northbound for the St.\ Louis approach. Total I-35 segment: approximately 620 miles, estimated 11.3 hours at 55 mph---a full HOS driving day.
+
+\subsubsection{Segment 3: I-55, St.\ Louis to Chicago (300 miles)}
+
+I-55 runs 300 miles from St.\ Louis to Chicago. The St.\ Louis approach is the second high-variance interchange node: I-55 intersects I-70 at the Stan Musial Veterans Memorial Bridge, and the I-55/I-70/I-64 interchange complex in East St.\ Louis is a documented reliability hotspot. HPMS records I-55 north of St.\ Louis at 55,000--90,000 vpd \citep{HPMS2018}; the corridor is not congested in rural Missouri and Illinois but the Chicago approach on I-55 through Joliet and Bolingbrook reaches 140,000+ vpd. Transit time: 300 miles / 55 mph = 5.5 hours.
+
+\subsection{Total Route Profile}
+
+The complete three-hop route totals approximately 1,160 miles. At 55 mph average and HOS-legal operation:
+\begin{equation}
+  T_{\text{HOU-CHI}} = \frac{1{,}160 \text{ mi}}{55 \text{ mph}} \div 11 \text{ hr/day} = 21.1 \text{ hr} \div 11 = 1.92 \text{ days} \approx 2 \text{ days}
+\end{equation}
+Two days is the current standard carrier quote for Houston--Chicago. The route does not approach transcontinental distances, but the PTI compounds across two high-variance nodes.
+
+A single-corridor PTI is additive in travel time; when a trip crosses multiple independent reliability regimes (Dallas interchange and St.\ Louis interchange), the tail risk compounds. A simplifying upper-bound estimate: if Dallas interchange contributes a PTI-equivalent delay of 0.5 hours on average and St.\ Louis contributes 0.3 hours, the tail events (which define PTI) are not additive---they can coincide. The 95th-percentile trip catches adverse conditions at both nodes; the combined PTI-implied delay is larger than the sum of the individual mean delays.
+
+\begin{table}[ht]
+\centering
+\caption{HOU--CHI corridor comparison: current three-hop route vs.\ I-69 direct}
+\label{tab:houchi_compare}
+\begin{tabular}{lrrrr}
+\toprule
+Attribute & Current Route & I-69 Direct & Difference \\
+\midrule
+Distance (miles)          & 1,160 & 870  & $-290$ \\
+Transit time (days)       & 1.92  & 1.53 & $-0.39$ \\
+Interchange nodes (major) & 2     & 0    & $-2$ \\
+Estimated corridor PTI    & $\sim$1.45 & $\sim$1.15 & $-0.30$ \\
+Annual truck volume (vpd) & 3,200 & 3,200 & --- \\
+Annual reliability cost   & \$2.5B & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Interchange Bottleneck Costs}
+
+The Dallas interchange (I-45/I-35 merge) imposes an estimated 35 minutes of mean delay per truck on peak-day transits based on ATRI incident data \citep{ATRI_costs2024}. At 3,200 trucks per day using the HOU--CHI route and \$225/truck-hour:
+\begin{equation}
+  C_{\text{Dallas}} = 3{,}200 \times \frac{35}{60} \times \$225 = \$4.2\text{M/day} = \$1.53\text{B/year}
+\end{equation}
+The St.\ Louis interchange (I-55/I-70) imposes an estimated 22 minutes of mean delay per truck:
+\begin{equation}
+  C_{\text{St.Louis}} = 3{,}200 \times \frac{22}{60} \times \$225 = \$2.64\text{M/day} = \$0.96\text{B/year}
+\end{equation}
+The distance penalty (290 extra miles at 55 mph = 5.3 hours of non-revenue driving per trip):
+\begin{equation}
+  C_{\text{detour}} = 3{,}200 \times 5.3 \times \$225 \times 365 = \$1.39\text{B/year}
+\end{equation}
+Combined annual reliability and inefficiency cost attributable to the missing direct corridor: approximately \$2.5 billion, net of rounding.
+
+\subsection{I-69: The Direct Route}
+
+Interstate 69 is a partially-built interstate corridor designated to run from the Texas--Mexico border near McAllen through Houston, Texarkana, Little Rock, Memphis, Indianapolis, and Detroit to Port Huron, Michigan at the Canadian border. The southern segment relevant to HOU--CHI runs from Houston to Indianapolis via a Texarkana--Shreveport--Jackson--Memphis--Indianapolis alignment, then I-65 or I-69 to Chicago. Relevant segment distance from Houston to Chicago via this alignment: approximately 870 miles.
+
+As of 2024, significant gaps remain: the Texarkana-to-Shreveport segment (approximately 75 miles in Texas and Arkansas) lacks full interstate standard construction, and the Louisville-to-Indianapolis segment has partial construction with grade crossings remaining \citep{FHWA_freight2023}. The Indianapolis-to-Chicago segment is served by I-65, which would connect to I-69 without additional construction.
+
+I-69 completion on the HOU--CHI alignment would:
+\begin{enumerate}
+  \item Eliminate the Dallas interchange entirely (I-69 bypasses the Dallas--Fort Worth metro via Texarkana)
+  \item Eliminate the St.\ Louis interchange (I-69 connects through Indianapolis, bypassing the I-55/I-70 junction)
+  \item Reduce route distance by 290 miles (1,160 to 870 miles)
+  \item Reduce transit time by approximately 5.3 hours (from 1.92 days to 1.53 days at 55 mph)
+\end{enumerate}
+
+The I-69 alignment also provides redundancy to the Dallas-centric I-35 NAFTA corridor, which currently has no bypass for the Dallas--Fort Worth metro complex---a metropolitan area that acts as a mandatory transit node for all north--south truck traffic in the central US.

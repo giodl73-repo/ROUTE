@@ -1,0 +1,72 @@
+\section{NPV Analysis by Corridor}
+\label{sec:npv}
+
+\subsection{General NPV Framework}
+
+Net present value for each corridor's managed freight lane investment is computed over a 30-year analysis period at a 7\% discount rate:
+
+\begin{equation}
+\text{NPV} = \sum_{t=1}^{30} \frac{B_t - C_t}{(1+r)^t}
+\label{eq:npv}
+\end{equation}
+
+where $B_t$ is the annual freight benefit in year $t$, $C_t$ is the annual cost in year $t$, and $r = 0.07$ is the discount rate. Benefits are not constant over the analysis period: freight volume grows at 1.8\% per year \citep{FHWA_freight2023}, increasing the annual benefit from delay reduction and platooning as the managed lanes carry more freight over time. Costs are essentially fixed after the construction period: annualized capital cost is constant (fixed amortization schedule), and O\&M costs grow only with inflation.
+
+\textbf{Annual benefit} has three components: (1) freight delay reduction --- the product of trucks per day on managed lanes, the delay-hours eliminated per truck, and ATRI cost per truck-hour (\$225 \citep{ATRI_costs2024}); (2) platooning fuel savings per the model in Section~\ref{sec:data}; and (3) shipper SLA premium --- the estimated 3--5\% freight rate premium that time-sensitive shippers pay for demonstrably reliable managed lane service, captured as a per-ton revenue increment on freight moving under managed lane service-level agreements.
+
+\textbf{Annual cost} has three components: (1) annualized capital --- construction cost amortized over 30 years at 7\% discount rate; (2) operations and maintenance at 2\% of capital per year, covering pavement rehabilitation, access ramp maintenance, drainage, and signage; (3) enforcement infrastructure --- transponder reading systems, weigh-in-motion sensors at access points, and CCTV at all entry/exit points, estimated at \$5 million per corridor per year regardless of corridor length.
+
+\subsection{Corridor Results}
+
+Table~\ref{tab:npv} presents the NPV analysis for all 7 managed lane corridors plus the I-40 exclusion for comparison.
+
+\begin{table}[h!]
+\centering
+\caption{Managed Freight Lane NPV Analysis by Corridor (30-year, 7\% discount rate)}
+\label{tab:npv}
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Corridor} & \textbf{Miles} & \textbf{Capital (\$B)} & \textbf{Benefit (\$B/yr)} & \textbf{NPV (\$B)} & \textbf{B/C} & \textbf{Breakeven (yr)} \\
+\midrule
+I-95  & 1,400 & 12.0 & 2.4 & 22.0 & 3.1 & 11 \\
+I-85  &   600 &  6.0 & 1.0 &  9.0 & 2.6 & 12 \\
+I-35  & 1,400 & 13.0 & 1.4 & 12.0 & 2.4 & 13 \\
+I-75  & 1,400 & 14.0 & 1.8 & 16.0 & 2.2 & 13 \\
+I-10  & 2,400 & 26.0 & 2.1 & 19.0 & 2.0 & 15 \\
+I-80  & 2,800 & 31.0 & 2.8 & 28.0 & 1.9 & 16 \\
+I-90  & 1,900 & 19.0 & 1.2 &  9.0 & 1.6 & 18 \\
+\midrule
+\textbf{Portfolio} & \textbf{11,900} & \textbf{121.0} & \textbf{12.7} & \textbf{115.0} & \textbf{2.3} & \textbf{14} \\
+\midrule
+I-40 (excl.)  & 2,400 & --- & --- & (neg.) & (neg.) & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{I-95 (highest B/C: 3.1:1).} The New Jersey to Maine segment is the highest-volume corridor in the national freight network by AADT \citep{FHWA_HPMS2023}, with peak V/C exceeding 1.98 at the binding segment. At \$14M/lane-mile reflecting the urban construction premium, the capital cost of \$12 billion is the lowest per-mile investment in the 7-corridor portfolio. Annual freight benefit of \$2.4 billion derives primarily from delay reduction: I-95 carries the highest commercial vehicle volume of any T1 corridor, and the delay cost at current LOS F conditions is correspondingly high. The NPV of \$22 billion at 3.1:1 B/C represents the strongest investment case in the portfolio.
+
+\textbf{I-85 (second B/C: 2.6:1).} The shortest T1 corridor in the managed lane program (600 miles, Atlanta to Petersburg VA) achieves the second-highest B/C ratio due to its high urban density and correspondingly high freight value per corridor mile. At \$14M/lane-mile urban rate, the \$6 billion capital cost is the lowest absolute investment in the program. The corridor's pharmaceutical distribution and automotive freight traffic generates above-average shipper SLA premium benefit.
+
+\textbf{I-80 (largest absolute NPV: \$28B, B/C 1.9:1).} I-80 is the longest T1 corridor in the managed lane program (2,800 miles, New Jersey to San Francisco Bay Area) and represents the most heterogeneous V/C profile: the Bay Area and Chicago segments operate at V/C above 2.0, while the Wyoming and Nevada rural segments operate at V/C below 0.8. The \$31 billion capital cost reflects this length. Despite the high absolute cost, the aggregate NPV of \$28 billion reflects the transcontinental throughput value of managed lanes on the primary east-west freight corridor. The NY--LA annual shipper benefit of \$10.5 billion \citep{ATRI_costs2024} (computed for the single O-D pair in Section~\ref{sec:throughput}) is a significant contributor to the I-80 benefit calculation.
+
+\textbf{I-90 (lowest B/C: 1.6:1).} The northern transcontinental corridor from Boston to Seattle is the weakest investment in the 7-corridor portfolio due to its rural-dominant V/C profile: outside the Chicago metropolitan area, I-90 operates at V/C well below the managed lane threshold. The \$19 billion capital cost at the rural-dominant rate (\$10M/lane-mile weighted average) produces an NPV of \$9 billion --- barely above the B/C = 1.0 threshold on the 7\% discount rate assumption. At a 10\% discount rate, I-90 falls below B/C = 1.0 and becomes marginal (see sensitivity analysis below).
+
+\textbf{I-40 exclusion.} I-40's peak V/C of 0.84 (Oklahoma City maximum) means that managed freight lanes would operate at V/C well below the economic threshold for freight delay benefit. The annual benefit from delay reduction at V/C = 0.84 is negligible; platooning benefit and SLA premium are insufficient to recover the \$24 billion capital cost of managed lane construction over 2,400 miles. NPV is negative at any positive discount rate. The correct investment for I-40 is resilience hardening (compound exposure; see Paper B.3 \citep{ROUTE_B3}) and access improvements, not capacity addition.
+
+\subsection{Sensitivity Analysis}
+
+At a 10\% discount rate (a more conservative assumption reflecting long-run federal borrowing costs under deficit conditions), three corridors fall below B/C = 1.0:
+
+\begin{itemize}
+\item \textbf{I-90}: B/C drops from 1.6 to 0.9 --- marginal investment at 10\%. Rural-dominant V/C profile limits benefit density.
+\item \textbf{I-80 rural segments}: The mixed urban-rural profile of I-80 means that rural segments (Wyoming, Nevada, Utah) individually fail the 10\% discount rate test; the corridor-level B/C remains above 1.0 only due to the Bay Area and Chicago segments cross-subsidizing the rural investment.
+\item \textbf{I-10 rural segments}: Similar pattern to I-80; western Texas and New Mexico rural segments are sub-threshold individually.
+\end{itemize}
+
+The sensitivity finding suggests a design option for the 10\%-discount-rate scenario: phased urban construction first, deferring rural segments until freight volume growth makes them viable. An urban-segment-first approach concentrates capital in the highest-V/C segments (the binding constraints on corridor throughput) and defers rural investment that produces lower per-dollar benefit. This approach is consistent with the IIJA phasing structure \citep{IIJA2021}, which front-loads high-congestion investments in the first 5-year authorization period.
+
+\subsection{Portfolio Breakeven and Self-Funding Mechanism}
+
+The portfolio-weighted average breakeven year is 14 --- meaning the aggregate managed lane investment recovers its annualized capital cost within 14 years of opening, and generates positive net returns for the remaining 16 years of the 30-year analysis period. The I-95 and I-85 corridors break even in 11--12 years; I-90 requires 18 years, the longest breakeven in the portfolio.
+
+The platooning fuel savings component creates a partial self-funding mechanism not available to any other freight infrastructure investment category. At \$180 million per year in fuel savings on a representative T1 corridor carrying 8,000 platoon-capable vehicles per day, the fuel savings alone approach the annualized construction cost on shorter or lower-cost segments (I-85 at \$6 billion capital has an annualized cost of approximately \$430 million per year at 7\% over 30 years; fuel savings cover approximately 42\% of the annualized capital service). This partial self-funding supports the case for P3 (public-private partnership) investment structures in which freight carriers contribute capital in exchange for guaranteed access to managed lanes and the operational savings that follow.

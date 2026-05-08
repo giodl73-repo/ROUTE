@@ -1,0 +1,55 @@
+\section{Throughput Outcomes}
+
+\subsection{Baseline Network Capacity}
+
+The current national max-flow on T1 and T2 corridors, measured in commercial vehicles per day summed across all major freight corridors, is approximately 4.8 million vehicles per day \citep{ROUTE_C2}. This figure is derived from the Track C max-flow analysis using the Bureau of Public Roads volume-delay function \citep{BPR1964} applied to HPMS annual average daily truck traffic counts \citep{FHWA_HPMS2022}. The max-flow calculation uses a standard four-lane interstate capacity of 2,000 passenger car equivalents per lane per hour (PCE/lane/hr), with heavy truck PCE of 2.0 on level terrain and 3.0 on grades exceeding 4\%.
+
+\subsection{Post-I2.0 Managed Lane Capacity}
+
+After the managed freight lane program adds two dedicated lanes per direction on seven T1 corridors, the national max-flow increases to approximately 7.2 million commercial vehicles per day --- a 50\% increase from the baseline \citep{ROUTE_E1}. The capacity gain is concentrated on the corridors with the highest current demand: I-80 (NY--CA), I-35 (MN--TX), and I-95 (ME--FL) account for 61\% of the total capacity gain.
+
+The managed lane design achieves capacity gains through two mechanisms. First, dedicated commercial vehicle lanes eliminate the PCE penalty from mixed traffic: a managed freight lane operating at its design density (1,200 Class 8 trucks per lane per hour) moves more freight than a general purpose lane operating at 2,000 PCE/lane/hr because the PCE conversion artificially inflates the truck demand in mixed-traffic conditions. Second, the PTI constraint on managed lanes (target PTI $\leq$ 1.15) requires dynamic tolling that actively manages demand, preventing the congestion-induced capacity loss that occurs when V/C exceeds 0.85 on general-purpose lanes.
+
+\subsection{Transit Time Reduction}
+
+The Planning Time Index improvement translates directly into carrier scheduling reliability. The key metric is the \textit{shipper planning buffer}: the additional transit time a shipper adds to the modal mean transit time to achieve a specified on-time delivery probability. At PTI 1.86 (current I-80), achieving 95th-percentile on-time performance requires a planning buffer of approximately 80 hours above the mean transit time \citep{ROUTE_C1}. At the managed lane PTI of 1.15, the planning buffer drops to approximately 48 hours.
+
+The effect on transcontinental transit times (NY--LA) is:
+\begin{itemize}
+  \item \textbf{Current mean transit time}: 4.5 days (108 hours, including mandatory driver rest under HOS regulations \citep{USDOT_FMCSA2022})
+  \item \textbf{Post-I2.0 managed lane mean transit time}: 3.5 days (84 hours; managed lane speed consistency allows tighter scheduling and reduces the effective time lost to congestion-induced speed reduction)
+  \item \textbf{Reduction}: 1 full day (24 hours, 22\% improvement)
+\end{itemize}
+
+The HOU--CHI corridor (I-69 completion scenario) shows a similar improvement: from 2.0 days mean transit time to 1.5 days, reflecting both managed lane PTI gains on I-35 and the capacity addition from I-69 completing the Gulf--Midwest link \citep{ROUTE_C2}.
+
+\subsection{I-69 Corridor Contribution to Max-Flow}
+
+Track C's national max-flow model treated I-69 completion as a discrete scenario: with I-69 complete to interstate standard, the Gulf-to-Midwest flow path gains an additional primary route, removing approximately 18\% of freight demand from the I-35 bottleneck at Kansas City and the I-44 connector \citep{ROUTE_C2}. The 18\% figure represents the fraction of current Gulf--Midwest freight that route assignment models predict will divert to the I-69 path under user equilibrium (Wardrop) conditions, given the shorter path length for freight originating in Texas Gulf ports and destined for the Great Lakes manufacturing corridor.
+
+\subsection{Compound Closure Stress Test}
+
+The most severe compound closure scenario in the Track C analysis combines simultaneous disruption of Donner Pass (I-80, CA) and the I-35 bridge corridor in Oklahoma --- two events that, while independent in cause, could plausibly co-occur given the independent hazard distributions on each corridor \citep{ROUTE_D2}. Under this scenario, Table~\ref{tab:stress} shows the I-40 V/C ratio with and without the compound exposure hardening investment.
+
+\begin{table}[h]
+\centering
+\caption{I-40 V/C Ratio Under Compound Closure Scenario (Donner + I-35 Oklahoma)}
+\label{tab:stress}
+\begin{tabular}{lccc}
+\toprule
+Scenario & I-40 V/C & Network Condition & Annual Consequence \\
+\midrule
+Baseline (no closure) & 0.62 & Free flow & --- \\
+Donner closure only & 0.84 & Stressed & \$2.4B/yr \citep{ROUTE_D2} \\
+I-35 closure only & 0.71 & Moderate stress & \$0.8B/yr \\
+Compound (no hardening) & 1.11 & Saturation/failure & \$9.6B/yr \\
+Compound (with hardening) & 0.91 & Stressed, stable & \$3.1B/yr \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent The compound exposure hardening investment prevents network saturation under the stress test scenario, reducing the compound closure consequence from \$9.6B/yr to \$3.1B/yr --- a \$6.5B/yr difference that alone justifies the \$18B hardening capital cost at a 7\% discount rate.
+
+\subsection{Reliability Variance Reduction}
+
+Current PTI variance across T1 corridors has a standard deviation of 0.42 (mean PTI 1.54, range 1.23--1.86) \citep{ROUTE_C1}. After the managed freight lane program and compound exposure hardening are fully implemented, the projected PTI standard deviation on T1 corridors falls to 0.18 --- a 57\% reduction in reliability variance. Lower variance is arguably more valuable to shippers than lower mean PTI, because variance drives buffer stock requirements, and inventory carrying costs scale with uncertainty, not with mean lead time \citep{Michaels2008}.

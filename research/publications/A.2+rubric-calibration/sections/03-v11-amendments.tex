@@ -1,0 +1,58 @@
+\section{v1.1: IRI Fallback Amendment}
+\label{sec:v11-amendments}
+
+\subsection{The Trigger}
+
+The v1.1 amendment was triggered by a single observation: I-80 scored A3 = 10.0 under the IRI fallback, and no planning analyst examining I-80 could defend that score. A3 = 10.0 means ``severely unreliable --- a shipper must budget nearly twice free-flow time to ensure on-time delivery.'' I-80 through rural Wyoming and Nevada operates at or near posted speed limits for the overwhelming majority of operating hours. The IRI values for these segments are high (roughness from heavy freight wear and freeze-thaw pavement cycles is well-documented), but high roughness is not the same as high congestion delay.
+
+The IRI proxy was chosen as a fallback when FHWA Freight Performance Measures PTI data was unavailable. PTI is the real quantity of interest: the ratio of 95th-percentile travel time to free-flow travel time. For 2024, FHWA Freight Performance Measures data covers approximately 60\% of NHS lane-miles, concentrated on high-volume urban corridors. Rural corridors --- including most of I-80 outside Sacramento and Salt Lake City --- have no PTI data. The fallback to IRI was intended as a rough proxy; the implementation allowed it to produce maximum scores.
+
+\subsection{The Fix: \texttt{iri\_fallback\_max}}
+
+v1.1 introduced a single parameter: \texttt{iri\_fallback\_max = 5.0}. Any A3 score computed from IRI proxy data rather than observed PTI is capped at 5.0. The interpretive meaning of this cap is ``moderately unreliable at worst'' --- a fallback score cannot assert severe unreliability because the data does not support that assertion. A score of 5.0 means ``we know this corridor has pavement issues that may affect reliability, but we cannot claim it is severely unreliable without PTI data.''
+
+The change is implemented in the scoring algorithm as a post-computation check: if the data source for A3 is IRI proxy (rather than FHWA FPM PTI or BPR-estimated V/C-based PTI), the score is floored at 0 and capped at 5.0. Corridors with real PTI data are unaffected.
+
+\subsection{Effects on Key Corridors}
+
+\textbf{I-80}: A3 dropped from 10.0 to 5.0 (full cap applied; no PTI data for WY/NV segments).
+
+\textbf{I-110}: A3 dropped from 8.0 to 5.0 (also capped; IRI proxy was the source for Pasadena Freeway as well, despite being an urban corridor with real congestion).
+
+The net effect on the congestion-stress paradox was partial. Table~\ref{tab:v11-delta} shows the dimension delta and revised totals.
+
+\begin{table}[h!]
+\centering
+\caption{I-110 vs.\ I-80: v1.0 to v1.1 Score Change}
+\label{tab:v11-delta}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Corridor} & \textbf{v1.0 Total} & \textbf{A3 Change} & \textbf{v1.1 Total} & \textbf{Tier v1.1} \\
+\midrule
+I-110 & 30.1 & $-$3.0 (8.0$\to$5.0) & 25.1 & T1 \\
+I-80  & 25.2 & $-$5.0 (10.0$\to$5.0) & 20.2 & T2 \\
+\midrule
+Gap (I-110 $-$ I-80) & $+$4.9 & --- & $+$4.9 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Both corridors lost points, but the gap between them was unchanged: the IRI cap reduced I-80's score by more than I-110's (because I-80's original IRI proxy score was higher), so I-110 remained above I-80 under v1.1. The A3 fix was necessary and correct, but it was insufficient to resolve the paradox. The root of the paradox was not the IRI score alone --- it was that A1 (Throughput Gap) rewarded congestion regardless of source, and the rubric lacked any dimension recognizing I-80's transcontinental strategic role.
+
+\subsection{What v1.1 Did Not Change}
+
+Three dimensions considered for amendment in the v1.1 cycle were deferred:
+
+\textbf{A1 (Throughput Gap)}: The congestion-rewards-congestion problem in A1 was identified but not resolved. The theoretical argument for keeping A1 as-is was that congestion stress is a legitimate investment signal --- a congested corridor genuinely needs investment. The problem is that A1 cannot distinguish between a congested corridor that is strategically important (I-80 near Sacramento) and one that is not (I-110 Pasadena Freeway). A1 logic was deferred for v1.3 consideration.
+
+\textbf{B2 (Network Centrality)}: The partial-graph instability of B2 was flagged in the v1.1 calibration review. Computing betweenness centrality on a graph covering 31 of 50 states produces scores that are sensitive to which states are included: a corridor that passes through an unrepresented state appears to have lower betweenness than it would on the complete graph. The fix requires TIGER/Line data for all 50 states plus a full Brandes algorithm implementation \citep{Brandes2001}, which was available in the route CLI but not yet run on the complete national graph. B2 scores in v1.1 are tagged as \texttt{estimated} and should not be used for comparisons across corridors in different geographic regions.
+
+\textbf{A1 congestion/importance separation}: The deeper issue --- that A1 measures congestion stress, not strategic importance, and these are correlated for wrong reasons --- was not addressed until v1.2 introduced positive strategic dimensions (A4, B4, C4) that pulled strategically important corridors upward regardless of their congestion level.
+
+\subsection{The Forward-Only Protocol: First Establishment}
+
+v1.1 established the forward-only versioning protocol that governs all subsequent rubric evolution. Once a corridor is scored under v1.0, that score is permanently tagged \texttt{rubric\_version: v1.0} in the corpus database and is never retroactively modified. v1.1 scores are tagged \texttt{rubric\_version: v1.1}. The two sets of scores coexist in the database and are used in different analytical contexts.
+
+The rationale for this protocol is scientific integrity: the A.1 paper \citep{ROUTE_A1} cited v1.0 and v1.1 scores for specific corridors. Those citations are the evidentiary basis for A.1's claims. If those scores were retroactively changed, the citations would become invalid and A.1's claims would be unsupported. The forward-only protocol protects the integrity of the citation chain across the ROUTE paper series.
+
+The protocol does not mean that v1.0 scores are correct. It means that v1.0 scores accurately record what the v1.0 rubric measured. The rubric improved; the historical record of what the earlier rubric measured is preserved.

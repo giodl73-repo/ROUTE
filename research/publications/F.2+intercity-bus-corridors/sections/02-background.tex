@@ -1,0 +1,37 @@
+\section{Background: Intercity Bus Economics and Infrastructure}
+\label{sec:background}
+
+\subsection{The Economics of Scheduled Bus Service}
+
+Intercity bus operators face a cost structure with high fixed costs and moderate variable costs. Fixed costs --- vehicle acquisition or lease, driver wages, commercial insurance, and depot operations --- accrue regardless of passenger count. Variable costs --- fuel, tires, and per-mile maintenance --- scale with distance operated. A typical 50-seat motorcoach on a 500-mile route incurs approximately \$2.80 per bus-mile in total operating cost, of which roughly \$0.80/mile is driver compensation, \$1.40/mile is fuel, and \$0.60/mile is vehicle depreciation, maintenance, and insurance \citep{ATRI_costs2024}.
+
+At this cost structure, the break-even load factor --- the fraction of seats that must be filled to cover operating costs --- is approximately 45\% at a fare of \$0.15/mile. This is an achievable threshold on corridors with populations in the range of 500,000--5,000,000 at each terminus, provided that passengers can be reliably acquired. The critical word is \emph{reliably}: bus operators running scheduled timetables compete against other modes (car, rail, air) on the basis of the scheduled travel time advertised to the customer. A schedule that passengers cannot trust is a service that passengers will not use.
+
+\subsection{PTI and the Scheduling Problem}
+
+Planning Time Index (PTI) is the ratio of the 95th percentile travel time to the free-flow travel time on a given corridor \citep{FHWA_freight2023}. It is primarily a freight reliability metric, but its implications for scheduled bus service are direct. A PTI of 1.86 --- the measured value on I-80 in the Midwest \citep{FHWA_freight2023} --- means that the 95th percentile trip takes 86\% longer than the free-flow trip. For a 780-mile route (New York to Chicago) with a free-flow time of approximately 11 hours, the 95th percentile travel time is approximately 20.5 hours.
+
+An operator scheduling a bus on this corridor faces three choices, all of them bad:
+\begin{enumerate}
+  \item \textbf{Schedule to the 95th percentile.} Post a 20-hour timetable. The median-day bus arrives 9 hours early and wastes that time at a rest stop. The schedule is technically reliable but so slow it has no market.
+  \item \textbf{Schedule to the median.} Post a 12-hour timetable. On one in twenty trips, the bus is 8+ hours late. Chronic late arrivals destroy ridership through unreliability reputation effects, documented extensively in the transit reliability literature \citep{Taylor2006}.
+  \item \textbf{Exit the market.} Greyhound's actual response, repeated on corridor after corridor through the 2010s and accelerating through its 2020 bankruptcy.
+\end{enumerate}
+
+With PTI 1.15 --- the I2.0 T1 managed lane design target \citep{ROUTE_E2} --- the same operator can post a 12.6-hour timetable and guarantee on-time arrival (within 15\% of posted time) for 95\% of trips. That guarantee is the precondition for building a brand, acquiring repeat customers, and achieving the load factors required for profitability.
+
+\subsection{Historical Context: Deregulation and Collapse}
+
+The Bus Regulatory Reform Act of 1982 deregulated the US intercity bus market, eliminating Interstate Commerce Commission route certification requirements \citep{BusRegulatoryReform1982}. The theory was that deregulation would produce competitive entry on profitable routes and more efficient service overall. The outcome was partial: competitive entry on the highest-density corridors (Northeast, Los Angeles--San Francisco) drove down prices, but cross-subsidy that had sustained service on thin rural routes evaporated \citep{Schwieterman2019}. Greyhound and Trailways systematically withdrew from routes carrying fewer than 10,000 annual passengers. By 2010, over 50\% of rural communities that had bus service in 1982 had lost it \citep{Schwieterman2019}.
+
+The 2008 financial crisis accelerated retrenchment. Greyhound's 2020 bankruptcy and subsequent acquisition by FlixMobility eliminated the last remaining subsidized thin-route service. The rural bus network that remained in 2026 consists almost entirely of routes connecting large metros with PTI-favorable highways --- the Northeast Corridor and the Los Angeles--San Francisco I-5 corridor --- where schedule reliability is achievable without managed lanes.
+
+\subsection{Modal Competition: Bus, Rail, Air}
+
+Intercity travel mode choice is strongly distance-dependent. Below 150 miles, rail dominates where it exists: frequency and city-center access outweigh bus speed advantages. Between 150 and 600 miles, bus is the optimal low-cost mode when reliability and schedule exist: air involves 2--3 hours of airport processing overhead that makes it uncompetitive below 600 miles for time-sensitive travelers, and above 150 miles rail becomes infrequent enough that schedule matching is difficult \citep{BTS_intermodal2023}. Above 600 miles, air dominates for time-sensitive travelers; bus retains price-sensitive market share.
+
+The 12 T1 corridors analyzed in this paper fall primarily in the 180--920 mile range, exactly the band where bus-with-reliability is optimal. This is not a coincidence: the T1 network connects the major metropolitan nodes of the continental interior, and those nodes are at interstate-bus-optimal distances from each other.
+
+\subsection{European Comparisons}
+
+FlixBus operates approximately 40 million annual passengers in Europe \citep{FlixBus2023}, running a network of intercity bus routes on highways with PTI values approximately comparable to I2.0 targets (German Autobahn PTI approximately 1.10). The EU FlixBus model demonstrates that high-volume intercity bus can be profitable at low fare points (\texteuro 0.08--0.15/km, comparable to \$0.09--0.17/mile) when infrastructure reliability is given. FlixBus's 2018 US market entry was deliberately constrained to the Northeast and California corridors --- exactly the US routes with highway PTI nearest to the EU baseline \citep{FlixBus2023}. This corridor-selectivity is direct evidence of the PTI-profitability link.

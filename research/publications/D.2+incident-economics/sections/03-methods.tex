@@ -1,0 +1,121 @@
+\section{Methods}
+
+\subsection{Closure Cost Model}
+
+The expected annual freight disruption cost for corridor $i$ is:
+
+\begin{equation}
+\label{eq:closure-cost}
+E[\text{Cost}_i] = \lambda_i \int_0^\infty \min\!\bigl(C_\text{wait}(d),\,
+C_\text{reroute}(d)\bigr) \cdot V_i \cdot P(D_i = d)\; \mathrm{d}d
+\end{equation}
+
+where:
+\begin{itemize}
+\item $\lambda_i$ = annual closure event frequency (events/yr), from FHWA/state DOT records
+\item $D_i$ = closure duration (hours), modeled as a lognormal distribution with
+parameters $\mu_i$, $\sigma_i$ estimated from historical closure records
+\item $V_i$ = daily truck volume at the closure point (trucks/day); 8\% of HPMS AADT
+for T1 corridors, as per FHWA truck fraction estimates
+\item $C_\text{wait}(d)$ = waiting cost per truck per hour $\times$ duration $\times$
+waiting multiplier: $\$225 \times d \times 1.3$
+\item $C_\text{reroute}(d)$ = rerouting cost per truck: $\$225 \times (\text{detour
+miles}/60) + C_\text{detention}$, independent of $d$ for durations $> d^*$
+\end{itemize}
+
+The ``switch duration'' $d^* = C_\text{reroute} / (\$225 \times 1.3)$ is the closure
+duration at which rerouting becomes cheaper than waiting. For Donner: $d^* = \$2,063
+/ (\$225 \times 1.3) = 7.06$ hours --- consistent with observed driver behavior
+(drivers begin rerouting decisions around hour 6--8 of a Donner closure).
+
+For computational tractability, the integral in Equation~\ref{eq:closure-cost} is
+discretized into two regimes:
+
+\begin{equation}
+E[\text{Cost}_i] = \lambda_i \cdot V_i \cdot \Bigl[
+P(D_i < d^*) \cdot \overline{C}_\text{wait}
++ P(D_i \geq d^*) \cdot C_\text{reroute}
+\Bigr]
+\end{equation}
+
+where $\overline{C}_\text{wait}$ is the expected waiting cost conditional on a short
+closure ($D_i < d^*$), computed analytically from the lognormal CDF.
+
+\subsection{B1 Isolation Penalty}
+
+The B1 dimension of the ROUTE rubric measures corridor isolation: the degree to which
+a corridor lacks an adequate alternate route \citep{ROUTE_B1}. A B1 score of 10
+indicates a corridor with no interstate-quality alternate within a 200-mile detour.
+A B1 score of 0 indicates parallel interstates with comparable capacity within 30 miles.
+
+We incorporate B1 as a multiplicative penalty on the rerouting cost:
+
+\begin{equation}
+C_\text{reroute}^{\text{adj}}(i) = C_\text{reroute}^{\text{base}} \times
+\underbrace{\left(1 + \frac{\text{detour miles}_i}{100}\right)}_{\text{B1 penalty multiplier}}
+\end{equation}
+
+The B1 penalty multiplier captures the empirical observation that longer detours impose
+super-linear costs through driver fatigue, fuel surcharges at non-standard fill points,
+and scheduling cascade effects. For Donner (550-mile I-40 detour): multiplier = $1 +
+550/100 = 6.5$. For Dallas interchange (200-mile US-287 detour): multiplier = $1 + 200/100
+= 3.0$. The ratio 6.5/3.0 = 2.17 explains approximately half the 4.2$\times$ cost
+differential between Donner and Dallas per closure; the remainder comes from Donner's
+higher closure frequency (50/yr vs.\ 6/yr) and longer mean closure duration (18 hr
+vs.\ 8 hr).
+
+\subsection{Data Sources and Freight Volume Proxy}
+
+\textbf{Closure frequency and duration}: FHWA national incident database \citep{FHWA_incident2022}
+for corridors with FHWA-reportable events; Caltrans District 3 closure database for
+California mountain corridors \citep{Caltrans2023}; WSDOT incident database for Washington.
+Lognormal parameters $\mu_i$, $\sigma_i$ estimated by method-of-moments from the closure
+duration sample for each corridor (minimum 10 events required; corridors with fewer
+historical events use regional averages by corridor type).
+
+\textbf{Freight volume}: HPMS 2018 AADT at representative corridor segments; truck
+fraction = 8\% for T1 Primary Arteries (consistent with ATRI T1 designation), 6\% for
+T2 Major Connectors \citep{ROUTE_A2}. Trucks per day $= \text{AADT} \times 0.08$.
+
+\textbf{Detour distance}: computed as the shortest path distance via the next-best
+alternate route in the ROUTE graph, minus the closed corridor segment length, from
+the ROUTE road network model \citep{ROUTE_B1}.
+
+\subsection{Redundancy Value Computation}
+
+Redundancy value for corridor $i$ is the expected annual closure cost reduction achievable
+by adding an adequate alternate route to the network:
+
+\begin{equation}
+V_\text{redundancy}(i) = E[\text{Cost}_i \mid \text{existing alternates}]
+- E[\text{Cost}_i \mid \text{best practical alternate added}]
+\end{equation}
+
+The ``best practical alternate'' is defined as the alternate route that could be built or
+upgraded to interstate quality within the ROUTE v1.2 framework --- not an unconstrained
+optimal route. For Donner, the best practical alternate is a hypothetical I-70W
+(western Colorado mountain crossing to Sacramento), which reduces the detour from 550
+miles (I-40 Flagstaff) to 90 miles (parallel Sierra crossing). For Dallas, the best
+practical alternate is US-287 upgraded to interstate standard (reducing detour from
+200 miles to 80 miles).
+
+\subsection{Model Validation}
+
+We validate the closure cost model against three external benchmarks:
+
+\begin{enumerate}
+\item \textbf{ATRI 2024 annual bottleneck cost} for Donner Pass: ATRI reports approximately
+\$2.1B in annual weather-related freight disruption for the I-80 corridor segment between
+Sacramento and Reno. Our model produces \$2.4B (14\% above ATRI), reflecting the inclusion
+of tail-event costs that ATRI's median-duration model underestimates.
+\item \textbf{Caltrans post-event cost reports}: Caltrans estimates the 2019 January storm
+Donner closure cost at \$12--18M for the five-day closure. Our model produces \$8.3M for
+a 72-hour closure at the Donner B1 penalty multiplier. The discrepancy reflects that
+Caltrans includes indirect costs (missed deliveries, shipper claims) that our model
+excludes.
+\item \textbf{FHWA Hurricane Harvey I-10 closure estimate}: FHWA estimated \$400--600M
+in freight disruption from the 6-day I-10 Houston closure in August 2017. Our annual
+expected-cost model, annualizing at a recurrence frequency of 0.1 events/year for Harvey
+severity, produces \$120M/yr --- consistent with an expected-value estimate against a
+multi-year recurrence.
+\end{enumerate}

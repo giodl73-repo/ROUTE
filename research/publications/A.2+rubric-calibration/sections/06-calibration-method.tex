@@ -1,0 +1,72 @@
+\section{Calibration Methodology and the Forward-Only Protocol}
+\label{sec:calibration-method}
+
+\subsection{How Calibration Was Triggered}
+
+The ROUTE rubric is not designed from first principles and verified against data; it is designed from first principles and then empirically tested by scoring real corridors. Calibration is triggered by corpus observations that cannot be explained by measurement error alone. The v1.0-to-v1.1 transition was triggered by a single corpus observation: I-80 scoring A3 = 10.0 with no PTI data. The v1.1-to-v1.2 transition was triggered by a persistent anomaly that survived the v1.1 fix: I-110 still ranked above I-80 after the IRI correction.
+
+The methodology is therefore inductive, not deductive. The rubric is a hypothesis; the corpus is the test; calibration is the update. This is the appropriate structure for an empirical scoring framework. A rubric derived purely from transportation theory would have no mechanism for recognizing that IRI is a poor proxy for PTI, or that A1 rewards congestion regardless of strategic importance. The corpus makes these errors visible.
+
+\subsection{Empirical Dimension Validation}
+
+Three statistical tests are applied to each dimension at calibration junctures.
+
+\textbf{Variance test.} A dimension is informative if it spreads across the 0--10 range in the corpus. A dimension that scores 8--10 for all corridors, or 0--2 for all corridors, is not discriminating --- it adds no information to the tier classification. In v1.0, D3 (Infrastructure Vintage) showed low variance: most of the interstate system was built between 1956 and 1975, and the 20-year range in mean construction year across corridors produced only 2--3 points of spread on the 0--10 scale. D3 is a calibration candidate for v1.3.
+
+\textbf{Correlation test.} A dimension pair with Pearson $r > 0.70$ is measuring approximately the same underlying construct. If two dimensions are strongly correlated, one of them is redundant: the rubric is effectively double-weighting a single dimension at the cost of dimension capacity. Correlation analysis across the 227-corridor corpus revealed a critical finding: A3 (Speed Reliability under IRI proxy) was correlated with A1 (Throughput Gap) at $r = 0.71$. This is the statistical signature of the congestion-stress paradox: both A1 and A3-via-IRI were measuring urban overload rather than distinct constructs. The IRI cap in v1.1 was the minimum necessary fix; the deeper fix will require replacing IRI with real PTI data when FHWA Freight Performance Measures coverage extends to rural corridors.
+
+\textbf{Independence test for new dimensions.} Before adding A4, B4, or C4, each was tested for correlation with existing dimensions:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{New dimension} & \textbf{Most correlated existing} & \textbf{Pearson $r$} \\
+\midrule
+A4 (International Trade) & A2 (Freight Intensity) & 0.22 \\
+B4 (Military/Strategic)  & B1 (Redundancy)         & 0.18 \\
+C4 (Agricultural Export) & C3 (Economic Opportunity) & 0.31 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All three new dimensions pass the independence test ($r < 0.50$ against all existing dimensions). They are adding information, not duplicating it. The low correlation between A4 and A2 is expected: freight intensity measures volume, while international trade corridor status measures which corridors carry USMCA-designated trade. Many high-freight-intensity corridors carry no border trade; some moderate-intensity corridors (I-35 in Kansas) have A4 = 8.5 because Laredo is at the southern terminus.
+
+\subsection{Anchor Calibration}
+
+Each dimension uses a three-point linear interpolation to map raw data values to the 0--10 scale. The three anchors are:
+
+\begin{itemize}
+  \item \texttt{anchor\_0}: corresponds approximately to the 10th percentile of the corpus distribution for that dimension's raw data. Corridors at or below this value score 0.
+  \item \texttt{anchor\_5}: the midpoint anchor, typically the median or a theoretically motivated threshold.
+  \item \texttt{anchor\_10}: corresponds approximately to the 90th percentile. Corridors at or above this value score 10.
+\end{itemize}
+
+The 10th/90th percentile approach ensures that the dimension spreads across the full 0--10 range for the actual corpus, rather than clustering near the midpoint. It also prevents one extreme outlier from compressing the rest of the distribution.
+
+Anchor values are version-tagged alongside rubric versions. If the corpus expands substantially (from 227 to 400 corridors), anchors should be recalibrated because the 10th and 90th percentiles will shift.
+
+\subsection{The Forward-Only Protocol: Formalization}
+
+The forward-only protocol was introduced informally in v1.1 and formalized in v1.2 with explicit implementation in the corpus database schema.
+
+\textbf{Rule.} Once a corridor receives a score under rubric version $N$, that score record is immutable. The \texttt{rubric\_version} column in \texttt{data/scores-all.csv} is set at scoring time and never modified. A new rubric version $N+1$ produces new score records for corridors scored (or re-scored) under the new rubric; it does not alter existing records.
+
+\textbf{Implementation.} Each row in \texttt{data/scores-all.csv} carries: \texttt{corridor\_slug}, \texttt{rubric\_version}, \texttt{scored\_date}, and one column per dimension. A corridor scored under v1.0, v1.1, and v1.2 has three rows --- one per version. Queries that need version-specific comparisons join on the version column.
+
+\textbf{Rationale.} Three scientific integrity requirements drive this protocol:
+
+\begin{enumerate}
+  \item \textit{Citation stability.} Paper A.1 \citep{ROUTE_A1} cites specific v1.0 and v1.1 scores. Those scores must remain reproducible from the corpus database. If retroactive rescoring were permitted, the A.1 citations would become unreproducible.
+  \item \textit{Calibration analysis validity.} This paper's before-after comparison (Table~\ref{tab:before-after}) is only possible because v1.0 and v1.1 scores were frozen. Retroactive rescoring would eliminate the historical record needed to document the calibration effect.
+  \item \textit{Score attribution.} When the rubric changes, the change should be credited to the rubric version, not silently applied to corridor scores. A corridor that scores differently under v1.2 than v1.0 changed because the \textit{rubric} recognized new dimensions --- not because the corridor changed. The version tag preserves this attribution.
+\end{enumerate}
+
+\subsection{Known Limitations of the v1.2 Corpus}
+
+Three systematic data limitations affect v1.2 scores and are documented here for reproducibility.
+
+\textbf{B2 (Network Centrality) instability.} All B2 scores are computed on a partial directed graph using TIGER/Line data available for 31 states. Betweenness centrality is sensitive to graph completeness: removing edges from an incomplete graph artificially concentrates centrality on the edges that are present. B2 scores for corridors in states with incomplete TIGER/Line coverage (notably TX, TN, VA, WY, and 18 others) should be treated as lower bounds, not point estimates. The full Brandes implementation on the complete 50-state graph is available in the route CLI but has not been run due to missing state HPMS submissions.
+
+\textbf{D1 (Climate Resilience) data vintage.} D1 scores use 2024 FEMA National Flood Hazard Layer (NFHL) data for flood exposure and 2022--2024 FHWA incident records for closure frequency. NOAA 2050 climate projections are available and show materially higher flood and storm surge exposure for Gulf Coast and Southeast corridors under intermediate sea-level-rise scenarios. D1 scores computed under 2024 baseline data will understate long-run exposure for these corridors.
+
+\textbf{NBI bridge coverage.} Infrastructure Vintage (D3) scores incorporate National Bridge Inventory data for bridge condition and age, but NBI submissions for this analysis were complete for only 28 of 50 states. Corridors in states with incomplete NBI submissions have D3 scores based on segment construction year alone, without bridge condition adjustment. This introduces a modest downward bias in D3 for corridors with high bridge density (I-95 Northeast, I-90 urban segments).

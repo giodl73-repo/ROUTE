@@ -1,0 +1,58 @@
+\section{Methods: Travel Time and Market Analysis}
+\label{sec:methods}
+
+\subsection{Bus Travel Time Model}
+
+Scheduled bus travel time on a T1 managed lane corridor is modeled as:
+
+\begin{equation}
+  T_{\text{bus}} = \frac{d}{v_{\text{bus}}} + N_{\text{stops}} \cdot t_{\text{stop}}
+  \label{eq:travel-time}
+\end{equation}
+
+where $d$ is route distance in miles, $v_{\text{bus}}$ is the effective average cruising speed in mph, $N_{\text{stops}}$ is the number of intermediate stops, and $t_{\text{stop}}$ is the dwell time per stop in minutes.
+
+\paragraph{Effective cruising speed.} T1 managed lanes sustain 65 mph under design conditions (PTI $\leq$ 1.15). We apply a 3 mph deduction for stop-approach deceleration and acceleration cycles integrated over the full route, yielding $v_{\text{bus}} = 62$ mph. This is conservative relative to express coach performance on uncongested European motorways, where 65--68 mph averages are common \citep{FlixBus2023}.
+
+\paragraph{Stop dwell time.} Each intermediate stop (T1/T2 hub platform boarding) is modeled at $t_{\text{stop}} = 8$ minutes: 3 minutes deceleration and platform approach, 3 minutes passenger boarding and alighting with wheelchair-accessible coach protocol, 2 minutes departure and acceleration to cruising speed. Express routes with 3--4 intermediate stops therefore add 24--32 minutes to the free-flow equivalent. We model all 12 corridors with 3 intermediate stops as a baseline; Section~\ref{sec:travel-time} notes where stop counts differ by corridor.
+
+\paragraph{PTI buffer and schedule reliability.} The scheduled time posted to passengers is derived from Equation~\ref{eq:travel-time} as the \emph{median-day} travel time. Under PTI 1.15, the 95th percentile travel time is $T_{\text{bus}} \times 1.15$, meaning the scheduled time is reliable for 95\% of trips with no additional buffer needed. Operators have the option to add a further 5--10 minute terminal arrival buffer to achieve 98\%+ on-time performance at published arrival times; this is not incorporated in the travel time comparisons below, which use the unpadded median-day time.
+
+\paragraph{Comparison baselines.} Current Greyhound and FlixBus travel times are taken from published operator schedules (winter 2025--2026). Where Greyhound does not operate (service withdrawn), we estimate current-network travel time from alternative connections (minimum-transfer composite routes). Amtrak travel times are from published FY2023 schedules \citep{Amtrak2023}; we use the scheduled (not historical on-time) time to give Amtrak the most favorable comparison. Drive times are Google Maps free-flow (no congestion). Air times include 1.5 hours airport processing each end plus scheduled flight duration from Bureau of Transportation Statistics O-D data \citep{BTS_intermodal2023}.
+
+\subsection{PTI Translation for Current-Network Baselines}
+
+Current Greyhound schedules on I-80 already incorporate de facto PTI buffers: operators know they cannot run reliably and pad schedules accordingly. The 18--22 hour published Chicago--New York Greyhound time is not a 62 mph average; it is a 35--43 mph average that includes 3--4 hours of schedule padding absorbing PTI 1.86 unreliability. We treat published operator times as the relevant comparison because that is the service experience available to travelers, regardless of what free-flow speed would theoretically permit.
+
+\subsection{Ridership Estimation}
+
+We estimate corridor ridership using a gravity model calibrated on existing Greyhound/FlixBus routes where ridership data is available \citep{BTS_intermodal2023}:
+
+\begin{equation}
+  Q_{ij} = G \cdot P_i^\alpha \cdot P_j^\beta \cdot f_{ij}^\gamma \cdot T_{ij}^\delta
+  \label{eq:gravity}
+\end{equation}
+
+where $Q_{ij}$ is annual passengers between markets $i$ and $j$, $P_i$ and $P_j$ are metropolitan statistical area populations, $f_{ij}$ is the one-way fare, and $T_{ij}$ is travel time in hours. Parameters $\alpha = 0.85$, $\beta = 0.85$, $\gamma = -1.2$, and $\delta = -0.7$ are calibrated on 18 existing intercity bus corridors for which ridership counts are available in the BTS Intermodal Connectivity Database \citep{BTS_intermodal2023}. The calibration yields $R^2 = 0.79$ in-sample. We apply a 30\% discount to new-market corridors (where no existing bus service operates) to account for awareness effects and the time required to build ridership.
+
+The total market equilibrium estimate of 24 million annual passengers is a steady-state figure (5+ years post-opening); first-year ridership is estimated at 40--55\% of equilibrium for new corridors and 70--80\% for corridors replacing existing services.
+
+\subsection{Operator Economics Model}
+
+Operating cost per route-day is:
+
+\begin{equation}
+  C_{\text{day}} = c_{\text{mile}} \cdot d \cdot N_{\text{buses}} \cdot 2
+  \label{eq:cost}
+\end{equation}
+
+where $c_{\text{mile}} = \$2.80$ per bus-mile (driver \$0.80, fuel \$1.40, vehicle O\&M \$0.40, insurance \$0.20), $d$ is one-way distance, $N_{\text{buses}}$ is the number of buses per direction per day, and the factor of 2 accounts for the return trip. Revenue is:
+
+\begin{equation}
+  R_{\text{day}} = f_{\text{mile}} \cdot d \cdot S \cdot \lambda \cdot N_{\text{buses}} \cdot 2
+  \label{eq:revenue}
+\end{equation}
+
+where $f_{\text{mile}}$ is the per-mile fare, $S = 50$ seats per coach, and $\lambda$ is the load factor. Break-even load factor is the value of $\lambda$ at which $R_{\text{day}} = C_{\text{day}}$.
+
+The Essential Intercity Transportation (EIT) subsidy analogy follows the structure of the Essential Air Service (EAS) program \citep{EAS_DOT2023}, which subsidizes air service to small communities at an average of \$175/passenger. We propose EIT subsidies capped at \$15/passenger for corridors that are marginally below break-even but serve communities with no other intercity transit option. Section~\ref{sec:economics} applies this model to marginal corridors.

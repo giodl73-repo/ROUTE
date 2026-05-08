@@ -1,0 +1,28 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\subsection{Summary of Findings}
+
+This paper analyzed freight reliability on two foundational US highway O-D pairs using PTI-based reliability analysis, max-flow network simulation, and ATRI cost accounting.
+
+For NY--LA: Donner Pass is a national single point of failure. The four-lane Sierra Nevada crossing at 91,200 vpd maximum capacity closes 50 times per year for a mean of 18 hours, imposing approximately \$776 million in direct detour and detention costs annually. The Bay Area approach on I-80 operates at V/C 1.86, driving a corridor PTI of 1.86 that forces shippers to maintain 80-hour commitment windows on a 43-hour free-flow trip. Interstate 2.0 managed freight lanes reduce transit time to 3.5 days and corridor PTI to 1.15, enabling a 48-hour SLA with 95-percent on-time performance.
+
+For HOU--CHI: the primary finding is the absence of a direct corridor. The three-hop route via I-45/I-35/I-55 adds 290 miles and routes all traffic through two high-variance interchange nodes at Dallas and St.\ Louis, collectively imposing \$2.5 billion per year in reliability and efficiency costs. I-69 completion on the Texarkana--Indianapolis alignment eliminates both interchange nodes, reduces distance by 290 miles, and---with I2.0 managed lanes---enables a 24-hour SLA from Houston to Chicago.
+
+\subsection{Policy Implications}
+
+The two O-D pairs analyzed here account for an estimated \$8.2 billion per year in addressable freight reliability costs \citep{ATRI_costs2024}. This figure is not a rounding-order-of-magnitude estimate; it is derived from segment-level AADT data \citep{HPMS2018}, documented incident records \citep{Caltrans2023}, and the ATRI all-in cost model \citep{ATRI_costs2024}. The figure is conservative in excluding shipper-side inventory and contract penalty costs in the HOU--CHI calculation.
+
+The policy implication is direct: Donner Pass infrastructure hardening (tunnel bore or managed alternate alignment) and I-69 gap completion are the two highest-value missing infrastructure investments for freight reliability on the national system, measured by addressable cost per investment dollar. The I2.0 managed-lane overlay on both corridors is a complementary investment that reduces congestion-driven unreliability independently of the physical gap closure.
+
+Neither investment requires new right-of-way on the primary corridors; both involve hardening or completing alignments that the Interstate system already designates or has partially built. The investment case is not speculative corridor creation---it is completion of deferred infrastructure with a documented and quantified reliability penalty for every year of non-completion.
+
+\subsection{Limitations}
+
+PTI estimates in this paper are derived from HPMS AADT data and the BPR volume-delay function \citep{HCM7}, not from direct FHWA Freight Performance Measures probe-vehicle data. For the NJ/PA, Ohio, and rural western segments of I-80, HPMS provides adequate AADT coverage; for the Bay Area approach, HPMS is supplemented by Caltrans PeMS detector data. FPM probe-vehicle PTI data, where available for individual corridor segments, would provide a more direct reliability estimate than the BPR-based approximation used here. The BPR function is known to overestimate delay at V/C ratios above 1.0 (where queuing dynamics dominate), which means the Bay Area PTI of 1.86 may be an underestimate of the true probe-vehicle PTI on that segment.
+
+The HOU--CHI PTI estimate of approximately 1.45 is a model estimate derived from interchange delay distributions and is not validated against FPM data for the I-45/I-35/I-55 route. A direct probe-vehicle PTI study of the three-hop corridor would refine this estimate.
+
+\subsection{Next Extension}
+
+Paper C.2 extends this analysis to the full national max-flow picture: using the Edmonds-Karp formulation on the complete HPMS interstate graph to identify the binding bottlenecks system-wide, not just for two O-D pairs. C.2 will report the top-20 binding edges by max-flow impact, the marginal flow increase from each I2.0 managed-lane segment, and the full national freight reliability cost addressable by the Interstate 2.0 program. The two corridors analyzed here are expected to appear prominently in that ranking but will be contextualized against all competing investment cases in the national network.
