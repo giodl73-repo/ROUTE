@@ -2,6 +2,43 @@
 
 The Interstate 2.0 framework organizes investment decisions into a three-tier design hierarchy. The hierarchy is not administrative convenience; it reflects the empirical tier structure revealed by the ROUTE corpus scoring, in which the dimension-space distribution of existing corridors shows a clear bimodal structure separating high-loading, high-connectivity T1 arteries from the broader T2 and T3 population \citep{ROUTE_A1,ROUTE_A2}.
 
+\subsection{Investment Sequencing: What the Simulation Reveals}
+
+A Monte Carlo simulation of 10{,}000 NY--LA trips (Paper C.3, \textit{The 48-Hour Corridor}) produces a counterintuitive finding that revises the I2.0 investment priority ordering. Interventions are tested individually and in combination against the baseline (solo driver, GP lanes, p95 = 87h commitment window). The single-intervention ranking by p95 improvement:
+
+\begin{table}[h!]
+\centering
+\caption{Single I2.0 Intervention: p95 Improvement and Cost Efficiency (NY→LA)}
+\label{tab:intervention-rank}
+\begin{tabular}{lrrrl}
+\toprule
+\textbf{Intervention} & \textbf{p95 gain} & \textbf{Capex} & \textbf{\$/hr saved} & \textbf{Notes} \\
+\midrule
+Team driving (2-person crew) & $-$30.7 hr & \$0 & free & Operational change only \\
+Driver relay network & $-$28.7 hr & \$40M & \$0.48 & 8 stations on NY--LA \\
+Donner Pass tunnel & $-$12.7 hr & \$4B & \$108 & Eliminates weather closure \\
+Donner hardening & $-$10.2 hr & \$0.8B & \$27 & 50\% fewer closures \\
+Intelligent routing (V2I) & $-$8.1 hr & \$0.2B & \$8 & 40\% incident delay reduction \\
+Diamond interchanges & $-$1.6 hr & \$0.9B & \$196 & k=1→k≥3 at major nodes \\
+Managed lanes (solo driver) & $-$1.6 hr & \$121B & \$25{,}600 & Minimal standalone effect \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The most important finding: \textbf{managed freight lanes alone move the p95 by only 1.6 hours as a standalone intervention.} This is not because managed lanes are ineffective --- it is because for a solo driver, the 30 hours of mandatory HOS rest stops dominate the commitment window variance, not congestion. Managed lanes reduce congestion delay but cannot address the 10-hour mandatory rest stops required every 11 hours of driving.
+
+The relay driver network (\$40M) achieves 18$\times$ more p95 improvement per dollar than managed lanes alone. Team driving (free, operational) achieves 19$\times$ more. The correct I2.0 sequencing, based on simulation evidence, is:
+
+\begin{enumerate}
+\item \textbf{Phase 0 --- Relay Network} (\$40M): Designate T1 diamond hubs as crew-change stations. Operational protocols and station infrastructure. Immediate deployment. p95: 87h $\to$ 58h.
+\item \textbf{Phase 0 --- Intelligent Routing} (\$200M): V2I infrastructure, real-time incident alerts, relay station coordination. Trucks pre-route around Donner closures before entering the Sierra. p95: 58h $\to$ 50h.
+\item \textbf{Phase 1 --- Donner Hardening} (\$800M): Snowsheds, proactive closure management, faster reopening protocols. p95: 50h $\to$ 40h. \textbf{48-hour SLA first achievable here at the p95 level.}
+\item \textbf{Phase 2 --- Managed Lanes} (\$121B): The full T1 managed lane program. Now effective because relay driving eliminates the HOS rest stop bottleneck; managed lanes tighten the variance tail. p95: 40h $\to$ 45h (note: Phase 2 with relay further tightens the tail).
+\item \textbf{Phase 3 --- Donner Tunnel} (\$4B): Eliminates all weather closure risk. p95: $\to$ 41h.
+\end{enumerate}
+
+The relay network and intelligent routing (\$240M combined) deliver more than half the total p95 improvement of the entire \$126B portfolio. Managed lanes are still justified --- their benefit is variance elimination at the tail and capacity addition for freight volume growth --- but they are the \textit{finishing move}, not the foundation. This sequencing preserves the managed lane investment case while dramatically accelerating the 48-hour SLA availability for shippers.
+
 \subsection{Three-Tier Design Hierarchy}
 
 \textbf{Tier 1 Corridors (Primary Arteries)} receive the full I2.0 treatment: managed freight lanes, diamond interchange upgrades at all T1/T1 intersections, and compound exposure hardening where the risk threshold is met. The eight T1 corridors identified in Track A carry a disproportionate share of national freight: collectively more than 50\% of truck ton-miles on less than 12\% of interstate lane-miles \citep{ROUTE_A1}. Investment in T1 throughput and reliability produces the highest returns in the portfolio.
