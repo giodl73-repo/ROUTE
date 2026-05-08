@@ -18,9 +18,13 @@ pub mod chaos;
 pub mod metrics;
 pub mod scenario;
 pub mod scenarios;
+pub mod od;
 
 pub use scenario::{Scenario, ScenarioResult, run_scenario};
 pub use chaos::{ChaosConfig, ChaosResult, run_chaos};
 pub use metrics::{SimMetrics, corridor_pti, network_throughput, freight_cost_delta};
 pub use assignment::{wardrop_equilibrium, FlowState};
 pub use incident::{IncidentSpec, apply_incident, restore_incident};
+pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork,
+             DriverMode, run_od_simulation, run_od_simulation_with_driver,
+             ny_la_corridor, hou_chi_current, hou_chi_i69};
