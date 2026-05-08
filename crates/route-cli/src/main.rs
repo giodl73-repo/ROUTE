@@ -1104,9 +1104,156 @@ fn main() -> Result<()> {
         }
 
         Commands::Calibrate => {
-            println!("route calibrate");
-            println!("  [stub] reads scored corpus from personas/axis-pool.md ledger.");
-            println!("  runs after route score-all produces a full ledger.");
+            println!("route calibrate — rubric calibration pass (v1.3)");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+            let ids = graph.interstate_ids();
+            println!("  scoring {} corridors for calibration…", ids.len());
+
+            // Collect per-dimension scores for all corridors
+            const N_DIMS: usize = 15;
+            let dim_names = ["A1","A2","A3","A4","B1","B2","B3","B4","C1","C2","C3","C4","D1","D2","D3"];
+            let dim_labels = [
+                "Throughput Gap", "Freight Intensity", "Speed Reliability", "International Trade",
+                "Redundancy", "Network Centrality", "Port/Border Access", "Military/Strategic",
+                "Population Reach", "Rural Connectivity", "Economic Opportunity", "Agricultural Export",
+                "Climate Resilience", "Multimodal Integration", "Infrastructure Vintage",
+            ];
+
+            let mut matrix: Vec<[f64; N_DIMS]> = Vec::new();
+            let mut route_ids_used: Vec<String> = Vec::new();
+            let mut total_scores: Vec<f64> = Vec::new();
+            let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
+
+            for id in &ids {
+                if let Some(corridor) = route_network::aggregate_corridor(&graph, id) {
+                    let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
+                    let row = [
+                        s.a1.score, s.a2.score, s.a3.score, s.a4.score,
+                        s.b1.score, s.b2.score, s.b3.score, s.b4.score,
+                        s.c1.score, s.c2.score, s.c3.score, s.c4.score,
+                        s.d1.score, s.d2.score, s.d3.score,
+                    ];
+                    let total = s.total();
+                    // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
+                    if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
+                        flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
+                    }
+                    matrix.push(row);
+                    route_ids_used.push(id.clone());
+                    total_scores.push(total);
+                }
+            }
+
+            let n = matrix.len() as f64;
+            println!("  {} corridors scored\n", matrix.len());
+
+            // Per-dimension statistics
+            println!("┌────────────────────────────────────────────────────────────────────────────────────┐");
+            println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                     │", matrix.len());
+            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────────  ┤");
+            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │  Status    │");
+            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────────  ┤");
+
+            let mut dim_stats: Vec<(f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90
+
+            for d in 0..N_DIMS {
+                let vals: Vec<f64> = matrix.iter().map(|r| r[d]).collect();
+                let min = vals.iter().cloned().fold(f64::MAX, f64::min);
+                let max = vals.iter().cloned().fold(f64::MIN, f64::max);
+                let mean = vals.iter().sum::<f64>() / n;
+                let variance = vals.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n;
+                let std = variance.sqrt();
+                let mut sorted = vals.clone();
+                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let p90 = sorted[((n * 0.90) as usize).min(sorted.len()-1)];
+
+                // Status flags
+                let status = if std < 1.5 {
+                    "LOW VAR ⚠"
+                } else if max - min < 3.0 {
+                    "NARROW  ⚠"
+                } else {
+                    "OK      ✓"
+                };
+
+                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │  {}  │",
+                    dim_names[d], dim_labels[d], min, max, mean, std, p90, status);
+                dim_stats.push((min, max, mean, std, p90));
+            }
+            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────────  ┘");
+
+            // Pairwise correlation (Pearson) — flag pairs > 0.60
+            println!("\n  Computing pairwise Pearson correlations…");
+            let means: Vec<f64> = (0..N_DIMS).map(|d| matrix.iter().map(|r| r[d]).sum::<f64>() / n).collect();
+            let stds:  Vec<f64> = dim_stats.iter().map(|s| s.3).collect();
+
+            let mut high_corr: Vec<(usize, usize, f64)> = Vec::new();
+            for i in 0..N_DIMS {
+                for j in (i+1)..N_DIMS {
+                    if stds[i] < 0.01 || stds[j] < 0.01 { continue; }
+                    let cov: f64 = matrix.iter()
+                        .map(|r| (r[i] - means[i]) * (r[j] - means[j]))
+                        .sum::<f64>() / n;
+                    let r = cov / (stds[i] * stds[j]);
+                    if r.abs() > 0.55 {
+                        high_corr.push((i, j, r));
+                    }
+                }
+            }
+            high_corr.sort_by(|a, b| b.2.abs().partial_cmp(&a.2.abs()).unwrap());
+
+            if !high_corr.is_empty() {
+                println!("\n  High-correlation pairs (|r| > 0.55):");
+                println!("  {:>2} × {:>2}   r       Status", "D1", "D2");
+                println!("  {}", "─".repeat(50));
+                for (i, j, r) in &high_corr {
+                    let warn = if r.abs() > 0.70 { " ⚠ REDUNDANT?" } else { "" };
+                    println!("  {} × {}  {:>+5.2}  {}{}", dim_names[*i], dim_names[*j], r, "", warn);
+                }
+            } else {
+                println!("  No high-correlation pairs found (all |r| ≤ 0.55) ✓");
+            }
+
+            // Congestion-stress paradox candidates
+            if !flagged_congestion.is_empty() {
+                println!("\n  Congestion-stress candidates (high A1, low B2, near T1):");
+                println!("  {:>8}  {:>6}  {:>6}", "Route", "A1", "B2");
+                println!("  {}", "─".repeat(30));
+                for (route, a1, b2) in &flagged_congestion {
+                    println!("  {:>8}  {:>6.1}  {:>6.1}  ⚠ urban connector inflation", route, a1, b2);
+                }
+                println!("  → These corridors may need centrality-adjusted tier classification.");
+                println!("    See A.1 paper: betweenness centrality correction (α=0.65).");
+            }
+
+            // Tier distribution
+            let t1 = total_scores.iter().filter(|&&s| s >= 26.0).count();
+            let t2 = total_scores.iter().filter(|&&s| s >= 19.0 && s < 26.0).count();
+            let t3 = total_scores.iter().filter(|&&s| s >= 11.0 && s < 19.0).count();
+            let t4 = total_scores.iter().filter(|&&s| s < 11.0).count();
+            println!("\n  Tier distribution (v1.3 thresholds: T1≥26, T2≥19, T3≥11):");
+            println!("    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
+                t1, t2, t3, t4);
+            if t1 > 12 {
+                println!("    ⚠ T1 count {} exceeds expected ~8-10. Congestion-stress inflation likely.", t1);
+                println!("    → Run centrality-adjusted classification (route score-all + A.1 α=0.65).");
+            }
+
+            // Retirement candidates
+            println!("\n  Retirement candidates (std < 1.5 — low discriminating power):");
+            let mut any_retire = false;
+            for d in 0..N_DIMS {
+                let (_, _, _, std, _) = dim_stats[d];
+                if std < 1.5 {
+                    println!("    {} ({}) — std={:.2} — consider retiring or merging", dim_names[d], dim_labels[d], std);
+                    any_retire = true;
+                }
+            }
+            if !any_retire { println!("    None — all dimensions show adequate variance ✓"); }
+
+            println!("\ncalibrate complete. Review output above before bumping rubric version.");
         }
 
         Commands::Od { corridor, month } => {
