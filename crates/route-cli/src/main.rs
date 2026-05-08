@@ -1207,6 +1207,11 @@ fn main() -> Result<()> {
             if !ports.is_empty() {
                 println!("  {} port/border locations loaded — B3 will use real values", ports.len());
             }
+            // Load DCFC stations for D2 scoring (partial — DEMO_KEY rate limit)
+            let dcfc = load_dcfc_stations();
+            if !dcfc.is_empty() {
+                println!("  {} DCFC stations loaded — D2 will use real values (partial coverage)", dcfc.len());
+            }
 
             // Collect per-dimension scores for all corridors
             const N_DIMS: usize = 15;
@@ -1232,6 +1237,10 @@ fn main() -> Result<()> {
                     // Join port access for B3
                     if !ports.is_empty() {
                         join_port_access_to_corridor(&graph, id, &mut corridor.attributes, &ports);
+                    }
+                    // Join DCFC for D2
+                    if !dcfc.is_empty() {
+                        join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
                     }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
@@ -2251,6 +2260,62 @@ fn load_ports() -> Vec<PortLocation> {
 }
 
 struct PortLocation { lat: f64, lon: f64, rank: u32, is_border: bool }
+
+/// Load DCFC charging station locations from cache.
+fn load_dcfc_stations() -> Vec<(f64, f64)> {  // (lat, lon)
+    let path = std::path::Path::new("data/cache/dcfc_stations.csv");
+    if !path.exists() { return Vec::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    rdr.records()
+        .filter_map(|r| r.ok())
+        .filter_map(|rec| {
+            if rec.len() < 6 { return None; }
+            let lat: f64 = rec[4].parse().ok()?;
+            let lon: f64 = rec[5].parse().ok()?;
+            if lat.abs() < 1.0 || lon.abs() < 1.0 { return None; }
+            Some((lat, lon))
+        })
+        .collect()
+}
+
+/// Compute DCFC per 100 miles for a corridor.
+fn join_dcfc_to_corridor(
+    graph: &route_network::HighwayGraph,
+    route_id: &str,
+    corridor_miles: f64,
+    attrs: &mut route_network::CorridorAttributes,
+    dcfc_stations: &[(f64, f64)],
+) {
+    if dcfc_stations.is_empty() { return; }
+
+    // Get all nodes on this corridor
+    let corridor_nodes: Vec<(f64, f64)> = graph.graph.node_indices()
+        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
+        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+        .collect();
+    if corridor_nodes.is_empty() { return; }
+
+    fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+        let r = 3_958.8_f64;
+        let dlat = (lat2 - lat1).to_radians();
+        let dlon = (lon2 - lon1).to_radians();
+        let a = (dlat / 2.0).sin().powi(2)
+            + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+        r * 2.0 * a.sqrt().asin()
+    }
+
+    // Count DCFC stations within 5 miles of any corridor node
+    let mut count = 0u32;
+    for &(slat, slon) in dcfc_stations {
+        let near = corridor_nodes.iter().any(|&(nx, ny)| haversine(ny, nx, slat, slon) <= 5.0);
+        if near { count += 1; }
+    }
+
+    if corridor_miles > 0.0 {
+        let dcfc_per_100 = (count as f64 / corridor_miles) * 100.0;
+        attrs.dcfc_per_100mi = Some(dcfc_per_100 as f32);
+    }
+}
 
 /// Compute B3 fields: port terminus flag, border crossing flag, nearest port distance.
 fn join_port_access_to_corridor(
