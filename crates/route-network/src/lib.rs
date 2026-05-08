@@ -17,7 +17,7 @@ pub use build::build_graph;
 pub use aggregate::aggregate_corridor;
 pub use flow::{corridor_max_flow, FlowResult};
 pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
-pub use coverage::{compute_coverage, compute_pop_coverage, CoverageResult, PopCoverageResult, CountyGap};
+pub use coverage::{compute_coverage, compute_pop_coverage, corridor_pop_within_50mi, CoverageResult, PopCoverageResult, CountyGap};
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
 pub use diamond::{find_t1_intersections, find_intersection, analyze_diamond, DiamondResult, T1Intersection};
 pub use strategic::{usmca_corridor_score, military_strategic_score, agricultural_export_score, init_designations, load_designations};

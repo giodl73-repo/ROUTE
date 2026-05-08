@@ -143,6 +143,13 @@ enum Commands {
     /// Fetch ACS county population from Census API (no auth required)
     FetchAcs,
 
+    /// Fetch FEMA NFHL SFHA feature counts for T1 corridor bounding boxes (D1 dimension)
+    FetchFema {
+        /// Output file (default: data/cache/fema_sfha_counts.csv)
+        #[arg(long, value_name = "FILE")]
+        output: Option<PathBuf>,
+    },
+
     /// Show tier standards for a given tier
     Standards {
         /// Tier to show (1, 2, 3, or 4)
@@ -456,6 +463,9 @@ fn main() -> Result<()> {
             println!("  corridor: {} ({:.0} miles, {} segments)",
                 corridor.designation, corridor.total_miles, corridor.edge_count);
 
+            // Join ACS population for C1/C3 dimensions (if cached data is available)
+            join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes);
+
             // Score
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
             // Print score table
@@ -487,13 +497,31 @@ fn main() -> Result<()> {
             println!("  centrality: {} edges scored", bc.len());
             graph.edge_betweenness = Some(bc);
 
+            // Load ACS population once for all corridors
+            let acs_counties = load_acs_counties_for_scoring(&manifest);
+            if acs_counties.is_some() {
+                println!("  ACS population loaded — C1/C3 will use real census data");
+            }
+
             // Score all interstates
             let ids = graph.interstate_ids();
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
             for id in &ids {
-                if let Some(corridor) = route_network::aggregate_corridor(&graph, id) {
+                if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
+                    // Join population if available
+                    if let Some(ref counties) = acs_counties {
+                        let (pop, rural_pop) = route_network::corridor_pop_within_50mi(
+                            &graph, id, counties,
+                        );
+                        if pop > 0 {
+                            let rural_share = if pop > 0 { rural_pop as f32 / pop as f32 } else { 0.0 };
+                            corridor.attributes.pop_within_50mi = Some(pop);
+                            corridor.attributes.rural_pop_within_50mi = Some(rural_pop);
+                            corridor.attributes.pct_rural_in_buffer = Some(rural_share);
+                        }
+                    }
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     println!("  {}: {:.1}/150{}", corridor.designation, scores.total(),
                         if scores.any_estimated() { "†" } else { "" });
@@ -734,6 +762,30 @@ fn main() -> Result<()> {
             route_data::fetch_acs_population(&out)?;
             println!("  saved → {}", out.display());
             println!("  run `route fetch` to get county gazetteer, then `route coverage` for population-weighted analysis.");
+        }
+
+        Commands::FetchFema { output } => {
+            let out = output.unwrap_or_else(|| PathBuf::from("data/cache/fema_sfha_counts.csv"));
+            println!("route fetch-fema → {}", out.display());
+            println!("  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)");
+            println!("  querying {} T1 corridor bounding boxes…", route_data::T1_BBOXES.len());
+
+            std::fs::create_dir_all(out.parent().unwrap_or(std::path::Path::new(".")))?;
+
+            let results = route_data::fetch_all_sfha_counts(&out)?;
+
+            let ok_count = results.iter().filter(|r| r.status == "ok").count();
+            println!("\n  Results:");
+            println!("  {:10}  {:>14}  {}", "Corridor", "SFHA Features", "Status");
+            println!("  {}", "─".repeat(40));
+            for r in &results {
+                println!("  {:10}  {:>14}  {}", r.corridor, r.sfha_count, r.status);
+            }
+            println!("\n  {}/{} corridors queried successfully", ok_count, results.len());
+            println!("  saved → {}", out.display());
+            println!("  Use counts as D1 proxy: higher = more flood-exposed corridor.");
+            println!("  Note: counts reflect SFHA polygons in the bounding box, not miles.");
+            println!("  Run `route score <corridor>` after this to see D1 update (manual join needed).");
         }
 
         Commands::Coverage { threshold, grid, t1_only, top_gaps, grid_mode } => {
@@ -1111,6 +1163,12 @@ fn main() -> Result<()> {
             let ids = graph.interstate_ids();
             println!("  scoring {} corridors for calibration…", ids.len());
 
+            // Load ACS population once for C1/C2 wiring
+            let acs_counties = load_acs_counties_for_scoring(&manifest);
+            if acs_counties.is_some() {
+                println!("  ACS population data loaded — C1/C2 will use real values");
+            }
+
             // Collect per-dimension scores for all corridors
             const N_DIMS: usize = 15;
             let dim_names = ["A1","A2","A3","A4","B1","B2","B3","B4","C1","C2","C3","C4","D1","D2","D3"];
@@ -1127,7 +1185,11 @@ fn main() -> Result<()> {
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
 
             for id in &ids {
-                if let Some(corridor) = route_network::aggregate_corridor(&graph, id) {
+                if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
+                    // Join ACS population for C1/C2
+                    if acs_counties.is_some() {
+                        join_acs_population_to_corridor(&manifest, &graph, id, &mut corridor.attributes);
+                    }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
                         s.a1.score, s.a2.score, s.a3.score, s.a4.score,
@@ -2088,6 +2150,59 @@ fn load_graph(manifest: &route_data::Manifest) -> Result<route_network::HighwayG
 
     let (graph, _) = route_network::build_graph(segments, &hpms);
     Ok(graph)
+}
+
+/// Load county gazetteer + ACS population from cache (if available).
+/// Returns None silently if the files are not cached — scoring degrades gracefully.
+fn load_acs_counties_for_scoring(
+    manifest: &route_data::Manifest,
+) -> Option<Vec<route_data::CountyCentroid>> {
+    // Locate gazetteer
+    let gaz_path: Option<std::path::PathBuf> = std::fs::read_dir(&manifest.cache_dir).ok()
+        .and_then(|entries| {
+            entries.filter_map(|e| e.ok())
+                .find(|e| e.file_name().to_string_lossy().ends_with("counties_national.txt"))
+                .map(|e| e.path())
+        });
+
+    let gaz_path = gaz_path?;
+    let mut counties = route_data::read_county_gazetteer(&gaz_path).ok()?;
+
+    // Join ACS population if cached
+    let pop_path = manifest.cache_dir.join("acs_county_pop_2022.csv");
+    if pop_path.exists() {
+        let _ = route_data::join_population(&mut counties, &pop_path);
+    }
+
+    Some(counties)
+}
+
+/// Join ACS population onto a single corridor's CorridorAttributes.
+/// No-op if the cached files are not present.
+fn join_acs_population_to_corridor(
+    manifest: &route_data::Manifest,
+    graph: &route_network::HighwayGraph,
+    route_id: &str,
+    attrs: &mut route_network::CorridorAttributes,
+) {
+    if let Some(counties) = load_acs_counties_for_scoring(manifest) {
+        let (pop, rural_pop) =
+            route_network::corridor_pop_within_50mi(graph, route_id, &counties);
+        if pop > 0 {
+            let rural_share = rural_pop as f32 / pop as f32;
+            attrs.pop_within_50mi = Some(pop);
+            attrs.rural_pop_within_50mi = Some(rural_pop);
+            attrs.pct_rural_in_buffer = Some(rural_share);
+            println!(
+                "  C1 population (50mi buffer): {:>12} ({:.1}% rural)",
+                pop,
+                rural_share * 100.0
+            );
+        } else {
+            println!("  C1: no interchange nodes found for {route_id} — check graph build");
+        }
+    }
+    // If counties is None (files not cached), silently leave attrs as-is (None = not scored)
 }
 
 /// Print a formatted score table to stdout.

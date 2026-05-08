@@ -7,6 +7,7 @@
 ///      Includes ocean cells; use only as rough estimate.
 use crate::graph::HighwayGraph;
 use petgraph::graph::NodeIndex;
+use std::collections::HashSet;
 
 /// Population-weighted coverage result (county centroid mode).
 #[derive(Debug)]
@@ -272,6 +273,55 @@ fn find_nearest_miles(coords: &[(f64, f64)], lat: f64, lon: f64) -> f64 {
     coords.iter()
         .map(|&(ilon, ilat)| haversine_miles(lat, lon, ilat, ilon))
         .fold(f64::MAX, f64::min)
+}
+
+/// Compute population within 50 miles of a specific corridor's interchange nodes.
+///
+/// Uses the same haversine logic as `compute_pop_coverage` but restricted to
+/// interchange nodes belonging to `route_id`. Counties are deduplicated by GEOID
+/// so each county is counted once regardless of how many nodes are nearby.
+///
+/// Returns `(pop_within_50mi, rural_pop_within_50mi)`.
+/// Rural = counties whose RUCC code ≥ 4; when RUCC is 0 (not assigned), treated as urban.
+pub fn corridor_pop_within_50mi(
+    g: &HighwayGraph,
+    route_id: &str,
+    counties: &[route_data::CountyCentroid],
+) -> (u64, u64) {
+    // Collect interchange node coordinates for this corridor only
+    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+        .filter(|&ni| {
+            let node = &g.graph[ni];
+            if !node.is_interchange { return false; }
+            // Keep node if any adjacent edge belongs to this route
+            g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .collect();
+
+    if interchange_coords.is_empty() {
+        return (0, 0);
+    }
+
+    let mut seen: HashSet<&str> = HashSet::new();
+    let mut total_pop: u64 = 0;
+    let mut rural_pop: u64 = 0;
+
+    for county in counties {
+        if seen.contains(county.geoid.as_str()) {
+            continue;
+        }
+        let nearest = find_nearest_miles(&interchange_coords, county.lat, county.lon);
+        if nearest <= 50.0 {
+            seen.insert(&county.geoid);
+            total_pop += county.population;
+            if county.rucc >= 4 {
+                rural_pop += county.population;
+            }
+        }
+    }
+
+    (total_pop, rural_pop)
 }
 
 /// Very rough state assignment from lat/lon (bounding box approximation).

@@ -6,6 +6,7 @@ pub mod hpms_fetch;
 pub mod nbi;
 pub mod faf5;
 pub mod census;
+pub mod fema;
 
 pub use nhs::{NhsSegment, RoadClass};
 pub use hpms::HpmsRecord;
@@ -14,3 +15,4 @@ pub use nbi::NbiRecord;
 pub use faf5::Faf5Record;
 pub use manifest::Manifest;
 pub use census::{CountyCentroid, read_county_gazetteer, fetch_acs_population, join_population};
+pub use fema::{fetch_all_sfha_counts, FemaSfhaResult, T1_BBOXES, CorridorBbox};
