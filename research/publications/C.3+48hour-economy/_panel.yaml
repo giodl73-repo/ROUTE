@@ -1,14 +1,49 @@
 paper: C.3+48hour-economy
 title: "The 48-Hour Corridor: Economic Opportunities Unlocked by I2.0 Transcontinental Freight"
 venue: "Journal of Economic Perspectives"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: neumark
+    name: David Neumark
+    persona: "Distinguished Professor of Economics, UC Irvine"
+    score: 2
+  - slug: mckinnon
+    name: Alan McKinnon
+    persona: "Professor of Logistics, Kuehne Logistics University Hamburg"
+    score: 3
+  - slug: puentes
+    name: Robert Puentes
+    persona: "President & CEO, Eno Center for Transportation"
+    score: 3
+  - slug: schmitt
+    name: Angie Schmitt
+    persona: "Transportation journalist; author of Right of Way"
+    score: 2
+  - slug: walker
+    name: Jarrett Walker
+    persona: "Principal, Jarrett Walker + Associates"
+    score: 3
+reviews:
+  neumark: REVIEW-neumark.md
+  mckinnon: REVIEW-mckinnon.md
+  puentes: REVIEW-puentes.md
+  schmitt: REVIEW-schmitt.md
+  walker: REVIEW-walker.md
+avg_score: 2.6
+min_score: 2
+synthesis: SYNTHESIS.md
+revision_plan: REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-07
     note: "Spawned from OD simulation finding: relay + managed lanes achieves 48h NY-LA.
            The paper quantifies what economic activity 48h enables that 3.6 days does not.
            Core mechanism: air-to-truck freight substitution ($8B/yr addressable market)."
+  - stage: revision
+    date: 2026-05-08
+    note: "Round 1 panel complete. avg_score=2.6/4, min_score=2/4. Two P1 blockers:
+           net-vs-gross economic calculation ($8.2B is gross); labor displacement framing
+           (20,000 relay jobs are restructured positions, not net new). Six P2 items.
+           Target Round 2 at 3.5/4 after single revision pass."

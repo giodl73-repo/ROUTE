@@ -1,11 +1,40 @@
 paper: B.5+port-connectivity
 title: "The Last Interstate Mile: T1 Port Connections and the Highway-Maritime Interface"
 venue: "Maritime Policy and Management"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: elefteriadou
+    name: Lily Elefteriadou
+    persona: "Director, McTrans Center, University of Florida; HCM7 contributing author"
+    score: 2
+  - slug: puentes
+    name: Robert Puentes
+    persona: "President and CEO, Eno Center for Transportation; federal surface transportation policy"
+    score: 3
+  - slug: mckinnon
+    name: Alan McKinnon
+    persona: "Professor of Logistics, Kühne Logistics University Hamburg; freight transport economics"
+    score: 3
+  - slug: hanson
+    name: Susan Hanson
+    persona: "Distinguished University Professor Emerita, Clark University; transport geography, equity"
+    score: 2
+  - slug: chester
+    name: Mikhail Chester
+    persona: "Professor and Director, Metis Center, Arizona State University; infrastructure resilience"
+    score: 3
+reviews:
+  elefteriadou: 2
+  puentes: 3
+  mckinnon: 3
+  hanson: 2
+  chester: 3
+score_mean: 2.6
+score_min: 2
+p1_items: 2
+p2_items: 6
 history:
   - stage: planned
     date: 2026-05-07
@@ -16,3 +45,8 @@ history:
            binding East Coast constraint within 5 years. USMCA Laredo case adds border
            crossing tier: $10.8B/yr in delay cost on one connector. Track B extension
            of gap analysis work."
+  - stage: revision
+    date: 2026-05-08
+    note: "Round 1 panel complete. Mean 2.6/4. Two P1 blockers: K_port empirical
+           calibration (Elefteriadou) and I-710 equity dimension (Hanson). Six P2
+           items. SYNTHESIS.md and REVISION-PLAN.md written."

@@ -1,11 +1,40 @@
 paper: F.3+relay-marketplace
 title: "The Relay Marketplace: Platform Design for 48-Hour National Freight and the AV Transition"
 venue: "Management Science"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: neumark
+    name: David Neumark
+    persona: "Distinguished Professor of Economics, UC Irvine; labor economics, market structure"
+    score: 2
+  - slug: adamic
+    name: Lada Adamic
+    persona: "Research Scientist, Meta AI; computational social science, platform design"
+    score: 3
+  - slug: puentes
+    name: Robert Puentes
+    persona: "President and CEO, Eno Center for Transportation; federal surface transportation policy"
+    score: 3
+  - slug: mckinnon
+    name: Alan McKinnon
+    persona: "Professor of Logistics, Kühne Logistics University Hamburg; freight economics, decarbonization"
+    score: 3
+  - slug: schmitt
+    name: Angie Schmitt
+    persona: "Transportation journalist and author; transportation equity, labor, community impact"
+    score: 2
+reviews:
+  neumark: 2
+  adamic: 3
+  puentes: 3
+  mckinnon: 3
+  schmitt: 2
+score_mean: 2.6
+score_min: 2
+p1_items: 2
+p2_items: 8
 history:
   - stage: planned
     date: 2026-05-07
@@ -15,3 +44,9 @@ history:
            missing infrastructure. Paper also covers AV transition: managed lanes are
            the AV runway; relay hubs become AV handoff points. Coordination failure
            is the core economic problem, not economics."
+  - stage: revision
+    date: 2026-05-08
+    note: "Round 1 panel complete. Mean 2.6/4. Two P1 blockers: hub fee economics
+           requiring per-ton-mile reframing (Neumark) and Mode 2 gig labor classification
+           under AB5/ABC-test (Schmitt/McKinnon). Eight P2 items. SYNTHESIS.md and
+           REVISION-PLAN.md written."

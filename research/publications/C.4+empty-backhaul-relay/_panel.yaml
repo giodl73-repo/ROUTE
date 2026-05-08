@@ -1,11 +1,40 @@
 paper: C.4+empty-backhaul-relay
 title: "Empty Miles and Load Matching: The Relay Marketplace as National Freight Optimizer"
 venue: "Transportation Research Part E (Logistics and Transportation Review)"
-stage: planned
-round: 0
+stage: revision
+round: 1
 content_mode: full
-reviewers: []
-reviews: {}
+reviewers:
+  - slug: mckinnon
+    name: Alan McKinnon
+    persona: "Professor of Logistics, Kuehne Logistics University Hamburg"
+    score: 3
+  - slug: adamic
+    name: Lada Adamic
+    persona: "Research Scientist, Meta; Adjunct Professor of Information, University of Michigan"
+    score: 2
+  - slug: neumark
+    name: David Neumark
+    persona: "Distinguished Professor of Economics, UC Irvine"
+    score: 3
+  - slug: puentes
+    name: Robert Puentes
+    persona: "President & CEO, Eno Center for Transportation"
+    score: 3
+  - slug: hanson
+    name: Susan Hanson
+    persona: "Distinguished University Professor Emerita of Geography, Clark University"
+    score: 3
+reviews:
+  mckinnon: REVIEW-mckinnon.md
+  adamic: REVIEW-adamic.md
+  neumark: REVIEW-neumark.md
+  puentes: REVIEW-puentes.md
+  hanson: REVIEW-hanson.md
+avg_score: 2.8
+min_score: 2
+synthesis: SYNTHESIS.md
+revision_plan: REVISION-PLAN.md
 history:
   - stage: planned
     date: 2026-05-07
@@ -15,3 +44,10 @@ history:
            via scheduled pre-matching; benchmarked against UPS/FedEx closed-network
            performance. Structural flow imbalance analysis identifies highest-value hub
            siting corridors. Track C extension of relay marketplace work."
+  - stage: revision
+    date: 2026-05-08
+    note: "Round 1 panel complete. avg_score=2.8/4, min_score=2/4. Two P1 blockers:
+           Hungarian O(n³) complexity claim inconsistent with hub-scale input sizes
+           described in Section 3.3 (n≈2,720 at Chicago peak); 35% baseline needs
+           FAF5 cross-validation beyond ATRI self-reported surveys. Five P2 items.
+           Target Round 2 at 3.5/4 after single revision pass."
