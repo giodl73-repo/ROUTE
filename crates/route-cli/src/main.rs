@@ -1242,6 +1242,16 @@ fn main() -> Result<()> {
                     if !dcfc.is_empty() {
                         join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
                     }
+                    // Estimate A2 freight value from HPMS truck AADT × corridor miles
+                    // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
+                    if corridor.attributes.annual_freight_value_b.is_none() {
+                        if let Some(aadt) = corridor.attributes.p90_aadt {
+                            let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
+                            let truck_aadt = aadt as f64 * truck_pct;
+                            let freight_b = truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
+                            corridor.attributes.annual_freight_value_b = Some(freight_b);
+                        }
+                    }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
                         s.a1.score, s.a2.score, s.a3.score, s.a4.score,
