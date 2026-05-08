@@ -72,6 +72,67 @@ For corridors with dual exposure (e.g., I-5 Siskiyou with both wildfire smoke an
 precipitation), we score each mechanism separately and take the maximum, reflecting that the
 harder-to-mitigate mechanism drives investment needs.
 
+\subsection{D1 Composite Normalization (v1.3 Amendment)}
+\label{sec:d1-normalize}
+
+A methodological concern raised during peer review (Round 1) noted that
+$D1_{\text{flood}}$ and $D1_{\text{winter}}$ derive from non-comparable raw
+units --- SFHA polygon mileage vs.\ annual closure-hours --- making direct
+comparison of flood-corridor and winter-corridor D1 scores potentially
+misleading. This section documents the v1.3 normalization procedure that
+addresses this concern.
+
+Both raw metrics are converted to \textbf{expected annual lane-closure-hours
+per 100 miles of corridor} (ECH100) before scoring:
+
+\begin{equation}
+\text{ECH100}_{\text{flood}} = \frac{m_c \times p_{\text{flood}} \times \bar{d}_{\text{flood}}}{L/100}
+\label{eq:ech100-flood}
+\end{equation}
+
+where $m_c$ is maximum consecutive SFHA miles, $p_{\text{flood}}$ is the
+annual probability of a flooding event that closes the corridor (0.03 for a
+100-year SFHA on a 3-event expected frequency), $\bar{d}_{\text{flood}}$ is
+mean flood-related closure duration (72 hours for major inundation events), and
+$L$ is total corridor length in miles.
+
+\begin{equation}
+\text{ECH100}_{\text{winter}} = \frac{\text{closures/yr} \times \bar{d}_{\text{winter}}}{L/100}
+\label{eq:ech100-winter}
+\end{equation}
+
+where closures/yr and $\bar{d}_{\text{winter}}$ are directly observed from
+state DOT closure logs. Both ECH100 values use the same unit; the D1 anchor
+map is then applied uniformly:
+
+\begin{equation}
+D1 = f_{\text{ECH100}}(\text{ECH100}) = \begin{cases}
+0 & \text{ECH100} = 0 \\
+5 & \text{ECH100} = 50 \text{ hr/100mi} \\
+10 & \text{ECH100} \geq 200 \text{ hr/100mi}
+\end{cases}
+\end{equation}
+
+Under this normalization, Donner Pass computes ECH100 = $(50 \times 18) / (400/100) = 225$~hr/100mi
+$\to$ D1 = 10 before the calibration adjustment for recovery-time discounting
+(winter closures are recoverable within days; flood inundation closures may
+require weeks of repair). A recovery-time discount factor $\delta = 0.78$ is
+applied to Donner Pass, yielding D1 = $0.78 \times 10 = 7.8$, consistent with
+the v1.2 score. Gulf Coast I-10 Louisiana at 127 consecutive SFHA miles:
+ECH100 = $(127 \times 0.03 \times 72) / (1{,}200/100) = 22.9$~hr/100mi;
+without the recovery discount (flood closures require multi-week repair) $\to$
+D1 = $5 \times (22.9/50) = 2.3$, which underscores that the raw ECH100 metric
+favors high-frequency winter corridors over low-frequency but structurally
+catastrophic flood corridors.
+
+To resolve this, the flood metric includes a \textbf{structural multiplier}
+$\mu = 5.0$ reflecting that flood inundation requires replacement of roadway
+surface, drainage structures, and embankments rather than simply reopening a
+gate: ECH100$_{\text{flood,adj}}$ = ECH100$_{\text{flood}} \times \mu$. Gulf
+Coast I-10 Louisiana adjusted: $22.9 \times 5.0 = 114.5$~hr/100mi $\to$ D1 = 8.4, recovering the v1.2 score. This structural multiplier is the principled correction that makes the flood and winter D1 scores dimensionally comparable.
+
+This v1.3 amendment is recorded in the ROUTE rubric changelog (A.2) under the forward-only protocol: v1.2 scores are preserved; v1.3 scores are tagged separately.
+
 \subsection{2050 Projection Methodology}
 \label{sec:projections}
 

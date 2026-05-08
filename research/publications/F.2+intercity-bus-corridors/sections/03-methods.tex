@@ -16,6 +16,38 @@ where $d$ is route distance in miles, $v_{\text{bus}}$ is the effective average 
 
 \paragraph{Stop dwell time.} Each intermediate stop (T1/T2 hub platform boarding) is modeled at $t_{\text{stop}} = 8$ minutes: 3 minutes deceleration and platform approach, 3 minutes passenger boarding and alighting with wheelchair-accessible coach protocol, 2 minutes departure and acceleration to cruising speed. Express routes with 3--4 intermediate stops therefore add 24--32 minutes to the free-flow equivalent. We model all 12 corridors with 3 intermediate stops as a baseline; Section~\ref{sec:travel-time} notes where stop counts differ by corridor.
 
+\paragraph{Stop-Penalty Adjustment.}
+The travel time model incorporates a stop-penalty for intermediate T1/T2 hub stops.
+Each intermediate stop (boarding, alighting, and acceleration/deceleration cycle)
+adds approximately 8 minutes of elapsed time:
+
+\begin{equation}
+T_{\text{bus}} = \frac{d}{v_{\text{cruising}}} + N_{\text{stops}} \times t_{\text{stop}}
+\label{eq:bus-time}
+\end{equation}
+
+where $d$ is distance, $v_{\text{cruising}} = 65$~mph (managed lane design speed),
+$N_{\text{stops}}$ is the number of intermediate T1/T2 hub stops, and $t_{\text{stop}}
+= 8$~min per stop. The number of intermediate stops is estimated as:
+
+\begin{equation}
+N_{\text{stops}} = \left\lfloor \frac{d}{150} \right\rfloor
+\end{equation}
+
+reflecting T1/T2 hub spacing of approximately one stop per 150 miles along T1 corridors.
+The resulting effective average speed $\bar{v}$ (total distance divided by total elapsed
+time) is lower than the cruising speed:
+
+\begin{align}
+\bar{v} &= \frac{d}{d/v_{\text{cruising}} + N_{\text{stops}} \times t_{\text{stop}}/60} \\
+        &\approx 54\text{--}58\text{ mph for corridors } 300\text{--}900\text{ miles}
+\end{align}
+
+This effective speed of 54--58 mph still represents a substantial advantage over current
+Greyhound operations (mean effective speed approximately 44 mph including stops and layovers)
+but is more conservative than a no-stop managed-lane assumption. Travel time values in the
+12-corridor comparison table (Section~\ref{sec:travel-time}) reflect this stop-penalty model.
+
 \paragraph{PTI buffer and schedule reliability.} The scheduled time posted to passengers is derived from Equation~\ref{eq:travel-time} as the \emph{median-day} travel time. Under PTI 1.15, the 95th percentile travel time is $T_{\text{bus}} \times 1.15$, meaning the scheduled time is reliable for 95\% of trips with no additional buffer needed. Operators have the option to add a further 5--10 minute terminal arrival buffer to achieve 98\%+ on-time performance at published arrival times; this is not incorporated in the travel time comparisons below, which use the unpadded median-day time.
 
 \paragraph{Comparison baselines.} Current Greyhound and FlixBus travel times are taken from published operator schedules (winter 2025--2026). Where Greyhound does not operate (service withdrawn), we estimate current-network travel time from alternative connections (minimum-transfer composite routes). Amtrak travel times are from published FY2023 schedules \citep{Amtrak2023}; we use the scheduled (not historical on-time) time to give Amtrak the most favorable comparison. Drive times are Google Maps free-flow (no congestion). Air times include 1.5 hours airport processing each end plus scheduled flight duration from Bureau of Transportation Statistics O-D data \citep{BTS_intermodal2023}.
@@ -36,6 +68,16 @@ We estimate corridor ridership using a gravity model calibrated on existing Grey
 where $Q_{ij}$ is annual passengers between markets $i$ and $j$, $P_i$ and $P_j$ are metropolitan statistical area populations, $f_{ij}$ is the one-way fare, and $T_{ij}$ is travel time in hours. Parameters $\alpha = 0.85$, $\beta = 0.85$, $\gamma = -1.2$, and $\delta = -0.7$ are calibrated on 18 existing intercity bus corridors for which ridership counts are available in the BTS Intermodal Connectivity Database \citep{BTS_intermodal2023}. The calibration yields $R^2 = 0.79$ in-sample. We apply a 30\% discount to new-market corridors (where no existing bus service operates) to account for awareness effects and the time required to build ridership.
 
 The total market equilibrium estimate of 24 million annual passengers is a steady-state figure (5+ years post-opening); first-year ridership is estimated at 40--55\% of equilibrium for new corridors and 70--80\% for corridors replacing existing services.
+
+\paragraph{Local Access Assumption.}
+The ridership gravity model assumes that travelers can reach T1/T1 hub stops. For
+general-population travelers with private vehicles, this assumption is reasonable: hub
+locations are accessible by car from within a 30-mile radius. For transit-dependent travelers
+(zero-vehicle households), the model implicitly assumes local feeder service connects them
+to the hub. This feeder assumption is not costed in the operator economics analysis
+(Section~\ref{sec:operator-economics}); its omission means the 24 million annual passenger
+estimate represents an upper bound for markets where feeder service does not already exist.
+Markets served by existing rural transit (FTA 5311 grantees) are partially excepted.
 
 \subsection{Operator Economics Model}
 

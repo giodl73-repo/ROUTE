@@ -30,6 +30,21 @@ Third, PTI is estimated by applying the BPR function to a 90th-percentile demand
 \end{equation}
 The 1.15 multiplier on the numerator projects the 90th-percentile demand day to the demand level that, with incident superposition, produces 95th-percentile travel time. This formulation follows the FHWA FPM technical reference \citep{FHWA_freight2023}.
 
+\paragraph{BPR Calibration Range Limitation.}
+The BPR volume-delay function was calibrated on empirical data for $V/C \leq 1.3$
+\citep{HCM7}. At $V/C = 1.86$ (I-80 Bay Area segments, peak conditions), the function
+extrapolates beyond its calibrated range. At high $V/C$, the BPR function
+systematically \textit{underestimates} congestion delay because the quartic term grows
+more steeply than the empirical relationship in stop-and-go conditions. The Bay Area PTI
+estimate of 1.86 derived from BPR should therefore be interpreted as a \textbf{conservative
+lower bound}: actual PTI on the I-580/I-80 approach corridor likely exceeds 2.0 during
+peak periods. Available NPMRDS probe-vehicle speed data for the I-80 corridor (where
+accessible) reports mean peak travel time ratios of 2.1--2.4 in the San Francisco Bay
+Area, consistent with BPR underestimation at high $V/C$. All PTI-dependent findings in
+this paper (SLA feasibility, buffer-window estimates) are therefore directionally
+conservative: managed lane improvements that reduce PTI from 1.86 (BPR estimate) to 1.15
+are likely understatements of the true unreliability reduction.
+
 \subsection{Max-Flow Network Model}
 
 The directed interstate graph is constructed with nodes at major interchanges (FHWA interchange density data) and edges representing interstate segments. Edge capacity is set to the segment capacity in vehicles per day: $C_{\text{edge}} = \text{lanes}/2 \times 2{,}300 \times 16$, where 16 is the daily operating hours (6~am to 10~pm for freight-significant volumes). The source node is the NYC metropolitan area (I-95 at Hackensack, NJ); the sink is the Los Angeles metropolitan area (I-405/I-10 junction).

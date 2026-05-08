@@ -19,7 +19,9 @@ Key B1 = 10 cases in the corpus are mountain passes and high-desert crossings wh
 
 \subsection{The D1 Dimension: Environmental Vulnerability}
 
-D1 is a composite climate vulnerability score incorporating three exposure components: (1) FEMA National Flood Hazard Layer (NFHL) Special Flood Hazard Area miles as a share of total corridor miles, reflecting baseline flood exposure probability; (2) mean annual closure events from FHWA incident records and Caltrans/WSDOT/LADOTD operational logs \citep{Caltrans2023, FHWA_freight2023}; and (3) a climate trajectory adjustment reflecting whether the 2050 exposure under NOAA intermediate sea-level-rise and precipitation-intensity scenarios is substantially higher than the 2024 baseline \citep{FEMA_NFHL}.
+D1 is a composite climate vulnerability score incorporating three exposure components: (1) FEMA National Flood Hazard Layer (NFHL) Special Flood Hazard Area miles as a share of total corridor miles, reflecting baseline flood exposure probability; (2) mean annual closure events from FHWA incident records and Caltrans/WSDOT/LADOTD operational logs \citep{Caltrans2023, FHWA_freight2023}; and (3) a climate trajectory adjustment reflecting whether the 2050 exposure under NOAA intermediate sea-level-rise and precipitation-intensity scenarios is substantially higher than the 2024 baseline \citep{FEMA_NFHL} \citep{ROUTE_D1}.
+
+The D1 scores used in this analysis are drawn from Paper D.1 \citep{ROUTE_D1}, which maps climate exposure for all 227 corridors using FEMA NFHL flood zone overlay and historical closure frequency data. B.3's compound exposure thresholds require D.1 to be finalized before the compound corpus can be validated.
 
 A corridor scores D1 = 0 when it has no FHWA SFHA miles, near-zero historical closure frequency, and no projected increase in 2050 exposure. It scores D1 = 10 when a majority of the corridor lies in high-hazard flood zones, annual closure frequency is high (50+ events/year), and 2050 projections show substantially elevated exposure. The score is signed for vulnerability, not resilience: higher D1 is worse.
 
