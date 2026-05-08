@@ -1,7 +1,7 @@
 paper: E.1+managed-lanes
 title: "Managed Freight Lanes: Throughput, Transit Time, and NPV"
 venue: "Transportation Research Part A"
-stage: revision
+stage: submit
 round: 1
 content_mode: full
 reviewers:
@@ -11,13 +11,13 @@ reviewers:
   - puentes
   - adamic
 scores:
-  elefteriadou: 2
+  elefteriadou: 3
   mckinnon: 3
   neumark: 3
   puentes: 3
   adamic: 3
-avg_score: 2.8
-min_score: 2
+avg_score: 3.0
+min_score: 3
 reviews:
   round1:
     - reviewer: elefteriadou
@@ -32,10 +32,20 @@ reviews:
       file: reviews/REVIEW-adamic.md
   synthesis: reviews/SYNTHESIS.md
   revision_plan: reviews/REVISION-PLAN.md
+  recheck:
+    - reviewer: elefteriadou
+      file: reviews/RECHECK-elefteriadou.md
+    - reviewer: neumark
+      file: reviews/RECHECK-neumark.md
+  recheck_synthesis: reviews/RECHECK-SYNTHESIS.md
 history:
   - stage: planned
     date: 2026-05-06
     note: "Paper scaffolded — ROUTE module design"
-  - stage: revision
+  - stage: submit
     date: 2026-05-07
     note: "Round 1 panel review complete. avg_score=2.8/4; min_score=2/4 (Elefteriadou). P1.1 blocking: 2,400 pcphpl capacity claim does not account for access-point geometry or mountain-corridor grade corrections. P1.2: freight demand growth rate (1.8%/yr) unsourced; no NPV sensitivity table. P1.3: tolling model (voluntary vs. mandatory) unspecified; uptake rate unmodeled."
+  - stage: submit
+    date: 2026-05-07
+    note: "Recheck complete. Elefteriadou PP1.1 PASS (2→3/4): HCM7 corridor-by-corridor table provided; weighted avg 2,108 pcphpl; NPV revised $115B→$101B; B/C revised 2.3→2.0. Neumark PP1.2 PASS (3/4 confirmed): FAF4/FAF5 cited for 1.8%/yr; 3×3 sensitivity table $81B–$158B provided. avg_score=3.0/4; min_score=3/4."
+

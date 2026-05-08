@@ -1,14 +1,14 @@
 paper: C.2+national-max-flow
 title: "National Max-Flow: Capacity and Bottleneck Analysis of the Interstate Network"
 venue: "Transportation Science"
-stage: revision
+stage: ready
 round: 1
 content_mode: full
 reviewers:
   - slug: adamic
     name: Lada Adamic
     role: network-scientist
-    score: 2
+    score: 3
     score_max: 4
   - slug: elefteriadou
     name: Lily Elefteriadou
@@ -44,6 +44,14 @@ reviews:
       - reviews/REVIEW-puentes.md
       - reviews/SYNTHESIS.md
       - reviews/REVISION-PLAN.md
+  round1_recheck:
+    mean_score: 3.0
+    panel_decision: advance
+    blocking_items_resolved: 1
+    blocking_items_remaining: 0
+    files:
+      - reviews/RECHECK-adamic.md
+      - reviews/RECHECK-SYNTHESIS.md
 history:
   - stage: planned
     date: 2026-05-06
@@ -51,3 +59,6 @@ history:
   - stage: revision
     date: 2026-05-07
     note: "Round 1 panel review complete. Mean score 2.8/4. P1 blocking: single-commodity max-flow may misidentify binding constraints vs. multi-commodity reality (Adamic 2/4). 7 P2 items including I-69 NPV sensitivity table and max-flow utilization ratio. Revision required before re-review."
+  - stage: ready
+    date: 2026-05-07
+    note: "Round 1 recheck complete. P1.1 resolved: Section 3.6 two-class commodity sensitivity accepted by Adamic (3/4). Mean score 3.0/4. Paper advanced to ready for venue submission (Transportation Science)."

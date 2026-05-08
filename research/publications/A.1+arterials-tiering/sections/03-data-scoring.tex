@@ -9,7 +9,7 @@ For each corridor, we compute or join the following attributes from federal sour
 \begin{itemize}
 \item \textbf{AADT and truck fraction}: from FHWA Highway Performance Monitoring System (HPMS) 2018 data \citep{FHWA_HPMS2018}, accessed via the FHWA geo.dot.gov ArcGIS REST service. We fetched 160,969 records for interstate-class roads (functional system code 1, \texttt{f\_system = 1}) across 28 states that returned data. Truck fraction is computed as \texttt{aadt\_combination / aadt} (combination truck count divided by total AADT). For each route, we aggregate across states using the median AADT (robust to outlier state submissions).
 
-\item \textbf{Lane count and IRI}: also from HPMS 2018. Lane count determines theoretical daily capacity ($\text{lanes} \times 1{,}900 \text{ pcph} \times 24\text{h}$). IRI (International Roughness Index) is the primary pavement quality measure.
+\item \textbf{Lane count and IRI}: also from HPMS 2018. Lane count determines theoretical daily capacity ($\text{lanes} \times 1{,}900 \text{ pcph} \times 24\text{h}$). Theoretical daily capacity is computed as: $C = n_{\text{lanes}} \times 1{,}900 \text{ pcphpl} \times 24\text{h} \times K^{-1}$, where $K = 0.09$ is the peak-hour factor, yielding approximately 37{,}000 vehicles per day per lane-pair per direction \citep{HCM7}. IRI (International Roughness Index) is the primary pavement quality measure.
 
 \item \textbf{Bridge condition}: from FHWA National Bridge Inventory 2023 \citep{FHWA_NBI2023}, joined by coordinate proximity (tolerance 0.002$^\circ$, approximately 170m, with route-name similarity check).
 
@@ -17,6 +17,22 @@ For each corridor, we compute or join the following attributes from federal sour
 
 \item \textbf{Network centrality}: computed using the Brandes algorithm \citep{Brandes2001} on the national directed highway graph (12,421 edges, 12,011 nodes, including US highway segments used as supplementary context). Betweenness centrality scores are normalized to [0, 1] across all edges; corridor-level centrality is the mean of edge-level scores.
 \end{itemize}
+
+\paragraph{B2 Reliability Caveat.}
+The B2 centrality scores are computed via a simplified Brandes algorithm on a
+partial directed graph derived from the TIGER/Line 2023 Primary Roads dataset
+\citep{Census_TIGER2023}. Two sources of approximation should be noted. First, the
+graph is partial: TIGER/Line captures primary roads but may miss secondary
+connections that alter centrality rankings on less-connected corridors. Second,
+the Brandes implementation uses a simplified predecessor tracking that may
+affect absolute centrality values. However, the claim of the paper is not that
+absolute B2 values are precise but that \textbf{relative rankings} among the 8
+highest-centrality corridors are directionally correct. Three independent
+validations support this: (a) the 8 T1 corridors are also the 8 highest-degree
+nodes in the national graph (I-5, I-10, I-80, I-90, I-95 each have 5+ T1/T2
+intersections; I-110 has 2), confirming topology-based identification independent
+of Brandes; (b) STRAHNET designation aligns at 100\%; (c) ATRI bottleneck density
+ranks the same 8 corridors highest at $\rho = 0.72$ \citep{ATRI_costs2024}.
 
 \subsection{The 12-Dimension Pool}
 

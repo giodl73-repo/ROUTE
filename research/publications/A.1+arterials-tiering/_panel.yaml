@@ -1,7 +1,7 @@
 paper: A.1+arterials-tiering
 title: "Interstate Arterials: Tiering the National Highway Network by Freight Volume and Network Centrality"
 venue: "Transportation Research Part A: Policy and Practice"
-stage: revision
+stage: submit
 round: 1
 content_mode: full
 writing_completed: true
@@ -12,8 +12,13 @@ reviews:
   transport-policy: {score: 3, concern: "no federal implementation mechanism; v1.0 thresholds stale"}
   traffic-engineer: {score: 3, concern: "capacity formula not stated; I-40 at-target qualification needed"}
   freight-economist: {score: 3, concern: "A2 estimated; commodity criticality; decarbonization gap"}
-avg_score: 2.8
-min_score: 2
+recheck:
+  date: 2026-05-07
+  reviewers: [hanson, adamic]
+  verdicts: {hanson: PASS, adamic: PASS-WITH-NOTE}
+  scores_after: {hanson: 3, adamic: 3, transport-policy: 3, traffic-engineer: 3, freight-economist: 3}
+avg_score: 3.0
+min_score: 3
 history:
   - stage: draft
     date: 2026-05-06
@@ -21,3 +26,10 @@ history:
   - stage: draft
     date: 2026-05-06
     note: "All 8 sections written by panel:publication author. Key finding: congestion-stress paradox — aggregate score puts urban beltways (I-110, I-880) in T1; centrality-adjusted classification recovers 8 true trunk-line arteries. Validated against STRAHNET (100% T1 alignment) and ATRI (rho=0.72)."
+  - stage: submit
+    date: 2026-05-07
+    note: "Round 1 panel complete — avg 2.8/4, min 2/4 (Adamic/Network Scientist). P1.1 alpha circularity and P1.2 B2 reliability flagged as blocking."
+  - stage: submit
+    date: 2026-05-07
+    note: "Recheck passed — Hanson PASS (P1.1 circularity broken; Section 5.3 doc-frequency as external calibration), Adamic PASS-WITH-NOTE (P1.2 directional-ranking claim + degree-node + STRAHNET + ATRI validations). Avg rises 2.8→3.0, min rises 2→3."
+
