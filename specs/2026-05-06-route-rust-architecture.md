@@ -322,18 +322,19 @@ route score <designation> [--estimated]
 
 route score-all
     Score all corridors. Computes full national betweenness centrality (unlocks B2).
-    Updates personas/axis-pool.md scoring ledger. Runs parallel via Rayon.
+    Writes data/scores-all.csv with route, score, tier, rubric_version, and estimated.
+    Runs parallel via Rayon where graph operations allow it.
 
 route gap [--type missing-link|bottleneck|resilience|intermodal]
-    Analyze scored corpus. Identify corridors above threshold on gap-type dimensions.
-    Output gap findings to gaps/{slug}.md.
+    Planned: analyze scored corpus and identify corridors above threshold on gap-type dimensions.
+    Current CLI labels this command planned and does not write a gap file.
     (Equity gap type deferred — economic opportunity analysis added in future pass.)
 
 route map <designation> [--output path/to/map.png] [--color-by a2|d1|b1|...]
     Render corridor map. Corridor polyline over US outline base. Color by dimension score.
 
 route report <designation>
-    Regenerate corpus entry markdown from current scores. Idempotent.
+    Regenerate corpus entry markdown from current graph attributes and scores. Idempotent.
 
 route calibrate
     Compute variance stats per dimension across all scored corridors.
@@ -351,7 +352,17 @@ route calibrate
 
 ### Scoring ledger
 
-`route score-all` updates `personas/axis-pool.md` ledger: corridors scored, mean, IQR, min, max, correlation flags per dimension. Single source of truth for calibration pass.
+`route score-all` writes `data/scores-all.csv` with:
+
+| Column | Meaning |
+|---|---|
+| `route` | Normalized route id, e.g. `I80` |
+| `score` | Total score on the current 160-point rubric |
+| `tier` | T1/T2/T3/T4 threshold label used by maps |
+| `rubric_version` | Rubric version from `config/scoring.toml` |
+| `estimated` | `true` when any dimension score is estimated/proxy |
+
+The map renderer reads the first two columns for tier coloring. Calibration ledgers are a separate planned output.
 
 ### Map output (PNG)
 

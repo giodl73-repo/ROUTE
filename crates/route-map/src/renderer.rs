@@ -120,7 +120,7 @@ pub fn build_svg(
 
     // Info panel
     let score_str = scores
-        .map(|sc| format!("{:.1}/120", sc.total()))
+        .map(|sc| format!("{:.1}/160", sc.total()))
         .unwrap_or("—".into());
     let tier_label = match highlight_id.as_str() {
         "I5" | "I10" | "I35" | "I40" | "I75" | "I80" | "I90" | "I95" => "T1 Primary Artery",
@@ -159,6 +159,77 @@ pub fn build_svg(
 
     s += "</svg>";
     Ok(s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use geo_types::{Coord, LineString};
+    use route_network::{Corridor, CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
+    use std::collections::HashMap;
+
+    fn tiny_graph() -> (HighwayGraph, Corridor) {
+        let mut g = HighwayGraph::new();
+        let n0 = g.graph.add_node(HighwayNode {
+            id: 1,
+            coord: Coord { x: -100.0, y: 40.0 },
+            is_interchange: false,
+        });
+        let n1 = g.graph.add_node(HighwayNode {
+            id: 2,
+            coord: Coord { x: -99.0, y: 40.5 },
+            is_interchange: false,
+        });
+        let edge = HighwayEdge {
+            id: 1,
+            route_id: "I80".into(),
+            state: "NE".into(),
+            road_class: route_data::RoadClass::Interstate,
+            geometry: LineString::from(vec![(-100.0, 40.0), (-99.0, 40.5)]),
+            length_miles: 70.0,
+            lane_count: Some(2),
+            aadt: Some(50_000),
+            pct_truck: Some(0.2),
+            iri: Some(1.0),
+            tti: Some(1.1),
+            pti: Some(1.2),
+            speed_limit: Some(70),
+        };
+        let ei = g.graph.add_edge(n0, n1, edge);
+        g.route_index.insert("I80".into(), vec![ei]);
+        g.terminus_index.insert("I80".into(), [n0, n1]);
+        g.edge_betweenness = Some(HashMap::new());
+
+        let corridor = Corridor {
+            designation: "I80".into(),
+            termini: ["Teaneck, NJ".into(), "San Francisco, CA".into()],
+            states: vec!["NE".into()],
+            total_miles: 70.0,
+            edge_count: 1,
+            edges: vec![ei],
+            attributes: CorridorAttributes {
+                p90_aadt: Some(50_000.0),
+                p90_pti: Some(1.2),
+                ..Default::default()
+            },
+        };
+
+        (g, corridor)
+    }
+
+    #[test]
+    fn corridor_svg_uses_current_160_point_score_scale() {
+        let (g, corridor) = tiny_graph();
+        let scores = route_score::score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+
+        let svg = build_svg(&corridor, &g, Some(&scores), None).expect("build svg");
+
+        assert!(svg.contains("/160"));
+        assert!(!svg.contains("/120"));
+    }
 }
 
 fn score_heat(score: f64) -> String {
