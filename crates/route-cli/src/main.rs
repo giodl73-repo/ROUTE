@@ -579,15 +579,7 @@ fn main() -> Result<()> {
                 corridor.attributes.tornado_risk = Some(zone.tornado);
                 corridor.attributes.seismic_risk = Some(zone.seismic);
             }
-            if corridor.attributes.annual_freight_value_b.is_none() {
-                if let Some(aadt) = corridor.attributes.p90_aadt {
-                    let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
-                    let truck_aadt = aadt as f64 * truck_pct;
-                    let freight_b =
-                        truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
-                    corridor.attributes.annual_freight_value_b = Some(freight_b);
-                }
-            }
+            join_a2_freight_proxy(&mut corridor.attributes, corridor.total_miles);
 
             // Score
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
@@ -734,16 +726,7 @@ fn main() -> Result<()> {
                         corridor.attributes.tornado_risk = Some(zone.tornado);
                         corridor.attributes.seismic_risk = Some(zone.seismic);
                     }
-                    // A2 freight proxy from HPMS
-                    if corridor.attributes.annual_freight_value_b.is_none() {
-                        if let Some(aadt) = corridor.attributes.p90_aadt {
-                            let truck_pct =
-                                corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
-                            let freight_b = aadt * truck_pct * 365.0 * corridor.total_miles * 3.50
-                                / 1_000_000_000.0;
-                            corridor.attributes.annual_freight_value_b = Some(freight_b);
-                        }
-                    }
+                    join_a2_freight_proxy(&mut corridor.attributes, corridor.total_miles);
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     println!(
                         "  {}: {:.1}/160{}",
@@ -2019,18 +2002,7 @@ fn main() -> Result<()> {
                         corridor.attributes.tornado_risk = Some(zone.tornado);
                         corridor.attributes.seismic_risk = Some(zone.seismic);
                     }
-                    // Estimate A2 freight value from HPMS truck AADT × corridor miles
-                    // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
-                    if corridor.attributes.annual_freight_value_b.is_none() {
-                        if let Some(aadt) = corridor.attributes.p90_aadt {
-                            let truck_pct =
-                                corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
-                            let truck_aadt = aadt as f64 * truck_pct;
-                            let freight_b =
-                                truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
-                            corridor.attributes.annual_freight_value_b = Some(freight_b);
-                        }
-                    }
+                    join_a2_freight_proxy(&mut corridor.attributes, corridor.total_miles);
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = dimension_score_values(&s);
                     let estimated_row = dimension_estimated_values(&s);
@@ -3399,6 +3371,20 @@ mod tests {
     }
 
     #[test]
+    fn a2_freight_proxy_uses_mean_aadt_when_p90_missing() {
+        let mut attrs = CorridorAttributes {
+            p90_aadt: None,
+            mean_aadt: Some(20_000.0),
+            mean_pct_truck: Some(0.10),
+            ..Default::default()
+        };
+
+        super::join_a2_freight_proxy(&mut attrs, 100.0);
+
+        assert!(attrs.annual_freight_value_b.is_some());
+    }
+
+    #[test]
     fn atlas_candidates_include_us_highway_promotions_but_not_state_routes() {
         let mut graph = HighwayGraph::new();
         let a = graph.graph.add_node(HighwayNode {
@@ -4074,6 +4060,22 @@ fn join_nbi_to_corridor(
         attrs.bridge_count = rec.bridge_count as usize;
     }
 }
+
+/// Estimate A2 freight value from HPMS truck AADT times corridor miles.
+/// Uses p90 AADT when available, then mean AADT as the secondary A2 path.
+fn join_a2_freight_proxy(attrs: &mut route_network::CorridorAttributes, corridor_miles: f64) {
+    if attrs.annual_freight_value_b.is_some() {
+        return;
+    }
+    let Some(aadt) = attrs.p90_aadt.or(attrs.mean_aadt) else {
+        return;
+    };
+    let truck_pct = attrs.mean_pct_truck.unwrap_or(0.084) as f64;
+    let truck_aadt = aadt * truck_pct;
+    let freight_b = truck_aadt * 365.0 * corridor_miles * 3.50 / 1_000_000_000.0;
+    attrs.annual_freight_value_b = Some(freight_b);
+}
+
 ///
 /// Only fills in fields that are currently None.
 fn join_d3_iri_proxy(attrs: &mut route_network::CorridorAttributes) {
