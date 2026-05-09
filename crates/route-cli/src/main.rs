@@ -2,9 +2,9 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-const T1_THRESHOLD: f64 = 70.0;
-const T2_THRESHOLD: f64 = 48.0;
-const T3_THRESHOLD: f64 = 27.5;
+const T1_THRESHOLD: f64 = 60.0;
+const T2_THRESHOLD: f64 = 45.0;
+const T3_THRESHOLD: f64 = 30.0;
 
 #[derive(Parser)]
 #[command(
@@ -613,8 +613,8 @@ fn main() -> Result<()> {
                 println!("  {} hazard zone records loaded", hazard_zones.len());
             }
 
-            // Score all interstates
-            let ids = graph.interstate_ids();
+            // Score interstates plus US highway upgrade candidates when present.
+            let ids = atlas_candidate_ids(&graph);
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
@@ -689,7 +689,7 @@ fn main() -> Result<()> {
                         scores.total(),
                         if scores.any_estimated() { "†" } else { "" }
                     );
-                    let total = scores.total();
+                    let total = rounded_score(scores.total());
                     let tier = tier_for_score(total);
                     score_rows.push((
                         corridor.designation.clone(),
@@ -1764,7 +1764,7 @@ fn main() -> Result<()> {
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let mut graph = load_graph(&manifest)?;
-            let ids = graph.interstate_ids();
+            let ids = atlas_candidate_ids(&graph);
             println!("  scoring {} corridors for calibration…", ids.len());
 
             // Compute betweenness centrality so B2 is populated (same as score-all)
@@ -1962,7 +1962,7 @@ fn main() -> Result<()> {
                         s.b2.score, s.b3.score, s.b4.score, s.c1.score, s.c2.score, s.c3.score,
                         s.c4.score, s.d1.score, s.d2.score, s.d3.score,
                     ];
-                    let total = s.total();
+                    let total = rounded_score(s.total());
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
                         flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
@@ -3181,18 +3181,84 @@ fn tier_for_score(score: f64) -> &'static str {
     }
 }
 
+fn rounded_score(score: f64) -> f64 {
+    (score * 10.0).round() / 10.0
+}
+
+fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
+    let mut ids = graph.interstate_ids();
+    ids.extend(graph.us_highway_ids());
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
 #[cfg(test)]
 mod tests {
-    use super::tier_for_score;
+    use super::{atlas_candidate_ids, rounded_score, tier_for_score};
+    use geo_types::{coord, LineString};
+    use route_network::{HighwayEdge, HighwayGraph, HighwayNode};
+    use std::collections::HashMap;
 
     #[test]
     fn tier_for_score_matches_megamap_thresholds() {
-        assert_eq!(tier_for_score(70.0), "T1");
-        assert_eq!(tier_for_score(69.9), "T2");
-        assert_eq!(tier_for_score(48.0), "T2");
-        assert_eq!(tier_for_score(47.9), "T3");
-        assert_eq!(tier_for_score(27.5), "T3");
-        assert_eq!(tier_for_score(27.4), "T4");
+        assert_eq!(tier_for_score(60.0), "T1");
+        assert_eq!(tier_for_score(59.9), "T2");
+        assert_eq!(tier_for_score(45.0), "T2");
+        assert_eq!(tier_for_score(44.9), "T3");
+        assert_eq!(tier_for_score(30.0), "T3");
+        assert_eq!(tier_for_score(29.9), "T4");
+    }
+
+    #[test]
+    fn rounded_score_matches_score_all_csv_precision() {
+        assert_eq!(rounded_score(59.95), 60.0);
+        assert_eq!(rounded_score(59.94), 59.9);
+    }
+
+    #[test]
+    fn atlas_candidates_include_us_highway_promotions_but_not_state_routes() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 1.0 },
+            is_interchange: false,
+        });
+        graph.route_index = ["I80", "US30", "SR99"]
+            .into_iter()
+            .map(|id| {
+                let edge = graph.graph.add_edge(
+                    a,
+                    b,
+                    HighwayEdge {
+                        id: 1,
+                        route_id: id.to_string(),
+                        state: "TS".to_string(),
+                        road_class: route_data::RoadClass::Interstate,
+                        geometry: LineString::from(vec![
+                            coord! { x: 0.0, y: 0.0 },
+                            coord! { x: 1.0, y: 1.0 },
+                        ]),
+                        length_miles: 1.0,
+                        lane_count: None,
+                        aadt: None,
+                        pct_truck: None,
+                        iri: None,
+                        tti: None,
+                        pti: None,
+                        speed_limit: None,
+                    },
+                );
+                (id.to_string(), vec![edge])
+            })
+            .collect::<HashMap<_, _>>();
+
+        assert_eq!(atlas_candidate_ids(&graph), vec!["I80", "US30"]);
     }
 }
 
@@ -3882,7 +3948,7 @@ fn join_acs_population_to_corridor(
                 rural_share * 100.0
             );
         } else {
-            println!("  C1: no interchange nodes found for {route_id} — check graph build");
+            println!("  C1: no counties found within 50mi corridor buffer for {route_id}");
         }
     }
     // If counties is None (files not cached), silently leave attrs as-is (None = not scored)

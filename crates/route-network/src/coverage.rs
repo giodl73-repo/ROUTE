@@ -318,25 +318,9 @@ pub fn corridor_pop_within_50mi(
     route_id: &str,
     counties: &[route_data::CountyCentroid],
 ) -> (u64, u64) {
-    // Collect interchange node coordinates for this corridor only
-    let interchange_coords: Vec<(f64, f64)> = g
-        .graph
-        .node_indices()
-        .filter(|&ni| {
-            let node = &g.graph[ni];
-            if !node.is_interchange {
-                return false;
-            }
-            // Keep node if any adjacent edge belongs to this route
-            g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
-        })
-        .map(|ni| {
-            let c = g.graph[ni].coord;
-            (c.x, c.y)
-        })
-        .collect();
+    let access_coords = route_access_coords(g, route_id);
 
-    if interchange_coords.is_empty() {
+    if access_coords.is_empty() {
         return (0, 0);
     }
 
@@ -348,7 +332,7 @@ pub fn corridor_pop_within_50mi(
         if seen.contains(county.geoid.as_str()) {
             continue;
         }
-        let nearest = find_nearest_miles(&interchange_coords, county.lat, county.lon);
+        let nearest = find_nearest_miles(&access_coords, county.lat, county.lon);
         if nearest <= 50.0 {
             seen.insert(&county.geoid);
             total_pop += county.population;
@@ -368,23 +352,9 @@ pub fn counties_within_50mi<'a>(
     route_id: &str,
     counties: &'a [route_data::CountyCentroid],
 ) -> Vec<&'a route_data::CountyCentroid> {
-    let interchange_coords: Vec<(f64, f64)> = g
-        .graph
-        .node_indices()
-        .filter(|&ni| {
-            let node = &g.graph[ni];
-            if !node.is_interchange {
-                return false;
-            }
-            g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
-        })
-        .map(|ni| {
-            let c = g.graph[ni].coord;
-            (c.x, c.y)
-        })
-        .collect();
+    let access_coords = route_access_coords(g, route_id);
 
-    if interchange_coords.is_empty() {
+    if access_coords.is_empty() {
         return Vec::new();
     }
 
@@ -394,12 +364,104 @@ pub fn counties_within_50mi<'a>(
         if seen.contains(county.geoid.as_str()) {
             continue;
         }
-        if find_nearest_miles(&interchange_coords, county.lat, county.lon) <= 50.0 {
+        if find_nearest_miles(&access_coords, county.lat, county.lon) <= 50.0 {
             seen.insert(&county.geoid);
             result.push(county);
         }
     }
     result
+}
+
+fn route_access_coords(g: &HighwayGraph, route_id: &str) -> Vec<(f64, f64)> {
+    let mut coords = route_node_coords(g, route_id, true);
+    if coords.is_empty() {
+        coords = route_node_coords(g, route_id, false);
+    }
+    coords.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
+    coords.dedup_by(|a, b| (a.0 - b.0).abs() < 1e-6 && (a.1 - b.1).abs() < 1e-6);
+    coords
+}
+
+fn route_node_coords(g: &HighwayGraph, route_id: &str, interchanges_only: bool) -> Vec<(f64, f64)> {
+    g.graph
+        .node_indices()
+        .filter(|&ni| {
+            let node = &g.graph[ni];
+            if interchanges_only && !node.is_interchange {
+                return false;
+            }
+            g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| {
+            let c = g.graph[ni].coord;
+            (c.x, c.y)
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{HighwayEdge, HighwayGraph, HighwayNode};
+    use geo_types::{coord, LineString};
+    use std::collections::HashMap;
+
+    fn county(geoid: &str, lat: f64, lon: f64, population: u64) -> route_data::CountyCentroid {
+        route_data::CountyCentroid {
+            geoid: geoid.to_string(),
+            name: "Test County".to_string(),
+            state: "TS".to_string(),
+            lat,
+            lon,
+            population,
+            aland_sqmi: 100.0,
+            rucc: 4,
+            median_hhi: 50_000,
+        }
+    }
+
+    #[test]
+    fn corridor_population_falls_back_to_route_nodes_without_interchanges() {
+        let mut g = HighwayGraph::new();
+        let a = g.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = g.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 0.1, y: 0.0 },
+            is_interchange: false,
+        });
+        let edge = g.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 10,
+                route_id: "I1".to_string(),
+                state: "TS".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 0.1, y: 0.0 },
+                ]),
+                length_miles: 7.0,
+                lane_count: None,
+                aadt: None,
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        g.route_index = HashMap::from([("I1".to_string(), vec![edge])]);
+
+        let counties = vec![county("001", 0.0, 0.0, 1234)];
+
+        assert_eq!(corridor_pop_within_50mi(&g, "I1", &counties), (1234, 1234));
+        assert_eq!(counties_within_50mi(&g, "I1", &counties).len(), 1);
+    }
 }
 
 /// Very rough state assignment from lat/lon (bounding box approximation).
