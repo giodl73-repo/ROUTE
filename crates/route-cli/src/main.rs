@@ -314,6 +314,27 @@ enum Commands {
         radius_miles: f64,
     },
 
+    /// Merge normalized T1/T1 event observations into an accumulated event table
+    T1AccumulateEvents {
+        /// Existing accumulated T1/T1 event CSV
+        #[arg(
+            long,
+            default_value = "data/t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        events: PathBuf,
+        /// New normalized T1/T1 event CSV to merge
+        #[arg(long, value_name = "FILE")]
+        input: PathBuf,
+        /// Output merged event CSV
+        #[arg(
+            long,
+            default_value = "data/t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1933,6 +1954,31 @@ fn main() -> Result<()> {
                 .with_context(|| format!("writing normalized events {}", output.display()))?;
             println!("route t1-import-iowa511");
             println!("  rows: {}", rows.len());
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1AccumulateEvents {
+            events,
+            input,
+            output,
+        } => {
+            let existing = if events.exists() {
+                load_t1_failure_events(&events)
+                    .with_context(|| format!("loading accumulated events {}", events.display()))?
+            } else {
+                Vec::new()
+            };
+            let incoming = load_t1_failure_events(&input)
+                .with_context(|| format!("loading incoming events {}", input.display()))?;
+            let merged = merge_t1_failure_events(&existing, &incoming);
+            let added = merged.len().saturating_sub(existing.len());
+            write_t1_failure_events(&output, &merged)
+                .with_context(|| format!("writing accumulated events {}", output.display()))?;
+            println!("route t1-accumulate-events");
+            println!("  existing rows: {}", existing.len());
+            println!("  incoming rows: {}", incoming.len());
+            println!("  merged rows: {}", merged.len());
+            println!("  net new rows: {added}");
             println!("  wrote {}", output.display());
         }
 
@@ -4756,6 +4802,35 @@ fn parse_t1_failure_events<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureE
     Ok(rows)
 }
 
+fn merge_t1_failure_events(
+    existing: &[T1FailureEventRow],
+    incoming: &[T1FailureEventRow],
+) -> Vec<T1FailureEventRow> {
+    let mut rows = existing.to_vec();
+    let mut seen = rows
+        .iter()
+        .map(t1_failure_event_key)
+        .collect::<std::collections::BTreeSet<_>>();
+
+    for row in incoming {
+        if seen.insert(t1_failure_event_key(row)) {
+            rows.push(row.clone());
+        }
+    }
+
+    rows.sort_by(|a, b| {
+        a.site_id
+            .cmp(&b.site_id)
+            .then_with(|| a.observation_year.cmp(&b.observation_year))
+            .then_with(|| a.event_id.cmp(&b.event_id))
+    });
+    rows
+}
+
+fn t1_failure_event_key(row: &T1FailureEventRow) -> (String, String) {
+    (row.site_id.clone(), row.event_id.clone())
+}
+
 fn fetch_iowa511_events(output: &Path) -> Result<()> {
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent)?;
@@ -5400,6 +5475,28 @@ T1X-I35-I80,e2,Iowa 511,101,2024,2024-01-01T00:00:00Z,2024-01-01T06:00:00Z,6.0,i
             .current_artifact
             .contains("data/t1-failure-events.csv"));
         assert_eq!(updated[1].source_status, "source_needed");
+    }
+
+    #[test]
+    fn t1_failure_events_merge_dedupes_repeated_snapshots() {
+        let existing_csv = "\
+site_id,event_id,source,source_event_id,observation_year,start_time,end_time,duration_hours,event_type,full_closure,lanes_closed,freight_relevant,confidence,notes
+T1X-I35-I80,IOWA511-1,Iowa DOT 511 ArcGIS,1,2026,2026-05-01 08:00 AM,2026-05-01 10:00 AM,2.0,work_zone,false,,true,medium,first
+";
+        let incoming_csv = "\
+site_id,event_id,source,source_event_id,observation_year,start_time,end_time,duration_hours,event_type,full_closure,lanes_closed,freight_relevant,confidence,notes
+T1X-I35-I80,IOWA511-1,Iowa DOT 511 ArcGIS,1,2026,2026-05-01 08:00 AM,2026-05-01 10:00 AM,2.0,work_zone,false,,true,medium,duplicate
+T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 11:00 AM,3.0,closure,true,,true,medium,second
+";
+
+        let existing = parse_t1_failure_events(existing_csv.as_bytes()).expect("parse existing");
+        let incoming = parse_t1_failure_events(incoming_csv.as_bytes()).expect("parse incoming");
+        let merged = super::merge_t1_failure_events(&existing, &incoming);
+
+        assert_eq!(merged.len(), 2);
+        assert_eq!(merged[0].event_id, "IOWA511-1");
+        assert_eq!(merged[0].notes, "first");
+        assert_eq!(merged[1].event_id, "IOWA511-2");
     }
 
     #[test]
