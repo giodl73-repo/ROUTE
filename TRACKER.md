@@ -12,7 +12,7 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 |---|---|---|
 | 0 — Ground Survey | Repo, specs, roles, data inventory, and CLI scaffold | ✅ substantially complete |
 | 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | ✅ complete |
-| 2 — Atlas | Reproducible existing-corridor corpus and tier map | 🔄 partial; refresh needed |
+| 2 — Atlas | Reproducible existing-corridor corpus and tier map | ✅ complete |
 | 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | 🔄 partial; artifact checks needed |
 | 4 — Pressure Test | Flow, incident, relay, SLA, and investment simulations | 🔄 partial; test coverage needed |
 | 5 — The Forum | Parliament, stakeholder, editorial, and panel review records | 🔄 partial; formal gates needed |
