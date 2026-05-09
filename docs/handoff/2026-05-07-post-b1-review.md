@@ -6,6 +6,11 @@ rubric_version: v1.1
 
 # ROUTE Session Handoff — Post B.1 Review
 
+> Superseded status note, 2026-05-09: this handoff is retained as session history.
+> `data/scores-all.csv` has since been regenerated under rubric v1.4 for 386
+> interstate and US-highway atlas candidates. Current milestone status lives in
+> `TRACKER.md`; the current dimension registry lives in `docs/DIMENSIONS.md`.
+
 ## What just happened
 
 Full session from project initialization through first paper review:
@@ -20,7 +25,7 @@ Full session from project initialization through first paper review:
 
 ## Rubric version: v1.1
 
-**Important**: `data/scores-all.csv` contains v1.0 scores. Most corridors scored A3=10.0 (IRI proxy, no PTI data). After v1.1 amendment, A3 caps at 5.0. **Re-run `route score-all` before any analysis that uses total scores or tier assignments.**
+Historical note: at the time of this handoff, `data/scores-all.csv` contained v1.0 scores and needed a v1.1 refresh. That warning is now superseded; the tracked score ledger has been regenerated under v1.4 with confidence labels and current 160-point tier thresholds.
 
 I-80 v1.1 scores: A1=3.0, A3=5.0 (was 10.0), B1=8.2, C2=4.0 — total will drop ~5 points.
 
@@ -46,12 +51,12 @@ I-80 v1.1 scores: A1=3.0, A3=5.0 (was 10.0), B1=8.2, C2=4.0 — total will drop 
 - `data/coverage-gaps.csv` — 1,510 continental US gap counties with population
 - `data/cache/acs_county_pop_2022.csv` — Census ACS county population
 - `data/cache/hpms_2018.csv` — 160,969 HPMS interstate records (28 states)
-- `data/scores-all.csv` — **stale v1.0 scores; re-run score-all before use**
+- `data/scores-all.csv` — historical note originally marked this stale; current tracked file is v1.4
 
 ## Next session priorities (ranked)
 
-### 1. Re-run score-all v1.1 (15 min)
-`route score-all` — updates all 227 corridor scores to v1.1 (A3 fix). Refreshes `data/scores-all.csv` and the tier structure. **A.1 paper tier findings may shift; verify before A.1 review.**
+### 1. Re-run score-all v1.1 (completed/superseded)
+This item was completed and superseded by v1.4. `route score-all` now scores 386 atlas candidates and writes confidence labels to `data/scores-all.csv`.
 
 ### 2. Address B.1 P1 revision items (1–2 sessions)
 Four blockers before recheck. P1.1 (centroid artifact) requires a new analysis pass — identify the CA/AZ/NV large-county cases and compute a corrected headline number. P1.3 and P1.4 are single-paragraph additions.
@@ -78,7 +83,7 @@ Depends on score-all v1.1 for accurate A1/A2/A3 corpus distribution. After score
 
 ## Corpus state
 
-- 227 interstates scored (v1.0 — stale)
-- Tier structure (v1.0): T1(13), T2(33), T3(61), T4(120) — will shift after v1.1 score-all
+- Historical snapshot: 227 interstates scored under v1.0 at the time of this handoff.
+- Current state: 386 atlas candidates scored under v1.4; see `data/scores-all.csv` and `route calibrate`.
 - Centrality-adjusted T1 (from A.1): I-5, I-10, I-35, I-40, I-75, I-80, I-90, I-95
 - 1,510 continental US gap counties (30-mile standard) in `data/coverage-gaps.csv`

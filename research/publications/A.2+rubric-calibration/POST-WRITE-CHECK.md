@@ -10,6 +10,12 @@ updated: 2026-05-08
 
 # POST-WRITE-CHECK: A.2 — Rubric Calibration: Which 12 Dimensions Actually Differentiate Interstate Corridors
 
+> Superseded contract note, 2026-05-09: the active A.2 contract now tracks the
+> v1.4 16-dimension scorer, confidence-risk ledgers, and source-quality gaps.
+> The findings below remain useful as a historical review of the earlier
+> v1.0→v1.2 paper draft, but the old reduction target is no longer the active
+> Milepost 1 Instrument contract.
+
 ## PHASE 1 — PAPER SUMMARY
 
 ```
@@ -27,7 +33,7 @@ Key claims:
      that correct the T1 ranking inversion; I-80 now leads T1 (§04, §05)
   3. The 12→15 dimension expansion (v1.0→v1.2) expands max score from 120 to 150;
      all prior scores preserved under forward-only versioning protocol (§03, §06)
-Primary number (from MODULE.md contract): ≤9 of 12 dimensions survive; ≥2 correlated pairs retired
+Primary number (historical MODULE.md contract): retire weak/correlated dimensions from the original 12-dimension pool
 Paper's stated primary number: Abstract says rubric evolved to 15 dimensions (added 3 new
   ones to original 12, reaching v1.2). No correlated pair retirements yet — those are deferred.
 Match: PARTIAL — paper documents 12→15 expansion not 12→≤9 reduction. The MODULE.md
@@ -158,7 +164,7 @@ P3 (minor):
 
 | Promise (MODULE.md contract) | Paper section | Delivered? | Gap |
 |------------------------------|---------------|-----------|-----|
-| ≤9 of 12 dimensions survive | §07 conclusion | NO — dimensions expanded 12→15, not reduced | ✗ CONTRACT MISS |
+| Historical dimension-reduction target | §07 conclusion | NO — dimensions expanded 12→15, not reduced | Superseded by v1.4 confidence-risk contract |
 | ≥2 correlated pairs retired | §06 calibration | NO — correlated pairs identified (A1/A3 r=0.71) but NOT retired; deferred to v1.3 | ✗ CONTRACT MISS |
 | Variance + correlation analysis at N≥20 | §06 calibration method | YES — both tests documented | ✓ |
 | Document v1.0→v1.1→v1.2 evolution | All sections | YES — full evolution documented | ✓ |
@@ -170,7 +176,7 @@ P3 (minor):
 CONTRACT: PARTIAL/FAIL on primary contract numbers
 Promises kept: 4/7
 Contract misses:
-  1. MODULE.md requires ≤9 dimensions survive. Paper adds 3 dimensions (12→15), netting
+  1. The historical MODULE.md contract required dimension reduction. Paper adds 3 dimensions (12→15), netting
      more not fewer. This is a meaningful contract deviation that should be disclosed:
      "The v1.2 calibration expanded rather than contracted the rubric because the IRI
      and centrality fixes required adding strategic dimensions before retiring weak ones.

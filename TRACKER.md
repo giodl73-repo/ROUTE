@@ -11,7 +11,7 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 | Milepost | Description | Status |
 |---|---|---|
 | 0 — Ground Survey | Repo, specs, roles, data inventory, and CLI scaffold | ✅ substantially complete |
-| 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | 🔄 in progress |
+| 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | ✅ complete |
 | 2 — Atlas | Reproducible existing-corridor corpus and tier map | 🔄 partial; refresh needed |
 | 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | 🔄 partial; artifact checks needed |
 | 4 — Pressure Test | Flow, incident, relay, SLA, and investment simulations | 🔄 partial; test coverage needed |
@@ -35,7 +35,7 @@ Goal: make the 16-dimension scorer boringly reliable enough that Atlas work can 
 | L0/L1 tests cover missing-data behavior and anchor extremes for all 16 dimensions | ✅ done | `sparse_corridor_scores_all_dimensions_with_truth_labels`; `dimension_anchor_extremes_score_zero_and_ten` |
 | Proxy and missing-data labels are consistent across score table, corpus report, and CSVs | ✅ done | Shared `confidence_label`; corpus and CSV outputs include labels |
 | `route score-all` refreshed under current rubric and confidence columns | ✅ done | `data/scores-all.csv` regenerated with v1.4 confidence labels |
-| Stale docs/handoff warnings about old A3/score-all outputs are reconciled | ⏳ pending | Update or archive stale notes |
+| Stale docs/handoff warnings about old A3/score-all outputs are reconciled | ✅ done | Historical handoff marked superseded; architecture/research docs updated |
 
 Milestone 1 is done when every task above is ✅ and `cargo test --workspace` plus `route calibrate` pass from a clean worktree.
 

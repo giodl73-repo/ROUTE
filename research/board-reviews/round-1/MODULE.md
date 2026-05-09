@@ -147,7 +147,7 @@ The country chose highways. This is the evidence for which ones to invest in nex
 | Paper | Primary Number | Experiment Design | Decision It Changes | Null Fallback |
 |---|---|---|---|---|
 | A.1 | Tier 1 carries ≥50% ton-miles; Brandes gap Tier1/Tier2 ≥ 3× | Score 227; natural break cluster | Investment tier priority | Tiers collapse to 2 |
-| A.2 | ≤9 of 12 dimensions survive; ≥2 correlated pairs retired | Variance + correlation at N≥20 | Which dimensions to use downstream | All 12 survive |
+| A.2 | 16 dimensions calibrated with variance, confidence, and review-risk ledgers | Variance + correlation + confidence-risk summary at N≥20 | Which dimensions and source gaps to prioritize downstream | Confidence-risk summary missing |
 | B.1 | K missing links with gap score ≥ 7.5; avg nearest-interstate X miles | Score proposed vs corpus distribution | Which proposed corridors to advance | No corridor above corpus 75th |
 | B.2 | M corridors at V/C > 0.85; top-10 ATRI cost $X billion | ATRI + HPMS AADT + lane count join | Bottleneck investment sequencing | ATRI ≠ A1 scores |
 | B.3 | N compound-exposure corridors; X% rural pop affected | Intersect B1 > 7.0 AND D1 > 6.0 | Resilience investment targeting | No compound corridors |
