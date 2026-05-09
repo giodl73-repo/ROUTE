@@ -344,7 +344,8 @@ route report <designation>
 
 route calibrate
     Compute variance stats per dimension across all scored corridors.
-    Report: mean, IQR, correlation matrix, retirement candidates.
+    Report: mean, IQR, correlation matrix, retirement candidates, and confidence-risk corridors.
+    Writes data/confidence-risks.csv sorted by score-weighted confidence.
     Does NOT retire automatically — prints findings for human review.
 ```
 
@@ -373,6 +374,8 @@ route calibrate
 | `A1_conf`..`D3_conf` | Per-dimension confidence on a 0.0-1.0 source/coverage scale |
 
 The map renderer reads route scores and applies the same v1.4 thresholds for tier coloring. Calibration ledgers are a separate planned output.
+
+`route calibrate` also writes `data/confidence-risks.csv`, sorted by `score_confidence`, with a `review` flag for T2+ corridors below the confidence threshold.
 
 ### Map output (PNG)
 

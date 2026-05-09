@@ -2235,6 +2235,31 @@ fn main() -> Result<()> {
                 "  → Sort by score_confidence to find rankings most dependent on weak dimensions."
             );
 
+            std::fs::create_dir_all("data")?;
+            let risk_path = PathBuf::from("data/confidence-risks.csv");
+            let mut risk_wtr = csv::Writer::from_path(&risk_path)?;
+            risk_wtr.write_record([
+                "route",
+                "score",
+                "tier",
+                "confidence",
+                "score_confidence",
+                "review",
+            ])?;
+            for (route, score, tier, mean_conf, score_conf) in &confidence_risks {
+                let review = *score >= T2_THRESHOLD && *score_conf < 0.75;
+                risk_wtr.write_record([
+                    route.clone(),
+                    format!("{score:.1}"),
+                    tier.to_string(),
+                    format!("{mean_conf:.2}"),
+                    format!("{score_conf:.2}"),
+                    review.to_string(),
+                ])?;
+            }
+            risk_wtr.flush()?;
+            println!("  wrote confidence risk ledger → {}", risk_path.display());
+
             // Retirement candidates
             println!("\n  Retirement candidates (std < 1.5, estimated < 80%):");
             let mut any_retire = false;
