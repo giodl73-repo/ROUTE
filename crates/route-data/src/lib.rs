@@ -14,7 +14,7 @@ pub use census::{
 };
 pub use faf5::Faf5Record;
 pub use fema::{fetch_all_sfha_counts, fetch_fema_count, CorridorBbox, FemaSfhaResult, T1_BBOXES};
-pub use hpms::HpmsRecord;
+pub use hpms::{HpmsFpmRecord, HpmsRecord};
 pub use hpms_fetch::{fetch_all_hpms, STATE_CODES};
 pub use manifest::Manifest;
 pub use nbi::NbiRecord;

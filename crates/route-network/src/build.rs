@@ -1,13 +1,22 @@
 use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode, JoinReport};
 use geo_types::Coord;
 use petgraph::graph::NodeIndex;
-use route_data::{HpmsRecord, NhsSegment};
+use route_data::{HpmsFpmRecord, HpmsRecord, NhsSegment};
 use std::collections::HashMap;
 
 const NODE_SNAP_DEG: f64 = 0.0005; // ~50m at mid-latitudes — snap tolerance for node deduplication
 
 /// Build a HighwayGraph from NHS segments with HPMS attributes joined by route+state key.
 pub fn build_graph(segments: Vec<NhsSegment>, hpms: &[HpmsRecord]) -> (HighwayGraph, JoinReport) {
+    build_graph_with_fpm(segments, hpms, &[])
+}
+
+/// Build a HighwayGraph from NHS segments with HPMS and optional FPM reliability attributes.
+pub fn build_graph_with_fpm(
+    segments: Vec<NhsSegment>,
+    hpms: &[HpmsRecord],
+    fpm: &[HpmsFpmRecord],
+) -> (HighwayGraph, JoinReport) {
     let mut g = HighwayGraph::new();
     let mut report = JoinReport::default();
     report.data_sparse_threshold = 3;
@@ -17,6 +26,7 @@ pub fn build_graph(segments: Vec<NhsSegment>, hpms: &[HpmsRecord]) -> (HighwayGr
     // Aggregate: median AADT (not mean — avoids outlier states skewing), median IRI,
     // modal lane count, mean pct_truck, modal speed_limit.
     let hpms_map: HashMap<String, HpmsAgg> = aggregate_hpms_by_route(hpms);
+    let fpm_map: HashMap<String, FpmAgg> = aggregate_fpm_by_route(fpm);
 
     // Node deduplication: coord (snapped to NODE_SNAP_DEG grid) → NodeIndex
     let mut node_map: HashMap<(i64, i64), NodeIndex> = HashMap::new();
@@ -42,6 +52,11 @@ pub fn build_graph(segments: Vec<NhsSegment>, hpms: &[HpmsRecord]) -> (HighwayGr
             }
         };
 
+        let (tti, pti) = fpm_map
+            .get(&norm_id)
+            .map(|f| (f.tti, f.pti))
+            .unwrap_or((None, None));
+
         let edge = HighwayEdge {
             id: edge_id,
             route_id: norm_id.clone(),
@@ -53,8 +68,8 @@ pub fn build_graph(segments: Vec<NhsSegment>, hpms: &[HpmsRecord]) -> (HighwayGr
             aadt,
             pct_truck,
             iri,
-            tti: None,
-            pti: None,
+            tti,
+            pti,
             speed_limit,
         };
 
@@ -135,6 +150,13 @@ pub struct HpmsAgg {
     pub speed_limit: Option<u8>,
 }
 
+/// Aggregated FPM reliability values for a single route.
+#[derive(Debug)]
+pub struct FpmAgg {
+    pub tti: Option<f32>,
+    pub pti: Option<f32>,
+}
+
 /// Aggregate HPMS records by route_id across all states.
 /// Uses median AADT (robust to outlier states), mean pct_truck, modal lane_count.
 pub fn aggregate_hpms_by_route(hpms: &[route_data::HpmsRecord]) -> HashMap<String, HpmsAgg> {
@@ -162,6 +184,31 @@ pub fn aggregate_hpms_by_route(hpms: &[route_data::HpmsRecord]) -> HashMap<Strin
                 speed_limit: mode_u8(&speeds),
             };
             (id, agg)
+        })
+        .collect()
+}
+
+/// Aggregate FPM records by route_id across all states or reporting slices.
+/// Uses mean TTI and median PTI to keep route-level reliability robust to outliers.
+pub fn aggregate_fpm_by_route(fpm: &[route_data::HpmsFpmRecord]) -> HashMap<String, FpmAgg> {
+    let mut groups: HashMap<String, Vec<&route_data::HpmsFpmRecord>> = HashMap::new();
+    for r in fpm {
+        let id = normalise_route_id(&r.route_id);
+        groups.entry(id).or_default().push(r);
+    }
+
+    groups
+        .into_iter()
+        .map(|(id, records)| {
+            let ttis: Vec<f32> = records.iter().filter_map(|r| r.tti).collect();
+            let ptis: Vec<f32> = records.iter().filter_map(|r| r.pti).collect();
+            (
+                id,
+                FpmAgg {
+                    tti: mean_f32(&ttis),
+                    pti: median_f32(&ptis),
+                },
+            )
         })
         .collect()
 }
@@ -207,7 +254,7 @@ fn mode_u8(v: &[u8]) -> Option<u8> {
 mod tests {
     use super::*;
     use geo_types::{Coord, LineString};
-    use route_data::{HpmsRecord, NhsSegment, RoadClass};
+    use route_data::{HpmsFpmRecord, HpmsRecord, NhsSegment, RoadClass};
 
     fn seg(route_id: &str, x0: f64, x1: f64) -> NhsSegment {
         NhsSegment {
@@ -232,6 +279,14 @@ mod tests {
         }
     }
 
+    fn fpm(route_id: &str, tti: f32, pti: f32) -> HpmsFpmRecord {
+        HpmsFpmRecord {
+            route_id: route_id.to_string(),
+            tti: Some(tti),
+            pti: Some(pti),
+        }
+    }
+
     #[test]
     fn normalise_route_id_strips_separators_and_uppercases() {
         assert_eq!(normalise_route_id("I-80"), "I80");
@@ -251,6 +306,20 @@ mod tests {
         for &ei in g.route_edges("I80") {
             assert_eq!(g.graph[ei].aadt, Some(42_000));
             assert_eq!(g.graph[ei].lane_count, Some(4));
+        }
+    }
+
+    #[test]
+    fn build_graph_joins_fpm_by_normalised_route() {
+        let (g, _report) = build_graph_with_fpm(
+            vec![seg("I-80", -101.0, -100.0), seg("I 80", -100.0, -99.0)],
+            &[hpms("I80", 42_000, 0.18, 4)],
+            &[fpm("I-80", 1.15, 1.40)],
+        );
+
+        for &ei in g.route_edges("I80") {
+            assert_eq!(g.graph[ei].tti, Some(1.15));
+            assert_eq!(g.graph[ei].pti, Some(1.40));
         }
     }
 

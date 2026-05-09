@@ -12,7 +12,7 @@ pub mod join;
 pub mod strategic;
 
 pub use aggregate::aggregate_corridor;
-pub use build::build_graph;
+pub use build::{build_graph, build_graph_with_fpm};
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
 pub use corridor::{Corridor, CorridorAttributes};
 pub use coverage::{

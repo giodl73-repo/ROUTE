@@ -57,6 +57,9 @@ enum Commands {
         /// Path to HPMS CSV (from route fetch-hpms or manual download)
         #[arg(long, value_name = "FILE")]
         hpms: Option<PathBuf>,
+        /// Path to FPM reliability CSV with ROUTE_ID, TTI, PTI columns
+        #[arg(long, value_name = "FILE")]
+        fpm: Option<PathBuf>,
     },
 
     /// Fetch HPMS traffic data from FHWA geo.dot.gov (no registration required)
@@ -379,6 +382,7 @@ fn main() -> Result<()> {
         Commands::Build {
             all_roads,
             hpms: hpms_path,
+            fpm: fpm_path,
         } => {
             println!("route build{}", if all_roads { " --all-roads" } else { "" });
             let manifest = route_data::Manifest::load(&manifest_path)
@@ -425,7 +429,18 @@ fn main() -> Result<()> {
                 println!("  HPMS records: {}", hpms.len());
             }
 
-            let (graph, report) = route_network::build_graph(segments, &hpms);
+            let fpm = if let Some(ref path) = fpm_path {
+                println!("  loading FPM reliability: {}", path.display());
+                route_data::hpms::read_hpms_fpm_csv(path)?
+            } else {
+                load_cached_fpm(&manifest)
+            };
+
+            if !fpm.is_empty() {
+                println!("  FPM reliability records: {}", fpm.len());
+            }
+
+            let (graph, report) = route_network::build_graph_with_fpm(segments, &hpms, &fpm);
             graph.print_build_report(&report);
 
             std::fs::create_dir_all(&manifest.cache_dir)?;
@@ -447,7 +462,10 @@ fn main() -> Result<()> {
                 all_ids.len()
             );
             if !hpms.is_empty() {
-                println!("  HPMS joined — A1/A2/A3 scores will use real traffic data.");
+                println!("  HPMS joined — A1/A2 and BPR A3 fallback will use traffic data.");
+            }
+            if !fpm.is_empty() {
+                println!("  FPM joined — A3 will use observed PTI/TTI reliability data.");
             }
         }
 
@@ -3784,8 +3802,22 @@ fn load_graph(manifest: &route_data::Manifest) -> Result<route_network::HighwayG
         Vec::new()
     };
 
-    let (graph, _) = route_network::build_graph(segments, &hpms);
+    let fpm = load_cached_fpm(manifest);
+    let (graph, _) = route_network::build_graph_with_fpm(segments, &hpms, &fpm);
     Ok(graph)
+}
+
+fn load_cached_fpm(manifest: &route_data::Manifest) -> Vec<route_data::HpmsFpmRecord> {
+    [
+        "hpms_fpm.csv",
+        "fpm_2023.csv",
+        "freight_performance_measures.csv",
+    ]
+    .iter()
+    .map(|name| manifest.cache_dir.join(name))
+    .find(|path| path.exists())
+    .and_then(|path| route_data::hpms::read_hpms_fpm_csv(&path).ok())
+    .unwrap_or_default()
 }
 
 /// Load county gazetteer + ACS population from cache (if available).
