@@ -94,3 +94,31 @@ I-110 gained 5.0 points from the STRAHNET B4 baseline --- the same credit any in
 I-80 gained 18.5 points: B4 = 6.5 (Cheyenne/FE Warren proximity) and C4 = 7.5 (Corn Belt, dual-coast export access). It gained 0 on A4 (no primary border crossing). Under v1.2 scoring rules, I-80 total is 38.7/150, placing it first in the T1 ranking.
 
 The 19.7-point gap in v1.2 --- with I-80 leading --- reflects the actual strategic difference between these corridors. The three new dimensions did not change the corridors. They measured what the corridors actually do.
+
+\subsection{v1.4: Safety, Multi-Hazard, and Rail Redundancy (2026-05-08)}
+
+The fourth calibration cycle adds three amendments to the v1.3 instrument.
+
+\subsubsection*{A5 --- Safety Record}
+
+The v1.3 rubric had no mechanism to capture corridor safety performance. High fatality rates create a systematic investment case for managed lanes (physical separation eliminates the mixing-crash failure mode that dominates rural interstate fatalities). Dimension A5 scores the fatal crash rate per 100 million vehicle-miles traveled, derived from the NHTSA Fatality Analysis Reporting System (FARS) 2022 annual file \citep{NHTSA_FARS2022}. Corridors with low fatality rates (near the national average of 0.54 per 100M VMT) score near zero; corridors with elevated rates score toward 10.
+
+The v1.4 A5 anchors place the national interstate average at score 2.5: anchor\_0 = 0.3 (below average, safe corridor), anchor\_5 = 1.5 (at threshold for meaningful investment), anchor\_10 = 4.0 (significantly elevated; rural high-speed geometry). Rural Western interstates (I-90 Montana/Wyoming: 5.6 fatals/100M VMT; I-5 California: 1.85) score substantially higher than urban-dominated corridors (I-95 Northeast: 0.97).
+
+The policy implication is direct: Tier 1 managed-lane investment is justified not only by congestion and reliability benefits but also by the safety benefit of grade-separated freight-only lanes. The v1.4 tier standards specify a T1 safety target of $\leq 0.8$ fatalities per 100M VMT --- a threshold that managed freight lanes can achieve by eliminating the mixing-collision failure mode.
+
+\subsubsection*{D1 Extension: Multi-Hazard Composite}
+
+The v1.3 D1 dimension scored only FEMA SFHA flood exposure. The v1.4 amendment extends D1 to a four-component composite: flood (40\% weight), wildfire (25\%), tornado (20\%), and seismic (15\%). Component scores are derived from USFS Wildfire Hazard Potential mapping \citep{USFS_WHP2023}, NOAA Storm Prediction Center tornado probability, and USGS design spectral acceleration ($S_{ds}$) from the ASCE 7-22 national seismic hazard maps \citep{USGS_Seismic2023}.
+
+The extension materially changes D1 scores for corridors whose primary hazard exposure is not flooding: I-35 Oklahoma now scores tornado\_risk = 9.0 (Tornado Alley core; 30+ corridor closure events per year); I-5 Washington scores seismic\_risk = 8.5 (Cascadia subduction zone M9 scenario); I-40 California scores wildfire\_risk = 6.0 (increasing Great Basin and Sierra Nevada wildfire corridor exposure). These scores capture infrastructure risks that FEMA flood zone mapping does not address.
+
+\subsubsection*{B1 Rail Parallel Discount}
+
+When a Class 1 freight railroad operates within 50 miles of a highway corridor, partial freight redundancy exists even if the highway is fully closed. The v1.4 amendment applies a 20\% discount to the B1 (Redundancy) raw score when a Class 1 railroad parallel is confirmed. The discount reflects that rail can absorb approximately 10--15\% of highway freight volume during extended closures (capacity-constrained by rail network saturation), reducing the effective single-point-of-failure severity.
+
+Key corridors affected: I-80 (Union Pacific Overland Route parallel; Donner closure impact moderated), I-40 (BNSF Transcon parallel), I-90 (BNSF Northern Transcon), I-10 (UP Sunset Route), I-95 (CSX/NS parallel). This refinement corrects a systematic overstatement of B1 isolation for corridors with credible freight rail alternatives.
+
+\subsubsection*{Scale and Threshold Update}
+
+Addition of A5 increases the maximum rubric score from 150 to 160. Tier thresholds are rescaled proportionally: T1 $\geq$ 29 (from 26), T2 $\geq$ 21 (from 19), T3 $\geq$ 12 (from 11), T4 $<$ 12. The forward-only protocol is preserved: v1.3 corpus entries remain tagged at their scoring version; v1.4 re-scores all 227 corridors and stores results in data/scores-v1.4.csv.
