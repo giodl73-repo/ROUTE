@@ -3529,6 +3529,23 @@ mod tests {
         assert_eq!(attrs.fema_sfha_miles, Some(2.1));
         assert_eq!(attrs.max_consecutive_sfha_miles, Some(1.47));
     }
+
+    #[test]
+    fn hazard_zone_loader_skips_comment_preamble_and_merges_segments() {
+        let zones = super::load_hazard_zones();
+        let i5 = zones
+            .get("I5")
+            .expect("I-5 hazard rows should load from commented CSV");
+        let i80 = zones
+            .get("I80")
+            .expect("I-80 hazard row should load from commented CSV");
+
+        assert_eq!(zones.len(), 12);
+        assert_eq!(i5.wildfire, 8.5);
+        assert_eq!(i5.seismic, 8.5);
+        assert_eq!(i80.wildfire, 3.5);
+        assert_eq!(i80.tornado, 0.5);
+    }
 }
 
 /// Normalise user input to internal route ID: "I-80" → "I80", "i80" → "I80"
@@ -4101,10 +4118,22 @@ struct HazardZone {
 /// Route names like "I-5 (CA Siskiyou)" are normalized to "I5"; MAX taken for multi-segment corridors.
 fn load_hazard_zones() -> std::collections::HashMap<String, HazardZone> {
     let path = std::path::Path::new("data/hazard_zones.csv");
+    let manifest_path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/hazard_zones.csv");
+    let path = if path.exists() {
+        path.to_path_buf()
+    } else {
+        manifest_path
+    };
     if !path.exists() {
         return std::collections::HashMap::new();
     }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+    let Ok(mut rdr) = csv::ReaderBuilder::new()
+        .comment(Some(b'#'))
+        .flexible(true)
+        .has_headers(false)
+        .from_path(path)
+    else {
         return std::collections::HashMap::new();
     };
     let mut map = std::collections::HashMap::new();
@@ -4113,6 +4142,9 @@ fn load_hazard_zones() -> std::collections::HashMap<String, HazardZone> {
             continue;
         }
         let route_raw = result[0].trim();
+        if route_raw.eq_ignore_ascii_case("route_id") {
+            continue;
+        }
         // Extract base route: "I-5 (CA Siskiyou)" -> "I5"
         let id: String = route_raw
             .split_whitespace()
