@@ -152,6 +152,13 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         pti_bpr_estimate,
         military_strategic_score: military_strategic_score_val,
         agricultural_export_score: agricultural_export_score_val,
+        // v1.4 new fields — joined externally from FARS, railroad_parallels, hazard_zones
+        fatal_crash_rate: None,
+        rail_parallel_flag: false,
+        rail_parallel_name: None,
+        wildfire_risk: None,
+        tornado_risk: None,
+        seismic_risk: None,
     };
 
     Some(Corridor {

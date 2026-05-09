@@ -102,6 +102,10 @@ pub struct ScoringConfig {
     /// v1.2: International Trade Corridor — USMCA designation (0–10, hard-coded per route)
     #[serde(default = "default_simple_anchor")]
     pub a4: AnchorMap,
+    /// v1.4: Safety Record — fatal crashes per 100M VMT (FARS 2022)
+    /// Low rate = safe corridor. High rate = elevated crash exposure.
+    #[serde(default = "default_a5_anchor")]
+    pub a5: AnchorMap,
     pub b1: AnchorMap,
     pub b2: AnchorMap,
     pub b3: AnchorMap,
@@ -121,6 +125,12 @@ pub struct ScoringConfig {
 
 fn default_simple_anchor() -> AnchorMap {
     AnchorMap { anchor_0: 0.0, anchor_5: 5.0, anchor_10: 10.0 }
+}
+
+fn default_a5_anchor() -> AnchorMap {
+    // A5 Safety Record: higher crash rate → higher score (more investment need)
+    // National interstate avg: 0.54 fatals/100M VMT (FHWA 2022)
+    AnchorMap { anchor_0: 0.3, anchor_5: 1.5, anchor_10: 4.0 }
 }
 
 #[derive(Debug, Clone, Deserialize)]

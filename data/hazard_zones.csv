@@ -1,0 +1,20 @@
+# Natural hazard zones for corridor D1 multi-hazard scoring
+# wildfire_risk: 0-10 based on WHP (Wildfire Hazard Potential) exposure
+# tornado_risk: 0-10 based on annual tornado probability (SPC data)
+# seismic_risk: 0-10 based on USGS sds (design spectral acceleration)
+# Used to extend D1 beyond flood-only to full multi-hazard composite
+route_id,wildfire_risk,tornado_risk,seismic_risk,primary_hazard,notes
+I-5 (CA Siskiyou),8.5,0.0,6.5,wildfire,"Siskiyou Pass; WHP very high; Cascade subduction zone"
+I-5 (WA/OR),4.0,0.0,8.5,seismic,"Cascadia subduction zone M9 risk; highest US seismic exposure"
+I-40 (NM/AZ),6.0,2.0,1.0,wildfire,"SW drought + forest fire risk; limited seismic"
+I-40 (OK),2.0,9.5,0.5,tornado,"Oklahoma tornado alley; 30+ tornado closures/year"
+I-35 (OK/KS),2.0,9.0,0.5,tornado,"Tornado alley core; Moore OK area highest US tornado frequency"
+I-70 (CO mountains),7.0,1.0,3.5,wildfire,"CO Front Range wildfire; Vail/Eisenhower tunnel; I-70 closes 100+ hrs/yr"
+I-90 (MT/WY),3.0,2.0,2.0,wildfire,"Northern Rockies wildfire smoke closures increasing"
+I-80 (NV desert),3.5,0.5,2.5,wildfire,"Great Basin fire risk; I-80 NV segment increasingly affected"
+I-15 (UT/ID/MT),4.0,1.0,5.5,seismic,"Intermountain Seismic Belt; Wasatch Front M7.5 scenario"
+I-25 (NM/CO),5.5,3.0,3.0,wildfire,"SW wildfire + Front Range tornado risk"
+I-10 (CA desert),4.0,0.0,7.5,seismic,"San Andreas proximity; Salton Sea segment highest CA seismic"
+I-8 (CA),5.0,0.0,6.0,wildfire/seismic,"San Diego wildfire + Elsinore Fault"
+I-84 (OR),4.5,0.5,7.0,seismic,"Portland metro Cascadia risk; Columbia River Gorge wildfire"
+I-82 (WA),3.5,0.5,7.5,seismic,"Yakima Valley; Cascadia + crustal fault seismic"

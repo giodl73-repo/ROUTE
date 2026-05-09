@@ -7,6 +7,7 @@ pub enum Dimension {
     A2FreightIntensity,
     A3SpeedReliability,
     A4InternationalTrade,
+    A5SafetyRecord,
     B1Redundancy,
     B2NetworkCentrality,
     B3PortBorderAccess,
@@ -27,6 +28,7 @@ impl Dimension {
             Dimension::A2FreightIntensity     => "A2",
             Dimension::A3SpeedReliability     => "A3",
             Dimension::A4InternationalTrade   => "A4",
+            Dimension::A5SafetyRecord         => "A5",
             Dimension::B1Redundancy           => "B1",
             Dimension::B2NetworkCentrality    => "B2",
             Dimension::B3PortBorderAccess     => "B3",
@@ -47,6 +49,7 @@ impl Dimension {
             Dimension::A2FreightIntensity     => "Freight Intensity",
             Dimension::A3SpeedReliability     => "Speed Reliability",
             Dimension::A4InternationalTrade   => "International Trade Corridor",
+            Dimension::A5SafetyRecord         => "Safety Record",
             Dimension::B1Redundancy           => "Redundancy",
             Dimension::B2NetworkCentrality    => "Network Centrality",
             Dimension::B3PortBorderAccess     => "Port/Border Access",
@@ -80,6 +83,7 @@ pub struct DimensionScores {
     pub a2: ScoredDimension,
     pub a3: ScoredDimension,
     pub a4: ScoredDimension,  // v1.2
+    pub a5: ScoredDimension,  // v1.4
     pub b1: ScoredDimension,
     pub b2: ScoredDimension,
     pub b3: ScoredDimension,
@@ -96,13 +100,13 @@ pub struct DimensionScores {
 }
 
 impl DimensionScores {
-    pub fn band_a(&self) -> f64 { self.a1.score + self.a2.score + self.a3.score + self.a4.score }
+    pub fn band_a(&self) -> f64 { self.a1.score + self.a2.score + self.a3.score + self.a4.score + self.a5.score }
     pub fn band_b(&self) -> f64 { self.b1.score + self.b2.score + self.b3.score + self.b4.score }
     pub fn band_c(&self) -> f64 { self.c1.score + self.c2.score + self.c3.score + self.c4.score }
     pub fn band_d(&self) -> f64 { self.d1.score + self.d2.score + self.d3.score }
     pub fn total(&self)  -> f64 { self.band_a() + self.band_b() + self.band_c() + self.band_d() }
     pub fn any_estimated(&self) -> bool {
-        [&self.a1,&self.a2,&self.a3,&self.a4,&self.b1,&self.b2,&self.b3,&self.b4,
+        [&self.a1,&self.a2,&self.a3,&self.a4,&self.a5,&self.b1,&self.b2,&self.b3,&self.b4,
          &self.c1,&self.c2,&self.c3,&self.c4,&self.d1,&self.d2,&self.d3]
             .iter().any(|d| d.estimated)
     }
@@ -115,6 +119,7 @@ pub fn score_corridor(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> Dimens
         a2: score_a2(attrs, cfg),
         a3: score_a3(attrs, cfg),
         a4: score_a4(attrs, cfg),
+        a5: score_a5(attrs, cfg),
         b1: score_b1(attrs, cfg),
         b2: score_b2(attrs, cfg),
         b3: score_b3(attrs, cfg),
@@ -235,6 +240,23 @@ fn score_a4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
     }
 }
 
+fn score_a5(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
+    match attrs.fatal_crash_rate {
+        Some(rate) => ScoredDimension {
+            dim: Dimension::A5SafetyRecord,
+            score: cfg.a5.score(rate as f64),
+            justification: format!(
+                "Fatal crash rate {rate:.3} per 100M VMT (FARS 2022). \
+                 National interstate avg: 0.54 per 100M VMT.",
+            ),
+            sources: vec!["NHTSA FARS 2022".into()],
+            estimated: false,
+        },
+        None => estimated(Dimension::A5SafetyRecord,
+            "FARS crash data not yet joined — run route fetch-fars."),
+    }
+}
+
 fn score_b4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension {
     let score = attrs.military_strategic_score;
     if score > 0.0 {
@@ -287,16 +309,28 @@ fn score_c4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
 
 fn score_b1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     match attrs.detour_penalty_miles {
-        Some(penalty) => ScoredDimension {
-            dim: Dimension::B1Redundancy,
-            score: cfg.b1.score(penalty),
-            justification: format!(
-                "Best alternate route adds {penalty:.0} miles (nearest parallel route \
-                 {:.0} miles away).",
-                attrs.nearest_parallel_miles.unwrap_or(0.0)
-            ),
-            sources: vec!["HighwayGraph shortest-path analysis".into()],
-            estimated: false,
+        Some(penalty) => {
+            let raw_score = cfg.b1.score(penalty);
+            // Rail parallel discount: Class 1 freight railroad within 50mi reduces effective isolation
+            let rail_discount = if attrs.rail_parallel_flag { 0.80 } else { 1.0 };
+            let score = raw_score * rail_discount;
+            let rail_note = if attrs.rail_parallel_flag {
+                format!(" Rail parallel ({}) within 50mi — B1 discounted 20% (rail provides partial redundancy).",
+                    attrs.rail_parallel_name.as_deref().unwrap_or("Class 1 RR"))
+            } else {
+                String::new()
+            };
+            ScoredDimension {
+                dim: Dimension::B1Redundancy,
+                score,
+                justification: format!(
+                    "Best alternate route adds {penalty:.0} miles (nearest parallel route \
+                     {:.0} miles away).{rail_note}",
+                    attrs.nearest_parallel_miles.unwrap_or(0.0)
+                ),
+                sources: vec!["HighwayGraph shortest-path analysis".into()],
+                estimated: false,
+            }
         },
         None => estimated(Dimension::B1Redundancy, "Parallel route analysis incomplete."),
     }
@@ -417,17 +451,51 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
     let total_score = attrs.fema_sfha_miles
         .map(|m| cfg.d1.total_sfha.score(m))
         .unwrap_or(0.0);
-    let composite = 0.7 * consec_score + 0.3 * total_score;
+    let flood_score = 0.7 * consec_score + 0.3 * total_score;
+
+    // Multi-hazard extension (v1.4): add wildfire, tornado, seismic components
+    let wildfire_score = attrs.wildfire_risk.map(|w| w as f64).unwrap_or(0.0);
+    let tornado_score = attrs.tornado_risk.map(|t| t as f64).unwrap_or(0.0);
+    let seismic_score = attrs.seismic_risk.map(|s| s as f64).unwrap_or(0.0);
+    let has_extended = attrs.wildfire_risk.is_some()
+        || attrs.tornado_risk.is_some()
+        || attrs.seismic_risk.is_some();
+
+    let composite = if has_extended {
+        // Four-component weighted composite
+        flood_score * 0.40 + wildfire_score * 0.25 + tornado_score * 0.20 + seismic_score * 0.15
+    } else {
+        // Flood-only (legacy path): preserve pre-v1.4 scoring for corridors without hazard data
+        flood_score
+    };
+
+    let hazard_note = if has_extended {
+        format!(
+            " Wildfire {:.1}/10, tornado {:.1}/10, seismic {:.1}/10 (v1.4 multi-hazard).",
+            attrs.wildfire_risk.unwrap_or(0.0),
+            attrs.tornado_risk.unwrap_or(0.0),
+            attrs.seismic_risk.unwrap_or(0.0),
+        )
+    } else {
+        " Wildfire/tornado/seismic not yet joined — run route fetch-hazards.".to_string()
+    };
+
+    let mut sources = vec!["FEMA NFHL 2024".into()];
+    if has_extended {
+        sources.push("USFS Wildfire Hazard Potential 2023".into());
+        sources.push("NOAA SPC tornado probability".into());
+        sources.push("USGS seismic hazard (Sds)".into());
+    }
+
     ScoredDimension {
         dim: Dimension::D1ClimateResilience,
         score: composite,
         justification: format!(
-            "Longest contiguous SFHA segment {:.1} mi; {:.1} total SFHA miles. \
-             v1.0 uses FEMA flood zones only — wildfire and extreme heat not yet scored.",
+            "Longest contiguous SFHA segment {:.1} mi; {:.1} total SFHA miles.{hazard_note}",
             attrs.max_consecutive_sfha_miles.unwrap_or(0.0),
             attrs.fema_sfha_miles.unwrap_or(0.0)
         ),
-        sources: vec!["FEMA NFHL 2024".into()],
+        sources,
         estimated: false,
     }
 }

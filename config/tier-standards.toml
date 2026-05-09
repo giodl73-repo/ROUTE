@@ -41,6 +41,7 @@ cd_road_metro_threshold_pop = 500_000
 diamond_k_connectivity = 3
 bridge_target_year = 2030
 min_clearance_ft = 16.0
+safety_target_fatals_per_100mvmt = 0.8  # managed lanes eliminate mixing crashes
 
 # ── Tier 2 standards ──────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ diamond_k_connectivity = 2
 bridge_target_year = 2035
 min_clearance_ft = 14.5
 capacity_expansion_vc_threshold = 0.90
+safety_target_fatals_per_100mvmt = 1.2
 
 # ── Tier 3 standards ──────────────────────────────────────────────────────────
 
@@ -77,6 +79,7 @@ rural_spur_trigger_distance = 30.0  # miles from T1/T2/T3 on-ramp
 rural_spur_max_miles = 10.0       # maximum spur length
 bridge_target_year = 2040
 onramp_spacing_rural_max_miles = 20.0
+safety_target_fatals_per_100mvmt = 1.8
 
 # ── Tier 4 standards ──────────────────────────────────────────────────────────
 

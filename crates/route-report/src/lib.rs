@@ -80,21 +80,20 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
     md.push_str("| Band | Dim | Name | Score | Justification |\n|---|---|---|---|---|\n");
 
     let all = [
-        &scores.a1, &scores.a2, &scores.a3,
-        &scores.b1, &scores.b2, &scores.b3,
-        &scores.c1, &scores.c2, &scores.c3,
-        &scores.d1, &scores.d2, &scores.d3,
+        ("A", &scores.a1), ("A", &scores.a2), ("A", &scores.a3), ("A", &scores.a4), ("A", &scores.a5),
+        ("B", &scores.b1), ("B", &scores.b2), ("B", &scores.b3), ("B", &scores.b4),
+        ("C", &scores.c1), ("C", &scores.c2), ("C", &scores.c3), ("C", &scores.c4),
+        ("D", &scores.d1), ("D", &scores.d2), ("D", &scores.d3),
     ];
-    let bands = ["A","A","A","B","B","B","C","C","C","D","D","D"];
 
-    for (sd, band) in all.iter().zip(bands.iter()) {
+    for (band, sd) in all.iter() {
         let est = if sd.estimated { "†" } else { "" };
         md.push_str(&format!("| {} | {} | {} | {:.1}{} | {} |\n",
             band, sd.dim.code(), sd.dim.name(),
             sd.score, est, sd.justification));
     }
 
-    md.push_str(&format!("\n**Band totals**: A: {:.1}/30 · B: {:.1}/30 · C: {:.1}/30 · D: {:.1}/30 · **Total: {:.1}/120**\n\n",
+    md.push_str(&format!("\n**Band totals**: A: {:.1}/50 · B: {:.1}/40 · C: {:.1}/40 · D: {:.1}/30 · **Total: {:.1}/160**\n\n",
         scores.band_a(), scores.band_b(), scores.band_c(), scores.band_d(), scores.total()));
 
     if scores.any_estimated() {

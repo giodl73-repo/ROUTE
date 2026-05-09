@@ -103,6 +103,20 @@ pub struct CorridorAttributes {
     /// 10 = primary Laredo/El Paso/San Diego corridor; 5 = secondary crossing
     pub intl_trade_score: f64,
 
+    // ── v1.4 New Fields ───────────────────────────────────────────────────────
+    /// Fatal crash rate per 100M VMT — A5 (from FARS 2022)
+    pub fatal_crash_rate: Option<f32>,
+    /// Rail parallel flag — B1 modifier (Class 1 railroad within 50mi reduces effective B1)
+    pub rail_parallel_flag: bool,
+    /// Rail parallel name (e.g. "UP Overland Route")
+    pub rail_parallel_name: Option<String>,
+    /// Wildfire hazard risk 0-10 (USFS WHP-derived) — D1 component
+    pub wildfire_risk: Option<f32>,
+    /// Tornado risk 0-10 (SPC tornado probability) — D1 component
+    pub tornado_risk: Option<f32>,
+    /// Seismic risk 0-10 (USGS sds-derived) — D1 component
+    pub seismic_risk: Option<f32>,
+
     /// BPR-estimated PTI from V/C ratio — better A3 fallback than IRI
     /// PTI_bpr = 1 + 0.15 × (V/C_peak × 1.15)^4  where V/C_peak = p90_aadt × 0.09 / (lanes/2 × 2300)
     /// None if insufficient data (AADT or lane count missing)

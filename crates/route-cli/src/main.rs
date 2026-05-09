@@ -522,6 +522,12 @@ fn main() -> Result<()> {
             if !fema_tiles.is_empty() { println!("  {} FEMA tiles loaded", fema_tiles.len()); }
             let nbi = load_nbi_bridges();
             if !nbi.is_empty() { println!("  {} NBI bridge records loaded", nbi.len()); }
+            let fars_safety = load_fars_safety();
+            if !fars_safety.is_empty() { println!("  {} FARS route records loaded", fars_safety.len()); }
+            let railroad_parallels = load_railroad_parallels();
+            if !railroad_parallels.is_empty() { println!("  {} railroad parallels loaded", railroad_parallels.len()); }
+            let hazard_zones = load_hazard_zones();
+            if !hazard_zones.is_empty() { println!("  {} hazard zone records loaded", hazard_zones.len()); }
 
             // Score all interstates
             let ids = graph.interstate_ids();
@@ -550,6 +556,21 @@ fn main() -> Result<()> {
                         join_nbi_to_corridor(id, &mut corridor.attributes, &nbi);
                     }
                     join_d3_iri_proxy(&mut corridor.attributes);
+                    // A5: join FARS fatal crash rate
+                    if let Some(&rate) = fars_safety.get(id) {
+                        corridor.attributes.fatal_crash_rate = Some(rate);
+                    }
+                    // B1: join railroad parallel flag
+                    if let Some(railroad) = railroad_parallels.get(id) {
+                        corridor.attributes.rail_parallel_flag = true;
+                        corridor.attributes.rail_parallel_name = Some(railroad.clone());
+                    }
+                    // D1: join multi-hazard zone data
+                    if let Some(zone) = hazard_zones.get(id) {
+                        corridor.attributes.wildfire_risk = Some(zone.wildfire);
+                        corridor.attributes.tornado_risk = Some(zone.tornado);
+                        corridor.attributes.seismic_risk = Some(zone.seismic);
+                    }
                     // A2 freight proxy from HPMS
                     if corridor.attributes.annual_freight_value_b.is_none() {
                         if let Some(aadt) = corridor.attributes.p90_aadt {
@@ -559,7 +580,7 @@ fn main() -> Result<()> {
                         }
                     }
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
-                    println!("  {}: {:.1}/150{}", corridor.designation, scores.total(),
+                    println!("  {}: {:.1}/160{}", corridor.designation, scores.total(),
                         if scores.any_estimated() { "†" } else { "" });
                     all_scores.push(scores);
                 }
@@ -1265,7 +1286,7 @@ fn main() -> Result<()> {
         }
 
         Commands::Calibrate => {
-            println!("route calibrate — rubric calibration pass (v1.3)");
+            println!("route calibrate — rubric calibration pass (v1.4)");
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let mut graph = load_graph(&manifest)?;
@@ -1315,12 +1336,28 @@ fn main() -> Result<()> {
             if !fema_tiles.is_empty() {
                 println!("  {} FEMA SFHA tiles loaded — D1 will use real flood-zone data", fema_tiles.len());
             }
+            // Load FARS fatal crash rates for A5 scoring
+            let fars_safety = load_fars_safety();
+            if !fars_safety.is_empty() {
+                println!("  {} FARS route records loaded — A5 will use real safety data", fars_safety.len());
+            }
+            // Load railroad parallel data for B1 discount
+            let railroad_parallels = load_railroad_parallels();
+            if !railroad_parallels.is_empty() {
+                println!("  {} railroad parallels loaded — B1 rail discount applied", railroad_parallels.len());
+            }
+            // Load multi-hazard zones for D1 extension
+            let hazard_zones = load_hazard_zones();
+            if !hazard_zones.is_empty() {
+                println!("  {} hazard zone records loaded — D1 multi-hazard composite active", hazard_zones.len());
+            }
 
             // Collect per-dimension scores for all corridors
-            const N_DIMS: usize = 15;
-            let dim_names = ["A1","A2","A3","A4","B1","B2","B3","B4","C1","C2","C3","C4","D1","D2","D3"];
+            const N_DIMS: usize = 16;
+            let dim_names = ["A1","A2","A3","A4","A5","B1","B2","B3","B4","C1","C2","C3","C4","D1","D2","D3"];
             let dim_labels = [
                 "Throughput Gap", "Freight Intensity", "Speed Reliability", "International Trade",
+                "Safety Record",
                 "Redundancy", "Network Centrality", "Port/Border Access", "Military/Strategic",
                 "Population Reach", "Rural Connectivity", "Economic Opportunity", "Agricultural Export",
                 "Climate Resilience", "Multimodal Integration", "Infrastructure Vintage",
@@ -1359,6 +1396,21 @@ fn main() -> Result<()> {
                         join_nbi_to_corridor(id, &mut corridor.attributes, &nbi);
                     }
                     join_d3_iri_proxy(&mut corridor.attributes); // no-op if NBI already set
+                    // A5: join FARS fatal crash rate
+                    if let Some(&rate) = fars_safety.get(id) {
+                        corridor.attributes.fatal_crash_rate = Some(rate);
+                    }
+                    // B1: join railroad parallel flag
+                    if let Some(railroad) = railroad_parallels.get(id) {
+                        corridor.attributes.rail_parallel_flag = true;
+                        corridor.attributes.rail_parallel_name = Some(railroad.clone());
+                    }
+                    // D1: join multi-hazard zone data
+                    if let Some(zone) = hazard_zones.get(id) {
+                        corridor.attributes.wildfire_risk = Some(zone.wildfire);
+                        corridor.attributes.tornado_risk = Some(zone.tornado);
+                        corridor.attributes.seismic_risk = Some(zone.seismic);
+                    }
                     // Estimate A2 freight value from HPMS truck AADT × corridor miles
                     // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
                     if corridor.attributes.annual_freight_value_b.is_none() {
@@ -1371,7 +1423,7 @@ fn main() -> Result<()> {
                     }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
-                        s.a1.score, s.a2.score, s.a3.score, s.a4.score,
+                        s.a1.score, s.a2.score, s.a3.score, s.a4.score, s.a5.score,
                         s.b1.score, s.b2.score, s.b3.score, s.b4.score,
                         s.c1.score, s.c2.score, s.c3.score, s.c4.score,
                         s.d1.score, s.d2.score, s.d3.score,
@@ -1470,11 +1522,11 @@ fn main() -> Result<()> {
             }
 
             // Tier distribution
-            let t1 = total_scores.iter().filter(|&&s| s >= 26.0).count();
-            let t2 = total_scores.iter().filter(|&&s| s >= 19.0 && s < 26.0).count();
-            let t3 = total_scores.iter().filter(|&&s| s >= 11.0 && s < 19.0).count();
-            let t4 = total_scores.iter().filter(|&&s| s < 11.0).count();
-            println!("\n  Tier distribution (v1.3 thresholds: T1≥26, T2≥19, T3≥11):");
+            let t1 = total_scores.iter().filter(|&&s| s >= 29.0).count();
+            let t2 = total_scores.iter().filter(|&&s| s >= 21.0 && s < 29.0).count();
+            let t3 = total_scores.iter().filter(|&&s| s >= 12.0 && s < 21.0).count();
+            let t4 = total_scores.iter().filter(|&&s| s < 12.0).count();
+            println!("\n  Tier distribution (v1.4 thresholds: T1≥29, T2≥21, T3≥12):");
             println!("    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
                 t1, t2, t3, t4);
             if t1 > 12 {
@@ -2650,6 +2702,74 @@ fn load_nbi_bridges() -> std::collections::HashMap<String, NbiBridgeRecord> {
     map
 }
 
+/// Load FARS 2022 fatal crash rates by route from data/cache/fars_2022_routes.csv.
+/// Columns: route_id, fatal_count, fatal_rate_per_100mvmt
+/// Returns route_id -> crash_rate_per_100M_VMT.
+fn load_fars_safety() -> std::collections::HashMap<String, f32> {
+    let path = std::path::Path::new("data/cache/fars_2022_routes.csv");
+    if !path.exists() { return std::collections::HashMap::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    let mut map = std::collections::HashMap::new();
+    for result in rdr.records().filter_map(|r| r.ok()) {
+        if result.len() < 3 { continue; }
+        let route_id = result[0].to_string();
+        let rate: f32 = result[2].parse().unwrap_or(0.0);
+        map.insert(route_id, rate);
+    }
+    map
+}
+
+/// Load railroad parallel data from data/railroad_parallels.csv.
+/// Columns: interstate, railroad, railroad_owner, approx_parallel_miles, within_50mi, notes
+/// Returns: route_id (normalized e.g. "I80") -> railroad_name (only within_50mi=true entries).
+fn load_railroad_parallels() -> std::collections::HashMap<String, String> {
+    let path = std::path::Path::new("data/railroad_parallels.csv");
+    if !path.exists() { return std::collections::HashMap::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    let mut map = std::collections::HashMap::new();
+    for result in rdr.records().filter_map(|r| r.ok()) {
+        if result.len() < 5 { continue; }
+        // Columns: interstate, railroad, railroad_owner, approx_parallel_miles, within_50mi, notes
+        let interstate = result[0].trim().to_string();
+        let railroad = result[1].trim().to_string();
+        let within_50mi = result[4].trim() == "true";
+        if within_50mi {
+            // Normalize interstate name: "I-80" -> "I80"
+            let id: String = interstate.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_uppercase();
+            map.insert(id, railroad);
+        }
+    }
+    map
+}
+
+struct HazardZone { wildfire: f32, tornado: f32, seismic: f32 }
+
+/// Load multi-hazard zone scores from data/hazard_zones.csv.
+/// Columns: route, wildfire_risk, tornado_risk, seismic_risk
+/// Route names like "I-5 (CA Siskiyou)" are normalized to "I5"; MAX taken for multi-segment corridors.
+fn load_hazard_zones() -> std::collections::HashMap<String, HazardZone> {
+    let path = std::path::Path::new("data/hazard_zones.csv");
+    if !path.exists() { return std::collections::HashMap::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    let mut map = std::collections::HashMap::new();
+    for result in rdr.records().filter_map(|r| r.ok()) {
+        if result.len() < 4 { continue; }
+        let route_raw = result[0].trim();
+        // Extract base route: "I-5 (CA Siskiyou)" -> "I5"
+        let id: String = route_raw.split_whitespace().next().unwrap_or("")
+            .chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_uppercase();
+        let wf: f32 = result[1].parse().unwrap_or(0.0);
+        let tor: f32 = result[2].parse().unwrap_or(0.0);
+        let seis: f32 = result[3].parse().unwrap_or(0.0);
+        // Take MAX for corridors spanning multiple segment entries
+        let entry = map.entry(id).or_insert(HazardZone { wildfire: 0.0, tornado: 0.0, seismic: 0.0 });
+        if wf > entry.wildfire { entry.wildfire = wf; }
+        if tor > entry.tornado { entry.tornado = tor; }
+        if seis > entry.seismic { entry.seismic = seis; }
+    }
+    map
+}
+
 /// Join NBI bridge condition data to a corridor.
 fn join_nbi_to_corridor(
     route_id: &str,
@@ -2757,7 +2877,7 @@ fn print_score_table(designation: &str, scores: &route_score::DimensionScores, a
     println!("│ Band B (Network)                     │ {:>5.1} │     │", scores.band_b());
     println!("│ Band C (People)                      │ {:>5.1} │     │", scores.band_c());
     println!("│ Band D (Future)                      │ {:>5.1} │     │", scores.band_d());
-    println!("│ TOTAL                                │ {:>5.1} │ /150│", scores.total());
+    println!("│ TOTAL                                │ {:>5.1} │ /160│", scores.total());
     println!("└──────────────────────────────────────┴───────┴─────┘");
 }
 

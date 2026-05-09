@@ -9,9 +9,25 @@
 # Bump [meta].version when anchors change; prior corpus entries record the version they were scored under.
 
 [meta]
-version = "v1.3"
-rubric_version = "v1.3"
+version = "v1.4"
+rubric_version = "v1.4"
 
+# v1.4 changes (2026-05-08):
+#   A5: Safety Record (NEW) — FARS fatal crash rate per 100M VMT
+#       Anchors: 0.3 → 0, 1.5 → 5, 4.0 → 10 (national avg: 0.54 fatals/100M VMT)
+#       Higher rate = higher score = more investment need
+#       Data: NHTSA FARS 2022 fatality file, joined by route via data/cache/fars_2022_routes.csv
+#   D1: Extended to multi-hazard composite (v1.4)
+#       When wildfire/tornado/seismic joined: flood 0.40 + wildfire 0.25 + tornado 0.20 + seismic 0.15
+#       When extended data absent: flood-only (legacy path, same as v1.3)
+#       Sources: USFS WHP 2023, NOAA SPC tornado probability, USGS seismic hazard (Sds)
+#       Data files: data/hazard_zones.csv (route → wildfire/tornado/seismic scores)
+#   B1: Rail parallel discount — Class 1 railroad within 50mi reduces B1 by 20%
+#       Rail provides partial freight redundancy even though highway isolation remains
+#       Data file: data/railroad_parallels.csv (interstate, railroad, within_50mi)
+#   Score range: 160 (was 150). Tier thresholds scaled:
+#     v1.4: T1≥29, T2≥21, T3≥12, T4<12
+#
 # v1.3 changes (2026-05-07):
 #   D1: ECH100 normalization — both SFHA flood mileage and winter closure-hours
 #       converted to the same unit before scoring:
@@ -233,6 +249,19 @@ anchor_10 = 10.0   # top-5 border crossing corridor
 anchor_0  = 0.0
 anchor_5  = 5.0    # STRAHNET baseline
 anchor_10 = 10.0   # STRAHNET + highest strategic value
+
+# ── A5: Safety Record ─────────────────────────────────────────────────────────
+[a5]
+# Safety Record — fatal crashes per 100M VMT (FARS 2022)
+# Low rate = safe corridor. High rate = needs investment (managed lanes reduce mixing crashes).
+# National interstate average: 0.54 fatals/100M VMT (FHWA 2022)
+# Anchors:
+anchor_0  = 0.3    # below national average; excellent safety record
+anchor_5  = 1.5    # at or above average; meaningful investment case
+anchor_10 = 4.0    # significantly above average; major safety issue (rural high-speed corridors)
+
+# ── v1.4 tier thresholds (score range /160 with A5): ─────────────────────────
+# T1≥29, T2≥21, T3≥12, T4<12
 
 # ── C4: Agricultural Export Access ────────────────────────────────────────────
 [c4]
