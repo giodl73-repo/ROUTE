@@ -676,8 +676,15 @@ fn main() -> Result<()> {
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
-            let mut score_rows: Vec<(String, f64, &'static str, String, bool, [f64; 16])> =
-                Vec::new();
+            let mut score_rows: Vec<(
+                String,
+                f64,
+                &'static str,
+                String,
+                bool,
+                [f64; 16],
+                [f32; 16],
+            )> = Vec::new();
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Apply all data joins (same as calibrate)
@@ -749,6 +756,7 @@ fn main() -> Result<()> {
                         scores.rubric_version.clone(),
                         scores.any_estimated(),
                         dimension_score_values(&scores),
+                        dimension_confidence_values(&scores),
                     ));
                     all_scores.push(scores);
                 }
@@ -759,8 +767,13 @@ fn main() -> Result<()> {
             let mut wtr = csv::Writer::from_path(&out)?;
             let mut header = vec!["route", "score", "tier", "rubric_version", "estimated"];
             header.extend(DIMENSION_CODES);
+            header.extend([
+                "A1_conf", "A2_conf", "A3_conf", "A4_conf", "A5_conf", "B1_conf", "B2_conf",
+                "B3_conf", "B4_conf", "C1_conf", "C2_conf", "C3_conf", "C4_conf", "D1_conf",
+                "D2_conf", "D3_conf",
+            ]);
             wtr.write_record(header)?;
-            for (route, score, tier, rubric_version, estimated, dims) in &score_rows {
+            for (route, score, tier, rubric_version, estimated, dims, confs) in &score_rows {
                 let mut row = vec![
                     route.clone(),
                     format!("{score:.1}"),
@@ -769,6 +782,7 @@ fn main() -> Result<()> {
                     estimated.to_string(),
                 ];
                 row.extend(dims.iter().map(|value| format!("{value:.1}")));
+                row.extend(confs.iter().map(|value| format!("{value:.2}")));
                 wtr.write_record(row)?;
             }
             wtr.flush()?;
@@ -1944,6 +1958,7 @@ fn main() -> Result<()> {
 
             let mut matrix: Vec<[f64; N_DIMS]> = Vec::new();
             let mut estimated_matrix: Vec<[bool; N_DIMS]> = Vec::new();
+            let mut confidence_matrix: Vec<[f32; N_DIMS]> = Vec::new();
             let mut route_ids_used: Vec<String> = Vec::new();
             let mut total_scores: Vec<f64> = Vec::new();
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
@@ -2012,6 +2027,7 @@ fn main() -> Result<()> {
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = dimension_score_values(&s);
                     let estimated_row = dimension_estimated_values(&s);
+                    let confidence_row = dimension_confidence_values(&s);
                     let total = rounded_score(s.total());
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
@@ -2019,6 +2035,7 @@ fn main() -> Result<()> {
                     }
                     matrix.push(row);
                     estimated_matrix.push(estimated_row);
+                    confidence_matrix.push(confidence_row);
                     route_ids_used.push(id.clone());
                     total_scores.push(total);
                 }
@@ -2030,15 +2047,16 @@ fn main() -> Result<()> {
             // Per-dimension statistics
             println!("┌───────────────────────────────────────────────────────────────────────────────────────────────────┐");
             println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                                    │", matrix.len());
-            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬────────────  ┤");
-            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │ Est% │ NZ%  │  Status      │");
-            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────────  ┤");
+            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬────────────  ┤");
+            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │ Conf │ Est% │ NZ%  │  Status      │");
+            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────────  ┤");
 
             let mut dim_stats: Vec<(f64, f64, f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90,est_rate,nonzero_rate
 
             for d in 0..N_DIMS {
                 let vals: Vec<f64> = matrix.iter().map(|r| r[d]).collect();
                 let estimated_count = estimated_matrix.iter().filter(|r| r[d]).count();
+                let avg_conf = confidence_matrix.iter().map(|r| r[d] as f64).sum::<f64>() / n;
                 let est_rate = estimated_count as f64 / n;
                 let nonzero_rate = vals.iter().filter(|&&v| v > 0.0).count() as f64 / n;
                 let min = vals.iter().cloned().fold(f64::MAX, f64::min);
@@ -2063,11 +2081,11 @@ fn main() -> Result<()> {
                     "OK      ✓"
                 };
 
-                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.0} │ {:>4.0} │  {:<10}  │",
-                    dim_names[d], dim_labels[d], min, max, mean, std, p90, est_rate * 100.0, nonzero_rate * 100.0, status);
+                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.2} │ {:>4.0} │ {:>4.0} │  {:<10}  │",
+                    dim_names[d], dim_labels[d], min, max, mean, std, p90, avg_conf, est_rate * 100.0, nonzero_rate * 100.0, status);
                 dim_stats.push((min, max, mean, std, p90, est_rate, nonzero_rate));
             }
-            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴────────────  ┘");
+            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴────────────  ┘");
 
             // Pairwise correlation (Pearson) — flag pairs > 0.60
             println!("\n  Computing pairwise Pearson correlations…");
@@ -3324,6 +3342,27 @@ fn dimension_estimated_values(scores: &route_score::DimensionScores) -> [bool; 1
     ]
 }
 
+fn dimension_confidence_values(scores: &route_score::DimensionScores) -> [f32; 16] {
+    [
+        scores.a1.confidence,
+        scores.a2.confidence,
+        scores.a3.confidence,
+        scores.a4.confidence,
+        scores.a5.confidence,
+        scores.b1.confidence,
+        scores.b2.confidence,
+        scores.b3.confidence,
+        scores.b4.confidence,
+        scores.c1.confidence,
+        scores.c2.confidence,
+        scores.c3.confidence,
+        scores.c4.confidence,
+        scores.d1.confidence,
+        scores.d2.confidence,
+        scores.d3.confidence,
+    ]
+}
+
 fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     let mut ids = graph.interstate_ids();
     ids.extend(graph.us_highway_ids());
@@ -3335,8 +3374,8 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, dimension_estimated_values, dimension_score_values,
-        join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
+        atlas_candidate_ids, dimension_confidence_values, dimension_estimated_values,
+        dimension_score_values, join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -3368,6 +3407,7 @@ mod tests {
 
         assert_eq!(dimension_score_values(&scores).len(), 16);
         assert_eq!(dimension_estimated_values(&scores).len(), 16);
+        assert_eq!(dimension_confidence_values(&scores).len(), 16);
     }
 
     #[test]
@@ -4297,9 +4337,9 @@ fn print_score_table(
         "│  {} — Dimension Scores (rubric {})",
         designation, scores.rubric_version
     );
-    println!("├──────┬──────────────────────────────┬───────┬────────────────────────┤");
-    println!("│ Dim  │ Name                         │ Score │ Est │");
-    println!("├──────┼──────────────────────────────┼───────┼─────┤");
+    println!("├──────┬──────────────────────────────┬───────┬─────┬────────┬──────┤");
+    println!("│ Dim  │ Name                         │ Score │ Est │ Quality│ Conf │");
+    println!("├──────┼──────────────────────────────┼───────┼─────┼────────┼──────┤");
 
     let all = [
         &scores.a1, &scores.a2, &scores.a3, &scores.a4, &scores.a5, &scores.b1, &scores.b2,
@@ -4314,36 +4354,38 @@ fn print_score_table(
             " "
         };
         println!(
-            "│ {:4} │ {:<28} │ {:>5.1} │  {}  │",
+            "│ {:4} │ {:<28} │ {:>5.1} │  {}  │ {:<6} │ {:>4.2} │",
             sd.dim.code(),
             sd.dim.name(),
             sd.score,
-            est
+            est,
+            sd.quality_label(),
+            sd.confidence
         );
     }
 
-    println!("├──────┴──────────────────────────────┼───────┼─────┤");
+    println!("├──────┴──────────────────────────────┼───────┼─────┴────────┴──────┤");
     println!(
-        "│ Band A (Flow)                        │ {:>5.1} │     │",
+        "│ Band A (Flow)                        │ {:>5.1} │                    │",
         scores.band_a()
     );
     println!(
-        "│ Band B (Network)                     │ {:>5.1} │     │",
+        "│ Band B (Network)                     │ {:>5.1} │                    │",
         scores.band_b()
     );
     println!(
-        "│ Band C (People)                      │ {:>5.1} │     │",
+        "│ Band C (People)                      │ {:>5.1} │                    │",
         scores.band_c()
     );
     println!(
-        "│ Band D (Future)                      │ {:>5.1} │     │",
+        "│ Band D (Future)                      │ {:>5.1} │                    │",
         scores.band_d()
     );
     println!(
-        "│ TOTAL                                │ {:>5.1} │ /160│",
+        "│ TOTAL                                │ {:>5.1} │ /160               │",
         scores.total()
     );
-    println!("└──────────────────────────────────────┴───────┴─────┘");
+    println!("└──────────────────────────────────────┴───────┴─────────────────────┘");
 }
 
 /// Build a simple demand matrix from HPMS AADT data in the graph.

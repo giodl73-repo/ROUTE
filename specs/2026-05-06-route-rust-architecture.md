@@ -273,9 +273,12 @@ pub struct ScoredDimension {
     pub score: f64,            // 0.0–10.0
     pub justification: String, // generated from scoring function output
     pub sources: Vec<String>,
+    pub confidence: f32,       // 0.0–1.0 source/coverage quality, not score magnitude
     pub estimated: bool,       // true → mark with † in corpus entry
 }
 ```
+
+Confidence labels are derived from `confidence`: `High >= 0.85`, `Medium >= 0.60`, `Low > 0.0`, `Missing = 0.0`. Keep `estimated` as a compatibility flag for the `†` marker, but use `confidence` for data-quality comparison and planning.
 
 ### Scoring function notes per dimension
 
@@ -323,7 +326,7 @@ route score <designation> [--estimated]
 
 route score-all
     Score all corridors. Computes full national betweenness centrality (unlocks B2).
-    Writes data/scores-all.csv with route, score, tier, rubric_version, and estimated.
+    Writes data/scores-all.csv with route, score, tier, rubric_version, estimated, dimension scores, and per-dimension confidence.
     Runs parallel via Rayon where graph operations allow it.
 
 route gap [--type missing-link|bottleneck|resilience|intermodal]
@@ -362,6 +365,8 @@ route calibrate
 | `tier` | T1/T2/T3/T4 label from v1.4 promotion thresholds: T1 >= 70.0, T2 >= 50.0, T3 >= 30.0 |
 | `rubric_version` | Rubric version from `config/scoring.toml` |
 | `estimated` | `true` when any dimension score is estimated/proxy |
+| `A1`..`D3` | Dimension score on the 0.0-10.0 rubric |
+| `A1_conf`..`D3_conf` | Per-dimension confidence on a 0.0-1.0 source/coverage scale |
 
 The map renderer reads route scores and applies the same v1.4 thresholds for tier coloring. Calibration ledgers are a separate planned output.
 

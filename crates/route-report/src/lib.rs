@@ -112,7 +112,7 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
     // Dimension scores table
     md.push_str("## Dimension Scores\n\n");
     md.push_str(&format!("Rubric version: `{}`\n\n", scores.rubric_version));
-    md.push_str("| Band | Dim | Name | Score | Justification |\n|---|---|---|---|---|\n");
+    md.push_str("| Band | Dim | Name | Score | Quality | Confidence | Justification |\n|---|---|---|---|---|---|---|\n");
 
     let all = [
         ("A", &scores.a1),
@@ -136,12 +136,14 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
     for (band, sd) in all.iter() {
         let est = if sd.estimated { "†" } else { "" };
         md.push_str(&format!(
-            "| {} | {} | {} | {:.1}{} | {} |\n",
+            "| {} | {} | {} | {:.1}{} | {} | {:.2} | {} |\n",
             band,
             sd.dim.code(),
             sd.dim.name(),
             sd.score,
             est,
+            sd.quality_label(),
+            sd.confidence,
             sd.justification
         ));
     }

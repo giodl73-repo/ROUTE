@@ -73,8 +73,24 @@ pub struct ScoredDimension {
     /// One-sentence justification with data cited
     pub justification: String,
     pub sources: Vec<String>,
+    /// 0.0–1.0 data confidence. This measures source/coverage quality, not score magnitude.
+    pub confidence: f32,
     /// true → mark with † in corpus entry (estimated value used)
     pub estimated: bool,
+}
+
+impl ScoredDimension {
+    pub fn quality_label(&self) -> &'static str {
+        if self.confidence >= 0.85 {
+            "High"
+        } else if self.confidence >= 0.60 {
+            "Medium"
+        } else if self.confidence > 0.0 {
+            "Low"
+        } else {
+            "Missing"
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -160,6 +176,7 @@ fn score_a1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 attrs.mean_aadt.unwrap_or(0.0)
             ),
             sources: vec!["FHWA HPMS 2023".into()],
+            confidence: 0.90,
             estimated: false,
         },
         None => estimated(
@@ -197,6 +214,11 @@ fn score_a2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 score: cfg.a2.score(val),
                 justification,
                 sources,
+                confidence: if attrs.freight_value_is_hpms_proxy {
+                    0.45
+                } else {
+                    0.60
+                },
                 estimated: true, // FAF5 traversal and HPMS cargo-value proxy are both estimates
             }
         }
@@ -218,6 +240,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 attrs.mean_tti.unwrap_or(1.0)
             ),
             sources: vec!["FHWA Freight Performance Measures 2023".into()],
+            confidence: 0.95,
             estimated: false,
         }
     } else if let Some(pti_bpr) = attrs.pti_bpr_estimate {
@@ -231,6 +254,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 attrs.vc_ratio_p90.unwrap_or(0.0)
             ),
             sources: vec!["FHWA HPMS 2023 (AADT + lanes)".into()],
+            confidence: 0.55,
             estimated: true,
         }
     } else if let Some(iri) = attrs.mean_iri {
@@ -244,6 +268,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 cfg.a3.iri_fallback_max
             ),
             sources: vec!["FHWA HPMS 2023".into()],
+            confidence: 0.25,
             estimated: true,
         }
     } else {
@@ -267,6 +292,7 @@ fn score_a4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
                  Higher = more central to US-Mexico or US-Canada freight flows."
             ),
             sources: vec!["FHWA NHS High Priority Corridors; USMCA Annex 31-A".into()],
+            confidence: 0.75,
             estimated: false, // hard-coded designation data is reliable
         }
     } else {
@@ -275,6 +301,7 @@ fn score_a4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
             score: 0.0,
             justification: "No USMCA corridor designation.".into(),
             sources: vec![],
+            confidence: 0.70,
             estimated: false,
         }
     }
@@ -290,6 +317,7 @@ fn score_a5(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                  National interstate avg: 0.54 per 100M VMT.",
             ),
             sources: vec!["NHTSA FARS 2022".into()],
+            confidence: 0.85,
             estimated: false,
         },
         None => estimated(
@@ -310,6 +338,7 @@ fn score_b4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
                  additional points for proximity to nuclear command, major installations."
             ),
             sources: vec!["FHWA STRAHNET; DoD installation list".into()],
+            confidence: 0.75,
             estimated: false,
         }
     } else {
@@ -319,6 +348,7 @@ fn score_b4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
             justification:
                 "Not STRAHNET-designated; no major military installation within 30 miles.".into(),
             sources: vec![],
+            confidence: 0.70,
             estimated: false,
         }
     }
@@ -335,6 +365,7 @@ fn score_c4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
                  corridor for grain, beef, cotton, or other commodity production zones."
             ),
             sources: vec!["USDA ERS county production data; export terminal locations".into()],
+            confidence: 0.75,
             estimated: false,
         }
     } else {
@@ -343,6 +374,7 @@ fn score_c4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
             score: 0.0,
             justification: "No significant agricultural production or export corridor role.".into(),
             sources: vec![],
+            confidence: 0.70,
             estimated: false,
         }
     }
@@ -372,6 +404,7 @@ fn score_b1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                     attrs.nearest_parallel_miles.unwrap_or(0.0)
                 ),
                 sources: vec!["HighwayGraph shortest-path analysis".into()],
+                confidence: 0.80,
                 estimated: false,
             }
         }
@@ -391,6 +424,7 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 "Normalised betweenness centrality {bc:.3} (0=peripheral, 1=spine)."
             ),
             sources: vec!["HighwayGraph Brandes centrality".into()],
+            confidence: 0.90,
             estimated: false,
         },
         None => ScoredDimension {
@@ -400,6 +434,7 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                             to build full national graph."
                 .into(),
             sources: vec![],
+            confidence: 0.0,
             estimated: true,
         },
     }
@@ -442,6 +477,7 @@ fn score_b3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
         score,
         justification,
         sources: vec!["BTS Port Rankings 2023".into()],
+        confidence: if missing_data { 0.0 } else { 0.80 },
         estimated: missing_data,
     }
 }
@@ -455,6 +491,7 @@ fn score_c1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             score: cfg.c1.score(pop as f64),
             justification: format!("{} people within 50-mile corridor buffer.", format_pop(pop)),
             sources: vec!["Census ACS 2022 5-year estimates".into()],
+            confidence: 0.85,
             estimated: false,
         },
         None => estimated(
@@ -488,6 +525,7 @@ fn score_c2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             "USDA ERS Rural-Urban Continuum Codes 2023".into(),
             "HighwayGraph interchange analysis".into(),
         ],
+        confidence: if estimated { 0.50 } else { 0.75 },
         estimated,
     }
 }
@@ -507,6 +545,7 @@ fn score_c3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 "BEA CAINC4 County GDP 2022".into(),
                 "Census ACS 2022 population".into(),
             ],
+            confidence: 0.80,
             estimated: false,
         },
         None => estimated(
@@ -574,6 +613,12 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             attrs.fema_sfha_miles.unwrap_or(0.0)
         ),
         sources,
+        confidence: match (has_flood_data, has_extended) {
+            (true, true) => 0.70,
+            (true, false) => 0.55,
+            (false, true) => 0.60,
+            (false, false) => 0.0,
+        },
         estimated: !has_flood_data && !has_extended,
     }
 }
@@ -600,6 +645,11 @@ fn score_d2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             "AAR intermodal terminal data".into(),
             "DOE AFDC EV charger locator 2024".into(),
         ],
+        confidence: if attrs.dcfc_per_100mi.is_none() {
+            0.55
+        } else {
+            0.80
+        },
         estimated: attrs.dcfc_per_100mi.is_none(),
     }
 }
@@ -632,6 +682,11 @@ fn score_d3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             attrs.mean_year_built.unwrap_or(0.0)
         ),
         sources: vec!["FHWA NBI 2023".into()],
+        confidence: if attrs.pct_bridges_poor.is_none() {
+            0.35
+        } else {
+            0.85
+        },
         estimated: attrs.pct_bridges_poor.is_none(),
     }
 }
@@ -644,6 +699,7 @@ fn estimated(dim: Dimension, reason: &str) -> ScoredDimension {
         score: 0.0,
         justification: format!("{reason} Score not computed."),
         sources: vec![],
+        confidence: 0.0,
         estimated: true,
     }
 }
@@ -820,6 +876,7 @@ mod tests {
         );
         assert!(bpr.a3.estimated);
         assert_close(bpr.a3.score, cfg.a3.score_bpr_pti(2.2));
+        assert_eq!(bpr.a3.quality_label(), "Low");
 
         let iri = score_corridor(
             &CorridorAttributes {
@@ -830,6 +887,7 @@ mod tests {
         );
         assert!(iri.a3.estimated);
         assert_eq!(iri.a3.score, cfg.a3.iri_fallback_max);
+        assert_eq!(iri.a3.quality_label(), "Low");
     }
 
     #[test]
