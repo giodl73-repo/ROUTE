@@ -157,7 +157,7 @@ Goal: make the 16-dimension scorer boringly reliable.
 
 Deliverables:
 - Unit tests for every dimension's missing-data behavior and anchor extremes.
-- A calibration ledger that emits all 16 dimensions consistently.
+- A calibration ledger that emits all 16 dimensions consistently, including score confidence and the weakest risk-driving dimensions for review.
 - A dimension registry table in docs generated or checked against code.
 - Clear labeling for estimated, proxy, and unavailable dimensions.
 
@@ -271,4 +271,3 @@ A ROUTE claim is done when:
 4. At least one test protects the behavior or calculation.
 5. A relevant role pass has either challenged it or explicitly declined to challenge it.
 6. The public-facing doc says no more than the implementation can support.
-

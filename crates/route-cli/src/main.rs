@@ -9,6 +9,15 @@ const DIMENSION_CODES: [&str; 16] = [
     "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1", "D2", "D3",
 ];
 
+struct ConfidenceRisk {
+    route: String,
+    score: f64,
+    tier: &'static str,
+    mean_confidence: f32,
+    score_confidence: f32,
+    risk_dimensions: String,
+}
+
 #[derive(Parser)]
 #[command(
     name = "route",
@@ -1987,7 +1996,7 @@ fn main() -> Result<()> {
             let mut route_ids_used: Vec<String> = Vec::new();
             let mut total_scores: Vec<f64> = Vec::new();
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
-            let mut confidence_risks: Vec<(String, f64, &'static str, f32, f32)> = Vec::new();
+            let mut confidence_risks: Vec<ConfidenceRisk> = Vec::new();
 
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
@@ -2060,13 +2069,15 @@ fn main() -> Result<()> {
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
                         flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
                     }
-                    confidence_risks.push((
-                        id.clone(),
-                        total,
+                    let risk_dimensions = confidence_risk_dimensions(&row, &confidence_row);
+                    confidence_risks.push(ConfidenceRisk {
+                        route: id.clone(),
+                        score: total,
                         tier,
-                        s.mean_confidence(),
-                        s.score_weighted_confidence(),
-                    ));
+                        mean_confidence: s.mean_confidence(),
+                        score_confidence: s.score_weighted_confidence(),
+                        risk_dimensions,
+                    });
                     matrix.push(row);
                     estimated_matrix.push(estimated_row);
                     confidence_matrix.push(confidence_row);
@@ -2210,29 +2221,36 @@ fn main() -> Result<()> {
             }
 
             confidence_risks.sort_by(|a, b| {
-                a.4.total_cmp(&b.4)
-                    .then_with(|| b.1.total_cmp(&a.1))
-                    .then_with(|| a.0.cmp(&b.0))
+                a.score_confidence
+                    .total_cmp(&b.score_confidence)
+                    .then_with(|| b.score.total_cmp(&a.score))
+                    .then_with(|| a.route.cmp(&b.route))
             });
             println!("\n  Lowest score-weighted confidence corridors:");
             println!(
-                "  {:>8}  {:>6}  {:>4}  {:>7}  {:>10}",
-                "Route", "Score", "Tier", "Conf", "ScoreConf"
+                "  {:>8}  {:>6}  {:>4}  {:>7}  {:>10}  {}",
+                "Route", "Score", "Tier", "Conf", "ScoreConf", "RiskDims"
             );
-            println!("  {}", "─".repeat(46));
-            for (route, score, tier, mean_conf, score_conf) in confidence_risks.iter().take(12) {
-                let flag = if *score >= T2_THRESHOLD && *score_conf < 0.75 {
+            println!("  {}", "─".repeat(78));
+            for risk in confidence_risks.iter().take(12) {
+                let flag = if risk.score >= T2_THRESHOLD && risk.score_confidence < 0.75 {
                     "  ⚠ review"
                 } else {
                     ""
                 };
                 println!(
-                    "  {:>8}  {:>6.1}  {:>4}  {:>7.2}  {:>10.2}{}",
-                    route, score, tier, mean_conf, score_conf, flag
+                    "  {:>8}  {:>6.1}  {:>4}  {:>7.2}  {:>10.2}  {:<24}{}",
+                    risk.route,
+                    risk.score,
+                    risk.tier,
+                    risk.mean_confidence,
+                    risk.score_confidence,
+                    risk.risk_dimensions,
+                    flag
                 );
             }
             println!(
-                "  → Sort by score_confidence to find rankings most dependent on weak dimensions."
+                "  → Sort by score_confidence and risk_dimensions to find rankings most dependent on weak dimensions."
             );
 
             std::fs::create_dir_all("data")?;
@@ -2245,16 +2263,18 @@ fn main() -> Result<()> {
                 "confidence",
                 "score_confidence",
                 "review",
+                "risk_dimensions",
             ])?;
-            for (route, score, tier, mean_conf, score_conf) in &confidence_risks {
-                let review = *score >= T2_THRESHOLD && *score_conf < 0.75;
+            for risk in &confidence_risks {
+                let review = risk.score >= T2_THRESHOLD && risk.score_confidence < 0.75;
                 risk_wtr.write_record([
-                    route.clone(),
-                    format!("{score:.1}"),
-                    tier.to_string(),
-                    format!("{mean_conf:.2}"),
-                    format!("{score_conf:.2}"),
+                    risk.route.clone(),
+                    format!("{:.1}", risk.score),
+                    risk.tier.to_string(),
+                    format!("{:.2}", risk.mean_confidence),
+                    format!("{:.2}", risk.score_confidence),
                     review.to_string(),
+                    risk.risk_dimensions.clone(),
                 ])?;
             }
             risk_wtr.flush()?;
@@ -3448,6 +3468,37 @@ fn dimension_confidence_values(scores: &route_score::DimensionScores) -> [f32; 1
     ]
 }
 
+fn confidence_risk_dimensions(scores: &[f64; 16], confidences: &[f32; 16]) -> String {
+    let mut risks: Vec<(&str, f64, f32, f64)> = DIMENSION_CODES
+        .iter()
+        .zip(scores.iter())
+        .zip(confidences.iter())
+        .filter_map(|((code, score), confidence)| {
+            let score = *score;
+            let confidence = confidence.clamp(0.0, 1.0);
+            let risk = score * (1.0 - confidence as f64);
+            if risk >= 1.0 {
+                Some((*code, score, confidence, risk))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    risks.sort_by(|a, b| {
+        b.3.total_cmp(&a.3)
+            .then_with(|| b.1.total_cmp(&a.1))
+            .then_with(|| a.0.cmp(b.0))
+    });
+
+    risks
+        .into_iter()
+        .take(3)
+        .map(|(code, score, confidence, _)| format!("{code}:{score:.1}@{confidence:.2}"))
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
 fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     let mut ids = graph.interstate_ids();
     ids.extend(graph.us_highway_ids());
@@ -3459,8 +3510,9 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, dimension_confidence_values, dimension_estimated_values,
-        dimension_score_values, join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
+        atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_values,
+        dimension_estimated_values, dimension_score_values, join_fema_d1_to_corridor,
+        rounded_score, tier_for_score, FemaTile,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -3493,6 +3545,24 @@ mod tests {
         assert_eq!(dimension_score_values(&scores).len(), 16);
         assert_eq!(dimension_estimated_values(&scores).len(), 16);
         assert_eq!(dimension_confidence_values(&scores).len(), 16);
+    }
+
+    #[test]
+    fn confidence_risk_dimensions_prioritizes_scored_low_confidence_dimensions() {
+        let mut scores = [0.0; 16];
+        let mut confidences = [0.9; 16];
+        scores[0] = 9.0;
+        scores[1] = 6.0;
+        scores[2] = 10.0;
+        scores[13] = 5.0;
+        confidences[1] = 0.45;
+        confidences[2] = 0.55;
+        confidences[13] = 0.50;
+
+        assert_eq!(
+            confidence_risk_dimensions(&scores, &confidences),
+            "A3:10.0@0.55;A2:6.0@0.45;D1:5.0@0.50"
+        );
     }
 
     #[test]
