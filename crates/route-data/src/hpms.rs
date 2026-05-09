@@ -69,6 +69,31 @@ where
     D: serde::Deserializer<'de>,
 {
     let opt: Option<f32> = Option::deserialize(deserializer)?;
-    // Raw HPMS PCT_TRUCK field is 0–100; store as 0.0–1.0
-    Ok(opt.map(|v| v / 100.0))
+    // Cached fetch output stores proportions (0.0-1.0). Some manually curated
+    // HPMS files store percentages (0-100). Normalize both to proportions.
+    Ok(opt.map(|v| if v > 1.0 { v / 100.0 } else { v }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::HpmsRecord;
+
+    #[test]
+    fn pct_truck_accepts_cached_proportion() {
+        let csv = "STATE,ROUTE_ID,AADT,PCT_TRUCK,LANE_COUNT,IRI,SPEED_LIMIT\nTX,I10,100000,0.0840,4,90,65\n";
+        let mut rdr = csv::Reader::from_reader(csv.as_bytes());
+        let record: HpmsRecord = rdr.deserialize().next().unwrap().unwrap();
+
+        assert_eq!(record.pct_truck, Some(0.0840));
+    }
+
+    #[test]
+    fn pct_truck_accepts_manual_percent() {
+        let csv =
+            "STATE,ROUTE_ID,AADT,PCT_TRUCK,LANE_COUNT,IRI,SPEED_LIMIT\nTX,I10,100000,8.4,4,90,65\n";
+        let mut rdr = csv::Reader::from_reader(csv.as_bytes());
+        let record: HpmsRecord = rdr.deserialize().next().unwrap().unwrap();
+
+        assert_eq!(record.pct_truck, Some(0.084));
+    }
 }
