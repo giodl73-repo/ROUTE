@@ -7,20 +7,23 @@ use std::collections::HashMap;
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
-const T1_THRESHOLD: f64 = 21.0;
-const T2_THRESHOLD: f64 = 15.0;
-const T3_THRESHOLD: f64 = 9.0;
+const T1_THRESHOLD: f64 = 29.0;
+const T2_THRESHOLD: f64 = 21.0;
+const T3_THRESHOLD: f64 = 12.0;
 
-// ── Tier stroke weights ────────────────────────────────────────────────────────
-const STROKE_T1: f64 = 4.0;
+// ── Tier stroke weights (Beck hierarchy) ──────────────────────────────────────
+const STROKE_T1: f64 = 6.0;
 const STROKE_T2: f64 = 2.5;
-const STROKE_T3_T4: f64 = 1.2;
+const STROKE_T3_T4: f64 = 1.0;
 
 fn t1_color(route_id: &str) -> &'static str {
     match route_id {
         "I5"  => "#ef4444", "I10" => "#f97316", "I35" => "#10b981",
         "I40" => "#eab308", "I75" => "#06b6d4", "I80" => "#3b82f6",
-        "I90" => "#8b5cf6", "I95" => "#f43f5e", _     => "#ffffff",
+        "I90" => "#8b5cf6", "I95" => "#f43f5e",
+        // Proposed T1 — emerald green, distinct from I-35's #10b981
+        "I69" | "US69" => "#059669",
+        _     => "#ffffff",
     }
 }
 
@@ -41,6 +44,8 @@ fn is_upgrade_candidate(route_id: &str) -> bool {
 }
 
 /// Returns (stroke_color, stroke_width, opacity, is_dashed).
+/// Used by `build_t1_corridor_svg`; megamap uses per-tier inline styling.
+#[allow(dead_code)]
 fn route_style(route_id: &str, score: f64) -> (String, f64, f64, bool) {
     if is_t1_route(route_id) {
         (t1_color(route_id).to_string(), STROKE_T1, 1.0, false)
@@ -169,6 +174,87 @@ pub fn build_megamap_svg(
     build_megamap_svg_with_hubs(graph, scores, None)
 }
 
+// ── State abbreviation centroids (lon, lat) ───────────────────────────────────
+const STATE_LABELS: &[(f64, f64, &str)] = &[
+    (-86.9, 32.7, "AL"), (-149.4, 64.2, "AK"), (-111.5, 34.3, "AZ"),
+    (-92.4, 34.9, "AR"), (-119.4, 37.2, "CA"), (-105.3, 39.0, "CO"),
+    (-72.6, 41.6, "CT"), (-75.5, 39.0, "DE"), (-81.7, 27.9, "FL"),
+    (-83.4, 32.7, "GA"), (-157.8, 20.3, "HI"), (-114.3, 44.4, "ID"),
+    (-88.9, 40.0, "IL"), (-86.3, 40.3, "IN"), (-93.5, 42.1, "IA"),
+    (-98.4, 38.5, "KS"), (-85.3, 37.5, "KY"), (-91.8, 31.2, "LA"),
+    (-69.4, 44.5, "ME"), (-76.8, 39.1, "MD"), (-71.5, 42.3, "MA"),
+    (-84.7, 44.4, "MI"), (-93.6, 46.4, "MN"), (-89.7, 32.7, "MS"),
+    (-92.6, 38.4, "MO"), (-109.6, 47.0, "MT"), (-99.8, 41.5, "NE"),
+    (-116.4, 38.5, "NV"), (-71.6, 44.0, "NH"), (-74.7, 40.0, "NJ"),
+    (-106.1, 34.3, "NM"), (-75.5, 43.0, "NY"), (-79.4, 35.5, "NC"),
+    (-100.3, 47.5, "ND"), (-82.8, 40.4, "OH"), (-97.5, 35.6, "OK"),
+    (-120.6, 44.1, "OR"), (-77.2, 40.9, "PA"), (-71.5, 41.7, "RI"),
+    (-80.9, 33.8, "SC"), (-100.3, 44.5, "SD"), (-86.3, 35.9, "TN"),
+    (-99.4, 31.5, "TX"), (-111.1, 39.4, "UT"), (-72.7, 44.0, "VT"),
+    (-78.7, 37.9, "VA"), (-120.7, 47.4, "WA"), (-80.6, 38.7, "WV"),
+    (-89.5, 44.6, "WI"), (-107.5, 43.0, "WY"), (-77.0, 38.9, "DC"),
+];
+
+// ── City anchor dots for geographic orientation ────────────────────────────────
+const CITY_LABELS: &[(f64, f64, &str)] = &[
+    (-87.63, 41.88, "Chicago"),
+    (-74.00, 40.71, "New York"),
+    (-118.24, 34.05, "Los Angeles"),
+    (-95.37, 29.76, "Houston"),
+    (-112.07, 33.45, "Phoenix"),
+    (-75.17, 39.95, "Philadelphia"),
+    (-122.33, 37.78, "San Francisco"),
+    (-122.33, 47.61, "Seattle"),
+    (-104.98, 39.74, "Denver"),
+    (-90.20, 38.63, "St. Louis"),
+    (-84.39, 33.75, "Atlanta"),
+    (-80.19, 25.77, "Miami"),
+    (-93.26, 44.98, "Minneapolis"),
+    (-71.06, 42.36, "Boston"),
+    (-97.52, 35.47, "Oklahoma City"),
+    (-98.49, 29.42, "San Antonio"),
+    (-81.66, 30.33, "Jacksonville"),
+    (-122.68, 45.52, "Portland"),
+    (-83.04, 42.33, "Detroit"),
+    (-77.04, 38.91, "Washington DC"),
+];
+
+/// Collect all edge segments for a route into grouped path data.
+/// Each edge produces one M…L sub-path, avoiding inter-segment seams.
+/// Available for external callers; megamap builds route_paths inline via edge_indices.
+#[allow(dead_code)]
+fn collect_route_path(
+    graph: &HighwayGraph,
+    route_id: &str,
+    proj: &AlbersUS,
+    view: &ViewTransform,
+) -> Vec<Vec<(f64, f64)>> {
+    graph.route_edges(route_id)
+        .iter()
+        .map(|&ei| {
+            graph.graph[ei].geometry.0.iter()
+                .filter(|c| c.x > -125.5 && c.x < -65.5 && c.y > 23.5 && c.y < 50.5)
+                .map(|c| view.project_to_pixel(proj, c.x, c.y))
+                .collect::<Vec<_>>()
+        })
+        .filter(|pts| pts.len() >= 2)
+        .collect()
+}
+
+/// Convert a list of point-list segments into a single SVG `d` attribute
+/// with individual M/L move commands — one sub-path per segment.
+fn segments_to_path(segments: &[Vec<(f64, f64)>]) -> String {
+    let mut d = String::new();
+    for seg in segments {
+        if seg.len() < 2 { continue; }
+        d += &format!("M {:.1} {:.1}", seg[0].0, seg[0].1);
+        for pt in &seg[1..] {
+            d += &format!(" L {:.1} {:.1}", pt.0, pt.1);
+        }
+    }
+    d
+}
+
 pub fn build_megamap_svg_with_hubs(
     graph: &HighwayGraph,
     scores: &HashMap<String,f64>,
@@ -182,7 +268,6 @@ pub fn build_megamap_svg_with_hubs(
     let hubs: Vec<RelayHub> = match hubs_path {
         Some(p) => load_relay_hubs(p),
         None => {
-            // Try default location relative to cwd
             let default = std::path::Path::new("data/relay-hubs.toml");
             load_relay_hubs(default)
         }
@@ -190,125 +275,121 @@ pub fn build_megamap_svg_with_hubs(
 
     let mut s = String::new();
 
+    // ── 1. Background (#0f1623 — deeper navy) ─────────────────────────────────
     s += &format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {W} {H}\" \
          width=\"{W}\" height=\"{H}\">\n\
-         <rect width=\"{W}\" height=\"{H}\" fill=\"#0d1117\"/>\n"
+         <rect width=\"{W}\" height=\"{H}\" fill=\"#0f1623\"/>\n"
     );
 
-    // ── Painter order: T4 → T3 → T2 → T1, then upgrade candidates on top ──────
-    // Draw non-upgrade, non-T1 tiers first (T4, T3, T2), then T1, then upgrades.
-    let tier_bands: &[(f64, f64)] = &[
-        (f64::NEG_INFINITY, T3_THRESHOLD),
-        (T3_THRESHOLD, T2_THRESHOLD),
-        (T2_THRESHOLD, T1_THRESHOLD),
-        (T1_THRESHOLD, f64::INFINITY),
-    ];
-
-    for &(min_s, max_s) in tier_bands {
-        let t1 = min_s >= T1_THRESHOLD;
-        for ei in graph.graph.edge_indices() {
-            let edge = &graph.graph[ei];
-            // Skip upgrade candidates — drawn in a separate pass below
-            if is_upgrade_candidate(&edge.route_id) { continue; }
-            let score = scores.get(&edge.route_id).cloned().unwrap_or(0.0);
-            if score < min_s || score >= max_s { continue; }
-            let pts: Vec<(f64,f64)> = edge.geometry.0.iter()
-                .filter(|c| c.x > -125.0 && c.x < -66.0 && c.y > 24.0 && c.y < 50.0)
-                .map(|c| view.project_to_pixel(&proj, c.x, c.y))
-                .collect();
-            if pts.len() < 2 { continue; }
-            let (color, width, opacity, _dashed) = route_style(&edge.route_id, score);
-            let p: String = pts.iter()
-                .map(|(x,y)| format!("{x:.1},{y:.1}"))
-                .collect::<Vec<_>>().join(" ");
-            if t1 {
-                // Glow halo under T1 lines
-                s += &format!(
-                    "<polyline points=\"{p}\" stroke=\"{color}\" stroke-width=\"9\" \
-                     fill=\"none\" opacity=\"0.12\" stroke-linecap=\"round\"/>\n"
-                );
-            }
-            s += &format!(
-                "<polyline points=\"{p}\" stroke=\"{color}\" stroke-width=\"{width}\" \
-                 fill=\"none\" opacity=\"{opacity}\" stroke-linecap=\"round\" \
-                 stroke-linejoin=\"round\"/>\n"
-            );
-        }
-    }
-
-    // ── Upgrade candidates — dashed gold lines ────────────────────────────────
-    s += "<!-- Upgrade candidates (dashed gold #DAA520) -->\n";
-    for ei in graph.graph.edge_indices() {
-        let edge = &graph.graph[ei];
-        if !is_upgrade_candidate(&edge.route_id) { continue; }
-        let pts: Vec<(f64,f64)> = edge.geometry.0.iter()
-            .filter(|c| c.x > -125.0 && c.x < -66.0 && c.y > 24.0 && c.y < 50.0)
-            .map(|c| view.project_to_pixel(&proj, c.x, c.y))
-            .collect();
-        if pts.len() < 2 { continue; }
-        let p: String = pts.iter()
-            .map(|(x,y)| format!("{x:.1},{y:.1}"))
-            .collect::<Vec<_>>().join(" ");
+    // ── 2. State abbreviation labels (9px, subtle gray, no background) ────────
+    s += "<!-- State abbreviation labels -->\n";
+    for &(lon, lat, abbr) in STATE_LABELS {
+        // skip AK and HI — outside CONUS bounds
+        if lon < -125.5 || lon > -65.5 || lat < 23.5 || lat > 50.5 { continue; }
+        let (px, py) = view.project_to_pixel(&proj, lon, lat);
         s += &format!(
-            "<polyline points=\"{p}\" stroke=\"#DAA520\" stroke-width=\"2.5\" \
-             fill=\"none\" opacity=\"0.80\" stroke-linecap=\"round\" \
-             stroke-dasharray=\"8,5\"/>\n"
+            "<text x=\"{px:.1}\" y=\"{py:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"9\" fill=\"#3d5070\" text-anchor=\"middle\" \
+             dominant-baseline=\"middle\">{abbr}</text>\n"
         );
     }
 
-    // ── T1 corridor labels — 14px white text on colored pill ─────────────────
-    for (route_id, label) in T1_ROUTES {
-        if let Some((lx, ly)) = midpoint(graph, route_id, &proj, &view) {
-            let c = t1_color(route_id);
-            // Outer glow
-            s += &format!(
-                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"64\" height=\"26\" rx=\"5\" \
-                 fill=\"{c}\" fill-opacity=\"0.18\"/>\n",
-                lx - 32.0, ly - 20.0
-            );
-            // Filled pill
-            s += &format!(
-                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"60\" height=\"22\" rx=\"5\" \
-                 fill=\"{c}\" fill-opacity=\"0.92\"/>\n",
-                lx - 30.0, ly - 18.0
-            );
-            // Text — 14px per spec
-            s += &format!(
-                "<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-                 font-size=\"14\" font-weight=\"bold\" fill=\"white\" \
-                 text-anchor=\"middle\">{label}</text>\n",
-                ly - 2.0
-            );
+    // ── 3. Group all edges by route_id for path-based rendering ──────────────
+    // Build: route_id -> Vec<Vec<(f64,f64)>> (one inner vec per edge)
+    let mut route_paths: HashMap<String, Vec<Vec<(f64, f64)>>> = HashMap::new();
+    for ei in graph.graph.edge_indices() {
+        let edge = &graph.graph[ei];
+        let pts: Vec<(f64, f64)> = edge.geometry.0.iter()
+            .filter(|c| c.x > -125.5 && c.x < -65.5 && c.y > 23.5 && c.y < 50.5)
+            .map(|c| view.project_to_pixel(&proj, c.x, c.y))
+            .collect();
+        if pts.len() >= 2 {
+            route_paths.entry(edge.route_id.clone()).or_default().push(pts);
         }
     }
 
-    // ── Upgrade candidate labels ───────────────────────────────────────────────
-    let upgrade_labels: &[(&str, &str)] = &[
-        ("US2",  "US-2 ★T1★"),
-        ("US30", "US-30"),
-        ("US69", "US-69/I-69"),
-        ("US83", "US-83"),
-        ("US287","US-287"),
-    ];
-    for (route_id, label) in upgrade_labels {
-        if let Some((lx, ly_pt)) = midpoint(graph, route_id, &proj, &view) {
-            s += &format!(
-                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"70\" height=\"22\" rx=\"5\" \
-                 fill=\"none\" stroke=\"#DAA520\" stroke-width=\"1.5\" \
-                 stroke-dasharray=\"4,3\" opacity=\"0.85\"/>\n",
-                lx - 35.0, ly_pt - 18.0
-            );
-            s += &format!(
-                "<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-                 font-size=\"11\" font-weight=\"bold\" fill=\"#DAA520\" \
-                 text-anchor=\"middle\" opacity=\"0.9\">{label}</text>\n",
-                ly_pt - 2.0
-            );
+    // Helper: emit a <path> for collected segments
+    let emit_path = |s: &mut String, segs: &[Vec<(f64, f64)>], stroke: &str,
+                     width: f64, opacity: f64, extra_attrs: &str| {
+        let d = segments_to_path(segs);
+        if d.is_empty() { return; }
+        *s += &format!(
+            "<path d=\"{d}\" stroke=\"{stroke}\" stroke-width=\"{width:.1}\" \
+             fill=\"none\" opacity=\"{opacity:.2}\" stroke-linecap=\"round\" \
+             stroke-linejoin=\"round\"{extra_attrs}/>\n"
+        );
+    };
+
+    // ── 4. T4 routes (background noise — very faint) ──────────────────────────
+    s += "<!-- T4 routes -->\n";
+    for (rid, segs) in &route_paths {
+        if is_upgrade_candidate(rid) || is_t1_route(rid) { continue; }
+        let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
+        if score >= T3_THRESHOLD { continue; } // T3+, skip
+        emit_path(&mut s, segs, "#1a2540", STROKE_T3_T4, 0.40, "");
+    }
+
+    // ── 5. T3 routes ──────────────────────────────────────────────────────────
+    s += "<!-- T3 routes -->\n";
+    for (rid, segs) in &route_paths {
+        if is_upgrade_candidate(rid) || is_t1_route(rid) { continue; }
+        let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
+        if score < T3_THRESHOLD || score >= T2_THRESHOLD { continue; }
+        emit_path(&mut s, segs, "#2e4060", STROKE_T3_T4, 0.52, "");
+    }
+
+    // ── 6. T2 routes ──────────────────────────────────────────────────────────
+    s += "<!-- T2 routes -->\n";
+    for (rid, segs) in &route_paths {
+        if is_upgrade_candidate(rid) || is_t1_route(rid) { continue; }
+        let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
+        if score < T2_THRESHOLD || score >= T1_THRESHOLD { continue; }
+        emit_path(&mut s, segs, "#64748b", STROKE_T2, 0.68, "");
+    }
+
+    // ── 7. Upgrade candidates — dashed gold lines ─────────────────────────────
+    s += "<!-- Upgrade candidates (dashed gold #DAA520) -->\n";
+    for (rid, segs) in &route_paths {
+        if !is_upgrade_candidate(rid) { continue; }
+        emit_path(&mut s, segs, "#DAA520", 2.5, 0.78,
+                  " stroke-dasharray=\"8,5\"");
+    }
+
+    // ── 8. T1 routes — glow halos then strokes ────────────────────────────────
+    // Pass A: glow halos (14px at 20% opacity in corridor color)
+    s += "<!-- T1 glow halos -->\n";
+    for (route_id, _label) in T1_ROUTES {
+        let color = t1_color(route_id);
+        if let Some(segs) = route_paths.get(*route_id) {
+            emit_path(&mut s, segs, color, 14.0, 0.18, "");
+        }
+    }
+    // Pass B: T1 bold strokes (6px, full opacity)
+    s += "<!-- T1 corridor strokes -->\n";
+    for (route_id, _label) in T1_ROUTES {
+        let color = t1_color(route_id);
+        if let Some(segs) = route_paths.get(*route_id) {
+            emit_path(&mut s, segs, color, STROKE_T1, 1.0, "");
         }
     }
 
-    // ── Relay hub markers ─────────────────────────────────────────────────────
+    // ── 9. City anchor dots (3px white + city name) ───────────────────────────
+    s += "<!-- City anchor dots -->\n";
+    for &(lon, lat, city) in CITY_LABELS {
+        if lon < -125.5 || lon > -65.5 || lat < 23.5 || lat > 50.5 { continue; }
+        let (px, py) = view.project_to_pixel(&proj, lon, lat);
+        s += &format!(
+            "<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"3\" fill=\"white\" opacity=\"0.85\"/>\n"
+        );
+        s += &format!(
+            "<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"8\" fill=\"#9ab\" text-anchor=\"middle\" opacity=\"0.75\">{city}</text>\n",
+            px, py + 11.0
+        );
+    }
+
+    // ── 10. Relay hub markers ──────────────────────────────────────────────────
     if !hubs.is_empty() {
         s += "<!-- Relay hub markers -->\n";
         for hub in &hubs {
@@ -319,16 +400,13 @@ pub fn build_megamap_svg_with_hubs(
                     continue;
                 }
             };
-            // lon = x, lat = y for geographic projection
-            if lon < -125.0 || lon > -66.0 || lat < 24.0 || lat > 50.0 { continue; }
+            if lon < -125.5 || lon > -65.5 || lat < 23.5 || lat > 50.5 { continue; }
             let (px, py) = view.project_to_pixel(&proj, lon, lat);
             let confirmed = hub.status == "confirmed";
             let radius: f64 = if confirmed { 8.0 } else { 6.0 };
             let marker_color = hub_color(&hub.corridors);
 
             if confirmed {
-                // Filled circle — confirmed hub
-                // White outline ring
                 s += &format!(
                     "<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"{:.1}\" \
                      fill=\"white\" opacity=\"0.9\"/>\n",
@@ -340,7 +418,6 @@ pub fn build_megamap_svg_with_hubs(
                      opacity=\"0.95\"/>\n"
                 );
             } else {
-                // Hollow circle — proposed hub
                 s += &format!(
                     "<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"{radius:.1}\" \
                      fill=\"none\" stroke=\"#DAA520\" stroke-width=\"2\" \
@@ -348,8 +425,6 @@ pub fn build_megamap_svg_with_hubs(
                 );
             }
 
-            // City name label — 11px below marker
-            // Extract short city name (before comma)
             let city_label = hub.name.split(',').next().unwrap_or(&hub.name);
             let label_y = py + radius + 14.0;
             s += &format!(
@@ -360,89 +435,184 @@ pub fn build_megamap_svg_with_hubs(
         }
     }
 
-    // ── Title ─────────────────────────────────────────────────────────────────
+    // ── 11. T1 highway shield markers (circular, Beck-style) ─────────────────
+    s += "<!-- T1 highway shield markers -->\n";
+    for (route_id, label) in T1_ROUTES {
+        let segs = match route_paths.get(*route_id) {
+            Some(s) => s,
+            None => continue,
+        };
+        // Use midpoint helper (based on route_edges) — falls back to None if empty
+        let Some((lx, ly)) = midpoint(graph, route_id, &proj, &view) else { continue };
+        let _ = segs; // segs used implicitly for existence check via route_paths
+        let c = t1_color(route_id);
+        // White halo circle
+        s += &format!(
+            "<circle cx=\"{lx:.1}\" cy=\"{ly:.1}\" r=\"22\" \
+             fill=\"white\" opacity=\"0.95\"/>\n"
+        );
+        // Colored fill circle
+        s += &format!(
+            "<circle cx=\"{lx:.1}\" cy=\"{ly:.1}\" r=\"20\" \
+             fill=\"{c}\" opacity=\"1.0\"/>\n"
+        );
+        // Route number text (e.g. "I-80")
+        s += &format!(
+            "<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"13\" font-weight=\"900\" fill=\"white\" \
+             text-anchor=\"middle\" dominant-baseline=\"middle\">{label}</text>\n",
+            ly + 1.0
+        );
+    }
+
+    // ── 12. Upgrade candidate labels (dashed-border circles, gold) ────────────
+    s += "<!-- Upgrade candidate labels -->\n";
+    let upgrade_labels: &[(&str, &str)] = &[
+        ("US2",   "I-92"),
+        ("US83",  "I-29S"),
+        ("US287", "I-31"),
+        ("US69",  "I-69"),
+    ];
+    for (route_id, proposed_label) in upgrade_labels {
+        let Some((lx, ly)) = midpoint(graph, route_id, &proj, &view) else { continue };
+        // Dashed-border circle
+        s += &format!(
+            "<circle cx=\"{lx:.1}\" cy=\"{ly:.1}\" r=\"18\" \
+             fill=\"#0f1623\" fill-opacity=\"0.85\" stroke=\"#DAA520\" \
+             stroke-width=\"1.5\" stroke-dasharray=\"4,3\" opacity=\"0.90\"/>\n"
+        );
+        s += &format!(
+            "<text x=\"{lx:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"10\" font-weight=\"bold\" fill=\"#DAA520\" \
+             text-anchor=\"middle\" dominant-baseline=\"middle\">{proposed_label}</text>\n",
+            ly + 1.0
+        );
+    }
+
+    // ── 13. Legend panel (bottom-right, Beck-style) ────────────────────────────
+    {
+        const LX: f64 = 1950.0;
+        const LY: f64 = 1050.0;
+        const LW: f64 = 420.0;
+        const LH: f64 = 280.0;
+
+        // Semi-transparent panel
+        s += &format!(
+            "<rect x=\"{LX}\" y=\"{LY}\" width=\"{LW}\" height=\"{LH}\" rx=\"8\" \
+             fill=\"#1e2d3d\" fill-opacity=\"0.92\" stroke=\"#2a3550\" stroke-width=\"1\"/>\n"
+        );
+        // Title
+        s += &format!(
+            "<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"14\" font-weight=\"bold\" fill=\"white\" \
+             text-anchor=\"middle\">INTERSTATE 2.0 TIER MAP</text>\n",
+            LX + LW / 2.0, LY + 24.0
+        );
+        // Divider
+        s += &format!(
+            "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" \
+             stroke=\"#2a3550\" stroke-width=\"1\"/>\n",
+            LX + 12.0, LY + 34.0, LX + LW - 12.0, LY + 34.0
+        );
+
+        // T1 corridor color entries
+        let t1_legend: &[(&str, &str, &str)] = &[
+            ("I5",  "#ef4444", "I-5"),
+            ("I10", "#f97316", "I-10"),
+            ("I35", "#10b981", "I-35"),
+            ("I40", "#eab308", "I-40"),
+            ("I75", "#06b6d4", "I-75"),
+            ("I80", "#3b82f6", "I-80"),
+            ("I90", "#8b5cf6", "I-90"),
+            ("I95", "#f43f5e", "I-95"),
+        ];
+        let cols = 2usize;
+        for (i, (_rid, color, label)) in t1_legend.iter().enumerate() {
+            let col = i % cols;
+            let row = i / cols;
+            let ex = LX + 16.0 + col as f64 * (LW / 2.0 - 8.0);
+            let ey = LY + 48.0 + row as f64 * 20.0;
+            s += &format!(
+                "<rect x=\"{ex:.1}\" y=\"{ey:.1}\" width=\"28\" height=\"10\" rx=\"2\" \
+                 fill=\"{color}\"/>\n\
+                 <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+                 font-size=\"11\" fill=\"#e2e8f0\">{label}</text>\n",
+                ex + 34.0, ey + 9.0
+            );
+        }
+
+        // Tier grades
+        let tier_y = LY + 48.0 + (t1_legend.len() / cols) as f64 * 20.0 + 8.0;
+        for (i, (color, label)) in [
+            ("#64748b", "T2 Major Connectors"),
+            ("#2e4060", "T3 Regional Feeders"),
+            ("#1a2540", "T4 Local Access"),
+        ].iter().enumerate() {
+            let ey = tier_y + i as f64 * 18.0;
+            s += &format!(
+                "<rect x=\"{:.1}\" y=\"{ey:.1}\" width=\"28\" height=\"8\" rx=\"1\" \
+                 fill=\"{color}\"/>\n\
+                 <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+                 font-size=\"11\" fill=\"#8b949e\">{label}</text>\n",
+                LX + 16.0, LX + 50.0, ey + 8.0
+            );
+        }
+
+        // Upgrade candidate entry
+        let uc_y = tier_y + 3.0 * 18.0 + 8.0;
+        s += &format!(
+            "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" \
+             stroke=\"#DAA520\" stroke-width=\"2\" stroke-dasharray=\"6,4\" opacity=\"0.85\"/>\n\
+             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"11\" fill=\"#DAA520\">Upgrade candidate (US→I)</text>\n",
+            LX + 16.0, uc_y + 4.0, LX + 44.0, uc_y + 4.0,
+            LX + 50.0, uc_y + 8.0
+        );
+
+        // Relay hub entries
+        let hub_y = uc_y + 22.0;
+        s += &format!(
+            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"5\" fill=\"#3b82f6\" \
+             stroke=\"white\" stroke-width=\"1.5\"/>\n\
+             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"11\" fill=\"#e2e8f0\">Relay hub (confirmed)</text>\n",
+            LX + 21.0, hub_y, LX + 32.0, hub_y + 4.0
+        );
+        let hub_y2 = hub_y + 18.0;
+        s += &format!(
+            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"5\" fill=\"none\" \
+             stroke=\"#DAA520\" stroke-width=\"1.5\" stroke-dasharray=\"3,2\"/>\n\
+             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"11\" fill=\"#DAA520\">Relay hub (proposed)</text>\n",
+            LX + 21.0, hub_y2, LX + 32.0, hub_y2 + 4.0
+        );
+
+        // Rubric version watermark inside legend
+        s += &format!(
+            "<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
+             font-size=\"9\" fill=\"#3d5070\" text-anchor=\"end\">ROUTE · rubric v1.4 · /160</text>\n",
+            LX + LW - 8.0, LY + LH - 8.0
+        );
+    }
+
+    // ── 14. Title panel ────────────────────────────────────────────────────────
     s += "<rect x=\"20\" y=\"20\" width=\"560\" height=\"84\" rx=\"6\" \
-          fill=\"#0d1117\" fill-opacity=\"0.92\" stroke=\"#21262d\" stroke-width=\"1\"/>\n";
+          fill=\"#0f1623\" fill-opacity=\"0.92\" stroke=\"#2a3550\" stroke-width=\"1\"/>\n";
     s += "<text x=\"36\" y=\"50\" font-family=\"Arial,sans-serif\" font-size=\"22\" \
           font-weight=\"bold\" fill=\"#f0f6fc\">US Interstate Arterial Map</text>\n";
     s += "<text x=\"36\" y=\"70\" font-family=\"Arial,sans-serif\" font-size=\"13\" \
-          fill=\"#8b949e\">Centrality-adjusted tier classification  ROUTE v1.1  227 corridors</text>\n";
+          fill=\"#8b949e\">Centrality-adjusted tier classification  ROUTE v1.4  /160 scale</text>\n";
     s += "<text x=\"36\" y=\"88\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
-          fill=\"#6e7681\">T1 arteries in signature colors  T2/T3/T4 graded gray  TIGER 2023</text>\n";
+          fill=\"#6e7681\">T1 arteries in signature colors  T2/T3/T4 graded  TIGER 2023</text>\n";
 
-    // ── Legend ─────────────────────────────────────────────────────────────────
-    let ly = H - 80.0;
-    s += &format!("<rect x=\"0\" y=\"{ly}\" width=\"{W}\" height=\"80\" fill=\"#010409\"/>\n");
-
-    // T1 corridor colors — top row
-    for (i, (rid, label)) in T1_ROUTES.iter().enumerate() {
-        let x = 24.0 + i as f64 * 290.0;
-        let c = t1_color(rid);
-        s += &format!(
-            "<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"44\" height=\"10\" rx=\"2\" fill=\"{c}\"/>\n\
-             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-             font-size=\"13\" fill=\"#e2e8f0\">{label}</text>\n",
-            ly + 14.0, x + 52.0, ly + 25.0
-        );
-    }
-
-    // Tier shades — bottom row
-    for (i, (c, label)) in [
-        ("#64748b", "T2 Major Connectors"),
-        ("#475569", "T3 Regional Feeders"),
-        ("#1e293b", "T4 Local Access"),
-    ].iter().enumerate() {
-        let x = 24.0 + i as f64 * 340.0;
-        s += &format!(
-            "<rect x=\"{x:.1}\" y=\"{:.1}\" width=\"32\" height=\"7\" rx=\"1\" fill=\"{c}\"/>\n\
-             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-             font-size=\"11\" fill=\"#8b949e\">{label}</text>\n",
-            ly + 46.0, x + 38.0, ly + 54.0
-        );
-    }
-
-    // Upgrade candidates in legend
-    for (i, (c, label)) in [
-        ("#DAA520", "Gold dashed — upgrade candidate (US-2, US-30, US-69, US-83, US-287)"),
-    ].iter().enumerate() {
-        let x = 1050.0 + i as f64 * 570.0;
-        s += &format!(
-            "<line x1=\"{x:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" \
-             stroke=\"{c}\" stroke-width=\"2\" stroke-dasharray=\"6,4\" opacity=\"0.80\"/>\n\
-             <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-             font-size=\"11\" fill=\"{c}\" opacity=\"0.85\">{label}</text>\n",
-            ly + 50.0, x + 38.0, ly + 50.0, x + 44.0, ly + 54.0
-        );
-    }
-
-    // Hub marker legend entry
-    let hub_legend_x = 1050.0;
-    let hub_legend_y2 = ly + 68.0;
-    s += &format!(
-        "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"6\" fill=\"#3b82f6\" \
-         stroke=\"white\" stroke-width=\"1.5\"/>\n\
-         <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-         font-size=\"11\" fill=\"#e2e8f0\">● Relay hub (confirmed)</text>\n",
-        hub_legend_x + 6.0, hub_legend_y2,
-        hub_legend_x + 16.0, hub_legend_y2 + 4.0
-    );
-    s += &format!(
-        "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"5\" fill=\"none\" \
-         stroke=\"#DAA520\" stroke-width=\"1.5\" stroke-dasharray=\"3,2\"/>\n\
-         <text x=\"{:.1}\" y=\"{:.1}\" font-family=\"Arial,sans-serif\" \
-         font-size=\"11\" fill=\"#DAA520\">○ Relay hub (proposed)</text>\n",
-        hub_legend_x + 240.0, hub_legend_y2,
-        hub_legend_x + 250.0, hub_legend_y2 + 4.0
-    );
-
+    // Watermark
     s += &format!(
         "<text x=\"{:.0}\" y=\"{:.0}\" font-family=\"Arial,sans-serif\" font-size=\"10\" \
-         fill=\"#484f58\" text-anchor=\"end\">\
-         github.com/giodl73-repo/ROUTE  ·  B1 scores confirm US-2 as highest-priority \
-         T1 upgrade (B1=10.0)</text>\n",
-        W - 16.0,
-        ly + 70.0
+         fill=\"#3d5070\" text-anchor=\"end\">\
+         github.com/giodl73-repo/ROUTE  ·  Beck schematic · Bertin semiotics</text>\n",
+        W - 16.0, H - 8.0
     );
+
     s += "</svg>";
     Ok(s)
 }
