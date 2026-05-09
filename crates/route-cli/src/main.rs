@@ -261,6 +261,16 @@ enum Commands {
             value_name = "FILE"
         )]
         events: PathBuf,
+        /// Path to T1/T1 failure evidence ledger CSV
+        #[arg(
+            long,
+            default_value = "data/t1-intersection-failures.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Write an updated evidence ledger with empirical event summaries applied
+        #[arg(long, value_name = "FILE")]
+        write_ledger: Option<PathBuf>,
     },
 
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
@@ -1840,10 +1850,23 @@ fn main() -> Result<()> {
             print_t1_failure_sources(&rows, lookup_needed);
         }
 
-        Commands::T1FailureEvents { events } => {
-            let rows = load_t1_failure_events(&events)
+        Commands::T1FailureEvents {
+            events,
+            ledger,
+            write_ledger,
+        } => {
+            let event_rows = load_t1_failure_events(&events)
                 .with_context(|| format!("loading T1 failure events {}", events.display()))?;
-            print_t1_failure_event_summary(&rows);
+            print_t1_failure_event_summary(&event_rows);
+            if let Some(output) = write_ledger {
+                let ledger_rows = load_t1_failure_ledger(&ledger)
+                    .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
+                let updated = apply_t1_failure_events_to_ledger(&ledger_rows, &event_rows, &events);
+                write_t1_failure_ledger(&output, &updated)
+                    .with_context(|| format!("writing T1 failure ledger {}", output.display()))?;
+                println!();
+                println!("  updated ledger -> {}", output.display());
+            }
         }
 
         Commands::Sim { mode } => {
@@ -4434,7 +4457,7 @@ fn print_standards_proof(
     }
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureRow {
     site_id: String,
     intersection: String,
@@ -4466,6 +4489,15 @@ fn parse_t1_failure_ledger<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureR
         rows.push(result?);
     }
     Ok(rows)
+}
+
+fn write_t1_failure_ledger(path: &Path, rows: &[T1FailureRow]) -> Result<()> {
+    let mut wtr = csv::Writer::from_path(path)?;
+    for row in rows {
+        wtr.serialize(row)?;
+    }
+    wtr.flush()?;
+    Ok(())
 }
 
 fn print_t1_failures(rows: &[T1FailureRow], needs_sources: bool, details: bool) {
@@ -4625,8 +4657,10 @@ struct T1FailureEventSummary {
     observed_years: usize,
     event_count: usize,
     annual_rate: f64,
+    annual_probability: f64,
     duration_p50_hours: Option<f64>,
     duration_p95_hours: Option<f64>,
+    confidence: String,
 }
 
 fn load_t1_failure_events(path: &Path) -> Result<Vec<T1FailureEventRow>> {
@@ -4681,17 +4715,47 @@ fn summarize_t1_failure_events(rows: &[T1FailureEventRow]) -> Vec<T1FailureEvent
             } else {
                 0.0
             };
+            let confidence = event_summary_confidence(&site_rows);
 
             T1FailureEventSummary {
                 site_id: site_id.to_string(),
                 observed_years,
                 event_count,
                 annual_rate,
+                annual_probability: annual_probability_from_rate(annual_rate),
                 duration_p50_hours: percentile_nearest(&durations, 0.50),
                 duration_p95_hours: percentile_nearest(&durations, 0.95),
+                confidence,
             }
         })
         .collect()
+}
+
+fn annual_probability_from_rate(rate: f64) -> f64 {
+    if rate <= 0.0 {
+        0.0
+    } else {
+        1.0 - (-rate).exp()
+    }
+}
+
+fn event_summary_confidence(rows: &[&T1FailureEventRow]) -> String {
+    if rows.is_empty() {
+        return "unknown".to_string();
+    }
+    if rows
+        .iter()
+        .all(|row| row.confidence.eq_ignore_ascii_case("high"))
+    {
+        "high".to_string()
+    } else if rows
+        .iter()
+        .any(|row| row.confidence.eq_ignore_ascii_case("low"))
+    {
+        "low".to_string()
+    } else {
+        "medium".to_string()
+    }
 }
 
 fn percentile_nearest(sorted_values: &[f64], p: f64) -> Option<f64> {
@@ -4701,6 +4765,50 @@ fn percentile_nearest(sorted_values: &[f64], p: f64) -> Option<f64> {
     let p = p.clamp(0.0, 1.0);
     let idx = ((sorted_values.len() - 1) as f64 * p).round() as usize;
     sorted_values.get(idx).copied()
+}
+
+fn apply_t1_failure_events_to_ledger(
+    ledger_rows: &[T1FailureRow],
+    event_rows: &[T1FailureEventRow],
+    event_artifact: &Path,
+) -> Vec<T1FailureRow> {
+    let summaries = summarize_t1_failure_events(event_rows)
+        .into_iter()
+        .map(|summary| (summary.site_id.clone(), summary))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    ledger_rows
+        .iter()
+        .cloned()
+        .map(|mut row| {
+            if let Some(summary) = summaries.get(&row.site_id) {
+                row.annual_probability = Some(summary.annual_probability);
+                row.duration_p50_hours = summary.duration_p50_hours;
+                row.duration_p95_hours = summary.duration_p95_hours;
+                row.source_status = "empirical".to_string();
+                row.confidence = summary.confidence.clone();
+                row.current_artifact = append_artifact(&row.current_artifact, event_artifact);
+                row.blocking_gap = "Empirical event observations loaded; reroute time and throughput retention still require route simulation/source validation".to_string();
+                row.next_evidence_step = "Join event windows to NPMRDS/FPM travel-time traces and reroute simulations to validate throughput retention under closure".to_string();
+            }
+            row
+        })
+        .collect()
+}
+
+fn append_artifact(existing: &str, artifact: &Path) -> String {
+    let artifact = artifact.to_string_lossy();
+    if existing
+        .split(';')
+        .map(str::trim)
+        .any(|value| value == artifact)
+    {
+        existing.to_string()
+    } else if existing.trim().is_empty() {
+        artifact.to_string()
+    } else {
+        format!("{}; {}", existing.trim(), artifact)
+    }
 }
 
 fn print_t1_failure_event_summary(rows: &[T1FailureEventRow]) {
@@ -4756,17 +4864,18 @@ fn print_t1_failure_event_summary(rows: &[T1FailureEventRow]) {
     println!("  confidence labels: {}", join_set(&confidence_labels));
     println!();
     println!(
-        "{:<18} {:>6} {:>7} {:>8} {:>8} {:>8}",
-        "Site", "Years", "Events", "Rate/Yr", "P50 h", "P95 h"
+        "{:<18} {:>6} {:>7} {:>8} {:>8} {:>8} {:>8}",
+        "Site", "Years", "Events", "Rate/Yr", "P_ann", "P50 h", "P95 h"
     );
-    println!("{}", "-".repeat(68));
+    println!("{}", "-".repeat(78));
     for summary in summaries {
         println!(
-            "{:<18} {:>6} {:>7} {:>8.3} {:>8} {:>8}",
+            "{:<18} {:>6} {:>7} {:>8.3} {:>8.3} {:>8} {:>8}",
             summary.site_id,
             summary.observed_years,
             summary.event_count,
             summary.annual_rate,
+            summary.annual_probability,
             fmt_opt(summary.duration_p50_hours),
             fmt_opt(summary.duration_p95_hours)
         );
@@ -4987,8 +5096,41 @@ T1X-I35-I80,e4,Iowa 511,103,2024,2024-07-01T00:00:00Z,2024-07-01T08:00:00Z,8.0,i
         assert_eq!(summary.observed_years, 2);
         assert_eq!(summary.event_count, 3);
         assert_eq!(summary.annual_rate, 1.5);
+        assert!((summary.annual_probability - 0.77686984).abs() < 1e-6);
         assert_eq!(summary.duration_p50_hours, Some(4.0));
         assert_eq!(summary.duration_p95_hours, Some(10.0));
+        assert_eq!(summary.confidence, "medium");
+    }
+
+    #[test]
+    fn t1_failure_events_apply_empirical_fields_to_ledger() {
+        let ledger_csv = "\
+site_id,intersection,location,failure_mode,annual_probability,duration_p50_hours,duration_p95_hours,throughput_retention_current,throughput_retention_i2,reroute_time_p50_hours,reroute_time_p95_hours,source_status,confidence,current_artifact,blocking_gap,next_evidence_step
+T1X-I35-I80,I-35 x I-80,Des Moines IA,closure,,,,0.962,1.000,0.9,,modeled,low,artifact,gap,next
+T1X-I35-I40,I-35 x I-40,Oklahoma City OK,closure,,,,,,,,source_needed,unknown,artifact,gap,next
+";
+        let events_csv = "\
+site_id,event_id,source,source_event_id,observation_year,start_time,end_time,duration_hours,event_type,full_closure,lanes_closed,freight_relevant,confidence,notes
+T1X-I35-I80,e1,Iowa 511,100,2023,2023-01-01T00:00:00Z,2023-01-01T02:00:00Z,2.0,incident,true,2,true,medium,first
+T1X-I35-I80,e2,Iowa 511,101,2024,2024-01-01T00:00:00Z,2024-01-01T06:00:00Z,6.0,incident,true,2,true,medium,second
+";
+
+        let ledger_rows = parse_t1_failure_ledger(ledger_csv.as_bytes()).expect("parse ledger");
+        let event_rows = parse_t1_failure_events(events_csv.as_bytes()).expect("parse events");
+        let updated = super::apply_t1_failure_events_to_ledger(
+            &ledger_rows,
+            &event_rows,
+            std::path::Path::new("data/t1-failure-events.csv"),
+        );
+
+        assert_eq!(updated[0].source_status, "empirical");
+        assert_eq!(updated[0].duration_p50_hours, Some(6.0));
+        assert_eq!(updated[0].duration_p95_hours, Some(6.0));
+        assert_eq!(updated[0].throughput_retention_current, Some(0.962));
+        assert!(updated[0]
+            .current_artifact
+            .contains("data/t1-failure-events.csv"));
+        assert_eq!(updated[1].source_status, "source_needed");
     }
 
     #[test]
