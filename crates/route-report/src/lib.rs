@@ -172,3 +172,112 @@ fn chrono_today() -> String {
     // Simple date without chrono dependency — use env or fixed fallback
     std::env::var("ROUTE_DATE").unwrap_or_else(|_| "2026-05-06".into())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use route_network::CorridorAttributes;
+    use route_score::score_corridor;
+
+    fn corridor() -> Corridor {
+        Corridor {
+            designation: "I80".into(),
+            termini: ["Teaneck, NJ".into(), "San Francisco, CA".into()],
+            states: vec!["NJ".into(), "PA".into(), "OH".into()],
+            total_miles: 2909.0,
+            edge_count: 0,
+            edges: vec![],
+            attributes: CorridorAttributes {
+                p90_aadt: Some(90_000.0),
+                mean_aadt: Some(60_000.0),
+                annual_freight_value_b: Some(500.0),
+                mean_pct_truck: Some(0.22),
+                p90_pti: Some(1.8),
+                intl_trade_score: 4.0,
+                fatal_crash_rate: Some(1.0),
+                detour_penalty_miles: Some(250.0),
+                nearest_parallel_miles: Some(70.0),
+                betweenness_centrality: Some(0.8),
+                nearest_top25_port_miles: Some(40.0),
+                pop_within_50mi: Some(12_000_000),
+                pct_rural_in_buffer: Some(0.35),
+                max_rural_interchange_gap_miles: Some(45.0),
+                gdp_per_capita_relative: Some(0.75),
+                agricultural_export_score: 6.0,
+                max_consecutive_sfha_miles: Some(18.0),
+                fema_sfha_miles: Some(75.0),
+                intermodal_hub_count: 3,
+                dcfc_per_100mi: Some(22.0),
+                bridge_count: 100,
+                pct_bridges_poor: Some(0.08),
+                mean_year_built: Some(1970.0),
+                military_strategic_score: 5.0,
+                ..Default::default()
+            },
+        }
+    }
+
+    #[test]
+    fn corpus_entry_contains_all_sixteen_dimensions_and_160_total() {
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        let md = format_corpus_entry(&corridor, &scores);
+
+        for code in [
+            "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
+            "D2", "D3",
+        ] {
+            assert!(md.contains(&format!("| {code} |")), "missing {code}");
+        }
+        assert!(md.contains("A: "));
+        assert!(md.contains("/50"));
+        assert!(md.contains("/40"));
+        assert!(md.contains("/30"));
+        assert!(md.contains("Total: "));
+        assert!(md.contains("/160"));
+        assert!(md.contains("† Estimated value"));
+    }
+
+    #[test]
+    fn corpus_entry_uses_route_date_for_reproducibility() {
+        unsafe {
+            std::env::set_var("ROUTE_DATE", "2030-01-02");
+        }
+
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        let md = format_corpus_entry(&corridor, &scores);
+
+        assert!(md.contains("created: 2030-01-02"));
+        assert!(md.contains("updated: 2030-01-02"));
+
+        unsafe {
+            std::env::remove_var("ROUTE_DATE");
+        }
+    }
+
+    #[test]
+    fn write_corpus_entry_creates_parent_directories() {
+        let dir = std::env::temp_dir().join(format!("route-report-test-{}", std::process::id()));
+        let path = dir.join("nested").join("i80.md");
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+
+        write_corpus_entry(&corridor, &scores, &path).expect("write corpus entry");
+
+        let written = std::fs::read_to_string(&path).expect("read written corpus entry");
+        assert!(written.contains("# I80"));
+        assert!(written.contains("rubric_version:"));
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}

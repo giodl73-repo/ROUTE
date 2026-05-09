@@ -75,17 +75,21 @@ Proposed-corridor scores are estimates — mark with `†`.
 | A | A1 | Throughput Gap | | |
 | A | A2 | Freight Intensity | | |
 | A | A3 | Speed Reliability | | |
+| A | A4 | International Trade Corridor | | |
+| A | A5 | Safety Record | | |
 | B | B1 | Redundancy | | |
 | B | B2 | Network Centrality | | |
 | B | B3 | Port/Border Access | | |
+| B | B4 | Military/Strategic | | |
 | C | C1 | Population Reach | | |
 | C | C2 | Rural Connectivity | | |
-| C | C3 | Equity Access | | |
+| C | C3 | Economic Opportunity Access | | |
+| C | C4 | Agricultural Export Access | | |
 | D | D1 | Climate Resilience | | |
 | D | D2 | Multimodal Integration | | |
 | D | D3 | Infrastructure Vintage | | |
 
-**Band totals**: A: _/30 · B: _/30 · C: _/30 · D: _/30 · **Total: _/120**
+**Band totals**: A: _/50 · B: _/40 · C: _/40 · D: _/30 · **Total: _/160**
 
 ### 4. Notable Segments
 Key segments that differ significantly from corridor average — major bottlenecks, major high-performers, or anomalies worth noting. 2–5 bullet points.
