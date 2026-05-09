@@ -39,7 +39,7 @@ No raw data files are committed to this repo. Data is accessed from authoritativ
 
 | Source | What it provides | Notes |
 |---|---|---|
-| FHWA National Bridge Inventory (NBI) | Bridge condition, sufficiency rating, age, posted weight limits | https://www.fhwa.dot.gov/bridge/nbi.cfm |
+| FHWA National Bridge Inventory (NBI) | Bridge condition, sufficiency rating, age, posted weight limits | https://www.fhwa.dot.gov/bridge/nbi.cfm — **cached**: `data/cache/nbi_bridges.csv` (2024 data, 623,218 records, downloaded 2026-05-08 from https://www.fhwa.dot.gov/bridge/nbi/2024hwybronefiledel.zip) |
 | FHWA HPMS Pavement Data | IRI (International Roughness Index) by segment | Via HPMS DataFinder |
 | FHWA Pavement Performance | % of NHS in good/fair/poor condition by state | https://www.fhwa.dot.gov/policyinformation/statistics.cfm |
 

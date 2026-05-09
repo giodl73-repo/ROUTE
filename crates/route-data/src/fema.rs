@@ -3,6 +3,20 @@
 /// Queries Layer 28 (Flood Hazard Zones / SFHA) of the FEMA ArcGIS REST service:
 ///   https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query
 ///
+/// fetch_fema_count: single URL → SFHA feature count (for small tiles)
+pub fn fetch_fema_count(url: &str) -> anyhow::Result<u32> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(20))
+        .user_agent("ROUTE/1.0 highway-analysis")
+        .build()?;
+    let text = client.get(url).send()
+        .map_err(|e| anyhow::anyhow!("FEMA request: {e}"))?
+        .text()
+        .map_err(|e| anyhow::anyhow!("FEMA body: {e}"))?;
+    let json: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| anyhow::anyhow!("FEMA JSON: {e}"))?;
+    Ok(json["count"].as_u64().unwrap_or(0) as u32)
+}
 /// Returns the count of SFHA A-zone features intersecting a bounding box.
 /// This is used as a proxy for flood exposure on a corridor (D1 dimension).
 use anyhow::{Context, Result};

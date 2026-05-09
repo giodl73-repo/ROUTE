@@ -146,6 +146,9 @@ enum Commands {
     /// Fetch ACS county median household income from Census API (B19013, no auth required)
     FetchAcsIncome,
 
+    /// Fetch FEMA NFHL D1 data using small per-state bboxes (avoids 504 timeout)
+    FetchFemaD1,
+
     /// Fetch FEMA NFHL SFHA feature counts for T1 corridor bounding boxes (D1 dimension)
     FetchFema {
         /// Output file (default: data/cache/fema_sfha_counts.csv)
@@ -785,6 +788,67 @@ fn main() -> Result<()> {
             println!("  run `route score-all` to apply C3 scores.");
         }
 
+        Commands::FetchFemaD1 => {
+            println!("route fetch-fema-d1 — FEMA NFHL D1 data via per-state small bboxes");
+            println!("  Querying Layer 28 (Flood Hazard Zones) in 1°×1° tiles to avoid 504...");
+
+            // State bounding boxes (1°×1° tiles covering major flood-exposed corridors)
+            // Focus on Gulf Coast (I-10 LA/TX), Atlantic Coast (I-95), Mississippi Valley
+            let state_tiles: Vec<(&str, f64, f64, f64, f64)> = vec![
+                ("LA-Gulf", -93.5, 29.0, -92.5, 30.0),
+                ("LA-Gulf2", -92.5, 29.0, -91.5, 30.0),
+                ("LA-Gulf3", -91.5, 29.0, -90.5, 30.0),
+                ("LA-Gulf4", -90.5, 29.0, -89.5, 30.0),
+                ("TX-Gulf", -95.5, 29.0, -94.5, 30.0),
+                ("TX-Gulf2", -94.5, 29.0, -93.5, 30.0),
+                ("FL-Gulf", -87.5, 30.0, -86.5, 31.0),
+                ("FL-SE", -81.0, 25.5, -80.0, 26.5),
+                ("FL-Atlantic", -80.5, 26.5, -79.5, 27.5),
+                ("NC-coast", -77.5, 34.5, -76.5, 35.5),
+                ("VA-coast", -76.5, 36.5, -75.5, 37.5),
+                ("NJ-coast", -74.5, 39.5, -73.5, 40.5),
+                ("MS-valley", -91.0, 32.0, -90.0, 33.0),
+                ("AR-flood", -91.5, 33.5, -90.5, 34.5),
+            ];
+
+            let fema_url = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
+
+            let mut results: Vec<(String, u32)> = Vec::new();
+            for (name, xmin, ymin, xmax, ymax) in &state_tiles {
+                let qs = format!(
+                    "where=FLD_ZONE+LIKE+%27A%25%27&geometry={},{},{},{}&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects&returnCountOnly=true&f=json",
+                    xmin, ymin, xmax, ymax
+                );
+                let url = format!("{fema_url}?{qs}");
+                // Use route-data's reqwest client pattern
+                match route_data::fetch_fema_count(&url) {
+                    Ok(count) => {
+                        println!("  {name}: {count} SFHA features");
+                        results.push((name.to_string(), count));
+                    }
+                    Err(e) => {
+                        println!("  {name}: FAILED — {e}");
+                        results.push((name.to_string(), 0));
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_millis(800));
+            }
+
+            // Write results
+            let out = PathBuf::from("data/cache/fema_sfha_tile_counts.csv");
+            let mut wtr = csv::Writer::from_path(&out)?;
+            wtr.write_record(["tile","xmin","ymin","xmax","ymax","sfha_count"])?;
+            for (i, (name, count)) in results.iter().enumerate() {
+                let t = &state_tiles[i];
+                wtr.write_record(&[name, &t.1.to_string(), &t.2.to_string(), &t.3.to_string(), &t.4.to_string(), &count.to_string()])?;
+            }
+            wtr.flush()?;
+            println!("\n  Saved → {}", out.display());
+            let total: u32 = results.iter().map(|(_, c)| c).sum();
+            println!("  Total SFHA features across flood-exposed tiles: {total}");
+            println!("  Next: wire tile counts into corridor D1 scoring via bbox intersection");
+        }
+
         Commands::FetchFema { output } => {
             let out = output.unwrap_or_else(|| PathBuf::from("data/cache/fema_sfha_counts.csv"));
             println!("route fetch-fema → {}", out.display());
@@ -1210,7 +1274,12 @@ fn main() -> Result<()> {
             // Load DCFC stations for D2 scoring (partial — DEMO_KEY rate limit)
             let dcfc = load_dcfc_stations();
             if !dcfc.is_empty() {
-                println!("  {} DCFC stations loaded — D2 will use real values (partial coverage)", dcfc.len());
+                println!("  {} DCFC stations loaded — D2 EV component will use real values", dcfc.len());
+            }
+            // Load intermodal terminals for D2 hub count
+            let intermodal = load_intermodal_terminals();
+            if !intermodal.is_empty() {
+                println!("  {} intermodal terminals loaded — D2 hub count will use real values", intermodal.len());
             }
 
             // Collect per-dimension scores for all corridors
@@ -1238,9 +1307,13 @@ fn main() -> Result<()> {
                     if !ports.is_empty() {
                         join_port_access_to_corridor(&graph, id, &mut corridor.attributes, &ports);
                     }
-                    // Join DCFC for D2
+                    // Join DCFC for D2 EV component
                     if !dcfc.is_empty() {
                         join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
+                    }
+                    // Join intermodal terminals for D2 hub count
+                    if !intermodal.is_empty() {
+                        join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
                     }
                     // Estimate A2 freight value from HPMS truck AADT × corridor miles
                     // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
@@ -2270,6 +2343,53 @@ fn load_ports() -> Vec<PortLocation> {
 }
 
 struct PortLocation { lat: f64, lon: f64, rank: u32, is_border: bool }
+
+/// Load intermodal terminal locations from data/intermodal_terminals.csv.
+fn load_intermodal_terminals() -> Vec<(f64, f64)> {
+    let path = std::path::Path::new("data/intermodal_terminals.csv");
+    if !path.exists() { return Vec::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    rdr.records()
+        .filter_map(|r| r.ok())
+        .filter_map(|rec| {
+            if rec.len() < 5 { return None; }
+            let lat: f64 = rec[3].parse().ok()?;
+            let lon: f64 = rec[4].parse().ok()?;
+            Some((lat, lon))
+        })
+        .collect()
+}
+
+/// Compute intermodal hub count for a corridor (hubs within 30 miles).
+fn join_intermodal_to_corridor(
+    graph: &route_network::HighwayGraph,
+    route_id: &str,
+    attrs: &mut route_network::CorridorAttributes,
+    terminals: &[(f64, f64)],
+) {
+    if terminals.is_empty() { return; }
+    let corridor_nodes: Vec<(f64, f64)> = graph.graph.node_indices()
+        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
+        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+        .collect();
+    if corridor_nodes.is_empty() { return; }
+
+    fn haversine2(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+        let r = 3_958.8_f64;
+        let dlat = (lat2 - lat1).to_radians();
+        let dlon = (lon2 - lon1).to_radians();
+        let a = (dlat / 2.0).sin().powi(2)
+            + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+        r * 2.0 * a.sqrt().asin()
+    }
+
+    let count = terminals.iter()
+        .filter(|&&(tlat, tlon)| {
+            corridor_nodes.iter().any(|&(nx, ny)| haversine2(ny, nx, tlat, tlon) <= 30.0)
+        })
+        .count();
+    attrs.intermodal_hub_count = count.min(255) as u8;
+}
 
 /// Load DCFC charging station locations from cache.
 fn load_dcfc_stations() -> Vec<(f64, f64)> {  // (lat, lon)
