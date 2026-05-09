@@ -120,6 +120,8 @@ route t1-failure-sources
 route t1-source-health
 route t1-source-health --blockers --details
 route t1-source-health --gate-ingestion
+route t1-access-docket
+route t1-access-docket --category api_key --details
 route t1-failure-events
 route t1-failure-events --write-ledger data/t1-intersection-failures.csv
 route t1-fetch-iowa511
@@ -136,6 +138,8 @@ route t1-accumulate-events --input data/cache/iowa511-t1-failure-events.csv
 `route t1-fetch-iowa511` caches the current public Iowa DOT 511 ArcGIS event layer. `route t1-import-iowa511` normalizes nearby I-35/I-80 records into the T1/T1 event schema for source accumulation. `route t1-fetch-tdot-smartway` and `route t1-import-tdot-smartway` define the same path for the TDOT SmartWay line-event layer around the Knoxville I-40/I-75 site, but the live TDOT query currently needs endpoint tuning or an alternate export path before it is as reliable as Iowa. As of May 9, 2026, TDOT FeatureServer and MapServer query attempts time out or return ArcGIS query errors even for count-only or one-row queries, while the service metadata remains public. `route t1-fetch-mdot-midrive` and `route t1-import-mdot-midrive` cache and normalize the public Mi Drive current incident feed around the Detroit metro I-75/I-90 evidence site. `route t1-fetch-indot-trafficwise` and `route t1-import-indot-trafficwise` cache and normalize the public TrafficWise GraphQL map feed for the northern Indiana I-80/I-90 evidence site. `route t1-accumulate-events` merges generated source rows into the canonical event table and dedupes repeated site/event IDs. These feeds are live, not historical archives, so cache snapshots should be treated as observation samples until a polling or archive strategy creates a stable annual history.
 
 `route t1-source-health --gate-ingestion` is expected to fail until every source needed for Blueprint-grade T1/T1 claims has either a working importer, a documented historical extract, or an explicit downgraded status.
+
+`route t1-access-docket` converts remaining source-health blockers into action categories: `api_key`, `account`, `access_request`, `endpoint_tuning`, and `records_request`. This is the request/credential punch list for turning snapshot feeds and blocked sources into annual failure-rate, duration, PTI, and reroute evidence.
 
 Access notes from source probing:
 

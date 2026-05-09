@@ -268,6 +268,19 @@ enum Commands {
         gate_ingestion: bool,
     },
 
+    /// Show actionable access/request docket for blocked T1/T1 evidence sources
+    T1AccessDocket {
+        /// Path to T1/T1 source health ledger CSV
+        #[arg(long, default_value = "data/t1-source-health.csv", value_name = "FILE")]
+        ledger: PathBuf,
+        /// Show only one action category, e.g. api_key, account, access_request
+        #[arg(long)]
+        category: Option<String>,
+        /// Print detailed source URLs, gaps, and next steps
+        #[arg(long)]
+        details: bool,
+    },
+
     /// Summarize raw T1/T1 failure event observations into rates and durations
     T1FailureEvents {
         /// Path to normalized T1/T1 failure event observations CSV
@@ -2102,6 +2115,16 @@ fn run_cli() -> Result<()> {
                     );
                 }
             }
+        }
+
+        Commands::T1AccessDocket {
+            ledger,
+            category,
+            details,
+        } => {
+            let rows = load_t1_source_health(&ledger)
+                .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
+            print_t1_access_docket(&rows, category.as_deref(), details);
         }
 
         Commands::T1FailureEvents {
@@ -5132,6 +5155,134 @@ fn t1_source_health_is_blocked(row: &T1SourceHealthRow) -> bool {
     )
 }
 
+fn print_t1_access_docket(rows: &[T1SourceHealthRow], category: Option<&str>, details: bool) {
+    let mut docket = rows
+        .iter()
+        .filter(|row| t1_source_health_is_blocked(row))
+        .map(t1_access_docket_item)
+        .filter(|item| {
+            category
+                .map(|category| item.category.eq_ignore_ascii_case(category))
+                .unwrap_or(true)
+        })
+        .collect::<Vec<_>>();
+    docket.sort_by(|a, b| {
+        t1_access_priority_rank(&a.priority)
+            .cmp(&t1_access_priority_rank(&b.priority))
+            .then_with(|| a.category.cmp(&b.category))
+            .then_with(|| a.site_id.cmp(&b.site_id))
+    });
+
+    let mut by_category: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for item in &docket {
+        *by_category.entry(item.category.clone()).or_insert(0) += 1;
+    }
+
+    println!("route t1-access-docket");
+    println!("  actions: {} shown", docket.len());
+    println!("  categories: {}", format_count_map(&by_category));
+    println!();
+    println!(
+        "{:<10} {:<16} {:<18} {:<24} {}",
+        "Priority", "Category", "Site", "Source", "Action"
+    );
+    println!("{}", "-".repeat(132));
+    for item in docket {
+        println!(
+            "{:<10} {:<16} {:<18} {:<24} {}",
+            item.priority,
+            item.category,
+            item.site_id,
+            truncate_for_table(&item.source_name, 24),
+            item.action
+        );
+        if details {
+            println!("  access: {}", item.access_health);
+            println!("  history: {}", item.history_status);
+            println!("  url: {}", item.source_url);
+            println!("  gap: {}", item.blocking_gap);
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct T1AccessDocketItem {
+    site_id: String,
+    source_name: String,
+    source_url: String,
+    access_health: String,
+    history_status: String,
+    blocking_gap: String,
+    category: String,
+    priority: String,
+    action: String,
+}
+
+fn t1_access_docket_item(row: &T1SourceHealthRow) -> T1AccessDocketItem {
+    let category = t1_access_category(row).to_string();
+    let priority = t1_access_priority(row).to_string();
+    let action = match category.as_str() {
+        "api_key" => format!("Request credentials; then implement {}", row.source_name),
+        "account" => format!("Obtain account/export; then map {}", row.source_name),
+        "access_request" => format!(
+            "Request data access or partner extract for {}",
+            row.source_name
+        ),
+        "endpoint_tuning" => format!("Tune query/export path for {}", row.source_name),
+        "records_request" => format!(
+            "Request archive/export or identify allowed endpoint for {}",
+            row.source_name
+        ),
+        _ => row.next_step.clone(),
+    };
+    T1AccessDocketItem {
+        site_id: row.site_id.clone(),
+        source_name: row.source_name.clone(),
+        source_url: row.source_url.clone(),
+        access_health: row.access_health.clone(),
+        history_status: row.history_status.clone(),
+        blocking_gap: row.blocking_gap.clone(),
+        category,
+        priority,
+        action,
+    }
+}
+
+fn t1_access_category(row: &T1SourceHealthRow) -> &'static str {
+    match row.access_health.as_str() {
+        "requires_key" => "api_key",
+        "requires_account" => "account",
+        "requires_access" => "access_request",
+        "blocked_query" => "endpoint_tuning",
+        "blocked_access" => "records_request",
+        _ if row.ingestion_status != "implemented" => "implementation",
+        _ if row.history_status == "snapshot_only" => "history_archive",
+        _ => "monitoring",
+    }
+}
+
+fn t1_access_priority(row: &T1SourceHealthRow) -> &'static str {
+    if row.source_kind == "travel_time_reliability" {
+        "critical"
+    } else if row.access_health == "blocked_query" || row.access_health == "blocked_access" {
+        "high"
+    } else if row.access_health == "requires_access" || row.access_health == "requires_key" {
+        "high"
+    } else {
+        "medium"
+    }
+}
+
+fn t1_access_priority_rank(priority: &str) -> u8 {
+    match priority {
+        "critical" => 0,
+        "high" => 1,
+        "medium" => 2,
+        _ => 3,
+    }
+}
+
 fn format_count_map(counts: &std::collections::BTreeMap<String, usize>) -> String {
     if counts.is_empty() {
         "none".to_string()
@@ -6425,6 +6576,29 @@ T1X-I40-I75,TDOT SmartWay,https://example.invalid,live_event_feed,blocked_query,
         assert!(!super::t1_source_health_is_blocked(&rows[0]));
         assert!(super::t1_source_health_is_blocked(&rows[1]));
         assert_eq!(super::t1_source_health_blockers(&rows).len(), 1);
+    }
+
+    #[test]
+    fn t1_access_docket_groups_blockers_by_action_type() {
+        let csv = "\
+site_id,source_name,source_url,source_kind,access_health,ingestion_status,history_status,last_checked,blocking_gap,next_step
+T1X-I35-I80,Iowa DOT 511,https://example.invalid,live_event_feed,live,implemented,snapshot_only,2026-05-09,gap,next
+T1X-I40-I75,TDOT SmartWay,https://example.invalid,live_event_feed,blocked_query,scaffolded,unknown,2026-05-09,gap,next
+ALL,FHWA NPMRDS,https://example.invalid,travel_time_reliability,requires_access,not_started,historical_available,2026-05-09,gap,next
+";
+
+        let rows = parse_t1_source_health(csv.as_bytes()).expect("parse source health");
+        let items = rows
+            .iter()
+            .filter(|row| super::t1_source_health_is_blocked(row))
+            .map(super::t1_access_docket_item)
+            .collect::<Vec<_>>();
+
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].category, "endpoint_tuning");
+        assert_eq!(items[0].priority, "high");
+        assert_eq!(items[1].category, "access_request");
+        assert_eq!(items[1].priority, "critical");
     }
 
     #[test]
