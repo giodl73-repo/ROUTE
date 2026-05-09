@@ -537,6 +537,57 @@ fn main() -> Result<()> {
                 &mut corridor.attributes,
                 true,
             );
+            let ports = load_ports();
+            if !ports.is_empty() {
+                join_port_access_to_corridor(&graph, &norm, &mut corridor.attributes, &ports);
+            }
+            let dcfc = load_dcfc_stations();
+            if !dcfc.is_empty() {
+                join_dcfc_to_corridor(
+                    &graph,
+                    &norm,
+                    corridor.total_miles,
+                    &mut corridor.attributes,
+                    &dcfc,
+                );
+            }
+            let intermodal = load_intermodal_terminals();
+            if !intermodal.is_empty() {
+                join_intermodal_to_corridor(&graph, &norm, &mut corridor.attributes, &intermodal);
+            }
+            let fema_tiles = load_fema_tiles();
+            if !fema_tiles.is_empty() {
+                join_fema_d1_to_corridor(&graph, &norm, &mut corridor.attributes, &fema_tiles);
+            }
+            let nbi = load_nbi_bridges();
+            if !nbi.is_empty() {
+                join_nbi_to_corridor(&norm, &mut corridor.attributes, &nbi);
+            }
+            join_d3_iri_proxy(&mut corridor.attributes);
+            let fars_safety = load_fars_safety();
+            if let Some(&rate) = fars_safety.get(&norm) {
+                corridor.attributes.fatal_crash_rate = Some(rate);
+            }
+            let railroad_parallels = load_railroad_parallels();
+            if let Some(railroad) = railroad_parallels.get(&norm) {
+                corridor.attributes.rail_parallel_flag = true;
+                corridor.attributes.rail_parallel_name = Some(railroad.clone());
+            }
+            let hazard_zones = load_hazard_zones();
+            if let Some(zone) = hazard_zones.get(&norm) {
+                corridor.attributes.wildfire_risk = Some(zone.wildfire);
+                corridor.attributes.tornado_risk = Some(zone.tornado);
+                corridor.attributes.seismic_risk = Some(zone.seismic);
+            }
+            if corridor.attributes.annual_freight_value_b.is_none() {
+                if let Some(aadt) = corridor.attributes.p90_aadt {
+                    let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
+                    let truck_aadt = aadt as f64 * truck_pct;
+                    let freight_b =
+                        truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
+                    corridor.attributes.annual_freight_value_b = Some(freight_b);
+                }
+            }
 
             // Score
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
@@ -556,7 +607,7 @@ fn main() -> Result<()> {
 
             if scores.any_estimated() {
                 println!("  † Some scores are estimated — see justifications above.");
-                println!("    Run `route build` with HPMS data joined to improve accuracy.");
+                println!("    Run `route score-all` for authoritative national B2 centrality.");
             }
         }
 
