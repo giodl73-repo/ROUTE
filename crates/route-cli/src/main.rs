@@ -1527,6 +1527,29 @@ fn main() -> Result<()> {
                     threshold,
                     result.gap_counties.len()
                 );
+                let candidate_gaps = result
+                    .gap_counties
+                    .iter()
+                    .filter(|g| g.gap_class == "candidate_access_gap")
+                    .count();
+                let centroid_risks = result
+                    .gap_counties
+                    .iter()
+                    .filter(|g| g.gap_class == "centroid_artifact_risk")
+                    .count();
+                let non_conus = result
+                    .gap_counties
+                    .iter()
+                    .filter(|g| g.gap_class == "non_conus")
+                    .count();
+                println!(
+                    "│    Candidate access: {:>8}  centroid-risk: {:>5}       │",
+                    candidate_gaps, centroid_risks
+                );
+                println!(
+                    "│    Non-CONUS/model: {:>8}                              │",
+                    non_conus
+                );
                 println!(
                     "│  Worst gap:          {:>9.1} miles  ({}, {})           │",
                     result.max_gap_miles,
@@ -1573,6 +1596,8 @@ fn main() -> Result<()> {
                             "NEAREST_MI",
                             "POPULATION",
                             "LAND_SQMI",
+                            "GAP_CLASS",
+                            "ARTIFACT_REASON",
                         ]);
                         for g in &result.gap_counties {
                             let _ = wtr.write_record(&[
@@ -1584,6 +1609,8 @@ fn main() -> Result<()> {
                                 format!("{:.1}", g.nearest_miles),
                                 g.population.to_string(),
                                 format!("{:.0}", g.aland_sqmi),
+                                g.gap_class.clone(),
+                                g.artifact_reason.clone(),
                             ]);
                         }
                         println!("\n  gap list saved → {}", gap_csv.display());

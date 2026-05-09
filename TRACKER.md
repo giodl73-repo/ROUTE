@@ -65,7 +65,7 @@ Goal: separate true network gaps from source and geometry artifacts.
 | Task | Status | Evidence / Next Step |
 |---|---|---|
 | Corridor geometry QA catches impossible termini, empty states, and carriageway-inflated mileage | ✅ done | I-80 report now has west longitudes, inferred states, and TIGER interstate centerline miles |
-| Coverage gaps distinguish large-county centroid artifacts from true access gaps | ⏳ pending | Audit `data/coverage-gaps.csv`; add artifact labels for large western counties |
+| Coverage gaps distinguish large-county centroid artifacts from true access gaps | ✅ done | `data/coverage-gaps.csv` includes gap class and artifact reason columns |
 | `route gap --type ...` writes reproducible gap artifacts instead of planned-only output | ⏳ pending | Move missing-link/bottleneck/resilience/port logic into tested code paths |
 | Bottleneck findings separate congestion, capacity, and graph topology failures | ⏳ pending | Compare ATRI seeds, A1/A3 scores, and `route flow` outputs |
 | Resilience and port-connector gap claims have source/confidence labels | ⏳ pending | Tie D1/B3 weak claims to source coverage and review flags |

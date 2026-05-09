@@ -39,6 +39,8 @@ pub struct CountyGap {
     pub nearest_miles: f64,
     pub population: u64,
     pub aland_sqmi: f64,
+    pub gap_class: String,
+    pub artifact_reason: String,
 }
 
 /// Compute population-weighted coverage using county centroids.
@@ -109,6 +111,7 @@ pub fn compute_pop_coverage(
             result.land_within_50mi += county.aland_sqmi;
         }
         if nearest > threshold_miles {
+            let (gap_class, artifact_reason) = classify_county_gap(county, nearest);
             result.gap_counties.push(CountyGap {
                 geoid: county.geoid.clone(),
                 name: county.name.clone(),
@@ -118,6 +121,8 @@ pub fn compute_pop_coverage(
                 nearest_miles: nearest,
                 population: county.population,
                 aland_sqmi: county.aland_sqmi,
+                gap_class,
+                artifact_reason,
             });
         }
     }
@@ -126,6 +131,32 @@ pub fn compute_pop_coverage(
         .gap_counties
         .sort_by(|a, b| b.nearest_miles.total_cmp(&a.nearest_miles));
     result
+}
+
+fn classify_county_gap(
+    county: &route_data::CountyCentroid,
+    nearest_miles: f64,
+) -> (String, String) {
+    if !is_conus_state(&county.state) {
+        return (
+            "non_conus".to_string(),
+            "outside_contiguous_us_threshold_model".to_string(),
+        );
+    }
+    if county.aland_sqmi >= 5_000.0 && nearest_miles > 50.0 {
+        return (
+            "centroid_artifact_risk".to_string(),
+            "large_county_internal_point_may_overstate_access_gap".to_string(),
+        );
+    }
+    (
+        "candidate_access_gap".to_string(),
+        "county_centroid_beyond_threshold".to_string(),
+    )
+}
+
+fn is_conus_state(state: &str) -> bool {
+    !matches!(state, "AK" | "HI" | "PR" | "GU" | "VI" | "AS" | "MP" | "UM")
 }
 
 /// Result of a geometric grid coverage analysis run.
@@ -407,14 +438,25 @@ mod tests {
     use std::collections::HashMap;
 
     fn county(geoid: &str, lat: f64, lon: f64, population: u64) -> route_data::CountyCentroid {
+        county_with_state_area(geoid, "TS", 100.0, lat, lon, population)
+    }
+
+    fn county_with_state_area(
+        geoid: &str,
+        state: &str,
+        aland_sqmi: f64,
+        lat: f64,
+        lon: f64,
+        population: u64,
+    ) -> route_data::CountyCentroid {
         route_data::CountyCentroid {
             geoid: geoid.to_string(),
             name: "Test County".to_string(),
-            state: "TS".to_string(),
+            state: state.to_string(),
             lat,
             lon,
             population,
-            aland_sqmi: 100.0,
+            aland_sqmi,
             rucc: 4,
             median_hhi: 50_000,
         }
@@ -461,6 +503,28 @@ mod tests {
 
         assert_eq!(corridor_pop_within_50mi(&g, "I1", &counties), (1234, 1234));
         assert_eq!(counties_within_50mi(&g, "I1", &counties).len(), 1);
+    }
+
+    #[test]
+    fn county_gap_classification_labels_non_conus_and_large_counties() {
+        let alaska = county_with_state_area("02020", "AK", 1_707.0, 61.0, -149.0, 290_000);
+        let large_arizona = county_with_state_area("04019", "AZ", 9_189.0, 32.1, -111.8, 1_000_000);
+        let rural_maine = county_with_state_area("23003", "ME", 6_671.0, 46.7, -68.6, 67_000);
+        let small_gap = county_with_state_area("38023", "ND", 1_261.0, 48.8, -103.5, 2_200);
+
+        assert_eq!(classify_county_gap(&alaska, 1405.0).0, "non_conus");
+        assert_eq!(
+            classify_county_gap(&large_arizona, 189.0).0,
+            "centroid_artifact_risk"
+        );
+        assert_eq!(
+            classify_county_gap(&rural_maine, 261.0).0,
+            "centroid_artifact_risk"
+        );
+        assert_eq!(
+            classify_county_gap(&small_gap, 186.0).0,
+            "candidate_access_gap"
+        );
     }
 }
 
