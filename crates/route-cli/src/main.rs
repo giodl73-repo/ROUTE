@@ -314,6 +314,47 @@ enum Commands {
         radius_miles: f64,
     },
 
+    /// Fetch current TDOT SmartWay line-event JSON for source-cache ingestion
+    T1FetchTdotSmartway {
+        /// Output JSON file
+        #[arg(
+            long,
+            default_value = "data/cache/tdot-smartway-events.json",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+    },
+
+    /// Normalize TDOT SmartWay line-event JSON into T1/T1 failure event rows
+    T1ImportTdotSmartway {
+        /// Cached TDOT SmartWay ArcGIS query JSON
+        #[arg(
+            long,
+            default_value = "data/cache/tdot-smartway-events.json",
+            value_name = "FILE"
+        )]
+        input: PathBuf,
+        /// Output normalized T1/T1 event CSV
+        #[arg(
+            long,
+            default_value = "data/cache/tdot-smartway-t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// T1/T1 site id to assign
+        #[arg(long, default_value = "T1X-I40-I75")]
+        site_id: String,
+        /// Site latitude for radius filtering
+        #[arg(long, default_value_t = 35.90)]
+        lat: f64,
+        /// Site longitude for radius filtering
+        #[arg(long, default_value_t = -84.16)]
+        lon: f64,
+        /// Maximum event distance from site center
+        #[arg(long, default_value_t = 35.0)]
+        radius_miles: f64,
+    },
+
     /// Merge normalized T1/T1 event observations into an accumulated event table
     T1AccumulateEvents {
         /// Existing accumulated T1/T1 event CSV
@@ -507,6 +548,24 @@ enum SimMode {
 }
 
 fn main() -> Result<()> {
+    std::thread::Builder::new()
+        .name("route-cli".to_string())
+        .stack_size(8 * 1024 * 1024)
+        .spawn(run_cli)
+        .context("spawning route CLI thread")?
+        .join()
+        .map_err(|panic| {
+            if let Some(message) = panic.downcast_ref::<&str>() {
+                anyhow::anyhow!("route CLI thread panicked: {message}")
+            } else if let Some(message) = panic.downcast_ref::<String>() {
+                anyhow::anyhow!("route CLI thread panicked: {message}")
+            } else {
+                anyhow::anyhow!("route CLI thread panicked")
+            }
+        })?
+}
+
+fn run_cli() -> Result<()> {
     let cli = Cli::parse();
 
     // Load scoring config
@@ -1953,6 +2012,33 @@ fn main() -> Result<()> {
             write_t1_failure_events(&output, &rows)
                 .with_context(|| format!("writing normalized events {}", output.display()))?;
             println!("route t1-import-iowa511");
+            println!("  rows: {}", rows.len());
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1FetchTdotSmartway { output } => {
+            fetch_tdot_smartway_events(&output).with_context(|| {
+                format!("fetching TDOT SmartWay events to {}", output.display())
+            })?;
+            println!("route t1-fetch-tdot-smartway");
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1ImportTdotSmartway {
+            input,
+            output,
+            site_id,
+            lat,
+            lon,
+            radius_miles,
+        } => {
+            let json = std::fs::read_to_string(&input)
+                .with_context(|| format!("reading TDOT SmartWay JSON {}", input.display()))?;
+            let rows = parse_tdot_smartway_events(&json, &site_id, lat, lon, radius_miles)
+                .with_context(|| format!("normalizing TDOT SmartWay JSON {}", input.display()))?;
+            write_t1_failure_events(&output, &rows)
+                .with_context(|| format!("writing normalized events {}", output.display()))?;
+            println!("route t1-import-tdot-smartway");
             println!("  rows: {}", rows.len());
             println!("  wrote {}", output.display());
         }
@@ -4837,7 +4923,46 @@ fn fetch_iowa511_events(output: &Path) -> Result<()> {
     }
     let url = "https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/CARS511_Iowa_View/FeatureServer/0/query?f=json&where=1%3D1&outFields=ID,Route,StartTime,EndTime,IssueDate,IssueTime,headline,cause,Restrict_,Desc0&returnGeometry=true&outSR=4326";
     let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
+    ensure_no_arcgis_error(&body)?;
     std::fs::write(output, body)?;
+    Ok(())
+}
+
+fn fetch_tdot_smartway_events(output: &Path) -> Result<()> {
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let url = "https://spatial.tdot.tn.gov/arcgis/rest/services/Smartway/Smartway_Events/FeatureServer/1/query?f=json&where=1%3D1&outFields=ID,START_DATE,END_DATE,CD_ROAD_NAMES,CD_DIRECTION,EVENT_TYPE,EVENT_SUBTYPE,DESCRIPTION,HAS_CLOSURE,MIDPOINT_LATITUDE_DD,MIDPOINT_LONGITUDE_DD,COUNTY_NAME&returnGeometry=false&resultRecordCount=200";
+    let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
+    ensure_no_arcgis_error(&body)?;
+    std::fs::write(output, body)?;
+    Ok(())
+}
+
+fn ensure_no_arcgis_error(json: &str) -> Result<()> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    if let Some(error) = value.get("error") {
+        let message = error
+            .get("message")
+            .and_then(|value| value.as_str())
+            .unwrap_or("ArcGIS query failed");
+        let details = error
+            .get("details")
+            .and_then(|value| value.as_array())
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str())
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            })
+            .unwrap_or_default();
+        if details.is_empty() {
+            anyhow::bail!("{message}");
+        } else {
+            anyhow::bail!("{message}: {details}");
+        }
+    }
     Ok(())
 }
 
@@ -4849,6 +4974,7 @@ fn parse_iowa511_events(
     radius_miles: f64,
 ) -> Result<Vec<T1FailureEventRow>> {
     let value: serde_json::Value = serde_json::from_str(json)?;
+    ensure_no_arcgis_error(json)?;
     let Some(features) = value.get("features").and_then(|value| value.as_array()) else {
         return Ok(Vec::new());
     };
@@ -4929,6 +5055,95 @@ fn parse_iowa511_events(
     Ok(rows)
 }
 
+fn parse_tdot_smartway_events(
+    json: &str,
+    site_id: &str,
+    lat: f64,
+    lon: f64,
+    radius_miles: f64,
+) -> Result<Vec<T1FailureEventRow>> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    ensure_no_arcgis_error(json)?;
+    let Some(features) = value.get("features").and_then(|value| value.as_array()) else {
+        return Ok(Vec::new());
+    };
+
+    let mut rows = Vec::new();
+    let mut seen_event_ids = std::collections::BTreeSet::new();
+    for feature in features {
+        let attrs = feature
+            .get("attributes")
+            .and_then(|value| value.as_object())
+            .cloned()
+            .unwrap_or_default();
+        let event_lat = json_f64(&attrs, "MIDPOINT_LATITUDE_DD");
+        let event_lon = json_f64(&attrs, "MIDPOINT_LONGITUDE_DD");
+        if let (Some(event_lat), Some(event_lon)) = (event_lat, event_lon) {
+            if haversine_miles(lat, lon, event_lat, event_lon) > radius_miles {
+                continue;
+            }
+        }
+
+        let road_names = json_string(&attrs, "CD_ROAD_NAMES");
+        let text = [
+            road_names.as_str(),
+            json_string(&attrs, "CD_DIRECTION").as_str(),
+            json_string(&attrs, "EVENT_TYPE").as_str(),
+            json_string(&attrs, "EVENT_SUBTYPE").as_str(),
+            json_string(&attrs, "DESCRIPTION").as_str(),
+            json_string(&attrs, "COUNTY_NAME").as_str(),
+        ]
+        .join(" ");
+        if !tdot_smartway_is_t1_relevant(&road_names, &text) {
+            continue;
+        }
+
+        let source_event_id = json_string(&attrs, "ID");
+        let event_id = if source_event_id.trim().is_empty() {
+            format!("TDOT-SMARTWAY-{}", rows.len() + 1)
+        } else {
+            format!("TDOT-SMARTWAY-{source_event_id}")
+        };
+        if !seen_event_ids.insert(event_id.clone()) {
+            continue;
+        }
+
+        let start_ms = json_i64(&attrs, "START_DATE");
+        let end_ms = json_i64(&attrs, "END_DATE");
+        let duration_hours = match (start_ms, end_ms) {
+            (Some(start), Some(end)) if end >= start => Some((end - start) as f64 / 3_600_000.0),
+            _ => None,
+        };
+        let observation_year = start_ms.and_then(epoch_millis_year).unwrap_or(0);
+
+        rows.push(T1FailureEventRow {
+            site_id: site_id.to_string(),
+            event_id,
+            source: "TDOT SmartWay ArcGIS".to_string(),
+            source_event_id,
+            observation_year,
+            start_time: start_ms
+                .and_then(epoch_millis_date)
+                .unwrap_or_else(|| json_string(&attrs, "START_DATE")),
+            end_time: end_ms
+                .and_then(epoch_millis_date)
+                .unwrap_or_else(|| json_string(&attrs, "END_DATE")),
+            duration_hours,
+            event_type: tdot_smartway_event_type(&text).to_string(),
+            full_closure: json_i64(&attrs, "HAS_CLOSURE").unwrap_or(0) > 0,
+            lanes_closed: None,
+            freight_relevant: true,
+            confidence: if duration_hours.is_some() {
+                "medium".to_string()
+            } else {
+                "low".to_string()
+            },
+            notes: compact_note(&text),
+        });
+    }
+    Ok(rows)
+}
+
 fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
     attrs
         .get(key)
@@ -4936,6 +5151,22 @@ fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) ->
         .unwrap_or("")
         .trim()
         .to_string()
+}
+
+fn json_f64(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<f64> {
+    attrs.get(key).and_then(|value| {
+        value
+            .as_f64()
+            .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+    })
+}
+
+fn json_i64(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<i64> {
+    attrs.get(key).and_then(|value| {
+        value
+            .as_i64()
+            .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+    })
 }
 
 fn iowa511_is_t1_relevant(route: &str, text: &str) -> bool {
@@ -4948,6 +5179,35 @@ fn iowa511_is_t1_relevant(route: &str, text: &str) -> bool {
         && ["CLOSED", "CLOSURE", "CONSTRUCTION", "CRASH", "INCIDENT"]
             .iter()
             .any(|needle| text_norm.contains(needle))
+}
+
+fn tdot_smartway_is_t1_relevant(road_names: &str, text: &str) -> bool {
+    let route_norm = road_names.to_ascii_uppercase().replace(' ', "");
+    let text_norm = text.to_ascii_uppercase().replace(' ', "");
+    (route_norm.contains("I-40")
+        || route_norm.contains("I40")
+        || route_norm.contains("I-75")
+        || route_norm.contains("I75")
+        || text_norm.contains("I-40")
+        || text_norm.contains("I40")
+        || text_norm.contains("I-75")
+        || text_norm.contains("I75"))
+        && ["CLOSURE", "CLOSED", "CRASH", "INCIDENT", "CONSTRUCTION"]
+            .iter()
+            .any(|needle| text.to_ascii_uppercase().contains(needle))
+}
+
+fn tdot_smartway_event_type(text: &str) -> &'static str {
+    let text = text.to_ascii_lowercase();
+    if text.contains("construction") || text.contains("maintenance") {
+        "work_zone"
+    } else if text.contains("crash") {
+        "crash"
+    } else if text.contains("closure") || text.contains("closed") {
+        "closure"
+    } else {
+        "incident"
+    }
 }
 
 fn iowa511_event_type(text: &str) -> &'static str {
@@ -4972,6 +5232,32 @@ fn iowa511_full_closure(text: &str) -> bool {
         || text.contains("ramp closed")
         || text.contains("entrance ramp closed")
         || text.contains(": closed")
+}
+
+fn epoch_millis_year(millis: i64) -> Option<u16> {
+    epoch_millis_ymd(millis).and_then(|(year, _, _)| u16::try_from(year).ok())
+}
+
+fn epoch_millis_date(millis: i64) -> Option<String> {
+    epoch_millis_ymd(millis).map(|(year, month, day)| format!("{year:04}-{month:02}-{day:02}"))
+}
+
+fn epoch_millis_ymd(millis: i64) -> Option<(i32, u32, u32)> {
+    if millis < 0 {
+        return None;
+    }
+    let days = millis.div_euclid(86_400_000);
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096).div_euclid(365);
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2).div_euclid(153);
+    let day = doy - (153 * mp + 2).div_euclid(5) + 1;
+    let month = mp + if mp < 10 { 3 } else { -9 };
+    let year = y + if month <= 2 { 1 } else { 0 };
+    Some((year as i32, month as u32, day as u32))
 }
 
 fn compact_note(text: &str) -> String {
@@ -5241,9 +5527,9 @@ mod tests {
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events,
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, rounded_score, scenario_edge_candidates,
-        standards_blueprint_gate_failures, summarize_t1_failure_events, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        parse_t1_failure_source_plan, parse_tdot_smartway_events, rounded_score,
+        scenario_edge_candidates, standards_blueprint_gate_failures, summarize_t1_failure_events,
+        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -5395,7 +5681,7 @@ T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,
         let csv = "\
 site_id,intersection,location,failure_mode,annual_probability,duration_p50_hours,duration_p95_hours,throughput_retention_current,throughput_retention_i2,reroute_time_p50_hours,reroute_time_p95_hours,source_status,confidence,current_artifact,blocking_gap,next_evidence_step
 T1X-I35-I80,I-35 x I-80,Des Moines IA,closure,,,,0.962,1.000,0.9,,modeled,low,artifact,gap,next
-T1X-I40-I75,I-40 x I-75,Chattanooga TN,closure,,,,,,,,source_needed,unknown,artifact,gap,next
+T1X-I40-I75,I-40 x I-75,Knoxville TN,closure,,,,,,,,source_needed,unknown,artifact,gap,next
 ";
 
         let rows = parse_t1_failure_ledger(csv.as_bytes()).expect("parse T1 failure ledger");
@@ -5561,6 +5847,73 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         assert_eq!(rows[0].duration_hours, Some(2.5));
         assert_eq!(rows[0].event_type, "crash");
         assert!(!rows[0].full_closure);
+    }
+
+    #[test]
+    fn tdot_smartway_import_filters_radius_and_normalizes_events() {
+        let json = r#"{
+  "features": [
+    {
+      "attributes": {
+        "ID": "TDOT-1",
+        "START_DATE": 1777636800000,
+        "END_DATE": 1777651200000,
+        "CD_ROAD_NAMES": "I-40 / I-75",
+        "CD_DIRECTION": "Eastbound",
+        "EVENT_TYPE": "Roadway Closure",
+        "EVENT_SUBTYPE": "Construction",
+        "DESCRIPTION": "I-40/I-75 lane closure in Knox County",
+        "HAS_CLOSURE": 1,
+        "MIDPOINT_LATITUDE_DD": 35.90,
+        "MIDPOINT_LONGITUDE_DD": -84.16,
+        "COUNTY_NAME": "Knox"
+      }
+    },
+    {
+      "attributes": {
+        "ID": "TDOT-2",
+        "START_DATE": 1777636800000,
+        "END_DATE": 1777651200000,
+        "CD_ROAD_NAMES": "SR-1",
+        "CD_DIRECTION": "Eastbound",
+        "EVENT_TYPE": "Roadway Closure",
+        "EVENT_SUBTYPE": "Construction",
+        "DESCRIPTION": "not a T1 route",
+        "HAS_CLOSURE": 1,
+        "MIDPOINT_LATITUDE_DD": 35.90,
+        "MIDPOINT_LONGITUDE_DD": -84.16,
+        "COUNTY_NAME": "Knox"
+      }
+    },
+    {
+      "attributes": {
+        "ID": "TDOT-3",
+        "START_DATE": 1777636800000,
+        "END_DATE": 1777651200000,
+        "CD_ROAD_NAMES": "I-75",
+        "CD_DIRECTION": "Southbound",
+        "EVENT_TYPE": "Roadway Closure",
+        "EVENT_SUBTYPE": "Construction",
+        "DESCRIPTION": "near Chattanooga",
+        "HAS_CLOSURE": 1,
+        "MIDPOINT_LATITUDE_DD": 35.05,
+        "MIDPOINT_LONGITUDE_DD": -85.20,
+        "COUNTY_NAME": "Hamilton"
+      }
+    }
+  ]
+}"#;
+
+        let rows =
+            parse_tdot_smartway_events(json, "T1X-I40-I75", 35.90, -84.16, 35.0).expect("parse");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].site_id, "T1X-I40-I75");
+        assert_eq!(rows[0].source_event_id, "TDOT-1");
+        assert_eq!(rows[0].observation_year, 2026);
+        assert_eq!(rows[0].duration_hours, Some(4.0));
+        assert_eq!(rows[0].event_type, "work_zone");
+        assert!(rows[0].full_closure);
     }
 
     #[test]

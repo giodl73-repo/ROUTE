@@ -15,7 +15,7 @@ SPF risk: HIGH = 1 path only; MED = 2 paths; LOW = 3+ paths (distributed)
 | 1 | I-80 × I-90 | Indiana/Ohio (shared 158 mi) | **CRITICAL** | Flat | Yes | No — they ARE the same road; at the split they diverge safely |
 | 2 | I-35 × I-80 | Des Moines IA | **RECHECK** | Flat | Medium | Re-evaluate — prior Omaha/I-680 description was a location error |
 | 3 | I-35 × I-40 | Oklahoma City | **HIGH** | Flat | Limited | Yes — OKC inner loop inadequate for T1 load |
-| 4 | I-40 × I-75 | Chattanooga TN | **HIGH** | Mountains | No | Yes — terrain limits alternate paths severely |
+| 4 | I-40 × I-75 | Knoxville TN | **HIGH** | Mountains | No | Yes — terrain limits alternate paths severely |
 | 5 | I-10 × I-35 | San Antonio TX | **HIGH** | Flat | Limited | Yes — single spaghetti interchange, no 50-mile zone |
 | 6 | I-75 × I-80 | Toledo OH | **HIGH** | Flat | Limited | Yes — I-475 bypass exists but at capacity |
 | 7 | I-90 × I-95 | Boston MA | **HIGH** | Urban | Dense | Yes — Central Artery is single path, world's most expensive fix |
@@ -32,7 +32,7 @@ SPF risk: HIGH = 1 path only; MED = 2 paths; LOW = 3+ paths (distributed)
 
 ### TIER A — Build now (SPF HIGH, high volume)
 1. I-35 × I-80 (Des Moines) — recheck required; prior Omaha/I-680 rationale was a location error
-2. I-40 × I-75 (Chattanooga) — terrain-constrained, no alternate
+2. I-40 × I-75 (Knoxville) — terrain-constrained, no alternate
 3. I-10 × I-35 (San Antonio) — busiest SPF node by freight volume
 4. I-90 × I-95 (Boston) — highest population exposure
 5. I-10 × I-95 (Jacksonville) — Southeast gateway SPF
@@ -84,7 +84,7 @@ and 80% of freight flow is maintained via the northern and southern connectors.
 
 **Data correction (2026-05-09)**: earlier drafts incorrectly located the I-35 × I-80 T1/T1 junction at Omaha and cited I-680 as the relevant bypass. `route sim bind` confirmed that Omaha-area I-80/I-680/I-29 edges are present, but no I-35 edges exist near Omaha. The active T1/T1 fixture is now `des-moines-interchange`; the k-class and diamond design for this site require manual revalidation before publication use.
 
-### What a 50-mile diamond looks like: I-40 × I-75 at Chattanooga
+### What a 50-mile diamond looks like: I-40 × I-75 at Knoxville
 
 This is the hard case — the Appalachian Mountains constrain alternate paths.
 
@@ -98,11 +98,11 @@ This is the hard case — the Appalachian Mountains constrain alternate paths.
   I-75 (south)
 ```
 
-**Northern connector**: I-24 already provides a connection ~30 miles NW (Nashville approach)
-**Southern connector**: GA-2/US-411 provides a limited alternate but not interstate-grade
-**What's needed**: upgrade GA-2 corridor to limited-access standard as a T1 resilience bypass
-- Creates a 2nd interstate-grade connection between I-75 and I-40 at ~30 miles south
-- Specifically valuable for Knoxville-Atlanta freight, which currently has NO alternate
+**Northern connector**: I-640 provides the existing Knoxville bypass but still rejoins the same metro corridor
+**Southern/western connector**: I-140/Pellissippi Parkway and regional arterials provide partial relief, not a full T1-grade freight bypass
+**What's needed**: validate a West Knoxville diamond concept using I-640, I-140, and truck-capable regional connectors before proposing any new build
+- Creates a second or third operational transfer path between I-75 and I-40 without forcing all flow through the same West Knoxville merge
+- Specifically valuable for I-75 to I-40 freight when the West Knoxville concurrency or split is constrained
 
 ## The Diamond Metric
 

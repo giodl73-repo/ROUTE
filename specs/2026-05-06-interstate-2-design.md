@@ -187,7 +187,7 @@ The diamond connector roads still provide value — they handle general traffic 
 | # | Intersection | Node | SPF risk | Diamond needed |
 |---|---|---|---|---|
 | 1 | I-35 × I-80 | Des Moines IA | **RECHECK** | Prior Omaha/I-680 rationale was a location error; revalidate k-class |
-| 2 | I-40 × I-75 | Chattanooga TN | **HIGH** | Yes — mountains constrain alternates |
+| 2 | I-40 × I-75 | Knoxville TN | **HIGH** | Yes — mountains constrain alternates |
 | 3 | I-10 × I-35 | San Antonio TX | **HIGH** | Yes — single spaghetti interchange |
 | 4 | I-90 × I-95 | Boston MA | **HIGH** | Yes — Central Artery is single path |
 | 5 | I-10 × I-95 | Jacksonville FL | **HIGH** | Yes — I-295 is only ring |
