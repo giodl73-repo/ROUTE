@@ -5,6 +5,9 @@ use std::path::PathBuf;
 const T1_THRESHOLD: f64 = 70.0;
 const T2_THRESHOLD: f64 = 50.0;
 const T3_THRESHOLD: f64 = 30.0;
+const DIMENSION_CODES: [&str; 16] = [
+    "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1", "D2", "D3",
+];
 
 #[derive(Parser)]
 #[command(
@@ -624,7 +627,8 @@ fn main() -> Result<()> {
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
-            let mut score_rows: Vec<(String, f64, &'static str, String, bool)> = Vec::new();
+            let mut score_rows: Vec<(String, f64, &'static str, String, bool, [f64; 16])> =
+                Vec::new();
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Apply all data joins (same as calibrate)
@@ -704,6 +708,7 @@ fn main() -> Result<()> {
                         tier,
                         scores.rubric_version.clone(),
                         scores.any_estimated(),
+                        dimension_score_values(&scores),
                     ));
                     all_scores.push(scores);
                 }
@@ -712,15 +717,19 @@ fn main() -> Result<()> {
             std::fs::create_dir_all("data")?;
             let out = PathBuf::from("data/scores-all.csv");
             let mut wtr = csv::Writer::from_path(&out)?;
-            wtr.write_record(["route", "score", "tier", "rubric_version", "estimated"])?;
-            for (route, score, tier, rubric_version, estimated) in &score_rows {
-                wtr.write_record([
-                    route.as_str(),
-                    &format!("{score:.1}"),
-                    tier,
-                    rubric_version.as_str(),
-                    if *estimated { "true" } else { "false" },
-                ])?;
+            let mut header = vec!["route", "score", "tier", "rubric_version", "estimated"];
+            header.extend(DIMENSION_CODES);
+            wtr.write_record(header)?;
+            for (route, score, tier, rubric_version, estimated, dims) in &score_rows {
+                let mut row = vec![
+                    route.clone(),
+                    format!("{score:.1}"),
+                    tier.to_string(),
+                    rubric_version.clone(),
+                    estimated.to_string(),
+                ];
+                row.extend(dims.iter().map(|value| format!("{value:.1}")));
+                wtr.write_record(row)?;
             }
             wtr.flush()?;
             println!(
@@ -3199,6 +3208,27 @@ fn rounded_score(score: f64) -> f64 {
     (score * 10.0).round() / 10.0
 }
 
+fn dimension_score_values(scores: &route_score::DimensionScores) -> [f64; 16] {
+    [
+        scores.a1.score,
+        scores.a2.score,
+        scores.a3.score,
+        scores.a4.score,
+        scores.a5.score,
+        scores.b1.score,
+        scores.b2.score,
+        scores.b3.score,
+        scores.b4.score,
+        scores.c1.score,
+        scores.c2.score,
+        scores.c3.score,
+        scores.c4.score,
+        scores.d1.score,
+        scores.d2.score,
+        scores.d3.score,
+    ]
+}
+
 fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     let mut ids = graph.interstate_ids();
     ids.extend(graph.us_highway_ids());
@@ -3209,9 +3239,10 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{atlas_candidate_ids, rounded_score, tier_for_score};
+    use super::{atlas_candidate_ids, dimension_score_values, rounded_score, tier_for_score};
     use geo_types::{coord, LineString};
-    use route_network::{HighwayEdge, HighwayGraph, HighwayNode};
+    use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
+    use route_score::{score_corridor, ScoringConfig};
     use std::collections::HashMap;
 
     #[test]
@@ -3228,6 +3259,16 @@ mod tests {
     fn rounded_score_matches_score_all_csv_precision() {
         assert_eq!(rounded_score(59.95), 60.0);
         assert_eq!(rounded_score(59.94), 59.9);
+    }
+
+    #[test]
+    fn score_all_csv_dimension_values_cover_full_rubric() {
+        let scores = score_corridor(
+            &CorridorAttributes::default(),
+            &ScoringConfig::default_config(),
+        );
+
+        assert_eq!(dimension_score_values(&scores).len(), 16);
     }
 
     #[test]
@@ -3987,9 +4028,9 @@ fn print_score_table(
     println!("├──────┼──────────────────────────────┼───────┼─────┤");
 
     let all = [
-        &scores.a1, &scores.a2, &scores.a3, &scores.a4, &scores.b1, &scores.b2, &scores.b3,
-        &scores.b4, &scores.c1, &scores.c2, &scores.c3, &scores.c4, &scores.d1, &scores.d2,
-        &scores.d3,
+        &scores.a1, &scores.a2, &scores.a3, &scores.a4, &scores.a5, &scores.b1, &scores.b2,
+        &scores.b3, &scores.b4, &scores.c1, &scores.c2, &scores.c3, &scores.c4, &scores.d1,
+        &scores.d2, &scores.d3,
     ];
 
     for sd in all {
