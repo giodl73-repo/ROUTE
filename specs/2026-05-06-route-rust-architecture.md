@@ -358,11 +358,11 @@ route calibrate
 |---|---|
 | `route` | Normalized route id, e.g. `I80` |
 | `score` | Total score on the current 160-point rubric |
-| `tier` | T1/T2/T3/T4 threshold label used by maps |
+| `tier` | T1/T2/T3/T4 label from v1.4 corpus thresholds: T1 >= 70.0, T2 >= 48.0, T3 >= 27.5 |
 | `rubric_version` | Rubric version from `config/scoring.toml` |
 | `estimated` | `true` when any dimension score is estimated/proxy |
 
-The map renderer reads the first two columns for tier coloring. Calibration ledgers are a separate planned output.
+The map renderer reads route scores and applies the same v1.4 thresholds for tier coloring. Calibration ledgers are a separate planned output.
 
 ### Map output (PNG)
 

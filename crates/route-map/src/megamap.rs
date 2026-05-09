@@ -7,9 +7,9 @@ use std::collections::HashMap;
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
-const T1_THRESHOLD: f64 = 29.0;
-const T2_THRESHOLD: f64 = 21.0;
-const T3_THRESHOLD: f64 = 12.0;
+const T1_THRESHOLD: f64 = 70.0;
+const T2_THRESHOLD: f64 = 48.0;
+const T3_THRESHOLD: f64 = 27.5;
 
 // ── Tier stroke weights (Beck hierarchy) ──────────────────────────────────────
 const STROKE_T1: f64 = 6.0;
@@ -1022,7 +1022,7 @@ pub fn build_t1_corridor_svg(
          <text x=\"36\" y=\"54\" font-family=\"Arial,sans-serif\" font-size=\"26\" \
          font-weight=\"bold\" fill=\"{t1_color_str}\">{t1_label} Regional Map</text>\n\
          <text x=\"36\" y=\"74\" font-family=\"Arial,sans-serif\" font-size=\"12\" \
-         fill=\"#8b949e\">T1 bold · T2/other T1 medium · T3/T4 gray  ROUTE v1.1</text>\n\
+         fill=\"#8b949e\">T1 bold · T2/other T1 medium · T3/T4 gray  ROUTE v1.4</text>\n\
          <text x=\"36\" y=\"90\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
          fill=\"#6e7681\">TIGER 2023  ·  Albers Equal-Area Conic</text>\n"
     );

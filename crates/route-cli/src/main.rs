@@ -2,6 +2,10 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+const T1_THRESHOLD: f64 = 70.0;
+const T2_THRESHOLD: f64 = 48.0;
+const T3_THRESHOLD: f64 = 27.5;
+
 #[derive(Parser)]
 #[command(
     name = "route",
@@ -2068,17 +2072,19 @@ fn main() -> Result<()> {
             }
 
             // Tier distribution
-            let t1 = total_scores.iter().filter(|&&s| s >= 29.0).count();
+            let t1 = total_scores.iter().filter(|&&s| s >= T1_THRESHOLD).count();
             let t2 = total_scores
                 .iter()
-                .filter(|&&s| s >= 21.0 && s < 29.0)
+                .filter(|&&s| s >= T2_THRESHOLD && s < T1_THRESHOLD)
                 .count();
             let t3 = total_scores
                 .iter()
-                .filter(|&&s| s >= 12.0 && s < 21.0)
+                .filter(|&&s| s >= T3_THRESHOLD && s < T2_THRESHOLD)
                 .count();
-            let t4 = total_scores.iter().filter(|&&s| s < 12.0).count();
-            println!("\n  Tier distribution (v1.4 thresholds: T1≥29, T2≥21, T3≥12):");
+            let t4 = total_scores.iter().filter(|&&s| s < T3_THRESHOLD).count();
+            println!(
+                "\n  Tier distribution (v1.4 thresholds: T1≥{T1_THRESHOLD:.1}, T2≥{T2_THRESHOLD:.1}, T3≥{T3_THRESHOLD:.1}):"
+            );
             println!(
                 "    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
                 t1, t2, t3, t4
@@ -3164,11 +3170,11 @@ fn num_cpus() -> usize {
 }
 
 fn tier_for_score(score: f64) -> &'static str {
-    if score >= 29.0 {
+    if score >= T1_THRESHOLD {
         "T1"
-    } else if score >= 21.0 {
+    } else if score >= T2_THRESHOLD {
         "T2"
-    } else if score >= 12.0 {
+    } else if score >= T3_THRESHOLD {
         "T3"
     } else {
         "T4"
@@ -3181,12 +3187,12 @@ mod tests {
 
     #[test]
     fn tier_for_score_matches_megamap_thresholds() {
-        assert_eq!(tier_for_score(29.0), "T1");
-        assert_eq!(tier_for_score(28.9), "T2");
-        assert_eq!(tier_for_score(21.0), "T2");
-        assert_eq!(tier_for_score(20.9), "T3");
-        assert_eq!(tier_for_score(12.0), "T3");
-        assert_eq!(tier_for_score(11.9), "T4");
+        assert_eq!(tier_for_score(70.0), "T1");
+        assert_eq!(tier_for_score(69.9), "T2");
+        assert_eq!(tier_for_score(48.0), "T2");
+        assert_eq!(tier_for_score(47.9), "T3");
+        assert_eq!(tier_for_score(27.5), "T3");
+        assert_eq!(tier_for_score(27.4), "T4");
     }
 }
 

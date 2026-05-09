@@ -153,7 +153,7 @@ pub fn build_svg(
         "<rect x=\"0\" y=\"{bot}\" width=\"{W}\" height=\"32\" fill=\"#0d1117\" fill-opacity=\"0.85\"/>\n\
          <rect x=\"16\" y=\"{sy}\" width=\"28\" height=\"7\" rx=\"2\" fill=\"{hc}\"/>\n\
          <text x=\"50\" y=\"{lty}\" font-family=\"Arial,sans-serif\" font-size=\"11\" fill=\"#94a3b8\">{desig} (highlighted)</text>\n\
-         <text x=\"{right}\" y=\"{lty}\" font-family=\"Arial,sans-serif\" font-size=\"10\" fill=\"#475569\" text-anchor=\"end\">ROUTE v1.1 · TIGER 2023 · HPMS 2018</text>\n",
+         <text x=\"{right}\" y=\"{lty}\" font-family=\"Arial,sans-serif\" font-size=\"10\" fill=\"#475569\" text-anchor=\"end\">ROUTE v1.4 · TIGER 2023 · HPMS 2018</text>\n",
         W=VIEWBOX_W, sy=lcy-6.0, desig=corridor.designation,
     );
 
