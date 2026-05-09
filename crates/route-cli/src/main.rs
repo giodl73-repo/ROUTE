@@ -1903,6 +1903,7 @@ fn main() -> Result<()> {
             ];
 
             let mut matrix: Vec<[f64; N_DIMS]> = Vec::new();
+            let mut estimated_matrix: Vec<[bool; N_DIMS]> = Vec::new();
             let mut route_ids_used: Vec<String> = Vec::new();
             let mut total_scores: Vec<f64> = Vec::new();
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
@@ -1980,17 +1981,15 @@ fn main() -> Result<()> {
                         }
                     }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
-                    let row = [
-                        s.a1.score, s.a2.score, s.a3.score, s.a4.score, s.a5.score, s.b1.score,
-                        s.b2.score, s.b3.score, s.b4.score, s.c1.score, s.c2.score, s.c3.score,
-                        s.c4.score, s.d1.score, s.d2.score, s.d3.score,
-                    ];
+                    let row = dimension_score_values(&s);
+                    let estimated_row = dimension_estimated_values(&s);
                     let total = rounded_score(s.total());
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
                         flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
                     }
                     matrix.push(row);
+                    estimated_matrix.push(estimated_row);
                     route_ids_used.push(id.clone());
                     total_scores.push(total);
                 }
@@ -2000,16 +1999,18 @@ fn main() -> Result<()> {
             println!("  {} corridors scored\n", matrix.len());
 
             // Per-dimension statistics
-            println!("┌────────────────────────────────────────────────────────────────────────────────────┐");
-            println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                     │", matrix.len());
-            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────────  ┤");
-            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │  Status    │");
-            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────────  ┤");
+            println!("┌────────────────────────────────────────────────────────────────────────────────────────────┐");
+            println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                             │", matrix.len());
+            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────┬────────────  ┤");
+            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │ Est% │  Status      │");
+            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────┼────────────  ┤");
 
-            let mut dim_stats: Vec<(f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90
+            let mut dim_stats: Vec<(f64, f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90,est_rate
 
             for d in 0..N_DIMS {
                 let vals: Vec<f64> = matrix.iter().map(|r| r[d]).collect();
+                let estimated_count = estimated_matrix.iter().filter(|r| r[d]).count();
+                let est_rate = estimated_count as f64 / n;
                 let min = vals.iter().cloned().fold(f64::MAX, f64::min);
                 let max = vals.iter().cloned().fold(f64::MIN, f64::max);
                 let mean = vals.iter().sum::<f64>() / n;
@@ -2020,7 +2021,9 @@ fn main() -> Result<()> {
                 let p90 = sorted[((n * 0.90) as usize).min(sorted.len() - 1)];
 
                 // Status flags
-                let status = if std < 1.5 {
+                let status = if est_rate >= 0.80 {
+                    "PROXY GAP ⚠"
+                } else if std < 1.5 {
                     "LOW VAR ⚠"
                 } else if max - min < 3.0 {
                     "NARROW  ⚠"
@@ -2028,11 +2031,11 @@ fn main() -> Result<()> {
                     "OK      ✓"
                 };
 
-                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │  {}  │",
-                    dim_names[d], dim_labels[d], min, max, mean, std, p90, status);
-                dim_stats.push((min, max, mean, std, p90));
+                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.0} │  {:<10}  │",
+                    dim_names[d], dim_labels[d], min, max, mean, std, p90, est_rate * 100.0, status);
+                dim_stats.push((min, max, mean, std, p90, est_rate));
             }
-            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────────  ┘");
+            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────┴────────────  ┘");
 
             // Pairwise correlation (Pearson) — flag pairs > 0.60
             println!("\n  Computing pairwise Pearson correlations…");
@@ -2123,11 +2126,11 @@ fn main() -> Result<()> {
             }
 
             // Retirement candidates
-            println!("\n  Retirement candidates (std < 1.5 — low discriminating power):");
+            println!("\n  Retirement candidates (std < 1.5, estimated < 80%):");
             let mut any_retire = false;
             for d in 0..N_DIMS {
-                let (_, _, _, std, _) = dim_stats[d];
-                if std < 1.5 {
+                let (_, _, _, std, _, est_rate) = dim_stats[d];
+                if std < 1.5 && est_rate < 0.80 {
                     println!(
                         "    {} ({}) — std={:.2} — consider retiring or merging",
                         dim_names[d], dim_labels[d], std
@@ -2137,6 +2140,25 @@ fn main() -> Result<()> {
             }
             if !any_retire {
                 println!("    None — all dimensions show adequate variance ✓");
+            }
+
+            println!("\n  Data/proxy gaps (estimated ≥ 80%):");
+            let mut any_proxy_gap = false;
+            for d in 0..N_DIMS {
+                let (_, _, _, std, _, est_rate) = dim_stats[d];
+                if est_rate >= 0.80 {
+                    println!(
+                        "    {} ({}) — estimated={:.0}% std={:.2} — improve source coverage before retirement decisions",
+                        dim_names[d],
+                        dim_labels[d],
+                        est_rate * 100.0,
+                        std
+                    );
+                    any_proxy_gap = true;
+                }
+            }
+            if !any_proxy_gap {
+                println!("    None — all dimensions have adequate source coverage ✓");
             }
 
             println!("\ncalibrate complete. Review output above before bumping rubric version.");
@@ -3229,6 +3251,27 @@ fn dimension_score_values(scores: &route_score::DimensionScores) -> [f64; 16] {
     ]
 }
 
+fn dimension_estimated_values(scores: &route_score::DimensionScores) -> [bool; 16] {
+    [
+        scores.a1.estimated,
+        scores.a2.estimated,
+        scores.a3.estimated,
+        scores.a4.estimated,
+        scores.a5.estimated,
+        scores.b1.estimated,
+        scores.b2.estimated,
+        scores.b3.estimated,
+        scores.b4.estimated,
+        scores.c1.estimated,
+        scores.c2.estimated,
+        scores.c3.estimated,
+        scores.c4.estimated,
+        scores.d1.estimated,
+        scores.d2.estimated,
+        scores.d3.estimated,
+    ]
+}
+
 fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     let mut ids = graph.interstate_ids();
     ids.extend(graph.us_highway_ids());
@@ -3239,7 +3282,10 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{atlas_candidate_ids, dimension_score_values, rounded_score, tier_for_score};
+    use super::{
+        atlas_candidate_ids, dimension_estimated_values, dimension_score_values, rounded_score,
+        tier_for_score,
+    };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
     use route_score::{score_corridor, ScoringConfig};
@@ -3269,6 +3315,7 @@ mod tests {
         );
 
         assert_eq!(dimension_score_values(&scores).len(), 16);
+        assert_eq!(dimension_estimated_values(&scores).len(), 16);
     }
 
     #[test]
