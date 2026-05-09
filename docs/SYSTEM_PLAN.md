@@ -31,7 +31,7 @@ ROUTE is not an engineering drawing set, a construction promise, or a pure advoc
 | 1 | Instrument | Can the scoring system measure consistently? | 16-dimension rubric tested, documented, and reproducible |
 | 2 | Atlas | What does the national network look like under the instrument? | Existing corridors scored; tier map and calibration ledger generated |
 | 3 | Fault Lines | Where does the system fail? | Missing-link, bottleneck, resilience, port, and coverage gaps identified |
-| 4 | Pressure Test | What do failures cost under realistic movement? | Flow, incident, SLA, relay, and investment simulations produce bounded outputs |
+| 4 | Pressure Test | Which standards still deliver under adversity? | Standards proof ledger, T1/T1 diamond stress tests, SLA/throughput scenarios, and bounded simulation outputs exist |
 | 5 | The Forum | Which claims survive adversarial review? | Parliament, stakeholder, editorial, and panel-review records attached |
 | 6 | Blueprint | What should Interstate 2.0 build first? | Feature packages, cost ranges, NPV cases, and phase sequencing written |
 | 7 | Program | How does this become a repeatable public artifact? | Reproducible builds, CI, release docs, maps, papers, and public corpus |
@@ -195,16 +195,26 @@ Primary risks:
 
 ### Milepost 4 — Pressure Test
 
-Goal: stress the network under movement, incidents, and investment.
+Goal: stress the network under movement, incidents, investment, and service obligations.
+
+This milepost converts tier standards from design intent into proof obligations. Every standard must name the outcome it protects, the mechanism by which it protects it, the adverse condition it is tested against, and the evidence level that currently supports it. Standards that cannot pass this pressure test remain useful design ideas, but they cannot be treated as proven Blueprint claims.
+
+The first binding issue is T1/T1 interchange resilience. T1 corridors carry the national freight backbone; T1/T1 nodes are where two backbone corridors share the same physical failure point. A diamond zone or express freight flyover standard earns its place only if it demonstrates that a single interchange or connector failure does not collapse T1/T1 transfer capacity and that the T1 recovery target remains plausible.
 
 Deliverables:
+- A standards proof ledger that maps each standard to outcome, mechanism, stressor, acceptance gate, artifact, evidence level, and owner.
+- T1/T1 diamond scenario outputs for the 50-mile zone: baseline k-connectivity, post-intervention k-connectivity, single-failure transfer retention, and 4-hour recovery throughput.
 - Tests for max-flow, incident, relay, and SLA simulation primitives.
 - Scenario outputs for NY-LA, Houston-Chicago, and at least one port corridor.
 - Sensitivity tables for PTI, closure duration, relay hub spacing, and managed-lane assumptions.
+- A shared SLA proof table that separates freight-lane PTI, GP PTI, relay buffer, incident buffer, throughput restoration, and confidence label.
+- L0/L1/L2 coverage: primitive invariants, reproducible generated artifacts, and bounded representative scenarios.
 
 Primary risks:
 - Simulation assumptions become headline claims without uncertainty bounds.
 - Relay marketplace claims outrun regulatory and operational evidence.
+- T1/T1 diamond claims prove graph connectivity but not usable freight throughput.
+- Standards accumulate because they sound desirable rather than because they improve a tested SLA, throughput, resilience, safety, access, or equity outcome.
 
 ### Milepost 5 — The Forum
 

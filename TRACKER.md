@@ -14,7 +14,7 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 | 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | ✅ complete |
 | 2 — Atlas | Reproducible existing-corridor corpus and tier map | ✅ complete |
 | 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | ✅ complete |
-| 4 — Pressure Test | Flow, incident, relay, SLA, and investment simulations | 🔄 partial; test coverage needed |
+| 4 — Pressure Test | Standards proof under flow, incident, relay, SLA, and investment simulations | 🔄 partial; proof ledger and scenario gates needed |
 | 5 — The Forum | Parliament, stakeholder, editorial, and panel review records | 🔄 partial; formal gates needed |
 | 6 — Blueprint | Interstate 2.0 feature packages and investment sequence | 🔄 partial; claims need evidence labels |
 | 7 — Program | CI, release process, public corpus, maps, and papers | ⏳ not started |
@@ -71,6 +71,28 @@ Goal: separate true network gaps from source and geometry artifacts.
 | Resilience and port-connector gap claims have source/confidence labels | ✅ done | `gaps/resilience.md` and `gaps/intermodal.md` include confidence labels |
 
 Milestone 3 is done when each gap artifact names whether it is a true system gap, a data gap, or a geometry/source artifact, and `cargo test --workspace` passes.
+
+---
+
+## Current Sprint — Milepost 4 Pressure Test
+
+Goal: make every Interstate 2.0 standard earn its place by proving which SLA, throughput, resilience, or access outcome it protects under adversity.
+
+The central blocker is T1/T1 interchange resilience. The current system concentrates two national primary arteries into a single interchange node; Interstate 2.0 must prove that diamond zones, express freight flyovers, and alternate routing keep T1 freight moving when that node is stressed or partially closed.
+
+| Task | Status | Evidence / Next Step |
+|---|---|---|
+| Standards proof ledger maps every T1/T2/T3/T4 standard to outcome, mechanism, stressor, acceptance gate, evidence source, and confidence level | ⏳ not started | Add machine-readable ledger and doc crosswalk before promoting standards claims |
+| T1/T1 diamond proof has explicit acceptance gates | ⏳ not started | Gate: k >= 3 in the 50-mile zone, single connector/interchange failure does not collapse transfers, and 80% T1 throughput restoration within 4 hours is demonstrated or labeled unproven |
+| T1 SLA model distinguishes freight-lane PTI, GP PTI, relay buffers, incident buffers, and shipper planning windows | 🔄 partial | Existing SLA/relay code and C-track papers need one shared proof table |
+| Throughput proof separates congestion-binding bottlenecks from resilience-binding chokepoints | 🔄 partial | Tie `route flow`, bottleneck gaps, and T1/T1 diamond analysis into one scenario matrix |
+| Adversity scenario library covers T1/T1 closure, corridor segment closure, port surge, weather/flood disruption, relay hub outage, EV/rest-area outage, and managed-lane sensitivity | ⏳ not started | Define L2 scenarios and expected artifact names |
+| L0 tests cover primitive invariants for max-flow, incident degradation, SLA arithmetic, relay timing, and k-connectivity | 🔄 partial | Audit `route-network` and `route-sim` coverage; add missing unit tests |
+| L1 tests verify generated pressure-test artifacts are reproducible from stable fixtures | ⏳ not started | Add fixture-driven CSV/Markdown snapshot checks |
+| L2 tests run representative scenarios and assert bounded outputs rather than headline-only claims | ⏳ not started | Start with NY-LA, Houston-Chicago, and one port corridor |
+| Unproven standards are labeled before Blueprint work consumes them | ⏳ not started | Standards should enter Milepost 6 only as Implemented, Heuristic, Stub, Planned, or Deprecated |
+
+Milestone 4 is done when every active standard has a proof record, T1/T1 interchange resilience has passed or been explicitly downgraded, and `cargo test --workspace` protects the L0/L1/L2 pressure-test path.
 
 ---
 
