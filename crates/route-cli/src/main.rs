@@ -323,6 +323,9 @@ enum Commands {
             value_name = "FILE"
         )]
         output: PathBuf,
+        /// Maximum seconds to wait for the TDOT ArcGIS query
+        #[arg(long, default_value_t = 15)]
+        timeout_seconds: u64,
     },
 
     /// Normalize TDOT SmartWay line-event JSON into T1/T1 failure event rows
@@ -2016,8 +2019,11 @@ fn run_cli() -> Result<()> {
             println!("  wrote {}", output.display());
         }
 
-        Commands::T1FetchTdotSmartway { output } => {
-            fetch_tdot_smartway_events(&output).with_context(|| {
+        Commands::T1FetchTdotSmartway {
+            output,
+            timeout_seconds,
+        } => {
+            fetch_tdot_smartway_events(&output, timeout_seconds).with_context(|| {
                 format!("fetching TDOT SmartWay events to {}", output.display())
             })?;
             println!("route t1-fetch-tdot-smartway");
@@ -4928,12 +4934,15 @@ fn fetch_iowa511_events(output: &Path) -> Result<()> {
     Ok(())
 }
 
-fn fetch_tdot_smartway_events(output: &Path) -> Result<()> {
+fn fetch_tdot_smartway_events(output: &Path, timeout_seconds: u64) -> Result<()> {
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let url = "https://spatial.tdot.tn.gov/arcgis/rest/services/Smartway/Smartway_Events/FeatureServer/1/query?f=json&where=1%3D1&outFields=ID,START_DATE,END_DATE,CD_ROAD_NAMES,CD_DIRECTION,EVENT_TYPE,EVENT_SUBTYPE,DESCRIPTION,HAS_CLOSURE,MIDPOINT_LATITUDE_DD,MIDPOINT_LONGITUDE_DD,COUNTY_NAME&returnGeometry=false&resultRecordCount=200";
-    let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_seconds.max(1)))
+        .build()?;
+    let body = client.get(url).send()?.error_for_status()?.text()?;
     ensure_no_arcgis_error(&body)?;
     std::fs::write(output, body)?;
     Ok(())
