@@ -31,7 +31,7 @@ pub fn compute_edge_betweenness(g: &HighwayGraph) -> HashMap<EdgeIndex, f64> {
 
         // Process nodes in reverse order of distance
         let mut ordered: Vec<_> = dist.iter().collect();
-        ordered.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap()); // reverse distance order
+        ordered.sort_by(|a, b| b.1.total_cmp(a.1)); // reverse distance order
 
         for (&w, _) in &ordered {
             if let Some(predecessors) = pred.get(&w) {
@@ -64,12 +64,14 @@ fn dijkstra_with_pred(
     HashMap<petgraph::graph::NodeIndex, f64>,
     HashMap<petgraph::graph::NodeIndex, Vec<(petgraph::graph::NodeIndex, EdgeIndex)>>,
 ) {
-    use std::collections::BinaryHeap;
     use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
 
     let mut dist: HashMap<petgraph::graph::NodeIndex, f64> = HashMap::new();
-    let mut pred: HashMap<petgraph::graph::NodeIndex, Vec<(petgraph::graph::NodeIndex, EdgeIndex)>> =
-        HashMap::new();
+    let mut pred: HashMap<
+        petgraph::graph::NodeIndex,
+        Vec<(petgraph::graph::NodeIndex, EdgeIndex)>,
+    > = HashMap::new();
     let mut heap: BinaryHeap<Reverse<(ordered_float::NotNan<f64>, petgraph::graph::NodeIndex)>> =
         BinaryHeap::new();
 
@@ -83,12 +85,18 @@ fn dijkstra_with_pred(
         }
         for er in g.graph.edges(u) {
             let v = er.target();
-            let new_cost = cost + er.weight().length_miles;
+            let edge_miles = er.weight().length_miles;
+            if !edge_miles.is_finite() || edge_miles < 0.0 {
+                continue;
+            }
+            let new_cost = cost + edge_miles;
             let prev = dist.get(&v).cloned().unwrap_or(f64::MAX);
             if new_cost < prev - 1e-9 {
                 dist.insert(v, new_cost);
                 pred.insert(v, vec![(u, er.id())]);
-                heap.push(Reverse((ordered_float::NotNan::new(new_cost).unwrap(), v)));
+                if let Ok(cost) = ordered_float::NotNan::new(new_cost) {
+                    heap.push(Reverse((cost, v)));
+                }
             } else if (new_cost - prev).abs() < 1e-9 {
                 pred.entry(v).or_default().push((u, er.id()));
             }

@@ -10,14 +10,14 @@
 ///   - The measurement: what metrics to report
 ///
 /// The output is a ScenarioResult: baseline vs. incident vs. intervention comparison.
-use crate::assignment::{wardrop_equilibrium, edge_capacity_vph, BprParams};
+use crate::assignment::{edge_capacity_vph, wardrop_equilibrium, BprParams};
 use crate::demand::DemandMatrix;
-use crate::incident::{IncidentSpec, apply_incident};
+use crate::incident::{apply_incident, IncidentSpec};
 use crate::metrics::{compute_metrics, corridor_pti, freight_cost_delta, SimMetrics};
-use route_network::HighwayGraph;
 use petgraph::graph::EdgeIndex;
+use route_network::HighwayGraph;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 /// A named simulation scenario.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,29 +83,52 @@ pub fn run_scenario(
     scenario: &Scenario,
 ) -> ScenarioResult {
     let bpr = BprParams::default();
-    let base_capacities: HashMap<EdgeIndex, f64> = g.graph.edge_indices()
+    let base_capacities: HashMap<EdgeIndex, f64> = g
+        .graph
+        .edge_indices()
         .map(|ei| (ei, edge_capacity_vph(g, ei)))
         .collect();
 
-    let edge_id_map: HashMap<u64, EdgeIndex> = g.graph.edge_indices()
+    let edge_id_map: HashMap<u64, EdgeIndex> = g
+        .graph
+        .edge_indices()
         .map(|ei| (g.graph[ei].id, ei))
         .collect();
 
     // --- Baseline ---
     let baseline_flow = wardrop_equilibrium(
-        g, demand, &base_capacities, &bpr, scenario.fw_max_iter, scenario.fw_tolerance
+        g,
+        demand,
+        &base_capacities,
+        &bpr,
+        scenario.fw_max_iter,
+        scenario.fw_tolerance,
     );
     let baseline_result = build_run_result(
-        "baseline", g, &baseline_flow, &base_capacities, &scenario.report_corridors,
+        "baseline",
+        g,
+        &baseline_flow,
+        &base_capacities,
+        &scenario.report_corridors,
     );
 
     // --- Incident ---
-    let (incident_caps, _snapshot) = apply_incident(&base_capacities, &scenario.incident, &edge_id_map);
+    let (incident_caps, _snapshot) =
+        apply_incident(&base_capacities, &scenario.incident, &edge_id_map);
     let incident_flow = wardrop_equilibrium(
-        g, demand, &incident_caps, &bpr, scenario.fw_max_iter, scenario.fw_tolerance
+        g,
+        demand,
+        &incident_caps,
+        &bpr,
+        scenario.fw_max_iter,
+        scenario.fw_tolerance,
     );
     let mut incident_result = build_run_result(
-        "incident", g, &incident_flow, &incident_caps, &scenario.report_corridors,
+        "incident",
+        g,
+        &incident_flow,
+        &incident_caps,
+        &scenario.report_corridors,
     );
 
     // Estimate T90: simple heuristic based on throughput drop
@@ -113,25 +136,32 @@ pub fn run_scenario(
     let incident_throughput = incident_result.metrics.total_throughput_vph;
     let throughput_fraction = if baseline_throughput > 0.0 {
         incident_throughput / baseline_throughput
-    } else { 1.0 };
+    } else {
+        1.0
+    };
     // T90 = incident duration × (1 - throughput_fraction) × recovery_factor
     // Simplified: if 50% throughput during 48h closure, T90 ≈ 12h after reopening
-    incident_result.t90_hours = Some(
-        scenario.incident.duration_hours * (1.0 - throughput_fraction) * 0.5
-    );
+    incident_result.t90_hours =
+        Some(scenario.incident.duration_hours * (1.0 - throughput_fraction) * 0.5);
 
     // --- Intervention (if any) ---
     let intervention_result = scenario.intervention.as_ref().map(|intervention| {
         let mut intervention_caps = incident_caps.clone();
         match intervention {
-            Intervention::ManagedLanes { corridor, added_lanes_per_direction } => {
+            Intervention::ManagedLanes {
+                corridor,
+                added_lanes_per_direction,
+            } => {
                 for &ei in g.route_edges(corridor) {
                     if let Some(c) = intervention_caps.get_mut(&ei) {
                         *c += *added_lanes_per_direction as f64 * 1_900.0;
                     }
                 }
             }
-            Intervention::Diamond { connector_capacity_vph, .. } => {
+            Intervention::Diamond {
+                connector_capacity_vph,
+                ..
+            } => {
                 // Diamond adds capacity at the intersection — modeled as capacity
                 // increase on incident edges (simplified; real model would add new nodes/edges)
                 for &ei in &scenario.incident.affected_edges {
@@ -148,9 +178,20 @@ pub fn run_scenario(
         }
 
         let int_flow = wardrop_equilibrium(
-            g, demand, &intervention_caps, &bpr, scenario.fw_max_iter, scenario.fw_tolerance
+            g,
+            demand,
+            &intervention_caps,
+            &bpr,
+            scenario.fw_max_iter,
+            scenario.fw_tolerance,
         );
-        build_run_result("intervention", g, &int_flow, &intervention_caps, &scenario.report_corridors)
+        build_run_result(
+            "intervention",
+            g,
+            &int_flow,
+            &intervention_caps,
+            &scenario.report_corridors,
+        )
     });
 
     ScenarioResult {
@@ -169,7 +210,8 @@ fn build_run_result(
     report_corridors: &[String],
 ) -> RunResult {
     let metrics = compute_metrics(g, flow, capacities);
-    let corridor_ptis: HashMap<String, f64> = report_corridors.iter()
+    let corridor_ptis: HashMap<String, f64> = report_corridors
+        .iter()
         .map(|c| (c.clone(), corridor_pti(g, c, flow, capacities)))
         .collect();
 

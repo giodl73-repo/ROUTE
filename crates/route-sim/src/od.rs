@@ -10,7 +10,7 @@
 ///   - HOS regulations applied: 11h driving / 10h mandatory rest
 ///   - PTI computed as p95_transit / free_flow_transit across N trips
 use rand::Rng;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 // ── TOML file loading ─────────────────────────────────────────────────────────
@@ -53,17 +53,21 @@ impl From<CorridorRecord> for OdCorridor {
             fixed_overhead_hours: r.fixed_overhead_hours,
             hos_driving_hours: r.hos_driving_hours,
             hos_rest_hours: r.hos_rest_hours,
-            segments: r.segments.into_iter().map(|s| CorridorSegment {
-                name: s.name,
-                miles: s.miles,
-                base_vc: s.base_vc,
-                free_flow_mph: s.free_flow_mph,
-                incident_prob: s.incident_prob,
-                incident_delay_mean_hours: s.incident_delay_mean_h,
-                incident_delay_std_hours: s.incident_delay_std_h,
-                managed_lane_bypasses_incident: s.managed_lane_bypasses,
-                managed_lane_vc: s.managed_lane_vc,
-            }).collect(),
+            segments: r
+                .segments
+                .into_iter()
+                .map(|s| CorridorSegment {
+                    name: s.name,
+                    miles: s.miles,
+                    base_vc: s.base_vc,
+                    free_flow_mph: s.free_flow_mph,
+                    incident_prob: s.incident_prob,
+                    incident_delay_mean_hours: s.incident_delay_mean_h,
+                    incident_delay_std_hours: s.incident_delay_std_h,
+                    managed_lane_bypasses_incident: s.managed_lane_bypasses,
+                    managed_lane_vc: s.managed_lane_vc,
+                })
+                .collect(),
         }
     }
 }
@@ -75,7 +79,12 @@ pub fn load_corridor(data_dir: &Path, slug: &str) -> Option<OdCorridor> {
     if path.exists() {
         if let Ok(text) = std::fs::read_to_string(&path) {
             if let Ok(file) = toml::from_str::<CorridorsFile>(&text) {
-                if let Some(record) = file.corridor.into_iter().find(|(k, _)| k == slug).map(|(_, v)| v) {
+                if let Some(record) = file
+                    .corridor
+                    .into_iter()
+                    .find(|(k, _)| k == slug)
+                    .map(|(_, v)| v)
+                {
                     return Some(record.into());
                 }
             }
@@ -83,16 +92,16 @@ pub fn load_corridor(data_dir: &Path, slug: &str) -> Option<OdCorridor> {
     }
     // Fall back to built-in
     match slug {
-        "ny_la"           => Some(ny_la_corridor()),
+        "ny_la" => Some(ny_la_corridor()),
         "hou_chi_current" => Some(hou_chi_current()),
-        "hou_chi_i69"     => Some(hou_chi_i69()),
-        "chi_la"          => Some(chi_la()),
-        "mia_nyc"         => Some(mia_nyc()),
-        "sea_chi"         => Some(sea_chi()),
-        "dal_nyc"         => Some(dal_nyc()),
-        "la_sea"          => Some(la_sea()),
-        "atl_chi"         => Some(atl_chi()),
-        "ny_chi"          => Some(ny_chi()),
+        "hou_chi_i69" => Some(hou_chi_i69()),
+        "chi_la" => Some(chi_la()),
+        "mia_nyc" => Some(mia_nyc()),
+        "sea_chi" => Some(sea_chi()),
+        "dal_nyc" => Some(dal_nyc()),
+        "la_sea" => Some(la_sea()),
+        "atl_chi" => Some(atl_chi()),
+        "ny_chi" => Some(ny_chi()),
         _ => None,
     }
 }
@@ -139,7 +148,10 @@ impl OdCorridor {
     }
 
     pub fn free_flow_driving_hours(&self) -> f64 {
-        self.segments.iter().map(|s| s.miles / s.free_flow_mph).sum()
+        self.segments
+            .iter()
+            .map(|s| s.miles / s.free_flow_mph)
+            .sum()
     }
 
     pub fn free_flow_elapsed_hours(&self) -> f64 {
@@ -199,27 +211,27 @@ pub enum Intervention {
 impl Intervention {
     pub fn label(&self) -> &str {
         match self {
-            Self::ManagedFreightLanes  => "Managed freight lanes",
-            Self::DriverRelay { .. }   => "Driver relay network",
-            Self::TeamDrivers          => "Team drivers (2-person)",
-            Self::DonnerHardening      => "Donner hardening",
-            Self::DonnerTunnel         => "Donner tunnel",
-            Self::DiamondInterchanges  => "Diamond interchanges",
-            Self::IntelligentRouting   => "Intelligent routing (V2I)",
-            Self::Platooning           => "Truck platooning",
+            Self::ManagedFreightLanes => "Managed freight lanes",
+            Self::DriverRelay { .. } => "Driver relay network",
+            Self::TeamDrivers => "Team drivers (2-person)",
+            Self::DonnerHardening => "Donner hardening",
+            Self::DonnerTunnel => "Donner tunnel",
+            Self::DiamondInterchanges => "Diamond interchanges",
+            Self::IntelligentRouting => "Intelligent routing (V2I)",
+            Self::Platooning => "Truck platooning",
         }
     }
 
     pub fn capex_label(&self) -> &str {
         match self {
-            Self::ManagedFreightLanes  => "$121B (7 T1 corridors)",
-            Self::DriverRelay { .. }   => "$40M (8 relay stations)",
-            Self::TeamDrivers          => "$0 (operational change)",
-            Self::DonnerHardening      => "$800M (snowshed + warning)",
-            Self::DonnerTunnel         => "$4B (12-mile tunnel)",
-            Self::DiamondInterchanges  => "$930M (Phase 1: ATL/JAX/TOL)",
-            Self::IntelligentRouting   => "$200M (V2I hardware + software)",
-            Self::Platooning           => "$50M (V2V + platooning systems)",
+            Self::ManagedFreightLanes => "$121B (7 T1 corridors)",
+            Self::DriverRelay { .. } => "$40M (8 relay stations)",
+            Self::TeamDrivers => "$0 (operational change)",
+            Self::DonnerHardening => "$800M (snowshed + warning)",
+            Self::DonnerTunnel => "$4B (12-mile tunnel)",
+            Self::DiamondInterchanges => "$930M (Phase 1: ATL/JAX/TOL)",
+            Self::IntelligentRouting => "$200M (V2I hardware + software)",
+            Self::Platooning => "$50M (V2V + platooning systems)",
         }
     }
 }
@@ -244,7 +256,10 @@ pub fn apply_interventions(
                     // No congestion surge events on access-controlled lanes
                 }
             }
-            Intervention::DriverRelay { stations, swap_minutes } => {
+            Intervention::DriverRelay {
+                stations,
+                swap_minutes,
+            } => {
                 relay_stations = *stations;
                 relay_swap_min = *swap_minutes;
                 driver_mode = DriverMode::Relay {
@@ -260,7 +275,7 @@ pub fn apply_interventions(
             Intervention::DonnerHardening => {
                 for seg in &mut corridor.segments {
                     if seg.name.contains("Donner") {
-                        seg.incident_prob *= 0.50;          // 50% fewer closures
+                        seg.incident_prob *= 0.50; // 50% fewer closures
                         seg.incident_delay_mean_hours *= 0.67; // 18h→12h mean
                     }
                 }
@@ -268,7 +283,7 @@ pub fn apply_interventions(
             Intervention::DonnerTunnel => {
                 for seg in &mut corridor.segments {
                     if seg.name.contains("Donner") {
-                        seg.incident_prob = 0.0;  // tunnel bypasses all weather risk
+                        seg.incident_prob = 0.0; // tunnel bypasses all weather risk
                         seg.managed_lane_bypasses_incident = true;
                         // Tunnel also eliminates grade: slightly faster
                         seg.free_flow_mph = 65.0;
@@ -278,8 +293,11 @@ pub fn apply_interventions(
             Intervention::DiamondInterchanges => {
                 // Diamond interchanges at major bottleneck nodes reduce incident prob 60%
                 for seg in &mut corridor.segments {
-                    if seg.name.contains("interchange") || seg.name.contains("metro")
-                       || seg.name.contains("approach") || seg.name.contains("bypass") {
+                    if seg.name.contains("interchange")
+                        || seg.name.contains("metro")
+                        || seg.name.contains("approach")
+                        || seg.name.contains("bypass")
+                    {
                         seg.incident_prob *= 0.40; // k≥3 means trucks reroute around incidents
                         seg.incident_delay_mean_hours *= 0.60; // shorter delays with alternates
                     }
@@ -295,7 +313,8 @@ pub fn apply_interventions(
             Intervention::Platooning => {
                 // 2-3 mph effective speed gain on rural/highway segments from reduced drag
                 for seg in &mut corridor.segments {
-                    if seg.base_vc < 0.60 {  // only effective on free-flowing segments
+                    if seg.base_vc < 0.60 {
+                        // only effective on free-flowing segments
                         seg.free_flow_mph *= 1.035; // ~3.5% speed increase
                     }
                 }
@@ -336,7 +355,7 @@ pub struct InterventionResult {
     pub label: String,
     pub capex: String,
     pub dist: TransitDistribution,
-    pub p95_delta_hours: f64,  // vs baseline (negative = improvement)
+    pub p95_delta_hours: f64, // vs baseline (negative = improvement)
     pub pct_under_48h: f64,
     pub sla_achieved: bool,
 }
@@ -348,58 +367,112 @@ impl InterventionBenchmark {
         // Define all single interventions to test
         let singles: Vec<(&str, &str, Vec<Intervention>)> = vec![
             ("Baseline (Solo/GP)", "$0", vec![]),
-            ("Managed lanes only", "$121B", vec![Intervention::ManagedFreightLanes]),
+            (
+                "Managed lanes only",
+                "$121B",
+                vec![Intervention::ManagedFreightLanes],
+            ),
             ("Team drivers only", "$0", vec![Intervention::TeamDrivers]),
-            ("Driver relay only", "$40M", vec![
-                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
-            ]),
-            ("Intelligent routing only", "$200M", vec![Intervention::IntelligentRouting]),
-            ("Diamond interchanges", "$930M", vec![Intervention::DiamondInterchanges]),
-            ("Donner hardening", "$800M", vec![Intervention::DonnerHardening]),
+            (
+                "Driver relay only",
+                "$40M",
+                vec![Intervention::DriverRelay {
+                    stations: relay_count,
+                    swap_minutes: 20.0,
+                }],
+            ),
+            (
+                "Intelligent routing only",
+                "$200M",
+                vec![Intervention::IntelligentRouting],
+            ),
+            (
+                "Diamond interchanges",
+                "$930M",
+                vec![Intervention::DiamondInterchanges],
+            ),
+            (
+                "Donner hardening",
+                "$800M",
+                vec![Intervention::DonnerHardening],
+            ),
             ("Donner tunnel", "$4B", vec![Intervention::DonnerTunnel]),
             ("Platooning", "$50M", vec![Intervention::Platooning]),
             // Combinations
-            ("Relay + Managed lanes", "$121B+$40M", vec![
-                Intervention::ManagedFreightLanes,
-                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
-            ]),
-            ("Relay + Managed + Donner tunnel", "$125B", vec![
-                Intervention::ManagedFreightLanes,
-                Intervention::DonnerTunnel,
-                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
-            ]),
-            ("Relay + Diamonds + Routing", "$1.2B", vec![
-                Intervention::DriverRelay { stations: relay_count, swap_minutes: 20.0 },
-                Intervention::DiamondInterchanges,
-                Intervention::IntelligentRouting,
-            ]),
-            ("Full I2.0 stack", "$126B+$1.2B", vec![
-                Intervention::ManagedFreightLanes,
-                Intervention::DonnerTunnel,
-                Intervention::DiamondInterchanges,
-                Intervention::IntelligentRouting,
-                Intervention::Platooning,
-                Intervention::DriverRelay { stations: relay_count, swap_minutes: 15.0 },
-            ]),
+            (
+                "Relay + Managed lanes",
+                "$121B+$40M",
+                vec![
+                    Intervention::ManagedFreightLanes,
+                    Intervention::DriverRelay {
+                        stations: relay_count,
+                        swap_minutes: 20.0,
+                    },
+                ],
+            ),
+            (
+                "Relay + Managed + Donner tunnel",
+                "$125B",
+                vec![
+                    Intervention::ManagedFreightLanes,
+                    Intervention::DonnerTunnel,
+                    Intervention::DriverRelay {
+                        stations: relay_count,
+                        swap_minutes: 20.0,
+                    },
+                ],
+            ),
+            (
+                "Relay + Diamonds + Routing",
+                "$1.2B",
+                vec![
+                    Intervention::DriverRelay {
+                        stations: relay_count,
+                        swap_minutes: 20.0,
+                    },
+                    Intervention::DiamondInterchanges,
+                    Intervention::IntelligentRouting,
+                ],
+            ),
+            (
+                "Full I2.0 stack",
+                "$126B+$1.2B",
+                vec![
+                    Intervention::ManagedFreightLanes,
+                    Intervention::DonnerTunnel,
+                    Intervention::DiamondInterchanges,
+                    Intervention::IntelligentRouting,
+                    Intervention::Platooning,
+                    Intervention::DriverRelay {
+                        stations: relay_count,
+                        swap_minutes: 15.0,
+                    },
+                ],
+            ),
         ];
 
         let baseline_dist = run_intervention_stack(corridor, &[], n_trips, seed);
         let baseline_p95 = baseline_dist.p95_hours;
 
-        let results = singles.into_iter().enumerate().map(|(i, (label, capex, interventions))| {
-            let dist = run_intervention_stack(corridor, &interventions, n_trips, seed + i as u64);
-            let delta = dist.p95_hours - baseline_p95;
-            let pct = dist.pct_under_48h;
-            let sla = dist.p95_hours <= 48.0;
-            InterventionResult {
-                label: label.to_string(),
-                capex: capex.to_string(),
-                dist,
-                p95_delta_hours: delta,
-                pct_under_48h: pct,
-                sla_achieved: sla,
-            }
-        }).collect();
+        let results = singles
+            .into_iter()
+            .enumerate()
+            .map(|(i, (label, capex, interventions))| {
+                let dist =
+                    run_intervention_stack(corridor, &interventions, n_trips, seed + i as u64);
+                let delta = dist.p95_hours - baseline_p95;
+                let pct = dist.pct_under_48h;
+                let sla = dist.p95_hours <= 48.0;
+                InterventionResult {
+                    label: label.to_string(),
+                    capex: capex.to_string(),
+                    dist,
+                    p95_delta_hours: delta,
+                    pct_under_48h: pct,
+                    sla_achieved: sla,
+                }
+            })
+            .collect();
 
         InterventionBenchmark {
             corridor_name: corridor.name.clone(),
@@ -470,7 +543,8 @@ fn simulate_trip(
                 seg.incident_delay_mean_hours,
                 seg.incident_delay_std_hours,
                 rng,
-            ).max(0.1);
+            )
+            .max(0.1);
             delay_hours += delay;
             incidents.push(format!("{} (+{:.1}h)", seg.name, delay));
         }
@@ -487,9 +561,12 @@ fn simulate_trip(
             // Co-driver sleeps in berth — truck never stops for rest.
             // Small overhead: driver-swap time every 11 hours (2-5 min to swap seats).
             let swaps = (driving_hours / corridor.hos_driving_hours).floor() as u32;
-            swaps as f64 * (4.0 / 60.0)  // 4-minute swap, truck barely slows
+            swaps as f64 * (4.0 / 60.0) // 4-minute swap, truck barely slows
         }
-        DriverMode::Relay { stations, swap_minutes } => {
+        DriverMode::Relay {
+            stations,
+            swap_minutes,
+        } => {
             // Fresh driver at each relay station; swap takes swap_minutes.
             // Relay is always at a T1 hub so no search time.
             // Small variance: swap time can run +5 min if paperwork delayed.
@@ -499,7 +576,13 @@ fn simulate_trip(
     };
 
     let elapsed = driving_hours + hos_overhead + delay_hours + corridor.fixed_overhead_hours;
-    TripResult { elapsed_hours: elapsed, driving_hours, delay_hours, incidents, managed_lanes }
+    TripResult {
+        elapsed_hours: elapsed,
+        driving_hours,
+        delay_hours,
+        incidents,
+        managed_lanes,
+    }
 }
 
 fn bpr_time(free_flow_hours: f64, vc: f64) -> f64 {
@@ -532,22 +615,26 @@ pub struct TransitDistribution {
     pub p90_hours: f64,
     pub p95_hours: f64,
     pub p99_hours: f64,
-    pub pti: f64,   // p95 / free_flow
-    pub commitment_window_hours: f64,  // = p95
+    pub pti: f64,                     // p95 / free_flow
+    pub commitment_window_hours: f64, // = p95
     pub commitment_window_days: f64,
-    pub pct_under_48h: f64,   // fraction of trips completing under 48 hours elapsed
-    pub pct_sla_met: f64,     // fraction meeting the tier SLA (configurable)
+    pub pct_under_48h: f64, // fraction of trips completing under 48 hours elapsed
+    pub pct_sla_met: f64,   // fraction meeting the tier SLA (configurable)
     pub managed_lanes: bool,
 }
 
 impl TransitDistribution {
-    pub fn sla_hours(&self) -> f64 { self.commitment_window_hours }
+    pub fn sla_hours(&self) -> f64 {
+        self.commitment_window_hours
+    }
 }
 
 /// Apply seasonal incident probability modifiers to a corridor.
 /// month: 1=January ... 12=December
 pub fn apply_seasonal(corridor: &OdCorridor, month: u8) -> OdCorridor {
-    if month == 0 || month > 12 { return corridor.clone(); }
+    if month == 0 || month > 12 {
+        return corridor.clone();
+    }
     let mut c = corridor.clone();
     let is_winter = matches!(month, 11 | 12 | 1 | 2 | 3 | 4);
     let is_holiday = matches!(month, 10 | 11 | 12);
@@ -557,21 +644,32 @@ pub fn apply_seasonal(corridor: &OdCorridor, month: u8) -> OdCorridor {
     for seg in &mut c.segments {
         let name_lower = seg.name.to_lowercase();
         // Mountain pass winter closures
-        if is_winter && (name_lower.contains("donner") || name_lower.contains("pass")
-            || name_lower.contains("snoqualmie") || name_lower.contains("siskiyou")) {
+        if is_winter
+            && (name_lower.contains("donner")
+                || name_lower.contains("pass")
+                || name_lower.contains("snoqualmie")
+                || name_lower.contains("siskiyou"))
+        {
             seg.incident_prob *= 2.4;
             seg.incident_prob = seg.incident_prob.min(0.60);
         } else if !is_winter && (name_lower.contains("donner") || name_lower.contains("pass")) {
             seg.incident_prob *= 0.25;
         }
         // Holiday freight surge at urban bottlenecks
-        if is_holiday && (name_lower.contains("urban") || name_lower.contains("metro")
-            || name_lower.contains("approach") || name_lower.contains("interchange")) {
+        if is_holiday
+            && (name_lower.contains("urban")
+                || name_lower.contains("metro")
+                || name_lower.contains("approach")
+                || name_lower.contains("interchange"))
+        {
             seg.base_vc = (seg.base_vc * 1.20).min(1.5);
         }
         // Harvest surge on rural corridors
-        if is_harvest && (name_lower.contains("rural") || name_lower.contains("i-35")
-            || name_lower.contains("i-55")) {
+        if is_harvest
+            && (name_lower.contains("rural")
+                || name_lower.contains("i-35")
+                || name_lower.contains("i-55"))
+        {
             seg.base_vc = (seg.base_vc * 1.15).min(1.2);
         }
         // Summer construction
@@ -606,7 +704,7 @@ pub fn run_od_simulation_with_driver(
         .map(|_| simulate_trip(corridor, managed_lanes, driver, &mut rng).elapsed_hours)
         .collect();
 
-    elapsed_times.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    elapsed_times.sort_by(f64::total_cmp);
 
     let n = elapsed_times.len() as f64;
     let mean = elapsed_times.iter().sum::<f64>() / n;
@@ -661,7 +759,7 @@ pub fn ny_la_corridor() -> OdCorridor {
                 miles: 120.0,
                 base_vc: 0.92,
                 free_flow_mph: 65.0,
-                incident_prob: 0.18,  // high urban incident rate
+                incident_prob: 0.18, // high urban incident rate
                 incident_delay_mean_hours: 1.2,
                 incident_delay_std_hours: 0.8,
                 managed_lane_bypasses_incident: false,
@@ -693,8 +791,8 @@ pub fn ny_la_corridor() -> OdCorridor {
                 name: "IL/IA/NE/WY rural I-80".into(),
                 miles: 1100.0,
                 base_vc: 0.28,
-                free_flow_mph: 75.0,  // higher rural speed limit (NE/WY 80mph)
-                incident_prob: 0.06,  // weather (blizzard, ice)
+                free_flow_mph: 75.0, // higher rural speed limit (NE/WY 80mph)
+                incident_prob: 0.06, // weather (blizzard, ice)
                 incident_delay_mean_hours: 3.5,
                 incident_delay_std_hours: 2.0,
                 managed_lane_bypasses_incident: false,
@@ -704,20 +802,20 @@ pub fn ny_la_corridor() -> OdCorridor {
                 name: "Donner Pass (Sierra Nevada, I-80)".into(),
                 miles: 65.0,
                 base_vc: 0.80,
-                free_flow_mph: 55.0,  // mountain grade; lower speed
+                free_flow_mph: 55.0, // mountain grade; lower speed
                 // 50 closures/year × mean 18h / (8760h/yr) = 10.3% closure probability
                 // But per trip: closure hits if you arrive during a closure window
                 // ~50 events × 18h / 8760h = 10.3% chance on any given arrival
                 incident_prob: 0.103,
-                incident_delay_mean_hours: 18.0,  // mean closure: wait or reroute
+                incident_delay_mean_hours: 18.0, // mean closure: wait or reroute
                 incident_delay_std_hours: 12.0,
-                managed_lane_bypasses_incident: true,  // managed lane = tunnel
+                managed_lane_bypasses_incident: true, // managed lane = tunnel
                 managed_lane_vc: 0.72,
             },
             CorridorSegment {
                 name: "Bay Area approach (I-80→I-580, Emeryville)".into(),
                 miles: 90.0,
-                base_vc: 1.15,   // chronically over capacity
+                base_vc: 1.15, // chronically over capacity
                 free_flow_mph: 65.0,
                 incident_prob: 0.22,
                 incident_delay_mean_hours: 1.5,
@@ -739,7 +837,7 @@ pub fn ny_la_corridor() -> OdCorridor {
             CorridorSegment {
                 name: "LA approach (I-5/I-405 metro)".into(),
                 miles: 50.0,
-                base_vc: 1.30,   // highest V/C segment
+                base_vc: 1.30, // highest V/C segment
                 free_flow_mph: 65.0,
                 incident_prob: 0.25,
                 incident_delay_mean_hours: 1.2,
@@ -787,7 +885,7 @@ pub fn hou_chi_current() -> OdCorridor {
                 // Dallas interchange: I-45/I-35 merge — major bottleneck
                 name: "Dallas interchange (I-45/I-35 merge)".into(),
                 miles: 30.0,
-                base_vc: 1.35,   // ATRI top-10 bottleneck
+                base_vc: 1.35, // ATRI top-10 bottleneck
                 free_flow_mph: 60.0,
                 incident_prob: 0.28,
                 incident_delay_mean_hours: 1.8,
@@ -800,7 +898,7 @@ pub fn hou_chi_current() -> OdCorridor {
                 miles: 210.0,
                 base_vc: 0.60,
                 free_flow_mph: 75.0,
-                incident_prob: 0.08,  // tornado/severe wx corridor
+                incident_prob: 0.08, // tornado/severe wx corridor
                 incident_delay_mean_hours: 2.5,
                 incident_delay_std_hours: 1.5,
                 managed_lane_bypasses_incident: false,
@@ -877,7 +975,7 @@ pub fn hou_chi_i69() -> OdCorridor {
         CorridorSegment {
             name: "I-69 Houston→Texarkana".into(),
             miles: 185.0,
-            base_vc: 0.40,  // new road, lower initial V/C
+            base_vc: 0.40, // new road, lower initial V/C
             free_flow_mph: 75.0,
             incident_prob: 0.04,
             incident_delay_mean_hours: 0.8,
@@ -945,24 +1043,72 @@ pub fn chi_la() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "Chicago south approach".into(), miles: 60.0, base_vc: 1.05,
-                free_flow_mph: 65.0, incident_prob: 0.20, incident_delay_mean_hours: 1.4,
-                incident_delay_std_hours: 0.9, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "IL/IA/NE rural I-80".into(), miles: 840.0, base_vc: 0.28,
-                free_flow_mph: 75.0, incident_prob: 0.05, incident_delay_mean_hours: 2.5,
-                incident_delay_std_hours: 1.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.25 },
-            CorridorSegment { name: "WY/UT rural I-80".into(), miles: 560.0, base_vc: 0.22,
-                free_flow_mph: 75.0, incident_prob: 0.06, incident_delay_mean_hours: 3.0,
-                incident_delay_std_hours: 2.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.20 },
-            CorridorSegment { name: "Donner Pass (Sierra Nevada)".into(), miles: 65.0, base_vc: 0.80,
-                free_flow_mph: 55.0, incident_prob: 0.103, incident_delay_mean_hours: 18.0,
-                incident_delay_std_hours: 12.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.72 },
-            CorridorSegment { name: "Bay Area → I-5 south".into(), miles: 280.0, base_vc: 0.65,
-                free_flow_mph: 70.0, incident_prob: 0.08, incident_delay_mean_hours: 1.0,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.60 },
-            CorridorSegment { name: "LA approach".into(), miles: 50.0, base_vc: 1.30,
-                free_flow_mph: 65.0, incident_prob: 0.25, incident_delay_mean_hours: 1.2,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment {
+                name: "Chicago south approach".into(),
+                miles: 60.0,
+                base_vc: 1.05,
+                free_flow_mph: 65.0,
+                incident_prob: 0.20,
+                incident_delay_mean_hours: 1.4,
+                incident_delay_std_hours: 0.9,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "IL/IA/NE rural I-80".into(),
+                miles: 840.0,
+                base_vc: 0.28,
+                free_flow_mph: 75.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 2.5,
+                incident_delay_std_hours: 1.5,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.25,
+            },
+            CorridorSegment {
+                name: "WY/UT rural I-80".into(),
+                miles: 560.0,
+                base_vc: 0.22,
+                free_flow_mph: 75.0,
+                incident_prob: 0.06,
+                incident_delay_mean_hours: 3.0,
+                incident_delay_std_hours: 2.0,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.20,
+            },
+            CorridorSegment {
+                name: "Donner Pass (Sierra Nevada)".into(),
+                miles: 65.0,
+                base_vc: 0.80,
+                free_flow_mph: 55.0,
+                incident_prob: 0.103,
+                incident_delay_mean_hours: 18.0,
+                incident_delay_std_hours: 12.0,
+                managed_lane_bypasses_incident: true,
+                managed_lane_vc: 0.72,
+            },
+            CorridorSegment {
+                name: "Bay Area → I-5 south".into(),
+                miles: 280.0,
+                base_vc: 0.65,
+                free_flow_mph: 70.0,
+                incident_prob: 0.08,
+                incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.60,
+            },
+            CorridorSegment {
+                name: "LA approach".into(),
+                miles: 50.0,
+                base_vc: 1.30,
+                free_flow_mph: 65.0,
+                incident_prob: 0.25,
+                incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
         ],
     }
 }
@@ -977,21 +1123,61 @@ pub fn mia_nyc() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "Miami metro (I-95)".into(), miles: 50.0, base_vc: 1.25,
-                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.5,
-                incident_delay_std_hours: 1.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "I-95 FL/GA rural".into(), miles: 380.0, base_vc: 0.48,
-                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 1.0,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.42 },
-            CorridorSegment { name: "I-95 SC/NC/VA".into(), miles: 440.0, base_vc: 0.55,
-                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 1.1,
-                incident_delay_std_hours: 0.7, managed_lane_bypasses_incident: false, managed_lane_vc: 0.48 },
-            CorridorSegment { name: "DC/Baltimore corridor".into(), miles: 200.0, base_vc: 1.15,
-                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.6,
-                incident_delay_std_hours: 1.1, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "NJ/NYC approach".into(), miles: 100.0, base_vc: 1.30,
-                free_flow_mph: 60.0, incident_prob: 0.25, incident_delay_mean_hours: 1.4,
-                incident_delay_std_hours: 0.9, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment {
+                name: "Miami metro (I-95)".into(),
+                miles: 50.0,
+                base_vc: 1.25,
+                free_flow_mph: 65.0,
+                incident_prob: 0.22,
+                incident_delay_mean_hours: 1.5,
+                incident_delay_std_hours: 1.0,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "I-95 FL/GA rural".into(),
+                miles: 380.0,
+                base_vc: 0.48,
+                free_flow_mph: 70.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.42,
+            },
+            CorridorSegment {
+                name: "I-95 SC/NC/VA".into(),
+                miles: 440.0,
+                base_vc: 0.55,
+                free_flow_mph: 70.0,
+                incident_prob: 0.06,
+                incident_delay_mean_hours: 1.1,
+                incident_delay_std_hours: 0.7,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.48,
+            },
+            CorridorSegment {
+                name: "DC/Baltimore corridor".into(),
+                miles: 200.0,
+                base_vc: 1.15,
+                free_flow_mph: 65.0,
+                incident_prob: 0.22,
+                incident_delay_mean_hours: 1.6,
+                incident_delay_std_hours: 1.1,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "NJ/NYC approach".into(),
+                miles: 100.0,
+                base_vc: 1.30,
+                free_flow_mph: 60.0,
+                incident_prob: 0.25,
+                incident_delay_mean_hours: 1.4,
+                incident_delay_std_hours: 0.9,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
         ],
     }
 }
@@ -1006,24 +1192,72 @@ pub fn sea_chi() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "Seattle metro (I-90)".into(), miles: 30.0, base_vc: 1.10,
-                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "Snoqualmie Pass (Cascades)".into(), miles: 80.0, base_vc: 0.75,
-                free_flow_mph: 55.0, incident_prob: 0.085, incident_delay_mean_hours: 12.0,
-                incident_delay_std_hours: 8.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.68 },
-            CorridorSegment { name: "Eastern WA/ID/MT I-90".into(), miles: 480.0, base_vc: 0.30,
-                free_flow_mph: 80.0, incident_prob: 0.05, incident_delay_mean_hours: 2.5,
-                incident_delay_std_hours: 1.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.25 },
-            CorridorSegment { name: "WY/SD rural I-90".into(), miles: 760.0, base_vc: 0.22,
-                free_flow_mph: 80.0, incident_prob: 0.04, incident_delay_mean_hours: 2.0,
-                incident_delay_std_hours: 1.2, managed_lane_bypasses_incident: false, managed_lane_vc: 0.18 },
-            CorridorSegment { name: "MN/WI I-90 to Chicago".into(), miles: 460.0, base_vc: 0.45,
-                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 0.9,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
-            CorridorSegment { name: "Chicago south approach".into(), miles: 60.0, base_vc: 1.05,
-                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment {
+                name: "Seattle metro (I-90)".into(),
+                miles: 30.0,
+                base_vc: 1.10,
+                free_flow_mph: 65.0,
+                incident_prob: 0.18,
+                incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "Snoqualmie Pass (Cascades)".into(),
+                miles: 80.0,
+                base_vc: 0.75,
+                free_flow_mph: 55.0,
+                incident_prob: 0.085,
+                incident_delay_mean_hours: 12.0,
+                incident_delay_std_hours: 8.0,
+                managed_lane_bypasses_incident: true,
+                managed_lane_vc: 0.68,
+            },
+            CorridorSegment {
+                name: "Eastern WA/ID/MT I-90".into(),
+                miles: 480.0,
+                base_vc: 0.30,
+                free_flow_mph: 80.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 2.5,
+                incident_delay_std_hours: 1.5,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.25,
+            },
+            CorridorSegment {
+                name: "WY/SD rural I-90".into(),
+                miles: 760.0,
+                base_vc: 0.22,
+                free_flow_mph: 80.0,
+                incident_prob: 0.04,
+                incident_delay_mean_hours: 2.0,
+                incident_delay_std_hours: 1.2,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.18,
+            },
+            CorridorSegment {
+                name: "MN/WI I-90 to Chicago".into(),
+                miles: 460.0,
+                base_vc: 0.45,
+                free_flow_mph: 70.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.40,
+            },
+            CorridorSegment {
+                name: "Chicago south approach".into(),
+                miles: 60.0,
+                base_vc: 1.05,
+                free_flow_mph: 65.0,
+                incident_prob: 0.18,
+                incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
         ],
     }
 }
@@ -1038,21 +1272,61 @@ pub fn dal_nyc() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "Dallas metro".into(), miles: 40.0, base_vc: 1.20,
-                free_flow_mph: 65.0, incident_prob: 0.22, incident_delay_mean_hours: 1.5,
-                incident_delay_std_hours: 1.0, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "I-30 TX/AR".into(), miles: 340.0, base_vc: 0.45,
-                free_flow_mph: 75.0, incident_prob: 0.05, incident_delay_mean_hours: 1.0,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
-            CorridorSegment { name: "TN/VA I-40/I-81".into(), miles: 580.0, base_vc: 0.50,
-                free_flow_mph: 70.0, incident_prob: 0.07, incident_delay_mean_hours: 1.2,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.44 },
-            CorridorSegment { name: "I-81/I-78 PA/NJ".into(), miles: 400.0, base_vc: 0.75,
-                free_flow_mph: 65.0, incident_prob: 0.12, incident_delay_mean_hours: 1.3,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.65 },
-            CorridorSegment { name: "NYC approach (I-95/GWB)".into(), miles: 80.0, base_vc: 1.35,
-                free_flow_mph: 55.0, incident_prob: 0.28, incident_delay_mean_hours: 1.6,
-                incident_delay_std_hours: 1.1, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment {
+                name: "Dallas metro".into(),
+                miles: 40.0,
+                base_vc: 1.20,
+                free_flow_mph: 65.0,
+                incident_prob: 0.22,
+                incident_delay_mean_hours: 1.5,
+                incident_delay_std_hours: 1.0,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "I-30 TX/AR".into(),
+                miles: 340.0,
+                base_vc: 0.45,
+                free_flow_mph: 75.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.40,
+            },
+            CorridorSegment {
+                name: "TN/VA I-40/I-81".into(),
+                miles: 580.0,
+                base_vc: 0.50,
+                free_flow_mph: 70.0,
+                incident_prob: 0.07,
+                incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.44,
+            },
+            CorridorSegment {
+                name: "I-81/I-78 PA/NJ".into(),
+                miles: 400.0,
+                base_vc: 0.75,
+                free_flow_mph: 65.0,
+                incident_prob: 0.12,
+                incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.65,
+            },
+            CorridorSegment {
+                name: "NYC approach (I-95/GWB)".into(),
+                miles: 80.0,
+                base_vc: 1.35,
+                free_flow_mph: 55.0,
+                incident_prob: 0.28,
+                incident_delay_mean_hours: 1.6,
+                incident_delay_std_hours: 1.1,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
         ],
     }
 }
@@ -1067,21 +1341,61 @@ pub fn la_sea() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "LA metro (I-5)".into(), miles: 50.0, base_vc: 1.30,
-                free_flow_mph: 65.0, incident_prob: 0.25, incident_delay_mean_hours: 1.3,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "I-5 Central Valley CA".into(), miles: 380.0, base_vc: 0.50,
-                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 0.9,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.45 },
-            CorridorSegment { name: "Siskiyou Pass (OR border)".into(), miles: 80.0, base_vc: 0.70,
-                free_flow_mph: 55.0, incident_prob: 0.065, incident_delay_mean_hours: 6.0,
-                incident_delay_std_hours: 4.0, managed_lane_bypasses_incident: true, managed_lane_vc: 0.65 },
-            CorridorSegment { name: "I-5 OR/WA".into(), miles: 440.0, base_vc: 0.45,
-                free_flow_mph: 70.0, incident_prob: 0.05, incident_delay_mean_hours: 0.9,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.40 },
-            CorridorSegment { name: "Seattle metro (I-5)".into(), miles: 30.0, base_vc: 1.10,
-                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.2,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.68 },
+            CorridorSegment {
+                name: "LA metro (I-5)".into(),
+                miles: 50.0,
+                base_vc: 1.30,
+                free_flow_mph: 65.0,
+                incident_prob: 0.25,
+                incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "I-5 Central Valley CA".into(),
+                miles: 380.0,
+                base_vc: 0.50,
+                free_flow_mph: 70.0,
+                incident_prob: 0.06,
+                incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.45,
+            },
+            CorridorSegment {
+                name: "Siskiyou Pass (OR border)".into(),
+                miles: 80.0,
+                base_vc: 0.70,
+                free_flow_mph: 55.0,
+                incident_prob: 0.065,
+                incident_delay_mean_hours: 6.0,
+                incident_delay_std_hours: 4.0,
+                managed_lane_bypasses_incident: true,
+                managed_lane_vc: 0.65,
+            },
+            CorridorSegment {
+                name: "I-5 OR/WA".into(),
+                miles: 440.0,
+                base_vc: 0.45,
+                free_flow_mph: 70.0,
+                incident_prob: 0.05,
+                incident_delay_mean_hours: 0.9,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.40,
+            },
+            CorridorSegment {
+                name: "Seattle metro (I-5)".into(),
+                miles: 30.0,
+                base_vc: 1.10,
+                free_flow_mph: 65.0,
+                incident_prob: 0.18,
+                incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.68,
+            },
         ],
     }
 }
@@ -1096,15 +1410,39 @@ pub fn ny_chi() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "NJ/PA urban I-80".into(), miles: 120.0, base_vc: 0.92,
-                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.2,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "PA/OH/IN rural I-80/I-90".into(), miles: 560.0, base_vc: 0.35,
-                free_flow_mph: 75.0, incident_prob: 0.04, incident_delay_mean_hours: 0.8,
-                incident_delay_std_hours: 0.5, managed_lane_bypasses_incident: false, managed_lane_vc: 0.30 },
-            CorridorSegment { name: "Chicago south approach".into(), miles: 80.0, base_vc: 1.05,
-                free_flow_mph: 65.0, incident_prob: 0.18, incident_delay_mean_hours: 1.3,
-                incident_delay_std_hours: 0.8, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
+            CorridorSegment {
+                name: "NJ/PA urban I-80".into(),
+                miles: 120.0,
+                base_vc: 0.92,
+                free_flow_mph: 65.0,
+                incident_prob: 0.18,
+                incident_delay_mean_hours: 1.2,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "PA/OH/IN rural I-80/I-90".into(),
+                miles: 560.0,
+                base_vc: 0.35,
+                free_flow_mph: 75.0,
+                incident_prob: 0.04,
+                incident_delay_mean_hours: 0.8,
+                incident_delay_std_hours: 0.5,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.30,
+            },
+            CorridorSegment {
+                name: "Chicago south approach".into(),
+                miles: 80.0,
+                base_vc: 1.05,
+                free_flow_mph: 65.0,
+                incident_prob: 0.18,
+                incident_delay_mean_hours: 1.3,
+                incident_delay_std_hours: 0.8,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
         ],
     }
 }
@@ -1119,15 +1457,39 @@ pub fn atl_chi() -> OdCorridor {
         hos_driving_hours: 11.0,
         hos_rest_hours: 10.0,
         segments: vec![
-            CorridorSegment { name: "Atlanta metro (I-75/I-285)".into(), miles: 40.0, base_vc: 1.30,
-                free_flow_mph: 65.0, incident_prob: 0.28, incident_delay_mean_hours: 1.8,
-                incident_delay_std_hours: 1.2, managed_lane_bypasses_incident: false, managed_lane_vc: 0.70 },
-            CorridorSegment { name: "I-65 AL/TN/KY".into(), miles: 540.0, base_vc: 0.42,
-                free_flow_mph: 70.0, incident_prob: 0.06, incident_delay_mean_hours: 1.0,
-                incident_delay_std_hours: 0.6, managed_lane_bypasses_incident: false, managed_lane_vc: 0.38 },
-            CorridorSegment { name: "I-65 IN to Chicago".into(), miles: 150.0, base_vc: 0.65,
-                free_flow_mph: 70.0, incident_prob: 0.08, incident_delay_mean_hours: 1.1,
-                incident_delay_std_hours: 0.7, managed_lane_bypasses_incident: false, managed_lane_vc: 0.58 },
+            CorridorSegment {
+                name: "Atlanta metro (I-75/I-285)".into(),
+                miles: 40.0,
+                base_vc: 1.30,
+                free_flow_mph: 65.0,
+                incident_prob: 0.28,
+                incident_delay_mean_hours: 1.8,
+                incident_delay_std_hours: 1.2,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.70,
+            },
+            CorridorSegment {
+                name: "I-65 AL/TN/KY".into(),
+                miles: 540.0,
+                base_vc: 0.42,
+                free_flow_mph: 70.0,
+                incident_prob: 0.06,
+                incident_delay_mean_hours: 1.0,
+                incident_delay_std_hours: 0.6,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.38,
+            },
+            CorridorSegment {
+                name: "I-65 IN to Chicago".into(),
+                miles: 150.0,
+                base_vc: 0.65,
+                free_flow_mph: 70.0,
+                incident_prob: 0.08,
+                incident_delay_mean_hours: 1.1,
+                incident_delay_std_hours: 0.7,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.58,
+            },
         ],
     }
 }
@@ -1148,7 +1510,10 @@ pub enum PassengerMode {
     /// Driver sleeps/works; takes over at urban exit
     AutonomousVehicle,
     /// Current Amtrak benchmark (for comparison)
-    Amtrak { schedule_hours: f64, reliability_pti: f64 },
+    Amtrak {
+        schedule_hours: f64,
+        reliability_pti: f64,
+    },
 }
 
 /// Passenger trip result.
@@ -1197,7 +1562,7 @@ impl EvProfile {
     }
 
     /// Total charging time (minutes) for a trip of distance miles
-    pub fn total_charge_minutes(&self, distance: f64, dcfc_kw: f64, stops: usize) -> f64 {
+    pub fn total_charge_minutes(&self, _distance: f64, dcfc_kw: f64, stops: usize) -> f64 {
         // Each stop: charge from ~10% to ~80% (practical fast-charge window)
         // 70% of battery capacity per stop
         let kwh_per_stop = self.battery_kwh * 0.70;
@@ -1211,8 +1576,8 @@ impl EvProfile {
 pub fn tesla_model_y() -> EvProfile {
     EvProfile {
         name: "Tesla Model Y (Long Range)",
-        highway_range_miles: 290.0,  // EPA 330mi, 88% at 75mph
-        charge_rate_kw: 250.0,       // V3 Supercharger rate
+        highway_range_miles: 290.0, // EPA 330mi, 88% at 75mph
+        charge_rate_kw: 250.0,      // V3 Supercharger rate
         battery_kwh: 82.0,
         kwh_per_mile: 0.283,
     }
@@ -1221,8 +1586,8 @@ pub fn tesla_model_y() -> EvProfile {
 pub fn tesla_semi() -> EvProfile {
     EvProfile {
         name: "Tesla Semi (500mi range)",
-        highway_range_miles: 480.0,  // at highway freight speed
-        charge_rate_kw: 1000.0,      // Megacharger (1MW)
+        highway_range_miles: 480.0, // at highway freight speed
+        charge_rate_kw: 1000.0,     // Megacharger (1MW)
         battery_kwh: 900.0,
         kwh_per_mile: 1.875,
     }
@@ -1231,8 +1596,8 @@ pub fn tesla_semi() -> EvProfile {
 pub fn average_ev_2026() -> EvProfile {
     EvProfile {
         name: "Average EV 2026 (Chevy Equinox / Hyundai Ioniq 5)",
-        highway_range_miles: 220.0,  // conservative highway range
-        charge_rate_kw: 150.0,       // 150kW = I2.0 minimum standard
+        highway_range_miles: 220.0, // conservative highway range
+        charge_rate_kw: 150.0,      // 150kW = I2.0 minimum standard
         battery_kwh: 78.0,
         kwh_per_mile: 0.355,
     }
@@ -1278,12 +1643,16 @@ pub fn analyze_ev_charging(
     let overnight_ok = charge_per_hub_stop >= charge_needed_per_stop * 1.1; // 10% buffer
 
     let overnight_note = if overnight_ok {
-        format!("Auto-charges at hub stops ({} stops × 20min = {:.0}min total — no wake needed)",
-            stops, charge_mins)
+        format!(
+            "Auto-charges at hub stops ({} stops × 20min = {:.0}min total — no wake needed)",
+            stops, charge_mins
+        )
     } else {
-        format!("Needs {:.0}min/stop; hub stop provides {:.0}min — may need brief charge stop",
+        format!(
+            "Needs {:.0}min/stop; hub stop provides {:.0}min — may need brief charge stop",
             charge_needed_per_stop / i20_dcfc_kw.min(ev.charge_rate_kw) * 60.0,
-            20.0)
+            20.0
+        )
     };
 
     EvChargingAnalysis {
@@ -1311,78 +1680,86 @@ pub fn run_passenger_simulation(
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
     let miles = corridor.total_miles();
 
-    let elapsed_times: Vec<f64> = (0..n_trips).map(|_| {
-        match mode {
-            PassengerMode::ExpressBus => {
-                // Bus at 55 mph effective, relay driver at T1 hubs
-                // More stops than freight: boarding time adds ~5 min per hub stop
-                let relay_stations = ((miles / 400.0).ceil() as usize).max(1);
-                let mut drive_hours = 0.0f64;
-                let mut delay = 0.0f64;
+    let elapsed_times: Vec<f64> = (0..n_trips)
+        .map(|_| {
+            match mode {
+                PassengerMode::ExpressBus => {
+                    // Bus at 55 mph effective, relay driver at T1 hubs
+                    // More stops than freight: boarding time adds ~5 min per hub stop
+                    let relay_stations = ((miles / 400.0).ceil() as usize).max(1);
+                    let mut drive_hours = 0.0f64;
+                    let mut delay = 0.0f64;
 
-                for seg in &corridor.segments {
-                    let vc = {
-                        let v = rng.gen_range(0.80..=1.15f64);
-                        let surge = if rng.gen_bool(0.08) { 1.30 } else { 1.0 };
-                        // Bus uses managed lane where available
-                        seg.managed_lane_vc * v * surge
-                    };
-                    let ff = seg.miles / 55.0_f64.min(seg.free_flow_mph);
-                    drive_hours += bpr_time(ff, vc.min(1.3));
-                    if !seg.managed_lane_bypasses_incident && rng.gen_bool(seg.incident_prob * 0.5) {
-                        // Bus can reroute faster than trucks; half the delay
-                        delay += sample_lognormal(
-                            seg.incident_delay_mean_hours * 0.5,
-                            seg.incident_delay_std_hours * 0.5,
-                            &mut rng,
-                        ).max(0.05);
+                    for seg in &corridor.segments {
+                        let vc = {
+                            let v = rng.gen_range(0.80..=1.15f64);
+                            let surge = if rng.gen_bool(0.08) { 1.30 } else { 1.0 };
+                            // Bus uses managed lane where available
+                            seg.managed_lane_vc * v * surge
+                        };
+                        let ff = seg.miles / 55.0_f64.min(seg.free_flow_mph);
+                        drive_hours += bpr_time(ff, vc.min(1.3));
+                        if !seg.managed_lane_bypasses_incident
+                            && rng.gen_bool(seg.incident_prob * 0.5)
+                        {
+                            // Bus can reroute faster than trucks; half the delay
+                            delay += sample_lognormal(
+                                seg.incident_delay_mean_hours * 0.5,
+                                seg.incident_delay_std_hours * 0.5,
+                                &mut rng,
+                            )
+                            .max(0.05);
+                        }
                     }
+                    // Relay driver swaps + passenger boarding overhead
+                    let swap_overhead = relay_stations as f64 * (20.0 + 8.0) / 60.0; // 28 min/stop
+                    let terminal_overhead = 1.5; // boarding at origin + alighting at destination
+                    drive_hours + delay + swap_overhead + terminal_overhead
                 }
-                // Relay driver swaps + passenger boarding overhead
-                let swap_overhead = relay_stations as f64 * (20.0 + 8.0) / 60.0; // 28 min/stop
-                let terminal_overhead = 1.5; // boarding at origin + alighting at destination
-                drive_hours + delay + swap_overhead + terminal_overhead
-            }
 
-            PassengerMode::AutonomousVehicle => {
-                // AV at 75 mph on managed lane — no HOS stops, no driver fatigue
-                // Occasional slowdown: construction, weather, sensor limitation zone
-                let mut drive_hours = 0.0f64;
-                let mut delay = 0.0f64;
+                PassengerMode::AutonomousVehicle => {
+                    // AV at 75 mph on managed lane — no HOS stops, no driver fatigue
+                    // Occasional slowdown: construction, weather, sensor limitation zone
+                    let mut drive_hours = 0.0f64;
+                    let mut delay = 0.0f64;
 
-                for seg in &corridor.segments {
-                    let base_speed = 75.0_f64.min(seg.free_flow_mph * 1.1);
-                    let vc = seg.managed_lane_vc * rng.gen_range(0.90..=1.05f64);
-                    let ff = seg.miles / base_speed;
-                    drive_hours += bpr_time(ff, vc.min(1.0)); // AV disengages above V/C 1.0
+                    for seg in &corridor.segments {
+                        let base_speed = 75.0_f64.min(seg.free_flow_mph * 1.1);
+                        let vc = seg.managed_lane_vc * rng.gen_range(0.90..=1.05f64);
+                        let ff = seg.miles / base_speed;
+                        drive_hours += bpr_time(ff, vc.min(1.0)); // AV disengages above V/C 1.0
 
-                    // AV encounters: severe weather (must slow to 45mph), sensor degradation
-                    if rng.gen_bool(seg.incident_prob * 0.3) {
-                        // AV slows but doesn't stop; partial delay
-                        delay += rng.gen_range(0.1..0.5_f64);
+                        // AV encounters: severe weather (must slow to 45mph), sensor degradation
+                        if rng.gen_bool(seg.incident_prob * 0.3) {
+                            // AV slows but doesn't stop; partial delay
+                            delay += rng.gen_range(0.1..0.5_f64);
+                        }
+                        // Donner/mountain pass: AV may need to slow; no closure because hardened
+                        if seg.name.contains("Donner") || seg.name.contains("Pass") {
+                            drive_hours *= 1.05; // 5% speed reduction for grade/weather caution
+                        }
                     }
-                    // Donner/mountain pass: AV may need to slow; no closure because hardened
-                    if seg.name.contains("Donner") || seg.name.contains("Pass") {
-                        drive_hours *= 1.05; // 5% speed reduction for grade/weather caution
-                    }
+                    // AV overhead: managed lane entry/exit (hub junction)
+                    let hub_stops = ((miles / 500.0).ceil() as usize).max(0);
+                    let hub_overhead = hub_stops as f64 * 0.1; // 6 minutes per hub junction
+                    let terminal_overhead = 0.5; // park and walk at destination
+                    drive_hours + delay + hub_overhead + terminal_overhead
                 }
-                // AV overhead: managed lane entry/exit (hub junction)
-                let hub_stops = ((miles / 500.0).ceil() as usize).max(0);
-                let hub_overhead = hub_stops as f64 * 0.1; // 6 minutes per hub junction
-                let terminal_overhead = 0.5; // park and walk at destination
-                drive_hours + delay + hub_overhead + terminal_overhead
-            }
 
-            PassengerMode::Amtrak { schedule_hours, reliability_pti } => {
-                // Amtrak: scheduled time × PTI variance
-                let variance = rng.gen_range(0.85..=(reliability_pti * 1.1));
-                schedule_hours * variance
+                PassengerMode::Amtrak {
+                    schedule_hours,
+                    reliability_pti,
+                } => {
+                    // Amtrak: scheduled time × PTI variance
+                    let variance = rng.gen_range(0.85..=(reliability_pti * 1.1));
+                    schedule_hours * variance
+                }
             }
-        }
-    }).collect();
+        })
+        .collect();
 
     let mut sorted = elapsed_times.clone();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(f64::total_cmp);
     let n = sorted.len() as f64;
     let p50 = sorted[(0.50 * (n - 1.0)) as usize];
     let p95 = sorted[(0.95 * (n - 1.0)) as usize];
@@ -1392,9 +1769,9 @@ pub fn run_passenger_simulation(
         PassengerMode::Amtrak { schedule_hours, .. } => schedule_hours,
     };
     let cost = match mode {
-        PassengerMode::ExpressBus => miles * 0.12,       // $0.12/mile
+        PassengerMode::ExpressBus => miles * 0.12, // $0.12/mile
         PassengerMode::AutonomousVehicle => miles * 0.18 + 15.0, // $0.18/mi fuel+wear + managed lane toll
-        PassengerMode::Amtrak { .. } => miles * 0.15,    // Amtrak avg
+        PassengerMode::Amtrak { .. } => miles * 0.15,            // Amtrak avg
     };
     let mode_label = match mode {
         PassengerMode::ExpressBus => "Express bus (relay)",
@@ -1441,16 +1818,28 @@ impl OdComparison {
         let relay_stations = ((corridor.total_miles() / 500.0).ceil() as usize).max(1);
         let relay = DriverMode::Relay {
             stations: relay_stations,
-            swap_minutes: 20.0,  // 20-minute target swap; conservative
+            swap_minutes: 20.0, // 20-minute target swap; conservative
         };
 
         OdComparison {
             corridor_name: corridor.name.clone(),
-            solo_gp:       run_od_simulation_with_driver(corridor, false, &DriverMode::Solo,  n, seed),
-            solo_managed:  run_od_simulation_with_driver(corridor, true,  &DriverMode::Solo,  n, seed+1),
-            team_managed:  run_od_simulation_with_driver(corridor, true,  &DriverMode::Team,  n, seed+2),
-            relay_gp:      run_od_simulation_with_driver(corridor, false, &relay,              n, seed+3),
-            relay_managed: run_od_simulation_with_driver(corridor, true,  &relay,              n, seed+4),
+            solo_gp: run_od_simulation_with_driver(corridor, false, &DriverMode::Solo, n, seed),
+            solo_managed: run_od_simulation_with_driver(
+                corridor,
+                true,
+                &DriverMode::Solo,
+                n,
+                seed + 1,
+            ),
+            team_managed: run_od_simulation_with_driver(
+                corridor,
+                true,
+                &DriverMode::Team,
+                n,
+                seed + 2,
+            ),
+            relay_gp: run_od_simulation_with_driver(corridor, false, &relay, n, seed + 3),
+            relay_managed: run_od_simulation_with_driver(corridor, true, &relay, n, seed + 4),
         }
     }
 }

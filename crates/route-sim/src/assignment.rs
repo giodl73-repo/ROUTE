@@ -16,9 +16,9 @@
 ///   t(v) = t_0 × (1 + α × (v/c)^β)
 ///   Standard parameters: α=0.15, β=4.0
 use crate::demand::{DemandMatrix, OdDemand};
-use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::algo::dijkstra;
-use petgraph::visit::EdgeRef;  // needed for .id(), .source(), .target() on EdgeReference
+use petgraph::graph::{EdgeIndex, NodeIndex};
+use petgraph::visit::EdgeRef; // needed for .id(), .source(), .target() on EdgeReference
 use route_network::HighwayGraph;
 use std::collections::HashMap;
 
@@ -32,7 +32,12 @@ pub struct BprParams {
 }
 
 impl Default for BprParams {
-    fn default() -> Self { BprParams { alpha: 0.15, beta: 4.0 } }
+    fn default() -> Self {
+        BprParams {
+            alpha: 0.15,
+            beta: 4.0,
+        }
+    }
 }
 
 /// Current flow state: vehicles per hour on each edge.
@@ -64,7 +69,11 @@ impl FlowState {
     /// Volume-to-capacity ratio for an edge.
     pub fn vc_ratio(&self, ei: EdgeIndex, capacity_vph: f64) -> f64 {
         let v = self.flow.get(&ei).cloned().unwrap_or(0.0);
-        if capacity_vph > 0.0 { v / capacity_vph } else { 0.0 }
+        if capacity_vph > 0.0 {
+            v / capacity_vph
+        } else {
+            0.0
+        }
     }
 }
 
@@ -83,7 +92,9 @@ pub fn bpr_travel_time(
     capacity_vph: f64,
     params: &BprParams,
 ) -> f64 {
-    if capacity_vph <= 0.0 { return free_flow_hours * 10.0; } // blocked
+    if capacity_vph <= 0.0 {
+        return free_flow_hours * 10.0;
+    } // blocked
     free_flow_hours * (1.0 + params.alpha * (flow_vph / capacity_vph).powf(params.beta))
 }
 
@@ -139,19 +150,29 @@ pub fn wardrop_equilibrium(
         let direction = all_or_nothing(g, demand, &state.travel_time);
 
         // Compute relative gap
-        let current_obj: f64 = g.graph.edge_indices().map(|ei| {
-            let v = state.flow.get(&ei).cloned().unwrap_or(0.0);
-            let t = state.travel_time.get(&ei).cloned().unwrap_or(0.0);
-            v * t
-        }).sum();
-        let aon_obj: f64 = g.graph.edge_indices().map(|ei| {
-            let v = direction.flow.get(&ei).cloned().unwrap_or(0.0);
-            let t = state.travel_time.get(&ei).cloned().unwrap_or(0.0);
-            v * t
-        }).sum();
+        let current_obj: f64 = g
+            .graph
+            .edge_indices()
+            .map(|ei| {
+                let v = state.flow.get(&ei).cloned().unwrap_or(0.0);
+                let t = state.travel_time.get(&ei).cloned().unwrap_or(0.0);
+                v * t
+            })
+            .sum();
+        let aon_obj: f64 = g
+            .graph
+            .edge_indices()
+            .map(|ei| {
+                let v = direction.flow.get(&ei).cloned().unwrap_or(0.0);
+                let t = state.travel_time.get(&ei).cloned().unwrap_or(0.0);
+                v * t
+            })
+            .sum();
         let gap = if current_obj > 0.0 {
             (current_obj - aon_obj).abs() / current_obj
-        } else { 0.0 };
+        } else {
+            0.0
+        };
 
         state.relative_gap = gap;
         state.iterations = iter + 1;
@@ -171,7 +192,9 @@ pub fn wardrop_equilibrium(
 
             let xt = state.truck_flow.get(&ei).cloned().unwrap_or(0.0);
             let dt = direction.truck_flow.get(&ei).cloned().unwrap_or(0.0);
-            state.truck_flow.insert(ei, (1.0 - lambda) * xt + lambda * dt);
+            state
+                .truck_flow
+                .insert(ei, (1.0 - lambda) * xt + lambda * dt);
         }
     }
 
@@ -212,12 +235,12 @@ fn shortest_path_flow(
     let mut result = FlowState::empty();
 
     // Edge weight function: travel time
-    let dist = dijkstra(
-        &g.graph,
-        origin,
-        Some(destination),
-        |er| travel_times.get(&er.id()).cloned().unwrap_or(free_flow_time_hours(g, er.id())),
-    );
+    let dist = dijkstra(&g.graph, origin, Some(destination), |er| {
+        travel_times
+            .get(&er.id())
+            .cloned()
+            .unwrap_or(free_flow_time_hours(g, er.id()))
+    });
 
     if !dist.contains_key(&destination) {
         return result; // no path found
@@ -229,7 +252,11 @@ fn shortest_path_flow(
     // Here we use a heuristic: edges whose endpoints are on the shortest-path tree
     let path_edges = find_path_edges(g, origin, destination, &dist, travel_times);
     let total_demand = od.truck_vph + od.car_vph;
-    let truck_fraction = if total_demand > 0.0 { od.truck_vph / total_demand } else { 0.0 };
+    let truck_fraction = if total_demand > 0.0 {
+        od.truck_vph / total_demand
+    } else {
+        0.0
+    };
 
     for ei in path_edges {
         *result.flow.entry(ei).or_insert(0.0) += total_demand;
@@ -253,14 +280,20 @@ fn find_path_edges(
     let mut visited = std::collections::HashSet::new();
 
     while current != origin {
-        if visited.contains(&current) { break; } // cycle guard
+        if visited.contains(&current) {
+            break;
+        } // cycle guard
         visited.insert(current);
 
         // Find the incoming edge that is on the shortest path
-        let best = g.graph.edges_directed(current, petgraph::Direction::Incoming)
+        let best = g
+            .graph
+            .edges_directed(current, petgraph::Direction::Incoming)
             .filter_map(|er| {
                 let pred = er.source();
-                let t = travel_times.get(&er.id()).cloned()
+                let t = travel_times
+                    .get(&er.id())
+                    .cloned()
                     .unwrap_or(free_flow_time_hours(g, er.id()));
                 let pred_dist = dist.get(&pred).cloned()?;
                 let curr_dist = dist.get(&current).cloned()?;
@@ -297,15 +330,19 @@ fn line_search(
     _demand: &DemandMatrix,
 ) -> f64 {
     let objective = |lambda: f64| -> f64 {
-        g.graph.edge_indices().map(|ei| {
-            let x = current.flow.get(&ei).cloned().unwrap_or(0.0);
-            let d = direction.flow.get(&ei).cloned().unwrap_or(0.0);
-            let v = (1.0 - lambda) * x + lambda * d;
-            let c = capacities.get(&ei).cloned().unwrap_or(1900.0);
-            let ff = free_flow_time_hours(g, ei);
-            // BPR integral: t_0 × [v + α × v^(β+1) / ((β+1) × c^β)]
-            ff * (v + bpr.alpha * v.powf(bpr.beta + 1.0) / ((bpr.beta + 1.0) * c.powf(bpr.beta)))
-        }).sum()
+        g.graph
+            .edge_indices()
+            .map(|ei| {
+                let x = current.flow.get(&ei).cloned().unwrap_or(0.0);
+                let d = direction.flow.get(&ei).cloned().unwrap_or(0.0);
+                let v = (1.0 - lambda) * x + lambda * d;
+                let c = capacities.get(&ei).cloned().unwrap_or(1900.0);
+                let ff = free_flow_time_hours(g, ei);
+                // BPR integral: t_0 × [v + α × v^(β+1) / ((β+1) × c^β)]
+                ff * (v + bpr.alpha * v.powf(bpr.beta + 1.0)
+                    / ((bpr.beta + 1.0) * c.powf(bpr.beta)))
+            })
+            .sum()
     };
 
     // Bisection on derivative of objective w.r.t. lambda
@@ -314,7 +351,11 @@ fn line_search(
         let mid = (lo + hi) / 2.0;
         let f_lo = objective(lo + 1e-6) - objective(lo);
         let f_mid = objective(mid + 1e-6) - objective(mid);
-        if f_lo * f_mid < 0.0 { hi = mid; } else { lo = mid; }
+        if f_lo * f_mid < 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
     }
     (lo + hi) / 2.0
 }

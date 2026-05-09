@@ -53,12 +53,14 @@ pub fn corridor_max_flow(g: &HighwayGraph, route_id: &str) -> Option<FlowResult>
     let (bottleneck_edge, min_cap) = edges
         .iter()
         .map(|&ei| (ei, capacities.get(&ei).cloned().unwrap_or(0.0)))
-        .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())?;
+        .min_by(|a, b| a.1.total_cmp(&b.1))?;
 
     // Mean capacity across all segments — the "unconstrained" throughput
-    let mean_cap = edges.iter()
+    let mean_cap = edges
+        .iter()
         .map(|&ei| capacities.get(&ei).cloned().unwrap_or(0.0))
-        .sum::<f64>() / edges.len() as f64;
+        .sum::<f64>()
+        / edges.len() as f64;
 
     let bottleneck_capacities = vec![min_cap];
     let lane_addition_gain = vec![1_900.0 * 24.0]; // one lane = 45,600 vpd
@@ -76,36 +78,9 @@ pub fn corridor_max_flow(g: &HighwayGraph, route_id: &str) -> Option<FlowResult>
 
 /// Max-flow across the full national highway graph between two node indices.
 /// Use this to find how much freight CAN move even when one corridor is closed.
-pub fn national_max_flow(
-    g: &HighwayGraph,
-    source: NodeIndex,
-    sink: NodeIndex,
-) -> f64 {
+pub fn national_max_flow(g: &HighwayGraph, source: NodeIndex, sink: NodeIndex) -> f64 {
     let capacities = build_capacity_map(g);
     edmonds_karp(g, &capacities, source, sink).max_flow
-}
-
-/// Find the two terminus nodes for a corridor (lowest and highest x-coordinate nodes).
-fn find_corridor_termini(
-    g: &HighwayGraph,
-    edges: &[EdgeIndex],
-) -> Option<(NodeIndex, NodeIndex)> {
-    let mut west_node: Option<NodeIndex> = None;
-    let mut east_node: Option<NodeIndex> = None;
-    let mut west_lon = f64::MAX;
-    let mut east_lon = f64::MIN;
-
-    for &ei in edges {
-        if let Some((s, t)) = g.graph.edge_endpoints(ei) {
-            for ni in [s, t] {
-                let lon = g.graph[ni].coord.x;
-                if lon < west_lon { west_lon = lon; west_node = Some(ni); }
-                if lon > east_lon { east_lon = lon; east_node = Some(ni); }
-            }
-        }
-    }
-
-    west_node.zip(east_node).filter(|(s, t)| s != t)
 }
 
 /// Build edge capacity map: EdgeIndex → vpd (vehicles per day).
@@ -131,9 +106,6 @@ fn build_capacity_map(g: &HighwayGraph) -> HashMap<EdgeIndex, f64> {
 /// Internal Edmonds-Karp result.
 struct EKResult {
     max_flow: f64,
-    paths: usize,
-    /// Residual capacity after all augmentations
-    residual: HashMap<(NodeIndex, NodeIndex), f64>,
 }
 
 /// Edmonds-Karp algorithm (BFS augmenting paths).
@@ -161,18 +133,25 @@ fn edmonds_karp(
     const MAX_PATHS: usize = 500;
 
     loop {
-        if paths >= MAX_PATHS { break; }
+        if paths >= MAX_PATHS {
+            break;
+        }
 
         // BFS to find shortest augmenting path
         let path = bfs_augmenting_path(&residual, source, sink);
-        if path.is_empty() { break; }
+        if path.is_empty() {
+            break;
+        }
 
         // Find bottleneck capacity along path
-        let flow = path.windows(2)
+        let flow = path
+            .windows(2)
             .map(|w| residual.get(&(w[0], w[1])).cloned().unwrap_or(0.0))
             .fold(f64::MAX, f64::min);
 
-        if flow <= 0.0 { break; }
+        if flow <= 0.0 {
+            break;
+        }
 
         // Update residual capacities
         for w in path.windows(2) {
@@ -184,7 +163,7 @@ fn edmonds_karp(
         paths += 1;
     }
 
-    EKResult { max_flow, paths, residual }
+    EKResult { max_flow }
 }
 
 /// BFS to find an augmenting path from source to sink in the residual graph.
@@ -199,7 +178,9 @@ fn bfs_augmenting_path(
     visited.insert(source, source);
 
     while let Some(u) = queue.pop_front() {
-        if u == sink { break; }
+        if u == sink {
+            break;
+        }
         // Iterate over all edges from u that have residual capacity
         for (&(from, to), &cap) in residual {
             if from == u && cap > 1e-9 && !visited.contains_key(&to) {
@@ -222,41 +203,4 @@ fn bfs_augmenting_path(
     }
     path.reverse();
     path
-}
-
-/// Find min-cut edges (saturated edges on corridor route in the residual graph).
-fn find_min_cut(
-    g: &HighwayGraph,
-    caps: &HashMap<EdgeIndex, f64>,
-    source: NodeIndex,
-    residual: &HashMap<(NodeIndex, NodeIndex), f64>,
-    route_edges: &[EdgeIndex],
-) -> Vec<EdgeIndex> {
-    // Reachable from source in residual graph
-    let mut reachable = std::collections::HashSet::new();
-    let mut queue = VecDeque::new();
-    queue.push_back(source);
-    reachable.insert(source);
-    while let Some(u) = queue.pop_front() {
-        for (&(from, to), &cap) in residual {
-            if from == u && cap > 1e-9 && !reachable.contains(&to) {
-                reachable.insert(to);
-                queue.push_back(to);
-            }
-        }
-    }
-
-    // Min-cut edges: on route, crossing from reachable to unreachable
-    route_edges
-        .iter()
-        .filter(|&&ei| {
-            if let Some((u, v)) = g.graph.edge_endpoints(ei) {
-                reachable.contains(&u) && !reachable.contains(&v)
-                    && caps.get(&ei).cloned().unwrap_or(0.0) > 0.0
-            } else {
-                false
-            }
-        })
-        .cloned()
-        .collect()
 }

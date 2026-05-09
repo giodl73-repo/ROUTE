@@ -11,7 +11,7 @@
 ///
 /// For future multi-constraint problems (budget + maintenance + political
 /// feasibility + climate resilience simultaneously), add rows to the LP.
-use minilp::{Problem, OptimizationDirection, ComparisonOp};
+use minilp::{ComparisonOp, OptimizationDirection, Problem};
 
 /// A corridor that is a candidate for investment.
 #[derive(Debug, Clone)]
@@ -46,32 +46,27 @@ impl UpgradeType {
     /// Rough cost per mile in $B. Source: FHWA project cost data ranges.
     pub fn cost_per_mile_b(&self) -> f64 {
         match self {
-            UpgradeType::InterstateWidening      => 0.010, // $10M/mile average
-            UpgradeType::UsHighwayToInterstate   => 0.030, // $30M/mile average
+            UpgradeType::InterstateWidening => 0.010, // $10M/mile average
+            UpgradeType::UsHighwayToInterstate => 0.030, // $30M/mile average
             UpgradeType::StateHighwayToInterstate => 0.040, // $40M/mile average
-            UpgradeType::Greenfield              => 0.075, // $75M/mile average
+            UpgradeType::Greenfield => 0.075,         // $75M/mile average
         }
     }
 
     /// Throughput gain per mile per day at full upgrade (vpd added).
     pub fn throughput_gain_per_mile_vpd(&self) -> f64 {
         match self {
-            UpgradeType::InterstateWidening      => 45_600.0, // 2 added lanes × 1900 × 24
-            UpgradeType::UsHighwayToInterstate   => 91_200.0, // full interstate standard
+            UpgradeType::InterstateWidening => 45_600.0, // 2 added lanes × 1900 × 24
+            UpgradeType::UsHighwayToInterstate => 91_200.0, // full interstate standard
             UpgradeType::StateHighwayToInterstate => 91_200.0,
-            UpgradeType::Greenfield              => 91_200.0,
+            UpgradeType::Greenfield => 91_200.0,
         }
     }
 }
 
 impl InvestmentCandidate {
     /// Build a candidate from corridor data.
-    pub fn from_corridor(
-        route_id: &str,
-        designation: &str,
-        miles: f64,
-        is_upgrade: bool,
-    ) -> Self {
+    pub fn from_corridor(route_id: &str, designation: &str, miles: f64, is_upgrade: bool) -> Self {
         let upgrade_type = if is_upgrade {
             if route_id.starts_with("US") {
                 UpgradeType::UsHighwayToInterstate
@@ -111,8 +106,8 @@ pub struct InvestmentPlan {
 pub struct InvestmentItem {
     pub route_id: String,
     pub designation: String,
-    pub allocation: f64,       // fraction funded (0.0–1.0)
-    pub cost_b: f64,           // dollars allocated
+    pub allocation: f64, // fraction funded (0.0–1.0)
+    pub cost_b: f64,     // dollars allocated
     pub throughput_gain_vpd: f64,
     pub upgrade_type: UpgradeType,
     pub miles: f64,
@@ -120,14 +115,14 @@ pub struct InvestmentItem {
 
 /// Solve the investment allocation LP.
 /// Returns the optimal portfolio maximising throughput within budget.
-pub fn allocate_investment(
-    candidates: &[InvestmentCandidate],
-    budget_b: f64,
-) -> InvestmentPlan {
+pub fn allocate_investment(candidates: &[InvestmentCandidate], budget_b: f64) -> InvestmentPlan {
     if candidates.is_empty() {
         return InvestmentPlan {
-            budget_b, allocated_b: 0.0, items: vec![],
-            total_throughput_gain_vpd: 0.0, total_score_improvement: 0.0,
+            budget_b,
+            allocated_b: 0.0,
+            items: vec![],
+            total_throughput_gain_vpd: 0.0,
+            total_score_improvement: 0.0,
         };
     }
 
@@ -140,7 +135,8 @@ pub fn allocate_investment(
         .collect();
 
     // Budget constraint: Σ cost_i × x_i ≤ budget_b
-    let budget_row: Vec<(minilp::Variable, f64)> = vars.iter()
+    let budget_row: Vec<(minilp::Variable, f64)> = vars
+        .iter()
         .zip(candidates.iter())
         .map(|(&v, c)| (v, c.upgrade_cost_b))
         .collect();
@@ -148,7 +144,10 @@ pub fn allocate_investment(
 
     // Solve
     let allocations: Vec<f64> = match problem.solve() {
-        Ok(solution) => vars.iter().map(|&v| solution[v].max(0.0).min(1.0)).collect(),
+        Ok(solution) => vars
+            .iter()
+            .map(|&v| solution[v].max(0.0).min(1.0))
+            .collect(),
         Err(_) => {
             // Fallback: greedy by gain/cost ratio (optimal for single constraint)
             greedy_allocate(candidates, budget_b)
@@ -162,7 +161,9 @@ pub fn allocate_investment(
     let mut total_score = 0.0;
 
     for (c, &alloc) in candidates.iter().zip(allocations.iter()) {
-        if alloc < 0.001 { continue; }
+        if alloc < 0.001 {
+            continue;
+        }
         let cost = c.upgrade_cost_b * alloc;
         let gain = c.throughput_gain_vpd * alloc;
         allocated_b += cost;
@@ -180,7 +181,7 @@ pub fn allocate_investment(
     }
 
     // Sort by throughput gain descending
-    items.sort_by(|a, b| b.throughput_gain_vpd.partial_cmp(&a.throughput_gain_vpd).unwrap());
+    items.sort_by(|a, b| b.throughput_gain_vpd.total_cmp(&a.throughput_gain_vpd));
 
     InvestmentPlan {
         budget_b,
@@ -198,14 +199,16 @@ fn greedy_allocate(candidates: &[InvestmentCandidate], budget_b: f64) -> Vec<f64
         .enumerate()
         .map(|(i, c)| (i, c.throughput_gain_vpd / c.upgrade_cost_b.max(0.001)))
         .collect();
-    ratios.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    ratios.sort_by(|a, b| b.1.total_cmp(&a.1));
 
     let mut allocations = vec![0.0f64; candidates.len()];
     let mut remaining = budget_b;
 
     for (i, _) in ratios {
         let c = &candidates[i];
-        if remaining <= 0.0 { break; }
+        if remaining <= 0.0 {
+            break;
+        }
         let alloc = (remaining / c.upgrade_cost_b).min(1.0);
         allocations[i] = alloc;
         remaining -= c.upgrade_cost_b * alloc;

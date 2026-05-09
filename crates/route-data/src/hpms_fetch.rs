@@ -8,26 +8,62 @@
 use crate::hpms::HpmsRecord;
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use std::collections::HashMap;
 
 const BASE_URL: &str =
     "https://geo.dot.gov/server/rest/services/Hosted/{STATE}_2018_PR/FeatureServer/0/query";
 
 /// All 50 state name-codes as used in the geo.dot.gov endpoint pattern.
 pub const STATE_CODES: &[(&str, &str)] = &[
-    ("AL", "Alabama"), ("AK", "Alaska"), ("AZ", "Arizona"), ("AR", "Arkansas"),
-    ("CA", "California"), ("CO", "Colorado"), ("CT", "Connecticut"), ("DE", "Delaware"),
-    ("FL", "Florida"), ("GA", "Georgia"), ("HI", "Hawaii"), ("ID", "Idaho"),
-    ("IL", "Illinois"), ("IN", "Indiana"), ("IA", "Iowa"), ("KS", "Kansas"),
-    ("KY", "Kentucky"), ("LA", "Louisiana"), ("ME", "Maine"), ("MD", "Maryland"),
-    ("MA", "Massachusetts"), ("MI", "Michigan"), ("MN", "Minnesota"), ("MS", "Mississippi"),
-    ("MO", "Missouri"), ("MT", "Montana"), ("NE", "Nebraska"), ("NV", "Nevada"),
-    ("NH", "New_Hampshire"), ("NJ", "New_Jersey"), ("NM", "New_Mexico"), ("NY", "New_York"),
-    ("NC", "North_Carolina"), ("ND", "North_Dakota"), ("OH", "Ohio"), ("OK", "Oklahoma"),
-    ("OR", "Oregon"), ("PA", "Pennsylvania"), ("RI", "Rhode_Island"), ("SC", "South_Carolina"),
-    ("SD", "South_Dakota"), ("TN", "Tennessee"), ("TX", "Texas"), ("UT", "Utah"),
-    ("VT", "Vermont"), ("VA", "Virginia"), ("WA", "Washington"), ("WV", "West_Virginia"),
-    ("WI", "Wisconsin"), ("WY", "Wyoming"),
+    ("AL", "Alabama"),
+    ("AK", "Alaska"),
+    ("AZ", "Arizona"),
+    ("AR", "Arkansas"),
+    ("CA", "California"),
+    ("CO", "Colorado"),
+    ("CT", "Connecticut"),
+    ("DE", "Delaware"),
+    ("FL", "Florida"),
+    ("GA", "Georgia"),
+    ("HI", "Hawaii"),
+    ("ID", "Idaho"),
+    ("IL", "Illinois"),
+    ("IN", "Indiana"),
+    ("IA", "Iowa"),
+    ("KS", "Kansas"),
+    ("KY", "Kentucky"),
+    ("LA", "Louisiana"),
+    ("ME", "Maine"),
+    ("MD", "Maryland"),
+    ("MA", "Massachusetts"),
+    ("MI", "Michigan"),
+    ("MN", "Minnesota"),
+    ("MS", "Mississippi"),
+    ("MO", "Missouri"),
+    ("MT", "Montana"),
+    ("NE", "Nebraska"),
+    ("NV", "Nevada"),
+    ("NH", "New_Hampshire"),
+    ("NJ", "New_Jersey"),
+    ("NM", "New_Mexico"),
+    ("NY", "New_York"),
+    ("NC", "North_Carolina"),
+    ("ND", "North_Dakota"),
+    ("OH", "Ohio"),
+    ("OK", "Oklahoma"),
+    ("OR", "Oregon"),
+    ("PA", "Pennsylvania"),
+    ("RI", "Rhode_Island"),
+    ("SC", "South_Carolina"),
+    ("SD", "South_Dakota"),
+    ("TN", "Tennessee"),
+    ("TX", "Texas"),
+    ("UT", "Utah"),
+    ("VT", "Vermont"),
+    ("VA", "Virginia"),
+    ("WA", "Washington"),
+    ("WV", "West_Virginia"),
+    ("WI", "Wisconsin"),
+    ("WY", "Wyoming"),
 ];
 
 #[derive(Debug, Deserialize)]
@@ -56,16 +92,11 @@ struct FeatureAttributes {
     iri: Option<f64>,
     through_lanes: Option<f64>,
     speed_limit: Option<f64>,
-    /// f_system=1 → Interstate principal arterial
-    f_system: Option<i64>,
 }
 
 /// Fetch HPMS data for one state and return a list of HpmsRecords.
 /// `state_name` is the URL-encoded name, e.g. "California", "New_Hampshire".
-pub fn fetch_state_hpms(
-    state_abbr: &str,
-    state_name: &str,
-) -> Result<Vec<HpmsRecord>> {
+pub fn fetch_state_hpms(state_abbr: &str, state_name: &str) -> Result<Vec<HpmsRecord>> {
     let url = BASE_URL.replace("{STATE}", state_name);
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
@@ -160,7 +191,15 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
 
     // Write to CSV
     let mut wtr = csv::Writer::from_path(output_path)?;
-    wtr.write_record(["STATE", "ROUTE_ID", "AADT", "PCT_TRUCK", "LANE_COUNT", "IRI", "SPEED_LIMIT"])?;
+    wtr.write_record([
+        "STATE",
+        "ROUTE_ID",
+        "AADT",
+        "PCT_TRUCK",
+        "LANE_COUNT",
+        "IRI",
+        "SPEED_LIMIT",
+    ])?;
     for r in &all_records {
         wtr.write_record(&[
             r.state.clone(),
@@ -174,7 +213,11 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
     }
     wtr.flush()?;
 
-    println!("  wrote {} HPMS records → {}", all_records.len(), output_path.display());
+    println!(
+        "  wrote {} HPMS records → {}",
+        all_records.len(),
+        output_path.display()
+    );
     Ok(())
 }
 
@@ -188,30 +231,45 @@ pub fn normalise_hpms_route_id(raw: &str) -> String {
     if upper.starts_with("IH") || upper.starts_with("IS") {
         let num: String = upper.chars().filter(|c| c.is_ascii_digit()).collect();
         let num = num.trim_start_matches('0');
-        if !num.is_empty() { return format!("I{num}"); }
+        if !num.is_empty() {
+            return format!("I{num}");
+        }
     }
     if upper.starts_with("I-") || upper.starts_with("I ") {
-        let num: String = upper[2..].chars().filter(|c| c.is_ascii_alphanumeric()).collect();
+        let num: String = upper[2..]
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect();
         let num = num.trim_start_matches('0');
-        if !num.is_empty() { return format!("I{num}"); }
+        if !num.is_empty() {
+            return format!("I{num}");
+        }
     }
 
     // US route patterns: US, UH
     if upper.starts_with("US") || upper.starts_with("UH") {
         let num: String = upper[2..].chars().filter(|c| c.is_ascii_digit()).collect();
         let num = num.trim_start_matches('0');
-        if !num.is_empty() { return format!("US{num}"); }
+        if !num.is_empty() {
+            return format!("US{num}");
+        }
     }
 
     // State route: SH, SR, ST
     if upper.starts_with("SH") || upper.starts_with("SR") || upper.starts_with("ST") {
         let num: String = upper[2..].chars().filter(|c| c.is_ascii_digit()).collect();
         let num = num.trim_start_matches('0');
-        if !num.is_empty() { return format!("SR{num}"); }
+        if !num.is_empty() {
+            return format!("SR{num}");
+        }
     }
 
     // Fallback: extract digits
     let num: String = upper.chars().filter(|c| c.is_ascii_digit()).collect();
     let num = num.trim_start_matches('0');
-    if num.is_empty() { "UNKNOWN".into() } else { format!("R{num}") }
+    if num.is_empty() {
+        "UNKNOWN".into()
+    } else {
+        format!("R{num}")
+    }
 }

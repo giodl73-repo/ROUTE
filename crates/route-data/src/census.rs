@@ -1,7 +1,6 @@
-/// Census Bureau data: county centroids (Gazetteer) + population (ACS).
-use serde::Deserialize;
-use std::path::Path;
 use anyhow::{Context, Result};
+/// Census Bureau data: county centroids (Gazetteer) + population (ACS).
+use std::path::Path;
 
 /// A US county with its internal point centroid and basic attributes.
 #[derive(Debug, Clone)]
@@ -41,11 +40,15 @@ pub fn read_county_gazetteer(path: &Path) -> Result<Vec<CountyCentroid>> {
             continue;
         }
         let line = line.trim();
-        if line.is_empty() { continue; }
+        if line.is_empty() {
+            continue;
+        }
 
         // Tab-separated: USPS GEOID ANSICODE NAME ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
         let fields: Vec<&str> = line.split('\t').collect();
-        if fields.len() < 10 { continue; }
+        if fields.len() < 10 {
+            continue;
+        }
 
         let state = fields[0].trim().to_string();
         let geoid = fields[1].trim().to_string();
@@ -64,7 +67,12 @@ pub fn read_county_gazetteer(path: &Path) -> Result<Vec<CountyCentroid>> {
         }
 
         counties.push(CountyCentroid {
-            state, geoid, name, aland_sqmi, lat, lon,
+            state,
+            geoid,
+            name,
+            aland_sqmi,
+            lat,
+            lon,
             population: 0,
             median_hhi: 0,
             rucc: 0,
@@ -86,32 +94,38 @@ pub fn fetch_acs_population(output_path: &Path) -> Result<()> {
         .user_agent("ROUTE/1.0 highway-analysis")
         .build()?;
 
-    let text = client.get(url).send()
+    let text = client
+        .get(url)
+        .send()
         .context("fetching ACS")?
         .text()
         .context("reading ACS response")?;
 
     // Response is a JSON array: [["NAME","B01003_001E","state","county"], [...], ...]
-    let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(&text)
-        .context("parsing ACS JSON")?;
+    let rows: Vec<Vec<serde_json::Value>> =
+        serde_json::from_str(&text).context("parsing ACS JSON")?;
 
     let mut wtr = csv::Writer::from_path(output_path)
         .with_context(|| format!("creating {}", output_path.display()))?;
     wtr.write_record(["GEOID", "NAME", "POPULATION"])?;
 
-    for row in rows.iter().skip(1) { // skip header row
-        if row.len() < 4 { continue; }
+    for row in rows.iter().skip(1) {
+        // skip header row
+        if row.len() < 4 {
+            continue;
+        }
         let name = row[0].as_str().unwrap_or("").to_string();
-        let pop: u64 = row[1].as_str()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0);
+        let pop: u64 = row[1].as_str().and_then(|s| s.parse().ok()).unwrap_or(0);
         let state_fips = row[2].as_str().unwrap_or("");
         let county_fips = row[3].as_str().unwrap_or("");
         let geoid = format!("{state_fips}{county_fips}");
         wtr.write_record(&[geoid, name, pop.to_string()])?;
     }
     wtr.flush()?;
-    println!("  wrote {} county population records", rows.len().saturating_sub(1));
+    println!(
+        "  wrote {} county population records",
+        rows.len().saturating_sub(1)
+    );
     Ok(())
 }
 
@@ -177,13 +191,15 @@ pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
         .user_agent("ROUTE/1.0 highway-analysis")
         .build()?;
 
-    let text = client.get(url).send()
+    let text = client
+        .get(url)
+        .send()
         .context("fetching ACS income")?
         .text()
         .context("reading ACS income response")?;
 
-    let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(&text)
-        .context("parsing ACS income JSON")?;
+    let rows: Vec<Vec<serde_json::Value>> =
+        serde_json::from_str(&text).context("parsing ACS income JSON")?;
 
     let mut wtr = csv::Writer::from_path(output_path)
         .with_context(|| format!("creating {}", output_path.display()))?;
@@ -191,10 +207,13 @@ pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
 
     let mut written = 0usize;
     for row in rows.iter().skip(1) {
-        if row.len() < 4 { continue; }
+        if row.len() < 4 {
+            continue;
+        }
         let name = row[0].as_str().unwrap_or("").to_string();
         // Negative values (-666666666) mean suppressed/unavailable — treat as 0
-        let hhi: u64 = row[1].as_str()
+        let hhi: u64 = row[1]
+            .as_str()
             .and_then(|s| s.parse::<i64>().ok())
             .map(|v| v.max(0) as u64)
             .unwrap_or(0);

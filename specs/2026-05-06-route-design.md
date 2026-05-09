@@ -118,7 +118,7 @@ This list grows as research proceeds. Every addition gets a corpus entry in `cor
 Process:
 1. Identify termini and key intermediate points.
 2. Pull data from declared sources (`data/sources.md`): FHWA traffic counts, ATRI freight data, BTS corridor statistics, FHWA bridge/pavement ratings, Census population within buffer.
-3. Score each of the 12 dimensions 0–10. Every score gets a one-sentence justification + source citation.
+3. Score each of the 16 dimensions 0–10. Every score gets a one-sentence justification + source citation.
 4. Calculate and record band totals (A: flow, B: network, C: people, D: future).
 5. Write corridor entry with frontmatter, dimension table, and key facts.
 6. Update `personas/axis-pool.md` scoring ledger.

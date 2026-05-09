@@ -9,12 +9,14 @@ pub fn fetch_fema_count(url: &str) -> anyhow::Result<u32> {
         .timeout(std::time::Duration::from_secs(20))
         .user_agent("ROUTE/1.0 highway-analysis")
         .build()?;
-    let text = client.get(url).send()
+    let text = client
+        .get(url)
+        .send()
         .map_err(|e| anyhow::anyhow!("FEMA request: {e}"))?
         .text()
         .map_err(|e| anyhow::anyhow!("FEMA body: {e}"))?;
-    let json: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| anyhow::anyhow!("FEMA JSON: {e}"))?;
+    let json: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("FEMA JSON: {e}"))?;
     Ok(json["count"].as_u64().unwrap_or(0) as u32)
 }
 /// Returns the count of SFHA A-zone features intersecting a bounding box.
@@ -39,14 +41,62 @@ pub struct CorridorBbox {
 /// T1 corridor bounding boxes (approximate degrees).
 /// Gulf Coast extent for I-10; northern transcontinental for I-80; etc.
 pub const T1_BBOXES: &[CorridorBbox] = &[
-    CorridorBbox { corridor: "I-10", xmin: -94.0, ymin: 25.0, xmax: -80.0, ymax: 31.0 },
-    CorridorBbox { corridor: "I-80", xmin: -122.5, ymin: 38.0, xmax: -74.0, ymax: 42.5 },
-    CorridorBbox { corridor: "I-95", xmin: -81.0, ymin: 25.0, xmax: -70.0, ymax: 47.5 },
-    CorridorBbox { corridor: "I-35", xmin: -97.5, ymin: 27.0, xmax: -93.0, ymax: 46.5 },
-    CorridorBbox { corridor: "I-5",  xmin: -124.0, ymin: 32.5, xmax: -117.0, ymax: 49.0 },
-    CorridorBbox { corridor: "I-75", xmin: -84.5, ymin: 25.0, xmax: -83.0, ymax: 46.0 },
-    CorridorBbox { corridor: "I-90", xmin: -122.5, ymin: 41.5, xmax: -71.0, ymax: 48.5 },
-    CorridorBbox { corridor: "I-40", xmin: -117.0, ymin: 34.0, xmax: -74.0, ymax: 36.5 },
+    CorridorBbox {
+        corridor: "I-10",
+        xmin: -94.0,
+        ymin: 25.0,
+        xmax: -80.0,
+        ymax: 31.0,
+    },
+    CorridorBbox {
+        corridor: "I-80",
+        xmin: -122.5,
+        ymin: 38.0,
+        xmax: -74.0,
+        ymax: 42.5,
+    },
+    CorridorBbox {
+        corridor: "I-95",
+        xmin: -81.0,
+        ymin: 25.0,
+        xmax: -70.0,
+        ymax: 47.5,
+    },
+    CorridorBbox {
+        corridor: "I-35",
+        xmin: -97.5,
+        ymin: 27.0,
+        xmax: -93.0,
+        ymax: 46.5,
+    },
+    CorridorBbox {
+        corridor: "I-5",
+        xmin: -124.0,
+        ymin: 32.5,
+        xmax: -117.0,
+        ymax: 49.0,
+    },
+    CorridorBbox {
+        corridor: "I-75",
+        xmin: -84.5,
+        ymin: 25.0,
+        xmax: -83.0,
+        ymax: 46.0,
+    },
+    CorridorBbox {
+        corridor: "I-90",
+        xmin: -122.5,
+        ymin: 41.5,
+        xmax: -71.0,
+        ymax: 48.5,
+    },
+    CorridorBbox {
+        corridor: "I-40",
+        xmin: -117.0,
+        ymin: 34.0,
+        xmax: -74.0,
+        ymax: 36.5,
+    },
 ];
 
 /// Result for one corridor SFHA query.
@@ -70,10 +120,7 @@ struct FemaError {
 }
 
 /// Query the FEMA NFHL Layer 28 for SFHA A-zone feature count in a bounding box.
-pub fn query_sfha_count(
-    client: &reqwest::blocking::Client,
-    bbox: &CorridorBbox,
-) -> FemaSfhaResult {
+pub fn query_sfha_count(client: &reqwest::blocking::Client, bbox: &CorridorBbox) -> FemaSfhaResult {
     let geometry = format!("{},{},{},{}", bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax);
     let bbox_str = format!("{},{},{},{}", bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax);
 

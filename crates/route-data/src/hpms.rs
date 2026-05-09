@@ -1,6 +1,6 @@
+use anyhow::Result;
 use serde::Deserialize;
 use std::path::Path;
-use anyhow::Result;
 
 /// A single HPMS summary record joined to an NHS route segment.
 /// PCT_TRUCK is stored as proportion (0.0–1.0).

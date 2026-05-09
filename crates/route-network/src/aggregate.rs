@@ -13,7 +13,8 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
 
     let total_miles: f64 = edges.iter().map(|&ei| g.graph[ei].length_miles).sum();
     let edge_count = edges.len();
-    let is_upgrade = edges.first()
+    let is_upgrade = edges
+        .first()
         .map(|&ei| g.graph[ei].road_class != route_data::RoadClass::Interstate)
         .unwrap_or(false);
 
@@ -59,22 +60,13 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         .collect();
     let mean_pct_truck = mean_f32(&pct_trucks);
 
-    let iris: Vec<f32> = edges
-        .iter()
-        .filter_map(|&ei| g.graph[ei].iri)
-        .collect();
+    let iris: Vec<f32> = edges.iter().filter_map(|&ei| g.graph[ei].iri).collect();
     let mean_iri = mean_f32(&iris);
 
-    let ptis: Vec<f32> = edges
-        .iter()
-        .filter_map(|&ei| g.graph[ei].pti)
-        .collect();
+    let ptis: Vec<f32> = edges.iter().filter_map(|&ei| g.graph[ei].pti).collect();
     let p90_pti = percentile_f32(&ptis, 0.90);
 
-    let ttis: Vec<f32> = edges
-        .iter()
-        .filter_map(|&ei| g.graph[ei].tti)
-        .collect();
+    let ttis: Vec<f32> = edges.iter().filter_map(|&ei| g.graph[ei].tti).collect();
     let mean_tti = mean_f32(&ttis);
 
     // Betweenness centrality — P90 of corridor edges (not mean)
@@ -83,8 +75,14 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
     // P90 captures the "spine" sections without extreme-outlier sensitivity.
     let betweenness_centrality = g.edge_betweenness.as_ref().and_then(|bc| {
         let mut vals: Vec<f64> = edges.iter().filter_map(|ei| bc.get(ei)).cloned().collect();
-        if vals.is_empty() { return None; }
-        vals.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        if vals.is_empty() {
+            return None;
+        }
+        vals.retain(|v| v.is_finite());
+        if vals.is_empty() {
+            return None;
+        }
+        vals.sort_by(f64::total_cmp);
         let p90_idx = ((vals.len() as f64 * 0.90) as usize).min(vals.len() - 1);
         Some(vals[p90_idx])
     });
@@ -93,8 +91,7 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
     let max_rural_interchange_gap_miles = compute_interchange_gap(g, edges);
 
     // B1 Redundancy — find nearest parallel interstate
-    let (nearest_parallel_miles, detour_penalty_miles) =
-        find_parallel_route(g, route_id, edges);
+    let (nearest_parallel_miles, detour_penalty_miles) = find_parallel_route(g, route_id, edges);
 
     // BPR-estimated PTI from V/C ratio (v1.2 A3 improvement)
     // PTI_bpr = 1 + 0.15 × (V/C_peak × 1.15)^4
@@ -109,7 +106,9 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
     });
 
     // v1.2 strategic dimensions from hard-coded reference data
-    use crate::strategic::{usmca_corridor_score, military_strategic_score, agricultural_export_score};
+    use crate::strategic::{
+        agricultural_export_score, military_strategic_score, usmca_corridor_score,
+    };
     let intl_trade_score = usmca_corridor_score(route_id);
     let military_strategic_score_val = military_strategic_score(route_id);
     let agricultural_export_score_val = agricultural_export_score(route_id);
@@ -222,7 +221,11 @@ fn compute_interchange_gap(g: &HighwayGraph, edges: &[EdgeIndex]) -> Option<f32>
     if interchange_lons.len() < 2 {
         return None;
     }
-    interchange_lons.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    interchange_lons.retain(|v| v.is_finite());
+    if interchange_lons.len() < 2 {
+        return None;
+    }
+    interchange_lons.sort_by(f64::total_cmp);
     interchange_lons.dedup_by(|a, b| (*a - *b).abs() < 0.01);
 
     // Longest gap in degrees * ~55 miles/degree longitude at ~38°N
@@ -250,7 +253,12 @@ fn find_parallel_route(
     let coords: Vec<(f64, f64)> = edges
         .iter()
         .flat_map(|&ei| {
-            g.graph[ei].geometry.0.iter().map(|c| (c.x, c.y)).collect::<Vec<_>>()
+            g.graph[ei]
+                .geometry
+                .0
+                .iter()
+                .map(|c| (c.x, c.y))
+                .collect::<Vec<_>>()
         })
         .collect();
 
@@ -314,29 +322,29 @@ fn percentile_and_mean(vals: &[f64]) -> (Option<f64>, Option<f64>) {
 }
 
 fn percentile_f64(vals: &[f64], p: f64) -> Option<f64> {
-    if vals.is_empty() {
+    let mut sorted: Vec<f64> = vals.iter().copied().filter(|v| v.is_finite()).collect();
+    if sorted.is_empty() {
         return None;
     }
-    let mut sorted = vals.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(f64::total_cmp);
     let idx = ((sorted.len() as f64 * p) as usize).min(sorted.len() - 1);
     Some(sorted[idx])
 }
 
 fn percentile_f32(vals: &[f32], p: f64) -> Option<f32> {
-    if vals.is_empty() {
+    let mut sorted: Vec<f32> = vals.iter().copied().filter(|v| v.is_finite()).collect();
+    if sorted.is_empty() {
         return None;
     }
-    let mut sorted = vals.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(f32::total_cmp);
     let idx = ((sorted.len() as f64 * p) as usize).min(sorted.len() - 1);
     Some(sorted[idx])
 }
 
 fn mean_f32(vals: &[f32]) -> Option<f32> {
-    if vals.is_empty() { None } else { Some(vals.iter().sum::<f32>() / vals.len() as f32) }
-}
-
-fn mean_f64(vals: &[f64]) -> Option<f64> {
-    if vals.is_empty() { None } else { Some(vals.iter().sum::<f64>() / vals.len() as f64) }
+    if vals.is_empty() {
+        None
+    } else {
+        Some(vals.iter().sum::<f32>() / vals.len() as f32)
+    }
 }

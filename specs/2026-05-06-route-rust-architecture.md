@@ -13,7 +13,7 @@ sources:
   - "FHWA Freight Performance Measures, Annual Report 2023"
   - "ATRI Top 100 Truck Bottleneck Report 2024"
   - "FAF5 Freight Analysis Framework v5.6, BTS/FHWA 2022"
-  - "apportionment/redist Rust codebase (C:\\src\\apportionment)"
+  - "apportionment/bisect Rust codebase (C:\\src\\apportionment)"
   - "ROUTE design spec (specs/2026-05-06-route-design.md)"
 ---
 
@@ -21,9 +21,9 @@ sources:
 
 ## §1. Purpose
 
-This spec defines the Rust implementation of the ROUTE data and analysis pipeline. The binary is named `route`. It fetches authoritative federal highway data, builds a corridor graph, scores corridors against the 12-dimension pool, identifies network gaps, and renders corridor maps. All computation is in Rust; no GDAL, no Python runtime.
+This spec defines the Rust implementation of the ROUTE data and analysis pipeline. The binary is named `route`. It fetches authoritative federal highway data, builds a corridor graph, scores corridors against the 16-dimension pool, identifies network gaps, and renders corridor maps. All computation is in Rust; no GDAL, no Python runtime.
 
-The design follows the `redist` CLI pattern from the apportionment sibling project: manifest-driven data fetching, pure-Rust shapefile parsing, graph-based analysis, and markdown/CSV/PNG output.
+The design follows the `bisect` CLI pattern from the apportionment sibling project: manifest-driven data fetching, pure-Rust shapefile parsing, graph-based analysis, and markdown/CSV/PNG output.
 
 ---
 
@@ -35,7 +35,7 @@ route/
 └── crates/
     ├── route-data/             ← fetch + parse FHWA shapefiles + CSV joins
     ├── route-network/          ← highway graph: nodes, edges, network metrics
-    ├── route-score/            ← 12-dimension scoring engine
+    ├── route-score/            ← 16-dimension scoring engine
     ├── route-map/              ← corridor map rendering (SVG → PNG)
     ├── route-report/           ← markdown corpus entry + CSV output
     └── route-cli/              ← main binary; all subcommands
@@ -59,7 +59,7 @@ rstar       = "0.12"     # R-tree spatial indexing for proximity joins
 petgraph    = "0.6"      # Dijkstra shortest path, Brandes betweenness centrality
 # metis — multilevel graph partitioning for bottleneck/cluster detection
 #   NOT added yet (YAGNI — not needed until gap analysis phase).
-#   Will depend on a standalone giodl73-repo/METIS crate, not redist-metis.
+#   Will depend on a standalone giodl73-repo/METIS crate, not bisect-metis.
 
 # Data handling
 serde       = { version = "1", features = ["derive"] }
@@ -72,7 +72,7 @@ toml        = "0.8"      # runtime scoring config (config/scoring.toml)
 clap        = { version = "4", features = ["derive"] }
 
 # Rendering
-resvg       = "0.42"     # SVG → PNG rasterizer (same as redist-map)
+resvg       = "0.42"     # SVG → PNG rasterizer (same as bisect-map)
 tiny-skia   = "0.11"     # pixel buffer backend
 
 # Utilities
@@ -82,7 +82,7 @@ anyhow      = "1"
 reqwest     = { version = "0.12", features = ["blocking"] }
 ```
 
-No GDAL. No Python. No PROJ. CRS handling is explicit: NHS shapefiles ship in EPSG:4269 (NAD83 geographic); we project to EPSG:5070 (Albers Equal Area) for area and length calculations, same as `redist`.
+No GDAL. No Python. No PROJ. CRS handling is explicit: NHS shapefiles ship in EPSG:4269 (NAD83 geographic); we project to EPSG:5070 (Albers Equal Area) for area and length calculations, same as `bisect`.
 
 ---
 
@@ -316,7 +316,7 @@ route build
     Report: N edges, N nodes, N routes, N join failures per source, N data-sparse corridors.
 
 route score <designation> [--estimated]
-    Score one corridor against the 12-dimension pool using config/scoring.toml anchors.
+    Score one corridor against the 16-dimension pool using config/scoring.toml anchors.
     Outputs: terminal table + corpus/existing/{slug}.md (or proposed/ with --estimated).
     B2 marked estimated until score-all completes.
 

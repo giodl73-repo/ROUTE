@@ -6,8 +6,7 @@ use std::path::Path;
 /// Download all manifest sources to the cache directory.
 /// Skips files already present unless `--force` is set.
 pub fn fetch_all(manifest: &Manifest, force: bool) -> Result<()> {
-    std::fs::create_dir_all(&manifest.cache_dir)
-        .context("creating cache directory")?;
+    std::fs::create_dir_all(&manifest.cache_dir).context("creating cache directory")?;
 
     for (name, source) in &manifest.sources {
         // Skip sources with no URL or placeholder URLs
@@ -18,14 +17,20 @@ pub fn fetch_all(manifest: &Manifest, force: bool) -> Result<()> {
 
         let dest = manifest.cache_dir.join(&source.filename);
         if dest.exists() && !force {
-            println!("  [skip] {name} — already cached ({} bytes)", dest.metadata().map(|m| m.len()).unwrap_or(0));
+            println!(
+                "  [skip] {name} — already cached ({} bytes)",
+                dest.metadata().map(|m| m.len()).unwrap_or(0)
+            );
             continue;
         }
         println!("  [fetch] {name}");
         println!("          {}", source.url);
-        download(&source.url, &dest)
-            .with_context(|| format!("downloading {name}"))?;
-        println!("  [ok]    {} → {} bytes", name, dest.metadata().map(|m| m.len()).unwrap_or(0));
+        download(&source.url, &dest).with_context(|| format!("downloading {name}"))?;
+        println!(
+            "  [ok]    {} → {} bytes",
+            name,
+            dest.metadata().map(|m| m.len()).unwrap_or(0)
+        );
     }
     Ok(())
 }
@@ -33,10 +38,9 @@ pub fn fetch_all(manifest: &Manifest, force: bool) -> Result<()> {
 /// Extract the .shp file from a downloaded .zip archive.
 /// Returns the path to the extracted .shp file.
 pub fn extract_shp(zip_path: &Path, dest_dir: &Path) -> Result<std::path::PathBuf> {
-    let file = std::fs::File::open(zip_path)
-        .with_context(|| format!("opening {}", zip_path.display()))?;
-    let mut archive = zip::ZipArchive::new(file)
-        .context("reading zip archive")?;
+    let file =
+        std::fs::File::open(zip_path).with_context(|| format!("opening {}", zip_path.display()))?;
+    let mut archive = zip::ZipArchive::new(file).context("reading zip archive")?;
 
     std::fs::create_dir_all(dest_dir).context("creating extraction directory")?;
 
@@ -63,8 +67,8 @@ fn download(url: &str, dest: &Path) -> Result<()> {
         .context("HTTP error response")?;
 
     let bytes = response.bytes().context("reading response body")?;
-    let mut file = std::fs::File::create(dest)
-        .with_context(|| format!("creating {}", dest.display()))?;
+    let mut file =
+        std::fs::File::create(dest).with_context(|| format!("creating {}", dest.display()))?;
     file.write_all(&bytes).context("writing file")?;
     Ok(())
 }

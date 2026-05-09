@@ -1,23 +1,31 @@
-pub mod graph;
+pub mod aggregate;
 pub mod build;
 pub mod centrality;
-pub mod join;
-pub mod corridor;
-pub mod aggregate;
-pub mod flow;
-pub mod invest;
-pub mod coverage;
 pub mod connectivity;
+pub mod corridor;
+pub mod coverage;
 pub mod diamond;
+pub mod flow;
+pub mod graph;
+pub mod invest;
+pub mod join;
 pub mod strategic;
 
-pub use graph::{HighwayGraph, HighwayNode, HighwayEdge};
-pub use corridor::{Corridor, CorridorAttributes};
-pub use build::build_graph;
 pub use aggregate::aggregate_corridor;
-pub use flow::{corridor_max_flow, FlowResult};
-pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
-pub use coverage::{compute_coverage, compute_pop_coverage, corridor_pop_within_50mi, counties_within_50mi, CoverageResult, PopCoverageResult, CountyGap};
+pub use build::build_graph;
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
-pub use diamond::{find_t1_intersections, find_intersection, analyze_diamond, DiamondResult, T1Intersection};
-pub use strategic::{usmca_corridor_score, military_strategic_score, agricultural_export_score, init_designations, load_designations};
+pub use corridor::{Corridor, CorridorAttributes};
+pub use coverage::{
+    compute_coverage, compute_pop_coverage, corridor_pop_within_50mi, counties_within_50mi,
+    CountyGap, CoverageResult, PopCoverageResult,
+};
+pub use diamond::{
+    analyze_diamond, find_intersection, find_t1_intersections, DiamondResult, T1Intersection,
+};
+pub use flow::{corridor_max_flow, FlowResult};
+pub use graph::{HighwayEdge, HighwayGraph, HighwayNode};
+pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
+pub use strategic::{
+    agricultural_export_score, init_designations, load_designations, military_strategic_score,
+    usmca_corridor_score,
+};

@@ -31,5 +31,10 @@ pub fn load_scenario(name: &str) -> Option<&'static str> {
 
 /// List all available scenario names.
 pub fn available_scenarios() -> &'static [&'static str] {
-    &["donner-closure", "atlanta-peak", "omaha-interchange", "houston-surge"]
+    &[
+        "donner-closure",
+        "atlanta-peak",
+        "omaha-interchange",
+        "houston-surge",
+    ]
 }

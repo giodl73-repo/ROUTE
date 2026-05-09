@@ -1,3 +1,5 @@
+pub mod assignment;
+pub mod chaos;
 /// ROUTE Simulation Engine
 ///
 /// Validates Interstate 2.0 standards through traffic simulation.
@@ -13,27 +15,26 @@
 ///   Implemented as iterative: all-or-nothing → BPR travel times → repeat.
 pub mod demand;
 pub mod hub;
-pub mod assignment;
 pub mod incident;
-pub mod chaos;
 pub mod metrics;
+pub mod od;
 pub mod scenario;
 pub mod scenarios;
-pub mod od;
 
-pub use scenario::{Scenario, ScenarioResult, run_scenario};
-pub use chaos::{ChaosConfig, ChaosResult, run_chaos};
-pub use metrics::{SimMetrics, corridor_pti, network_throughput, freight_cost_delta};
 pub use assignment::{wardrop_equilibrium, FlowState};
-pub use incident::{IncidentSpec, apply_incident, restore_incident};
-pub use hub::{RelayHub, HubStaffing, NetworkSummary,
-              load_hubs, t1_diamond_hubs, proposed_hubs, compute_network_summary};
-pub use od::{OdCorridor, OdComparison, TransitDistribution, RelayNetwork, load_corridor, apply_seasonal,
-             DriverMode, Intervention, InterventionBenchmark, InterventionResult,
-             PassengerMode, PassengerTripDistribution, run_passenger_simulation,
-             EvProfile, EvChargingAnalysis, analyze_ev_charging,
-             tesla_model_y, tesla_semi, average_ev_2026,
-             run_od_simulation, run_od_simulation_with_driver,
-             run_intervention_stack, apply_interventions,
-             ny_la_corridor, hou_chi_current, hou_chi_i69,
-             chi_la, mia_nyc, sea_chi, dal_nyc, la_sea, atl_chi, ny_chi};
+pub use chaos::{run_chaos, ChaosConfig, ChaosResult};
+pub use hub::{
+    compute_network_summary, load_hubs, proposed_hubs, t1_diamond_hubs, HubStaffing,
+    NetworkSummary, RelayHub,
+};
+pub use incident::{apply_incident, restore_incident, IncidentSpec};
+pub use metrics::{corridor_pti, freight_cost_delta, network_throughput, SimMetrics};
+pub use od::{
+    analyze_ev_charging, apply_interventions, apply_seasonal, atl_chi, average_ev_2026, chi_la,
+    dal_nyc, hou_chi_current, hou_chi_i69, la_sea, load_corridor, mia_nyc, ny_chi, ny_la_corridor,
+    run_intervention_stack, run_od_simulation, run_od_simulation_with_driver,
+    run_passenger_simulation, sea_chi, tesla_model_y, tesla_semi, DriverMode, EvChargingAnalysis,
+    EvProfile, Intervention, InterventionBenchmark, InterventionResult, OdComparison, OdCorridor,
+    PassengerMode, PassengerTripDistribution, RelayNetwork, TransitDistribution,
+};
+pub use scenario::{run_scenario, Scenario, ScenarioResult};

@@ -6,10 +6,6 @@
 ///   Origin latitude:    37.5°N
 ///
 /// Output is in abstract projection units; caller scales to pixel coordinates.
-use std::f64::consts::PI;
-
-const DEG_TO_RAD: f64 = PI / 180.0;
-
 /// Albers Equal Area Conic — US configuration.
 pub struct AlbersUS {
     n: f64,
@@ -20,16 +16,21 @@ pub struct AlbersUS {
 
 impl AlbersUS {
     pub fn new() -> Self {
-        let phi1 = 29.5_f64.to_radians();   // first standard parallel
-        let phi2 = 45.5_f64.to_radians();   // second standard parallel
-        let phi0 = 37.5_f64.to_radians();   // origin latitude
+        let phi1 = 29.5_f64.to_radians(); // first standard parallel
+        let phi2 = 45.5_f64.to_radians(); // second standard parallel
+        let phi0 = 37.5_f64.to_radians(); // origin latitude
         let lambda0 = (-96.0_f64).to_radians(); // central meridian
 
         let n = (phi1.sin() + phi2.sin()) / 2.0;
         let c = phi1.cos().powi(2) + 2.0 * n * phi1.sin();
         let rho0 = (c - 2.0 * n * phi0.sin()).sqrt() / n;
 
-        AlbersUS { n, c, rho0, lambda0 }
+        AlbersUS {
+            n,
+            c,
+            rho0,
+            lambda0,
+        }
     }
 
     /// Project (lon_deg, lat_deg) → (x, y) in Albers units.
@@ -45,7 +46,9 @@ impl AlbersUS {
 }
 
 impl Default for AlbersUS {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Bounding box for continental US in Albers units.
@@ -76,15 +79,22 @@ impl ViewTransform {
         let y_min = corners.iter().map(|c| c.1).fold(f64::MAX, f64::min);
         let y_max = corners.iter().map(|c| c.1).fold(f64::MIN, f64::max);
 
-        ViewTransform { x_min, x_max, y_min, y_max, width, height, padding: 40.0 }
+        ViewTransform {
+            x_min,
+            x_max,
+            y_min,
+            y_max,
+            width,
+            height,
+            padding: 40.0,
+        }
     }
 
     /// Convert Albers (x, y) to SVG pixel (px, py).
     pub fn to_pixel(&self, x: f64, y: f64) -> (f64, f64) {
         let draw_w = self.width - 2.0 * self.padding;
         let draw_h = self.height - 2.0 * self.padding;
-        let scale = (draw_w / (self.x_max - self.x_min))
-            .min(draw_h / (self.y_max - self.y_min));
+        let scale = (draw_w / (self.x_max - self.x_min)).min(draw_h / (self.y_max - self.y_min));
 
         // Center the map
         let map_w = (self.x_max - self.x_min) * scale;
@@ -102,5 +112,30 @@ impl ViewTransform {
     pub fn project_to_pixel(&self, proj: &AlbersUS, lon: f64, lat: f64) -> (f64, f64) {
         let (x, y) = proj.project(lon, lat);
         self.to_pixel(x, y)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn conus_center_projects_inside_viewport() {
+        let proj = AlbersUS::new();
+        let view = ViewTransform::conus(1600.0, 900.0);
+        let (x, y) = view.project_to_pixel(&proj, -96.0, 37.5);
+        assert!((0.0..=1600.0).contains(&x), "x={x}");
+        assert!((0.0..=900.0).contains(&y), "y={y}");
+    }
+
+    #[test]
+    fn conus_corners_respect_padding() {
+        let proj = AlbersUS::new();
+        let view = ViewTransform::conus(1600.0, 900.0);
+        for (lon, lat) in [(-124.8, 49.0), (-66.9, 49.0), (-124.8, 24.5), (-66.9, 24.5)] {
+            let (x, y) = view.project_to_pixel(&proj, lon, lat);
+            assert!(x >= 0.0 && x <= 1600.0, "lon={lon} lat={lat} x={x}");
+            assert!(y >= 0.0 && y <= 900.0, "lon={lon} lat={lat} y={y}");
+        }
     }
 }

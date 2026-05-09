@@ -8,10 +8,9 @@
 /// the national trunk-line system is not internally connected.
 use crate::graph::HighwayGraph;
 use petgraph::graph::NodeIndex;
-use petgraph::algo::dijkstra;
 use std::collections::{HashMap, HashSet};
 
-const T1_ROUTES: &[&str] = &["I5","I10","I35","I40","I75","I80","I90","I95"];
+const T1_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
 
 /// An endpoint of a T1 corridor.
 #[derive(Debug, Clone)]
@@ -60,7 +59,9 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
     let endpoints = find_t1_endpoints(g);
 
     // Build T1-only subgraph edge set
-    let t1_edge_set: HashSet<_> = g.graph.edge_indices()
+    let t1_edge_set: HashSet<_> = g
+        .graph
+        .edge_indices()
         .filter(|&ei| T1_ROUTES.contains(&g.graph[ei].route_id.as_str()))
         .collect();
 
@@ -70,11 +71,13 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
 
     // Test all pairs of T1 endpoints
     for i in 0..endpoints.len() {
-        for j in (i+1)..endpoints.len() {
-            if endpoints[i].route_id == endpoints[j].route_id { continue; } // same corridor
+        for j in (i + 1)..endpoints.len() {
+            if endpoints[i].route_id == endpoints[j].route_id {
+                continue;
+            } // same corridor
 
             let from = &endpoints[i];
-            let to   = &endpoints[j];
+            let to = &endpoints[j];
 
             // T1-only path
             let t1_dist = dijkstra_filtered(g, from.node, to.node, |ei| t1_edge_set.contains(&ei));
@@ -83,7 +86,9 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
             let all_dist = dijkstra_filtered(g, from.node, to.node, |_| true);
 
             let requires_t2 = t1_dist.is_none() && all_dist.is_some();
-            let detour = t1_dist.zip(all_dist).map(|(t1, all)| if all > 0.0 { t1 / all } else { 1.0 });
+            let detour = t1_dist
+                .zip(all_dist)
+                .map(|(t1, all)| if all > 0.0 { t1 / all } else { 1.0 });
 
             if requires_t2 {
                 any_gap = true;
@@ -103,7 +108,8 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
         }
     }
 
-    let gaps: Vec<_> = pair_results.iter()
+    let gaps: Vec<_> = pair_results
+        .iter()
         .filter(|r| r.requires_t2 || r.detour_factor.map(|d| d > 1.5).unwrap_or(false))
         .cloned()
         .collect();
@@ -125,7 +131,9 @@ fn find_t1_endpoints(g: &HighwayGraph) -> Vec<T1Endpoint> {
 
     for &route_id in T1_ROUTES {
         let edges = g.route_edges(route_id);
-        if edges.is_empty() { continue; }
+        if edges.is_empty() {
+            continue;
+        }
 
         // Collect all valid CONUS nodes for this corridor
         let mut all_nodes: Vec<(NodeIndex, f64, f64)> = Vec::new();
@@ -139,7 +147,9 @@ fn find_t1_endpoints(g: &HighwayGraph) -> Vec<T1Endpoint> {
                 }
             }
         }
-        if all_nodes.len() < 2 { continue; }
+        if all_nodes.len() < 2 {
+            continue;
+        }
 
         // Find the two nodes that are farthest apart (true termini)
         // For large corridors, sample to avoid O(N²) cost
@@ -157,7 +167,7 @@ fn find_t1_endpoints(g: &HighwayGraph) -> Vec<T1Endpoint> {
             for b in sample.iter().skip(i + 1) {
                 let dx = a.1 - b.1;
                 let dy = a.2 - b.2;
-                let d = dx*dx + dy*dy;
+                let d = dx * dx + dy * dy;
                 if d > max_dist {
                     max_dist = d;
                     term_a = (a.0, a.1, a.2);
@@ -167,7 +177,12 @@ fn find_t1_endpoints(g: &HighwayGraph) -> Vec<T1Endpoint> {
         }
 
         for (node, lon, lat) in [term_a, term_b] {
-            endpoints.push(T1Endpoint { route_id: route_id.to_string(), node, lon, lat });
+            endpoints.push(T1Endpoint {
+                route_id: route_id.to_string(),
+                node,
+                lon,
+                lat,
+            });
         }
     }
 
@@ -181,11 +196,12 @@ fn dijkstra_filtered<F>(
     target: NodeIndex,
     edge_filter: F,
 ) -> Option<f64>
-where F: Fn(petgraph::graph::EdgeIndex) -> bool
+where
+    F: Fn(petgraph::graph::EdgeIndex) -> bool,
 {
-    use std::collections::BinaryHeap;
-    use std::cmp::Reverse;
     use ordered_float::NotNan;
+    use std::cmp::Reverse;
+    use std::collections::BinaryHeap;
 
     let mut dist: HashMap<NodeIndex, f64> = HashMap::new();
     let mut heap: BinaryHeap<Reverse<(NotNan<f64>, NodeIndex)>> = BinaryHeap::new();
@@ -195,21 +211,38 @@ where F: Fn(petgraph::graph::EdgeIndex) -> bool
 
     while let Some(Reverse((cost, u))) = heap.pop() {
         let cost = cost.into_inner();
-        if u == target { return Some(cost); }
-        if cost > *dist.get(&u).unwrap_or(&f64::MAX) + 1e-9 { continue; }
+        if u == target {
+            return Some(cost);
+        }
+        if cost > *dist.get(&u).unwrap_or(&f64::MAX) + 1e-9 {
+            continue;
+        }
 
         use petgraph::visit::EdgeRef;
         // Use BOTH directions of each edge (highways are bidirectional).
         // The directed graph stores edges in one direction; we traverse both.
-        let both_dirs = g.graph.edges(u).map(|er| (er.target(), er.weight().length_miles, er.id()))
-            .chain(g.graph.edges_directed(u, petgraph::Direction::Incoming)
-                .map(|er| (er.source(), er.weight().length_miles, er.id())));
+        let both_dirs = g
+            .graph
+            .edges(u)
+            .map(|er| (er.target(), er.weight().length_miles, er.id()))
+            .chain(
+                g.graph
+                    .edges_directed(u, petgraph::Direction::Incoming)
+                    .map(|er| (er.source(), er.weight().length_miles, er.id())),
+            );
         for (v, edge_miles, eid) in both_dirs {
-            if !edge_filter(eid) { continue; }
+            if !edge_filter(eid) {
+                continue;
+            }
+            if !edge_miles.is_finite() || edge_miles < 0.0 {
+                continue;
+            }
             let new_cost = cost + edge_miles;
             if new_cost < *dist.get(&v).unwrap_or(&f64::MAX) {
                 dist.insert(v, new_cost);
-                heap.push(Reverse((NotNan::new(new_cost).unwrap(), v)));
+                if let Ok(cost) = NotNan::new(new_cost) {
+                    heap.push(Reverse((cost, v)));
+                }
             }
         }
     }

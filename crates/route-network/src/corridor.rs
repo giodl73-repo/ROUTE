@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 /// and produces `DimensionScores`.
 #[derive(Debug, Clone)]
 pub struct Corridor {
-    pub designation: String,        // "I-80"
-    pub termini: [String; 2],       // ["Teaneck NJ", "San Francisco CA"]
+    pub designation: String,  // "I-80"
+    pub termini: [String; 2], // ["Teaneck NJ", "San Francisco CA"]
     pub states: Vec<String>,
     pub total_miles: f64,
     pub edge_count: usize,

@@ -1,8 +1,8 @@
 /// Spatial join helpers — snap NBI bridges and population data onto corridor edges.
 use crate::graph::HighwayGraph;
 use petgraph::graph::EdgeIndex;
-use rstar::{RTree, RTreeObject, AABB};
 use route_data::NbiRecord;
+use rstar::{RTree, RTreeObject, AABB};
 use std::collections::HashMap;
 
 /// A point in the R-tree with an associated payload ID.
@@ -42,7 +42,10 @@ pub fn join_nbi_to_edges(
     let nbi_points: Vec<IndexedPoint> = nbi
         .iter()
         .enumerate()
-        .map(|(i, r)| IndexedPoint { coord: [r.lon, r.lat], id: i })
+        .map(|(i, r)| IndexedPoint {
+            coord: [r.lon, r.lat],
+            id: i,
+        })
         .collect();
     let tree = RTree::bulk_load(nbi_points);
 
@@ -63,9 +66,9 @@ pub fn join_nbi_to_edges(
             .locate_within_distance(query_pt, TOLERANCE_DEG_SQ)
             .filter(|p| {
                 // Route-name similarity: NBI facility carried must mention the interstate number
-                interstate_num.as_deref().map_or(true, |num| {
-                    nbi[p.id].route_on_bridge.contains(num)
-                })
+                interstate_num
+                    .as_deref()
+                    .map_or(true, |num| nbi[p.id].route_on_bridge.contains(num))
             })
             .map(|p| p.id)
             .collect();

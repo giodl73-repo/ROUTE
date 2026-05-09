@@ -1,6 +1,6 @@
+use anyhow::Result;
 use serde::Deserialize;
 use std::path::Path;
-use anyhow::Result;
 
 /// A bridge record from the FHWA National Bridge Inventory CSV.
 /// Joined to corridor by coordinate proximity (R-tree, ≤0.002° with route-name check).

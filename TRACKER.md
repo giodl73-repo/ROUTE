@@ -4,19 +4,20 @@ Status board for the ROUTE project. Updated as work happens.
 
 ---
 
-## Phase status
+## Milepost Status
 
-| Phase | Description | Status |
+ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
+
+| Milepost | Description | Status |
 |---|---|---|
-| 0 — Scaffold | Project structure, schema, axis pool, roles, skills | 🔄 in progress |
-| 1 — Anchor corpus | Score I-80 through full pipeline (anchor rule) | ⏳ not started |
-| 2 — Corpus build | Score 20+ existing corridors to calibrate rubric | ⏳ not started |
-| 3 — Calibration | First amendment pass; validate/retire dimensions | ⏳ not started |
-| 4 — Gap map | Identify missing links, bottlenecks, resilience holes | ⏳ not started |
-| 5 — Proposed corridors | Score 10+ proposed corridors against calibrated rubric | ⏳ not started |
-| 6 — Parliament | 3+ full parliament reviews | ⏳ not started |
-| 7 — Design | 1+ Interstate 2.0 design proposals | ⏳ not started |
-| 8 — Research | 1+ research paper | ⏳ not started |
+| 0 — Ground Survey | Repo, specs, roles, data inventory, and CLI scaffold | ✅ substantially complete |
+| 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | 🔄 in progress |
+| 2 — Atlas | Reproducible existing-corridor corpus and tier map | 🔄 partial; refresh needed |
+| 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | 🔄 partial; artifact checks needed |
+| 4 — Pressure Test | Flow, incident, relay, SLA, and investment simulations | 🔄 partial; test coverage needed |
+| 5 — The Forum | Parliament, stakeholder, editorial, and panel review records | 🔄 partial; formal gates needed |
+| 6 — Blueprint | Interstate 2.0 feature packages and investment sequence | 🔄 partial; claims need evidence labels |
+| 7 — Program | CI, release process, public corpus, maps, and papers | ⏳ not started |
 
 ---
 
@@ -65,6 +66,7 @@ Status board for the ROUTE project. Updated as work happens.
 | Version | Date | Change |
 |---|---|---|
 | v1.0 | 2026-05-06 | Initial 12-dimension pool |
+| v1.4 | 2026-05-08 | Current 16-dimension scorer: adds trade, safety, military/strategic, agricultural export access |
 
 ---
 

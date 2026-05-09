@@ -4,6 +4,8 @@ The United States chose highways. Not rail, not canals, not airships — highway
 
 ROUTE is a research and design project for what comes next.
 
+See [docs/SYSTEM_PLAN.md](docs/SYSTEM_PLAN.md) for the living milepost roadmap that connects the specs, Rust implementation, research tracks, and `.roles` review process. See [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md) for spec ownership.
+
 ---
 
 ## The argument
@@ -16,15 +18,23 @@ The same pattern that produced TIGRIS — score a corpus on enough dimensions an
 
 ## The method
 
-**Phase 1 — Corpus**: Score 40+ existing interstate corridors against a 12-dimension candidate pool. Every score is cited; every estimate is labeled. The rubric evolves from what actually differentiates real corridors.
+ROUTE uses a Milepost plan: each phase is a visible marker from raw data to defensible investment proposal.
 
-**Phase 2 — Calibrate**: After 20+ corridors, run an amendment pass: which dimensions show real variance, which are correlated, which dimensions the experts actually argue about. Retire the weak ones. Bump the rubric version. Prior scores are frozen.
+**Milepost 0 — Ground Survey**: Establish the repo, specs, data inventory, roles, and CLI scaffold.
 
-**Phase 3 — Gap map**: Project the scored corpus into dimension space. Find the empty regions. Translate them back to geography: where on the map does a combination of high freight intensity + no redundancy + no multimodal integration actually appear? Those are the design targets.
+**Milepost 1 — Instrument**: Score existing interstate corridors against the 16-dimension pool. Every score is cited; every estimate is labeled. The rubric evolves from what actually differentiates real corridors.
 
-**Phase 4 — Design**: Propose corridors and upgrades that address specific gaps. Score them against the calibrated rubric. Run them through a 7-voice Parliament — Eisenhower, Moses, Foxx, a Freight Economist, a Traffic Engineer, a Climate Engineer, a Rural Advocate. The experts plant incompatible stakes. The argument record is the output; consensus is not the goal.
+**Milepost 2 — Atlas**: Re-run the corpus and calibration ledger until the national tier map is reproducible.
 
-**Phase 5 — Interstate 2.0**: Each design proposal specifies which Interstate 2.0 features apply: managed freight lanes, shared transit facilities, intermodal hubs, EV charging corridors, resilience hardening, enhanced rest areas, rural connectivity spurs. Features are selected from evidence, not from a wishlist.
+**Milepost 3 — Fault Lines**: Project the scored corpus into dimension space. Find missing links, bottlenecks, resilience holes, port connector gaps, and coverage gaps. Translate them back to geography.
+
+**Milepost 4 — Pressure Test**: Run flow, incident, SLA, relay, and investment simulations so the gaps have operational and economic meaning.
+
+**Milepost 5 — The Forum**: Run high-stakes claims through Parliament, stakeholder lenses, editorial gates, and panel review. The experts plant incompatible stakes. The argument record is the output; consensus is not the goal.
+
+**Milepost 6 — Blueprint**: Specify which Interstate 2.0 features apply: managed freight lanes, shared transit facilities, intermodal hubs, EV charging corridors, resilience hardening, enhanced rest areas, rural connectivity spurs, relay hubs, and diamond intersections.
+
+**Milepost 7 — Program**: Make the corpus, maps, papers, and design claims reproducible enough to publish.
 
 ---
 
@@ -47,13 +57,13 @@ Proposed corridors under analysis:
 
 ## The dimension pool
 
-12 dimensions across 4 bands. Each scored 0–10 per corridor. The pool is a candidate until the corpus calibration pass validates which dimensions actually differentiate.
+16 dimensions across 4 bands. Each scored 0–10 per corridor. The pool is a candidate until the corpus calibration pass validates which dimensions actually differentiate.
 
 | Band | Dimensions |
 |---|---|
-| A — Flow | Throughput Gap · Freight Intensity · Speed Reliability |
-| B — Network | Redundancy · Network Centrality · Port/Border Access |
-| C — People | Population Reach · Rural Connectivity · Equity Access |
+| A — Flow | Throughput Gap · Freight Intensity · Speed Reliability · International Trade Corridor · Safety Record |
+| B — Network | Redundancy · Network Centrality · Port/Border Access · Military/Strategic |
+| C — People | Population Reach · Rural Connectivity · Equity Access · Agricultural Export Access |
 | D — Future | Climate Resilience · Multimodal Integration · Infrastructure Vintage |
 
 ---

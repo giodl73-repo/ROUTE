@@ -61,7 +61,10 @@ impl HighwayGraph {
 
     /// All edge indices belonging to a route. Empty vec if route not found.
     pub fn route_edges(&self, route_id: &str) -> &[EdgeIndex] {
-        self.route_index.get(route_id).map(|v| v.as_slice()).unwrap_or(&[])
+        self.route_index
+            .get(route_id)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Total route length in miles.
@@ -81,12 +84,18 @@ impl HighwayGraph {
 
     /// Interstate route IDs only (route_id starts with "I").
     pub fn interstate_ids(&self) -> Vec<String> {
-        self.route_ids().into_iter().filter(|id| id.starts_with('I')).collect()
+        self.route_ids()
+            .into_iter()
+            .filter(|id| id.starts_with('I'))
+            .collect()
     }
 
     /// US highway route IDs (route_id starts with "US").
     pub fn us_highway_ids(&self) -> Vec<String> {
-        self.route_ids().into_iter().filter(|id| id.starts_with("US")).collect()
+        self.route_ids()
+            .into_iter()
+            .filter(|id| id.starts_with("US"))
+            .collect()
     }
 
     /// All upgrade candidate IDs (US highways + state routes).
@@ -106,9 +115,15 @@ impl HighwayGraph {
         println!("  interstates:        {}", self.interstate_ids().len());
         println!("  HPMS join failures: {}", join_report.hpms_failures);
         println!("  NBI join failures:  {}", join_report.nbi_failures);
-        println!("  FAF5 zone coverage: {:.0}% of routes", join_report.faf5_coverage_pct);
+        println!(
+            "  FAF5 zone coverage: {:.0}% of routes",
+            join_report.faf5_coverage_pct
+        );
         if !join_report.data_sparse_routes.is_empty() {
-            println!("  data-sparse routes ({} primary fields None):", join_report.data_sparse_threshold);
+            println!(
+                "  data-sparse routes ({} primary fields None):",
+                join_report.data_sparse_threshold
+            );
             for r in &join_report.data_sparse_routes {
                 println!("    {r}");
             }
@@ -117,7 +132,9 @@ impl HighwayGraph {
 }
 
 impl Default for HighwayGraph {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Summary of join failures from `route build`.

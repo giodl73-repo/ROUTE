@@ -2,9 +2,9 @@
 ///
 /// All metrics are computed from a FlowState on a HighwayGraph.
 /// The same metrics are used for baseline, post-incident, and post-intervention.
-use crate::assignment::{FlowState, bpr_travel_time, free_flow_time_hours, edge_capacity_vph};
-use route_network::HighwayGraph;
+use crate::assignment::{bpr_travel_time, edge_capacity_vph, free_flow_time_hours, FlowState};
 use petgraph::graph::EdgeIndex;
+use route_network::HighwayGraph;
 use std::collections::HashMap;
 
 /// Full set of simulation output metrics for a corridor or network.
@@ -37,8 +37,13 @@ pub fn edge_pti(
     capacities: &HashMap<EdgeIndex, f64>,
 ) -> f64 {
     let ff = free_flow_time_hours(g, ei);
-    if ff <= 0.0 { return 1.0; }
-    let cap = capacities.get(&ei).cloned().unwrap_or(edge_capacity_vph(g, ei));
+    if ff <= 0.0 {
+        return 1.0;
+    }
+    let cap = capacities
+        .get(&ei)
+        .cloned()
+        .unwrap_or(edge_capacity_vph(g, ei));
     // 95th-pct volume ≈ mean flow × 1.15 (typical peak hour factor)
     let v_p95 = flow_state.flow.get(&ei).cloned().unwrap_or(0.0) * 1.15;
     let t_p95 = bpr_travel_time(ff, v_p95, cap, &Default::default());
@@ -53,7 +58,9 @@ pub fn corridor_pti(
     capacities: &HashMap<EdgeIndex, f64>,
 ) -> f64 {
     let edges = g.route_edges(route_id);
-    if edges.is_empty() { return 1.0; }
+    if edges.is_empty() {
+        return 1.0;
+    }
 
     let mut weighted_pti = 0.0;
     let mut total_weight = 0.0;
@@ -66,7 +73,11 @@ pub fn corridor_pti(
         total_weight += weight;
     }
 
-    if total_weight > 0.0 { weighted_pti / total_weight } else { 1.0 }
+    if total_weight > 0.0 {
+        weighted_pti / total_weight
+    } else {
+        1.0
+    }
 }
 
 /// Network throughput: total vehicles passing through the network per hour.
@@ -87,15 +98,21 @@ pub fn freight_cost_delta(
     const TO_MILLIONS: f64 = 1.0 / 1_000_000.0;
 
     let edge_delay_cost = |state: &FlowState| -> f64 {
-        g.graph.edge_indices().map(|ei| {
-            let truck_flow = state.truck_flow.get(&ei).cloned().unwrap_or(0.0);
-            let ff = free_flow_time_hours(g, ei);
-            let v = state.flow.get(&ei).cloned().unwrap_or(0.0);
-            let c = capacities.get(&ei).cloned().unwrap_or(edge_capacity_vph(g, ei));
-            let actual_t = bpr_travel_time(ff, v, c, &Default::default());
-            let delay_hours = (actual_t - ff).max(0.0);
-            truck_flow * delay_hours * ATRI_COST_PER_TRUCK_HOUR
-        }).sum()
+        g.graph
+            .edge_indices()
+            .map(|ei| {
+                let truck_flow = state.truck_flow.get(&ei).cloned().unwrap_or(0.0);
+                let ff = free_flow_time_hours(g, ei);
+                let v = state.flow.get(&ei).cloned().unwrap_or(0.0);
+                let c = capacities
+                    .get(&ei)
+                    .cloned()
+                    .unwrap_or(edge_capacity_vph(g, ei));
+                let actual_t = bpr_travel_time(ff, v, c, &Default::default());
+                let delay_hours = (actual_t - ff).max(0.0);
+                truck_flow * delay_hours * ATRI_COST_PER_TRUCK_HOUR
+            })
+            .sum()
     };
 
     (edge_delay_cost(scenario) - edge_delay_cost(baseline)) * TO_MILLIONS
@@ -116,7 +133,10 @@ pub fn compute_metrics(
     for ei in g.graph.edge_indices() {
         let v = flow_state.flow.get(&ei).cloned().unwrap_or(0.0);
         let truck_v = flow_state.truck_flow.get(&ei).cloned().unwrap_or(0.0);
-        let c = capacities.get(&ei).cloned().unwrap_or(edge_capacity_vph(g, ei));
+        let c = capacities
+            .get(&ei)
+            .cloned()
+            .unwrap_or(edge_capacity_vph(g, ei));
         let ff = free_flow_time_hours(g, ei);
         let t = bpr_travel_time(ff, v, c, &Default::default());
 
@@ -126,7 +146,9 @@ pub fn compute_metrics(
         pti_vals.push((pti, truck_v.max(0.1)));
         vc_sum += vc;
         edge_count += 1;
-        if vc > 1.0 { losf += 1; }
+        if vc > 1.0 {
+            losf += 1;
+        }
         truck_hours += truck_v * t;
     }
 
@@ -135,20 +157,19 @@ pub fn compute_metrics(
     let mean_pti = pti_vals.iter().map(|(p, w)| p * w).sum::<f64>() / total_weight.max(1.0);
 
     // P90 PTI — 90th percentile by truck flow weight
-    pti_vals.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    pti_vals.sort_by(|a, b| a.0.total_cmp(&b.0));
     let p90_target = total_weight * 0.90;
     let mut cumulative = 0.0;
     let mut p90_pti = 1.0;
     for (p, w) in &pti_vals {
         cumulative += w;
-        if cumulative >= p90_target { p90_pti = *p; break; }
+        if cumulative >= p90_target {
+            p90_pti = *p;
+            break;
+        }
     }
 
-    // Freight cost per hour (vs free-flow baseline)
-    let baseline_ff = FlowState { flow: flow_state.flow.clone(), truck_flow: flow_state.truck_flow.clone(),
-        travel_time: g.graph.edge_indices().map(|ei| (ei, free_flow_time_hours(g, ei))).collect(),
-        iterations: 0, relative_gap: 0.0 };
-    // Set baseline flows to 0 for free-flow comparison
+    // Set baseline flows to 0 for free-flow comparison.
     let zero_flow = FlowState::empty();
     let freight_cost = freight_cost_delta(g, &zero_flow, flow_state, capacities);
 
@@ -157,7 +178,11 @@ pub fn compute_metrics(
         total_truck_hours: truck_hours,
         mean_pti,
         p90_pti,
-        mean_vc: if edge_count > 0 { vc_sum / edge_count as f64 } else { 0.0 },
+        mean_vc: if edge_count > 0 {
+            vc_sum / edge_count as f64
+        } else {
+            0.0
+        },
         losf_edges: losf,
         freight_cost_per_hour_m: freight_cost,
     }

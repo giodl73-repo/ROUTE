@@ -1,8 +1,8 @@
+use crate::projection::{AlbersUS, ViewTransform};
 use anyhow::{Context, Result};
 use route_network::{Corridor, HighwayGraph};
 use route_score::DimensionScores;
 use std::path::Path;
-use crate::projection::{AlbersUS, ViewTransform};
 
 const VIEWBOX_W: f64 = 1600.0;
 const VIEWBOX_H: f64 = 900.0;
@@ -10,23 +10,37 @@ const VIEWBOX_H: f64 = 900.0;
 /// Metro-style color per T1 corridor (same as megamap registry).
 fn corridor_color(route_id: &str) -> &'static str {
     match route_id {
-        "I5"  => "#ef4444", "I10" => "#f97316", "I35" => "#10b981",
-        "I40" => "#eab308", "I75" => "#06b6d4", "I80" => "#3b82f6",
-        "I90" => "#8b5cf6", "I95" => "#f43f5e",
+        "I5" => "#ef4444",
+        "I10" => "#f97316",
+        "I35" => "#10b981",
+        "I40" => "#eab308",
+        "I75" => "#06b6d4",
+        "I80" => "#3b82f6",
+        "I90" => "#8b5cf6",
+        "I95" => "#f43f5e",
         // T1 urban connectors
-        "I110" => "#e63946", "I880" => "#fb923c", "I84" => "#a78bfa",
-        "I225" => "#34d399", "I2"   => "#f59e0b", "I290" => "#60a5fa",
-        "I285" => "#4ade80", "I4"   => "#f472b6",
+        "I110" => "#e63946",
+        "I880" => "#fb923c",
+        "I84" => "#a78bfa",
+        "I225" => "#34d399",
+        "I2" => "#f59e0b",
+        "I290" => "#60a5fa",
+        "I285" => "#4ade80",
+        "I4" => "#f472b6",
         // US highway upgrade candidates
-        _ if route_id.starts_with("US") => "#22d3ee",  // cyan
-        _ if route_id.starts_with("SR") => "#84cc16",  // lime
-        _ => "#94a3b8",  // default gray
+        _ if route_id.starts_with("US") => "#22d3ee", // cyan
+        _ if route_id.starts_with("SR") => "#84cc16", // lime
+        _ => "#94a3b8",                               // default gray
     }
 }
 
 fn bg_color(route_id: &str) -> &'static str {
-    const T1: &[&str] = &["I5","I10","I35","I40","I75","I80","I90","I95"];
-    if T1.contains(&route_id) { corridor_color(route_id) } else { "#475569" }
+    const T1: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
+    if T1.contains(&route_id) {
+        corridor_color(route_id)
+    } else {
+        "#475569"
+    }
 }
 
 pub fn build_svg(
@@ -58,11 +72,21 @@ pub fn build_svg(
     s += "<g opacity=\"0.30\">\n";
     for ei in graph.graph.edge_indices() {
         let edge = &graph.graph[ei];
-        if edge.route_id == highlight_id { continue; }
+        if edge.route_id == highlight_id {
+            continue;
+        }
         let pts = proj_edge(edge, &proj, &view);
-        if pts.len() < 2 { continue; }
+        if pts.len() < 2 {
+            continue;
+        }
         let c = bg_color(&edge.route_id);
-        let w = if ["I5","I10","I35","I40","I75","I80","I90","I95"].contains(&edge.route_id.as_str()) { 1.2 } else { 0.5 };
+        let w = if ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
+            .contains(&edge.route_id.as_str())
+        {
+            1.2
+        } else {
+            0.5
+        };
         s += &pline(&pts, c, w, 1.0);
     }
     s += "</g>\n";
@@ -71,27 +95,38 @@ pub fn build_svg(
     s += "<g>\n";
     for &ei in &corridor.edges {
         let pts = proj_edge(&graph.graph[ei], &proj, &view);
-        if pts.len() < 2 { continue; }
-        s += &pline(&pts, &hc, 8.0, 0.18);  // glow
-        s += &pline(&pts, &hc, 3.0, 1.0);   // solid
+        if pts.len() < 2 {
+            continue;
+        }
+        s += &pline(&pts, &hc, 8.0, 0.18); // glow
+        s += &pline(&pts, &hc, 3.0, 1.0); // solid
     }
     s += "</g>\n";
 
     // Termini dots
-    for &ei in corridor.edges.first().into_iter().chain(corridor.edges.last().into_iter()) {
+    for &ei in corridor
+        .edges
+        .first()
+        .into_iter()
+        .chain(corridor.edges.last().into_iter())
+    {
         if let Some(c) = graph.graph[ei].geometry.0.first() {
             if c.x > -125.0 && c.x < -66.0 && c.y > 24.0 && c.y < 50.0 {
-                let (px,py) = view.project_to_pixel(&proj, c.x, c.y);
+                let (px, py) = view.project_to_pixel(&proj, c.x, c.y);
                 s += &format!("<circle cx=\"{px:.1}\" cy=\"{py:.1}\" r=\"6\" fill=\"{hc}\" stroke=\"#0d1117\" stroke-width=\"2\"/>\n");
             }
         }
     }
 
     // Info panel
-    let score_str = scores.map(|sc| format!("{:.1}/120", sc.total())).unwrap_or("—".into());
+    let score_str = scores
+        .map(|sc| format!("{:.1}/120", sc.total()))
+        .unwrap_or("—".into());
     let tier_label = match highlight_id.as_str() {
-        "I5"|"I10"|"I35"|"I40"|"I75"|"I80"|"I90"|"I95" => "T1 Primary Artery",
-        id if ["I110","I880","I84","I225","I2","I290","I285","I4"].contains(&id) => "T1 Urban (aggregate score)",
+        "I5" | "I10" | "I35" | "I40" | "I75" | "I80" | "I90" | "I95" => "T1 Primary Artery",
+        id if ["I110", "I880", "I84", "I225", "I2", "I290", "I285", "I4"].contains(&id) => {
+            "T1 Urban (aggregate score)"
+        }
         id if id.starts_with("US") => "US Highway — Upgrade Candidate",
         _ => "Interstate Corridor",
     };
@@ -108,7 +143,12 @@ pub fn build_svg(
     );
 
     // Legend bar
-    let (bot,lcy,lty,right) = (VIEWBOX_H-32.0, VIEWBOX_H-14.0, VIEWBOX_H-10.0, VIEWBOX_W-10.0);
+    let (bot, lcy, lty, right) = (
+        VIEWBOX_H - 32.0,
+        VIEWBOX_H - 14.0,
+        VIEWBOX_H - 10.0,
+        VIEWBOX_W - 10.0,
+    );
     s += &format!(
         "<rect x=\"0\" y=\"{bot}\" width=\"{W}\" height=\"32\" fill=\"#0d1117\" fill-opacity=\"0.85\"/>\n\
          <rect x=\"16\" y=\"{sy}\" width=\"28\" height=\"7\" rx=\"2\" fill=\"{hc}\"/>\n\
@@ -128,14 +168,25 @@ fn score_heat(score: f64) -> String {
     format!("#{r:02x}{g:02x}40")
 }
 
-fn proj_edge(edge: &route_network::HighwayEdge, proj: &AlbersUS, view: &ViewTransform) -> Vec<(f64,f64)> {
-    edge.geometry.0.iter()
+fn proj_edge(
+    edge: &route_network::HighwayEdge,
+    proj: &AlbersUS,
+    view: &ViewTransform,
+) -> Vec<(f64, f64)> {
+    edge.geometry
+        .0
+        .iter()
         .filter(|c| c.x > -125.0 && c.x < -66.0 && c.y > 24.0 && c.y < 50.0)
-        .map(|c| view.project_to_pixel(proj, c.x, c.y)).collect()
+        .map(|c| view.project_to_pixel(proj, c.x, c.y))
+        .collect()
 }
 
-fn pline(pts: &[(f64,f64)], color: &str, width: f64, opacity: f64) -> String {
-    let p: String = pts.iter().map(|(x,y)| format!("{x:.1},{y:.1}")).collect::<Vec<_>>().join(" ");
+fn pline(pts: &[(f64, f64)], color: &str, width: f64, opacity: f64) -> String {
+    let p: String = pts
+        .iter()
+        .map(|(x, y)| format!("{x:.1},{y:.1}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     format!("<polyline points=\"{p}\" stroke=\"{color}\" stroke-width=\"{width}\" fill=\"none\" opacity=\"{opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n")
 }
 
@@ -144,6 +195,12 @@ pub fn svg_to_png(svg: &str, output: &Path, width: u32, height: u32) -> Result<(
     let tree = resvg::usvg::Tree::from_str(svg, &opt).context("parsing SVG")?;
     let mut pixmap = tiny_skia::Pixmap::new(width, height)
         .ok_or_else(|| anyhow::anyhow!("failed to allocate pixmap {width}x{height}"))?;
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pixmap.as_mut());
-    pixmap.save_png(output).with_context(|| format!("saving PNG to {}", output.display()))
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixmap.as_mut(),
+    );
+    pixmap
+        .save_png(output)
+        .with_context(|| format!("saving PNG to {}", output.display()))
 }

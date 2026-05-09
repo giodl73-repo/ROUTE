@@ -37,7 +37,7 @@ Interstate 2.0 is not a new interstate system. It is a targeted upgrade to the e
 
 ## §2. The Tier System
 
-The 227 US interstate corridors are not equally important. Scoring all 227 against 12 dimensions (throughput gap, freight intensity, network centrality, redundancy, population reach, rural connectivity, economic opportunity, climate resilience, multimodal integration, infrastructure vintage) and applying centrality-adjusted natural break analysis produces four tiers.
+The 227 US interstate corridors are not equally important. Scoring all 227 against 16 dimensions (throughput gap, freight intensity, reliability, trade, safety, centrality, redundancy, port/border access, military strategy, population reach, rural connectivity, equity, agricultural export access, climate resilience, multimodal integration, infrastructure vintage) and applying centrality-adjusted natural break analysis produces four tiers.
 
 **Centrality-adjusted classification** — B2 (betweenness centrality) weighted at 0.65, aggregate score at 0.35. This prevents congested urban beltways (high A1) from outscoring structurally irreplaceable trunk lines (high B2).
 
@@ -521,7 +521,7 @@ The `route` CLI is the computational backbone. Current commands:
 route fetch              # Download FHWA data (TIGER, HPMS, NBI, FAF5, FEMA)
 route fetch-hpms         # Download HPMS from geo.dot.gov (no auth required)
 route build              # Build HighwayGraph with all attribute joins
-route score <corridor>   # Score one corridor against 12 dimensions
+route score <corridor>   # Score one corridor against 16 dimensions
 route score-all          # Score all corridors; compute Brandes centrality
 route flow <corridor>    # Max-flow capacity analysis; identify bottleneck
 route invest --budget N  # LP investment allocation across corridors

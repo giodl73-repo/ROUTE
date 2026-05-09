@@ -5,16 +5,15 @@
 ///   - What is the expected annual freight cost of random closures?
 ///   - Which corridors appear in the worst-outcome scenarios?
 ///   - Does the diamond interchange reduce variance in closure outcomes?
-use crate::assignment::{wardrop_equilibrium, edge_capacity_vph, BprParams, FlowState};
+use crate::assignment::{edge_capacity_vph, wardrop_equilibrium, BprParams};
 use crate::demand::DemandMatrix;
-use crate::incident::{IncidentSpec, IncidentType, apply_incident, restore_incident};
-use crate::metrics::{compute_metrics, freight_cost_delta, SimMetrics};
-use route_network::HighwayGraph;
+use crate::metrics::compute_metrics;
 use petgraph::graph::EdgeIndex;
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use route_network::HighwayGraph;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 /// Configuration for a chaos run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,30 +63,31 @@ pub struct ChaosResult {
 }
 
 /// Run Monte Carlo chaos simulation.
-pub fn run_chaos(
-    g: &HighwayGraph,
-    demand: &DemandMatrix,
-    config: &ChaosConfig,
-) -> ChaosResult {
-    let capacities: HashMap<EdgeIndex, f64> = g.graph.edge_indices()
+pub fn run_chaos(g: &HighwayGraph, demand: &DemandMatrix, config: &ChaosConfig) -> ChaosResult {
+    let capacities: HashMap<EdgeIndex, f64> = g
+        .graph
+        .edge_indices()
         .map(|ei| (ei, edge_capacity_vph(g, ei)))
         .collect();
 
     let bpr = BprParams::default();
 
     // Baseline equilibrium
-    let baseline = wardrop_equilibrium(g, demand, &capacities, &bpr, config.fw_max_iter, config.fw_tolerance);
+    let baseline = wardrop_equilibrium(
+        g,
+        demand,
+        &capacities,
+        &bpr,
+        config.fw_max_iter,
+        config.fw_tolerance,
+    );
     let baseline_metrics = compute_metrics(g, &baseline, &capacities);
 
-    // Edge ID → index map
-    let edge_id_map: HashMap<u64, EdgeIndex> = g.graph.edge_indices()
-        .map(|ei| (g.graph[ei].id, ei))
-        .collect();
-
     // T1 edge IDs
-    let t1_routes = ["I5","I10","I35","I40","I75","I80","I90","I95"];
+    let t1_routes = ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
     let candidate_edges: Vec<EdgeIndex> = if config.t1_only {
-        g.graph.edge_indices()
+        g.graph
+            .edge_indices()
             .filter(|&ei| t1_routes.contains(&g.graph[ei].route_id.as_str()))
             .collect()
     } else {
@@ -96,8 +96,12 @@ pub fn run_chaos(
 
     if candidate_edges.is_empty() {
         return ChaosResult {
-            iterations: 0, mean_freight_cost_delta_m: 0.0, p95_freight_cost_delta_m: 0.0,
-            max_freight_cost_delta_m: 0.0, worst_case_corridors: vec![], mean_network_pti: 1.0,
+            iterations: 0,
+            mean_freight_cost_delta_m: 0.0,
+            p95_freight_cost_delta_m: 0.0,
+            max_freight_cost_delta_m: 0.0,
+            worst_case_corridors: vec![],
+            mean_network_pti: 1.0,
             saturation_fraction: 0.0,
         };
     }
@@ -125,9 +129,17 @@ pub fn run_chaos(
         }
 
         // Re-run equilibrium with modified capacities
-        let scenario_flow = wardrop_equilibrium(g, demand, &modified_caps, &bpr, config.fw_max_iter, config.fw_tolerance);
+        let scenario_flow = wardrop_equilibrium(
+            g,
+            demand,
+            &modified_caps,
+            &bpr,
+            config.fw_max_iter,
+            config.fw_tolerance,
+        );
         let scenario_metrics = compute_metrics(g, &scenario_flow, &modified_caps);
-        let cost_delta = scenario_metrics.freight_cost_per_hour_m - baseline_metrics.freight_cost_per_hour_m;
+        let cost_delta =
+            scenario_metrics.freight_cost_per_hour_m - baseline_metrics.freight_cost_per_hour_m;
 
         closed_routes.dedup();
         let route_label = closed_routes.join("+");
@@ -141,13 +153,17 @@ pub fn run_chaos(
 
     if cost_deltas.is_empty() {
         return ChaosResult {
-            iterations: config.iterations, mean_freight_cost_delta_m: 0.0,
-            p95_freight_cost_delta_m: 0.0, max_freight_cost_delta_m: 0.0,
-            worst_case_corridors: vec![], mean_network_pti: 1.0, saturation_fraction: 0.0,
+            iterations: config.iterations,
+            mean_freight_cost_delta_m: 0.0,
+            p95_freight_cost_delta_m: 0.0,
+            max_freight_cost_delta_m: 0.0,
+            worst_case_corridors: vec![],
+            mean_network_pti: 1.0,
+            saturation_fraction: 0.0,
         };
     }
 
-    cost_deltas.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    cost_deltas.sort_by(|a, b| a.0.total_cmp(&b.0));
     let n = cost_deltas.len() as f64;
     let mean = cost_deltas.iter().map(|(c, _)| c).sum::<f64>() / n;
     let p95_idx = ((n * 0.95) as usize).min(cost_deltas.len() - 1);

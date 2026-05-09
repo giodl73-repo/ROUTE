@@ -14,7 +14,7 @@ use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::visit::EdgeRef;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-const T1_ROUTES: &[&str] = &["I5","I10","I35","I40","I75","I80","I90","I95"];
+const T1_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
 const DIAMOND_RADIUS_DEG: f64 = 0.7; // ~50 miles at mid-latitude
 
 /// A T1/T1 intersection point.
@@ -55,10 +55,15 @@ pub fn find_t1_intersections(g: &HighwayGraph) -> Vec<T1Intersection> {
     // Find nodes where two different T1 routes meet
     for ni in g.graph.node_indices() {
         let route_ids: Vec<String> = {
-            let mut ids: Vec<_> = g.graph.edges(ni)
+            let mut ids: Vec<_> = g
+                .graph
+                .edges(ni)
                 .map(|er| er.weight().route_id.clone())
-                .chain(g.graph.edges_directed(ni, petgraph::Direction::Incoming)
-                    .map(|er| er.weight().route_id.clone()))
+                .chain(
+                    g.graph
+                        .edges_directed(ni, petgraph::Direction::Incoming)
+                        .map(|er| er.weight().route_id.clone()),
+                )
                 .filter(|id| T1_ROUTES.contains(&id.as_str()))
                 .collect();
             ids.sort();
@@ -72,14 +77,19 @@ pub fn find_t1_intersections(g: &HighwayGraph) -> Vec<T1Intersection> {
 
         // Create an intersection for each unique T1 pair at this node
         for i in 0..route_ids.len() {
-            for j in (i+1)..route_ids.len() {
+            for j in (i + 1)..route_ids.len() {
                 let key = format!("{}x{}", route_ids[i], route_ids[j]);
-                if seen.contains(&key) { continue; }
+                if seen.contains(&key) {
+                    continue;
+                }
                 seen.insert(key);
 
                 let c = &g.graph[ni].coord;
-                let name = format!("{}/{}", route_ids[i].replace('I', "I-"),
-                    route_ids[j].replace('I', "I-"));
+                let name = format!(
+                    "{}/{}",
+                    route_ids[i].replace('I', "I-"),
+                    route_ids[j].replace('I', "I-")
+                );
 
                 intersections.push(T1Intersection {
                     name,
@@ -103,8 +113,8 @@ pub fn find_intersection(g: &HighwayGraph, name: &str) -> Option<T1Intersection>
 
     // Try exact match
     if let Some(ix) = all.iter().find(|ix| {
-        format!("{}x{}", ix.route_a, ix.route_b) == norm ||
-        format!("{}x{}", ix.route_b, ix.route_a) == norm
+        format!("{}x{}", ix.route_a, ix.route_b) == norm
+            || format!("{}x{}", ix.route_b, ix.route_a) == norm
     }) {
         return Some(ix.clone());
     }
@@ -112,10 +122,10 @@ pub fn find_intersection(g: &HighwayGraph, name: &str) -> Option<T1Intersection>
     // Try partial match (any intersection containing both routes)
     let parts: Vec<&str> = norm.split('x').collect();
     if parts.len() == 2 {
-        if let Some(ix) = all.iter().find(|ix|
-            (ix.route_a.contains(parts[0]) || ix.route_b.contains(parts[0])) &&
-            (ix.route_a.contains(parts[1]) || ix.route_b.contains(parts[1]))
-        ) {
+        if let Some(ix) = all.iter().find(|ix| {
+            (ix.route_a.contains(parts[0]) || ix.route_b.contains(parts[0]))
+                && (ix.route_a.contains(parts[1]) || ix.route_b.contains(parts[1]))
+        }) {
             return Some(ix.clone());
         }
     }
@@ -133,14 +143,18 @@ pub fn analyze_diamond(g: &HighwayGraph, intersection: T1Intersection) -> Diamon
     let zone_nodes_b = nodes_in_zone(g, &intersection.route_b, cx, cy, DIAMOND_RADIUS_DEG);
 
     // Build subgraph of zone edges (all corridors within the zone)
-    let zone_edges: HashSet<EdgeIndex> = g.graph.edge_indices()
+    let zone_edges: HashSet<EdgeIndex> = g
+        .graph
+        .edge_indices()
         .filter(|&ei| {
             if let Some((s, t)) = g.graph.edge_endpoints(ei) {
                 let cs = &g.graph[s].coord;
                 let ct = &g.graph[t].coord;
-                in_zone(cs.x, cs.y, cx, cy, DIAMOND_RADIUS_DEG * 1.5) ||
-                in_zone(ct.x, ct.y, cx, cy, DIAMOND_RADIUS_DEG * 1.5)
-            } else { false }
+                in_zone(cs.x, cs.y, cx, cy, DIAMOND_RADIUS_DEG * 1.5)
+                    || in_zone(ct.x, ct.y, cx, cy, DIAMOND_RADIUS_DEG * 1.5)
+            } else {
+                false
+            }
         })
         .collect();
 
@@ -192,7 +206,7 @@ fn nodes_in_zone(
 fn in_zone(lon: f64, lat: f64, cx: f64, cy: f64, radius: f64) -> bool {
     let dx = lon - cx;
     let dy = lat - cy;
-    (dx*dx + dy*dy).sqrt() <= radius
+    (dx * dx + dy * dy).sqrt() <= radius
 }
 
 /// Simplified k-connectivity: BFS-based count of independent path starts.
@@ -214,9 +228,12 @@ fn compute_k_connectivity(
     let mut k = 0;
     let mut used_edges: HashSet<EdgeIndex> = HashSet::new();
 
-    for _ in 0..5 { // try to find up to 5 paths
+    for _ in 0..5 {
+        // try to find up to 5 paths
         let path = bfs_path(g, zone_a, &zone_b_set, zone_edges, &used_edges);
-        if path.is_empty() { break; }
+        if path.is_empty() {
+            break;
+        }
         for ei in &path {
             used_edges.insert(*ei);
         }
@@ -253,22 +270,32 @@ fn bfs_path(
         // Both directions (bidirectional highway)
         for er in g.graph.edges(u) {
             let ei = er.id();
-            if !zone_edges.contains(&ei) || used_edges.contains(&ei) { continue; }
+            if !zone_edges.contains(&ei) || used_edges.contains(&ei) {
+                continue;
+            }
             let v = er.target();
             if !visited.contains_key(&v) {
                 visited.insert(v, Some((u, ei)));
                 queue.push_back(v);
-                if zone_b.contains(&v) { reached_b = Some(v); break 'outer; }
+                if zone_b.contains(&v) {
+                    reached_b = Some(v);
+                    break 'outer;
+                }
             }
         }
         for er in g.graph.edges_directed(u, petgraph::Direction::Incoming) {
             let ei = er.id();
-            if !zone_edges.contains(&ei) || used_edges.contains(&ei) { continue; }
+            if !zone_edges.contains(&ei) || used_edges.contains(&ei) {
+                continue;
+            }
             let v = er.source();
             if !visited.contains_key(&v) {
                 visited.insert(v, Some((u, ei)));
                 queue.push_back(v);
-                if zone_b.contains(&v) { reached_b = Some(v); break 'outer; }
+                if zone_b.contains(&v) {
+                    reached_b = Some(v);
+                    break 'outer;
+                }
             }
         }
     }

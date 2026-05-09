@@ -1,6 +1,6 @@
 [package]
 name = "route-score"
-description = "12-dimension corridor scoring engine with runtime-configurable anchors"
+description = "16-dimension corridor scoring engine with runtime-configurable anchors"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

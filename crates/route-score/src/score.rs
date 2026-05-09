@@ -24,43 +24,43 @@ pub enum Dimension {
 impl Dimension {
     pub fn code(&self) -> &'static str {
         match self {
-            Dimension::A1ThroughputGap       => "A1",
-            Dimension::A2FreightIntensity     => "A2",
-            Dimension::A3SpeedReliability     => "A3",
-            Dimension::A4InternationalTrade   => "A4",
-            Dimension::A5SafetyRecord         => "A5",
-            Dimension::B1Redundancy           => "B1",
-            Dimension::B2NetworkCentrality    => "B2",
-            Dimension::B3PortBorderAccess     => "B3",
-            Dimension::B4MilitaryStrategic    => "B4",
-            Dimension::C1PopulationReach      => "C1",
-            Dimension::C2RuralConnectivity    => "C2",
-            Dimension::C3EconomicOpportunity  => "C3",
-            Dimension::C4AgriculturalExport   => "C4",
-            Dimension::D1ClimateResilience    => "D1",
-            Dimension::D2MultimodalIntegration=> "D2",
-            Dimension::D3InfrastructureVintage=> "D3",
+            Dimension::A1ThroughputGap => "A1",
+            Dimension::A2FreightIntensity => "A2",
+            Dimension::A3SpeedReliability => "A3",
+            Dimension::A4InternationalTrade => "A4",
+            Dimension::A5SafetyRecord => "A5",
+            Dimension::B1Redundancy => "B1",
+            Dimension::B2NetworkCentrality => "B2",
+            Dimension::B3PortBorderAccess => "B3",
+            Dimension::B4MilitaryStrategic => "B4",
+            Dimension::C1PopulationReach => "C1",
+            Dimension::C2RuralConnectivity => "C2",
+            Dimension::C3EconomicOpportunity => "C3",
+            Dimension::C4AgriculturalExport => "C4",
+            Dimension::D1ClimateResilience => "D1",
+            Dimension::D2MultimodalIntegration => "D2",
+            Dimension::D3InfrastructureVintage => "D3",
         }
     }
 
     pub fn name(&self) -> &'static str {
         match self {
-            Dimension::A1ThroughputGap       => "Throughput Gap",
-            Dimension::A2FreightIntensity     => "Freight Intensity",
-            Dimension::A3SpeedReliability     => "Speed Reliability",
-            Dimension::A4InternationalTrade   => "International Trade Corridor",
-            Dimension::A5SafetyRecord         => "Safety Record",
-            Dimension::B1Redundancy           => "Redundancy",
-            Dimension::B2NetworkCentrality    => "Network Centrality",
-            Dimension::B3PortBorderAccess     => "Port/Border Access",
-            Dimension::B4MilitaryStrategic    => "Military/Strategic",
-            Dimension::C1PopulationReach      => "Population Reach",
-            Dimension::C2RuralConnectivity    => "Rural Connectivity",
-            Dimension::C3EconomicOpportunity  => "Economic Opportunity Access",
-            Dimension::C4AgriculturalExport   => "Agricultural Export Access",
-            Dimension::D1ClimateResilience    => "Climate Resilience",
-            Dimension::D2MultimodalIntegration=> "Multimodal Integration",
-            Dimension::D3InfrastructureVintage=> "Infrastructure Vintage",
+            Dimension::A1ThroughputGap => "Throughput Gap",
+            Dimension::A2FreightIntensity => "Freight Intensity",
+            Dimension::A3SpeedReliability => "Speed Reliability",
+            Dimension::A4InternationalTrade => "International Trade Corridor",
+            Dimension::A5SafetyRecord => "Safety Record",
+            Dimension::B1Redundancy => "Redundancy",
+            Dimension::B2NetworkCentrality => "Network Centrality",
+            Dimension::B3PortBorderAccess => "Port/Border Access",
+            Dimension::B4MilitaryStrategic => "Military/Strategic",
+            Dimension::C1PopulationReach => "Population Reach",
+            Dimension::C2RuralConnectivity => "Rural Connectivity",
+            Dimension::C3EconomicOpportunity => "Economic Opportunity Access",
+            Dimension::C4AgriculturalExport => "Agricultural Export Access",
+            Dimension::D1ClimateResilience => "Climate Resilience",
+            Dimension::D2MultimodalIntegration => "Multimodal Integration",
+            Dimension::D3InfrastructureVintage => "Infrastructure Vintage",
         }
     }
 }
@@ -82,16 +82,16 @@ pub struct DimensionScores {
     pub a1: ScoredDimension,
     pub a2: ScoredDimension,
     pub a3: ScoredDimension,
-    pub a4: ScoredDimension,  // v1.2
-    pub a5: ScoredDimension,  // v1.4
+    pub a4: ScoredDimension, // v1.2
+    pub a5: ScoredDimension, // v1.4
     pub b1: ScoredDimension,
     pub b2: ScoredDimension,
     pub b3: ScoredDimension,
-    pub b4: ScoredDimension,  // v1.2
+    pub b4: ScoredDimension, // v1.2
     pub c1: ScoredDimension,
     pub c2: ScoredDimension,
     pub c3: ScoredDimension,
-    pub c4: ScoredDimension,  // v1.2
+    pub c4: ScoredDimension, // v1.2
     pub d1: ScoredDimension,
     pub d2: ScoredDimension,
     pub d3: ScoredDimension,
@@ -100,19 +100,32 @@ pub struct DimensionScores {
 }
 
 impl DimensionScores {
-    pub fn band_a(&self) -> f64 { self.a1.score + self.a2.score + self.a3.score + self.a4.score + self.a5.score }
-    pub fn band_b(&self) -> f64 { self.b1.score + self.b2.score + self.b3.score + self.b4.score }
-    pub fn band_c(&self) -> f64 { self.c1.score + self.c2.score + self.c3.score + self.c4.score }
-    pub fn band_d(&self) -> f64 { self.d1.score + self.d2.score + self.d3.score }
-    pub fn total(&self)  -> f64 { self.band_a() + self.band_b() + self.band_c() + self.band_d() }
+    pub fn band_a(&self) -> f64 {
+        self.a1.score + self.a2.score + self.a3.score + self.a4.score + self.a5.score
+    }
+    pub fn band_b(&self) -> f64 {
+        self.b1.score + self.b2.score + self.b3.score + self.b4.score
+    }
+    pub fn band_c(&self) -> f64 {
+        self.c1.score + self.c2.score + self.c3.score + self.c4.score
+    }
+    pub fn band_d(&self) -> f64 {
+        self.d1.score + self.d2.score + self.d3.score
+    }
+    pub fn total(&self) -> f64 {
+        self.band_a() + self.band_b() + self.band_c() + self.band_d()
+    }
     pub fn any_estimated(&self) -> bool {
-        [&self.a1,&self.a2,&self.a3,&self.a4,&self.a5,&self.b1,&self.b2,&self.b3,&self.b4,
-         &self.c1,&self.c2,&self.c3,&self.c4,&self.d1,&self.d2,&self.d3]
-            .iter().any(|d| d.estimated)
+        [
+            &self.a1, &self.a2, &self.a3, &self.a4, &self.a5, &self.b1, &self.b2, &self.b3,
+            &self.b4, &self.c1, &self.c2, &self.c3, &self.c4, &self.d1, &self.d2, &self.d3,
+        ]
+        .iter()
+        .any(|d| d.estimated)
     }
 }
 
-/// Score a corridor against all 12 dimensions using the provided config.
+/// Score a corridor against all 16 dimensions using the provided config.
 pub fn score_corridor(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> DimensionScores {
     DimensionScores {
         a1: score_a1(attrs, cfg),
@@ -149,7 +162,10 @@ fn score_a1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             sources: vec!["FHWA HPMS 2023".into()],
             estimated: false,
         },
-        None => estimated(Dimension::A1ThroughputGap, "HPMS AADT join failed; no score available."),
+        None => estimated(
+            Dimension::A1ThroughputGap,
+            "HPMS AADT join failed; no score available.",
+        ),
     }
 }
 
@@ -166,7 +182,10 @@ fn score_a2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             sources: vec!["FAF5 v5.6 BTS/FHWA 2022".into()],
             estimated: true, // zone-traversal is always an estimate in v1.0
         },
-        None => estimated(Dimension::A2FreightIntensity, "FAF5 flow attribution unavailable."),
+        None => estimated(
+            Dimension::A2FreightIntensity,
+            "FAF5 flow attribution unavailable.",
+        ),
     }
 }
 
@@ -210,7 +229,10 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             estimated: true,
         }
     } else {
-        estimated(Dimension::A3SpeedReliability, "PTI, V/C, and IRI all unavailable.")
+        estimated(
+            Dimension::A3SpeedReliability,
+            "PTI, V/C, and IRI all unavailable.",
+        )
     }
 }
 
@@ -252,8 +274,10 @@ fn score_a5(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             sources: vec!["NHTSA FARS 2022".into()],
             estimated: false,
         },
-        None => estimated(Dimension::A5SafetyRecord,
-            "FARS crash data not yet joined — run route fetch-fars."),
+        None => estimated(
+            Dimension::A5SafetyRecord,
+            "FARS crash data not yet joined — run route fetch-fars.",
+        ),
     }
 }
 
@@ -274,7 +298,8 @@ fn score_b4(attrs: &CorridorAttributes, _cfg: &ScoringConfig) -> ScoredDimension
         ScoredDimension {
             dim: Dimension::B4MilitaryStrategic,
             score: 0.0,
-            justification: "Not STRAHNET-designated; no major military installation within 30 miles.".into(),
+            justification:
+                "Not STRAHNET-designated; no major military installation within 30 miles.".into(),
             sources: vec![],
             estimated: false,
         }
@@ -331,8 +356,11 @@ fn score_b1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 sources: vec!["HighwayGraph shortest-path analysis".into()],
                 estimated: false,
             }
-        },
-        None => estimated(Dimension::B1Redundancy, "Parallel route analysis incomplete."),
+        }
+        None => estimated(
+            Dimension::B1Redundancy,
+            "Parallel route analysis incomplete.",
+        ),
     }
 }
 
@@ -352,7 +380,8 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             dim: Dimension::B2NetworkCentrality,
             score: 0.0,
             justification: "Betweenness centrality not yet computed — run route score-all \
-                            to build full national graph.".into(),
+                            to build full national graph."
+                .into(),
             sources: vec![],
             estimated: true,
         },
@@ -362,17 +391,25 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 fn score_b3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     // Stepped scoring: port terminus → 10, border crossing → 8, else distance-based
     let (score, justification) = if attrs.port_terminus_flag {
-        (10.0, format!(
-            "Terminus within 30 miles of top-25 US port \
+        (
+            10.0,
+            format!(
+                "Terminus within 30 miles of top-25 US port \
              (nearest {:.0} mi).",
-            attrs.nearest_top25_port_miles.unwrap_or(0.0)
-        ))
+                attrs.nearest_top25_port_miles.unwrap_or(0.0)
+            ),
+        )
     } else if attrs.border_crossing_flag {
-        (8.0, "Serves major US-Canada or US-Mexico border crossing.".into())
+        (
+            8.0,
+            "Serves major US-Canada or US-Mexico border crossing.".into(),
+        )
     } else {
         match attrs.nearest_top25_port_miles {
-            Some(d) => (cfg.b3.score(d as f64),
-                        format!("Nearest top-25 port {d:.0} miles from terminus.")),
+            Some(d) => (
+                cfg.b3.score(d as f64),
+                format!("Nearest top-25 port {d:.0} miles from terminus."),
+            ),
             None => (0.0, "No port or border crossing data available.".into()),
         }
     };
@@ -396,19 +433,25 @@ fn score_c1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             sources: vec!["Census ACS 2022 5-year estimates".into()],
             estimated: false,
         },
-        None => estimated(Dimension::C1PopulationReach, "Population buffer join incomplete."),
+        None => estimated(
+            Dimension::C1PopulationReach,
+            "Population buffer join incomplete.",
+        ),
     }
 }
 
 fn score_c2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
-    let rural_score = attrs.pct_rural_in_buffer
+    let rural_score = attrs
+        .pct_rural_in_buffer
         .map(|r| cfg.c2.rural_share.score(r as f64))
         .unwrap_or(0.0);
-    let gap_score = attrs.max_rural_interchange_gap_miles
+    let gap_score = attrs
+        .max_rural_interchange_gap_miles
         .map(|g| cfg.c2.interchange_gap.score(g as f64))
         .unwrap_or(0.0);
     let composite = 0.6 * rural_score + 0.4 * gap_score;
-    let estimated = attrs.pct_rural_in_buffer.is_none() || attrs.max_rural_interchange_gap_miles.is_none();
+    let estimated =
+        attrs.pct_rural_in_buffer.is_none() || attrs.max_rural_interchange_gap_miles.is_none();
     ScoredDimension {
         dim: Dimension::C2RuralConnectivity,
         score: composite,
@@ -417,8 +460,10 @@ fn score_c2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             attrs.pct_rural_in_buffer.unwrap_or(0.0) * 100.0,
             attrs.max_rural_interchange_gap_miles.unwrap_or(0.0)
         ),
-        sources: vec!["USDA ERS Rural-Urban Continuum Codes 2023".into(),
-                      "HighwayGraph interchange analysis".into()],
+        sources: vec![
+            "USDA ERS Rural-Urban Continuum Codes 2023".into(),
+            "HighwayGraph interchange analysis".into(),
+        ],
         estimated,
     }
 }
@@ -434,21 +479,28 @@ fn score_c3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 rel * 100.0,
                 attrs.corridor_gdp_b.unwrap_or(0.0)
             ),
-            sources: vec!["BEA CAINC4 County GDP 2022".into(),
-                          "Census ACS 2022 population".into()],
+            sources: vec![
+                "BEA CAINC4 County GDP 2022".into(),
+                "Census ACS 2022 population".into(),
+            ],
             estimated: false,
         },
-        None => estimated(Dimension::C3EconomicOpportunity, "BEA GDP data join incomplete."),
+        None => estimated(
+            Dimension::C3EconomicOpportunity,
+            "BEA GDP data join incomplete.",
+        ),
     }
 }
 
 // ── Band D ────────────────────────────────────────────────────────────────────
 
 fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
-    let consec_score = attrs.max_consecutive_sfha_miles
+    let consec_score = attrs
+        .max_consecutive_sfha_miles
         .map(|m| cfg.d1.consecutive_sfha.score(m as f64))
         .unwrap_or(0.0);
-    let total_score = attrs.fema_sfha_miles
+    let total_score = attrs
+        .fema_sfha_miles
         .map(|m| cfg.d1.total_sfha.score(m))
         .unwrap_or(0.0);
     let flood_score = 0.7 * consec_score + 0.3 * total_score;
@@ -501,8 +553,12 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 }
 
 fn score_d2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
-    let hub_score = cfg.d2.intermodal_hubs.score(attrs.intermodal_hub_count as f64);
-    let ev_score = attrs.dcfc_per_100mi
+    let hub_score = cfg
+        .d2
+        .intermodal_hubs
+        .score(attrs.intermodal_hub_count as f64);
+    let ev_score = attrs
+        .dcfc_per_100mi
         .map(|d| cfg.d2.dcfc_per_100mi.score(d as f64))
         .unwrap_or(0.0);
     let composite = 0.6 * hub_score + 0.4 * ev_score;
@@ -514,17 +570,21 @@ fn score_d2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             attrs.intermodal_hub_count,
             attrs.dcfc_per_100mi.unwrap_or(0.0)
         ),
-        sources: vec!["AAR intermodal terminal data".into(),
-                      "DOE AFDC EV charger locator 2024".into()],
+        sources: vec![
+            "AAR intermodal terminal data".into(),
+            "DOE AFDC EV charger locator 2024".into(),
+        ],
         estimated: attrs.dcfc_per_100mi.is_none(),
     }
 }
 
 fn score_d3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
-    let bridge_score = attrs.pct_bridges_poor
+    let bridge_score = attrs
+        .pct_bridges_poor
         .map(|p| cfg.d3.bridges_poor.score(p as f64))
         .unwrap_or(0.0);
-    let vintage_score = attrs.mean_year_built
+    let vintage_score = attrs
+        .mean_year_built
         .map(|y| cfg.d3.mean_year_built.score(y as f64))
         .unwrap_or(0.0);
     let composite = 0.6 * bridge_score + 0.4 * vintage_score;

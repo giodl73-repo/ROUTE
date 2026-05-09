@@ -32,17 +32,30 @@ pub fn load_designations(data_dir: &Path) -> HashMap<String, CorridorDesignation
 
     for line in content.lines() {
         let line = line.trim();
-        if line.is_empty() || line.starts_with('#') { continue; }
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
         let fields: Vec<&str> = line.split(',').collect();
-        if fields.len() < 4 { continue; }
-        if fields[0] == "ROUTE_ID" { continue; } // header
+        if fields.len() < 4 {
+            continue;
+        }
+        if fields[0] == "ROUTE_ID" {
+            continue;
+        } // header
 
         let route_id = fields[0].trim().to_string();
         let a4: f64 = fields[1].trim().parse().unwrap_or(0.0);
         let b4: f64 = fields[2].trim().parse().unwrap_or(0.0);
         let c4: f64 = fields[3].trim().parse().unwrap_or(0.0);
 
-        map.insert(route_id, CorridorDesignation { a4_usmca: a4, b4_military: b4, c4_ag_export: c4 });
+        map.insert(
+            route_id,
+            CorridorDesignation {
+                a4_usmca: a4,
+                b4_military: b4,
+                c4_ag_export: c4,
+            },
+        );
     }
 
     map
@@ -59,9 +72,7 @@ pub fn init_designations(data_dir: &Path) {
 }
 
 pub fn get_designation(route_id: &str) -> CorridorDesignation {
-    let from_csv = DESIGNATIONS.get()
-        .and_then(|m| m.get(route_id))
-        .cloned();
+    let from_csv = DESIGNATIONS.get().and_then(|m| m.get(route_id)).cloned();
 
     match from_csv {
         Some(d) => d,

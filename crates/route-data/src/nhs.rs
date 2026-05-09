@@ -80,8 +80,8 @@ pub fn read_nhs_shapefile(
     shp_path: &std::path::Path,
     all_nhs: bool,
 ) -> Result<Vec<NhsSegment>, NhsError> {
-    let mut reader = shapefile::Reader::from_path(shp_path)
-        .map_err(|e| NhsError::Shapefile(e.to_string()))?;
+    let mut reader =
+        shapefile::Reader::from_path(shp_path).map_err(|e| NhsError::Shapefile(e.to_string()))?;
 
     let mut segments = Vec::new();
 
@@ -91,11 +91,15 @@ pub fn read_nhs_shapefile(
         // Detect format by presence of ROUTE_ID (FHWA) vs FULLNAME (TIGER)
         let (route_id, state, nhs_type, road_class) = if record.get("ROUTE_ID").is_some() {
             // FHWA NHS format
-            let rid = get_string_field(&record, "ROUTE_ID")
-                .ok_or(NhsError::MissingField("ROUTE_ID"))?;
+            let rid =
+                get_string_field(&record, "ROUTE_ID").ok_or(NhsError::MissingField("ROUTE_ID"))?;
             let st = get_string_field(&record, "STATE_CODE").unwrap_or_default();
             let nt = get_numeric_field(&record, "NHS_TYPE").unwrap_or(1.0) as u8;
-            let rc = if nt == 2 { RoadClass::Interstate } else { RoadClass::UsHighway };
+            let rc = if nt == 2 {
+                RoadClass::Interstate
+            } else {
+                RoadClass::UsHighway
+            };
             (rid, st, nt, rc)
         } else {
             // TIGER Primary Roads format — includes interstates AND US routes
@@ -103,18 +107,23 @@ pub fn read_nhs_shapefile(
             let fullname = get_string_field(&record, "FULLNAME").unwrap_or_default();
             let rc = RoadClass::from_rttyp(&rttyp);
             let rid = tiger_name_to_route_id(&fullname, &rttyp);
-            let nt: u8 = match rc { RoadClass::Interstate => 2, _ => 1 };
+            let nt: u8 = match rc {
+                RoadClass::Interstate => 2,
+                _ => 1,
+            };
             (rid, String::new(), nt, rc)
         };
 
         // Filter by road class
         let include = match &road_class {
             RoadClass::Interstate => true,
-            RoadClass::UsHighway => all_nhs,   // included when all_nhs=true
+            RoadClass::UsHighway => all_nhs, // included when all_nhs=true
             RoadClass::StateHighway => all_nhs,
             RoadClass::Other => false,
         };
-        if !include { continue; }
+        if !include {
+            continue;
+        }
 
         // Skip records with empty/unknown route IDs
         if route_id.is_empty() || route_id == "UNKNOWN" {
@@ -122,8 +131,8 @@ pub fn read_nhs_shapefile(
         }
 
         let geometry = shape_to_linestring(shape, idx)?;
-        let length_miles = get_numeric_field(&record, "MILES")
-            .unwrap_or_else(|| approx_length_miles(&geometry));
+        let length_miles =
+            get_numeric_field(&record, "MILES").unwrap_or_else(|| approx_length_miles(&geometry));
 
         segments.push(NhsSegment {
             route_id,
@@ -183,7 +192,9 @@ fn tiger_name_to_route_id(fullname: &str, rttyp: &str) -> String {
 fn approx_length_miles(line: &LineString<f64>) -> f64 {
     const DEG_LAT_MILES: f64 = 69.0;
     let coords = &line.0;
-    if coords.len() < 2 { return 0.0; }
+    if coords.len() < 2 {
+        return 0.0;
+    }
     let mut total = 0.0;
     for w in coords.windows(2) {
         let dlat = (w[1].y - w[0].y) * DEG_LAT_MILES;
@@ -195,18 +206,16 @@ fn approx_length_miles(line: &LineString<f64>) -> f64 {
     total
 }
 
-fn shape_to_linestring(
-    shape: shapefile::Shape,
-    idx: usize,
-) -> Result<LineString<f64>, NhsError> {
+fn shape_to_linestring(shape: shapefile::Shape, idx: usize) -> Result<LineString<f64>, NhsError> {
     match shape {
         shapefile::Shape::Polyline(poly) => {
             // Take the first part (NHS segments are typically single-part)
-            let part = poly.parts().first().ok_or(NhsError::UnsupportedGeometry(idx))?;
-            let coords: Vec<Coord<f64>> = part
-                .iter()
-                .map(|pt| Coord { x: pt.x, y: pt.y })
-                .collect();
+            let part = poly
+                .parts()
+                .first()
+                .ok_or(NhsError::UnsupportedGeometry(idx))?;
+            let coords: Vec<Coord<f64>> =
+                part.iter().map(|pt| Coord { x: pt.x, y: pt.y }).collect();
             Ok(LineString(coords))
         }
         _ => Err(NhsError::UnsupportedGeometry(idx)),

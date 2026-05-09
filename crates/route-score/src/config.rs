@@ -16,26 +16,54 @@ impl AnchorMap {
     /// Interpolate a score for the given value.
     /// Handles both increasing (low=0, high=10) and decreasing (high=0, low=10) anchors.
     pub fn score(&self, value: f64) -> f64 {
+        if !value.is_finite()
+            || !self.anchor_0.is_finite()
+            || !self.anchor_5.is_finite()
+            || !self.anchor_10.is_finite()
+        {
+            return 0.0;
+        }
+
+        if (self.anchor_10 - self.anchor_0).abs() < f64::EPSILON {
+            return if value >= self.anchor_10 { 10.0 } else { 0.0 };
+        }
+
         let increasing = self.anchor_10 > self.anchor_0;
         if increasing {
-            if value <= self.anchor_0 { return 0.0; }
-            if value >= self.anchor_10 { return 10.0; }
+            if value <= self.anchor_0 {
+                return 0.0;
+            }
+            if value >= self.anchor_10 {
+                return 10.0;
+            }
             if value <= self.anchor_5 {
-                5.0 * (value - self.anchor_0) / (self.anchor_5 - self.anchor_0)
+                interpolate(value, self.anchor_0, self.anchor_5, 0.0, 5.0)
             } else {
-                5.0 + 5.0 * (value - self.anchor_5) / (self.anchor_10 - self.anchor_5)
+                interpolate(value, self.anchor_5, self.anchor_10, 5.0, 10.0)
             }
         } else {
             // Decreasing: high raw value → low score (e.g. GDP per capita relative for C3)
-            if value >= self.anchor_0 { return 0.0; }
-            if value <= self.anchor_10 { return 10.0; }
+            if value >= self.anchor_0 {
+                return 0.0;
+            }
+            if value <= self.anchor_10 {
+                return 10.0;
+            }
             if value >= self.anchor_5 {
-                5.0 * (self.anchor_0 - value) / (self.anchor_0 - self.anchor_5)
+                interpolate(value, self.anchor_0, self.anchor_5, 0.0, 5.0)
             } else {
-                5.0 + 5.0 * (self.anchor_5 - value) / (self.anchor_5 - self.anchor_10)
+                interpolate(value, self.anchor_5, self.anchor_10, 5.0, 10.0)
             }
         }
     }
+}
+
+fn interpolate(value: f64, x0: f64, x1: f64, y0: f64, y1: f64) -> f64 {
+    let dx = x1 - x0;
+    if dx.abs() < f64::EPSILON {
+        return y1;
+    }
+    (y0 + (y1 - y0) * (value - x0) / dx).clamp(0.0, 10.0)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -75,11 +103,17 @@ pub struct A3Anchors {
     pub iri_fallback_max: f64,
 }
 
-fn default_iri_fallback_max() -> f64 { 5.0 }
+fn default_iri_fallback_max() -> f64 {
+    5.0
+}
 
 impl A3Anchors {
     pub fn score_pti(&self, pti: f64) -> f64 {
-        let map = AnchorMap { anchor_0: self.anchor_0, anchor_5: self.anchor_5, anchor_10: self.anchor_10 };
+        let map = AnchorMap {
+            anchor_0: self.anchor_0,
+            anchor_5: self.anchor_5,
+            anchor_10: self.anchor_10,
+        };
         map.score(pti)
     }
     pub fn score_bpr_pti(&self, pti_bpr: f32) -> f64 {
@@ -124,13 +158,21 @@ pub struct ScoringConfig {
 }
 
 fn default_simple_anchor() -> AnchorMap {
-    AnchorMap { anchor_0: 0.0, anchor_5: 5.0, anchor_10: 10.0 }
+    AnchorMap {
+        anchor_0: 0.0,
+        anchor_5: 5.0,
+        anchor_10: 10.0,
+    }
 }
 
 fn default_a5_anchor() -> AnchorMap {
     // A5 Safety Record: higher crash rate → higher score (more investment need)
     // National interstate avg: 0.54 fatals/100M VMT (FHWA 2022)
-    AnchorMap { anchor_0: 0.3, anchor_5: 1.5, anchor_10: 4.0 }
+    AnchorMap {
+        anchor_0: 0.3,
+        anchor_5: 1.5,
+        anchor_10: 4.0,
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -143,8 +185,7 @@ impl ScoringConfig {
     pub fn load(path: &Path) -> Result<Self> {
         let text = std::fs::read_to_string(path)
             .with_context(|| format!("reading scoring config {}", path.display()))?;
-        toml::from_str(&text)
-            .with_context(|| format!("parsing scoring config {}", path.display()))
+        toml::from_str(&text).with_context(|| format!("parsing scoring config {}", path.display()))
     }
 
     /// Built-in defaults — matches config/scoring.toml in the repo.
@@ -152,5 +193,59 @@ impl ScoringConfig {
     pub fn default_config() -> Self {
         toml::from_str(include_str!("../../../config/scoring.toml"))
             .expect("built-in scoring config must parse")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn anchor_map_scores_increasing_midpoints() {
+        let a = AnchorMap {
+            anchor_0: 0.0,
+            anchor_5: 50.0,
+            anchor_10: 100.0,
+        };
+        assert_eq!(a.score(-1.0), 0.0);
+        assert_eq!(a.score(0.0), 0.0);
+        assert_eq!(a.score(50.0), 5.0);
+        assert_eq!(a.score(100.0), 10.0);
+        assert_eq!(a.score(150.0), 10.0);
+    }
+
+    #[test]
+    fn anchor_map_scores_decreasing_midpoints() {
+        let a = AnchorMap {
+            anchor_0: 2.0,
+            anchor_5: 1.0,
+            anchor_10: 0.5,
+        };
+        assert_eq!(a.score(2.5), 0.0);
+        assert_eq!(a.score(2.0), 0.0);
+        assert_eq!(a.score(1.0), 5.0);
+        assert_eq!(a.score(0.5), 10.0);
+        assert_eq!(a.score(0.1), 10.0);
+    }
+
+    #[test]
+    fn anchor_map_rejects_nan_without_panicking() {
+        let a = AnchorMap {
+            anchor_0: 0.0,
+            anchor_5: 5.0,
+            anchor_10: 10.0,
+        };
+        assert_eq!(a.score(f64::NAN), 0.0);
+    }
+
+    #[test]
+    fn anchor_map_degenerate_anchors_are_finite() {
+        let a = AnchorMap {
+            anchor_0: 5.0,
+            anchor_5: 5.0,
+            anchor_10: 5.0,
+        };
+        assert_eq!(a.score(4.9), 0.0);
+        assert_eq!(a.score(5.0), 10.0);
     }
 }

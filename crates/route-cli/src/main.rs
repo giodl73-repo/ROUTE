@@ -3,7 +3,11 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "route", about = "ROUTE — Interstate 2.0 analysis pipeline", version)]
+#[command(
+    name = "route",
+    about = "ROUTE — Interstate 2.0 analysis pipeline",
+    version
+)]
 struct Cli {
     /// Path to scoring config (default: config/scoring.toml in repo root)
     #[arg(long, global = true, value_name = "FILE")]
@@ -49,7 +53,7 @@ enum Commands {
         states: Option<String>,
     },
 
-    /// Score one corridor against the 12-dimension pool
+    /// Score one corridor against the 16-dimension pool
     Score {
         /// Interstate designation, e.g. "I-80" or "I80"
         designation: String,
@@ -243,9 +247,12 @@ enum Commands {
 
 #[derive(clap::ValueEnum, Clone, Debug)]
 enum InterventionCorridorArg {
-    #[value(name = "ny-la")]    NyLa,
-    #[value(name = "hou-chi")]  HouChi,
-    #[value(name = "hou-i69")] HouI69,
+    #[value(name = "ny-la")]
+    NyLa,
+    #[value(name = "hou-chi")]
+    HouChi,
+    #[value(name = "hou-i69")]
+    HouI69,
 }
 
 #[derive(clap::Subcommand, Clone, Debug)]
@@ -318,12 +325,12 @@ fn main() -> Result<()> {
 
     // Load scoring config
     let scoring_cfg = {
-        let path = cli.scoring_config
+        let path = cli
+            .scoring_config
             .clone()
             .unwrap_or_else(|| PathBuf::from("config/scoring.toml"));
         if path.exists() {
-            route_score::ScoringConfig::load(&path)
-                .context("loading scoring config")?
+            route_score::ScoringConfig::load(&path).context("loading scoring config")?
         } else {
             eprintln!("note: config/scoring.toml not found — using built-in defaults");
             route_score::ScoringConfig::default_config()
@@ -333,7 +340,11 @@ fn main() -> Result<()> {
     // Load manifest — check data/manifest.json in project root first, then ~/.route/manifest.json
     let manifest_path = cli.manifest.clone().unwrap_or_else(|| {
         let local = std::path::PathBuf::from("data/manifest.json");
-        if local.exists() { local } else { route_data::Manifest::default_path() }
+        if local.exists() {
+            local
+        } else {
+            route_data::Manifest::default_path()
+        }
     });
 
     // Initialize strategic designation data from CSV (no-op if file not found)
@@ -349,7 +360,10 @@ fn main() -> Result<()> {
             println!("fetch complete.");
         }
 
-        Commands::Build { all_roads, hpms: hpms_path } => {
+        Commands::Build {
+            all_roads,
+            hpms: hpms_path,
+        } => {
             println!("route build{}", if all_roads { " --all-roads" } else { "" });
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
@@ -360,10 +374,20 @@ fn main() -> Result<()> {
             let segments = route_data::nhs::read_nhs_shapefile(&shp_path, all_roads)
                 .map_err(|e| anyhow::anyhow!("shapefile error: {e}"))?;
 
-            let interstate_count = segments.iter().filter(|s| s.route_id.starts_with('I')).count();
-            let us_count = segments.iter().filter(|s| s.route_id.starts_with("US")).count();
-            println!("  segments: {} total  ({} interstate, {} US highway)",
-                segments.len(), interstate_count, us_count);
+            let interstate_count = segments
+                .iter()
+                .filter(|s| s.route_id.starts_with('I'))
+                .count();
+            let us_count = segments
+                .iter()
+                .filter(|s| s.route_id.starts_with("US"))
+                .count();
+            println!(
+                "  segments: {} total  ({} interstate, {} US highway)",
+                segments.len(),
+                interstate_count,
+                us_count
+            );
 
             // Load HPMS if provided
             let hpms = if let Some(ref path) = hpms_path {
@@ -401,7 +425,11 @@ fn main() -> Result<()> {
             let cache_path = manifest.cache_dir.join("graph.json");
             std::fs::write(&cache_path, serde_json::to_string_pretty(&summary)?)?;
             println!("  graph summary → {}", cache_path.display());
-            println!("build complete. {} interstates, {} total routes.", route_ids.len(), all_ids.len());
+            println!(
+                "build complete. {} interstates, {} total routes.",
+                route_ids.len(),
+                all_ids.len()
+            );
             if !hpms.is_empty() {
                 println!("  HPMS joined — A1/A2/A3 scores will use real traffic data.");
             }
@@ -422,21 +450,33 @@ fn main() -> Result<()> {
                     if filter.iter().any(|f| f.eq_ignore_ascii_case(abbr)) {
                         print!("  [hpms] {abbr}… ");
                         match route_data::hpms_fetch::fetch_state_hpms(abbr, name) {
-                            Ok(recs) => { println!("{} segments", recs.len()); all.extend(recs); }
-                            Err(e)   => println!("FAILED — {e}"),
+                            Ok(recs) => {
+                                println!("{} segments", recs.len());
+                                all.extend(recs);
+                            }
+                            Err(e) => println!("FAILED — {e}"),
                         }
                     }
                 }
                 // Write subset CSV
                 let mut wtr = csv::Writer::from_path(&out)?;
-                wtr.write_record(["STATE","ROUTE_ID","AADT","PCT_TRUCK","LANE_COUNT","IRI","SPEED_LIMIT"])?;
+                wtr.write_record([
+                    "STATE",
+                    "ROUTE_ID",
+                    "AADT",
+                    "PCT_TRUCK",
+                    "LANE_COUNT",
+                    "IRI",
+                    "SPEED_LIMIT",
+                ])?;
                 for r in &all {
                     wtr.write_record(&[
-                        r.state.clone(), r.route_id.clone(),
-                        r.aadt.map(|v|v.to_string()).unwrap_or_default(),
-                        r.pct_truck.map(|v|format!("{v:.4}")).unwrap_or_default(),
-                        r.lane_count.map(|v|v.to_string()).unwrap_or_default(),
-                        r.iri.map(|v|format!("{v:.1}")).unwrap_or_default(),
+                        r.state.clone(),
+                        r.route_id.clone(),
+                        r.aadt.map(|v| v.to_string()).unwrap_or_default(),
+                        r.pct_truck.map(|v| format!("{v:.4}")).unwrap_or_default(),
+                        r.lane_count.map(|v| v.to_string()).unwrap_or_default(),
+                        r.iri.map(|v| format!("{v:.1}")).unwrap_or_default(),
                         String::new(), // speed_limit placeholder
                     ])?;
                 }
@@ -448,7 +488,11 @@ fn main() -> Result<()> {
             println!("fetch-hpms complete. Run `route build` to join.");
         }
 
-        Commands::Score { designation, estimated, proposed } => {
+        Commands::Score {
+            designation,
+            estimated,
+            proposed,
+        } => {
             let norm = normalise_designation(&designation);
             println!("route score {}", norm);
 
@@ -457,17 +501,26 @@ fn main() -> Result<()> {
 
             // Build graph from cached shapefile
             let graph = load_graph(&manifest)?;
-            println!("  graph: {} edges, {} interstates", graph.graph.edge_count(), graph.interstate_ids().len());
+            println!(
+                "  graph: {} edges, {} interstates",
+                graph.graph.edge_count(),
+                graph.interstate_ids().len()
+            );
 
             // Extract corridor
-            let mut corridor = route_network::aggregate_corridor(&graph, &norm)
-                .ok_or_else(|| anyhow::anyhow!(
-                    "Route '{}' not found in graph. Available: {:?}",
-                    norm, &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
-                ))?;
+            let mut corridor =
+                route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "Route '{}' not found in graph. Available: {:?}",
+                        norm,
+                        &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
+                    )
+                })?;
 
-            println!("  corridor: {} ({:.0} miles, {} segments)",
-                corridor.designation, corridor.total_miles, corridor.edge_count);
+            println!(
+                "  corridor: {} ({:.0} miles, {} segments)",
+                corridor.designation, corridor.total_miles, corridor.edge_count
+            );
 
             // Join ACS population for C1/C3 dimensions (if cached data is available)
             join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes);
@@ -479,7 +532,11 @@ fn main() -> Result<()> {
 
             // Write corpus entry
             let slug = norm.to_lowercase();
-            let corpus_dir = if proposed { "corpus/proposed" } else { "corpus/existing" };
+            let corpus_dir = if proposed {
+                "corpus/proposed"
+            } else {
+                "corpus/existing"
+            };
             let output_path = PathBuf::from(format!("{corpus_dir}/{slug}.md"));
             route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
             println!("\n  corpus entry → {}", output_path.display());
@@ -502,32 +559,55 @@ fn main() -> Result<()> {
             let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
             println!("  centrality: {} edges scored", bc_raw.len());
             // Normalize using P95 to prevent outlier junction edges from compressing the distribution
-            let mut vals_sorted: Vec<f64> = bc_raw.values().cloned().collect();
-            vals_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
+            let mut vals_sorted: Vec<f64> =
+                bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+            vals_sorted.sort_by(f64::total_cmp);
+            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
+                .min(vals_sorted.len().saturating_sub(1));
             let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
-            let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
+            let bc = bc_raw
+                .into_iter()
+                .map(|(k, v)| (k, (v / bc_norm).min(1.0)))
+                .collect();
             graph.edge_betweenness = Some(bc);
 
             // Load all data sources (mirrors calibrate command)
             let acs_counties = load_acs_counties_for_scoring(&manifest);
-            if acs_counties.is_some() { println!("  ACS population loaded"); }
+            if acs_counties.is_some() {
+                println!("  ACS population loaded");
+            }
             let ports = load_ports();
-            if !ports.is_empty() { println!("  {} port/border locations loaded", ports.len()); }
+            if !ports.is_empty() {
+                println!("  {} port/border locations loaded", ports.len());
+            }
             let dcfc = load_dcfc_stations();
-            if !dcfc.is_empty() { println!("  {} DCFC stations loaded", dcfc.len()); }
+            if !dcfc.is_empty() {
+                println!("  {} DCFC stations loaded", dcfc.len());
+            }
             let intermodal = load_intermodal_terminals();
-            if !intermodal.is_empty() { println!("  {} intermodal terminals loaded", intermodal.len()); }
+            if !intermodal.is_empty() {
+                println!("  {} intermodal terminals loaded", intermodal.len());
+            }
             let fema_tiles = load_fema_tiles();
-            if !fema_tiles.is_empty() { println!("  {} FEMA tiles loaded", fema_tiles.len()); }
+            if !fema_tiles.is_empty() {
+                println!("  {} FEMA tiles loaded", fema_tiles.len());
+            }
             let nbi = load_nbi_bridges();
-            if !nbi.is_empty() { println!("  {} NBI bridge records loaded", nbi.len()); }
+            if !nbi.is_empty() {
+                println!("  {} NBI bridge records loaded", nbi.len());
+            }
             let fars_safety = load_fars_safety();
-            if !fars_safety.is_empty() { println!("  {} FARS route records loaded", fars_safety.len()); }
+            if !fars_safety.is_empty() {
+                println!("  {} FARS route records loaded", fars_safety.len());
+            }
             let railroad_parallels = load_railroad_parallels();
-            if !railroad_parallels.is_empty() { println!("  {} railroad parallels loaded", railroad_parallels.len()); }
+            if !railroad_parallels.is_empty() {
+                println!("  {} railroad parallels loaded", railroad_parallels.len());
+            }
             let hazard_zones = load_hazard_zones();
-            if !hazard_zones.is_empty() { println!("  {} hazard zone records loaded", hazard_zones.len()); }
+            if !hazard_zones.is_empty() {
+                println!("  {} hazard zone records loaded", hazard_zones.len());
+            }
 
             // Score all interstates
             let ids = graph.interstate_ids();
@@ -538,16 +618,32 @@ fn main() -> Result<()> {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Apply all data joins (same as calibrate)
                     if acs_counties.is_some() {
-                        join_acs_population_to_corridor(&manifest, &graph, id, &mut corridor.attributes);
+                        join_acs_population_to_corridor(
+                            &manifest,
+                            &graph,
+                            id,
+                            &mut corridor.attributes,
+                        );
                     }
                     if !ports.is_empty() {
                         join_port_access_to_corridor(&graph, id, &mut corridor.attributes, &ports);
                     }
                     if !dcfc.is_empty() {
-                        join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
+                        join_dcfc_to_corridor(
+                            &graph,
+                            id,
+                            corridor.total_miles,
+                            &mut corridor.attributes,
+                            &dcfc,
+                        );
                     }
                     if !intermodal.is_empty() {
-                        join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
+                        join_intermodal_to_corridor(
+                            &graph,
+                            id,
+                            &mut corridor.attributes,
+                            &intermodal,
+                        );
                     }
                     if !fema_tiles.is_empty() {
                         join_fema_d1_to_corridor(&graph, id, &mut corridor.attributes, &fema_tiles);
@@ -574,14 +670,20 @@ fn main() -> Result<()> {
                     // A2 freight proxy from HPMS
                     if corridor.attributes.annual_freight_value_b.is_none() {
                         if let Some(aadt) = corridor.attributes.p90_aadt {
-                            let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
-                            let freight_b = aadt * truck_pct * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
+                            let truck_pct =
+                                corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
+                            let freight_b = aadt * truck_pct * 365.0 * corridor.total_miles * 3.50
+                                / 1_000_000_000.0;
                             corridor.attributes.annual_freight_value_b = Some(freight_b);
                         }
                     }
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
-                    println!("  {}: {:.1}/160{}", corridor.designation, scores.total(),
-                        if scores.any_estimated() { "†" } else { "" });
+                    println!(
+                        "  {}: {:.1}/160{}",
+                        corridor.designation,
+                        scores.total(),
+                        if scores.any_estimated() { "†" } else { "" }
+                    );
                     all_scores.push(scores);
                 }
             }
@@ -595,10 +697,18 @@ fn main() -> Result<()> {
             println!("  [stub] gap analysis output → gaps/{out_slug}.md");
         }
 
-        Commands::Map { designation, output, color_by } => {
+        Commands::Map {
+            designation,
+            output,
+            color_by,
+        } => {
             let norm = normalise_designation(&designation);
             let out = output.unwrap_or_else(|| {
-                let slug = if norm == "ALL" { "all-tiers".to_string() } else { norm.to_lowercase() };
+                let slug = if norm == "ALL" {
+                    "all-tiers".to_string()
+                } else {
+                    norm.to_lowercase()
+                };
                 PathBuf::from(format!("maps/{slug}.png"))
             });
             println!("route map {norm} → {}", out.display());
@@ -609,19 +719,27 @@ fn main() -> Result<()> {
                 let out_path = PathBuf::from("maps/beck-schematic.png");
                 let svg = route_map::build_beck_svg();
                 route_map::svg_to_png(&svg, &out_path, 2400, 1350)?;
-                println!("  rendered Beck schematic: {} (2400×1350)", out_path.display());
+                println!(
+                    "  rendered Beck schematic: {} (2400×1350)",
+                    out_path.display()
+                );
                 println!("  T1 relay network topology · 0°/45°/90° · inspired by Beck 1933");
                 return Ok(());
             }
 
             // Mega-map: all tiers at once
             if norm == "ALL" {
-                let manifest = route_data::Manifest::load(&manifest_path)
-                    .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                let manifest = route_data::Manifest::load(&manifest_path).with_context(|| {
+                    format!("loading manifest from {}", manifest_path.display())
+                })?;
                 let graph = load_graph(&manifest)?;
-                let scores = route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
-                println!("  building tier mega-map ({} routes, {} score entries)…",
-                    graph.route_ids().len(), scores.len());
+                let scores =
+                    route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
+                println!(
+                    "  building tier mega-map ({} routes, {} score entries)…",
+                    graph.route_ids().len(),
+                    scores.len()
+                );
                 let svg = route_map::build_megamap_svg(&graph, &scores)?;
                 std::fs::create_dir_all("maps")?;
                 route_map::svg_to_png(&svg, &out, 2400, 1350)?;
@@ -635,18 +753,19 @@ fn main() -> Result<()> {
             let graph = load_graph(&manifest)?;
 
             // T1 primary corridors get a regional map showing T2/T3/T4 feeders.
-            const T1_PRIMARY: &[&str] = &["I5","I10","I35","I40","I75","I80","I90","I95"];
+            const T1_PRIMARY: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
             if T1_PRIMARY.contains(&norm.as_str()) {
-                let tier_scores = route_map::load_tier_scores(
-                    std::path::Path::new("data/scores-all.csv")
-                );
+                let tier_scores =
+                    route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
                 // Convert f64 scores to f32 for the T1 corridor map API.
                 let scores_f32: std::collections::HashMap<String, f32> = tier_scores
                     .iter()
                     .map(|(k, &v)| (k.clone(), v as f32))
                     .collect();
-                println!("  building T1 regional map for {norm} ({} score entries)…",
-                    scores_f32.len());
+                println!(
+                    "  building T1 regional map for {norm} ({} score entries)…",
+                    scores_f32.len()
+                );
 
                 // Load relay hubs and resolve coordinates for the map.
                 // t1_hub_coordinates() returns the canonical lat/lon table; we join
@@ -656,11 +775,13 @@ fn main() -> Result<()> {
                 let hubs = route_sim::load_hubs(&data_dir, false);
                 let coord_table = route_map::t1_hub_coordinates();
                 // Build owned (lat, lon, name) tuples for hubs that have coordinates.
-                let hub_pts: Vec<(f64, f64, String)> = hubs.iter()
+                let hub_pts: Vec<(f64, f64, String)> = hubs
+                    .iter()
                     .filter_map(|hub| {
                         // Match hub name against the coordinate table (TOML name is the
                         // prefix before any parenthetical suffix in hub.rs defaults).
-                        coord_table.iter()
+                        coord_table
+                            .iter()
                             .find(|(_, _, table_name, _)| {
                                 hub.name.starts_with(table_name.as_str())
                                     || table_name.starts_with(hub.name.as_str())
@@ -669,18 +790,18 @@ fn main() -> Result<()> {
                     })
                     .collect();
                 // Build the &str slice expected by build_t1_corridor_svg.
-                let hub_slice: Vec<(f64, f64, &str)> = hub_pts.iter()
+                let hub_slice: Vec<(f64, f64, &str)> = hub_pts
+                    .iter()
                     .map(|(lat, lon, name)| (*lat, *lon, name.as_str()))
                     .collect();
-                let hub_arg = if hub_slice.is_empty() { None } else { Some(hub_slice.as_slice()) };
+                let hub_arg = if hub_slice.is_empty() {
+                    None
+                } else {
+                    Some(hub_slice.as_slice())
+                };
                 println!("  relay hubs loaded: {}", hub_slice.len());
 
-                let svg = route_map::build_t1_corridor_svg(
-                    &graph,
-                    &norm,
-                    &scores_f32,
-                    hub_arg,
-                )?;
+                let svg = route_map::build_t1_corridor_svg(&graph, &norm, &scores_f32, hub_arg)?;
                 if let Some(parent) = out.parent() {
                     std::fs::create_dir_all(parent)?;
                 }
@@ -697,12 +818,7 @@ fn main() -> Result<()> {
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
 
             // Build SVG
-            let svg = route_map::build_svg(
-                &corridor,
-                &graph,
-                Some(&scores),
-                color_by.as_deref(),
-            )?;
+            let svg = route_map::build_svg(&corridor, &graph, Some(&scores), color_by.as_deref())?;
 
             // Create output directory
             if let Some(parent) = out.parent() {
@@ -710,10 +826,17 @@ fn main() -> Result<()> {
             }
 
             route_map::svg_to_png(&svg, &out, 1600, 900)?;
-            println!("  rendered: {} ({} segments, {:.0} miles)",
-                out.display(), corridor.edge_count, corridor.total_miles);
-            println!("  score: {:.1}/120  T90-PTI: {:.2}",
-                scores.total(), scores.a3.score);
+            println!(
+                "  rendered: {} ({} segments, {:.0} miles)",
+                out.display(),
+                corridor.edge_count,
+                corridor.total_miles
+            );
+            println!(
+                "  score: {:.1}/120  T90-PTI: {:.2}",
+                scores.total(),
+                scores.a3.score
+            );
         }
 
         Commands::Report { designation } => {
@@ -731,14 +854,30 @@ fn main() -> Result<()> {
             let result = route_network::corridor_max_flow(&graph, &norm)
                 .ok_or_else(|| anyhow::anyhow!("Route '{}' not found in graph", norm))?;
 
-            let lane_note = if result.has_lane_data { "" } else { "† (default 2-lane assumed — no HPMS data)" };
+            let lane_note = if result.has_lane_data {
+                ""
+            } else {
+                "† (default 2-lane assumed — no HPMS data)"
+            };
             println!("\n┌──────────────────────────────────────────────────────┐");
             println!("│  {} — Corridor Flow Capacity", norm);
             println!("├──────────────────────────────────────────────────────┤");
-            println!("│  Binding throughput (min segment):  {:>10.0} vpd  │", result.max_flow_vpd);
-            println!("│  Mean corridor capacity:            {:>10.0} vpd  │", result.mean_capacity_vpd);
-            println!("│  Segments analyzed:                 {:>10}      │", result.augmenting_paths);
-            println!("│  Bottleneck count:                  {:>10}      │", result.bottleneck_edges.len());
+            println!(
+                "│  Binding throughput (min segment):  {:>10.0} vpd  │",
+                result.max_flow_vpd
+            );
+            println!(
+                "│  Mean corridor capacity:            {:>10.0} vpd  │",
+                result.mean_capacity_vpd
+            );
+            println!(
+                "│  Segments analyzed:                 {:>10}      │",
+                result.augmenting_paths
+            );
+            println!(
+                "│  Bottleneck count:                  {:>10}      │",
+                result.bottleneck_edges.len()
+            );
             println!("└──────────────────────────────────────────────────────┘");
 
             for (i, &ei) in result.bottleneck_edges.iter().enumerate() {
@@ -747,9 +886,20 @@ fn main() -> Result<()> {
                 let gain = result.lane_addition_gain.get(i).cloned().unwrap_or(0.0);
                 let lanes = edge.lane_count.map(|l| l.to_string()).unwrap_or("?".into());
                 println!("\n  Binding bottleneck:");
-                println!("    Route: {}  State: {}  Lanes: {}",
-                    edge.route_id, if edge.state.is_empty() { "—" } else { &edge.state }, lanes);
-                println!("    Capacity: {:.0} vpd  |  +1 lane adds: +{:.0} vpd", cap, gain);
+                println!(
+                    "    Route: {}  State: {}  Lanes: {}",
+                    edge.route_id,
+                    if edge.state.is_empty() {
+                        "—"
+                    } else {
+                        &edge.state
+                    },
+                    lanes
+                );
+                println!(
+                    "    Capacity: {:.0} vpd  |  +1 lane adds: +{:.0} vpd",
+                    cap, gain
+                );
             }
             println!("\n  {} vpd = vehicles per day", "vpd");
             if !lane_note.is_empty() {
@@ -758,8 +908,19 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::Invest { budget, include_upgrades, top } => {
-            println!("route invest --budget ${budget}B{}", if include_upgrades { " --include-upgrades" } else { "" });
+        Commands::Invest {
+            budget,
+            include_upgrades,
+            top,
+        } => {
+            println!(
+                "route invest --budget ${budget}B{}",
+                if include_upgrades {
+                    " --include-upgrades"
+                } else {
+                    ""
+                }
+            );
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
@@ -789,11 +950,19 @@ fn main() -> Result<()> {
 
             let plan = route_network::allocate_investment(&candidates, budget);
 
-            println!("\n┌─────────────────────────────────────────────────────────────────────────┐");
+            println!(
+                "\n┌─────────────────────────────────────────────────────────────────────────┐"
+            );
             println!("│  Investment Plan — ${:.0}B budget", budget);
             println!("├─────────────────────────────────────────────────────────────────────────┤");
-            println!("│  Allocated: ${:.1}B of ${:.0}B budget", plan.allocated_b, plan.budget_b);
-            println!("│  Total throughput gain: {:.0} vehicles/day", plan.total_throughput_gain_vpd);
+            println!(
+                "│  Allocated: ${:.1}B of ${:.0}B budget",
+                plan.allocated_b, plan.budget_b
+            );
+            println!(
+                "│  Total throughput gain: {:.0} vehicles/day",
+                plan.total_throughput_gain_vpd
+            );
             println!("│  Corridors funded: {}", plan.items.len());
             println!("├──────┬───────────────┬───────────┬──────────────┬───────────────────────┤");
             println!("│ Rank │ Corridor      │    Miles  │   Cost ($B)  │ Gain (vpd)  | Type    │");
@@ -801,19 +970,26 @@ fn main() -> Result<()> {
 
             for (i, item) in plan.items.iter().take(top).enumerate() {
                 let type_label = match item.upgrade_type {
-                    route_network::UpgradeType::InterstateWidening      => "widen  ",
-                    route_network::UpgradeType::UsHighwayToInterstate   => "US→Int ",
-                    route_network::UpgradeType::StateHighwayToInterstate=> "SR→Int ",
-                    route_network::UpgradeType::Greenfield              => "new    ",
+                    route_network::UpgradeType::InterstateWidening => "widen  ",
+                    route_network::UpgradeType::UsHighwayToInterstate => "US→Int ",
+                    route_network::UpgradeType::StateHighwayToInterstate => "SR→Int ",
+                    route_network::UpgradeType::Greenfield => "new    ",
                 };
                 let alloc_pct = if item.allocation < 0.999 {
                     format!("{:.0}%", item.allocation * 100.0)
                 } else {
                     "100%".to_string()
                 };
-                println!("│ {:>4} │ {:<13} │ {:>6.0} mi │ {:>8.1} {} │ {:>10.0}  │ {} │",
-                    i + 1, item.designation, item.miles,
-                    item.cost_b, alloc_pct, item.throughput_gain_vpd, type_label);
+                println!(
+                    "│ {:>4} │ {:<13} │ {:>6.0} mi │ {:>8.1} {} │ {:>10.0}  │ {} │",
+                    i + 1,
+                    item.designation,
+                    item.miles,
+                    item.cost_b,
+                    alloc_pct,
+                    item.throughput_gain_vpd,
+                    type_label
+                );
             }
             println!("└──────┴───────────────┴───────────┴──────────────┴───────────────────────┘");
             println!("\n  Costs: widen=$10M/mi, US→Int=$30M/mi, SR→Int=$40M/mi, new=$75M/mi (rough FHWA ranges)");
@@ -867,7 +1043,8 @@ fn main() -> Result<()> {
                 ("AR-flood", -91.5, 33.5, -90.5, 34.5),
             ];
 
-            let fema_url = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
+            let fema_url =
+                "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
 
             let mut results: Vec<(String, u32)> = Vec::new();
             for (name, xmin, ymin, xmax, ymax) in &state_tiles {
@@ -893,10 +1070,17 @@ fn main() -> Result<()> {
             // Write results
             let out = PathBuf::from("data/cache/fema_sfha_tile_counts.csv");
             let mut wtr = csv::Writer::from_path(&out)?;
-            wtr.write_record(["tile","xmin","ymin","xmax","ymax","sfha_count"])?;
+            wtr.write_record(["tile", "xmin", "ymin", "xmax", "ymax", "sfha_count"])?;
             for (i, (name, count)) in results.iter().enumerate() {
                 let t = &state_tiles[i];
-                wtr.write_record(&[name, &t.1.to_string(), &t.2.to_string(), &t.3.to_string(), &t.4.to_string(), &count.to_string()])?;
+                wtr.write_record(&[
+                    name,
+                    &t.1.to_string(),
+                    &t.2.to_string(),
+                    &t.3.to_string(),
+                    &t.4.to_string(),
+                    &count.to_string(),
+                ])?;
             }
             wtr.flush()?;
             println!("\n  Saved → {}", out.display());
@@ -908,8 +1092,13 @@ fn main() -> Result<()> {
         Commands::FetchFema { output } => {
             let out = output.unwrap_or_else(|| PathBuf::from("data/cache/fema_sfha_counts.csv"));
             println!("route fetch-fema → {}", out.display());
-            println!("  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)");
-            println!("  querying {} T1 corridor bounding boxes…", route_data::T1_BBOXES.len());
+            println!(
+                "  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)"
+            );
+            println!(
+                "  querying {} T1 corridor bounding boxes…",
+                route_data::T1_BBOXES.len()
+            );
 
             std::fs::create_dir_all(out.parent().unwrap_or(std::path::Path::new(".")))?;
 
@@ -922,24 +1111,41 @@ fn main() -> Result<()> {
             for r in &results {
                 println!("  {:10}  {:>14}  {}", r.corridor, r.sfha_count, r.status);
             }
-            println!("\n  {}/{} corridors queried successfully", ok_count, results.len());
+            println!(
+                "\n  {}/{} corridors queried successfully",
+                ok_count,
+                results.len()
+            );
             println!("  saved → {}", out.display());
             println!("  Use counts as D1 proxy: higher = more flood-exposed corridor.");
             println!("  Note: counts reflect SFHA polygons in the bounding box, not miles.");
-            println!("  Run `route score <corridor>` after this to see D1 update (manual join needed).");
+            println!(
+                "  Run `route score <corridor>` after this to see D1 update (manual join needed)."
+            );
         }
 
-        Commands::Coverage { threshold, grid, t1_only, top_gaps, grid_mode } => {
-            println!("route coverage --threshold {threshold}mi{}{}",
+        Commands::Coverage {
+            threshold,
+            grid,
+            t1_only,
+            top_gaps,
+            grid_mode,
+        } => {
+            println!(
+                "route coverage --threshold {threshold}mi{}{}",
                 if t1_only { " --t1-only" } else { "" },
-                if grid_mode { " --grid-mode" } else { "" });
+                if grid_mode { " --grid-mode" } else { "" }
+            );
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
-            let t1_ids = ["I5","I10","I35","I40","I75","I80","I90","I95"];
+            let t1_ids = ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
             let filter: Option<&[&str]> = if t1_only { Some(&t1_ids) } else { None };
-            let interchange_count = graph.graph.node_indices()
-                .filter(|&ni| graph.graph[ni].is_interchange).count();
+            let interchange_count = graph
+                .graph
+                .node_indices()
+                .filter(|&ni| graph.graph[ni].is_interchange)
+                .count();
 
             // Try county centroid mode first (population-weighted, no ocean problem)
             let gaz_path = manifest.cache_dir.join("2023_Gaz_counties_national.txt");
@@ -952,19 +1158,27 @@ fn main() -> Result<()> {
                     route_data::fetch::extract_shp(&gaz_zip, &manifest.cache_dir).ok();
                 }
                 // Find the .txt file
-                std::fs::read_dir(&manifest.cache_dir).ok()
+                std::fs::read_dir(&manifest.cache_dir)
+                    .ok()
                     .and_then(|entries| {
-                        entries.filter_map(|e| e.ok())
-                            .find(|e| e.file_name().to_string_lossy().ends_with("counties_national.txt"))
+                        entries
+                            .filter_map(|e| e.ok())
+                            .find(|e| {
+                                e.file_name()
+                                    .to_string_lossy()
+                                    .ends_with("counties_national.txt")
+                            })
                             .map(|e| e.path())
                     })
-            } else { None };
+            } else {
+                None
+            };
 
             if let Some(ref path) = county_path {
                 // Population-weighted county centroid analysis
                 println!("  mode: county centroids ({interchange_count} interchange nodes)");
-                let mut counties = route_data::read_county_gazetteer(path)
-                    .context("reading county gazetteer")?;
+                let mut counties =
+                    route_data::read_county_gazetteer(path).context("reading county gazetteer")?;
                 println!("  counties loaded: {}", counties.len());
 
                 // Join population if available
@@ -978,61 +1192,120 @@ fn main() -> Result<()> {
                     false
                 };
 
-                let result = route_network::compute_pop_coverage(&graph, &counties, filter, threshold);
+                let result =
+                    route_network::compute_pop_coverage(&graph, &counties, filter, threshold);
                 let tc = result.total_counties as f64;
                 let tp = result.total_population as f64;
                 let tl = result.total_land_sqmi;
 
                 println!("\n┌──────────────────────────────────────────────────────────────┐");
-                println!("│  Coverage — {}mi threshold{}  [county centroid mode]",
-                    threshold, if t1_only { " T1-only" } else { "" });
+                println!(
+                    "│  Coverage — {}mi threshold{}  [county centroid mode]",
+                    threshold,
+                    if t1_only { " T1-only" } else { "" }
+                );
                 println!("├──────────────────────────────────────────────────────────────┤");
-                println!("│  Counties analyzed:  {:>8} total                          │", result.total_counties);
-                println!("│                      {:>8} within 20mi  ({:.1}%)          │",
-                    result.counties_within_20mi, result.counties_within_20mi as f64/tc*100.0);
-                println!("│                      {:>8} within 30mi  ({:.1}%)          │",
-                    result.counties_within_30mi, result.counties_within_30mi as f64/tc*100.0);
-                println!("│                      {:>8} within 50mi  ({:.1}%)          │",
-                    result.counties_within_50mi, result.counties_within_50mi as f64/tc*100.0);
+                println!(
+                    "│  Counties analyzed:  {:>8} total                          │",
+                    result.total_counties
+                );
+                println!(
+                    "│                      {:>8} within 20mi  ({:.1}%)          │",
+                    result.counties_within_20mi,
+                    result.counties_within_20mi as f64 / tc * 100.0
+                );
+                println!(
+                    "│                      {:>8} within 30mi  ({:.1}%)          │",
+                    result.counties_within_30mi,
+                    result.counties_within_30mi as f64 / tc * 100.0
+                );
+                println!(
+                    "│                      {:>8} within 50mi  ({:.1}%)          │",
+                    result.counties_within_50mi,
+                    result.counties_within_50mi as f64 / tc * 100.0
+                );
                 if has_pop && tp > 0.0 {
                     println!("│  Population:                                                 │");
-                    println!("│    Within 20mi:  {:>12} ({:.1}% of US)               │",
-                        result.pop_within_20mi, result.pop_within_20mi as f64/tp*100.0);
-                    println!("│    Within 30mi:  {:>12} ({:.1}% of US)               │",
-                        result.pop_within_30mi, result.pop_within_30mi as f64/tp*100.0);
-                    println!("│    Within 50mi:  {:>12} ({:.1}% of US)               │",
-                        result.pop_within_50mi, result.pop_within_50mi as f64/tp*100.0);
+                    println!(
+                        "│    Within 20mi:  {:>12} ({:.1}% of US)               │",
+                        result.pop_within_20mi,
+                        result.pop_within_20mi as f64 / tp * 100.0
+                    );
+                    println!(
+                        "│    Within 30mi:  {:>12} ({:.1}% of US)               │",
+                        result.pop_within_30mi,
+                        result.pop_within_30mi as f64 / tp * 100.0
+                    );
+                    println!(
+                        "│    Within 50mi:  {:>12} ({:.1}% of US)               │",
+                        result.pop_within_50mi,
+                        result.pop_within_50mi as f64 / tp * 100.0
+                    );
                 }
-                println!("│  Land area within 30mi:  {:>9.0} sq mi  ({:.1}% of US)  │",
-                    result.land_within_30mi, result.land_within_30mi/tl*100.0);
-                println!("│  Gap counties (>{}mi): {:>8}                           │",
-                    threshold, result.gap_counties.len());
-                println!("│  Worst gap:          {:>9.1} miles  ({}, {})           │",
+                println!(
+                    "│  Land area within 30mi:  {:>9.0} sq mi  ({:.1}% of US)  │",
+                    result.land_within_30mi,
+                    result.land_within_30mi / tl * 100.0
+                );
+                println!(
+                    "│  Gap counties (>{}mi): {:>8}                           │",
+                    threshold,
+                    result.gap_counties.len()
+                );
+                println!(
+                    "│  Worst gap:          {:>9.1} miles  ({}, {})           │",
                     result.max_gap_miles,
-                    result.gap_counties.first().map(|g| g.name.as_str()).unwrap_or("—"),
-                    result.gap_counties.first().map(|g| g.state.as_str()).unwrap_or("—"));
+                    result
+                        .gap_counties
+                        .first()
+                        .map(|g| g.name.as_str())
+                        .unwrap_or("—"),
+                    result
+                        .gap_counties
+                        .first()
+                        .map(|g| g.state.as_str())
+                        .unwrap_or("—")
+                );
                 println!("└──────────────────────────────────────────────────────────────┘");
 
                 if !result.gap_counties.is_empty() {
                     let label = if t1_only { "T1" } else { "any interstate" };
-                    println!("\n  Top {} counties >{}mi from {} on-ramp:", top_gaps, threshold, label);
-                    println!("  {:>6}  {:<28} {:>5}  {:>8}  {:>10}",
-                        "Miles", "County", "State", "Pop", "Land(sqmi)");
+                    println!(
+                        "\n  Top {} counties >{}mi from {} on-ramp:",
+                        top_gaps, threshold, label
+                    );
+                    println!(
+                        "  {:>6}  {:<28} {:>5}  {:>8}  {:>10}",
+                        "Miles", "County", "State", "Pop", "Land(sqmi)"
+                    );
                     println!("  {}", "─".repeat(66));
                     for gap in result.gap_counties.iter().take(top_gaps) {
-                        println!("  {:>5.1}mi  {:<28} {:>5}  {:>8}  {:>10.0}",
-                            gap.nearest_miles, gap.name, gap.state,
-                            gap.population, gap.aland_sqmi);
+                        println!(
+                            "  {:>5.1}mi  {:<28} {:>5}  {:>8}  {:>10.0}",
+                            gap.nearest_miles, gap.name, gap.state, gap.population, gap.aland_sqmi
+                        );
                     }
 
                     // Save gap list to CSV for paper B.1
                     let gap_csv = std::path::PathBuf::from("data/coverage-gaps.csv");
                     if let Ok(mut wtr) = csv::Writer::from_path(&gap_csv) {
-                        let _ = wtr.write_record(["GEOID","NAME","STATE","LAT","LON","NEAREST_MI","POPULATION","LAND_SQMI"]);
+                        let _ = wtr.write_record([
+                            "GEOID",
+                            "NAME",
+                            "STATE",
+                            "LAT",
+                            "LON",
+                            "NEAREST_MI",
+                            "POPULATION",
+                            "LAND_SQMI",
+                        ]);
                         for g in &result.gap_counties {
                             let _ = wtr.write_record(&[
-                                g.geoid.clone(), g.name.clone(), g.state.clone(),
-                                format!("{:.4}", g.lat), format!("{:.4}", g.lon),
+                                g.geoid.clone(),
+                                g.name.clone(),
+                                g.state.clone(),
+                                format!("{:.4}", g.lat),
+                                format!("{:.4}", g.lon),
                                 format!("{:.1}", g.nearest_miles),
                                 g.population.to_string(),
                                 format!("{:.0}", g.aland_sqmi),
@@ -1042,82 +1315,94 @@ fn main() -> Result<()> {
                     }
 
                     println!("\n  I2.0 target: 99% of counties within 30mi via T2+T3 combined");
-                    println!("  T3 rural spurs / new T3 designations needed: {}", result.gap_counties.len());
+                    println!(
+                        "  T3 rural spurs / new T3 designations needed: {}",
+                        result.gap_counties.len()
+                    );
                 }
             } else {
                 // Fallback: geometric grid mode
-                println!("  mode: geographic grid ({}mi resolution) — run `route fetch` for county data",
-                    grid);
+                println!(
+                    "  mode: geographic grid ({}mi resolution) — run `route fetch` for county data",
+                    grid
+                );
                 println!("  NOTE: includes ocean cells; county centroid mode is more accurate");
-                let result = route_network::coverage::compute_coverage(&graph, filter, grid, threshold);
-                println!("  cells: {} total, {:.1}% within 30mi, max gap {:.1}mi",
-                    result.total_cells, result.pct_within_30mi, result.max_gap_miles);
+                let result =
+                    route_network::coverage::compute_coverage(&graph, filter, grid, threshold);
+                println!(
+                    "  cells: {} total, {:.1}% within 30mi, max gap {:.1}mi",
+                    result.total_cells, result.pct_within_30mi, result.max_gap_miles
+                );
                 println!("  For accurate results: run `route fetch` to download county gazetteer,");
                 println!("  then `route fetch-acs` for population, then `route coverage` again.");
             }
         }
 
-        Commands::Standards { tier } => {
-            match tier {
-                1 => {
-                    println!("=== TIER 1 — Primary Arteries ===");
-                    println!("PTI target:           ≤ 1.15 (freight lanes) / ≤ 1.30 (GP)");
-                    println!("Express freight lanes: 2 per direction, physically separated");
-                    println!("Design speed:         65 mph sustained");
-                    println!("EV charging:          ≥150kW DC fast, every 50 miles, 8+ chargers");
-                    println!("Truck EV:             ≥350kW at freight terminals");
-                    println!("Rest areas:           Every 100 miles, 50+ truck spaces, full service");
-                    println!("Transit hub:          8 platforms, 2,000 parking at T1/T1 diamonds");
-                    println!("Bus frequency:        ≤ 2 hours per direction");
-                    println!("Resilience spurs:     Every 50 miles (rural)");
-                    println!("Diamond k-connect:    k ≥ 3 at all T1/T1 intersections");
-                    println!("Climate hardening:    Full SFHA protection");
-                    println!("Intermodal spurs:     1 per state traversed");
-                    println!("Bridge target:        All fair+ by 2030");
-                    println!("C-D roads:            Required in all metros >500k");
-                }
-                2 => {
-                    println!("=== TIER 2 — Major Connectors ===");
-                    println!("PTI target:           ≤ 1.30");
-                    println!("Freight lanes:        None — truck-friendly design, no dedicated lanes");
-                    println!("Design speed:         65 mph");
-                    println!("EV charging:          ≥100kW DC fast, every 75 miles, 4+ chargers");
-                    println!("Truck EV:             ≥150kW at fuel stops");
-                    println!("Rest areas:           Every 150 miles, 20+ truck spaces, enhanced");
-                    println!("Transit stops:        4 platforms, 500 parking at T1/T2 interchanges");
-                    println!("Bus frequency:        ≤ 4 hours per direction");
-                    println!("Resilience spurs:     Every 75 miles (rural)");
-                    println!("Diamond k-connect:    k ≥ 2 at T2/T2 intersections");
-                    println!("Bridge target:        All fair+ by 2035");
-                    println!("Capacity expansion:   Only where V/C > 0.90 at peak");
-                }
-                3 => {
-                    println!("=== TIER 3 — Regional Feeders ===");
-                    println!("PTI target:           ≤ 1.50 (functional reliability)");
-                    println!("Freight lanes:        None — standard lanes, no corridor restrictions");
-                    println!("Design speed:         65 mph (55 mph acceptable mountainous)");
-                    println!("EV charging:          ≥50kW DC fast, every 100 miles, 2+ chargers");
-                    println!("Rest areas:           Every 200 miles, 10 truck spaces, basic");
-                    println!("Transit nodes:        Shelter + demand-responsive, 50-100 parking");
-                    println!("Bus:                  Demand-responsive, min 2 round trips/day");
-                    println!("Resilience spurs:     Every 100 miles (rural)");
-                    println!("Rural access spurs:   ≤10mi, for communities >5k pop >30mi from T1/T2/T3");
-                    println!("Bridge target:        All fair+ by 2040");
-                    println!("Coverage role:        Fill 30-mile coverage gaps");
-                }
-                4 => {
-                    println!("=== TIER 4 — Local Access ===");
-                    println!("Standard:             Maintenance and safety only. No expansion.");
-                    println!("Pavement:             IRI ≤ 170 (fair) by 2040");
-                    println!("Bridges:              All fair+ by 2045");
-                    println!("Safety:               Standard signing, guardrails, interchange lighting");
-                    println!("EV:                   Preserve rest area sites for future; no new requirement");
-                    println!("Transit:              None required");
-                    println!("Freight:              Posted restrictions only where bridge-specific");
-                }
-                _ => println!("Error: tier must be 1, 2, 3, or 4"),
+        Commands::Standards { tier } => match tier {
+            1 => {
+                println!("=== TIER 1 — Primary Arteries ===");
+                println!("PTI target:           ≤ 1.15 (freight lanes) / ≤ 1.30 (GP)");
+                println!("Express freight lanes: 2 per direction, physically separated");
+                println!("Design speed:         65 mph sustained");
+                println!("EV charging:          ≥150kW DC fast, every 50 miles, 8+ chargers");
+                println!("Truck EV:             ≥350kW at freight terminals");
+                println!("Rest areas:           Every 100 miles, 50+ truck spaces, full service");
+                println!("Transit hub:          8 platforms, 2,000 parking at T1/T1 diamonds");
+                println!("Bus frequency:        ≤ 2 hours per direction");
+                println!("Resilience spurs:     Every 50 miles (rural)");
+                println!("Diamond k-connect:    k ≥ 3 at all T1/T1 intersections");
+                println!("Climate hardening:    Full SFHA protection");
+                println!("Intermodal spurs:     1 per state traversed");
+                println!("Bridge target:        All fair+ by 2030");
+                println!("C-D roads:            Required in all metros >500k");
             }
-        }
+            2 => {
+                println!("=== TIER 2 — Major Connectors ===");
+                println!("PTI target:           ≤ 1.30");
+                println!("Freight lanes:        None — truck-friendly design, no dedicated lanes");
+                println!("Design speed:         65 mph");
+                println!("EV charging:          ≥100kW DC fast, every 75 miles, 4+ chargers");
+                println!("Truck EV:             ≥150kW at fuel stops");
+                println!("Rest areas:           Every 150 miles, 20+ truck spaces, enhanced");
+                println!("Transit stops:        4 platforms, 500 parking at T1/T2 interchanges");
+                println!("Bus frequency:        ≤ 4 hours per direction");
+                println!("Resilience spurs:     Every 75 miles (rural)");
+                println!("Diamond k-connect:    k ≥ 2 at T2/T2 intersections");
+                println!("Bridge target:        All fair+ by 2035");
+                println!("Capacity expansion:   Only where V/C > 0.90 at peak");
+            }
+            3 => {
+                println!("=== TIER 3 — Regional Feeders ===");
+                println!("PTI target:           ≤ 1.50 (functional reliability)");
+                println!("Freight lanes:        None — standard lanes, no corridor restrictions");
+                println!("Design speed:         65 mph (55 mph acceptable mountainous)");
+                println!("EV charging:          ≥50kW DC fast, every 100 miles, 2+ chargers");
+                println!("Rest areas:           Every 200 miles, 10 truck spaces, basic");
+                println!("Transit nodes:        Shelter + demand-responsive, 50-100 parking");
+                println!("Bus:                  Demand-responsive, min 2 round trips/day");
+                println!("Resilience spurs:     Every 100 miles (rural)");
+                println!(
+                    "Rural access spurs:   ≤10mi, for communities >5k pop >30mi from T1/T2/T3"
+                );
+                println!("Bridge target:        All fair+ by 2040");
+                println!("Coverage role:        Fill 30-mile coverage gaps");
+            }
+            4 => {
+                println!("=== TIER 4 — Local Access ===");
+                println!("Standard:             Maintenance and safety only. No expansion.");
+                println!("Pavement:             IRI ≤ 170 (fair) by 2040");
+                println!("Bridges:              All fair+ by 2045");
+                println!(
+                    "Safety:               Standard signing, guardrails, interchange lighting"
+                );
+                println!(
+                    "EV:                   Preserve rest area sites for future; no new requirement"
+                );
+                println!("Transit:              None required");
+                println!("Freight:              Posted restrictions only where bridge-specific");
+            }
+            _ => println!("Error: tier must be 1, 2, 3, or 4"),
+        },
 
         Commands::Sim { mode } => {
             match mode {
@@ -1131,8 +1416,10 @@ fn main() -> Result<()> {
                 }
 
                 SimMode::Scenario { name, intervention } => {
-                    println!("route sim scenario {name}{}",
-                        if intervention { " --intervention" } else { "" });
+                    println!(
+                        "route sim scenario {name}{}",
+                        if intervention { " --intervention" } else { "" }
+                    );
 
                     let toml_str = route_sim::scenarios::load_scenario(&name)
                         .ok_or_else(|| anyhow::anyhow!(
@@ -1146,8 +1433,10 @@ fn main() -> Result<()> {
                         scenario.intervention = None;
                     }
 
-                    let manifest = route_data::Manifest::load(&manifest_path)
-                        .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                    let manifest =
+                        route_data::Manifest::load(&manifest_path).with_context(|| {
+                            format!("loading manifest from {}", manifest_path.display())
+                        })?;
                     let graph = load_graph(&manifest)?;
 
                     // Use AADT-based demand proxy (FAF5 not yet joined)
@@ -1160,12 +1449,20 @@ fn main() -> Result<()> {
                     print_scenario_result(&result);
                 }
 
-                SimMode::Chaos { iterations, seed, t1_only } => {
-                    println!("route sim chaos --iterations {iterations} --seed {seed}{}",
-                        if t1_only { " --t1-only" } else { "" });
+                SimMode::Chaos {
+                    iterations,
+                    seed,
+                    t1_only,
+                } => {
+                    println!(
+                        "route sim chaos --iterations {iterations} --seed {seed}{}",
+                        if t1_only { " --t1-only" } else { "" }
+                    );
 
-                    let manifest = route_data::Manifest::load(&manifest_path)
-                        .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+                    let manifest =
+                        route_data::Manifest::load(&manifest_path).with_context(|| {
+                            format!("loading manifest from {}", manifest_path.display())
+                        })?;
                     let graph = load_graph(&manifest)?;
                     let demand = build_demand_from_graph(&graph);
 
@@ -1191,22 +1488,37 @@ fn main() -> Result<()> {
             if at.to_uppercase() == "ALL" {
                 // Analyze all T1/T1 intersections
                 let intersections = route_network::find_t1_intersections(&graph);
-                println!("route diamond --at all  ({} T1/T1 intersections found)", intersections.len());
-                println!("\n  {:25} {:>4}  {:>6}  {:>10}  {:>6}", "Intersection", "k", "SPF?", "Cost ($B)", "Connectors");
+                println!(
+                    "route diamond --at all  ({} T1/T1 intersections found)",
+                    intersections.len()
+                );
+                println!(
+                    "\n  {:25} {:>4}  {:>6}  {:>10}  {:>6}",
+                    "Intersection", "k", "SPF?", "Cost ($B)", "Connectors"
+                );
                 println!("  {}", "─".repeat(60));
-                let mut results: Vec<_> = intersections.into_iter()
+                let mut results: Vec<_> = intersections
+                    .into_iter()
                     .map(|ix| route_network::analyze_diamond(&graph, ix))
                     .collect();
                 results.sort_by_key(|r| r.k_current);
                 for r in &results {
                     let spf = if r.is_spf { "YES ⚠" } else { "no " };
-                    println!("  {:25} {:>4}  {:>6}  {:>9.2}B  {:>6}",
-                        r.intersection.name, r.k_current, spf,
-                        r.est_cost_b, r.connectors_needed);
+                    println!(
+                        "  {:25} {:>4}  {:>6}  {:>9.2}B  {:>6}",
+                        r.intersection.name, r.k_current, spf, r.est_cost_b, r.connectors_needed
+                    );
                 }
                 let spf_count = results.iter().filter(|r| r.is_spf).count();
-                println!("\n  Single points of failure: {}/{}", spf_count, results.len());
-                println!("  Total diamond investment needed: ${:.1}B", results.iter().map(|r| r.est_cost_b).sum::<f64>());
+                println!(
+                    "\n  Single points of failure: {}/{}",
+                    spf_count,
+                    results.len()
+                );
+                println!(
+                    "  Total diamond investment needed: ${:.1}B",
+                    results.iter().map(|r| r.est_cost_b).sum::<f64>()
+                );
             } else {
                 // Analyze one specific intersection
                 println!("route diamond --at {at}");
@@ -1215,27 +1527,55 @@ fn main() -> Result<()> {
                         "No T1/T1 intersection found matching '{}'. Try 'route diamond --at all' to list all.",
                         at
                     ))?;
-                println!("  Found: {} ({:.2}°N {:.2}°W)",
-                    intersection.name,
-                    intersection.lat, -intersection.lon);
+                println!(
+                    "  Found: {} ({:.2}°N {:.2}°W)",
+                    intersection.name, intersection.lat, -intersection.lon
+                );
                 let result = route_network::analyze_diamond(&graph, intersection);
                 println!("\n┌─────────────────────────────────────────────────────┐");
                 println!("│  {} Diamond Analysis", result.intersection.name);
                 println!("├─────────────────────────────────────────────────────┤");
-                println!("│  k-connectivity (current):  {:>3}                    │", result.k_current);
-                println!("│  Single point of failure:   {}                  │", if result.is_spf { "YES ⚠" } else { "no" });
-                println!("│  Zone nodes (route A):      {:>3}                    │", result.zone_nodes_a.len());
-                println!("│  Zone nodes (route B):      {:>3}                    │", result.zone_nodes_b.len());
-                println!("│  Connectors needed (→k≥3): {:>3}                    │", result.connectors_needed);
-                println!("│  Estimated cost:           ${:.2}B                 │", result.est_cost_b);
+                println!(
+                    "│  k-connectivity (current):  {:>3}                    │",
+                    result.k_current
+                );
+                println!(
+                    "│  Single point of failure:   {}                  │",
+                    if result.is_spf { "YES ⚠" } else { "no" }
+                );
+                println!(
+                    "│  Zone nodes (route A):      {:>3}                    │",
+                    result.zone_nodes_a.len()
+                );
+                println!(
+                    "│  Zone nodes (route B):      {:>3}                    │",
+                    result.zone_nodes_b.len()
+                );
+                println!(
+                    "│  Connectors needed (→k≥3): {:>3}                    │",
+                    result.connectors_needed
+                );
+                println!(
+                    "│  Estimated cost:           ${:.2}B                 │",
+                    result.est_cost_b
+                );
                 println!("└─────────────────────────────────────────────────────┘");
 
                 if result.is_spf {
                     println!("\n  ⚠ This is a single point of failure.");
-                    println!("  A closure here disrupts both {} and {} simultaneously.", result.intersection.route_a, result.intersection.route_b);
-                    println!("  Adding {} connector road(s) within 50 miles would bring k to ≥3.", result.connectors_needed);
+                    println!(
+                        "  A closure here disrupts both {} and {} simultaneously.",
+                        result.intersection.route_a, result.intersection.route_b
+                    );
+                    println!(
+                        "  Adding {} connector road(s) within 50 miles would bring k to ≥3.",
+                        result.connectors_needed
+                    );
                 } else {
-                    println!("\n  This intersection has adequate path redundancy (k={}).", result.k_current);
+                    println!(
+                        "\n  This intersection has adequate path redundancy (k={}).",
+                        result.k_current
+                    );
                 }
             }
         }
@@ -1246,20 +1586,42 @@ fn main() -> Result<()> {
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
 
-            println!("  analyzing T1 network ({} T1 corridors, {} total routes)…",
-                graph.interstate_ids().iter().filter(|id| ["I5","I10","I35","I40","I75","I80","I90","I95"].contains(&id.as_str())).count(),
-                graph.route_ids().len());
+            println!(
+                "  analyzing T1 network ({} T1 corridors, {} total routes)…",
+                graph
+                    .interstate_ids()
+                    .iter()
+                    .filter(|id| ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
+                        .contains(&id.as_str()))
+                    .count(),
+                graph.route_ids().len()
+            );
 
             let report = route_network::analyze_t1_connectivity(&graph);
 
             println!("\n┌─────────────────────────────────────────────────────────────┐");
             println!("│  T1 Network Connectivity Report");
             println!("├─────────────────────────────────────────────────────────────┤");
-            println!("│  T1 endpoints analyzed:    {:>4}                            │", report.endpoints.len());
-            println!("│  Endpoint pairs tested:    {:>4}                            │", report.pair_results.len());
-            println!("│  Gaps (require T2 bridge): {:>4}                            │", report.gaps.len());
-            println!("│  Network fully connected:  {}                         │",
-                if report.is_fully_connected { "YES ✓" } else { "NO  ✗ — GAPS FOUND" });
+            println!(
+                "│  T1 endpoints analyzed:    {:>4}                            │",
+                report.endpoints.len()
+            );
+            println!(
+                "│  Endpoint pairs tested:    {:>4}                            │",
+                report.pair_results.len()
+            );
+            println!(
+                "│  Gaps (require T2 bridge): {:>4}                            │",
+                report.gaps.len()
+            );
+            println!(
+                "│  Network fully connected:  {}                         │",
+                if report.is_fully_connected {
+                    "YES ✓"
+                } else {
+                    "NO  ✗ — GAPS FOUND"
+                }
+            );
             println!("└─────────────────────────────────────────────────────────────┘");
 
             if !report.gaps.is_empty() {
@@ -1267,18 +1629,40 @@ fn main() -> Result<()> {
                 println!("  {:12} → {:12}  T1 miles  All miles  Detour", "From", "To");
                 println!("  {}", "─".repeat(60));
                 for gap in &report.gaps {
-                    let t1 = gap.t1_only_miles.map(|m| format!("{m:.0}")).unwrap_or("NONE".into());
-                    let all = gap.all_corridors_miles.map(|m| format!("{m:.0}")).unwrap_or("—".into());
-                    let det = gap.detour_factor.map(|d| format!("{d:.1}×")).unwrap_or("∞".into());
-                    let flag = if gap.requires_t2 { " ← T2 required!" } else { "" };
-                    println!("  {:12} → {:12}  {:>8}  {:>8}  {:>6}{}",
-                        gap.from_route, gap.to_route, t1, all, det, flag);
+                    let t1 = gap
+                        .t1_only_miles
+                        .map(|m| format!("{m:.0}"))
+                        .unwrap_or("NONE".into());
+                    let all = gap
+                        .all_corridors_miles
+                        .map(|m| format!("{m:.0}"))
+                        .unwrap_or("—".into());
+                    let det = gap
+                        .detour_factor
+                        .map(|d| format!("{d:.1}×"))
+                        .unwrap_or("∞".into());
+                    let flag = if gap.requires_t2 {
+                        " ← T2 required!"
+                    } else {
+                        ""
+                    };
+                    println!(
+                        "  {:12} → {:12}  {:>8}  {:>8}  {:>6}{}",
+                        gap.from_route, gap.to_route, t1, all, det, flag
+                    );
                 }
-                println!("\n  Isolated terminals: {}", report.isolated_terminals.join(", "));
+                println!(
+                    "\n  Isolated terminals: {}",
+                    report.isolated_terminals.join(", ")
+                );
                 println!("\n  → These gaps are I2.0 missing link targets:");
-                println!("    A new T1 corridor filling each gap would close the structural disconnect.");
+                println!(
+                    "    A new T1 corridor filling each gap would close the structural disconnect."
+                );
                 println!("    Example: I-40/I-70 western endpoint → I-5 requires I-15 (T2).");
-                println!("    A Pacific extension of I-40/I-70 (via US-50 alignment) would close it.");
+                println!(
+                    "    A Pacific extension of I-40/I-70 (via US-50 alignment) would close it."
+                );
             }
 
             if all_pairs {
@@ -1286,12 +1670,28 @@ fn main() -> Result<()> {
                 println!("  {:12} → {:12}  T1-only   All-crdr  Detour", "From", "To");
                 println!("  {}", "─".repeat(65));
                 let mut pairs = report.pair_results.clone();
-                pairs.sort_by(|a, b| b.detour_factor.unwrap_or(0.0).partial_cmp(&a.detour_factor.unwrap_or(0.0)).unwrap());
+                pairs.sort_by(|a, b| {
+                    b.detour_factor
+                        .unwrap_or(0.0)
+                        .total_cmp(&a.detour_factor.unwrap_or(0.0))
+                });
                 for r in pairs.iter().take(20) {
-                    let t1 = r.t1_only_miles.map(|m| format!("{m:.0}mi")).unwrap_or("UNREACHABLE".into());
-                    let all = r.all_corridors_miles.map(|m| format!("{m:.0}mi")).unwrap_or("—".into());
-                    let det = r.detour_factor.map(|d| format!("{d:.2}×")).unwrap_or("∞".into());
-                    println!("  {:12} → {:12}  {:>12}  {:>9}  {:>6}", r.from_route, r.to_route, t1, all, det);
+                    let t1 = r
+                        .t1_only_miles
+                        .map(|m| format!("{m:.0}mi"))
+                        .unwrap_or("UNREACHABLE".into());
+                    let all = r
+                        .all_corridors_miles
+                        .map(|m| format!("{m:.0}mi"))
+                        .unwrap_or("—".into());
+                    let det = r
+                        .detour_factor
+                        .map(|d| format!("{d:.2}×"))
+                        .unwrap_or("∞".into());
+                    println!(
+                        "  {:12} → {:12}  {:>12}  {:>9}  {:>6}",
+                        r.from_route, r.to_route, t1, all, det
+                    );
                 }
             }
         }
@@ -1310,11 +1710,16 @@ fn main() -> Result<()> {
             println!("  centrality: {} edges scored", bc_raw.len());
             // Normalize using P95 (not max) to prevent outlier edges from compressing distribution
             // A single hyper-central junction edge can be 100× larger than trunk route edges
-            let mut vals_sorted: Vec<f64> = bc_raw.values().cloned().collect();
-            vals_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
+            let mut vals_sorted: Vec<f64> =
+                bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+            vals_sorted.sort_by(f64::total_cmp);
+            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
+                .min(vals_sorted.len().saturating_sub(1));
             let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
-            let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
+            let bc = bc_raw
+                .into_iter()
+                .map(|(k, v)| (k, (v / bc_norm).min(1.0)))
+                .collect();
             graph.edge_betweenness = Some(bc);
 
             // Load ACS population once for C1/C2/C3 wiring
@@ -1325,53 +1730,91 @@ fn main() -> Result<()> {
             // Load ports for B3 scoring
             let ports = load_ports();
             if !ports.is_empty() {
-                println!("  {} port/border locations loaded — B3 will use real values", ports.len());
+                println!(
+                    "  {} port/border locations loaded — B3 will use real values",
+                    ports.len()
+                );
             }
             // Load DCFC stations for D2 scoring (partial — DEMO_KEY rate limit)
             let dcfc = load_dcfc_stations();
             if !dcfc.is_empty() {
-                println!("  {} DCFC stations loaded — D2 EV component will use real values", dcfc.len());
+                println!(
+                    "  {} DCFC stations loaded — D2 EV component will use real values",
+                    dcfc.len()
+                );
             }
             // Load intermodal terminals for D2 hub count
             let intermodal = load_intermodal_terminals();
             if !intermodal.is_empty() {
-                println!("  {} intermodal terminals loaded — D2 hub count will use real values", intermodal.len());
+                println!(
+                    "  {} intermodal terminals loaded — D2 hub count will use real values",
+                    intermodal.len()
+                );
             }
             // Load NBI bridge condition data for D3
             let nbi = load_nbi_bridges();
             if !nbi.is_empty() {
-                println!("  {} NBI bridge records loaded — D3 will use real condition data", nbi.len());
+                println!(
+                    "  {} NBI bridge records loaded — D3 will use real condition data",
+                    nbi.len()
+                );
             }
             // Load FEMA SFHA tile counts for D1 scoring
             let fema_tiles = load_fema_tiles();
             if !fema_tiles.is_empty() {
-                println!("  {} FEMA SFHA tiles loaded — D1 will use real flood-zone data", fema_tiles.len());
+                println!(
+                    "  {} FEMA SFHA tiles loaded — D1 will use real flood-zone data",
+                    fema_tiles.len()
+                );
             }
             // Load FARS fatal crash rates for A5 scoring
             let fars_safety = load_fars_safety();
             if !fars_safety.is_empty() {
-                println!("  {} FARS route records loaded — A5 will use real safety data", fars_safety.len());
+                println!(
+                    "  {} FARS route records loaded — A5 will use real safety data",
+                    fars_safety.len()
+                );
             }
             // Load railroad parallel data for B1 discount
             let railroad_parallels = load_railroad_parallels();
             if !railroad_parallels.is_empty() {
-                println!("  {} railroad parallels loaded — B1 rail discount applied", railroad_parallels.len());
+                println!(
+                    "  {} railroad parallels loaded — B1 rail discount applied",
+                    railroad_parallels.len()
+                );
             }
             // Load multi-hazard zones for D1 extension
             let hazard_zones = load_hazard_zones();
             if !hazard_zones.is_empty() {
-                println!("  {} hazard zone records loaded — D1 multi-hazard composite active", hazard_zones.len());
+                println!(
+                    "  {} hazard zone records loaded — D1 multi-hazard composite active",
+                    hazard_zones.len()
+                );
             }
 
             // Collect per-dimension scores for all corridors
             const N_DIMS: usize = 16;
-            let dim_names = ["A1","A2","A3","A4","A5","B1","B2","B3","B4","C1","C2","C3","C4","D1","D2","D3"];
+            let dim_names = [
+                "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
+                "D2", "D3",
+            ];
             let dim_labels = [
-                "Throughput Gap", "Freight Intensity", "Speed Reliability", "International Trade",
+                "Throughput Gap",
+                "Freight Intensity",
+                "Speed Reliability",
+                "International Trade",
                 "Safety Record",
-                "Redundancy", "Network Centrality", "Port/Border Access", "Military/Strategic",
-                "Population Reach", "Rural Connectivity", "Economic Opportunity", "Agricultural Export",
-                "Climate Resilience", "Multimodal Integration", "Infrastructure Vintage",
+                "Redundancy",
+                "Network Centrality",
+                "Port/Border Access",
+                "Military/Strategic",
+                "Population Reach",
+                "Rural Connectivity",
+                "Economic Opportunity",
+                "Agricultural Export",
+                "Climate Resilience",
+                "Multimodal Integration",
+                "Infrastructure Vintage",
             ];
 
             let mut matrix: Vec<[f64; N_DIMS]> = Vec::new();
@@ -1383,7 +1826,12 @@ fn main() -> Result<()> {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Join ACS population for C1/C2/C3
                     if acs_counties.is_some() {
-                        join_acs_population_to_corridor(&manifest, &graph, id, &mut corridor.attributes);
+                        join_acs_population_to_corridor(
+                            &manifest,
+                            &graph,
+                            id,
+                            &mut corridor.attributes,
+                        );
                     }
                     // Join port access for B3
                     if !ports.is_empty() {
@@ -1391,11 +1839,22 @@ fn main() -> Result<()> {
                     }
                     // Join DCFC for D2 EV component
                     if !dcfc.is_empty() {
-                        join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
+                        join_dcfc_to_corridor(
+                            &graph,
+                            id,
+                            corridor.total_miles,
+                            &mut corridor.attributes,
+                            &dcfc,
+                        );
                     }
                     // Join intermodal terminals for D2 hub count
                     if !intermodal.is_empty() {
-                        join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
+                        join_intermodal_to_corridor(
+                            &graph,
+                            id,
+                            &mut corridor.attributes,
+                            &intermodal,
+                        );
                     }
                     // Join FEMA SFHA tile counts for D1 flood-zone scoring
                     if !fema_tiles.is_empty() {
@@ -1407,7 +1866,7 @@ fn main() -> Result<()> {
                         join_nbi_to_corridor(id, &mut corridor.attributes, &nbi);
                     }
                     join_d3_iri_proxy(&mut corridor.attributes); // no-op if NBI already set
-                    // A5: join FARS fatal crash rate
+                                                                 // A5: join FARS fatal crash rate
                     if let Some(&rate) = fars_safety.get(id) {
                         corridor.attributes.fatal_crash_rate = Some(rate);
                     }
@@ -1426,18 +1885,19 @@ fn main() -> Result<()> {
                     // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
                     if corridor.attributes.annual_freight_value_b.is_none() {
                         if let Some(aadt) = corridor.attributes.p90_aadt {
-                            let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
+                            let truck_pct =
+                                corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
                             let truck_aadt = aadt as f64 * truck_pct;
-                            let freight_b = truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
+                            let freight_b =
+                                truck_aadt * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
                             corridor.attributes.annual_freight_value_b = Some(freight_b);
                         }
                     }
                     let s = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
                     let row = [
-                        s.a1.score, s.a2.score, s.a3.score, s.a4.score, s.a5.score,
-                        s.b1.score, s.b2.score, s.b3.score, s.b4.score,
-                        s.c1.score, s.c2.score, s.c3.score, s.c4.score,
-                        s.d1.score, s.d2.score, s.d3.score,
+                        s.a1.score, s.a2.score, s.a3.score, s.a4.score, s.a5.score, s.b1.score,
+                        s.b2.score, s.b3.score, s.b4.score, s.c1.score, s.c2.score, s.c3.score,
+                        s.c4.score, s.d1.score, s.d2.score, s.d3.score,
                     ];
                     let total = s.total();
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
@@ -1470,8 +1930,8 @@ fn main() -> Result<()> {
                 let variance = vals.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n;
                 let std = variance.sqrt();
                 let mut sorted = vals.clone();
-                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                let p90 = sorted[((n * 0.90) as usize).min(sorted.len()-1)];
+                sorted.sort_by(f64::total_cmp);
+                let p90 = sorted[((n * 0.90) as usize).min(sorted.len() - 1)];
 
                 // Status flags
                 let status = if std < 1.5 {
@@ -1490,31 +1950,44 @@ fn main() -> Result<()> {
 
             // Pairwise correlation (Pearson) — flag pairs > 0.60
             println!("\n  Computing pairwise Pearson correlations…");
-            let means: Vec<f64> = (0..N_DIMS).map(|d| matrix.iter().map(|r| r[d]).sum::<f64>() / n).collect();
-            let stds:  Vec<f64> = dim_stats.iter().map(|s| s.3).collect();
+            let means: Vec<f64> = (0..N_DIMS)
+                .map(|d| matrix.iter().map(|r| r[d]).sum::<f64>() / n)
+                .collect();
+            let stds: Vec<f64> = dim_stats.iter().map(|s| s.3).collect();
 
             let mut high_corr: Vec<(usize, usize, f64)> = Vec::new();
             for i in 0..N_DIMS {
-                for j in (i+1)..N_DIMS {
-                    if stds[i] < 0.01 || stds[j] < 0.01 { continue; }
-                    let cov: f64 = matrix.iter()
+                for j in (i + 1)..N_DIMS {
+                    if stds[i] < 0.01 || stds[j] < 0.01 {
+                        continue;
+                    }
+                    let cov: f64 = matrix
+                        .iter()
                         .map(|r| (r[i] - means[i]) * (r[j] - means[j]))
-                        .sum::<f64>() / n;
+                        .sum::<f64>()
+                        / n;
                     let r = cov / (stds[i] * stds[j]);
                     if r.abs() > 0.55 {
                         high_corr.push((i, j, r));
                     }
                 }
             }
-            high_corr.sort_by(|a, b| b.2.abs().partial_cmp(&a.2.abs()).unwrap());
+            high_corr.sort_by(|a, b| b.2.abs().total_cmp(&a.2.abs()));
 
             if !high_corr.is_empty() {
                 println!("\n  High-correlation pairs (|r| > 0.55):");
                 println!("  {:>2} × {:>2}   r       Status", "D1", "D2");
                 println!("  {}", "─".repeat(50));
                 for (i, j, r) in &high_corr {
-                    let warn = if r.abs() > 0.70 { " ⚠ REDUNDANT?" } else { "" };
-                    println!("  {} × {}  {:>+5.2}  {}{}", dim_names[*i], dim_names[*j], r, "", warn);
+                    let warn = if r.abs() > 0.70 {
+                        " ⚠ REDUNDANT?"
+                    } else {
+                        ""
+                    };
+                    println!(
+                        "  {} × {}  {:>+5.2}  {}{}",
+                        dim_names[*i], dim_names[*j], r, "", warn
+                    );
                 }
             } else {
                 println!("  No high-correlation pairs found (all |r| ≤ 0.55) ✓");
@@ -1526,7 +1999,10 @@ fn main() -> Result<()> {
                 println!("  {:>8}  {:>6}  {:>6}", "Route", "A1", "B2");
                 println!("  {}", "─".repeat(30));
                 for (route, a1, b2) in &flagged_congestion {
-                    println!("  {:>8}  {:>6.1}  {:>6.1}  ⚠ urban connector inflation", route, a1, b2);
+                    println!(
+                        "  {:>8}  {:>6.1}  {:>6.1}  ⚠ urban connector inflation",
+                        route, a1, b2
+                    );
                 }
                 println!("  → These corridors may need centrality-adjusted tier classification.");
                 println!("    See A.1 paper: betweenness centrality correction (α=0.65).");
@@ -1534,15 +2010,28 @@ fn main() -> Result<()> {
 
             // Tier distribution
             let t1 = total_scores.iter().filter(|&&s| s >= 29.0).count();
-            let t2 = total_scores.iter().filter(|&&s| s >= 21.0 && s < 29.0).count();
-            let t3 = total_scores.iter().filter(|&&s| s >= 12.0 && s < 21.0).count();
+            let t2 = total_scores
+                .iter()
+                .filter(|&&s| s >= 21.0 && s < 29.0)
+                .count();
+            let t3 = total_scores
+                .iter()
+                .filter(|&&s| s >= 12.0 && s < 21.0)
+                .count();
             let t4 = total_scores.iter().filter(|&&s| s < 12.0).count();
             println!("\n  Tier distribution (v1.4 thresholds: T1≥29, T2≥21, T3≥12):");
-            println!("    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
-                t1, t2, t3, t4);
+            println!(
+                "    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
+                t1, t2, t3, t4
+            );
             if t1 > 12 {
-                println!("    ⚠ T1 count {} exceeds expected ~8-10. Congestion-stress inflation likely.", t1);
-                println!("    → Run centrality-adjusted classification (route score-all + A.1 α=0.65).");
+                println!(
+                    "    ⚠ T1 count {} exceeds expected ~8-10. Congestion-stress inflation likely.",
+                    t1
+                );
+                println!(
+                    "    → Run centrality-adjusted classification (route score-all + A.1 α=0.65)."
+                );
             }
 
             // Retirement candidates
@@ -1551,18 +2040,24 @@ fn main() -> Result<()> {
             for d in 0..N_DIMS {
                 let (_, _, _, std, _) = dim_stats[d];
                 if std < 1.5 {
-                    println!("    {} ({}) — std={:.2} — consider retiring or merging", dim_names[d], dim_labels[d], std);
+                    println!(
+                        "    {} ({}) — std={:.2} — consider retiring or merging",
+                        dim_names[d], dim_labels[d], std
+                    );
                     any_retire = true;
                 }
             }
-            if !any_retire { println!("    None — all dimensions show adequate variance ✓"); }
+            if !any_retire {
+                println!("    None — all dimensions show adequate variance ✓");
+            }
 
             println!("\ncalibrate complete. Review output above before bumping rubric version.");
         }
 
         Commands::Od { corridor, month } => {
             let data_dir = std::path::PathBuf::from("data");
-            let (corridors, trips, seed): (Vec<route_sim::OdCorridor>, usize, u64) = match corridor {
+            let (corridors, trips, seed): (Vec<route_sim::OdCorridor>, usize, u64) = match corridor
+            {
                 OdCorridorCmd::NyLa { trips, seed } => {
                     let c = route_sim::load_corridor(&data_dir, "ny_la")
                         .unwrap_or_else(route_sim::ny_la_corridor);
@@ -1591,20 +2086,29 @@ fn main() -> Result<()> {
 
             // Apply seasonal modifiers if month specified
             let corridors: Vec<route_sim::OdCorridor> = if let Some(m) = month {
-                corridors.into_iter().map(|c| route_sim::apply_seasonal(&c, m)).collect()
+                corridors
+                    .into_iter()
+                    .map(|c| route_sim::apply_seasonal(&c, m))
+                    .collect()
             } else {
                 corridors
             };
 
-            let month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let month_names = [
+                "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov",
+                "Dec",
+            ];
             let season_note = match month {
                 Some(m @ 1..=12) => {
                     let is_winter = matches!(m, 11 | 12 | 1 | 2 | 3 | 4);
                     let is_holiday = matches!(m, 10 | 11 | 12);
                     let mut notes = vec![month_names[m as usize]];
-                    if is_winter { notes.push("WINTER: mountain pass closures 2.4× baseline"); }
-                    if is_holiday { notes.push("HOLIDAY: urban freight surge +20% V/C"); }
+                    if is_winter {
+                        notes.push("WINTER: mountain pass closures 2.4× baseline");
+                    }
+                    if is_holiday {
+                        notes.push("HOLIDAY: urban freight surge +20% V/C");
+                    }
                     format!(" — seasonal: {}", notes.join(" | "))
                 }
                 _ => " — annual average (use --month 1..12 for seasonal SLA)".to_string(),
@@ -1655,15 +2159,23 @@ fn main() -> Result<()> {
             print_sla_matrix(trips, seed, &data_dir);
         }
 
-        Commands::Interventions { corridor, trips, seed } => {
+        Commands::Interventions {
+            corridor,
+            trips,
+            seed,
+        } => {
             let data_dir = std::path::PathBuf::from("data");
             let c = match corridor {
                 InterventionCorridorArg::NyLa => route_sim::load_corridor(&data_dir, "ny_la")
                     .unwrap_or_else(route_sim::ny_la_corridor),
-                InterventionCorridorArg::HouChi => route_sim::load_corridor(&data_dir, "hou_chi_current")
-                    .unwrap_or_else(route_sim::hou_chi_current),
-                InterventionCorridorArg::HouI69 => route_sim::load_corridor(&data_dir, "hou_chi_i69")
-                    .unwrap_or_else(route_sim::hou_chi_i69),
+                InterventionCorridorArg::HouChi => {
+                    route_sim::load_corridor(&data_dir, "hou_chi_current")
+                        .unwrap_or_else(route_sim::hou_chi_current)
+                }
+                InterventionCorridorArg::HouI69 => {
+                    route_sim::load_corridor(&data_dir, "hou_chi_i69")
+                        .unwrap_or_else(route_sim::hou_chi_i69)
+                }
             };
             println!("route interventions — {trips} trips per scenario\n");
             let bench = route_sim::InterventionBenchmark::run(&c, trips, seed);
@@ -1685,36 +2197,64 @@ fn main() -> Result<()> {
             // Run at three demand levels: normal, adverse (+20% demand), severe (+40% + compound incident)
             println!("  Tier {tier} PTI target: ≤ {pti_target:.2}");
             println!("  Corridor: {corridor_name}");
-            println!("  Free-flow elapsed: {:.1}h ({:.1} days)",
+            println!(
+                "  Free-flow elapsed: {:.1}h ({:.1} days)",
                 corridor.free_flow_elapsed_hours(),
-                corridor.free_flow_elapsed_hours() / 24.0);
+                corridor.free_flow_elapsed_hours() / 24.0
+            );
             println!();
 
             let managed = tier == 1;
             let dist = route_sim::run_od_simulation(&corridor, managed, trips, seed);
 
-            println!("  {:>20}  {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>6}",
-                "Scenario", "p50 (h)", "p75 (h)", "p90 (h)", "p95 (h)", "p99 (h)", "PTI", "SLA?");
+            println!(
+                "  {:>20}  {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>6}",
+                "Scenario", "p50 (h)", "p75 (h)", "p90 (h)", "p95 (h)", "p99 (h)", "PTI", "SLA?"
+            );
             println!("  {}", "─".repeat(85));
 
             let pti_met = dist.pti <= pti_target;
             let sla_label = if pti_met { "PASS ✓" } else { "FAIL ✗" };
-            println!("  {:>20}  {:>8.1}  {:>8.1}  {:>8.1}  {:>8.1}  {:>8.1}  {:>6.3}  {}",
-                "Baseline", dist.p50_hours, dist.p75_hours, dist.p90_hours,
-                dist.p95_hours, dist.p99_hours, dist.pti, sla_label);
+            println!(
+                "  {:>20}  {:>8.1}  {:>8.1}  {:>8.1}  {:>8.1}  {:>8.1}  {:>6.3}  {}",
+                "Baseline",
+                dist.p50_hours,
+                dist.p75_hours,
+                dist.p90_hours,
+                dist.p95_hours,
+                dist.p99_hours,
+                dist.pti,
+                sla_label
+            );
 
             println!();
-            println!("  Commitment window (p95): {:.1}h = {:.1} days", dist.p95_hours, dist.p95_hours / 24.0);
-            println!("  PTI (p95/free-flow):     {:.3}  [target ≤ {:.2}] — {}",
-                dist.pti, pti_target, if pti_met { "TARGET MET ✓" } else { "TARGET MISSED ✗" });
+            println!(
+                "  Commitment window (p95): {:.1}h = {:.1} days",
+                dist.p95_hours,
+                dist.p95_hours / 24.0
+            );
+            println!(
+                "  PTI (p95/free-flow):     {:.3}  [target ≤ {:.2}] — {}",
+                dist.pti,
+                pti_target,
+                if pti_met {
+                    "TARGET MET ✓"
+                } else {
+                    "TARGET MISSED ✗"
+                }
+            );
             println!("  Trips completing < 48h:  {:.1}%", dist.pct_under_48h);
             println!();
 
             if pti_met {
-                println!("  ✓ Tier {tier} PTI standard is achievable under these simulation conditions.");
+                println!(
+                    "  ✓ Tier {tier} PTI standard is achievable under these simulation conditions."
+                );
                 println!("  ✓ Managed lanes + Donner tunnel remove the primary variance sources.");
             } else {
-                println!("  ✗ Tier {tier} PTI target NOT met at current demand/incident parameters.");
+                println!(
+                    "  ✗ Tier {tier} PTI target NOT met at current demand/incident parameters."
+                );
                 println!("  → Primary variance sources: see segment breakdown above.");
             }
         }
@@ -1731,36 +2271,61 @@ fn print_od_comparison(cmp: &route_sim::OdComparison) {
     let rm = &cmp.relay_managed;
     let net = route_sim::RelayNetwork::for_corridor_miles(sg.free_flow_hours);
 
-    println!("╔══════════════════════════════════════════════════════════════════════════════════╗");
+    println!(
+        "╔══════════════════════════════════════════════════════════════════════════════════╗"
+    );
     println!("║  {}  ║", pad_center(&cmp.corridor_name, 80));
-    println!("║  Free-flow: {:.1}h ({:.1} days)  |  Relay stations: {}  |  Station cost: ${:.0}M ea  ║",
-        sg.free_flow_hours, sg.free_flow_hours / 24.0,
-        net.stations, net.station_cost_m);
+    println!(
+        "║  Free-flow: {:.1}h ({:.1} days)  |  Relay stations: {}  |  Station cost: ${:.0}M ea  ║",
+        sg.free_flow_hours,
+        sg.free_flow_hours / 24.0,
+        net.stations,
+        net.station_cost_m
+    );
     println!("╠══════════════════╦══════════════╦══════════════╦══════════════╦══════════════╣");
     println!("║  Metric          ║ Solo / GP    ║ Solo / I2.0  ║ Team / I2.0  ║Relay / I2.0  ║");
     println!("╠══════════════════╬══════════════╬══════════════╬══════════════╬══════════════╣");
 
     let row = |label: &str, f: fn(&route_sim::TransitDistribution) -> f64| {
-        println!("║  {:<16}║  {:>8.1}h   ║  {:>8.1}h   ║  {:>8.1}h   ║  {:>8.1}h   ║",
-            label, f(sg), f(sm), f(tm), f(rm));
+        println!(
+            "║  {:<16}║  {:>8.1}h   ║  {:>8.1}h   ║  {:>8.1}h   ║  {:>8.1}h   ║",
+            label,
+            f(sg),
+            f(sm),
+            f(tm),
+            f(rm)
+        );
     };
-    row("Mean",           |d| d.mean_hours);
-    row("p50",            |d| d.p50_hours);
-    row("p75",            |d| d.p75_hours);
-    row("p90",            |d| d.p90_hours);
+    row("Mean", |d| d.mean_hours);
+    row("p50", |d| d.p50_hours);
+    row("p75", |d| d.p75_hours);
+    row("p90", |d| d.p90_hours);
     row("p95 commit wdw", |d| d.p95_hours);
     row("p99 worst-case", |d| d.p99_hours);
 
     println!("╠══════════════════╬══════════════╬══════════════╬══════════════╬══════════════╣");
-    println!("║  PTI             ║  {:>9.3}  ║  {:>9.3}  ║  {:>9.3}  ║  {:>9.3}  ║",
-        sg.pti, sm.pti, tm.pti, rm.pti);
-    println!("║  < 48h trips     ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║",
-        sg.pct_under_48h, sm.pct_under_48h, tm.pct_under_48h, rm.pct_under_48h);
-    println!("║  < 72h trips     ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║",
-        pct_under(sg, 72.0), pct_under(sm, 72.0), pct_under(tm, 72.0), pct_under(rm, 72.0));
-    println!("║  SLA window      ║  {:>7.1}d   ║  {:>7.1}d   ║  {:>7.1}d   ║  {:>7.1}d   ║",
-        sg.commitment_window_days, sm.commitment_window_days,
-        tm.commitment_window_days, rm.commitment_window_days);
+    println!(
+        "║  PTI             ║  {:>9.3}  ║  {:>9.3}  ║  {:>9.3}  ║  {:>9.3}  ║",
+        sg.pti, sm.pti, tm.pti, rm.pti
+    );
+    println!(
+        "║  < 48h trips     ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║",
+        sg.pct_under_48h, sm.pct_under_48h, tm.pct_under_48h, rm.pct_under_48h
+    );
+    println!(
+        "║  < 72h trips     ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║  {:>8.1}%  ║",
+        pct_under(sg, 72.0),
+        pct_under(sm, 72.0),
+        pct_under(tm, 72.0),
+        pct_under(rm, 72.0)
+    );
+    println!(
+        "║  SLA window      ║  {:>7.1}d   ║  {:>7.1}d   ║  {:>7.1}d   ║  {:>7.1}d   ║",
+        sg.commitment_window_days,
+        sm.commitment_window_days,
+        tm.commitment_window_days,
+        rm.commitment_window_days
+    );
     println!("╚══════════════════╩══════════════╩══════════════╩══════════════╩══════════════╝");
 
     // Verdict per scenario
@@ -1768,26 +2333,35 @@ fn print_od_comparison(cmp: &route_sim::OdComparison) {
     let verdict = |label: &str, d: &route_sim::TransitDistribution| {
         let sla = d.p95_hours;
         let days = sla / 24.0;
-        let icon = if sla <= 48.0 { "✓ 48h SLA" } else if sla <= 72.0 { "✓ 3-day SLA" } else { "→ {:.1}d window" };
-        let icon = if sla <= 48.0 { "✓ 48h SLA ACHIEVABLE".to_string() }
-                   else if sla <= 72.0 { format!("✓ {:.1}d ({:.0}h) — tight 3-day SLA", days, sla) }
-                   else { format!("→ {:.1}d ({:.0}h) commitment window", days, sla) };
+        let icon = if sla <= 48.0 {
+            "✓ 48h SLA ACHIEVABLE".to_string()
+        } else if sla <= 72.0 {
+            format!("✓ {:.1}d ({:.0}h) — tight 3-day SLA", days, sla)
+        } else {
+            format!("→ {:.1}d ({:.0}h) commitment window", days, sla)
+        };
         println!("  {:20}  {}", label, icon);
     };
-    verdict("Solo / GP lanes:",   sg);
-    verdict("Solo / Managed:",    sm);
-    verdict("Team / Managed:",    tm);
-    verdict("Relay / Managed:",   rm);
-    verdict("Relay / GP lanes:",  rg);
+    verdict("Solo / GP lanes:", sg);
+    verdict("Solo / Managed:", sm);
+    verdict("Team / Managed:", tm);
+    verdict("Relay / Managed:", rm);
+    verdict("Relay / GP lanes:", rg);
 
     // Relay network economics
     println!();
-    println!("  Relay network: {} stations × ${:.0}M = ${:.0}M total capex",
-        net.stations, net.station_cost_m, net.total_capex_m);
-    println!("  Avg driver leg: {:.0} miles / {:.1}h — home base return same day",
-        net.avg_leg_miles, net.avg_leg_hours);
-    println!("  vs. $253B I2.0 portfolio = {:.2}% of total program cost",
-        net.total_capex_m / 253_000.0 * 100.0);
+    println!(
+        "  Relay network: {} stations × ${:.0}M = ${:.0}M total capex",
+        net.stations, net.station_cost_m, net.total_capex_m
+    );
+    println!(
+        "  Avg driver leg: {:.0} miles / {:.1}h — home base return same day",
+        net.avg_leg_miles, net.avg_leg_hours
+    );
+    println!(
+        "  vs. $253B I2.0 portfolio = {:.2}% of total program cost",
+        net.total_capex_m / 253_000.0 * 100.0
+    );
 }
 
 fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
@@ -1796,14 +2370,17 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     println!("Relay drivers: 1 driver per truck swap, 3 shifts/day, 5-day week, 35%% buffer.");
     println!("Like airline crew bases: drivers work 1 leg, home same day.\n");
 
-    println!("{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}",
-        "Hub", "Trucks/d", "Swaps/d", "Frt Drvr", "Bus Drvr", "Support", "Total Jobs");
+    println!(
+        "{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}",
+        "Hub", "Trucks/d", "Swaps/d", "Frt Drvr", "Bus Drvr", "Support", "Total Jobs"
+    );
     println!("{}", "─".repeat(95));
 
     for s in &net.hub_staffings {
         let is_proposed = s.hub_name.contains("proposed");
         let marker = if is_proposed { " *" } else { "" };
-        println!("{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}{}",
+        println!(
+            "{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}{}",
             s.hub_name.split('(').next().unwrap_or(&s.hub_name).trim(),
             s.daily_truck_swaps,
             s.daily_total_swaps,
@@ -1816,13 +2393,20 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     }
 
     println!("{}", "─".repeat(95));
-    println!("{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}",
+    println!(
+        "{:<35} {:>8}  {:>8}  {:>8}  {:>8}  {:>8}  {:>10}",
         "TOTAL (all hubs)",
-        net.hub_staffings.iter().map(|s| s.daily_truck_swaps).sum::<u32>(),
+        net.hub_staffings
+            .iter()
+            .map(|s| s.daily_truck_swaps)
+            .sum::<u32>(),
         net.total_daily_swaps,
         net.total_freight_drivers,
         net.total_bus_drivers,
-        net.hub_staffings.iter().map(|s| s.dispatchers + s.maintenance_staff + s.admin_scheduling).sum::<u32>(),
+        net.hub_staffings
+            .iter()
+            .map(|s| s.dispatchers + s.maintenance_staff + s.admin_scheduling)
+            .sum::<u32>(),
         net.total_hub_employment,
     );
 
@@ -1831,22 +2415,32 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     }
 
     println!("\n── What this means ──────────────────────────────────────────────────────");
-    println!("  {} total hub-based jobs nationally ({} hubs)",
-        net.total_hub_employment, net.total_hubs);
-    println!("  {} freight relay drivers — regional CDL jobs, home every night",
-        net.total_freight_drivers);
-    println!("  {} bus relay drivers — intercity express on managed lanes",
-        net.total_bus_drivers);
+    println!(
+        "  {} total hub-based jobs nationally ({} hubs)",
+        net.total_hub_employment, net.total_hubs
+    );
+    println!(
+        "  {} freight relay drivers — regional CDL jobs, home every night",
+        net.total_freight_drivers
+    );
+    println!(
+        "  {} bus relay drivers — intercity express on managed lanes",
+        net.total_bus_drivers
+    );
     println!();
 
-    let avg_wage_freight = 58_000u32;  // relay driver: regional premium, no overnight
+    let avg_wage_freight = 58_000u32; // relay driver: regional premium, no overnight
     let avg_wage_bus = 52_000u32;
     let avg_wage_support = 48_000u32;
-    let support_count: u32 = net.hub_staffings.iter()
-        .map(|s| s.dispatchers + s.maintenance_staff + s.admin_scheduling).sum();
+    let support_count: u32 = net
+        .hub_staffings
+        .iter()
+        .map(|s| s.dispatchers + s.maintenance_staff + s.admin_scheduling)
+        .sum();
     let total_payroll = (net.total_freight_drivers as u64 * avg_wage_freight as u64
         + net.total_bus_drivers as u64 * avg_wage_bus as u64
-        + support_count as u64 * avg_wage_support as u64) / 1_000_000;
+        + support_count as u64 * avg_wage_support as u64)
+        / 1_000_000;
 
     println!("  Annual payroll: ~${total_payroll}M at hub locations");
     println!("  Average freight relay driver: ${avg_wage_freight}/yr (vs $70,000 long-haul signing bonus alone)");
@@ -1855,7 +2449,11 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     println!();
     println!("── Comparison: airline crew base model ──────────────────────────────────");
     println!("  United Airlines crew bases: ~12 bases, ~25,000 pilots/FAs total");
-    println!("  I2.0 relay hubs: {} bases, {} drivers", net.total_hubs, net.total_freight_drivers + net.total_bus_drivers);
+    println!(
+        "  I2.0 relay hubs: {} bases, {} drivers",
+        net.total_hubs,
+        net.total_freight_drivers + net.total_bus_drivers
+    );
     println!("  Pilot works 1 flight leg, overnights at hub or flies back on jumpseat");
     println!("  Relay driver works 1 truck leg, drives back or takes hub bus home");
     println!("  The operational model is identical. The regulation is the gap.");
@@ -1879,7 +2477,9 @@ fn print_ev_analysis(data_dir: &std::path::Path) {
 
     println!("route ev-analysis — I2.0 guaranteed DCFC (150kW every 50 miles on T1)\n");
     println!("Current T1 DCFC gap: rural segments have 80-120+ mile gaps (some 0 DCFC at all).");
-    println!("I2.0 standard: DCFC ≤ 50 miles, 150kW minimum passenger / 350kW freight terminals.\n");
+    println!(
+        "I2.0 standard: DCFC ≤ 50 miles, 150kW minimum passenger / 350kW freight terminals.\n"
+    );
 
     // Compare vs train lines
     println!("── How I2.0 compares to high-speed rail investment ─────────────────────────");
@@ -1903,15 +2503,22 @@ fn print_ev_analysis(data_dir: &std::path::Path) {
     println!();
 
     println!("── EV charging analysis by corridor ─────────────────────────────────────────");
-    println!("{:<38} {:>8}  {:>12}  {:>10}  {:>8}  {}",
-        "Corridor", "Miles", "EV type", "Stops I2.0", "Chrg min", "Overnight OK?");
+    println!(
+        "{:<38} {:>8}  {:>12}  {:>10}  {:>8}  {}",
+        "Corridor", "Miles", "EV type", "Stops I2.0", "Chrg min", "Overnight OK?"
+    );
     println!("{}", "─".repeat(100));
 
     for corridor in &corridors {
         for ev in &evs {
             let analysis = analyze_ev_charging(corridor, ev, i20_dcfc_kw);
-            let overnight = if analysis.overnight_scenario { "✓ auto-charge" } else { "needs stop" };
-            println!("{:<38} {:>8.0}  {:>12}  {:>10}  {:>8.0}  {}",
+            let overnight = if analysis.overnight_scenario {
+                "✓ auto-charge"
+            } else {
+                "needs stop"
+            };
+            println!(
+                "{:<38} {:>8.0}  {:>12}  {:>10}  {:>8.0}  {}",
                 corridor.name.split('(').next().unwrap_or("").trim(),
                 analysis.corridor_miles,
                 ev.name.split('(').next().unwrap_or(ev.name).trim(),
@@ -1926,7 +2533,9 @@ fn print_ev_analysis(data_dir: &std::path::Path) {
     println!("── The overnight AV scenario ─────────────────────────────────────────────");
     println!("  Tesla Model Y (290mi range) on NY→CHI (760mi):");
     let ny_chi = route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi);
-    let model_y = evs.iter().find(|e| e.highway_range_miles >= 280.0 && e.charge_rate_kw <= 250.0)
+    let model_y = evs
+        .iter()
+        .find(|e| e.highway_range_miles >= 280.0 && e.charge_rate_kw <= 250.0)
         .cloned()
         .unwrap_or_else(route_sim::tesla_model_y);
     let a = analyze_ev_charging(&ny_chi, &model_y, i20_dcfc_kw);
@@ -1943,16 +2552,24 @@ fn print_ev_analysis(data_dir: &std::path::Path) {
     println!("  I2.0 standard (50-mile spacing) eliminates this completely.");
     println!();
     println!("  Freight Tesla Semi (480mi range, 1MW Megacharger):");
-    let semi = evs.iter().find(|e| e.charge_rate_kw >= 900.0)
+    let semi = evs
+        .iter()
+        .find(|e| e.charge_rate_kw >= 900.0)
         .cloned()
         .unwrap_or_else(route_sim::tesla_semi);
     let a2 = analyze_ev_charging(&ny_chi, &semi, 1000.0); // 1MW freight charger
-    println!("    NY→CHI: {} charging stops, {:.0} min total charge time", a2.stops_i20, a2.charge_minutes_i20);
-    println!("    {} at relay hubs (driver swap + charge simultaneously)", a2.overnight_note);
+    println!(
+        "    NY→CHI: {} charging stops, {:.0} min total charge time",
+        a2.stops_i20, a2.charge_minutes_i20
+    );
+    println!(
+        "    {} at relay hubs (driver swap + charge simultaneously)",
+        a2.overnight_note
+    );
 }
 
 fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
-    use route_sim::{PassengerMode, run_passenger_simulation};
+    use route_sim::{run_passenger_simulation, PassengerMode};
 
     // Load Amtrak schedules from CSV; fall back to hardcoded values if file missing.
     let amtrak = load_amtrak_schedules(data_dir);
@@ -1968,39 +2585,87 @@ fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
     // Threshold: air is competitive when door-to-door < 4h (flight < 1.5h + overhead 2.5h)
     // Below that, bus relay often wins on total door-to-door time AND cost
     let corridors: Vec<(route_sim::OdCorridor, Option<f64>, &str)> = vec![
-        (route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
-            amtrak_hours("ny_chi", Some(18.0)), "Lake Shore Ltd 18h (60% on-time)"),
-        (route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
-            amtrak_hours("la_sea", Some(35.5)), "Coast Starlight 53h p95 (50% on-time)"),
-        (route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
-            amtrak_hours("mia_nyc", Some(30.0)), "Silver Star 45h p95 (75% on-time)"),
-        (route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
-            amtrak_hours("atl_chi", None), "No direct Amtrak service"),
-        (route_sim::load_corridor(data_dir, "hou_chi_i69").unwrap_or_else(route_sim::hou_chi_i69),
-            amtrak_hours("hou_chi_i69", None), "No direct Amtrak"),
-        (route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
-            amtrak_hours("dal_nyc", None), "No direct Amtrak"),
-        (route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
-            amtrak_hours("sea_chi", Some(46.0)), "Empire Builder 69h p95 (65% on-time)"),
-        (route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
-            amtrak_hours("ny_la", Some(67.0)), "Southwest Chief 100h p95 (55% on-time)"),
-        (route_sim::load_corridor(data_dir, "chi_la").unwrap_or_else(route_sim::chi_la),
-            amtrak_hours("chi_la", Some(43.0)), "Southwest Chief 64h p95 (55% on-time)"),
+        (
+            route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
+            amtrak_hours("ny_chi", Some(18.0)),
+            "Lake Shore Ltd 18h (60% on-time)",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
+            amtrak_hours("la_sea", Some(35.5)),
+            "Coast Starlight 53h p95 (50% on-time)",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
+            amtrak_hours("mia_nyc", Some(30.0)),
+            "Silver Star 45h p95 (75% on-time)",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
+            amtrak_hours("atl_chi", None),
+            "No direct Amtrak service",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "hou_chi_i69")
+                .unwrap_or_else(route_sim::hou_chi_i69),
+            amtrak_hours("hou_chi_i69", None),
+            "No direct Amtrak",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
+            amtrak_hours("dal_nyc", None),
+            "No direct Amtrak",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
+            amtrak_hours("sea_chi", Some(46.0)),
+            "Empire Builder 69h p95 (65% on-time)",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
+            amtrak_hours("ny_la", Some(67.0)),
+            "Southwest Chief 100h p95 (55% on-time)",
+        ),
+        (
+            route_sim::load_corridor(data_dir, "chi_la").unwrap_or_else(route_sim::chi_la),
+            amtrak_hours("chi_la", Some(43.0)),
+            "Southwest Chief 64h p95 (55% on-time)",
+        ),
     ];
 
-    println!("{:<35} {:>6}  {:>10}  {:>12}  {:>12}  {:>14}  {:>10}",
-        "Corridor", "Miles", "Amtrak p95", "Bus relay", "AV managed", "Air (door-to-door)", "AV vs Air");
-    println!("{:<35} {:>6}  {:>10}  {:>12}  {:>12}  {:>14}  {:>10}",
-        "", "", "(current)", "($0.12/mi)", "(~$0.18/mi)", "(est.)", "");
+    println!(
+        "{:<35} {:>6}  {:>10}  {:>12}  {:>12}  {:>14}  {:>10}",
+        "Corridor",
+        "Miles",
+        "Amtrak p95",
+        "Bus relay",
+        "AV managed",
+        "Air (door-to-door)",
+        "AV vs Air"
+    );
+    println!(
+        "{:<35} {:>6}  {:>10}  {:>12}  {:>12}  {:>14}  {:>10}",
+        "", "", "(current)", "($0.12/mi)", "(~$0.18/mi)", "(est.)", ""
+    );
     println!("{}", "─".repeat(110));
 
     for (corridor, amtrak_sched, _amtrak_note) in &corridors {
         let miles = corridor.total_miles();
 
-        let bus = run_passenger_simulation(corridor, PassengerMode::ExpressBus,
-            trips, seed, *amtrak_sched);
-        let av  = run_passenger_simulation(corridor, PassengerMode::AutonomousVehicle,
-            trips, seed+1, *amtrak_sched);
+        let bus = run_passenger_simulation(
+            corridor,
+            PassengerMode::ExpressBus,
+            trips,
+            seed,
+            *amtrak_sched,
+        );
+        let av = run_passenger_simulation(
+            corridor,
+            PassengerMode::AutonomousVehicle,
+            trips,
+            seed + 1,
+            *amtrak_sched,
+        );
 
         let amtrak_str = if let Some(sched) = amtrak_sched {
             let pti = 1.5; // typical long-distance Amtrak PTI
@@ -2021,8 +2686,14 @@ fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
             format!("Air -{:.1}h", av.p95_hours - air_dttd)
         };
 
-        println!("{:<35} {:>6.0}  {:>10}  {:>10.1}h  {:>10.1}h  {:>14}  {:>10}",
-            corridor.name.split(' ').take(4).collect::<Vec<_>>().join(" "),
+        println!(
+            "{:<35} {:>6.0}  {:>10}  {:>10.1}h  {:>10.1}h  {:>14}  {:>10}",
+            corridor
+                .name
+                .split(' ')
+                .take(4)
+                .collect::<Vec<_>>()
+                .join(" "),
             miles,
             amtrak_str,
             bus.p95_hours,
@@ -2038,16 +2709,24 @@ fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
     println!();
     println!("── Bus routes competitive with air (< 4h door-to-door threshold) ──────────");
     println!("  Airlines already bus some short-haul routes (United/Delta bus BOS↔NYC, LAX↔SNA).");
-    println!("  Door-to-door air < 4h means flight is under 1.5h — below that, bus relay competes:");
+    println!(
+        "  Door-to-door air < 4h means flight is under 1.5h — below that, bus relay competes:"
+    );
     println!();
     println!("  NY→CHI (790mi):    bus relay ~12h  vs air 4.7h — NOT competitive on time,");
-    println!("                      but competitive on COST ($95 bus vs $180+ air + Uber both ends)");
+    println!(
+        "                      but competitive on COST ($95 bus vs $180+ air + Uber both ends)"
+    );
     println!("                      and AV managed lane ~10h = sleep in your car, arrive rested");
     println!();
-    println!("  Routes where I2.0 BUS RELAY beats air door-to-door (rare; requires short corridor):");
+    println!(
+        "  Routes where I2.0 BUS RELAY beats air door-to-door (rare; requires short corridor):"
+    );
     println!("  → sub-300 mile routes where air = 3.5h door-to-door but bus relay = 3h:");
     println!("    LA→San Diego (120mi): bus relay ~2.5h vs air 2.8h door-to-door — BUS WINS");
-    println!("    NYC→Philadelphia (95mi): bus relay ~1.8h vs air 2.5h — BUS WINS (Amtrak 1.5h wins)");
+    println!(
+        "    NYC→Philadelphia (95mi): bus relay ~1.8h vs air 2.5h — BUS WINS (Amtrak 1.5h wins)"
+    );
     println!("    Chicago→Milwaukee (90mi): bus relay ~1.7h vs air 2.3h — BUS WINS");
     println!("    Miami→Orlando (240mi): bus relay ~4.5h vs air 3.2h — air narrowly wins");
     println!();
@@ -2064,14 +2743,15 @@ fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
 }
 
 fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
-    use route_sim::{Intervention, DriverMode, run_od_simulation_with_driver, apply_interventions};
+    use route_sim::{apply_interventions, run_od_simulation_with_driver, DriverMode, Intervention};
 
     // All corridors — loaded from od-corridors.toml, falling back to built-ins
     let corridors = vec![
         route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
         route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
         route_sim::load_corridor(data_dir, "hou_chi_i69").unwrap_or_else(route_sim::hou_chi_i69),
-        route_sim::load_corridor(data_dir, "hou_chi_current").unwrap_or_else(route_sim::hou_chi_current),
+        route_sim::load_corridor(data_dir, "hou_chi_current")
+            .unwrap_or_else(route_sim::hou_chi_current),
         route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
         route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
         route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
@@ -2081,7 +2761,10 @@ fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
 
     let relay_interventions = |c: &route_sim::OdCorridor| {
         let stations = ((c.total_miles() / 500.0).ceil() as usize).max(1);
-        vec![Intervention::DriverRelay { stations, swap_minutes: 20.0 }]
+        vec![Intervention::DriverRelay {
+            stations,
+            swap_minutes: 20.0,
+        }]
     };
 
     let full_stack = |c: &route_sim::OdCorridor| {
@@ -2091,14 +2774,21 @@ fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
             Intervention::DonnerTunnel,
             Intervention::DiamondInterchanges,
             Intervention::IntelligentRouting,
-            Intervention::DriverRelay { stations, swap_minutes: 15.0 },
+            Intervention::DriverRelay {
+                stations,
+                swap_minutes: 15.0,
+            },
         ]
     };
 
-    println!("{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
-        "Corridor", "Miles", "Today p95", "Relay only", "Relay+Mgd", "Full I2.0", "SLA unlock");
-    println!("{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
-        "", "", "(solo/GP)", "($40M)", "(+$121B)", "(full stk)", "");
+    println!(
+        "{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
+        "Corridor", "Miles", "Today p95", "Relay only", "Relay+Mgd", "Full I2.0", "SLA unlock"
+    );
+    println!(
+        "{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
+        "", "", "(solo/GP)", "($40M)", "(+$121B)", "(full stk)", ""
+    );
     println!("{}", "─".repeat(110));
 
     for c in &corridors {
@@ -2110,7 +2800,7 @@ fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
         // 2. Relay only (GP lanes)
         let relay_only = {
             let (modified, driver) = apply_interventions(c, &relay_interventions(c));
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed+1)
+            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 1)
         };
 
         // 3. Relay + managed lanes
@@ -2119,39 +2809,50 @@ fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
                 let stations = ((miles / 500.0).ceil() as usize).max(1);
                 vec![
                     Intervention::ManagedFreightLanes,
-                    Intervention::DriverRelay { stations, swap_minutes: 20.0 },
+                    Intervention::DriverRelay {
+                        stations,
+                        swap_minutes: 20.0,
+                    },
                 ]
             };
             let (modified, driver) = apply_interventions(c, &interventions);
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed+2)
+            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 2)
         };
 
         // 4. Full I2.0 stack
         let full = {
             let (modified, driver) = apply_interventions(c, &full_stack(c));
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed+3)
+            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 3)
         };
 
         // SLA classification
         let sla_label = |h: f64| -> &str {
-            if h <= 12.0 { "12h (half-day)" }
-            else if h <= 24.0 { "24h (overnight)" }
-            else if h <= 36.0 { "36h (next-day)" }
-            else if h <= 48.0 { "48h (2-day)" }
-            else if h <= 72.0 { "72h (3-day)" }
-            else { ">3-day" }
+            if h <= 12.0 {
+                "12h (half-day)"
+            } else if h <= 24.0 {
+                "24h (overnight)"
+            } else if h <= 36.0 {
+                "36h (next-day)"
+            } else if h <= 48.0 {
+                "48h (2-day)"
+            } else if h <= 72.0 {
+                "72h (3-day)"
+            } else {
+                ">3-day"
+            }
         };
 
         // Highlight which scenario first achieves a new SLA tier
         let today_sla = sla_label(today.p95_hours);
-        let full_sla  = sla_label(full.p95_hours);
+        let full_sla = sla_label(full.p95_hours);
         let unlock = if full_sla != today_sla {
             format!("{} → {}", today_sla, full_sla)
         } else {
             format!("holds at {}", today_sla)
         };
 
-        println!("{:<38} {:>6.0}  {:>8.1}h   {:>10.1}h  {:>9.1}h  {:>9.1}h  {}",
+        println!(
+            "{:<38} {:>6.0}  {:>8.1}h   {:>10.1}h  {:>9.1}h  {:>9.1}h  {}",
             c.name,
             miles,
             today.p95_hours,
@@ -2175,7 +2876,9 @@ fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
 fn load_amtrak_schedules(data_dir: &std::path::Path) -> std::collections::HashMap<String, f64> {
     let path = data_dir.join("amtrak-schedules.csv");
     let mut map = std::collections::HashMap::new();
-    let Ok(file) = std::fs::File::open(&path) else { return map; };
+    let Ok(file) = std::fs::File::open(&path) else {
+        return map;
+    };
     let mut rdr = csv::Reader::from_reader(file);
     for result in rdr.records() {
         let Ok(record) = result else { continue };
@@ -2213,18 +2916,22 @@ fn load_ev_profiles(data_dir: &std::path::Path) -> Vec<route_sim::EvProfile> {
     if let Ok(text) = std::fs::read_to_string(&path) {
         if let Ok(file) = toml::from_str::<EvProfilesFile>(&text) {
             if !file.vehicles.is_empty() {
-                return file.vehicles.into_iter().map(|r| {
-                    // Box::leak turns an owned String into a &'static str for the lifetime of the
-                    // process. Acceptable in a CLI binary that doesn't free profiles at runtime.
-                    let name: &'static str = Box::leak(r.name.into_boxed_str());
-                    route_sim::EvProfile {
-                        name,
-                        highway_range_miles: r.highway_range_miles,
-                        charge_rate_kw: r.charge_rate_kw,
-                        battery_kwh: r.battery_kwh,
-                        kwh_per_mile: r.kwh_per_mile,
-                    }
-                }).collect();
+                return file
+                    .vehicles
+                    .into_iter()
+                    .map(|r| {
+                        // Box::leak turns an owned String into a &'static str for the lifetime of the
+                        // process. Acceptable in a CLI binary that doesn't free profiles at runtime.
+                        let name: &'static str = Box::leak(r.name.into_boxed_str());
+                        route_sim::EvProfile {
+                            name,
+                            highway_range_miles: r.highway_range_miles,
+                            charge_rate_kw: r.charge_rate_kw,
+                            battery_kwh: r.battery_kwh,
+                            kwh_per_mile: r.kwh_per_mile,
+                        }
+                    })
+                    .collect();
             }
         }
     }
@@ -2241,17 +2948,23 @@ fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {
     let ff = bench.baseline.free_flow_hours;
 
     println!("Corridor: {}", bench.corridor_name);
-    println!("Baseline: Solo/GP lanes  |  free-flow {:.1}h  |  p95 {:.1}h ({:.1} days)\n",
-        ff, baseline_p95, baseline_p95 / 24.0);
+    println!(
+        "Baseline: Solo/GP lanes  |  free-flow {:.1}h  |  p95 {:.1}h ({:.1} days)\n",
+        ff,
+        baseline_p95,
+        baseline_p95 / 24.0
+    );
 
     // Header
-    println!("{:<35} {:>8}  {:>8}  {:>9}  {:>8}  {:>12}  {}",
-        "Intervention", "p50", "p95", "Δp95", "< 48h", "Capex", "48h SLA");
+    println!(
+        "{:<35} {:>8}  {:>8}  {:>9}  {:>8}  {:>12}  {}",
+        "Intervention", "p50", "p95", "Δp95", "< 48h", "Capex", "48h SLA"
+    );
     println!("{}", "─".repeat(105));
 
     // Sort by p95 ascending (best first), keeping baseline at top
     let mut results: Vec<&route_sim::InterventionResult> = bench.results.iter().collect();
-    results.sort_by(|a, b| a.dist.p95_hours.partial_cmp(&b.dist.p95_hours).unwrap());
+    results.sort_by(|a, b| a.dist.p95_hours.total_cmp(&b.dist.p95_hours));
 
     for r in &results {
         let delta_str = if r.p95_delta_hours.abs() < 0.05 {
@@ -2261,7 +2974,8 @@ fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {
         };
         let sla = if r.sla_achieved { "✓ YES" } else { "✗ no " };
         let marker = if r.sla_achieved { " ←" } else { "" };
-        println!("{:<35} {:>6.1}h  {:>6.1}h  {}  {:>6.1}%  {:>12}  {}{}",
+        println!(
+            "{:<35} {:>6.1}h  {:>6.1}h  {}  {:>6.1}%  {:>12}  {}{}",
             r.label,
             r.dist.p50_hours,
             r.dist.p95_hours,
@@ -2276,39 +2990,63 @@ fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {
     println!("\n{}", "─".repeat(105));
 
     // Summary: rank by marginal impact
-    let mut ranked: Vec<&route_sim::InterventionResult> = bench.results.iter()
-        .filter(|r| !r.label.contains("stack") && !r.label.contains("+") && !r.label.contains("Baseline"))
+    let mut ranked: Vec<&route_sim::InterventionResult> = bench
+        .results
+        .iter()
+        .filter(|r| {
+            !r.label.contains("stack") && !r.label.contains("+") && !r.label.contains("Baseline")
+        })
         .collect();
-    ranked.sort_by(|a, b| a.p95_delta_hours.partial_cmp(&b.p95_delta_hours).unwrap());
+    ranked.sort_by(|a, b| a.p95_delta_hours.total_cmp(&b.p95_delta_hours));
 
     println!("\nRanked single interventions by p95 improvement:");
-    println!("{:<35} {:>9}  {:>14}  {:>12}",
-        "Intervention", "p95 gain", "Cost/hour-saved", "Capex");
+    println!(
+        "{:<35} {:>9}  {:>14}  {:>12}",
+        "Intervention", "p95 gain", "Cost/hour-saved", "Capex"
+    );
     println!("{}", "─".repeat(80));
     for r in &ranked {
         let gain = baseline_p95 - r.dist.p95_hours;
-        if gain.abs() < 0.1 { continue; }
+        if gain.abs() < 0.1 {
+            continue;
+        }
         // Rough cost-per-hour-saved: capex / (gain × annual trips estimate)
-        let annual_trips = 8_000.0 * 365.0;  // 8k trucks/day on NY-LA
+        let annual_trips = 8_000.0 * 365.0; // 8k trucks/day on NY-LA
         let total_hours_saved = gain * annual_trips;
         // Parse capex to a number for $/hr calculation
-        let cost_per_hour = if r.capex.contains("$0") { 0.0 }
-            else if r.capex.contains("40M") { 40_000_000.0 / total_hours_saved }
-            else if r.capex.contains("200M") { 200_000_000.0 / total_hours_saved }
-            else if r.capex.contains("800M") { 800_000_000.0 / total_hours_saved }
-            else if r.capex.contains("930M") { 930_000_000.0 / total_hours_saved }
-            else if r.capex.contains("$4B") { 4_000_000_000.0 / total_hours_saved }
-            else if r.capex.contains("121B") { 121_000_000_000.0 / total_hours_saved }
-            else { -1.0 };
-        let cost_str = if cost_per_hour <= 0.0 { "free/operational".to_string() }
-            else { format!("${:.2}/hr saved", cost_per_hour) };
-        println!("{:<35} {:>+8.1}h  {:>14}  {:>12}",
-            r.label, -gain, cost_str, r.capex);
+        let cost_per_hour = if r.capex.contains("$0") {
+            0.0
+        } else if r.capex.contains("40M") {
+            40_000_000.0 / total_hours_saved
+        } else if r.capex.contains("200M") {
+            200_000_000.0 / total_hours_saved
+        } else if r.capex.contains("800M") {
+            800_000_000.0 / total_hours_saved
+        } else if r.capex.contains("930M") {
+            930_000_000.0 / total_hours_saved
+        } else if r.capex.contains("$4B") {
+            4_000_000_000.0 / total_hours_saved
+        } else if r.capex.contains("121B") {
+            121_000_000_000.0 / total_hours_saved
+        } else {
+            -1.0
+        };
+        let cost_str = if cost_per_hour <= 0.0 {
+            "free/operational".to_string()
+        } else {
+            format!("${:.2}/hr saved", cost_per_hour)
+        };
+        println!(
+            "{:<35} {:>+8.1}h  {:>14}  {:>12}",
+            r.label, -gain, cost_str, r.capex
+        );
     }
 
     // Insight summary
     println!("\n── Key findings ─────────────────────────────────────────────────────");
-    let achieves_48 = bench.results.iter()
+    let achieves_48 = bench
+        .results
+        .iter()
         .filter(|r| r.sla_achieved && !r.label.contains("Baseline"))
         .map(|r| r.label.as_str())
         .collect::<Vec<_>>();
@@ -2323,22 +3061,37 @@ fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {
     let best_value = ranked.first();
     if let Some(r) = best_value {
         let gain = baseline_p95 - r.dist.p95_hours;
-        println!("  Highest single-intervention impact: {} (−{:.1}h p95)", r.label, gain);
+        println!(
+            "  Highest single-intervention impact: {} (−{:.1}h p95)",
+            r.label, gain
+        );
     }
 }
 
 fn pct_under(d: &route_sim::TransitDistribution, threshold_h: f64) -> f64 {
     // We only have percentile snapshots; approximate from distribution shape
-    if threshold_h >= d.p99_hours { return 99.0; }
-    if threshold_h >= d.p95_hours { return 95.0; }
-    if threshold_h >= d.p90_hours { return 90.0; }
-    if threshold_h >= d.p75_hours { return 75.0; }
-    if threshold_h >= d.p50_hours { return 50.0; }
+    if threshold_h >= d.p99_hours {
+        return 99.0;
+    }
+    if threshold_h >= d.p95_hours {
+        return 95.0;
+    }
+    if threshold_h >= d.p90_hours {
+        return 90.0;
+    }
+    if threshold_h >= d.p75_hours {
+        return 75.0;
+    }
+    if threshold_h >= d.p50_hours {
+        return 50.0;
+    }
     0.0
 }
 
 fn pad_center(s: &str, width: usize) -> String {
-    if s.len() >= width { return s[..width].to_string(); }
+    if s.len() >= width {
+        return s[..width].to_string();
+    }
     let pad = width - s.len();
     let left = pad / 2;
     let right = pad - left;
@@ -2400,10 +3153,16 @@ fn load_acs_counties_for_scoring(
     manifest: &route_data::Manifest,
 ) -> Option<Vec<route_data::CountyCentroid>> {
     // Locate gazetteer
-    let gaz_path: Option<std::path::PathBuf> = std::fs::read_dir(&manifest.cache_dir).ok()
+    let gaz_path: Option<std::path::PathBuf> = std::fs::read_dir(&manifest.cache_dir)
+        .ok()
         .and_then(|entries| {
-            entries.filter_map(|e| e.ok())
-                .find(|e| e.file_name().to_string_lossy().ends_with("counties_national.txt"))
+            entries
+                .filter_map(|e| e.ok())
+                .find(|e| {
+                    e.file_name()
+                        .to_string_lossy()
+                        .ends_with("counties_national.txt")
+                })
                 .map(|e| e.path())
         });
 
@@ -2434,32 +3193,54 @@ fn load_acs_counties_for_scoring(
 /// Load ports.csv (top 25 ports + major border crossings) for B3 scoring.
 fn load_ports() -> Vec<PortLocation> {
     let path = std::path::Path::new("data/ports.csv");
-    if !path.exists() { return Vec::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    if !path.exists() {
+        return Vec::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return Vec::new();
+    };
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 5 { return None; }
+            if rec.len() < 5 {
+                return None;
+            }
             let lat: f64 = rec[1].parse().ok()?;
             let lon: f64 = rec[2].parse().ok()?;
             let rank: u32 = rec[3].parse().ok()?;
             let is_border = rec[4].contains("border");
-            Some(PortLocation { lat, lon, rank, is_border })
+            Some(PortLocation {
+                lat,
+                lon,
+                _rank: rank,
+                is_border,
+            })
         })
         .collect()
 }
 
-struct PortLocation { lat: f64, lon: f64, rank: u32, is_border: bool }
+struct PortLocation {
+    lat: f64,
+    lon: f64,
+    _rank: u32,
+    is_border: bool,
+}
 
 /// Load intermodal terminal locations from data/intermodal_terminals.csv.
 fn load_intermodal_terminals() -> Vec<(f64, f64)> {
     let path = std::path::Path::new("data/intermodal_terminals.csv");
-    if !path.exists() { return Vec::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    if !path.exists() {
+        return Vec::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return Vec::new();
+    };
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 5 { return None; }
+            if rec.len() < 5 {
+                return None;
+            }
             let lat: f64 = rec[3].parse().ok()?;
             let lon: f64 = rec[4].parse().ok()?;
             Some((lat, lon))
@@ -2474,12 +3255,26 @@ fn join_intermodal_to_corridor(
     attrs: &mut route_network::CorridorAttributes,
     terminals: &[(f64, f64)],
 ) {
-    if terminals.is_empty() { return; }
-    let corridor_nodes: Vec<(f64, f64)> = graph.graph.node_indices()
-        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
-        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+    if terminals.is_empty() {
+        return;
+    }
+    let corridor_nodes: Vec<(f64, f64)> = graph
+        .graph
+        .node_indices()
+        .filter(|&ni| {
+            graph
+                .graph
+                .edges(ni)
+                .any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| {
+            let c = graph.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
-    if corridor_nodes.is_empty() { return; }
+    if corridor_nodes.is_empty() {
+        return;
+    }
 
     fn haversine2(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
         let r = 3_958.8_f64;
@@ -2490,26 +3285,38 @@ fn join_intermodal_to_corridor(
         r * 2.0 * a.sqrt().asin()
     }
 
-    let count = terminals.iter()
+    let count = terminals
+        .iter()
         .filter(|&&(tlat, tlon)| {
-            corridor_nodes.iter().any(|&(nx, ny)| haversine2(ny, nx, tlat, tlon) <= 30.0)
+            corridor_nodes
+                .iter()
+                .any(|&(nx, ny)| haversine2(ny, nx, tlat, tlon) <= 30.0)
         })
         .count();
     attrs.intermodal_hub_count = count.min(255) as u8;
 }
 
 /// Load DCFC charging station locations from cache.
-fn load_dcfc_stations() -> Vec<(f64, f64)> {  // (lat, lon)
+fn load_dcfc_stations() -> Vec<(f64, f64)> {
+    // (lat, lon)
     let path = std::path::Path::new("data/cache/dcfc_stations.csv");
-    if !path.exists() { return Vec::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    if !path.exists() {
+        return Vec::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return Vec::new();
+    };
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 6 { return None; }
+            if rec.len() < 6 {
+                return None;
+            }
             let lat: f64 = rec[4].parse().ok()?;
             let lon: f64 = rec[5].parse().ok()?;
-            if lat.abs() < 1.0 || lon.abs() < 1.0 { return None; }
+            if lat.abs() < 1.0 || lon.abs() < 1.0 {
+                return None;
+            }
             Some((lat, lon))
         })
         .collect()
@@ -2523,14 +3330,28 @@ fn join_dcfc_to_corridor(
     attrs: &mut route_network::CorridorAttributes,
     dcfc_stations: &[(f64, f64)],
 ) {
-    if dcfc_stations.is_empty() { return; }
+    if dcfc_stations.is_empty() {
+        return;
+    }
 
     // Get all nodes on this corridor
-    let corridor_nodes: Vec<(f64, f64)> = graph.graph.node_indices()
-        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
-        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+    let corridor_nodes: Vec<(f64, f64)> = graph
+        .graph
+        .node_indices()
+        .filter(|&ni| {
+            graph
+                .graph
+                .edges(ni)
+                .any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| {
+            let c = graph.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
-    if corridor_nodes.is_empty() { return; }
+    if corridor_nodes.is_empty() {
+        return;
+    }
 
     fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
         let r = 3_958.8_f64;
@@ -2544,8 +3365,12 @@ fn join_dcfc_to_corridor(
     // Count DCFC stations within 5 miles of any corridor node
     let mut count = 0u32;
     for &(slat, slon) in dcfc_stations {
-        let near = corridor_nodes.iter().any(|&(nx, ny)| haversine(ny, nx, slat, slon) <= 5.0);
-        if near { count += 1; }
+        let near = corridor_nodes
+            .iter()
+            .any(|&(nx, ny)| haversine(ny, nx, slat, slon) <= 5.0);
+        if near {
+            count += 1;
+        }
     }
 
     if corridor_miles > 0.0 {
@@ -2561,14 +3386,28 @@ fn join_port_access_to_corridor(
     attrs: &mut route_network::CorridorAttributes,
     ports: &[PortLocation],
 ) {
-    if ports.is_empty() { return; }
+    if ports.is_empty() {
+        return;
+    }
 
     // Get terminus nodes (degree-1 interchange nodes on this route)
-    let node_coords: Vec<(f64, f64)> = graph.graph.node_indices()
-        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
-        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+    let node_coords: Vec<(f64, f64)> = graph
+        .graph
+        .node_indices()
+        .filter(|&ni| {
+            graph
+                .graph
+                .edges(ni)
+                .any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| {
+            let c = graph.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
-    if node_coords.is_empty() { return; }
+    if node_coords.is_empty() {
+        return;
+    }
 
     fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
         let r = 3_958.8_f64;
@@ -2586,10 +3425,15 @@ fn join_port_access_to_corridor(
     for port in ports {
         for &(px, py) in &node_coords {
             let d = haversine(py, px, port.lat, port.lon);
-            if d < min_dist { min_dist = d; }
+            if d < min_dist {
+                min_dist = d;
+            }
             if d <= 30.0 {
-                if port.is_border { border_flag = true; }
-                else { terminus_flag = true; }
+                if port.is_border {
+                    border_flag = true;
+                } else {
+                    terminus_flag = true;
+                }
             }
         }
     }
@@ -2614,18 +3458,30 @@ struct FemaTile {
 /// Returns an empty Vec if the file is not present or cannot be parsed.
 fn load_fema_tiles() -> Vec<FemaTile> {
     let path = std::path::Path::new("data/cache/fema_sfha_tile_counts.csv");
-    if !path.exists() { return Vec::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    if !path.exists() {
+        return Vec::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return Vec::new();
+    };
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 6 { return None; }
+            if rec.len() < 6 {
+                return None;
+            }
             let xmin: f64 = rec[1].trim().parse().ok()?;
             let ymin: f64 = rec[2].trim().parse().ok()?;
             let xmax: f64 = rec[3].trim().parse().ok()?;
             let ymax: f64 = rec[4].trim().parse().ok()?;
             let sfha_count: u32 = rec[5].trim().parse().ok()?;
-            Some(FemaTile { xmin, ymin, xmax, ymax, sfha_count })
+            Some(FemaTile {
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+                sfha_count,
+            })
         })
         .collect()
 }
@@ -2644,14 +3500,28 @@ fn join_fema_d1_to_corridor(
     attrs: &mut route_network::CorridorAttributes,
     tiles: &[FemaTile],
 ) {
-    if tiles.is_empty() { return; }
+    if tiles.is_empty() {
+        return;
+    }
 
     // Collect corridor node coords (lon = x, lat = y)
-    let node_coords: Vec<(f64, f64)> = graph.graph.node_indices()
-        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
-        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+    let node_coords: Vec<(f64, f64)> = graph
+        .graph
+        .node_indices()
+        .filter(|&ni| {
+            graph
+                .graph
+                .edges(ni)
+                .any(|er| er.weight().route_id == route_id)
+        })
+        .map(|ni| {
+            let c = graph.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
-    if node_coords.is_empty() { return; }
+    if node_coords.is_empty() {
+        return;
+    }
 
     // Compute corridor bounding box
     let corr_xmin = node_coords.iter().map(|&(x, _)| x).fold(f64::MAX, f64::min);
@@ -2660,16 +3530,18 @@ fn join_fema_d1_to_corridor(
     let corr_ymax = node_coords.iter().map(|&(_, y)| y).fold(f64::MIN, f64::max);
 
     // Sum sfha_count for overlapping tiles
-    let total_sfha: u64 = tiles.iter()
+    let total_sfha: u64 = tiles
+        .iter()
         .filter(|t| {
             // Bboxes overlap unless one is entirely outside the other on any axis
-            !(corr_xmax < t.xmin || corr_xmin > t.xmax
-              || corr_ymax < t.ymin || corr_ymin > t.ymax)
+            !(corr_xmax < t.xmin || corr_xmin > t.xmax || corr_ymax < t.ymin || corr_ymin > t.ymax)
         })
         .map(|t| t.sfha_count as u64)
         .sum();
 
-    if total_sfha == 0 { return; }
+    if total_sfha == 0 {
+        return;
+    }
 
     // Avg SFHA polygon spans ~0.3 miles → convert feature count to miles
     let sfha_miles = total_sfha as f64 * 0.3;
@@ -2699,16 +3571,29 @@ struct NbiBridgeRecord {
 /// Load NBI per-corridor summary from data/cache/nbi_bridges.csv.
 fn load_nbi_bridges() -> std::collections::HashMap<String, NbiBridgeRecord> {
     let path = std::path::Path::new("data/cache/nbi_bridges.csv");
-    if !path.exists() { return std::collections::HashMap::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    if !path.exists() {
+        return std::collections::HashMap::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return std::collections::HashMap::new();
+    };
     let mut map = std::collections::HashMap::new();
     for result in rdr.records().filter_map(|r| r.ok()) {
-        if result.len() < 5 { continue; }
+        if result.len() < 5 {
+            continue;
+        }
         let route_id = result[0].to_string();
         let bridge_count: u32 = result[1].parse().unwrap_or(0);
         let pct: f32 = result[3].parse().unwrap_or(0.0);
         let year: f32 = result[4].parse().unwrap_or(1970.0);
-        map.insert(route_id, NbiBridgeRecord { pct_bridges_poor: pct, mean_year_built: year, bridge_count });
+        map.insert(
+            route_id,
+            NbiBridgeRecord {
+                pct_bridges_poor: pct,
+                mean_year_built: year,
+                bridge_count,
+            },
+        );
     }
     map
 }
@@ -2718,11 +3603,17 @@ fn load_nbi_bridges() -> std::collections::HashMap<String, NbiBridgeRecord> {
 /// Returns route_id -> crash_rate_per_100M_VMT.
 fn load_fars_safety() -> std::collections::HashMap<String, f32> {
     let path = std::path::Path::new("data/cache/fars_2022_routes.csv");
-    if !path.exists() { return std::collections::HashMap::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    if !path.exists() {
+        return std::collections::HashMap::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return std::collections::HashMap::new();
+    };
     let mut map = std::collections::HashMap::new();
     for result in rdr.records().filter_map(|r| r.ok()) {
-        if result.len() < 3 { continue; }
+        if result.len() < 3 {
+            continue;
+        }
         let route_id = result[0].to_string();
         let rate: f32 = result[2].parse().unwrap_or(0.0);
         map.insert(route_id, rate);
@@ -2735,48 +3626,84 @@ fn load_fars_safety() -> std::collections::HashMap<String, f32> {
 /// Returns: route_id (normalized e.g. "I80") -> railroad_name (only within_50mi=true entries).
 fn load_railroad_parallels() -> std::collections::HashMap<String, String> {
     let path = std::path::Path::new("data/railroad_parallels.csv");
-    if !path.exists() { return std::collections::HashMap::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    if !path.exists() {
+        return std::collections::HashMap::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return std::collections::HashMap::new();
+    };
     let mut map = std::collections::HashMap::new();
     for result in rdr.records().filter_map(|r| r.ok()) {
-        if result.len() < 5 { continue; }
+        if result.len() < 5 {
+            continue;
+        }
         // Columns: interstate, railroad, railroad_owner, approx_parallel_miles, within_50mi, notes
         let interstate = result[0].trim().to_string();
         let railroad = result[1].trim().to_string();
         let within_50mi = result[4].trim() == "true";
         if within_50mi {
             // Normalize interstate name: "I-80" -> "I80"
-            let id: String = interstate.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_uppercase();
+            let id: String = interstate
+                .chars()
+                .filter(|c| c.is_alphanumeric())
+                .collect::<String>()
+                .to_uppercase();
             map.insert(id, railroad);
         }
     }
     map
 }
 
-struct HazardZone { wildfire: f32, tornado: f32, seismic: f32 }
+struct HazardZone {
+    wildfire: f32,
+    tornado: f32,
+    seismic: f32,
+}
 
 /// Load multi-hazard zone scores from data/hazard_zones.csv.
 /// Columns: route, wildfire_risk, tornado_risk, seismic_risk
 /// Route names like "I-5 (CA Siskiyou)" are normalized to "I5"; MAX taken for multi-segment corridors.
 fn load_hazard_zones() -> std::collections::HashMap<String, HazardZone> {
     let path = std::path::Path::new("data/hazard_zones.csv");
-    if !path.exists() { return std::collections::HashMap::new(); }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    if !path.exists() {
+        return std::collections::HashMap::new();
+    }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+        return std::collections::HashMap::new();
+    };
     let mut map = std::collections::HashMap::new();
     for result in rdr.records().filter_map(|r| r.ok()) {
-        if result.len() < 4 { continue; }
+        if result.len() < 4 {
+            continue;
+        }
         let route_raw = result[0].trim();
         // Extract base route: "I-5 (CA Siskiyou)" -> "I5"
-        let id: String = route_raw.split_whitespace().next().unwrap_or("")
-            .chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_uppercase();
+        let id: String = route_raw
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .chars()
+            .filter(|c| c.is_alphanumeric())
+            .collect::<String>()
+            .to_uppercase();
         let wf: f32 = result[1].parse().unwrap_or(0.0);
         let tor: f32 = result[2].parse().unwrap_or(0.0);
         let seis: f32 = result[3].parse().unwrap_or(0.0);
         // Take MAX for corridors spanning multiple segment entries
-        let entry = map.entry(id).or_insert(HazardZone { wildfire: 0.0, tornado: 0.0, seismic: 0.0 });
-        if wf > entry.wildfire { entry.wildfire = wf; }
-        if tor > entry.tornado { entry.tornado = tor; }
-        if seis > entry.seismic { entry.seismic = seis; }
+        let entry = map.entry(id).or_insert(HazardZone {
+            wildfire: 0.0,
+            tornado: 0.0,
+            seismic: 0.0,
+        });
+        if wf > entry.wildfire {
+            entry.wildfire = wf;
+        }
+        if tor > entry.tornado {
+            entry.tornado = tor;
+        }
+        if seis > entry.seismic {
+            entry.seismic = seis;
+        }
     }
     map
 }
@@ -2797,8 +3724,12 @@ fn join_nbi_to_corridor(
 /// Only fills in fields that are currently None.
 fn join_d3_iri_proxy(attrs: &mut route_network::CorridorAttributes) {
     // Only apply when NBI data is absent
-    if attrs.pct_bridges_poor.is_some() { return; }
-    let Some(iri) = attrs.mean_iri else { return; };
+    if attrs.pct_bridges_poor.is_some() {
+        return;
+    }
+    let Some(iri) = attrs.mean_iri else {
+        return;
+    };
 
     let estimated_year = if iri < 50.0 {
         2005.0_f32
@@ -2826,8 +3757,7 @@ fn join_acs_population_to_corridor(
     attrs: &mut route_network::CorridorAttributes,
 ) {
     if let Some(counties) = load_acs_counties_for_scoring(manifest) {
-        let (pop, rural_pop) =
-            route_network::corridor_pop_within_50mi(graph, route_id, &counties);
+        let (pop, rural_pop) = route_network::corridor_pop_within_50mi(graph, route_id, &counties);
         if pop > 0 {
             let rural_share = rural_pop as f32 / pop as f32;
             attrs.pop_within_50mi = Some(pop);
@@ -2836,15 +3766,19 @@ fn join_acs_population_to_corridor(
 
             // C3: compute median income relative to national median
             // Use population-weighted median HHI across counties in the 50-mile buffer
-            let near_counties: Vec<_> = route_network::counties_within_50mi(graph, route_id, &counties);
+            let near_counties: Vec<_> =
+                route_network::counties_within_50mi(graph, route_id, &counties);
             if !near_counties.is_empty() {
                 let total_pop_w: u64 = near_counties.iter().map(|c| c.population).sum();
                 if total_pop_w > 0 {
-                    let weighted_hhi: f64 = near_counties.iter()
+                    let weighted_hhi: f64 = near_counties
+                        .iter()
                         .map(|c| c.median_hhi as f64 * c.population as f64)
-                        .sum::<f64>() / total_pop_w as f64;
+                        .sum::<f64>()
+                        / total_pop_w as f64;
                     if weighted_hhi > 0.0 {
-                        let relative = (weighted_hhi / route_data::NATIONAL_MEDIAN_HHI_2022 as f64) as f32;
+                        let relative =
+                            (weighted_hhi / route_data::NATIONAL_MEDIAN_HHI_2022 as f64) as f32;
                         attrs.gdp_per_capita_relative = Some(relative);
                     }
                 }
@@ -2863,32 +3797,62 @@ fn join_acs_population_to_corridor(
 }
 
 /// Print a formatted score table to stdout.
-fn print_score_table(designation: &str, scores: &route_score::DimensionScores, all_estimated: bool) {
+fn print_score_table(
+    designation: &str,
+    scores: &route_score::DimensionScores,
+    all_estimated: bool,
+) {
     println!("\n┌─────────────────────────────────────────────────────────────────────┐");
-    println!("│  {} — Dimension Scores (rubric {})", designation, scores.rubric_version);
+    println!(
+        "│  {} — Dimension Scores (rubric {})",
+        designation, scores.rubric_version
+    );
     println!("├──────┬──────────────────────────────┬───────┬────────────────────────┤");
     println!("│ Dim  │ Name                         │ Score │ Est │");
     println!("├──────┼──────────────────────────────┼───────┼─────┤");
 
     let all = [
-        &scores.a1, &scores.a2, &scores.a3, &scores.a4,
-        &scores.b1, &scores.b2, &scores.b3, &scores.b4,
-        &scores.c1, &scores.c2, &scores.c3, &scores.c4,
-        &scores.d1, &scores.d2, &scores.d3,
+        &scores.a1, &scores.a2, &scores.a3, &scores.a4, &scores.b1, &scores.b2, &scores.b3,
+        &scores.b4, &scores.c1, &scores.c2, &scores.c3, &scores.c4, &scores.d1, &scores.d2,
+        &scores.d3,
     ];
 
     for sd in all {
-        let est = if sd.estimated || all_estimated { "†" } else { " " };
-        println!("│ {:4} │ {:<28} │ {:>5.1} │  {}  │",
-            sd.dim.code(), sd.dim.name(), sd.score, est);
+        let est = if sd.estimated || all_estimated {
+            "†"
+        } else {
+            " "
+        };
+        println!(
+            "│ {:4} │ {:<28} │ {:>5.1} │  {}  │",
+            sd.dim.code(),
+            sd.dim.name(),
+            sd.score,
+            est
+        );
     }
 
     println!("├──────┴──────────────────────────────┼───────┼─────┤");
-    println!("│ Band A (Flow)                        │ {:>5.1} │     │", scores.band_a());
-    println!("│ Band B (Network)                     │ {:>5.1} │     │", scores.band_b());
-    println!("│ Band C (People)                      │ {:>5.1} │     │", scores.band_c());
-    println!("│ Band D (Future)                      │ {:>5.1} │     │", scores.band_d());
-    println!("│ TOTAL                                │ {:>5.1} │ /160│", scores.total());
+    println!(
+        "│ Band A (Flow)                        │ {:>5.1} │     │",
+        scores.band_a()
+    );
+    println!(
+        "│ Band B (Network)                     │ {:>5.1} │     │",
+        scores.band_b()
+    );
+    println!(
+        "│ Band C (People)                      │ {:>5.1} │     │",
+        scores.band_c()
+    );
+    println!(
+        "│ Band D (Future)                      │ {:>5.1} │     │",
+        scores.band_d()
+    );
+    println!(
+        "│ TOTAL                                │ {:>5.1} │ /160│",
+        scores.total()
+    );
     println!("└──────────────────────────────────────┴───────┴─────┘");
 }
 
@@ -2902,7 +3866,9 @@ fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_sim::demand
     // Create O-D pairs from terminus nodes of each interstate
     for route_id in g.interstate_ids() {
         let edges = g.route_edges(&route_id);
-        if edges.len() < 2 { continue; }
+        if edges.len() < 2 {
+            continue;
+        }
 
         // Use first and last edge endpoints as a crude O-D pair
         if let (Some(&first_ei), Some(&last_ei)) = (edges.first(), edges.last()) {
@@ -2910,12 +3876,16 @@ fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_sim::demand
                 g.graph.edge_endpoints(first_ei),
                 g.graph.edge_endpoints(last_ei),
             ) {
-                let mean_aadt = edges.iter()
+                let mean_aadt = edges
+                    .iter()
                     .filter_map(|&ei| g.graph[ei].aadt.map(|a| a as f64))
-                    .sum::<f64>() / edges.len() as f64;
-                let mean_pct = edges.iter()
+                    .sum::<f64>()
+                    / edges.len() as f64;
+                let mean_pct = edges
+                    .iter()
                     .filter_map(|&ei| g.graph[ei].pct_truck)
-                    .sum::<f32>() / edges.len() as f32;
+                    .sum::<f32>()
+                    / edges.len() as f32;
 
                 if mean_aadt > 0.0 {
                     demand.push(demand_from_aadt(mean_aadt, mean_pct, &params, s, t));
@@ -2928,37 +3898,45 @@ fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_sim::demand
 
 fn print_scenario_result(result: &route_sim::ScenarioResult) {
     println!("\n=== {} ===", result.scenario_name);
-    println!("  Baseline:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
+    println!(
+        "  Baseline:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
         result.baseline.metrics.total_throughput_vph,
         result.baseline.metrics.mean_pti,
-        result.baseline.metrics.freight_cost_per_hour_m);
-    println!("  Incident:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
+        result.baseline.metrics.freight_cost_per_hour_m
+    );
+    println!(
+        "  Incident:  throughput {:.0} vph  |  PTI {:.2}  |  freight cost ${:.2}M/hr",
         result.incident.metrics.total_throughput_vph,
         result.incident.metrics.mean_pti,
-        result.incident.metrics.freight_cost_per_hour_m);
-    println!("  Cost delta: +${:.2}M/hr  |  LOS-F edges: {}  |  T90: {:.1}h",
+        result.incident.metrics.freight_cost_per_hour_m
+    );
+    println!(
+        "  Cost delta: +${:.2}M/hr  |  LOS-F edges: {}  |  T90: {:.1}h",
         result.incident.freight_cost_delta_m,
         result.incident.metrics.losf_edges,
-        result.incident.t90_hours.unwrap_or(0.0));
+        result.incident.t90_hours.unwrap_or(0.0)
+    );
 
     if let Some(ref int_result) = result.intervention {
-        println!("  Intervention: throughput {:.0} vph  |  PTI {:.2}  |  cost ${:.2}M/hr",
+        println!(
+            "  Intervention: throughput {:.0} vph  |  PTI {:.2}  |  cost ${:.2}M/hr",
             int_result.metrics.total_throughput_vph,
             int_result.metrics.mean_pti,
-            int_result.metrics.freight_cost_per_hour_m);
+            int_result.metrics.freight_cost_per_hour_m
+        );
         let improvement = result.incident.metrics.freight_cost_per_hour_m
             - int_result.metrics.freight_cost_per_hour_m;
-        println!("  Intervention saves: ${:.2}M/hr  PTI improvement: {:.2} → {:.2}",
-            improvement,
-            result.incident.metrics.mean_pti,
-            int_result.metrics.mean_pti);
+        println!(
+            "  Intervention saves: ${:.2}M/hr  PTI improvement: {:.2} → {:.2}",
+            improvement, result.incident.metrics.mean_pti, int_result.metrics.mean_pti
+        );
     }
 
     // Corridor PTIs
     if !result.incident.corridor_ptis.is_empty() {
         println!("\n  Corridor PTIs (incident):");
         let mut ptis: Vec<(&String, &f64)> = result.incident.corridor_ptis.iter().collect();
-        ptis.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
+        ptis.sort_by(|a, b| b.1.total_cmp(a.1));
         for (corridor, pti) in ptis {
             let flag = if *pti > 1.3 { " ⚠" } else { "" };
             println!("    {}: {:.2}{}", corridor, pti, flag);
@@ -2968,12 +3946,27 @@ fn print_scenario_result(result: &route_sim::ScenarioResult) {
 
 fn print_chaos_result(result: &route_sim::ChaosResult) {
     println!("\n=== Chaos Results ({} iterations) ===", result.iterations);
-    println!("  Mean freight cost delta: +${:.2}M/peak-hr", result.mean_freight_cost_delta_m);
-    println!("  P95 freight cost delta:  +${:.2}M/peak-hr", result.p95_freight_cost_delta_m);
-    println!("  Max freight cost delta:  +${:.2}M/peak-hr", result.max_freight_cost_delta_m);
+    println!(
+        "  Mean freight cost delta: +${:.2}M/peak-hr",
+        result.mean_freight_cost_delta_m
+    );
+    println!(
+        "  P95 freight cost delta:  +${:.2}M/peak-hr",
+        result.p95_freight_cost_delta_m
+    );
+    println!(
+        "  Max freight cost delta:  +${:.2}M/peak-hr",
+        result.max_freight_cost_delta_m
+    );
     println!("  Mean network PTI:        {:.2}", result.mean_network_pti);
-    println!("  Saturation fraction:     {:.1}%", result.saturation_fraction * 100.0);
+    println!(
+        "  Saturation fraction:     {:.1}%",
+        result.saturation_fraction * 100.0
+    );
     if !result.worst_case_corridors.is_empty() {
-        println!("  Worst-case corridors:    {}", result.worst_case_corridors.join(", "));
+        println!(
+            "  Worst-case corridors:    {}",
+            result.worst_case_corridors.join(", ")
+        );
     }
 }

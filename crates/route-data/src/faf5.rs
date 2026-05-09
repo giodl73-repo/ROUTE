@@ -1,6 +1,6 @@
+use anyhow::Result;
 use serde::Deserialize;
 use std::path::Path;
-use anyhow::Result;
 
 /// A FAF5 freight flow record (FAF5 v5.6, 2022 data year).
 /// Origin/destination are FAF zone codes (numeric region identifiers).
@@ -60,14 +60,62 @@ pub struct FafZone {
 pub fn faf5_zones() -> Vec<FafZone> {
     // Abbreviated — full 132-zone table to be populated from FAF5 zone shapefile
     vec![
-        FafZone { code: 11,  name: "Washington DC area".into(), lat: 38.9,  lon: -77.0,  state: "DC".into() },
-        FafZone { code: 119, name: "Rest of Virginia".into(),   lat: 37.5,  lon: -79.5,  state: "VA".into() },
-        FafZone { code: 191, name: "New York City".into(),      lat: 40.7,  lon: -74.0,  state: "NY".into() },
-        FafZone { code: 411, name: "Los Angeles area".into(),   lat: 34.05, lon: -118.2, state: "CA".into() },
-        FafZone { code: 419, name: "Rest of California".into(), lat: 36.8,  lon: -120.0, state: "CA".into() },
-        FafZone { code: 531, name: "Chicago area".into(),       lat: 41.85, lon: -87.65, state: "IL".into() },
-        FafZone { code: 481, name: "Dallas area".into(),        lat: 32.8,  lon: -96.8,  state: "TX".into() },
-        FafZone { code: 489, name: "Rest of Texas".into(),      lat: 31.0,  lon: -99.0,  state: "TX".into() },
+        FafZone {
+            code: 11,
+            name: "Washington DC area".into(),
+            lat: 38.9,
+            lon: -77.0,
+            state: "DC".into(),
+        },
+        FafZone {
+            code: 119,
+            name: "Rest of Virginia".into(),
+            lat: 37.5,
+            lon: -79.5,
+            state: "VA".into(),
+        },
+        FafZone {
+            code: 191,
+            name: "New York City".into(),
+            lat: 40.7,
+            lon: -74.0,
+            state: "NY".into(),
+        },
+        FafZone {
+            code: 411,
+            name: "Los Angeles area".into(),
+            lat: 34.05,
+            lon: -118.2,
+            state: "CA".into(),
+        },
+        FafZone {
+            code: 419,
+            name: "Rest of California".into(),
+            lat: 36.8,
+            lon: -120.0,
+            state: "CA".into(),
+        },
+        FafZone {
+            code: 531,
+            name: "Chicago area".into(),
+            lat: 41.85,
+            lon: -87.65,
+            state: "IL".into(),
+        },
+        FafZone {
+            code: 481,
+            name: "Dallas area".into(),
+            lat: 32.8,
+            lon: -96.8,
+            state: "TX".into(),
+        },
+        FafZone {
+            code: 489,
+            name: "Rest of Texas".into(),
+            lat: 31.0,
+            lon: -99.0,
+            state: "TX".into(),
+        },
         // TODO: populate remaining 124 zones from FAF5 zone shapefile
     ]
 }

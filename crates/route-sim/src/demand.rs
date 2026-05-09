@@ -1,3 +1,4 @@
+use petgraph::graph::NodeIndex;
 /// Traffic demand model.
 ///
 /// Converts FAF5 O-D commodity flows into vehicle demand on the highway network.
@@ -6,9 +7,6 @@
 ///
 /// Truck demand = FAF5 tons/year ÷ average_load_tons ÷ days_per_year ÷ peak_hour_factor
 /// Passenger demand: use HPMS AADT × (1 - pct_truck) ÷ daily_to_peak_factor
-use std::collections::HashMap;
-use petgraph::graph::NodeIndex;
-
 /// Demand between two graph nodes (vehicles per hour, peak period).
 #[derive(Debug, Clone)]
 pub struct OdDemand {
@@ -38,19 +36,16 @@ pub struct DemandParams {
 impl Default for DemandParams {
     fn default() -> Self {
         DemandParams {
-            avg_payload_tons: 18.0,      // ~18 tons average truck payload
-            days_per_year: 260.0,        // ~260 shipping days/year
-            peak_hour_factor: 0.09,      // 9% of daily in peak hour (standard K factor)
-            directional_factor: 0.60,    // 60% in peak direction (standard D factor)
+            avg_payload_tons: 18.0,   // ~18 tons average truck payload
+            days_per_year: 260.0,     // ~260 shipping days/year
+            peak_hour_factor: 0.09,   // 9% of daily in peak hour (standard K factor)
+            directional_factor: 0.60, // 60% in peak direction (standard D factor)
         }
     }
 }
 
 /// Convert annual FAF5 freight tons to peak-hour truck demand.
-pub fn tons_to_peak_trucks(
-    annual_tons: f64,
-    params: &DemandParams,
-) -> f64 {
+pub fn tons_to_peak_trucks(annual_tons: f64, params: &DemandParams) -> f64 {
     let daily_tons = annual_tons / params.days_per_year;
     let daily_trucks = daily_tons / params.avg_payload_tons;
     daily_trucks * params.peak_hour_factor * params.directional_factor

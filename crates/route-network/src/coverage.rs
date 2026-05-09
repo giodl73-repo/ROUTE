@@ -6,7 +6,6 @@
 ///   2. Geographic grid (fast proxy): 10-mile grid over bounding box.
 ///      Includes ocean cells; use only as rough estimate.
 use crate::graph::HighwayGraph;
-use petgraph::graph::NodeIndex;
 use std::collections::HashSet;
 
 /// Population-weighted coverage result (county centroid mode).
@@ -49,31 +48,50 @@ pub fn compute_pop_coverage(
     tier_filter: Option<&[&str]>,
     threshold_miles: f64,
 ) -> PopCoverageResult {
-    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+    let interchange_coords: Vec<(f64, f64)> = g
+        .graph
+        .node_indices()
         .filter(|&ni| {
             let node = &g.graph[ni];
-            if !node.is_interchange { return false; }
+            if !node.is_interchange {
+                return false;
+            }
             if let Some(filter) = tier_filter {
-                g.graph.edges(ni).any(|er| filter.iter().any(|&f| er.weight().route_id == f))
-            } else { true }
+                g.graph
+                    .edges(ni)
+                    .any(|er| filter.iter().any(|&f| er.weight().route_id == f))
+            } else {
+                true
+            }
         })
-        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .map(|ni| {
+            let c = g.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
 
     let mut result = PopCoverageResult {
         total_counties: counties.len(),
         total_population: counties.iter().map(|c| c.population).sum(),
         total_land_sqmi: counties.iter().map(|c| c.aland_sqmi).sum(),
-        counties_within_20mi: 0, counties_within_30mi: 0, counties_within_50mi: 0,
-        pop_within_20mi: 0, pop_within_30mi: 0, pop_within_50mi: 0,
-        land_within_20mi: 0.0, land_within_30mi: 0.0, land_within_50mi: 0.0,
+        counties_within_20mi: 0,
+        counties_within_30mi: 0,
+        counties_within_50mi: 0,
+        pop_within_20mi: 0,
+        pop_within_30mi: 0,
+        pop_within_50mi: 0,
+        land_within_20mi: 0.0,
+        land_within_30mi: 0.0,
+        land_within_50mi: 0.0,
         gap_counties: Vec::new(),
         max_gap_miles: 0.0,
     };
 
     for county in counties {
         let nearest = find_nearest_miles(&interchange_coords, county.lat, county.lon);
-        if nearest > result.max_gap_miles { result.max_gap_miles = nearest; }
+        if nearest > result.max_gap_miles {
+            result.max_gap_miles = nearest;
+        }
 
         if nearest <= 20.0 {
             result.counties_within_20mi += 1;
@@ -104,7 +122,9 @@ pub fn compute_pop_coverage(
         }
     }
 
-    result.gap_counties.sort_by(|a, b| b.nearest_miles.partial_cmp(&a.nearest_miles).unwrap());
+    result
+        .gap_counties
+        .sort_by(|a, b| b.nearest_miles.total_cmp(&a.nearest_miles));
     result
 }
 
@@ -156,17 +176,19 @@ pub fn compute_coverage(
     // Canadian/Mexican territory in the bounding box. Results should be
     // interpreted as a geometric proxy only. For population-weighted analysis,
     // use Census county centroid mode (planned for B.1 paper computation).
-    const LAT_MIN: f64 = 25.0;  // South Florida (excludes most ocean south of FL)
-    const LAT_MAX: f64 = 49.0;  // Northern border
+    const LAT_MIN: f64 = 25.0; // South Florida (excludes most ocean south of FL)
+    const LAT_MAX: f64 = 49.0; // Northern border
     const LON_MIN: f64 = -124.8; // Pacific coast
-    const LON_MAX: f64 = -67.5;  // Eastern Maine (excludes most Atlantic Ocean)
+    const LON_MAX: f64 = -67.5; // Eastern Maine (excludes most Atlantic Ocean)
 
     // Degree equivalents of grid_miles
     const MILES_PER_DEG_LAT: f64 = 69.0;
     let grid_deg_lat = grid_miles / MILES_PER_DEG_LAT;
 
     // Collect interchange node positions, filtered by tier if requested
-    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+    let interchange_coords: Vec<(f64, f64)> = g
+        .graph
+        .node_indices()
         .filter(|&ni| {
             let node = &g.graph[ni];
             if !node.is_interchange {
@@ -175,9 +197,9 @@ pub fn compute_coverage(
             // Apply tier filter if provided
             if let Some(filter) = tier_filter {
                 // Check if any edge at this node belongs to a filtered route
-                g.graph.edges(ni).any(|er| {
-                    filter.iter().any(|&f| er.weight().route_id == f)
-                })
+                g.graph
+                    .edges(ni)
+                    .any(|er| filter.iter().any(|&f| er.weight().route_id == f))
             } else {
                 true
             }
@@ -224,10 +246,18 @@ pub fn compute_coverage(
 
             total += 1;
 
-            if nearest <= 20.0 { within_20 += 1; }
-            if nearest <= 30.0 { within_30 += 1; }
-            if nearest <= 50.0 { within_50 += 1; }
-            if nearest > max_gap { max_gap = nearest; }
+            if nearest <= 20.0 {
+                within_20 += 1;
+            }
+            if nearest <= 30.0 {
+                within_30 += 1;
+            }
+            if nearest <= 50.0 {
+                within_50 += 1;
+            }
+            if nearest > max_gap {
+                max_gap = nearest;
+            }
 
             if nearest > threshold_miles {
                 gap_cells.push(GapCell {
@@ -263,14 +293,14 @@ fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     let dlat = (lat2 - lat1).to_radians();
     let dlon = (lon2 - lon1).to_radians();
     let a = (dlat / 2.0).sin().powi(2)
-        + lat1.to_radians().cos() * lat2.to_radians().cos()
-        * (dlon / 2.0).sin().powi(2);
+        + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
     2.0 * R * a.sqrt().asin()
 }
 
 /// Find distance (miles) to nearest interchange from a grid point.
 fn find_nearest_miles(coords: &[(f64, f64)], lat: f64, lon: f64) -> f64 {
-    coords.iter()
+    coords
+        .iter()
         .map(|&(ilon, ilat)| haversine_miles(lat, lon, ilat, ilon))
         .fold(f64::MAX, f64::min)
 }
@@ -289,14 +319,21 @@ pub fn corridor_pop_within_50mi(
     counties: &[route_data::CountyCentroid],
 ) -> (u64, u64) {
     // Collect interchange node coordinates for this corridor only
-    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+    let interchange_coords: Vec<(f64, f64)> = g
+        .graph
+        .node_indices()
         .filter(|&ni| {
             let node = &g.graph[ni];
-            if !node.is_interchange { return false; }
+            if !node.is_interchange {
+                return false;
+            }
             // Keep node if any adjacent edge belongs to this route
             g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
         })
-        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .map(|ni| {
+            let c = g.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
 
     if interchange_coords.is_empty() {
@@ -331,13 +368,20 @@ pub fn counties_within_50mi<'a>(
     route_id: &str,
     counties: &'a [route_data::CountyCentroid],
 ) -> Vec<&'a route_data::CountyCentroid> {
-    let interchange_coords: Vec<(f64, f64)> = g.graph.node_indices()
+    let interchange_coords: Vec<(f64, f64)> = g
+        .graph
+        .node_indices()
         .filter(|&ni| {
             let node = &g.graph[ni];
-            if !node.is_interchange { return false; }
+            if !node.is_interchange {
+                return false;
+            }
             g.graph.edges(ni).any(|er| er.weight().route_id == route_id)
         })
-        .map(|ni| { let c = g.graph[ni].coord; (c.x, c.y) })
+        .map(|ni| {
+            let c = g.graph[ni].coord;
+            (c.x, c.y)
+        })
         .collect();
 
     if interchange_coords.is_empty() {
@@ -347,7 +391,9 @@ pub fn counties_within_50mi<'a>(
     let mut seen: HashSet<&str> = HashSet::new();
     let mut result = Vec::new();
     for county in counties {
-        if seen.contains(county.geoid.as_str()) { continue; }
+        if seen.contains(county.geoid.as_str()) {
+            continue;
+        }
         if find_nearest_miles(&interchange_coords, county.lat, county.lon) <= 50.0 {
             seen.insert(&county.geoid);
             result.push(county);

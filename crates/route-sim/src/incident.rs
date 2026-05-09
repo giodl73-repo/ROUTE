@@ -9,8 +9,8 @@
 ///   - Weather: capacity drops based on weather type (snow → -30%, rain → -10%)
 ///   - Bridge failure: structural closure of specific bridge segments
 use petgraph::graph::EdgeIndex;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 /// Specification for a simulated incident.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,7 +18,7 @@ pub struct IncidentSpec {
     /// Human-readable name for reporting
     pub name: String,
     /// Edges affected by the incident
-    pub affected_edges: Vec<u64>,  // edge IDs (not indices — stable across graph rebuilds)
+    pub affected_edges: Vec<u64>, // edge IDs (not indices — stable across graph rebuilds)
     pub incident_type: IncidentType,
     /// Duration in hours
     pub duration_hours: f64,
@@ -36,28 +36,31 @@ pub enum IncidentType {
     /// Weather event (Donner Pass winter closure, Gulf Coast hurricane, etc.)
     Weather { weather_type: WeatherType },
     /// Construction (multi-month reduced capacity)
-    Construction { capacity_fraction: f64, duration_days: f64 },
+    Construction {
+        capacity_fraction: f64,
+        duration_days: f64,
+    },
     /// Bridge failure (closure of specific structure)
     BridgeFailure { bridge_id: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WeatherType {
-    SnowIce,          // -30% capacity
-    HeavyRain,        // -10% capacity
-    Fog,              // -20% capacity
-    ExtremeCold,      // -5% capacity (equipment issues)
-    Hurricane,        // full closure of affected segments
+    SnowIce,     // -30% capacity
+    HeavyRain,   // -10% capacity
+    Fog,         // -20% capacity
+    ExtremeCold, // -5% capacity (equipment issues)
+    Hurricane,   // full closure of affected segments
 }
 
 impl WeatherType {
     pub fn capacity_fraction(&self) -> f64 {
         match self {
-            WeatherType::SnowIce    => 0.70,
-            WeatherType::HeavyRain  => 0.90,
-            WeatherType::Fog        => 0.80,
+            WeatherType::SnowIce => 0.70,
+            WeatherType::HeavyRain => 0.90,
+            WeatherType::Fog => 0.80,
             WeatherType::ExtremeCold => 0.95,
-            WeatherType::Hurricane  => 0.0,
+            WeatherType::Hurricane => 0.0,
         }
     }
 }
@@ -68,7 +71,9 @@ impl IncidentType {
             IncidentType::Closure => 0.0,
             IncidentType::LaneClosure { remaining_fraction } => *remaining_fraction,
             IncidentType::Weather { weather_type } => weather_type.capacity_fraction(),
-            IncidentType::Construction { capacity_fraction, .. } => *capacity_fraction,
+            IncidentType::Construction {
+                capacity_fraction, ..
+            } => *capacity_fraction,
             IncidentType::BridgeFailure { .. } => 0.0,
         }
     }
