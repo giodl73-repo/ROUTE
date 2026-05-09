@@ -259,6 +259,7 @@ pub fn run_scenario(
 #[cfg(test)]
 mod tests {
     use super::{scenario_validation_warnings, Scenario};
+    use crate::incident::{IncidentSpec, IncidentType};
 
     #[test]
     fn embedded_scenarios_parse() {
@@ -271,8 +272,21 @@ mod tests {
 
     #[test]
     fn scenario_validation_flags_unbound_incident_edges() {
-        let toml = crate::scenarios::load_scenario("donner-closure").expect("scenario exists");
-        let scenario: Scenario = toml::from_str(toml).expect("scenario parses");
+        let scenario = Scenario {
+            name: "unbound".to_string(),
+            description: "test".to_string(),
+            incident: IncidentSpec {
+                name: "unbound incident".to_string(),
+                affected_edges: Vec::new(),
+                incident_type: IncidentType::Closure,
+                duration_hours: 1.0,
+                annual_occurrences: 1.0,
+            },
+            intervention: None,
+            report_corridors: vec!["I80".to_string()],
+            fw_max_iter: 1,
+            fw_tolerance: 0.01,
+        };
         let warnings = scenario_validation_warnings(&scenario);
 
         assert!(warnings.iter().any(|w| w.contains("no affected_edges")));

@@ -6,7 +6,7 @@ report_corridors = ["I75", "I85", "I285", "I20"]
 
 [incident]
 name = "Atlanta AM peak demand surge"
-affected_edges = []
+affected_edges = [3766, 3764, 3765, 1073, 1072]
 duration_hours = 3.0
 annual_occurrences = 260.0
 

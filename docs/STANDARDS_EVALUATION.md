@@ -81,7 +81,7 @@ For now, SLA and throughput outputs should be labeled Heuristic unless they are 
 
 The scenario library should report confidence labels with the output. A scenario can fail and still be valuable if it tells us which standard does not yet earn its place.
 
-Important current limitation: most embedded TOML scenarios are named shells until their `affected_edges` fields are bound to stable graph edge IDs. `route sim list` reports this status, and `route sim scenario ...` prints warnings before execution. A scenario with no affected edges is not an L2 pressure test; it is a fixture waiting for graph binding. The Des Moines T1/T1 fixture is the first bound-edge scenario, but its diamond intervention is still a simplified capacity-restoration model rather than engineered flyover geometry.
+Important current limitation: embedded TOML scenarios now bind stable graph edge IDs, but their intervention and demand models are still heuristic. `route sim list` reports definition readiness, and `route sim scenario ...` prints warnings before execution when a scenario is only a shell. A scenario with no affected edges is not an L2 pressure test; it is a fixture waiting for graph binding. A bound-edge scenario still needs focused demand and acceptance gates before it becomes a proof-grade L2 result; the Donner and Atlanta runs currently show no throughput delta under the synthetic demand proxy.
 
 ## Current Conclusions
 
