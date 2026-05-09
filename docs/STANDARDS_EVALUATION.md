@@ -138,6 +138,7 @@ Access notes from source probing:
 - DriveTexas: the documentation shell at `https://api.drivetexas.org/` is public, but direct incident and road-condition API paths returned 401 on May 9, 2026; treat it as key-gated.
 - OHGO: the API documentation requires registration/API key, and direct incident access returned 401 on May 9, 2026; treat it as key-gated.
 - 511 SF Bay: the open-data portal says data is free using a token, and direct traffic-event API access returned 401 on May 9, 2026; treat it as key-gated with possible archive access after token setup.
+- WSDOT: the Traveler API help page is public, but HighwayAlerts JSON access returned 401 without an access code on May 9, 2026; treat it as key-gated.
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 
