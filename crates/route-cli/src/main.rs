@@ -198,6 +198,29 @@ enum Commands {
         tier: u8,
     },
 
+    /// Show proof status for Interstate 2.0 standards
+    StandardsProof {
+        /// Path to standards proof ledger CSV
+        #[arg(
+            long,
+            default_value = "data/standards-proof-ledger.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Filter by tier, e.g. T1
+        #[arg(long)]
+        tier: Option<String>,
+        /// Filter by standard family, e.g. resilience
+        #[arg(long)]
+        family: Option<String>,
+        /// Print full proof records, including outcome, mechanism, gate, and next test
+        #[arg(long)]
+        details: bool,
+        /// Fail if unresolved standards would be promoted into Blueprint
+        #[arg(long)]
+        gate_blueprint: bool,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1703,6 +1726,40 @@ fn main() -> Result<()> {
             }
             _ => println!("Error: tier must be 1, 2, 3, or 4"),
         },
+
+        Commands::StandardsProof {
+            ledger,
+            tier,
+            family,
+            details,
+            gate_blueprint,
+        } => {
+            let rows = load_standards_proof_ledger(&ledger)
+                .with_context(|| format!("loading standards proof ledger {}", ledger.display()))?;
+            print_standards_proof(&rows, tier.as_deref(), family.as_deref(), details);
+
+            if gate_blueprint {
+                let failures = standards_blueprint_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Blueprint gate: FAIL");
+                    println!(
+                        "  {} standards still have unresolved proof gaps.",
+                        failures.len()
+                    );
+                    println!("  First unresolved standards:");
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{} {}]: {}",
+                            row.standard_id, row.tier, row.evidence_level, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("standards proof gate failed");
+                }
+                println!();
+                println!("Blueprint gate: PASS");
+            }
+        }
 
         Commands::Sim { mode } => {
             match mode {
@@ -4049,13 +4106,115 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     ids
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct StandardsProofRow {
+    standard_id: String,
+    tier: String,
+    standard_family: String,
+    standard: String,
+    outcome: String,
+    mechanism: String,
+    primary_stressor: String,
+    acceptance_gate: String,
+    evidence_level: String,
+    current_artifact: String,
+    blocking_gap: String,
+    next_command_or_test: String,
+    owner_track: String,
+}
+
+fn load_standards_proof_ledger(path: &Path) -> Result<Vec<StandardsProofRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_standards_proof_ledger(file)
+}
+
+fn parse_standards_proof_ledger<R: std::io::Read>(reader: R) -> Result<Vec<StandardsProofRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn standards_blueprint_gate_failures(rows: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
+    rows.iter()
+        .filter(|row| {
+            !row.evidence_level.eq_ignore_ascii_case("Implemented")
+                || !row.blocking_gap.trim().is_empty()
+        })
+        .collect()
+}
+
+fn print_standards_proof(
+    rows: &[StandardsProofRow],
+    tier: Option<&str>,
+    family: Option<&str>,
+    details: bool,
+) {
+    let filtered: Vec<&StandardsProofRow> = rows
+        .iter()
+        .filter(|row| {
+            tier.map(|t| row.tier.eq_ignore_ascii_case(t))
+                .unwrap_or(true)
+                && family
+                    .map(|f| row.standard_family.eq_ignore_ascii_case(f))
+                    .unwrap_or(true)
+        })
+        .collect();
+
+    println!("route standards-proof");
+    println!(
+        "  standards: {} shown / {} total",
+        filtered.len(),
+        rows.len()
+    );
+
+    let mut by_level: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    for row in &filtered {
+        *by_level.entry(row.evidence_level.clone()).or_insert(0) += 1;
+    }
+    if !by_level.is_empty() {
+        let summary = by_level
+            .iter()
+            .map(|(level, count)| format!("{level}: {count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        println!("  evidence: {summary}");
+    }
+    println!();
+
+    println!(
+        "{:<24} {:<4} {:<12} {:<11} {}",
+        "Standard", "Tier", "Family", "Evidence", "Blocking gap"
+    );
+    println!("{}", "-".repeat(110));
+    for row in filtered {
+        println!(
+            "{:<24} {:<4} {:<12} {:<11} {}",
+            row.standard_id, row.tier, row.standard_family, row.evidence_level, row.blocking_gap
+        );
+        if details {
+            println!("  standard: {}", row.standard);
+            println!("  outcome: {}", row.outcome);
+            println!("  mechanism: {}", row.mechanism);
+            println!("  stressor: {}", row.primary_stressor);
+            println!("  gate: {}", row.acceptance_gate);
+            println!("  artifact: {}", row.current_artifact);
+            println!("  next: {}", row.next_command_or_test);
+            println!("  owner: {}", row.owner_track);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, rounded_score, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger, rounded_score,
+        standards_blueprint_gate_failures, tier_for_score, write_tier_artifacts_to, FemaTile,
+        GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -4182,6 +4341,24 @@ mod tests {
         assert_eq!(route_order, ["I3", "I1", "I2"]);
 
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn standards_proof_ledger_parses_and_gates_unresolved_rows() {
+        let csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-DIAMOND-K,T1,resilience,k >= 3,outcome,mechanism,closure,gate,Heuristic,artifact,manual validation needed,next,B.4
+T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,next,B.1
+";
+
+        let rows = parse_standards_proof_ledger(csv.as_bytes()).expect("parse proof ledger");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].standard_id, "T1-DIAMOND-K");
+        assert_eq!(rows[1].evidence_level, "Implemented");
+
+        let failures = standards_blueprint_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].standard_id, "T1-DIAMOND-K");
     }
 
     #[test]
