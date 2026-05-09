@@ -119,6 +119,7 @@ route t1-failures --needs-sources
 route t1-failure-sources
 route t1-source-health
 route t1-source-health --blockers --details
+route t1-source-health --gate-ingestion
 route t1-failure-events
 route t1-failure-events --write-ledger data/t1-intersection-failures.csv
 route t1-fetch-iowa511
@@ -129,6 +130,8 @@ route t1-accumulate-events --input data/cache/iowa511-t1-failure-events.csv
 ```
 
 `route t1-fetch-iowa511` caches the current public Iowa DOT 511 ArcGIS event layer. `route t1-import-iowa511` normalizes nearby I-35/I-80 records into the T1/T1 event schema for source accumulation. `route t1-fetch-tdot-smartway` and `route t1-import-tdot-smartway` define the same path for the TDOT SmartWay line-event layer around the Knoxville I-40/I-75 site, but the live TDOT query currently needs endpoint tuning or an alternate export path before it is as reliable as Iowa. As of May 9, 2026, TDOT FeatureServer and MapServer query attempts time out or return ArcGIS query errors even for count-only or one-row queries, while the service metadata remains public. `route t1-accumulate-events` merges generated source rows into the canonical event table and dedupes repeated site/event IDs. These feeds are live, not historical archives, so cache snapshots should be treated as observation samples until a polling or archive strategy creates a stable annual history.
+
+`route t1-source-health --gate-ingestion` is expected to fail until every source needed for Blueprint-grade T1/T1 claims has either a working importer, a documented historical extract, or an explicit downgraded status.
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 

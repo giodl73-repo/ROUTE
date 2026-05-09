@@ -263,6 +263,9 @@ enum Commands {
         /// Print detailed blocker and next-step fields
         #[arg(long)]
         details: bool,
+        /// Exit with an error if any source-health blockers are present
+        #[arg(long)]
+        gate_ingestion: bool,
     },
 
     /// Summarize raw T1/T1 failure event observations into rates and durations
@@ -1991,10 +1994,20 @@ fn run_cli() -> Result<()> {
             ledger,
             blockers,
             details,
+            gate_ingestion,
         } => {
             let rows = load_t1_source_health(&ledger)
                 .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
             print_t1_source_health(&rows, blockers, details);
+            if gate_ingestion {
+                let blocked = t1_source_health_blockers(&rows);
+                if !blocked.is_empty() {
+                    anyhow::bail!(
+                        "{} T1 source-health blocker(s) remain; run `route t1-source-health --blockers --details`",
+                        blocked.len()
+                    );
+                }
+            }
         }
 
         Commands::T1FailureEvents {
@@ -4890,10 +4903,12 @@ fn parse_t1_source_health<R: std::io::Read>(reader: R) -> Result<Vec<T1SourceHea
 }
 
 fn print_t1_source_health(rows: &[T1SourceHealthRow], blockers: bool, details: bool) {
-    let filtered = rows
-        .iter()
-        .filter(|row| !blockers || t1_source_health_is_blocked(row))
-        .collect::<Vec<_>>();
+    let blocked = t1_source_health_blockers(rows);
+    let filtered = if blockers {
+        blocked.clone()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
 
     let mut by_access: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
@@ -4933,6 +4948,12 @@ fn print_t1_source_health(rows: &[T1SourceHealthRow], blockers: bool, details: b
             println!("  next: {}", row.next_step);
         }
     }
+}
+
+fn t1_source_health_blockers(rows: &[T1SourceHealthRow]) -> Vec<&T1SourceHealthRow> {
+    rows.iter()
+        .filter(|row| t1_source_health_is_blocked(row))
+        .collect()
 }
 
 fn t1_source_health_is_blocked(row: &T1SourceHealthRow) -> bool {
@@ -5861,6 +5882,7 @@ T1X-I40-I75,TDOT SmartWay,https://example.invalid,live_event_feed,blocked_query,
         assert_eq!(rows[0].access_health, "live");
         assert!(!super::t1_source_health_is_blocked(&rows[0]));
         assert!(super::t1_source_health_is_blocked(&rows[1]));
+        assert_eq!(super::t1_source_health_blockers(&rows).len(), 1);
     }
 
     #[test]
