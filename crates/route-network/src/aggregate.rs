@@ -122,6 +122,7 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         mean_speed_limit,
         mean_lane_count,
         annual_freight_value_b: None,
+        freight_value_is_hpms_proxy: false,
         mean_pct_truck,
         p90_pti,
         mean_tti,

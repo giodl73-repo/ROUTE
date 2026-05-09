@@ -171,17 +171,35 @@ fn score_a1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 
 fn score_a2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     match attrs.annual_freight_value_b {
-        Some(val) => ScoredDimension {
-            dim: Dimension::A2FreightIntensity,
-            score: cfg.a2.score(val),
-            justification: format!(
-                "Annual freight value ${val:.1}B (FAF5 zone-traversal estimate†); \
-                 mean truck share {:.0}%.",
-                attrs.mean_pct_truck.unwrap_or(0.0) * 100.0
-            ),
-            sources: vec!["FAF5 v5.6 BTS/FHWA 2022".into()],
-            estimated: true, // zone-traversal is always an estimate in v1.0
-        },
+        Some(val) => {
+            let (justification, sources) = if attrs.freight_value_is_hpms_proxy {
+                (
+                    format!(
+                        "Annual freight value proxy ${val:.1}B from HPMS truck AADT \
+                         (16 tons/truck × $1,000/ton); mean truck share {:.0}%.",
+                        attrs.mean_pct_truck.unwrap_or(0.0) * 100.0
+                    ),
+                    vec!["FHWA HPMS 2023 truck AADT".into()],
+                )
+            } else {
+                (
+                    format!(
+                        "Annual freight value ${val:.1}B (FAF5 zone-traversal estimate†); \
+                         mean truck share {:.0}%.",
+                        attrs.mean_pct_truck.unwrap_or(0.0) * 100.0
+                    ),
+                    vec!["FAF5 v5.6 BTS/FHWA 2022".into()],
+                )
+            };
+
+            ScoredDimension {
+                dim: Dimension::A2FreightIntensity,
+                score: cfg.a2.score(val),
+                justification,
+                sources,
+                estimated: true, // FAF5 traversal and HPMS cargo-value proxy are both estimates
+            }
+        }
         None => estimated(
             Dimension::A2FreightIntensity,
             "FAF5 flow attribution unavailable.",

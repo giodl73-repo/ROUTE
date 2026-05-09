@@ -166,7 +166,8 @@ pub struct CorridorAttributes {
     // Flow (Band A) — segment-level data aggregated per §4.5
     pub p90_aadt: Option<f64>,              // 90th-percentile segment AADT (A1 primary)
     pub mean_aadt: Option<f64>,             // mean AADT (context only)
-    pub annual_freight_value_b: Option<f64>,// annual freight value in $B (A2 primary, from FAF5)
+    pub annual_freight_value_b: Option<f64>,// annual freight value in $B (A2 primary, from FAF5 or HPMS proxy)
+    pub freight_value_is_hpms_proxy: bool,  // true when estimated from truck AADT
     pub mean_pct_truck: Option<f32>,        // 0.0–1.0; A2 secondary
     pub p90_tti: Option<f32>,               // 90th-pct Travel Time Index (A3 primary)
     pub mean_pti: Option<f32>,              // mean Planning Time Index (A3 secondary)
@@ -280,7 +281,7 @@ pub struct ScoredDimension {
 
 **A1 — Throughput Gap**: primary input `p90_aadt`. If `lane_count` is available, compute V/C ratio (p90_aadt / (lane_count × 1,900 pcph per lane)); score from V/C ratio instead of raw AADT. If `lane_count` is None (common), fall back to raw `p90_aadt` with `estimated: true`.
 
-**A2 — Freight Intensity**: primary input `annual_freight_value_b` (FAF5, marked estimated in v1.0); secondary `mean_pct_truck × mean_aadt`. Score from value; report truck count in justification.
+**A2 — Freight Intensity**: primary input `annual_freight_value_b` (FAF5, marked estimated in v1.0). When FAF5 is unavailable, the HPMS fallback estimates cargo value from representative daily truck crossings (`AADT × truck share × 365 × 16 tons/truck × $1,000/ton`) and marks `freight_value_is_hpms_proxy = true`; do not multiply this fallback by corridor miles, because the A2 anchors are annual commodity value, not truck-mile operating cost. Secondary context: `mean_pct_truck × mean_aadt`.
 
 **A3 — Speed Reliability**: primary input `p90_tti` (FHWA FPM Planning Time Index). If missing, fall back to `mean_iri` as a pavement-quality proxy with `estimated: true`. IRI and speed reliability are correlated on rural segments; the fallback is weakest on urban congested corridors.
 

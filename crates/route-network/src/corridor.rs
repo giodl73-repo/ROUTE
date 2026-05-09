@@ -41,6 +41,8 @@ pub struct CorridorAttributes {
     /// Annual freight value in $B, FAF5 zone-traversal estimate — primary A2 input
     /// Always estimated: true in v1.0 (zone-traversal approximation)
     pub annual_freight_value_b: Option<f64>,
+    /// True when annual_freight_value_b is estimated from HPMS truck AADT rather than FAF5.
+    pub freight_value_is_hpms_proxy: bool,
     /// Mean truck proportion 0.0–1.0 — A2 secondary
     pub mean_pct_truck: Option<f32>,
     /// 90th-percentile Planning Time Index (95th-pct / free-flow travel time) — primary A3
