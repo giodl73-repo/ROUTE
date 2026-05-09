@@ -6,6 +6,8 @@ The machine-readable ledger is `data/standards-proof-ledger.csv`.
 
 The L2 scenario catalog is `data/pressure-test-scenarios.csv`.
 
+The T1/T1 failure-rate and reroute evidence ledger is `data/t1-intersection-failures.csv`.
+
 ## Evaluation Rule
 
 A standard is ready for Blueprint only when it has:
@@ -53,6 +55,8 @@ The acceptance gate is stricter than graph connectivity alone:
 5. The T1 recovery target must be tested: at least 80% of baseline throughput restored within 4 hours, or the claim is labeled unproven.
 
 Current status: Heuristic. `route diamond --at all`, `data/t1-intersections.md`, and the B.4 paper establish the right framing, but manual validation and usable-throughput scenarios are still needed before this becomes a Blueprint-grade claim.
+
+The failure-rate evidence is currently the weakest piece. `data/t1-intersection-failures.csv` separates modeled scenario outputs from empirical evidence. Most rows are `source_needed`; the Des Moines row is only `modeled`, because it comes from `route sim scenario des-moines-interchange --intervention` rather than observed closure history.
 
 ## SLA And Throughput Proof
 
@@ -106,6 +110,8 @@ route standards-proof
 route standards-proof --tier T1 --family resilience
 route standards-proof --tier T1 --family resilience --details
 route standards-proof --gate-blueprint
+route t1-failures
+route t1-failures --needs-sources
 ```
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.

@@ -221,6 +221,23 @@ enum Commands {
         gate_blueprint: bool,
     },
 
+    /// Show T1/T1 failure-rate and reroute evidence status
+    T1Failures {
+        /// Path to T1/T1 failure evidence ledger CSV
+        #[arg(
+            long,
+            default_value = "data/t1-intersection-failures.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows that still need empirical sources
+        #[arg(long)]
+        needs_sources: bool,
+        /// Print detailed blocker and next-evidence fields
+        #[arg(long)]
+        details: bool,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1777,6 +1794,16 @@ fn main() -> Result<()> {
                 println!();
                 println!("Blueprint gate: PASS");
             }
+        }
+
+        Commands::T1Failures {
+            ledger,
+            needs_sources,
+            details,
+        } => {
+            let rows = load_t1_failure_ledger(&ledger)
+                .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
+            print_t1_failures(&rows, needs_sources, details);
         }
 
         Commands::Sim { mode } => {
@@ -4367,14 +4394,114 @@ fn print_standards_proof(
     }
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1FailureRow {
+    site_id: String,
+    intersection: String,
+    location: String,
+    failure_mode: String,
+    annual_probability: Option<f64>,
+    duration_p50_hours: Option<f64>,
+    duration_p95_hours: Option<f64>,
+    throughput_retention_current: Option<f64>,
+    throughput_retention_i2: Option<f64>,
+    reroute_time_p50_hours: Option<f64>,
+    reroute_time_p95_hours: Option<f64>,
+    source_status: String,
+    confidence: String,
+    current_artifact: String,
+    blocking_gap: String,
+    next_evidence_step: String,
+}
+
+fn load_t1_failure_ledger(path: &Path) -> Result<Vec<T1FailureRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_failure_ledger(file)
+}
+
+fn parse_t1_failure_ledger<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_failures(rows: &[T1FailureRow], needs_sources: bool, details: bool) {
+    let filtered: Vec<&T1FailureRow> = rows
+        .iter()
+        .filter(|row| !needs_sources || row.source_status.eq_ignore_ascii_case("source_needed"))
+        .collect();
+
+    let empirical = rows
+        .iter()
+        .filter(|row| row.source_status.eq_ignore_ascii_case("empirical"))
+        .count();
+    let modeled = rows
+        .iter()
+        .filter(|row| row.source_status.eq_ignore_ascii_case("modeled"))
+        .count();
+    let source_needed = rows
+        .iter()
+        .filter(|row| row.source_status.eq_ignore_ascii_case("source_needed"))
+        .count();
+
+    println!("route t1-failures");
+    println!("  sites: {} shown / {} total", filtered.len(), rows.len());
+    println!("  evidence: empirical {empirical}, modeled {modeled}, source_needed {source_needed}");
+    println!();
+    println!(
+        "{:<18} {:<14} {:<18} {:<13} {:>8} {:>8} {:>8} {}",
+        "Site", "Intersection", "Location", "Source", "P_fail", "KeepNow", "KeepI2", "Gap"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<14} {:<18} {:<13} {:>8} {:>8} {:>8} {}",
+            row.site_id,
+            row.intersection,
+            row.location,
+            row.source_status,
+            fmt_opt(row.annual_probability),
+            fmt_opt(row.throughput_retention_current),
+            fmt_opt(row.throughput_retention_i2),
+            row.blocking_gap
+        );
+        if details {
+            println!("  failure mode: {}", row.failure_mode);
+            println!(
+                "  duration p50/p95: {} / {} h",
+                fmt_opt(row.duration_p50_hours),
+                fmt_opt(row.duration_p95_hours)
+            );
+            println!(
+                "  reroute p50/p95: {} / {} h",
+                fmt_opt(row.reroute_time_p50_hours),
+                fmt_opt(row.reroute_time_p95_hours)
+            );
+            println!("  confidence: {}", row.confidence);
+            println!("  artifact: {}", row.current_artifact);
+            println!("  next: {}", row.next_evidence_step);
+        }
+    }
+}
+
+fn fmt_opt(value: Option<f64>) -> String {
+    value
+        .map(|v| format!("{v:.3}"))
+        .unwrap_or_else(|| "-".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger, rounded_score,
-        scenario_edge_candidates, standards_blueprint_gate_failures, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger,
+        parse_t1_failure_ledger, rounded_score, scenario_edge_candidates,
+        standards_blueprint_gate_failures, tier_for_score, write_tier_artifacts_to, FemaTile,
+        GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -4519,6 +4646,22 @@ T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,
         let failures = standards_blueprint_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].standard_id, "T1-DIAMOND-K");
+    }
+
+    #[test]
+    fn t1_failure_ledger_parses_optional_empirical_fields() {
+        let csv = "\
+site_id,intersection,location,failure_mode,annual_probability,duration_p50_hours,duration_p95_hours,throughput_retention_current,throughput_retention_i2,reroute_time_p50_hours,reroute_time_p95_hours,source_status,confidence,current_artifact,blocking_gap,next_evidence_step
+T1X-I35-I80,I-35 x I-80,Des Moines IA,closure,,,,0.962,1.000,0.9,,modeled,low,artifact,gap,next
+T1X-I40-I75,I-40 x I-75,Chattanooga TN,closure,,,,,,,,source_needed,unknown,artifact,gap,next
+";
+
+        let rows = parse_t1_failure_ledger(csv.as_bytes()).expect("parse T1 failure ledger");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].site_id, "T1X-I35-I80");
+        assert_eq!(rows[0].throughput_retention_current, Some(0.962));
+        assert_eq!(rows[0].annual_probability, None);
+        assert_eq!(rows[1].source_status, "source_needed");
     }
 
     #[test]
