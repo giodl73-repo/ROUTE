@@ -2016,6 +2016,7 @@ fn main() -> Result<()> {
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
             let mut confidence_risks: Vec<ConfidenceRisk> = Vec::new();
             let mut dimension_risk_totals = [0.0_f64; N_DIMS];
+            let mut dimension_review_risk_totals = [0.0_f64; N_DIMS];
             let mut dimension_risk_counts = [0_usize; N_DIMS];
             let mut dimension_review_counts = [0_usize; N_DIMS];
 
@@ -2099,6 +2100,7 @@ fn main() -> Result<()> {
                             dimension_risk_totals[d] += risk;
                             dimension_risk_counts[d] += 1;
                             if review {
+                                dimension_review_risk_totals[d] += risk;
                                 dimension_review_counts[d] += 1;
                             }
                         }
@@ -2287,32 +2289,41 @@ fn main() -> Result<()> {
                 "  → Sort by score_confidence and risk_dimensions to find rankings most dependent on weak dimensions."
             );
 
-            let mut dimension_risks: Vec<(usize, f64, usize, usize)> = (0..N_DIMS)
+            let mut dimension_risks: Vec<(usize, f64, f64, usize, usize)> = (0..N_DIMS)
                 .map(|d| {
                     (
                         d,
                         dimension_risk_totals[d],
+                        dimension_review_risk_totals[d],
                         dimension_risk_counts[d],
                         dimension_review_counts[d],
                     )
                 })
                 .collect();
             dimension_risks.sort_by(|a, b| {
-                b.1.total_cmp(&a.1)
-                    .then_with(|| b.3.cmp(&a.3))
+                b.2.total_cmp(&a.2)
+                    .then_with(|| b.1.total_cmp(&a.1))
+                    .then_with(|| b.4.cmp(&a.4))
                     .then_with(|| DIMENSION_CODES[a.0].cmp(DIMENSION_CODES[b.0]))
             });
 
             println!("\n  Confidence risk by dimension:");
             println!(
-                "  {:>2}  {:<28}  {:>9}  {:>9}  {:>9}",
-                "Dim", "Name", "Risk", "Corridors", "Reviews"
+                "  {:>2}  {:<28}  {:>9}  {:>10}  {:>9}  {:>9}",
+                "Dim", "Name", "Risk", "ReviewRisk", "Corridors", "Reviews"
             );
-            println!("  {}", "─".repeat(66));
-            for (d, total_risk, corridor_count, review_count) in dimension_risks.iter().take(8) {
+            println!("  {}", "─".repeat(78));
+            for (d, total_risk, review_risk, corridor_count, review_count) in
+                dimension_risks.iter().take(8)
+            {
                 println!(
-                    "  {:>2}  {:<28}  {:>9.1}  {:>9}  {:>9}",
-                    dim_names[*d], dim_labels[*d], total_risk, corridor_count, review_count
+                    "  {:>2}  {:<28}  {:>9.1}  {:>10.1}  {:>9}  {:>9}",
+                    dim_names[*d],
+                    dim_labels[*d],
+                    total_risk,
+                    review_risk,
+                    corridor_count,
+                    review_count
                 );
             }
 
@@ -2349,14 +2360,16 @@ fn main() -> Result<()> {
                 "dimension",
                 "name",
                 "total_risk",
+                "review_risk",
                 "corridors",
                 "review_corridors",
             ])?;
-            for (d, total_risk, corridor_count, review_count) in &dimension_risks {
+            for (d, total_risk, review_risk, corridor_count, review_count) in &dimension_risks {
                 summary_wtr.write_record([
                     dim_names[*d].to_string(),
                     dim_labels[*d].to_string(),
                     format!("{total_risk:.1}"),
+                    format!("{review_risk:.1}"),
                     corridor_count.to_string(),
                     review_count.to_string(),
                 ])?;
