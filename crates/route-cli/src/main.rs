@@ -603,6 +603,17 @@ fn main() -> Result<()> {
             });
             println!("route map {norm} → {}", out.display());
 
+            // Beck schematic — topological relay network (0°/45°/90° geometry, no geography)
+            if norm == "BECK" {
+                std::fs::create_dir_all("maps")?;
+                let out_path = PathBuf::from("maps/beck-schematic.png");
+                let svg = route_map::build_beck_svg();
+                route_map::svg_to_png(&svg, &out_path, 2400, 1350)?;
+                println!("  rendered Beck schematic: {} (2400×1350)", out_path.display());
+                println!("  T1 relay network topology · 0°/45°/90° · inspired by Beck 1933");
+                return Ok(());
+            }
+
             // Mega-map: all tiers at once
             if norm == "ALL" {
                 let manifest = route_data::Manifest::load(&manifest_path)
