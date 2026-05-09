@@ -527,7 +527,13 @@ fn main() -> Result<()> {
             );
 
             // Join ACS population for C1/C3 dimensions (if cached data is available)
-            join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes);
+            join_acs_population_to_corridor(
+                &manifest,
+                &graph,
+                &norm,
+                &mut corridor.attributes,
+                true,
+            );
 
             // Score
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
@@ -628,6 +634,7 @@ fn main() -> Result<()> {
                             &graph,
                             id,
                             &mut corridor.attributes,
+                            false,
                         );
                     }
                     if !ports.is_empty() {
@@ -891,7 +898,13 @@ fn main() -> Result<()> {
                     )
                 })?;
 
-            join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes);
+            join_acs_population_to_corridor(
+                &manifest,
+                &graph,
+                &norm,
+                &mut corridor.attributes,
+                false,
+            );
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
             let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
             route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
@@ -1894,6 +1907,7 @@ fn main() -> Result<()> {
                             &graph,
                             id,
                             &mut corridor.attributes,
+                            false,
                         );
                     }
                     // Join port access for B3
@@ -2089,13 +2103,13 @@ fn main() -> Result<()> {
                 "    T1: {} corridors  T2: {} corridors  T3: {} corridors  T4: {} corridors",
                 t1, t2, t3, t4
             );
-            if t1 > 12 {
+            if t1 > 30 {
                 println!(
-                    "    ⚠ T1 count {} exceeds expected ~8-10. Congestion-stress inflation likely.",
+                    "    ⚠ T1 count {} exceeds promotion atlas target range (~12-30).",
                     t1
                 );
                 println!(
-                    "    → Run centrality-adjusted classification (route score-all + A.1 α=0.65)."
+                    "    → Review congestion-stress candidates and promotion thresholds before freezing a release."
                 );
             }
 
@@ -3913,6 +3927,7 @@ fn join_acs_population_to_corridor(
     graph: &route_network::HighwayGraph,
     route_id: &str,
     attrs: &mut route_network::CorridorAttributes,
+    verbose: bool,
 ) {
     if let Some(counties) = load_acs_counties_for_scoring(manifest) {
         let (pop, rural_pop) = route_network::corridor_pop_within_50mi(graph, route_id, &counties);
@@ -3942,12 +3957,14 @@ fn join_acs_population_to_corridor(
                 }
             }
 
-            println!(
-                "  C1 population (50mi buffer): {:>12} ({:.1}% rural)",
-                pop,
-                rural_share * 100.0
-            );
-        } else {
+            if verbose {
+                println!(
+                    "  C1 population (50mi buffer): {:>12} ({:.1}% rural)",
+                    pop,
+                    rural_share * 100.0
+                );
+            }
+        } else if verbose {
             println!("  C1: no counties found within 50mi corridor buffer for {route_id}");
         }
     }
