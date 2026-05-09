@@ -116,6 +116,13 @@ pub struct DimensionScores {
 }
 
 impl DimensionScores {
+    pub fn dimensions(&self) -> [&ScoredDimension; 16] {
+        [
+            &self.a1, &self.a2, &self.a3, &self.a4, &self.a5, &self.b1, &self.b2, &self.b3,
+            &self.b4, &self.c1, &self.c2, &self.c3, &self.c4, &self.d1, &self.d2, &self.d3,
+        ]
+    }
+
     pub fn band_a(&self) -> f64 {
         self.a1.score + self.a2.score + self.a3.score + self.a4.score + self.a5.score
     }
@@ -131,13 +138,23 @@ impl DimensionScores {
     pub fn total(&self) -> f64 {
         self.band_a() + self.band_b() + self.band_c() + self.band_d()
     }
+    pub fn mean_confidence(&self) -> f32 {
+        self.dimensions().iter().map(|d| d.confidence).sum::<f32>() / 16.0
+    }
+    pub fn score_weighted_confidence(&self) -> f32 {
+        let total = self.total();
+        if total <= f64::EPSILON {
+            return self.mean_confidence();
+        }
+        (self
+            .dimensions()
+            .iter()
+            .map(|d| d.score * d.confidence as f64)
+            .sum::<f64>()
+            / total) as f32
+    }
     pub fn any_estimated(&self) -> bool {
-        [
-            &self.a1, &self.a2, &self.a3, &self.a4, &self.a5, &self.b1, &self.b2, &self.b3,
-            &self.b4, &self.c1, &self.c2, &self.c3, &self.c4, &self.d1, &self.d2, &self.d3,
-        ]
-        .iter()
-        .any(|d| d.estimated)
+        self.dimensions().iter().any(|d| d.estimated)
     }
 }
 
@@ -835,6 +852,8 @@ mod tests {
         assert!(dims(&scores)
             .iter()
             .all(|d| (0.0..=10.0).contains(&d.score)));
+        assert!((0.0..=1.0).contains(&scores.mean_confidence()));
+        assert!((0.0..=1.0).contains(&scores.score_weighted_confidence()));
         assert!(!scores.a1.estimated);
         assert!(scores.a2.estimated, "FAF5 zone traversal remains a proxy");
         assert!(!scores.a3.estimated, "real PTI is authoritative");

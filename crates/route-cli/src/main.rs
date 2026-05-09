@@ -682,6 +682,8 @@ fn main() -> Result<()> {
                 &'static str,
                 String,
                 bool,
+                f32,
+                f32,
                 [f64; 16],
                 [f32; 16],
             )> = Vec::new();
@@ -755,6 +757,8 @@ fn main() -> Result<()> {
                         tier,
                         scores.rubric_version.clone(),
                         scores.any_estimated(),
+                        scores.mean_confidence(),
+                        scores.score_weighted_confidence(),
                         dimension_score_values(&scores),
                         dimension_confidence_values(&scores),
                     ));
@@ -765,7 +769,15 @@ fn main() -> Result<()> {
             std::fs::create_dir_all("data")?;
             let out = PathBuf::from("data/scores-all.csv");
             let mut wtr = csv::Writer::from_path(&out)?;
-            let mut header = vec!["route", "score", "tier", "rubric_version", "estimated"];
+            let mut header = vec![
+                "route",
+                "score",
+                "tier",
+                "rubric_version",
+                "estimated",
+                "confidence",
+                "score_confidence",
+            ];
             header.extend(DIMENSION_CODES);
             header.extend([
                 "A1_conf", "A2_conf", "A3_conf", "A4_conf", "A5_conf", "B1_conf", "B2_conf",
@@ -773,13 +785,26 @@ fn main() -> Result<()> {
                 "D2_conf", "D3_conf",
             ]);
             wtr.write_record(header)?;
-            for (route, score, tier, rubric_version, estimated, dims, confs) in &score_rows {
+            for (
+                route,
+                score,
+                tier,
+                rubric_version,
+                estimated,
+                confidence,
+                score_confidence,
+                dims,
+                confs,
+            ) in &score_rows
+            {
                 let mut row = vec![
                     route.clone(),
                     format!("{score:.1}"),
                     tier.to_string(),
                     rubric_version.clone(),
                     estimated.to_string(),
+                    format!("{confidence:.2}"),
+                    format!("{score_confidence:.2}"),
                 ];
                 row.extend(dims.iter().map(|value| format!("{value:.1}")));
                 row.extend(confs.iter().map(|value| format!("{value:.2}")));
@@ -4334,8 +4359,11 @@ fn print_score_table(
 ) {
     println!("\n┌─────────────────────────────────────────────────────────────────────┐");
     println!(
-        "│  {} — Dimension Scores (rubric {})",
-        designation, scores.rubric_version
+        "│  {} — Dimension Scores (rubric {}, conf {:.2}, score-conf {:.2})",
+        designation,
+        scores.rubric_version,
+        scores.mean_confidence(),
+        scores.score_weighted_confidence()
     );
     println!("├──────┬──────────────────────────────┬───────┬─────┬────────┬──────┤");
     println!("│ Dim  │ Name                         │ Score │ Est │ Quality│ Conf │");

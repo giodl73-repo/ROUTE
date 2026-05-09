@@ -280,6 +280,8 @@ pub struct ScoredDimension {
 
 Confidence labels are derived from `confidence`: `High >= 0.85`, `Medium >= 0.60`, `Low > 0.0`, `Missing = 0.0`. Keep `estimated` as a compatibility flag for the `†` marker, but use `confidence` for data-quality comparison and planning.
 
+Corridor-level confidence appears two ways: `confidence` is the simple mean across all 16 dimensions, while `score_confidence` is weighted by dimension score so high-scoring dimensions influence the summary more than zero-valued role dimensions.
+
 ### Scoring function notes per dimension
 
 **A1 — Throughput Gap**: primary input `p90_aadt`. If `lane_count` is available, compute V/C ratio (p90_aadt / (lane_count × 1,900 pcph per lane)); score from V/C ratio instead of raw AADT. If `lane_count` is None (common), fall back to raw `p90_aadt` with `estimated: true`.
@@ -365,6 +367,8 @@ route calibrate
 | `tier` | T1/T2/T3/T4 label from v1.4 promotion thresholds: T1 >= 70.0, T2 >= 50.0, T3 >= 30.0 |
 | `rubric_version` | Rubric version from `config/scoring.toml` |
 | `estimated` | `true` when any dimension score is estimated/proxy |
+| `confidence` | Mean confidence across all 16 dimensions |
+| `score_confidence` | Score-weighted confidence for the points driving the corridor total |
 | `A1`..`D3` | Dimension score on the 0.0-10.0 rubric |
 | `A1_conf`..`D3_conf` | Per-dimension confidence on a 0.0-1.0 source/coverage scale |
 
