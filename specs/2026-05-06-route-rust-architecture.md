@@ -358,7 +358,7 @@ route calibrate
 |---|---|
 | `route` | Normalized route id, e.g. `I80` |
 | `score` | Total score on the current 160-point rubric |
-| `tier` | T1/T2/T3/T4 label from v1.4 promotion thresholds: T1 >= 60.0, T2 >= 45.0, T3 >= 30.0 |
+| `tier` | T1/T2/T3/T4 label from v1.4 promotion thresholds: T1 >= 70.0, T2 >= 50.0, T3 >= 30.0 |
 | `rubric_version` | Rubric version from `config/scoring.toml` |
 | `estimated` | `true` when any dimension score is estimated/proxy |
 

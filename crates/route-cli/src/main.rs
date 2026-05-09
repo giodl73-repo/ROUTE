@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-const T1_THRESHOLD: f64 = 60.0;
-const T2_THRESHOLD: f64 = 45.0;
+const T1_THRESHOLD: f64 = 70.0;
+const T2_THRESHOLD: f64 = 50.0;
 const T3_THRESHOLD: f64 = 30.0;
 
 #[derive(Parser)]
@@ -3216,10 +3216,10 @@ mod tests {
 
     #[test]
     fn tier_for_score_matches_megamap_thresholds() {
-        assert_eq!(tier_for_score(60.0), "T1");
-        assert_eq!(tier_for_score(59.9), "T2");
-        assert_eq!(tier_for_score(45.0), "T2");
-        assert_eq!(tier_for_score(44.9), "T3");
+        assert_eq!(tier_for_score(70.0), "T1");
+        assert_eq!(tier_for_score(69.9), "T2");
+        assert_eq!(tier_for_score(50.0), "T2");
+        assert_eq!(tier_for_score(49.9), "T3");
         assert_eq!(tier_for_score(30.0), "T3");
         assert_eq!(tier_for_score(29.9), "T4");
     }

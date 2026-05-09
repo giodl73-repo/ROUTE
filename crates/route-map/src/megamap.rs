@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
-const T1_THRESHOLD: f64 = 60.0;
-const T2_THRESHOLD: f64 = 45.0;
+const T1_THRESHOLD: f64 = 70.0;
+const T2_THRESHOLD: f64 = 50.0;
 const T3_THRESHOLD: f64 = 30.0;
 
 // ── Tier stroke weights (Beck hierarchy) ──────────────────────────────────────
