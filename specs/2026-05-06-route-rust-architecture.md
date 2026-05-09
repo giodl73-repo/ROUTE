@@ -363,7 +363,7 @@ route calibrate
 
 | Column | Meaning |
 |---|---|
-| `route` | Normalized route id, e.g. `I80` |
+| `route` | Display route id from the scored corridor, e.g. `I-80`; map loaders normalize this to graph ids such as `I80` |
 | `score` | Total score on the current 160-point rubric |
 | `tier` | T1/T2/T3/T4 label from v1.4 promotion thresholds: T1 >= 70.0, T2 >= 50.0, T3 >= 30.0 |
 | `rubric_version` | Rubric version from `config/scoring.toml` |
@@ -381,10 +381,17 @@ The map renderer reads route scores and applies the same v1.4 thresholds for tie
 
 ### Map output (PNG)
 
-- US outline: embedded GeoJSON, Natural Earth 1:50m
-- Corridor polyline in highlight color over grey base; state borders
-- Optional choropleth by dimension score
-- Resolution: 1600×900 default
+Current implementation:
+
+- `route map all` renders `maps/all-tiers.png` at 2400×1350 from the TIGER graph and `data/scores-all.csv`.
+- Scores are normalized from display ids such as `I-95` to graph ids such as `I95` before tier coloring.
+- The all-tier map is a projected network map with state abbreviation labels, city anchors, relay hubs, and tier-colored route strokes.
+- `route map <T1>` renders regional T1 corridor maps with T2/T3/T4 feeders where available.
+
+Deferred:
+
+- A real US polygon basemap is not implemented yet. `route-map::basemap` is a placeholder, so public claims should not promise Natural Earth outlines or state-border polygons until that module is populated and tested.
+- `--color-by` exists in the CLI surface but is not implemented for the all-tier renderer.
 
 ---
 

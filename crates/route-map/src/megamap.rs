@@ -79,13 +79,21 @@ pub fn load_tier_scores(scores_path: &std::path::Path) -> HashMap<String, f64> {
             if let Ok(r) = result {
                 if let (Some(route), Some(score)) = (r.get(0), r.get(1)) {
                     if let Ok(s) = score.parse::<f64>() {
-                        scores.insert(route.to_string(), s);
+                        scores.insert(normalise_route_id(route), s);
                     }
                 }
             }
         }
     }
     scores
+}
+
+fn normalise_route_id(route: &str) -> String {
+    route
+        .chars()
+        .filter(|ch| *ch != '-' && *ch != '_' && !ch.is_whitespace())
+        .flat_map(|ch| ch.to_uppercase())
+        .collect()
 }
 
 // ── Relay hub types ────────────────────────────────────────────────────────────
@@ -119,14 +127,15 @@ fn hub_coords() -> HashMap<&'static str, (f64, f64)> {
     m.insert("Wichita, KS", (37.69, -97.34));
     m.insert("Houston, TX", (29.76, -95.37));
     m.insert("Billings, MT", (45.78, -108.50));
+    m.insert("Los Angeles, CA", (34.05, -118.24));
     m
 }
 
-/// Public coordinate table for all 12 relay hub cities.
+/// Public coordinate table for all tracked relay hub cities.
 ///
 /// Returns `(lat, lon, name, is_confirmed)` for each hub.
 /// Confirmed hubs are the 9 T1/T1 diamond intersections;
-/// proposed hubs are the 3 missing-link candidates.
+/// proposed hubs are missing-link and capacity-relief candidates.
 /// Callers can use this to build the `hub_coords` slice for
 /// `build_t1_corridor_svg`.
 pub fn t1_hub_coordinates() -> Vec<(f64, f64, String, bool)> {
@@ -143,6 +152,7 @@ pub fn t1_hub_coordinates() -> Vec<(f64, f64, String, bool)> {
         (37.69, -97.34, "Wichita, KS".to_string(), false),
         (29.76, -95.37, "Houston, TX".to_string(), false),
         (45.78, -108.50, "Billings, MT".to_string(), false),
+        (34.05, -118.24, "Los Angeles, CA".to_string(), false),
     ]
 }
 
@@ -740,6 +750,57 @@ pub fn build_megamap_svg_with_hubs(
 
     s += "</svg>";
     Ok(s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{hub_coords, load_relay_hubs, load_tier_scores, normalise_route_id};
+    use std::path::Path;
+
+    #[test]
+    fn tier_scores_are_keyed_like_graph_route_ids() {
+        assert_eq!(normalise_route_id("I-95"), "I95");
+        assert_eq!(normalise_route_id("us 287"), "US287");
+        assert_eq!(normalise_route_id("I_610"), "I610");
+    }
+
+    #[test]
+    fn load_tier_scores_normalises_csv_route_ids() {
+        let dir = std::env::temp_dir().join(format!("route-map-score-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create temp dir");
+        let path = dir.join("scores-all.csv");
+        std::fs::write(
+            &path,
+            "route,score,tier\nI-95,96.8,T1\nUS 287,68.7,T2\nI_610,69.4,T2\n",
+        )
+        .expect("write score csv");
+
+        let scores = load_tier_scores(&path);
+
+        assert_eq!(scores.get("I95"), Some(&96.8));
+        assert_eq!(scores.get("US287"), Some(&68.7));
+        assert_eq!(scores.get("I610"), Some(&69.4));
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn relay_hub_coordinate_table_covers_tracked_hubs() {
+        let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let hubs_path = manifest_dir.join("../../data/relay-hubs.toml");
+        let hubs = load_relay_hubs(&hubs_path);
+        assert!(!hubs.is_empty(), "expected tracked relay hubs");
+
+        let coords = hub_coords();
+        let missing: Vec<String> = hubs
+            .iter()
+            .filter(|hub| !coords.contains_key(hub.name.as_str()))
+            .map(|hub| hub.name.clone())
+            .collect();
+
+        assert!(missing.is_empty(), "missing hub coordinates: {missing:?}");
+    }
 }
 
 // ── T1 Corridor Regional Map ───────────────────────────────────────────────────

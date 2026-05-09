@@ -51,8 +51,8 @@ Goal: make the existing network corpus and tier map reproducible from commands.
 | Tier table can be regenerated from `route score-all` | ✅ done | `data/tier-table.csv`, `data/tier-table.md`; written by `route score-all` |
 | Historical v1.2 candidate docs are clearly labeled as non-current | ✅ done | `data/t1-candidates.md`, `data/t2-candidates.md`, `data/t3-candidates.md` historical banners |
 | Corpus report entries record command, rubric version, data version, confidence, and estimation flags | 🔄 partial | `route report` writes rubric/confidence; audit command/data provenance |
-| Tier map can be regenerated from current score ledger | ⏳ pending | Verify `route map all` consumes current score ledger and renders nonblank output |
-| Basemap claim is either implemented or downgraded explicitly | ⏳ pending | Inspect `route-map`; update spec or renderer |
+| Tier map can be regenerated from current score ledger | ✅ done | `route map all` reads `data/scores-all.csv` and regenerates `maps/all-tiers.png` |
+| Basemap claim is either implemented or downgraded explicitly | ✅ done | Spec now labels current map as projected network + state/city labels; polygon basemap deferred |
 
 Milestone 2 is done when `route score-all`, `route calibrate`, and the tier map command regenerate tracked Atlas artifacts from a clean worktree.
 
