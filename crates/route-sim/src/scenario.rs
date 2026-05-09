@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn scenario_validation_flags_unbound_incident_edges() {
-        let toml = crate::scenarios::load_scenario("omaha-interchange").expect("scenario exists");
+        let toml = crate::scenarios::load_scenario("donner-closure").expect("scenario exists");
         let scenario: Scenario = toml::from_str(toml).expect("scenario parses");
         let warnings = scenario_validation_warnings(&scenario);
 

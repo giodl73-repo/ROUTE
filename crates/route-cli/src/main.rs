@@ -351,12 +351,30 @@ enum GapType {
 
 #[derive(clap::Subcommand, Clone, Debug)]
 enum SimMode {
-    /// Run a named scenario (donner-closure, atlanta-peak, omaha-interchange, houston-surge)
+    /// Run a named scenario (donner-closure, atlanta-peak, des-moines-interchange, houston-surge)
     Scenario {
         name: String,
         /// Test the named I2.0 intervention for this scenario
         #[arg(long)]
         intervention: bool,
+    },
+    /// Find stable graph edge IDs near a coordinate for binding scenario incidents
+    Bind {
+        /// Route to search, e.g. I80, I-80, I35
+        #[arg(long)]
+        route: String,
+        /// Latitude of the incident center
+        #[arg(long, allow_hyphen_values = true)]
+        lat: f64,
+        /// Longitude of the incident center
+        #[arg(long, allow_hyphen_values = true)]
+        lon: f64,
+        /// Search radius in miles
+        #[arg(long, default_value_t = 10.0)]
+        radius: f64,
+        /// Maximum candidate edges to print
+        #[arg(long, default_value_t = 12)]
+        top: usize,
     },
     /// Monte Carlo chaos: random closures, measure outcome distribution
     Chaos {
@@ -1779,7 +1797,61 @@ fn main() -> Result<()> {
                         println!("  {name:<20} {status}");
                     }
                     println!("\nUsage: route sim scenario <name> [--intervention]");
+                    println!("       route sim bind --route I80 --lat 39.32 --lon -120.33");
                     println!("       route sim chaos [--iterations N] [--seed S] [--t1-only]");
+                }
+
+                SimMode::Bind {
+                    route,
+                    lat,
+                    lon,
+                    radius,
+                    top,
+                } => {
+                    let norm = normalise_designation(&route);
+                    println!(
+                        "route sim bind --route {norm} --lat {lat:.5} --lon {lon:.5} --radius {radius:.1}"
+                    );
+
+                    let manifest =
+                        route_data::Manifest::load(&manifest_path).with_context(|| {
+                            format!("loading manifest from {}", manifest_path.display())
+                        })?;
+                    let graph = load_graph(&manifest)?;
+
+                    let candidates = scenario_edge_candidates(&graph, &norm, lat, lon, radius, top);
+                    if candidates.is_empty() {
+                        println!("  no {norm} edges found within {radius:.1} miles");
+                        println!(
+                            "  tip: increase --radius or verify the route exists in the graph"
+                        );
+                    } else {
+                        println!(
+                            "  {} candidate edge IDs for scenario affected_edges:",
+                            candidates.len()
+                        );
+                        println!(
+                            "  {:>12}  {:>7}  {:>7}  {:>8}  {:>5}  {:>8}  midpoint",
+                            "edge_id", "dist", "length", "aadt", "lanes", "state"
+                        );
+                        for c in candidates {
+                            println!(
+                                "  {:>12}  {:>6.2}m  {:>6.2}m  {:>8}  {:>5}  {:>8}  {:.5},{:.5}",
+                                c.edge_id,
+                                c.distance_miles,
+                                c.length_miles,
+                                c.aadt
+                                    .map(|v| v.to_string())
+                                    .unwrap_or_else(|| "-".to_string()),
+                                c.lanes
+                                    .map(|v| v.to_string())
+                                    .unwrap_or_else(|| "-".to_string()),
+                                c.state,
+                                c.mid_lat,
+                                c.mid_lon
+                            );
+                        }
+                    }
                 }
 
                 SimMode::Scenario { name, intervention } => {
@@ -4125,6 +4197,75 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     ids
 }
 
+#[derive(Debug, Clone)]
+struct ScenarioEdgeCandidate {
+    edge_id: u64,
+    distance_miles: f64,
+    length_miles: f64,
+    aadt: Option<u32>,
+    lanes: Option<u8>,
+    state: String,
+    mid_lat: f64,
+    mid_lon: f64,
+}
+
+fn scenario_edge_candidates(
+    graph: &route_network::HighwayGraph,
+    route: &str,
+    lat: f64,
+    lon: f64,
+    radius_miles: f64,
+    top: usize,
+) -> Vec<ScenarioEdgeCandidate> {
+    let mut candidates: Vec<ScenarioEdgeCandidate> = graph
+        .route_edges(route)
+        .iter()
+        .filter_map(|&ei| {
+            let edge = &graph.graph[ei];
+            let (mid_lat, mid_lon) = edge_midpoint(edge)?;
+            let distance_miles = haversine_miles(lat, lon, mid_lat, mid_lon);
+            (distance_miles <= radius_miles).then(|| ScenarioEdgeCandidate {
+                edge_id: edge.id,
+                distance_miles,
+                length_miles: edge.length_miles,
+                aadt: edge.aadt,
+                lanes: edge.lane_count,
+                state: edge.state.clone(),
+                mid_lat,
+                mid_lon,
+            })
+        })
+        .collect();
+
+    candidates.sort_by(|a, b| {
+        a.distance_miles
+            .partial_cmp(&b.distance_miles)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.edge_id.cmp(&b.edge_id))
+    });
+    candidates.truncate(top);
+    candidates
+}
+
+fn edge_midpoint(edge: &route_network::HighwayEdge) -> Option<(f64, f64)> {
+    let coords = edge.geometry.0.as_slice();
+    if coords.is_empty() {
+        return None;
+    }
+    let idx = coords.len() / 2;
+    let coord = coords[idx];
+    Some((coord.y, coord.x))
+}
+
+fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let r = 3958.8_f64;
+    let dlat = (lat2 - lat1).to_radians();
+    let dlon = (lon2 - lon1).to_radians();
+    let a = (dlat / 2.0).sin().powi(2)
+        + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+    2.0 * r * a.sqrt().asin()
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct StandardsProofRow {
     standard_id: String,
@@ -4232,8 +4373,8 @@ mod tests {
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger, rounded_score,
-        standards_blueprint_gate_failures, tier_for_score, write_tier_artifacts_to, FemaTile,
-        GapType, ScoreAllRow, ScoreSignalRow,
+        scenario_edge_candidates, standards_blueprint_gate_failures, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -4378,6 +4519,82 @@ T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,
         let failures = standards_blueprint_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].standard_id, "T1-DIAMOND-K");
+    }
+
+    #[test]
+    fn scenario_edge_candidates_return_nearest_stable_edge_ids() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: -96.0, y: 41.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: -95.9, y: 41.0 },
+            is_interchange: false,
+        });
+        let c = graph.graph.add_node(HighwayNode {
+            id: 3,
+            coord: coord! { x: -90.0, y: 41.0 },
+            is_interchange: false,
+        });
+        let d = graph.graph.add_node(HighwayNode {
+            id: 4,
+            coord: coord! { x: -89.9, y: 41.0 },
+            is_interchange: false,
+        });
+        let near = graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 101,
+                route_id: "I80".to_string(),
+                state: "NE".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: -96.0, y: 41.0 },
+                    coord! { x: -95.9, y: 41.0 },
+                ]),
+                length_miles: 6.0,
+                lane_count: Some(4),
+                aadt: Some(50_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        let far = graph.graph.add_edge(
+            c,
+            d,
+            HighwayEdge {
+                id: 202,
+                route_id: "I80".to_string(),
+                state: "IA".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: -90.0, y: 41.0 },
+                    coord! { x: -89.9, y: 41.0 },
+                ]),
+                length_miles: 6.0,
+                lane_count: Some(4),
+                aadt: Some(40_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.route_index.insert("I80".to_string(), vec![far, near]);
+
+        let candidates = scenario_edge_candidates(&graph, "I80", 41.0, -95.95, 20.0, 5);
+
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].edge_id, 101);
+        assert_eq!(candidates[0].state, "NE");
     }
 
     #[test]

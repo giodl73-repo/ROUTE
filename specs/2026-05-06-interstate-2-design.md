@@ -186,7 +186,7 @@ The diamond connector roads still provide value — they handle general traffic 
 
 | # | Intersection | Node | SPF risk | Diamond needed |
 |---|---|---|---|---|
-| 1 | I-35 × I-80 | Omaha NE | **HIGH** | Yes — I-680 is only bypass |
+| 1 | I-35 × I-80 | Des Moines IA | **RECHECK** | Prior Omaha/I-680 rationale was a location error; revalidate k-class |
 | 2 | I-40 × I-75 | Chattanooga TN | **HIGH** | Yes — mountains constrain alternates |
 | 3 | I-10 × I-35 | San Antonio TX | **HIGH** | Yes — single spaghetti interchange |
 | 4 | I-90 × I-95 | Boston MA | **HIGH** | Yes — Central Artery is single path |
@@ -204,7 +204,7 @@ The diamond connector roads still provide value — they handle general traffic 
 
 **k-connectivity target**: every T1/T1 intersection achieves k ≥ 3 (minimum 3 independent edge-disjoint paths) within the 50-mile zone. Current: 9 of 15 intersections have k=1.
 
-### Diamond Design — I-35 × I-80 at Omaha (example)
+### Diamond Design — I-35 × I-80 at Des Moines (example)
 
 ```
                     ←— 50 miles —→
@@ -230,7 +230,7 @@ I-35 south ───────────────────────
 - **Core** (existing): full interchange, maintain and improve
 - **North connector** (~$150M): new 10-mile connector from I-80 at Fremont to I-35 at Blair
 - **South connector** (~$200M): new connector from I-80 near Greenwood to I-35 near Plattsmouth
-- **Result**: Omaha core can close completely — 80% of freight flow maintained via connectors
+- **Result**: Des Moines core can close completely — 80% of freight flow maintained via connectors after k-class and connector assumptions are revalidated
 
 ### Diamond Investment Summary
 
@@ -330,7 +330,7 @@ route-sim/                  ← new crate in the workspace
 │   └── scenarios/          ← named scenario files
 │       ├── donner-closure.toml
 │       ├── atlanta-peak.toml
-│       ├── omaha-interchange-failure.toml
+│       ├── des-moines-interchange.toml
 │       └── hurricane-ian-i75.toml
 ```
 
@@ -366,7 +366,7 @@ route sim --chaos [--iterations 1000] [--seed 42]
 
 route sim --intervention diamond --at I35xI80
     Test a specific diamond design: add connector edges to the graph at
-    Omaha, re-run chaos, compare resilience metrics before/after.
+    Des Moines, re-run chaos, compare resilience metrics before/after.
 
 route sim --investment-rank --budget 50
     Given a $50B budget and the simulation results, rank all proposed
@@ -560,7 +560,7 @@ After I2.0 separation into express freight / GP / C-D road layers, the interchan
 Each of the 9 priority diamond intersections hosts a **Tier 1 Transit Hub**:
 
 ```
-T1/T1 Diamond Core (example: I-35 × I-80 at Omaha)
+T1/T1 Diamond Core (example: I-35 × I-80 at Des Moines)
 
 [Express freight lanes bypass the core — trucks do not stop here]
 

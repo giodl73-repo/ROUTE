@@ -1,0 +1,19 @@
+name = "des-moines-interchange"
+description = "I-35/I-80 Des Moines interchange zone closes 48h. Diamond connector vs no-diamond."
+fw_max_iter = 25
+fw_tolerance = 0.01
+report_corridors = ["I35", "I80", "I235"]
+
+[incident]
+name = "Des Moines I-35/I-80 interchange-zone closure"
+affected_edges = [1372, 1373, 4186, 4242]
+duration_hours = 48.0
+annual_occurrences = 3.0
+
+[incident.incident_type]
+kind = "Closure"
+
+[intervention]
+kind = "Diamond"
+intersection_name = "I35xI80-des-moines"
+connector_capacity_vph = 1900.0

@@ -28,7 +28,7 @@ If a standard cannot name these fields, it can stay in the design spec, but it c
 |---|---|---|
 | L0 | Primitive arithmetic and invariants are correct | k-connectivity fixtures, PTI calculation, capacity arithmetic, recovery ratio |
 | L1 | Generated artifacts are reproducible from stable inputs | standards proof ledger, coverage gaps, T1/T1 intersection ledger, scenario summaries |
-| L2 | Representative scenarios produce bounded outputs | Omaha interchange closure, Donner closure, Houston surge, NY-LA SLA, Houston-Chicago SLA |
+| L2 | Representative scenarios produce bounded outputs | Des Moines interchange closure, Donner closure, Houston surge, NY-LA SLA, Houston-Chicago SLA |
 | L3 | The claim survives adversarial review and source validation | NPMRDS PTI, FAF5 sensitivity, ramp geometry review, climate exposure review |
 
 Milepost 4 is not finished until active standards have at least L1 evidence, and the highest-stakes T1 standards have L2 scenario coverage or are explicitly downgraded.
@@ -72,7 +72,7 @@ For now, SLA and throughput outputs should be labeled Heuristic unless they are 
 
 | Scenario | Purpose | Existing Seed |
 |---|---|---|
-| Omaha T1/T1 closure | Diamond and flyover proof | `crates/route-sim/src/scenarios/omaha-interchange.toml` |
+| Des Moines T1/T1 closure | Diamond and flyover proof | `crates/route-sim/src/scenarios/des-moines-interchange.toml` |
 | Donner closure | Mountain-pass closure and resilience-routing proof | `crates/route-sim/src/scenarios/donner-closure.toml` |
 | Atlanta peak | Managed-lane/PTI stress proof | `crates/route-sim/src/scenarios/atlanta-peak.toml` |
 | Houston surge | Port/hurricane/evacuation stress proof | `crates/route-sim/src/scenarios/houston-surge.toml` |
@@ -81,7 +81,7 @@ For now, SLA and throughput outputs should be labeled Heuristic unless they are 
 
 The scenario library should report confidence labels with the output. A scenario can fail and still be valuable if it tells us which standard does not yet earn its place.
 
-Important current limitation: the embedded TOML scenarios are named shells until their `affected_edges` fields are bound to stable graph edge IDs. `route sim list` reports this status, and `route sim scenario ...` prints warnings before execution. A scenario with no affected edges is not an L2 pressure test; it is a fixture waiting for graph binding.
+Important current limitation: most embedded TOML scenarios are named shells until their `affected_edges` fields are bound to stable graph edge IDs. `route sim list` reports this status, and `route sim scenario ...` prints warnings before execution. A scenario with no affected edges is not an L2 pressure test; it is a fixture waiting for graph binding. The Des Moines T1/T1 fixture is the first bound-edge scenario, but its diamond intervention is still a simplified capacity-restoration model rather than engineered flyover geometry.
 
 ## Current Conclusions
 
@@ -114,5 +114,5 @@ For scenario readiness:
 
 ```text
 route sim list
-route sim scenario omaha-interchange --intervention
+route sim scenario des-moines-interchange --intervention
 ```

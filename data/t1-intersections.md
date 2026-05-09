@@ -13,7 +13,7 @@ SPF risk: HIGH = 1 path only; MED = 2 paths; LOW = 3+ paths (distributed)
 | # | Intersection | Location | SPF Risk | Terrain | Urban net | Diamond needed? |
 |---|---|---|---|---|---|---|
 | 1 | I-80 × I-90 | Indiana/Ohio (shared 158 mi) | **CRITICAL** | Flat | Yes | No — they ARE the same road; at the split they diverge safely |
-| 2 | I-35 × I-80 | Omaha NE | **HIGH** | Flat | Limited | Yes — I-680 is the only bypass, 1 path |
+| 2 | I-35 × I-80 | Des Moines IA | **RECHECK** | Flat | Medium | Re-evaluate — prior Omaha/I-680 description was a location error |
 | 3 | I-35 × I-40 | Oklahoma City | **HIGH** | Flat | Limited | Yes — OKC inner loop inadequate for T1 load |
 | 4 | I-40 × I-75 | Chattanooga TN | **HIGH** | Mountains | No | Yes — terrain limits alternate paths severely |
 | 5 | I-10 × I-35 | San Antonio TX | **HIGH** | Flat | Limited | Yes — single spaghetti interchange, no 50-mile zone |
@@ -31,7 +31,7 @@ SPF risk: HIGH = 1 path only; MED = 2 paths; LOW = 3+ paths (distributed)
 ## Priority for Diamond Investment
 
 ### TIER A — Build now (SPF HIGH, high volume)
-1. I-35 × I-80 (Omaha) — no diamond exists
+1. I-35 × I-80 (Des Moines) — recheck required; prior Omaha/I-680 rationale was a location error
 2. I-40 × I-75 (Chattanooga) — terrain-constrained, no alternate
 3. I-10 × I-35 (San Antonio) — busiest SPF node by freight volume
 4. I-90 × I-95 (Boston) — highest population exposure
@@ -50,37 +50,39 @@ SPF risk: HIGH = 1 path only; MED = 2 paths; LOW = 3+ paths (distributed)
 
 ## The Diamond Design
 
-### What a 50-mile diamond looks like: I-35 × I-80 at Omaha
+### What a 50-mile diamond looks like: I-35 × I-80 at Des Moines
 
 ```
          [NW connector]                [NE connector]
               |                              |
   I-35 ------+------ I-35 ----------------  |
              25mi N of                       |
-             Omaha                           |
+             Des Moines                      |
                                             |
               I-80 ============================= I-80
-                        [OMAHA CORE]
+                        [DES MOINES CORE]
                         (current single interchange)
                                             |
   I-35 ------+------ I-35 ----------------  |
              25mi S of                       |
-             Omaha                           |
+             Des Moines                      |
          [SW connector]                [SE connector]
 ```
 
 **Northern connector** (~25 miles north):
 - A new 10-mile connector from I-80 near Fremont NE westward to meet I-35 near Blair NE
-- Allows I-80 eastbound traffic to reach I-35 northbound WITHOUT entering Omaha
+- Allows I-80 eastbound traffic to reach I-35 northbound WITHOUT entering the Des Moines core
 - Cost: ~$150M (new interchange + 10 miles connector)
 
 **Southern connector** (~25 miles south):
 - A new connector from I-80 near Greenwood NE southward to I-35 near Nebraska City/Plattsmouth
-- Allows I-80 westbound traffic to reach I-35 southbound WITHOUT entering Omaha
+- Allows I-80 westbound traffic to reach I-35 southbound WITHOUT entering the Des Moines core
 - Cost: ~$200M (two new interchanges + connector)
 
-**Result**: the Omaha core interchange can close completely for construction or incident
+**Target result**: the Des Moines core interchange can close completely for construction or incident
 and 80% of freight flow is maintained via the northern and southern connectors.
+
+**Data correction (2026-05-09)**: earlier drafts incorrectly located the I-35 × I-80 T1/T1 junction at Omaha and cited I-680 as the relevant bypass. `route sim bind` confirmed that Omaha-area I-80/I-680/I-29 edges are present, but no I-35 edges exist near Omaha. The active T1/T1 fixture is now `des-moines-interchange`; the k-class and diamond design for this site require manual revalidation before publication use.
 
 ### What a 50-mile diamond looks like: I-40 × I-75 at Chattanooga
 
