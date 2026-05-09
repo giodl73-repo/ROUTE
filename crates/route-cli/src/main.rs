@@ -2050,18 +2050,19 @@ fn main() -> Result<()> {
             println!("  {} corridors scored\n", matrix.len());
 
             // Per-dimension statistics
-            println!("┌────────────────────────────────────────────────────────────────────────────────────────────┐");
-            println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                             │", matrix.len());
-            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────┬────────────  ┤");
-            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │ Est% │  Status      │");
-            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────┼────────────  ┤");
+            println!("┌───────────────────────────────────────────────────────────────────────────────────────────────────┐");
+            println!("│  Dimension Statistics (0.0–10.0 scale, n={})                                                    │", matrix.len());
+            println!("├──────┬────────────────────────────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬────────────  ┤");
+            println!("│  Dim │  Name                      │  Min │  Max │  Avg │  Std │  P90 │ Est% │ NZ%  │  Status      │");
+            println!("├──────┼────────────────────────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────────  ┤");
 
-            let mut dim_stats: Vec<(f64, f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90,est_rate
+            let mut dim_stats: Vec<(f64, f64, f64, f64, f64, f64, f64)> = Vec::new(); // min,max,mean,std,p90,est_rate,nonzero_rate
 
             for d in 0..N_DIMS {
                 let vals: Vec<f64> = matrix.iter().map(|r| r[d]).collect();
                 let estimated_count = estimated_matrix.iter().filter(|r| r[d]).count();
                 let est_rate = estimated_count as f64 / n;
+                let nonzero_rate = vals.iter().filter(|&&v| v > 0.0).count() as f64 / n;
                 let min = vals.iter().cloned().fold(f64::MAX, f64::min);
                 let max = vals.iter().cloned().fold(f64::MIN, f64::max);
                 let mean = vals.iter().sum::<f64>() / n;
@@ -2074,6 +2075,8 @@ fn main() -> Result<()> {
                 // Status flags
                 let status = if est_rate >= 0.80 {
                     "PROXY GAP ⚠"
+                } else if nonzero_rate < 0.10 && max >= 8.0 {
+                    "SPARSE ROLE"
                 } else if std < 1.5 {
                     "LOW VAR ⚠"
                 } else if max - min < 3.0 {
@@ -2082,11 +2085,11 @@ fn main() -> Result<()> {
                     "OK      ✓"
                 };
 
-                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.0} │  {:<10}  │",
-                    dim_names[d], dim_labels[d], min, max, mean, std, p90, est_rate * 100.0, status);
-                dim_stats.push((min, max, mean, std, p90, est_rate));
+                println!("│  {:>2}  │  {:<26} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.1} │ {:>4.0} │ {:>4.0} │  {:<10}  │",
+                    dim_names[d], dim_labels[d], min, max, mean, std, p90, est_rate * 100.0, nonzero_rate * 100.0, status);
+                dim_stats.push((min, max, mean, std, p90, est_rate, nonzero_rate));
             }
-            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────┴────────────  ┘");
+            println!("└──────┴────────────────────────────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴────────────  ┘");
 
             // Pairwise correlation (Pearson) — flag pairs > 0.60
             println!("\n  Computing pairwise Pearson correlations…");
@@ -2180,8 +2183,9 @@ fn main() -> Result<()> {
             println!("\n  Retirement candidates (std < 1.5, estimated < 80%):");
             let mut any_retire = false;
             for d in 0..N_DIMS {
-                let (_, _, _, std, _, est_rate) = dim_stats[d];
-                if std < 1.5 && est_rate < 0.80 {
+                let (_, max, _, std, _, est_rate, nonzero_rate) = dim_stats[d];
+                let sparse_role = nonzero_rate < 0.10 && max >= 8.0;
+                if std < 1.5 && est_rate < 0.80 && !sparse_role {
                     println!(
                         "    {} ({}) — std={:.2} — consider retiring or merging",
                         dim_names[d], dim_labels[d], std
@@ -2193,10 +2197,29 @@ fn main() -> Result<()> {
                 println!("    None — all dimensions show adequate variance ✓");
             }
 
+            println!("\n  Sparse role dimensions (nonzero < 10%, max ≥ 8):");
+            let mut any_sparse = false;
+            for d in 0..N_DIMS {
+                let (_, max, _, std, _, est_rate, nonzero_rate) = dim_stats[d];
+                if est_rate < 0.80 && nonzero_rate < 0.10 && max >= 8.0 {
+                    println!(
+                        "    {} ({}) — nonzero={:.0}% std={:.2} — keep if this is an intentional role flag; expand source list if not",
+                        dim_names[d],
+                        dim_labels[d],
+                        nonzero_rate * 100.0,
+                        std
+                    );
+                    any_sparse = true;
+                }
+            }
+            if !any_sparse {
+                println!("    None — no sparse high-ceiling role dimensions ✓");
+            }
+
             println!("\n  Data/proxy gaps (estimated ≥ 80%):");
             let mut any_proxy_gap = false;
             for d in 0..N_DIMS {
-                let (_, _, _, std, _, est_rate) = dim_stats[d];
+                let (_, _, _, std, _, est_rate, _) = dim_stats[d];
                 if est_rate >= 0.80 {
                     println!(
                         "    {} ({}) — estimated={:.0}% std={:.2} — improve source coverage before retirement decisions",
