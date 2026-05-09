@@ -133,6 +133,11 @@ route t1-accumulate-events --input data/cache/iowa511-t1-failure-events.csv
 
 `route t1-source-health --gate-ingestion` is expected to fail until every source needed for Blueprint-grade T1/T1 claims has either a working importer, a documented historical extract, or an explicit downgraded status.
 
+Access notes from source probing:
+
+- DriveTexas: the documentation shell at `https://api.drivetexas.org/` is public, but direct incident and road-condition API paths returned 401 on May 9, 2026; treat it as key-gated.
+- OHGO: the API documentation requires registration/API key, and direct incident access returned 401 on May 9, 2026; treat it as key-gated.
+
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 
 For scenario readiness:
