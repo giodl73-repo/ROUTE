@@ -418,6 +418,56 @@ enum Commands {
         observation_year: Option<u16>,
     },
 
+    /// Fetch current INDOT TrafficWise event JSON for source-cache ingestion
+    T1FetchIndotTrafficwise {
+        /// Output JSON file
+        #[arg(
+            long,
+            default_value = "data/cache/indot-trafficwise-events.json",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// North bound for the TrafficWise map query
+        #[arg(long, default_value_t = 42.0)]
+        north: f64,
+        /// South bound for the TrafficWise map query
+        #[arg(long, default_value_t = 40.8)]
+        south: f64,
+        /// East bound for the TrafficWise map query
+        #[arg(long, default_value_t = -84.6)]
+        east: f64,
+        /// West bound for the TrafficWise map query
+        #[arg(long, default_value_t = -87.7)]
+        west: f64,
+        /// TrafficWise map zoom used for event clustering
+        #[arg(long, default_value_t = 8)]
+        zoom: u8,
+    },
+
+    /// Normalize INDOT TrafficWise event JSON into T1/T1 failure event rows
+    T1ImportIndotTrafficwise {
+        /// Cached INDOT TrafficWise GraphQL response JSON
+        #[arg(
+            long,
+            default_value = "data/cache/indot-trafficwise-events.json",
+            value_name = "FILE"
+        )]
+        input: PathBuf,
+        /// Output normalized T1/T1 event CSV
+        #[arg(
+            long,
+            default_value = "data/cache/indot-trafficwise-t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// T1/T1 site id to assign
+        #[arg(long, default_value = "T1X-I80-I90")]
+        site_id: String,
+        /// Observation year for current-state snapshots
+        #[arg(long)]
+        observation_year: Option<u16>,
+    },
+
     /// Merge normalized T1/T1 event observations into an accumulated event table
     T1AccumulateEvents {
         /// Existing accumulated T1/T1 event CSV
@@ -2160,6 +2210,42 @@ fn run_cli() -> Result<()> {
             write_t1_failure_events(&output, &rows)
                 .with_context(|| format!("writing normalized events {}", output.display()))?;
             println!("route t1-import-mdot-midrive");
+            println!("  rows: {}", rows.len());
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1FetchIndotTrafficwise {
+            output,
+            north,
+            south,
+            east,
+            west,
+            zoom,
+        } => {
+            fetch_indot_trafficwise_events(&output, north, south, east, west, zoom).with_context(
+                || format!("fetching INDOT TrafficWise events to {}", output.display()),
+            )?;
+            println!("route t1-fetch-indot-trafficwise");
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1ImportIndotTrafficwise {
+            input,
+            output,
+            site_id,
+            observation_year,
+        } => {
+            let json = std::fs::read_to_string(&input)
+                .with_context(|| format!("reading INDOT TrafficWise JSON {}", input.display()))?;
+            let rows = parse_indot_trafficwise_events(
+                &json,
+                &site_id,
+                observation_year.unwrap_or_else(current_utc_year),
+            )
+            .with_context(|| format!("normalizing INDOT TrafficWise JSON {}", input.display()))?;
+            write_t1_failure_events(&output, &rows)
+                .with_context(|| format!("writing normalized events {}", output.display()))?;
+            println!("route t1-import-indot-trafficwise");
             println!("  rows: {}", rows.len());
             println!("  wrote {}", output.display());
         }
@@ -5190,6 +5276,67 @@ fn fetch_mdot_midrive_events(output: &Path) -> Result<()> {
     Ok(())
 }
 
+fn fetch_indot_trafficwise_events(
+    output: &Path,
+    north: f64,
+    south: f64,
+    east: f64,
+    west: f64,
+    zoom: u8,
+) -> Result<()> {
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let query = r#"
+query MapFeatures($input: MapFeaturesArgs!) {
+  mapFeaturesQuery(input: $input) {
+    mapFeatures {
+      bbox
+      title
+      tooltip
+      uri
+      __typename
+      features {
+        id
+        geometry
+        properties
+        type
+      }
+    }
+    error {
+      message
+      type
+    }
+  }
+}
+"#;
+    let body = serde_json::json!({
+        "query": query,
+        "variables": {
+            "input": {
+                "north": north,
+                "south": south,
+                "east": east,
+                "west": west,
+                "zoom": zoom,
+                "layerSlugs": ["incidents", "construction"]
+            }
+        }
+    });
+    let client = reqwest::blocking::Client::new();
+    let request_body = serde_json::to_string(&body)?;
+    let text = client
+        .post("https://511in.org/api/graphql")
+        .header("content-type", "application/json")
+        .body(request_body)
+        .send()?
+        .error_for_status()?
+        .text()?;
+    ensure_no_graphql_errors(&text)?;
+    std::fs::write(output, text)?;
+    Ok(())
+}
+
 fn ensure_no_arcgis_error(json: &str) -> Result<()> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     if let Some(error) = value.get("error") {
@@ -5212,6 +5359,23 @@ fn ensure_no_arcgis_error(json: &str) -> Result<()> {
             anyhow::bail!("{message}");
         } else {
             anyhow::bail!("{message}: {details}");
+        }
+    }
+    Ok(())
+}
+
+fn ensure_no_graphql_errors(json: &str) -> Result<()> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    if let Some(errors) = value.get("errors").and_then(|value| value.as_array()) {
+        let messages = errors
+            .iter()
+            .filter_map(|error| error.get("message").and_then(|value| value.as_str()))
+            .collect::<Vec<_>>()
+            .join("; ");
+        if messages.is_empty() {
+            anyhow::bail!("GraphQL query failed");
+        } else {
+            anyhow::bail!("{messages}");
         }
     }
     Ok(())
@@ -5460,6 +5624,69 @@ fn parse_mdot_midrive_events(
     Ok(rows)
 }
 
+fn parse_indot_trafficwise_events(
+    json: &str,
+    site_id: &str,
+    observation_year: u16,
+) -> Result<Vec<T1FailureEventRow>> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    ensure_no_graphql_errors(json)?;
+    let Some(features) = value
+        .get("data")
+        .and_then(|value| value.get("mapFeaturesQuery"))
+        .and_then(|value| value.get("mapFeatures"))
+        .and_then(|value| value.as_array())
+    else {
+        return Ok(Vec::new());
+    };
+
+    let mut rows = Vec::new();
+    let mut seen_event_ids = std::collections::BTreeSet::new();
+    for feature in features {
+        if json_value_string(feature, "__typename") != "Event" {
+            continue;
+        }
+        let title = json_value_string(feature, "title");
+        let tooltip = strip_html_tags(&json_value_string(feature, "tooltip"));
+        let text = compact_note(&format!("{title} {tooltip}"));
+        if !indot_trafficwise_is_t1_relevant(&text) {
+            continue;
+        }
+
+        let uri = json_value_string(feature, "uri");
+        let source_event_id = uri
+            .strip_prefix("event/")
+            .unwrap_or(uri.as_str())
+            .to_string();
+        let event_id = if source_event_id.trim().is_empty() {
+            format!("INDOT-TRAFFICWISE-{}", rows.len() + 1)
+        } else {
+            format!("INDOT-TRAFFICWISE-{source_event_id}")
+        };
+        if !seen_event_ids.insert(event_id.clone()) {
+            continue;
+        }
+
+        rows.push(T1FailureEventRow {
+            site_id: site_id.to_string(),
+            event_id,
+            source: "INDOT TrafficWise GraphQL".to_string(),
+            source_event_id,
+            observation_year,
+            start_time: String::new(),
+            end_time: String::new(),
+            duration_hours: None,
+            event_type: indot_trafficwise_event_type(&text).to_string(),
+            full_closure: indot_trafficwise_full_closure(&text),
+            lanes_closed: mdot_midrive_lanes_closed(&text),
+            freight_relevant: true,
+            confidence: "low".to_string(),
+            notes: text,
+        });
+    }
+    Ok(rows)
+}
+
 fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
     attrs
         .get(key)
@@ -5548,9 +5775,44 @@ fn mdot_midrive_is_t1_relevant(text: &str) -> bool {
             .any(|needle| text.to_ascii_uppercase().contains(needle))
 }
 
+fn indot_trafficwise_is_t1_relevant(text: &str) -> bool {
+    let text_norm = text.to_ascii_uppercase().replace(' ', "");
+    (text_norm.contains("I-80")
+        || text_norm.contains("I80")
+        || text_norm.contains("I-90")
+        || text_norm.contains("I90")
+        || text_norm.contains("I-94")
+        || text_norm.contains("I94")
+        || text_norm.contains("TOLLROAD"))
+        && [
+            "CLOSURE",
+            "CLOSED",
+            "CRASH",
+            "INCIDENT",
+            "CONSTRUCTION",
+            "ROADWORK",
+            "LANE CLOSED",
+        ]
+        .iter()
+        .any(|needle| text.to_ascii_uppercase().contains(needle))
+}
+
 fn tdot_smartway_event_type(text: &str) -> &'static str {
     let text = text.to_ascii_lowercase();
     if text.contains("construction") || text.contains("maintenance") {
+        "work_zone"
+    } else if text.contains("crash") {
+        "crash"
+    } else if text.contains("closure") || text.contains("closed") {
+        "closure"
+    } else {
+        "incident"
+    }
+}
+
+fn indot_trafficwise_event_type(text: &str) -> &'static str {
+    let text = text.to_ascii_lowercase();
+    if text.contains("roadwork") || text.contains("construction") || text.contains("maintenance") {
         "work_zone"
     } else if text.contains("crash") {
         "crash"
@@ -5596,6 +5858,15 @@ fn iowa511_full_closure(text: &str) -> bool {
         || text.contains("ramp closed")
         || text.contains("entrance ramp closed")
         || text.contains(": closed")
+}
+
+fn indot_trafficwise_full_closure(text: &str) -> bool {
+    let text = text.to_ascii_lowercase();
+    text.contains("road closed")
+        || text.contains("ramp closed")
+        || text.contains("entrance ramp closed")
+        || text.contains("exit ramp closed")
+        || text.contains("freeway closed")
 }
 
 fn mdot_midrive_full_closure(text: &str) -> bool {
@@ -5958,12 +6229,12 @@ mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events, parse_mdot_midrive_events,
-        parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
-        summarize_t1_failure_events, tier_for_score, write_tier_artifacts_to, FemaTile, GapType,
-        ScoreAllRow, ScoreSignalRow,
+        gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
+        parse_iowa511_events, parse_mdot_midrive_events, parse_standards_proof_ledger,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        parse_t1_source_health, parse_tdot_smartway_events, rounded_score,
+        scenario_edge_candidates, standards_blueprint_gate_failures, summarize_t1_failure_events,
+        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -6402,6 +6673,47 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         assert_eq!(rows[0].start_time, "5:14 PM");
         assert_eq!(rows[0].event_type, "crash");
         assert_eq!(rows[0].lanes_closed, Some(1));
+        assert_eq!(rows[0].confidence, "low");
+    }
+
+    #[test]
+    fn indot_trafficwise_import_filters_events_and_normalizes_rows() {
+        let json = r#"{
+  "data": {
+    "mapFeaturesQuery": {
+      "mapFeatures": [
+        {
+          "title": "I-80 westbound: Entrance ramp closed.",
+          "tooltip": "I-80 westbound: Entrance ramp closed, because of roadwork.",
+          "uri": "event/CARSx-333174",
+          "__typename": "Event"
+        },
+        {
+          "title": "US 30 in both directions: Paving operations.",
+          "tooltip": "US 30 in both directions: Paving operations, left lane closed.",
+          "uri": "event/incars-178325",
+          "__typename": "Event"
+        },
+        {
+          "title": "Show six events",
+          "tooltip": "",
+          "uri": "cluster/-87371644160212",
+          "__typename": "Cluster"
+        }
+      ],
+      "error": null
+    }
+  }
+}"#;
+
+        let rows = parse_indot_trafficwise_events(json, "T1X-I80-I90", 2026).expect("parse INDOT");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].site_id, "T1X-I80-I90");
+        assert_eq!(rows[0].source_event_id, "CARSx-333174");
+        assert_eq!(rows[0].observation_year, 2026);
+        assert_eq!(rows[0].event_type, "work_zone");
+        assert!(rows[0].full_closure);
         assert_eq!(rows[0].confidence, "low");
     }
 

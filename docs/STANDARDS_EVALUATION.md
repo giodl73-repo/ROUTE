@@ -128,10 +128,12 @@ route t1-fetch-tdot-smartway
 route t1-import-tdot-smartway
 route t1-fetch-mdot-midrive
 route t1-import-mdot-midrive
+route t1-fetch-indot-trafficwise
+route t1-import-indot-trafficwise
 route t1-accumulate-events --input data/cache/iowa511-t1-failure-events.csv
 ```
 
-`route t1-fetch-iowa511` caches the current public Iowa DOT 511 ArcGIS event layer. `route t1-import-iowa511` normalizes nearby I-35/I-80 records into the T1/T1 event schema for source accumulation. `route t1-fetch-tdot-smartway` and `route t1-import-tdot-smartway` define the same path for the TDOT SmartWay line-event layer around the Knoxville I-40/I-75 site, but the live TDOT query currently needs endpoint tuning or an alternate export path before it is as reliable as Iowa. As of May 9, 2026, TDOT FeatureServer and MapServer query attempts time out or return ArcGIS query errors even for count-only or one-row queries, while the service metadata remains public. `route t1-fetch-mdot-midrive` and `route t1-import-mdot-midrive` cache and normalize the public Mi Drive current incident feed around the Detroit metro I-75/I-90 evidence site. `route t1-accumulate-events` merges generated source rows into the canonical event table and dedupes repeated site/event IDs. These feeds are live, not historical archives, so cache snapshots should be treated as observation samples until a polling or archive strategy creates a stable annual history.
+`route t1-fetch-iowa511` caches the current public Iowa DOT 511 ArcGIS event layer. `route t1-import-iowa511` normalizes nearby I-35/I-80 records into the T1/T1 event schema for source accumulation. `route t1-fetch-tdot-smartway` and `route t1-import-tdot-smartway` define the same path for the TDOT SmartWay line-event layer around the Knoxville I-40/I-75 site, but the live TDOT query currently needs endpoint tuning or an alternate export path before it is as reliable as Iowa. As of May 9, 2026, TDOT FeatureServer and MapServer query attempts time out or return ArcGIS query errors even for count-only or one-row queries, while the service metadata remains public. `route t1-fetch-mdot-midrive` and `route t1-import-mdot-midrive` cache and normalize the public Mi Drive current incident feed around the Detroit metro I-75/I-90 evidence site. `route t1-fetch-indot-trafficwise` and `route t1-import-indot-trafficwise` cache and normalize the public TrafficWise GraphQL map feed for the northern Indiana I-80/I-90 evidence site. `route t1-accumulate-events` merges generated source rows into the canonical event table and dedupes repeated site/event IDs. These feeds are live, not historical archives, so cache snapshots should be treated as observation samples until a polling or archive strategy creates a stable annual history.
 
 `route t1-source-health --gate-ingestion` is expected to fail until every source needed for Blueprint-grade T1/T1 claims has either a working importer, a documented historical extract, or an explicit downgraded status.
 
@@ -144,6 +146,7 @@ Access notes from source probing:
 - MnDOT 511: the public app references a CARS backend, but direct CARS API/GraphQL requests returned 403 on May 9, 2026; treat it as access-blocked pending export access or an allowed public endpoint.
 - NCDOT DriveNC/TIMS: DriveNC is public, guessed event/API paths returned 404, and TIMS presented a login page on May 9, 2026; treat it as access-blocked pending export access or an allowed public endpoint.
 - MDOT Mi Drive: the public map references `/MiDrive/incidents/AllForMap/`, which returned JSON incident snapshots on May 9, 2026; treat it as live snapshot-only until polling/history and the Ohio/OHGO join are added.
+- INDOT TrafficWise: `https://511in.org/api/graphql` returned public `mapFeaturesQuery` event snapshots for `incidents` and `construction` layers on May 9, 2026; treat it as live snapshot-only until polling/history and the Ohio turnpike/OHGO join are added.
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 
