@@ -86,9 +86,9 @@ The central blocker is T1/T1 interchange resilience. The current system concentr
 | T1/T1 diamond proof has explicit acceptance gates | ✅ done | Gate defined in `docs/STANDARDS_EVALUATION.md`: k >= 3 in the 50-mile zone, single connector/interchange failure does not collapse transfers, and 80% T1 throughput restoration within 4 hours is demonstrated or labeled unproven |
 | T1 SLA model distinguishes freight-lane PTI, GP PTI, relay buffers, incident buffers, and shipper planning windows | 🔄 partial | Existing SLA/relay code and C-track papers need one shared proof table |
 | Throughput proof separates congestion-binding bottlenecks from resilience-binding chokepoints | 🔄 partial | Tie `route flow`, bottleneck gaps, and T1/T1 diamond analysis into one scenario matrix |
-| Adversity scenario library covers T1/T1 closure, corridor segment closure, port surge, weather/flood disruption, relay hub outage, EV/rest-area outage, and managed-lane sensitivity | ⏳ not started | Define L2 scenarios and expected artifact names |
+| Adversity scenario library covers T1/T1 closure, corridor segment closure, port surge, weather/flood disruption, relay hub outage, EV/rest-area outage, and managed-lane sensitivity | 🔄 partial | `data/pressure-test-scenarios.csv`; embedded TOMLs now warn when incidents lack edge bindings |
 | L0 tests cover primitive invariants for max-flow, incident degradation, SLA arithmetic, relay timing, and k-connectivity | 🔄 partial | Audit `route-network` and `route-sim` coverage; add missing unit tests |
-| L1 tests verify generated pressure-test artifacts are reproducible from stable fixtures | 🔄 partial | `route standards-proof` parses `data/standards-proof-ledger.csv`; add fixture-driven scenario artifact checks next |
+| L1 tests verify generated pressure-test artifacts are reproducible from stable fixtures | 🔄 partial | `route standards-proof` parses `data/standards-proof-ledger.csv`; embedded scenario TOMLs parse and expose readiness warnings |
 | L2 tests run representative scenarios and assert bounded outputs rather than headline-only claims | ⏳ not started | Start with NY-LA, Houston-Chicago, and one port corridor |
 | Unproven standards are labeled before Blueprint work consumes them | ⏳ not started | Standards should enter Milepost 6 only as Implemented, Heuristic, Stub, Planned, or Deprecated |
 

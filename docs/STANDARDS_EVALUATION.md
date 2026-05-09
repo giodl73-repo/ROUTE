@@ -4,6 +4,8 @@ This document is the proof plan for Milepost 4, Pressure Test. The tier standard
 
 The machine-readable ledger is `data/standards-proof-ledger.csv`.
 
+The L2 scenario catalog is `data/pressure-test-scenarios.csv`.
+
 ## Evaluation Rule
 
 A standard is ready for Blueprint only when it has:
@@ -79,6 +81,8 @@ For now, SLA and throughput outputs should be labeled Heuristic unless they are 
 
 The scenario library should report confidence labels with the output. A scenario can fail and still be valuable if it tells us which standard does not yet earn its place.
 
+Important current limitation: the embedded TOML scenarios are named shells until their `affected_edges` fields are bound to stable graph edge IDs. `route sim list` reports this status, and `route sim scenario ...` prints warnings before execution. A scenario with no affected edges is not an L2 pressure test; it is a fixture waiting for graph binding.
+
 ## Current Conclusions
 
 | Package | Current Claim Level | Reason |
@@ -105,3 +109,10 @@ route standards-proof --gate-blueprint
 ```
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
+
+For scenario readiness:
+
+```text
+route sim list
+route sim scenario omaha-interchange --intervention
+```

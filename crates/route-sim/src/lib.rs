@@ -37,4 +37,4 @@ pub use od::{
     EvProfile, Intervention, InterventionBenchmark, InterventionResult, OdComparison, OdCorridor,
     PassengerMode, PassengerTripDistribution, RelayNetwork, TransitDistribution,
 };
-pub use scenario::{run_scenario, Scenario, ScenarioResult};
+pub use scenario::{run_scenario, scenario_validation_warnings, Scenario, ScenarioResult};

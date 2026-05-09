@@ -1766,7 +1766,17 @@ fn main() -> Result<()> {
                 SimMode::List => {
                     println!("Available scenarios:");
                     for name in route_sim::scenarios::available_scenarios() {
-                        println!("  {name}");
+                        let status = route_sim::scenarios::load_scenario(name)
+                            .and_then(|toml| toml::from_str::<route_sim::Scenario>(toml).ok())
+                            .map(|scenario| {
+                                if route_sim::scenario_validation_warnings(&scenario).is_empty() {
+                                    "ready"
+                                } else {
+                                    "needs edge bindings"
+                                }
+                            })
+                            .unwrap_or("parse error");
+                        println!("  {name:<20} {status}");
                     }
                     println!("\nUsage: route sim scenario <name> [--intervention]");
                     println!("       route sim chaos [--iterations N] [--seed S] [--t1-only]");
@@ -1788,6 +1798,15 @@ fn main() -> Result<()> {
 
                     if !intervention {
                         scenario.intervention = None;
+                    }
+
+                    let warnings = route_sim::scenario_validation_warnings(&scenario);
+                    if !warnings.is_empty() {
+                        println!("  scenario warnings:");
+                        for warning in warnings {
+                            println!("  - {warning}");
+                        }
+                        println!();
                     }
 
                     let manifest =

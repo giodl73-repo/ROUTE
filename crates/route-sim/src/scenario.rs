@@ -76,6 +76,60 @@ pub struct RunResult {
     pub fw_gap: f64,
 }
 
+/// Lightweight validation for scenario definitions before execution.
+///
+/// These warnings intentionally do not reject a scenario: early Milepost 4
+/// fixtures are useful as named shells, but they must not be mistaken for
+/// fully bound pressure tests until they name concrete graph edge IDs.
+pub fn scenario_validation_warnings(scenario: &Scenario) -> Vec<String> {
+    let mut warnings = Vec::new();
+
+    if scenario.incident.affected_edges.is_empty() {
+        warnings.push("incident has no affected_edges; no graph capacity will change".to_string());
+    }
+    if scenario.report_corridors.is_empty() {
+        warnings.push("report_corridors is empty; no corridor PTI will be reported".to_string());
+    }
+    if scenario.fw_max_iter == 0 {
+        warnings.push("fw_max_iter is zero; assignment will not iterate".to_string());
+    }
+    if !scenario.fw_tolerance.is_finite() || scenario.fw_tolerance <= 0.0 {
+        warnings.push("fw_tolerance must be finite and positive".to_string());
+    }
+    if !scenario.incident.duration_hours.is_finite() || scenario.incident.duration_hours <= 0.0 {
+        warnings.push("incident duration_hours must be finite and positive".to_string());
+    }
+    if !scenario.incident.annual_occurrences.is_finite()
+        || scenario.incident.annual_occurrences < 0.0
+    {
+        warnings.push("incident annual_occurrences must be finite and non-negative".to_string());
+    }
+
+    if let Some(intervention) = &scenario.intervention {
+        match intervention {
+            Intervention::ManagedLanes {
+                added_lanes_per_direction,
+                ..
+            } if *added_lanes_per_direction == 0 => {
+                warnings.push(
+                    "managed-lanes intervention adds zero lanes; scenario is a named placeholder"
+                        .to_string(),
+                );
+            }
+            Intervention::Diamond {
+                connector_capacity_vph,
+                ..
+            } if !connector_capacity_vph.is_finite() || *connector_capacity_vph <= 0.0 => {
+                warnings
+                    .push("diamond connector_capacity_vph must be finite and positive".to_string());
+            }
+            _ => {}
+        }
+    }
+
+    warnings
+}
+
 /// Run a named scenario and return the full comparison.
 pub fn run_scenario(
     g: &HighwayGraph,
@@ -199,6 +253,29 @@ pub fn run_scenario(
         baseline: baseline_result,
         incident: incident_result,
         intervention: intervention_result,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{scenario_validation_warnings, Scenario};
+
+    #[test]
+    fn embedded_scenarios_parse() {
+        for name in crate::scenarios::available_scenarios() {
+            let toml = crate::scenarios::load_scenario(name).expect("scenario exists");
+            let scenario: Scenario = toml::from_str(toml).expect("scenario parses");
+            assert_eq!(scenario.name, *name);
+        }
+    }
+
+    #[test]
+    fn scenario_validation_flags_unbound_incident_edges() {
+        let toml = crate::scenarios::load_scenario("omaha-interchange").expect("scenario exists");
+        let scenario: Scenario = toml::from_str(toml).expect("scenario parses");
+        let warnings = scenario_validation_warnings(&scenario);
+
+        assert!(warnings.iter().any(|w| w.contains("no affected_edges")));
     }
 }
 

@@ -7,6 +7,7 @@ Start here when deciding which document owns a claim.
 | `docs/SYSTEM_PLAN.md` | Living roadmap, Milepost phases, roles, truth labels, forward plan | You need the current operating plan |
 | `docs/DIMENSIONS.md` | Current 16-dimension registry, evidence path, and truth label | You need the canonical rubric dimension list |
 | `docs/STANDARDS_EVALUATION.md` | Standards proof obligations, pressure-test gates, and T1/T1 evaluation framing | You need to know whether a tier standard has earned its place |
+| `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `specs/2026-05-06-route-design.md` | Core ROUTE method: corpus, dimensions, gap map, parliament, design proposals | You need the conceptual process |
 | `specs/2026-05-06-route-rust-architecture.md` | Rust workspace architecture, CLI contracts, data model, output formats | You need implementation boundaries |
 | `specs/2026-05-06-interstate-2-design.md` | Interstate 2.0 feature set, investment thesis, simulation toolkit, transit integration | You need the national design framework |
