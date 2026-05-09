@@ -58,7 +58,7 @@ The acceptance gate is stricter than graph connectivity alone:
 
 Current status: Heuristic. `route diamond --at all`, `data/t1-intersections.md`, and the B.4 paper establish the right framing, but manual validation and usable-throughput scenarios are still needed before this becomes a Blueprint-grade claim.
 
-The failure-rate evidence is currently the weakest piece. `data/t1-intersection-failures.csv` separates modeled scenario outputs from empirical evidence. Most rows are `source_needed`; the Des Moines row is only `modeled`, because it comes from `route sim scenario des-moines-interchange --intervention` rather than observed closure history. `data/t1-failure-source-plan.csv` lists the first source targets for replacing those blanks with observed incident, work-zone, travel-time, and reroute evidence.
+The failure-rate evidence is currently the weakest piece. `data/t1-intersection-failures.csv` separates modeled scenario outputs from empirical evidence. Most rows are `source_needed`; the Des Moines row is only `modeled`, because it comes from `route sim scenario des-moines-interchange --intervention` rather than observed closure history. `data/t1-failure-source-plan.csv` lists the first source targets for replacing those blanks with observed incident, work-zone, travel-time, and reroute evidence. `data/t1-failure-events.csv` is the normalized raw observation table; `route t1-failure-events` turns those observations into per-site annual rates and p50/p95 duration estimates.
 
 ## SLA And Throughput Proof
 
@@ -114,6 +114,8 @@ route standards-proof --tier T1 --family resilience --details
 route standards-proof --gate-blueprint
 route t1-failures
 route t1-failures --needs-sources
+route t1-failure-sources
+route t1-failure-events
 ```
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.

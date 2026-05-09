@@ -252,6 +252,17 @@ enum Commands {
         lookup_needed: bool,
     },
 
+    /// Summarize raw T1/T1 failure event observations into rates and durations
+    T1FailureEvents {
+        /// Path to normalized T1/T1 failure event observations CSV
+        #[arg(
+            long,
+            default_value = "data/t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        events: PathBuf,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1827,6 +1838,12 @@ fn main() -> Result<()> {
             let rows = load_t1_failure_source_plan(&ledger)
                 .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
             print_t1_failure_sources(&rows, lookup_needed);
+        }
+
+        Commands::T1FailureEvents { events } => {
+            let rows = load_t1_failure_events(&events)
+                .with_context(|| format!("loading T1 failure events {}", events.display()))?;
+            print_t1_failure_event_summary(&rows);
         }
 
         Commands::Sim { mode } => {
@@ -4584,15 +4601,196 @@ fn print_t1_failure_sources(rows: &[T1FailureSourceRow], lookup_needed: bool) {
     }
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1FailureEventRow {
+    site_id: String,
+    event_id: String,
+    source: String,
+    source_event_id: String,
+    observation_year: u16,
+    start_time: String,
+    end_time: String,
+    duration_hours: Option<f64>,
+    event_type: String,
+    full_closure: bool,
+    lanes_closed: Option<u8>,
+    freight_relevant: bool,
+    confidence: String,
+    notes: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct T1FailureEventSummary {
+    site_id: String,
+    observed_years: usize,
+    event_count: usize,
+    annual_rate: f64,
+    duration_p50_hours: Option<f64>,
+    duration_p95_hours: Option<f64>,
+}
+
+fn load_t1_failure_events(path: &Path) -> Result<Vec<T1FailureEventRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_failure_events(file)
+}
+
+fn parse_t1_failure_events<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureEventRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn summarize_t1_failure_events(rows: &[T1FailureEventRow]) -> Vec<T1FailureEventSummary> {
+    let mut by_site: std::collections::BTreeMap<&str, Vec<&T1FailureEventRow>> =
+        std::collections::BTreeMap::new();
+    for row in rows.iter().filter(|row| row.freight_relevant) {
+        by_site.entry(&row.site_id).or_default().push(row);
+    }
+
+    by_site
+        .into_iter()
+        .map(|(site_id, site_rows)| {
+            let mut years = site_rows
+                .iter()
+                .map(|row| row.observation_year)
+                .collect::<Vec<_>>();
+            years.sort_unstable();
+            years.dedup();
+
+            let mut event_ids = site_rows
+                .iter()
+                .map(|row| row.event_id.as_str())
+                .collect::<Vec<_>>();
+            event_ids.sort_unstable();
+            event_ids.dedup();
+
+            let mut durations = site_rows
+                .iter()
+                .filter_map(|row| row.duration_hours)
+                .filter(|v| v.is_finite() && *v >= 0.0)
+                .collect::<Vec<_>>();
+            durations.sort_by(|a, b| a.total_cmp(b));
+
+            let observed_years = years.len();
+            let event_count = event_ids.len();
+            let annual_rate = if observed_years > 0 {
+                event_count as f64 / observed_years as f64
+            } else {
+                0.0
+            };
+
+            T1FailureEventSummary {
+                site_id: site_id.to_string(),
+                observed_years,
+                event_count,
+                annual_rate,
+                duration_p50_hours: percentile_nearest(&durations, 0.50),
+                duration_p95_hours: percentile_nearest(&durations, 0.95),
+            }
+        })
+        .collect()
+}
+
+fn percentile_nearest(sorted_values: &[f64], p: f64) -> Option<f64> {
+    if sorted_values.is_empty() {
+        return None;
+    }
+    let p = p.clamp(0.0, 1.0);
+    let idx = ((sorted_values.len() - 1) as f64 * p).round() as usize;
+    sorted_values.get(idx).copied()
+}
+
+fn print_t1_failure_event_summary(rows: &[T1FailureEventRow]) {
+    let summaries = summarize_t1_failure_events(rows);
+    let freight_rows = rows.iter().filter(|row| row.freight_relevant).count();
+    let full_closures = rows.iter().filter(|row| row.full_closure).count();
+    let lane_rows = rows.iter().filter(|row| row.lanes_closed.is_some()).count();
+    let source_id_rows = rows
+        .iter()
+        .filter(|row| !row.source_event_id.trim().is_empty())
+        .count();
+    let timed_rows = rows
+        .iter()
+        .filter(|row| !row.start_time.trim().is_empty() && !row.end_time.trim().is_empty())
+        .count();
+    let noted_rows = rows
+        .iter()
+        .filter(|row| !row.notes.trim().is_empty())
+        .count();
+    let sources = rows
+        .iter()
+        .map(|row| row.source.as_str())
+        .filter(|value| !value.trim().is_empty())
+        .collect::<std::collections::BTreeSet<_>>();
+    let event_types = rows
+        .iter()
+        .map(|row| row.event_type.as_str())
+        .filter(|value| !value.trim().is_empty())
+        .collect::<std::collections::BTreeSet<_>>();
+    let confidence_labels = rows
+        .iter()
+        .map(|row| row.confidence.as_str())
+        .filter(|value| !value.trim().is_empty())
+        .collect::<std::collections::BTreeSet<_>>();
+    println!("route t1-failure-events");
+    println!("  events: {} raw rows", rows.len());
+    println!("  freight-relevant rows: {freight_rows}");
+    println!(
+        "  sites with freight-relevant observations: {}",
+        summaries.len()
+    );
+    if rows.is_empty() {
+        println!("  no observations loaded yet; populate data/t1-failure-events.csv from source plan records");
+        return;
+    }
+    println!("  full closures: {full_closures}");
+    println!("  rows with lane counts: {lane_rows}");
+    println!("  rows with source event ids: {source_id_rows}");
+    println!("  rows with start/end times: {timed_rows}");
+    println!("  rows with notes: {noted_rows}");
+    println!("  sources: {}", join_set(&sources));
+    println!("  event types: {}", join_set(&event_types));
+    println!("  confidence labels: {}", join_set(&confidence_labels));
+    println!();
+    println!(
+        "{:<18} {:>6} {:>7} {:>8} {:>8} {:>8}",
+        "Site", "Years", "Events", "Rate/Yr", "P50 h", "P95 h"
+    );
+    println!("{}", "-".repeat(68));
+    for summary in summaries {
+        println!(
+            "{:<18} {:>6} {:>7} {:>8.3} {:>8} {:>8}",
+            summary.site_id,
+            summary.observed_years,
+            summary.event_count,
+            summary.annual_rate,
+            fmt_opt(summary.duration_p50_hours),
+            fmt_opt(summary.duration_p95_hours)
+        );
+    }
+}
+
+fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
+    if values.is_empty() {
+        "none".to_string()
+    } else {
+        values.iter().copied().collect::<Vec<_>>().join(", ")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger,
-        parse_t1_failure_ledger, parse_t1_failure_source_plan, rounded_score,
-        scenario_edge_candidates, standards_blueprint_gate_failures, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        summarize_t1_failure_events, tier_for_score, write_tier_artifacts_to, FemaTile, GapType,
+        ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -4767,6 +4965,30 @@ T1X-I35-I40,I-35 x I-40,Oklahoma City OK,Oklahoma 511,NPMRDS,duration,lookup_nee
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].access_status, "identified");
         assert_eq!(rows[1].source_url, "");
+    }
+
+    #[test]
+    fn t1_failure_events_summarize_rates_and_durations() {
+        let csv = "\
+site_id,event_id,source,source_event_id,observation_year,start_time,end_time,duration_hours,event_type,full_closure,lanes_closed,freight_relevant,confidence,notes
+T1X-I35-I80,e1,Iowa 511,100,2023,2023-01-01T00:00:00Z,2023-01-01T02:00:00Z,2.0,incident,true,2,true,medium,first
+T1X-I35-I80,e2,Iowa 511,101,2023,2023-03-01T00:00:00Z,2023-03-01T04:00:00Z,4.0,work_zone,false,1,true,medium,second
+T1X-I35-I80,e3,Iowa 511,102,2024,2024-06-01T00:00:00Z,2024-06-01T10:00:00Z,10.0,incident,true,3,true,high,third
+T1X-I35-I80,e4,Iowa 511,103,2024,2024-07-01T00:00:00Z,2024-07-01T08:00:00Z,8.0,incident,true,3,false,low,non-freight
+";
+
+        let rows = parse_t1_failure_events(csv.as_bytes()).expect("parse event rows");
+        let summaries = summarize_t1_failure_events(&rows);
+
+        assert_eq!(rows.len(), 4);
+        assert_eq!(summaries.len(), 1);
+        let summary = &summaries[0];
+        assert_eq!(summary.site_id, "T1X-I35-I80");
+        assert_eq!(summary.observed_years, 2);
+        assert_eq!(summary.event_count, 3);
+        assert_eq!(summary.annual_rate, 1.5);
+        assert_eq!(summary.duration_p50_hours, Some(4.0));
+        assert_eq!(summary.duration_p95_hours, Some(10.0));
     }
 
     #[test]
