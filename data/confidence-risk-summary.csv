@@ -1,0 +1,17 @@
+dimension,name,total_risk,corridors,review_corridors
+B3,Port/Border Access,360.0,208,4
+B4,Military/Strategic,305.6,233,5
+D1,Climate Resilience,165.5,40,5
+B1,Redundancy,159.1,116,3
+A2,Freight Intensity,143.5,66,3
+C2,Rural Connectivity,131.8,107,2
+A3,Speed Reliability,109.5,35,5
+C3,Economic Opportunity,93.1,78,1
+C1,Population Reach,67.0,53,2
+C4,Agricultural Export,56.4,33,1
+B2,Network Centrality,55.0,55,0
+A4,International Trade,32.2,20,1
+D2,Multimodal Integration,13.7,11,0
+A5,Safety Record,11.5,8,0
+A1,Throughput Gap,6.0,6,2
+D3,Infrastructure Vintage,3.7,3,0

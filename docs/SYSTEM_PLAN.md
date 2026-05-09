@@ -157,7 +157,7 @@ Goal: make the 16-dimension scorer boringly reliable.
 
 Deliverables:
 - Unit tests for every dimension's missing-data behavior and anchor extremes.
-- A calibration ledger that emits all 16 dimensions consistently, including score confidence and the weakest risk-driving dimensions for review.
+- Calibration ledgers that emit all 16 dimensions consistently, including score confidence, weakest risk-driving corridor dimensions, and dimension-level review totals.
 - A dimension registry table in docs generated or checked against code.
 - Clear labeling for estimated, proxy, and unavailable dimensions.
 

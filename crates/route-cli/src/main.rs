@@ -2015,6 +2015,9 @@ fn main() -> Result<()> {
             let mut total_scores: Vec<f64> = Vec::new();
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
             let mut confidence_risks: Vec<ConfidenceRisk> = Vec::new();
+            let mut dimension_risk_totals = [0.0_f64; N_DIMS];
+            let mut dimension_risk_counts = [0_usize; N_DIMS];
+            let mut dimension_review_counts = [0_usize; N_DIMS];
 
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
@@ -2083,9 +2086,22 @@ fn main() -> Result<()> {
                     let confidence_row = dimension_confidence_values(&s);
                     let total = rounded_score(s.total());
                     let tier = tier_for_score(total);
+                    let review = total >= T2_THRESHOLD && s.score_weighted_confidence() < 0.75;
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
                         flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
+                    }
+                    for (d, risk) in dimension_confidence_risks(&row, &confidence_row)
+                        .iter()
+                        .enumerate()
+                    {
+                        if *risk >= 1.0 {
+                            dimension_risk_totals[d] += risk;
+                            dimension_risk_counts[d] += 1;
+                            if review {
+                                dimension_review_counts[d] += 1;
+                            }
+                        }
                     }
                     let risk_dimensions = confidence_risk_dimensions(&row, &confidence_row);
                     confidence_risks.push(ConfidenceRisk {
@@ -2271,6 +2287,35 @@ fn main() -> Result<()> {
                 "  → Sort by score_confidence and risk_dimensions to find rankings most dependent on weak dimensions."
             );
 
+            let mut dimension_risks: Vec<(usize, f64, usize, usize)> = (0..N_DIMS)
+                .map(|d| {
+                    (
+                        d,
+                        dimension_risk_totals[d],
+                        dimension_risk_counts[d],
+                        dimension_review_counts[d],
+                    )
+                })
+                .collect();
+            dimension_risks.sort_by(|a, b| {
+                b.1.total_cmp(&a.1)
+                    .then_with(|| b.3.cmp(&a.3))
+                    .then_with(|| DIMENSION_CODES[a.0].cmp(DIMENSION_CODES[b.0]))
+            });
+
+            println!("\n  Confidence risk by dimension:");
+            println!(
+                "  {:>2}  {:<28}  {:>9}  {:>9}  {:>9}",
+                "Dim", "Name", "Risk", "Corridors", "Reviews"
+            );
+            println!("  {}", "─".repeat(66));
+            for (d, total_risk, corridor_count, review_count) in dimension_risks.iter().take(8) {
+                println!(
+                    "  {:>2}  {:<28}  {:>9.1}  {:>9}  {:>9}",
+                    dim_names[*d], dim_labels[*d], total_risk, corridor_count, review_count
+                );
+            }
+
             std::fs::create_dir_all("data")?;
             let risk_path = PathBuf::from("data/confidence-risks.csv");
             let mut risk_wtr = csv::Writer::from_path(&risk_path)?;
@@ -2297,6 +2342,30 @@ fn main() -> Result<()> {
             }
             risk_wtr.flush()?;
             println!("  wrote confidence risk ledger → {}", risk_path.display());
+
+            let summary_path = PathBuf::from("data/confidence-risk-summary.csv");
+            let mut summary_wtr = csv::Writer::from_path(&summary_path)?;
+            summary_wtr.write_record([
+                "dimension",
+                "name",
+                "total_risk",
+                "corridors",
+                "review_corridors",
+            ])?;
+            for (d, total_risk, corridor_count, review_count) in &dimension_risks {
+                summary_wtr.write_record([
+                    dim_names[*d].to_string(),
+                    dim_labels[*d].to_string(),
+                    format!("{total_risk:.1}"),
+                    corridor_count.to_string(),
+                    review_count.to_string(),
+                ])?;
+            }
+            summary_wtr.flush()?;
+            println!(
+                "  wrote confidence risk summary → {}",
+                summary_path.display()
+            );
 
             // Retirement candidates
             println!("\n  Retirement candidates (std < 1.5, estimated < 80%):");
@@ -3486,17 +3555,26 @@ fn dimension_confidence_values(scores: &route_score::DimensionScores) -> [f32; 1
     ]
 }
 
+fn dimension_confidence_risks(scores: &[f64; 16], confidences: &[f32; 16]) -> [f64; 16] {
+    let mut risks = [0.0; 16];
+    for d in 0..16 {
+        risks[d] = scores[d] * (1.0 - confidences[d].clamp(0.0, 1.0) as f64);
+    }
+    risks
+}
+
 fn confidence_risk_dimensions(scores: &[f64; 16], confidences: &[f32; 16]) -> String {
+    let contribution = dimension_confidence_risks(scores, confidences);
     let mut risks: Vec<(&str, f64, f32, f64)> = DIMENSION_CODES
         .iter()
         .zip(scores.iter())
         .zip(confidences.iter())
-        .filter_map(|((code, score), confidence)| {
+        .zip(contribution.iter())
+        .filter_map(|(((code, score), confidence), risk)| {
             let score = *score;
             let confidence = confidence.clamp(0.0, 1.0);
-            let risk = score * (1.0 - confidence as f64);
-            if risk >= 1.0 {
-                Some((*code, score, confidence, risk))
+            if *risk >= 1.0 {
+                Some((*code, score, confidence, *risk))
             } else {
                 None
             }
@@ -3528,9 +3606,9 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_values,
-        dimension_estimated_values, dimension_score_values, join_fema_d1_to_corridor,
-        rounded_score, tier_for_score, FemaTile,
+        atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
+        dimension_confidence_values, dimension_estimated_values, dimension_score_values,
+        join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -3581,6 +3659,21 @@ mod tests {
             confidence_risk_dimensions(&scores, &confidences),
             "A3:10.0@0.55;A2:6.0@0.45;D1:5.0@0.50"
         );
+    }
+
+    #[test]
+    fn dimension_confidence_risks_clamps_confidence_to_valid_range() {
+        let mut scores = [0.0; 16];
+        let mut confidences = [1.0; 16];
+        scores[0] = 10.0;
+        scores[1] = 10.0;
+        confidences[0] = -0.5;
+        confidences[1] = 1.5;
+
+        let risks = dimension_confidence_risks(&scores, &confidences);
+
+        assert_eq!(risks[0], 10.0);
+        assert_eq!(risks[1], 0.0);
     }
 
     #[test]
