@@ -117,7 +117,11 @@ route t1-failures --needs-sources
 route t1-failure-sources
 route t1-failure-events
 route t1-failure-events --write-ledger data/t1-intersection-failures.csv
+route t1-fetch-iowa511
+route t1-import-iowa511
 ```
+
+`route t1-fetch-iowa511` caches the current public Iowa DOT 511 ArcGIS event layer. `route t1-import-iowa511` normalizes nearby I-35/I-80 records into the T1/T1 event schema for source accumulation. The Iowa feed is live, not a historical archive, so cache snapshots should be treated as observation samples until a polling or archive strategy creates a stable annual history.
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 

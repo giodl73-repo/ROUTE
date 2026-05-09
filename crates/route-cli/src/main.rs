@@ -273,6 +273,47 @@ enum Commands {
         write_ledger: Option<PathBuf>,
     },
 
+    /// Fetch current Iowa 511 ArcGIS event JSON for source-cache ingestion
+    T1FetchIowa511 {
+        /// Output JSON file
+        #[arg(
+            long,
+            default_value = "data/cache/iowa511-events.json",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+    },
+
+    /// Normalize Iowa 511 ArcGIS event JSON into T1/T1 failure event rows
+    T1ImportIowa511 {
+        /// Cached Iowa 511 ArcGIS query JSON
+        #[arg(
+            long,
+            default_value = "data/cache/iowa511-events.json",
+            value_name = "FILE"
+        )]
+        input: PathBuf,
+        /// Output normalized T1/T1 event CSV
+        #[arg(
+            long,
+            default_value = "data/cache/iowa511-t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// T1/T1 site id to assign
+        #[arg(long, default_value = "T1X-I35-I80")]
+        site_id: String,
+        /// Site latitude for radius filtering
+        #[arg(long, default_value_t = 41.658)]
+        lat: f64,
+        /// Site longitude for radius filtering
+        #[arg(long, default_value_t = -93.800)]
+        lon: f64,
+        /// Maximum event distance from site center
+        #[arg(long, default_value_t = 30.0)]
+        radius_miles: f64,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1867,6 +1908,32 @@ fn main() -> Result<()> {
                 println!();
                 println!("  updated ledger -> {}", output.display());
             }
+        }
+
+        Commands::T1FetchIowa511 { output } => {
+            fetch_iowa511_events(&output)
+                .with_context(|| format!("fetching Iowa 511 events to {}", output.display()))?;
+            println!("route t1-fetch-iowa511");
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1ImportIowa511 {
+            input,
+            output,
+            site_id,
+            lat,
+            lon,
+            radius_miles,
+        } => {
+            let json = std::fs::read_to_string(&input)
+                .with_context(|| format!("reading Iowa 511 JSON {}", input.display()))?;
+            let rows = parse_iowa511_events(&json, &site_id, lat, lon, radius_miles)
+                .with_context(|| format!("normalizing Iowa 511 JSON {}", input.display()))?;
+            write_t1_failure_events(&output, &rows)
+                .with_context(|| format!("writing normalized events {}", output.display()))?;
+            println!("route t1-import-iowa511");
+            println!("  rows: {}", rows.len());
+            println!("  wrote {}", output.display());
         }
 
         Commands::Sim { mode } => {
@@ -4633,7 +4700,7 @@ fn print_t1_failure_sources(rows: &[T1FailureSourceRow], lookup_needed: bool) {
     }
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureEventRow {
     site_id: String,
     event_id: String,
@@ -4668,6 +4735,18 @@ fn load_t1_failure_events(path: &Path) -> Result<Vec<T1FailureEventRow>> {
     parse_t1_failure_events(file)
 }
 
+fn write_t1_failure_events(path: &Path, rows: &[T1FailureEventRow]) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut wtr = csv::Writer::from_path(path)?;
+    for row in rows {
+        wtr.serialize(row)?;
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
 fn parse_t1_failure_events<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureEventRow>> {
     let mut rdr = csv::Reader::from_reader(reader);
     let mut rows = Vec::new();
@@ -4675,6 +4754,196 @@ fn parse_t1_failure_events<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureE
         rows.push(result?);
     }
     Ok(rows)
+}
+
+fn fetch_iowa511_events(output: &Path) -> Result<()> {
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let url = "https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/CARS511_Iowa_View/FeatureServer/0/query?f=json&where=1%3D1&outFields=ID,Route,StartTime,EndTime,IssueDate,IssueTime,headline,cause,Restrict_,Desc0&returnGeometry=true&outSR=4326";
+    let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
+    std::fs::write(output, body)?;
+    Ok(())
+}
+
+fn parse_iowa511_events(
+    json: &str,
+    site_id: &str,
+    lat: f64,
+    lon: f64,
+    radius_miles: f64,
+) -> Result<Vec<T1FailureEventRow>> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    let Some(features) = value.get("features").and_then(|value| value.as_array()) else {
+        return Ok(Vec::new());
+    };
+
+    let mut rows = Vec::new();
+    let mut seen_event_ids = std::collections::BTreeSet::new();
+    for feature in features {
+        let attrs = feature
+            .get("attributes")
+            .and_then(|value| value.as_object())
+            .cloned()
+            .unwrap_or_default();
+        let geometry = feature.get("geometry");
+        let event_lon = geometry
+            .and_then(|value| value.get("x"))
+            .and_then(|value| value.as_f64());
+        let event_lat = geometry
+            .and_then(|value| value.get("y"))
+            .and_then(|value| value.as_f64());
+        if let (Some(event_lat), Some(event_lon)) = (event_lat, event_lon) {
+            if haversine_miles(lat, lon, event_lat, event_lon) > radius_miles {
+                continue;
+            }
+        }
+
+        let route = json_string(&attrs, "Route");
+        let text = [
+            route.as_str(),
+            json_string(&attrs, "headline").as_str(),
+            json_string(&attrs, "cause").as_str(),
+            json_string(&attrs, "Restrict_").as_str(),
+            json_string(&attrs, "Desc0").as_str(),
+        ]
+        .join(" ");
+        if !iowa511_is_t1_relevant(&route, &text) {
+            continue;
+        }
+
+        let issue_date = json_string(&attrs, "IssueDate");
+        let observation_year = issue_date
+            .get(0..4)
+            .and_then(|value| value.parse::<u16>().ok())
+            .unwrap_or(0);
+        let start_time = json_string(&attrs, "StartTime");
+        let end_time = json_string(&attrs, "EndTime");
+        let duration_hours = same_day_duration_hours(&start_time, &end_time);
+        let source_event_id = json_string(&attrs, "ID");
+        let event_id = if source_event_id.trim().is_empty() {
+            format!("IOWA511-{}", rows.len() + 1)
+        } else {
+            format!("IOWA511-{source_event_id}")
+        };
+        if !seen_event_ids.insert(event_id.clone()) {
+            continue;
+        }
+
+        rows.push(T1FailureEventRow {
+            site_id: site_id.to_string(),
+            event_id,
+            source: "Iowa DOT 511 ArcGIS".to_string(),
+            source_event_id,
+            observation_year,
+            start_time: combine_iowa_date_time(&issue_date, &start_time),
+            end_time: combine_iowa_date_time(&issue_date, &end_time),
+            duration_hours,
+            event_type: iowa511_event_type(&text).to_string(),
+            full_closure: iowa511_full_closure(&text),
+            lanes_closed: None,
+            freight_relevant: true,
+            confidence: if duration_hours.is_some() {
+                "medium".to_string()
+            } else {
+                "low".to_string()
+            },
+            notes: compact_note(&text),
+        });
+    }
+    Ok(rows)
+}
+
+fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
+    attrs
+        .get(key)
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+fn iowa511_is_t1_relevant(route: &str, text: &str) -> bool {
+    let route_norm = route.to_ascii_uppercase().replace(' ', "");
+    let text_norm = text.to_ascii_uppercase();
+    (route_norm.contains("I-35")
+        || route_norm.contains("I35")
+        || route_norm.contains("I-80")
+        || route_norm.contains("I80"))
+        && ["CLOSED", "CLOSURE", "CONSTRUCTION", "CRASH", "INCIDENT"]
+            .iter()
+            .any(|needle| text_norm.contains(needle))
+}
+
+fn iowa511_event_type(text: &str) -> &'static str {
+    let text = text.to_ascii_lowercase();
+    if text.contains("construction") {
+        "work_zone"
+    } else if text.contains("crash") {
+        "crash"
+    } else if text.contains("closed") || text.contains("closure") {
+        "closure"
+    } else {
+        "incident"
+    }
+}
+
+fn iowa511_full_closure(text: &str) -> bool {
+    let text = text.to_ascii_lowercase();
+    if text.contains("shoulder") || text.contains("lane closed") || text.contains("lanes closed") {
+        return false;
+    }
+    text.contains("road closed")
+        || text.contains("ramp closed")
+        || text.contains("entrance ramp closed")
+        || text.contains(": closed")
+}
+
+fn compact_note(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn combine_iowa_date_time(issue_date: &str, time: &str) -> String {
+    if issue_date.len() != 8 || time.trim().is_empty() {
+        return time.to_string();
+    }
+    format!(
+        "{}-{}-{} {}",
+        &issue_date[0..4],
+        &issue_date[4..6],
+        &issue_date[6..8],
+        time.trim()
+    )
+}
+
+fn same_day_duration_hours(start: &str, end: &str) -> Option<f64> {
+    let start = parse_12h_minutes(start)?;
+    let end = parse_12h_minutes(end)?;
+    if end >= start {
+        Some((end - start) as f64 / 60.0)
+    } else {
+        None
+    }
+}
+
+fn parse_12h_minutes(input: &str) -> Option<i32> {
+    let input = input.trim();
+    let (time, suffix) = input.rsplit_once(' ')?;
+    let (hour, minute) = time.split_once(':')?;
+    let mut hour = hour.parse::<i32>().ok()?;
+    let minute = minute.parse::<i32>().ok()?;
+    if !(1..=12).contains(&hour) || !(0..=59).contains(&minute) {
+        return None;
+    }
+    let suffix = suffix.to_ascii_uppercase();
+    if suffix == "PM" && hour != 12 {
+        hour += 12;
+    } else if suffix == "AM" && hour == 12 {
+        hour = 0;
+    } else if suffix != "AM" && suffix != "PM" {
+        return None;
+    }
+    Some(hour * 60 + minute)
 }
 
 fn summarize_t1_failure_events(rows: &[T1FailureEventRow]) -> Vec<T1FailureEventSummary> {
@@ -4895,11 +5164,11 @@ mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger,
-        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
-        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
-        summarize_t1_failure_events, tier_for_score, write_tier_artifacts_to, FemaTile, GapType,
-        ScoreAllRow, ScoreSignalRow,
+        gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events,
+        parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
+        parse_t1_failure_source_plan, rounded_score, scenario_edge_candidates,
+        standards_blueprint_gate_failures, summarize_t1_failure_events, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -5131,6 +5400,70 @@ T1X-I35-I80,e2,Iowa 511,101,2024,2024-01-01T00:00:00Z,2024-01-01T06:00:00Z,6.0,i
             .current_artifact
             .contains("data/t1-failure-events.csv"));
         assert_eq!(updated[1].source_status, "source_needed");
+    }
+
+    #[test]
+    fn iowa511_import_filters_radius_and_normalizes_events() {
+        let json = r#"{
+  "features": [
+    {
+      "attributes": {
+        "ID": "IADOT-1",
+        "Route": "I-80 WB",
+        "StartTime": "08:00 AM",
+        "EndTime": "10:30 AM",
+        "IssueDate": "20260330",
+        "IssueTime": "170433",
+        "headline": "I-80 WB: Crash, left lane closed",
+        "cause": "due to crash.",
+        "Restrict_": "Lane closed",
+        "Desc0": "near Des Moines"
+      },
+      "geometry": { "x": -93.80, "y": 41.66 }
+    },
+    {
+      "attributes": {
+        "ID": "IADOT-2",
+        "Route": "US 218",
+        "StartTime": "08:00 AM",
+        "EndTime": "10:30 AM",
+        "IssueDate": "20260330",
+        "IssueTime": "170433",
+        "headline": "US 218: Road Construction",
+        "cause": "due to road construction.",
+        "Restrict_": "",
+        "Desc0": "not a T1 route"
+      },
+      "geometry": { "x": -93.80, "y": 41.66 }
+    },
+    {
+      "attributes": {
+        "ID": "IADOT-3",
+        "Route": "I-80 WB",
+        "StartTime": "08:00 AM",
+        "EndTime": "10:30 AM",
+        "IssueDate": "20260330",
+        "IssueTime": "170433",
+        "headline": "I-80 WB: Entrance Ramp Closed",
+        "cause": "due to road construction.",
+        "Restrict_": "",
+        "Desc0": "Council Bluffs"
+      },
+      "geometry": { "x": -95.85, "y": 41.26 }
+    }
+  ]
+}"#;
+
+        let rows = parse_iowa511_events(json, "T1X-I35-I80", 41.658, -93.800, 30.0)
+            .expect("parse Iowa 511 fixture");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].site_id, "T1X-I35-I80");
+        assert_eq!(rows[0].source_event_id, "IADOT-1");
+        assert_eq!(rows[0].observation_year, 2026);
+        assert_eq!(rows[0].duration_hours, Some(2.5));
+        assert_eq!(rows[0].event_type, "crash");
+        assert!(!rows[0].full_closure);
     }
 
     #[test]
