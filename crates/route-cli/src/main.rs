@@ -614,6 +614,7 @@ fn main() -> Result<()> {
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
+            let mut score_rows: Vec<(String, f64, &'static str, String, bool)> = Vec::new();
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Apply all data joins (same as calibrate)
@@ -684,10 +685,38 @@ fn main() -> Result<()> {
                         scores.total(),
                         if scores.any_estimated() { "†" } else { "" }
                     );
+                    let total = scores.total();
+                    let tier = tier_for_score(total);
+                    score_rows.push((
+                        corridor.designation.clone(),
+                        total,
+                        tier,
+                        scores.rubric_version.clone(),
+                        scores.any_estimated(),
+                    ));
                     all_scores.push(scores);
                 }
             }
 
+            std::fs::create_dir_all("data")?;
+            let out = PathBuf::from("data/scores-all.csv");
+            let mut wtr = csv::Writer::from_path(&out)?;
+            wtr.write_record(["route", "score", "tier", "rubric_version", "estimated"])?;
+            for (route, score, tier, rubric_version, estimated) in &score_rows {
+                wtr.write_record([
+                    route.as_str(),
+                    &format!("{score:.1}"),
+                    tier,
+                    rubric_version.as_str(),
+                    if *estimated { "true" } else { "false" },
+                ])?;
+            }
+            wtr.flush()?;
+            println!(
+                "  wrote {} score rows → {}",
+                score_rows.len(),
+                out.display()
+            );
             println!("score-all complete: {} corridors scored.", all_scores.len());
         }
 
@@ -3132,6 +3161,33 @@ fn num_cpus() -> usize {
     std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4)
+}
+
+fn tier_for_score(score: f64) -> &'static str {
+    if score >= 29.0 {
+        "T1"
+    } else if score >= 21.0 {
+        "T2"
+    } else if score >= 12.0 {
+        "T3"
+    } else {
+        "T4"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tier_for_score;
+
+    #[test]
+    fn tier_for_score_matches_megamap_thresholds() {
+        assert_eq!(tier_for_score(29.0), "T1");
+        assert_eq!(tier_for_score(28.9), "T2");
+        assert_eq!(tier_for_score(21.0), "T2");
+        assert_eq!(tier_for_score(20.9), "T3");
+        assert_eq!(tier_for_score(12.0), "T3");
+        assert_eq!(tier_for_score(11.9), "T4");
+    }
 }
 
 /// Normalise user input to internal route ID: "I-80" → "I80", "i80" → "I80"
