@@ -1987,6 +1987,7 @@ fn main() -> Result<()> {
             let mut route_ids_used: Vec<String> = Vec::new();
             let mut total_scores: Vec<f64> = Vec::new();
             let mut flagged_congestion: Vec<(String, f64, f64)> = Vec::new(); // (route, A1, B2)
+            let mut confidence_risks: Vec<(String, f64, &'static str, f32, f32)> = Vec::new();
 
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
@@ -2054,10 +2055,18 @@ fn main() -> Result<()> {
                     let estimated_row = dimension_estimated_values(&s);
                     let confidence_row = dimension_confidence_values(&s);
                     let total = rounded_score(s.total());
+                    let tier = tier_for_score(total);
                     // Flag congestion-stress candidates: high A1 + low B2 + total near T1 threshold
                     if s.a1.score > 7.0 && s.b2.score < 3.0 && total > 20.0 {
                         flagged_congestion.push((id.clone(), s.a1.score, s.b2.score));
                     }
+                    confidence_risks.push((
+                        id.clone(),
+                        total,
+                        tier,
+                        s.mean_confidence(),
+                        s.score_weighted_confidence(),
+                    ));
                     matrix.push(row);
                     estimated_matrix.push(estimated_row);
                     confidence_matrix.push(confidence_row);
@@ -2199,6 +2208,32 @@ fn main() -> Result<()> {
                     "    → Review congestion-stress candidates and promotion thresholds before freezing a release."
                 );
             }
+
+            confidence_risks.sort_by(|a, b| {
+                a.4.total_cmp(&b.4)
+                    .then_with(|| b.1.total_cmp(&a.1))
+                    .then_with(|| a.0.cmp(&b.0))
+            });
+            println!("\n  Lowest score-weighted confidence corridors:");
+            println!(
+                "  {:>8}  {:>6}  {:>4}  {:>7}  {:>10}",
+                "Route", "Score", "Tier", "Conf", "ScoreConf"
+            );
+            println!("  {}", "─".repeat(46));
+            for (route, score, tier, mean_conf, score_conf) in confidence_risks.iter().take(12) {
+                let flag = if *score >= T2_THRESHOLD && *score_conf < 0.75 {
+                    "  ⚠ review"
+                } else {
+                    ""
+                };
+                println!(
+                    "  {:>8}  {:>6.1}  {:>4}  {:>7.2}  {:>10.2}{}",
+                    route, score, tier, mean_conf, score_conf, flag
+                );
+            }
+            println!(
+                "  → Sort by score_confidence to find rankings most dependent on weak dimensions."
+            );
 
             // Retirement candidates
             println!("\n  Retirement candidates (std < 1.5, estimated < 80%):");
