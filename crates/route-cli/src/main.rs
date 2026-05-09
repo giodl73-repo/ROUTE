@@ -355,13 +355,14 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Load scoring config
+    let scoring_config_path = cli
+        .scoring_config
+        .clone()
+        .unwrap_or_else(|| PathBuf::from("config/scoring.toml"));
     let scoring_cfg = {
-        let path = cli
-            .scoring_config
-            .clone()
-            .unwrap_or_else(|| PathBuf::from("config/scoring.toml"));
-        if path.exists() {
-            route_score::ScoringConfig::load(&path).context("loading scoring config")?
+        if scoring_config_path.exists() {
+            route_score::ScoringConfig::load(&scoring_config_path)
+                .context("loading scoring config")?
         } else {
             eprintln!("note: config/scoring.toml not found — using built-in defaults");
             route_score::ScoringConfig::default_config()
@@ -639,7 +640,18 @@ fn main() -> Result<()> {
                 "corpus/existing"
             };
             let output_path = PathBuf::from(format!("{corpus_dir}/{slug}.md"));
-            route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
+            let provenance = route_report::CorpusProvenance {
+                command: format!("route score {norm}"),
+                manifest_version: manifest.version.clone(),
+                manifest_path: manifest_path.display().to_string(),
+                scoring_config_path: scoring_config_path.display().to_string(),
+            };
+            route_report::write_corpus_entry_with_provenance(
+                &corridor,
+                &scores,
+                &output_path,
+                &provenance,
+            )?;
             println!("\n  corpus entry → {}", output_path.display());
 
             if scores.any_estimated() {
@@ -1003,7 +1015,20 @@ fn main() -> Result<()> {
             println!("route report {norm}");
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            let graph = load_graph(&manifest)?;
+            let mut graph = load_graph(&manifest)?;
+            let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
+            let mut vals_sorted: Vec<f64> =
+                bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+            vals_sorted.sort_by(f64::total_cmp);
+            let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
+                .min(vals_sorted.len().saturating_sub(1));
+            let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
+            let bc = bc_raw
+                .into_iter()
+                .map(|(k, v)| (k, (v / bc_norm).min(1.0)))
+                .collect();
+            graph.edge_betweenness = Some(bc);
+
             let mut corridor =
                 route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
                     anyhow::anyhow!(
@@ -1013,16 +1038,75 @@ fn main() -> Result<()> {
                     )
                 })?;
 
-            join_acs_population_to_corridor(
-                &manifest,
-                &graph,
-                &norm,
-                &mut corridor.attributes,
-                false,
-            );
+            let acs_counties = load_acs_counties_for_scoring(&manifest);
+            let ports = load_ports();
+            let dcfc = load_dcfc_stations();
+            let intermodal = load_intermodal_terminals();
+            let fema_tiles = load_fema_tiles();
+            let nbi = load_nbi_bridges();
+            let fars_safety = load_fars_safety();
+            let railroad_parallels = load_railroad_parallels();
+            let hazard_zones = load_hazard_zones();
+
+            if acs_counties.is_some() {
+                join_acs_population_to_corridor(
+                    &manifest,
+                    &graph,
+                    &norm,
+                    &mut corridor.attributes,
+                    false,
+                );
+            }
+            if !ports.is_empty() {
+                join_port_access_to_corridor(&graph, &norm, &mut corridor.attributes, &ports);
+            }
+            if !dcfc.is_empty() {
+                join_dcfc_to_corridor(
+                    &graph,
+                    &norm,
+                    corridor.total_miles,
+                    &mut corridor.attributes,
+                    &dcfc,
+                );
+            }
+            if !intermodal.is_empty() {
+                join_intermodal_to_corridor(&graph, &norm, &mut corridor.attributes, &intermodal);
+            }
+            if !fema_tiles.is_empty() {
+                join_fema_d1_to_corridor(&graph, &norm, &mut corridor.attributes, &fema_tiles);
+            }
+            if !nbi.is_empty() {
+                join_nbi_to_corridor(&norm, &mut corridor.attributes, &nbi);
+            }
+            join_d3_iri_proxy(&mut corridor.attributes);
+            if let Some(&rate) = fars_safety.get(&norm) {
+                corridor.attributes.fatal_crash_rate = Some(rate);
+            }
+            if let Some(railroad) = railroad_parallels.get(&norm) {
+                corridor.attributes.rail_parallel_flag = true;
+                corridor.attributes.rail_parallel_name = Some(railroad.clone());
+            }
+            if let Some(zone) = hazard_zones.get(&norm) {
+                corridor.attributes.wildfire_risk = Some(zone.wildfire);
+                corridor.attributes.tornado_risk = Some(zone.tornado);
+                corridor.attributes.seismic_risk = Some(zone.seismic);
+            }
+            join_a2_freight_proxy(&mut corridor.attributes, corridor.total_miles);
+
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
             let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
-            route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
+            let provenance = route_report::CorpusProvenance {
+                command: format!("route report {norm}"),
+                manifest_version: manifest.version.clone(),
+                manifest_path: manifest_path.display().to_string(),
+                scoring_config_path: scoring_config_path.display().to_string(),
+            };
+            route_report::write_corpus_entry_with_provenance(
+                &corridor,
+                &scores,
+                &output_path,
+                &provenance,
+            )?;
 
             println!(
                 "  regenerated: {} ({:.1}/160{})",

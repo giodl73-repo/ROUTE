@@ -50,7 +50,7 @@ Goal: make the existing network corpus and tier map reproducible from commands.
 | Current v1.4 score ledger exists for all atlas candidates | ✅ done | `data/scores-all.csv`, 386 corridors |
 | Tier table can be regenerated from `route score-all` | ✅ done | `data/tier-table.csv`, `data/tier-table.md`; written by `route score-all` |
 | Historical v1.2 candidate docs are clearly labeled as non-current | ✅ done | `data/t1-candidates.md`, `data/t2-candidates.md`, `data/t3-candidates.md` historical banners |
-| Corpus report entries record command, rubric version, data version, confidence, and estimation flags | 🔄 partial | `route report` writes rubric/confidence; audit command/data provenance |
+| Corpus report entries record command, rubric version, data version, confidence, and estimation flags | ✅ done | `route report I80` writes provenance and matches `data/scores-all.csv` score/confidence |
 | Tier map can be regenerated from current score ledger | ✅ done | `route map all` reads `data/scores-all.csv` and regenerates `maps/all-tiers.png` |
 | Basemap claim is either implemented or downgraded explicitly | ✅ done | Spec now labels current map as projected network + state/city labels; polygon basemap deferred |
 

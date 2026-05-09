@@ -3,6 +3,25 @@ use route_network::Corridor;
 use route_score::DimensionScores;
 use std::path::Path;
 
+#[derive(Debug, Clone)]
+pub struct CorpusProvenance {
+    pub command: String,
+    pub manifest_version: String,
+    pub manifest_path: String,
+    pub scoring_config_path: String,
+}
+
+impl Default for CorpusProvenance {
+    fn default() -> Self {
+        Self {
+            command: "unknown".to_string(),
+            manifest_version: "unknown".to_string(),
+            manifest_path: "unknown".to_string(),
+            scoring_config_path: "unknown".to_string(),
+        }
+    }
+}
+
 /// Write a corpus entry markdown file for a corridor.
 /// Follows corpus/SCHEMA.md exactly.
 /// Idempotent — overwrites the file with current scores.
@@ -11,7 +30,16 @@ pub fn write_corpus_entry(
     scores: &DimensionScores,
     output_path: &Path,
 ) -> Result<()> {
-    let content = format_corpus_entry(corridor, scores);
+    write_corpus_entry_with_provenance(corridor, scores, output_path, &CorpusProvenance::default())
+}
+
+pub fn write_corpus_entry_with_provenance(
+    corridor: &Corridor,
+    scores: &DimensionScores,
+    output_path: &Path,
+    provenance: &CorpusProvenance,
+) -> Result<()> {
+    let content = format_corpus_entry(corridor, scores, provenance);
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent).context("creating corpus directory")?;
     }
@@ -19,7 +47,11 @@ pub fn write_corpus_entry(
         .with_context(|| format!("writing {}", output_path.display()))
 }
 
-fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String {
+fn format_corpus_entry(
+    corridor: &Corridor,
+    scores: &DimensionScores,
+    provenance: &CorpusProvenance,
+) -> String {
     let today = chrono_today();
     let estimated_flag = if scores.any_estimated() { "†" } else { "" };
     let attrs = &corridor.attributes;
@@ -36,6 +68,33 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
     md.push_str("type: existing-corridor\n");
     md.push_str("status: draft\n");
     md.push_str(&format!("rubric_version: {}\n", scores.rubric_version));
+    md.push_str(&format!("generated_by: \"{}\"\n", provenance.command));
+    md.push_str(&format!(
+        "data_manifest_version: \"{}\"\n",
+        provenance.manifest_version
+    ));
+    md.push_str(&format!(
+        "data_manifest_path: \"{}\"\n",
+        provenance.manifest_path
+    ));
+    md.push_str(&format!(
+        "scoring_config_path: \"{}\"\n",
+        provenance.scoring_config_path
+    ));
+    md.push_str(&format!("estimated: {}\n", scores.any_estimated()));
+    md.push_str(&format!("confidence: {:.2}\n", scores.mean_confidence()));
+    md.push_str(&format!(
+        "score_confidence: {:.2}\n",
+        scores.score_weighted_confidence()
+    ));
+    md.push_str(&format!(
+        "confidence_label: \"{}\"\n",
+        route_score::confidence_label(scores.mean_confidence())
+    ));
+    md.push_str(&format!(
+        "score_confidence_label: \"{}\"\n",
+        route_score::confidence_label(scores.score_weighted_confidence())
+    ));
     md.push_str("author: route-score\n");
     md.push_str(&format!("created: {today}\n"));
     md.push_str(&format!("updated: {today}\n"));
@@ -66,6 +125,28 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
 
     // Title
     md.push_str(&format!("# {}{}\n\n", corridor.designation, estimated_flag));
+
+    md.push_str("## Generation\n\n");
+    md.push_str("| Field | Value |\n|---|---|\n");
+    md.push_str(&format!("| Command | `{}` |\n", provenance.command));
+    md.push_str(&format!(
+        "| Data manifest | `{}` (`{}`) |\n",
+        provenance.manifest_version, provenance.manifest_path
+    ));
+    md.push_str(&format!(
+        "| Scoring config | `{}` |\n",
+        provenance.scoring_config_path
+    ));
+    md.push_str(&format!(
+        "| Confidence | {:.2} ({}) |\n",
+        scores.mean_confidence(),
+        route_score::confidence_label(scores.mean_confidence())
+    ));
+    md.push_str(&format!(
+        "| Score confidence | {:.2} ({}) |\n\n",
+        scores.score_weighted_confidence(),
+        route_score::confidence_label(scores.score_weighted_confidence())
+    ));
 
     // Overview — placeholder for human annotation
     md.push_str("## Overview\n\n");
@@ -233,7 +314,7 @@ mod tests {
             &corridor.attributes,
             &route_score::ScoringConfig::default_config(),
         );
-        let md = format_corpus_entry(&corridor, &scores);
+        let md = format_corpus_entry(&corridor, &scores, &CorpusProvenance::default());
 
         for code in [
             "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
@@ -263,7 +344,7 @@ mod tests {
             &corridor.attributes,
             &route_score::ScoringConfig::default_config(),
         );
-        let md = format_corpus_entry(&corridor, &scores);
+        let md = format_corpus_entry(&corridor, &scores, &CorpusProvenance::default());
 
         assert!(md.contains("created: 2030-01-02"));
         assert!(md.contains("updated: 2030-01-02"));
@@ -290,5 +371,31 @@ mod tests {
         assert!(written.contains("rubric_version:"));
 
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn corpus_entry_records_generation_provenance_in_frontmatter_and_body() {
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        let provenance = CorpusProvenance {
+            command: "route report I80".to_string(),
+            manifest_version: "1".to_string(),
+            manifest_path: "data/manifest.json".to_string(),
+            scoring_config_path: "config/scoring.toml".to_string(),
+        };
+
+        let md = format_corpus_entry(&corridor, &scores, &provenance);
+
+        assert!(md.contains("generated_by: \"route report I80\""));
+        assert!(md.contains("data_manifest_version: \"1\""));
+        assert!(md.contains("scoring_config_path: \"config/scoring.toml\""));
+        assert!(md.contains("estimated: "));
+        assert!(md.contains("confidence: "));
+        assert!(md.contains("score_confidence_label: "));
+        assert!(md.contains("## Generation"));
+        assert!(md.contains("| Command | `route report I80` |"));
     }
 }
