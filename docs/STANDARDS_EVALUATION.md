@@ -107,6 +107,8 @@ Important current limitation: embedded TOML scenarios now bind stable graph edge
 
 `route standards-proof` reads `data/standards-proof-ledger.csv`, prints the proof status table, and can fail a Blueprint gate when unresolved standards would be promoted.
 
+`route pressure-scenarios` reads `data/pressure-test-scenarios.csv` and checks that each L2 scenario row has a named adversity class, tested standards, an artifact, a labeled status, and a next evidence step. This is a catalog contract, not proof that the scenarios already pass their acceptance gates.
+
 Useful forms:
 
 ```text
@@ -114,6 +116,9 @@ route standards-proof
 route standards-proof --tier T1 --family resilience
 route standards-proof --tier T1 --family resilience --details
 route standards-proof --gate-blueprint
+route pressure-scenarios
+route pressure-scenarios --blockers --details
+route pressure-scenarios --gate-l2
 route t1-failures
 route t1-failures --needs-sources
 route t1-failure-sources

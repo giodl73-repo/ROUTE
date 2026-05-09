@@ -221,6 +221,26 @@ enum Commands {
         gate_blueprint: bool,
     },
 
+    /// Show L2 pressure-test scenario catalog readiness
+    PressureScenarios {
+        /// Path to L2 pressure-test scenario catalog CSV
+        #[arg(
+            long,
+            default_value = "data/pressure-test-scenarios.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only scenarios that still have blocking gaps
+        #[arg(long)]
+        blockers: bool,
+        /// Print full scenario proof details
+        #[arg(long)]
+        details: bool,
+        /// Fail if any scenario catalog row lacks a bounded proof contract
+        #[arg(long)]
+        gate_l2: bool,
+    },
+
     /// Show T1/T1 failure-rate and reroute evidence status
     T1Failures {
         /// Path to T1/T1 failure evidence ledger CSV
@@ -2075,6 +2095,39 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Blueprint gate: PASS");
+            }
+        }
+
+        Commands::PressureScenarios {
+            ledger,
+            blockers,
+            details,
+            gate_l2,
+        } => {
+            let rows = load_pressure_scenarios(&ledger).with_context(|| {
+                format!("loading pressure scenario ledger {}", ledger.display())
+            })?;
+            print_pressure_scenarios(&rows, blockers, details);
+
+            if gate_l2 {
+                let failures = pressure_scenario_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("L2 scenario gate: FAIL");
+                    println!(
+                        "  {} scenario rows still lack bounded proof contracts.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.scenario_id, row.current_status, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("pressure scenario gate failed");
+                }
+                println!();
+                println!("L2 scenario gate: PASS");
             }
         }
 
@@ -4886,6 +4939,102 @@ fn print_standards_proof(
     }
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct PressureScenarioRow {
+    scenario_id: String,
+    scenario_name: String,
+    adversity_class: String,
+    standards_tested: String,
+    current_status: String,
+    existing_artifact: String,
+    blocking_gap: String,
+    next_evidence_step: String,
+}
+
+fn load_pressure_scenarios(path: &Path) -> Result<Vec<PressureScenarioRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_pressure_scenarios(file)
+}
+
+fn parse_pressure_scenarios<R: std::io::Read>(reader: R) -> Result<Vec<PressureScenarioRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_pressure_scenarios(rows: &[PressureScenarioRow], blockers: bool, details: bool) {
+    let failures = pressure_scenario_gate_failures(rows);
+    let filtered = if blockers {
+        failures.clone()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status.entry(row.current_status.clone()).or_insert(0) += 1;
+    }
+
+    println!("route pressure-scenarios");
+    println!(
+        "  scenarios: {} shown / {} total",
+        filtered.len(),
+        rows.len()
+    );
+    println!("  status: {}", format_count_map(&by_status));
+    println!("  L2 gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<18} {:<24} {:<14} {:<28} {}",
+        "Scenario", "Name", "Status", "Adversity", "Gap"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<24} {:<14} {:<28} {}",
+            row.scenario_id,
+            truncate_for_table(&row.scenario_name, 24),
+            row.current_status,
+            truncate_for_table(&row.adversity_class, 28),
+            row.blocking_gap
+        );
+        if details {
+            println!("  standards: {}", row.standards_tested);
+            println!("  artifact: {}", row.existing_artifact);
+            println!("  next: {}", row.next_evidence_step);
+        }
+    }
+}
+
+fn pressure_scenario_gate_failures(rows: &[PressureScenarioRow]) -> Vec<&PressureScenarioRow> {
+    rows.iter()
+        .filter(|row| !pressure_scenario_has_bounded_contract(row))
+        .collect()
+}
+
+fn pressure_scenario_has_bounded_contract(row: &PressureScenarioRow) -> bool {
+    let has_identity = row.scenario_id.starts_with("S-L2-")
+        && !row.scenario_name.trim().is_empty()
+        && !row.adversity_class.trim().is_empty();
+    let has_test_scope = !row.standards_tested.trim().is_empty()
+        && row
+            .standards_tested
+            .split(';')
+            .any(|value| value.trim().starts_with('T'));
+    let has_artifact = !row.existing_artifact.trim().is_empty();
+    let has_next_step = !row.next_evidence_step.trim().is_empty();
+    let status = row.current_status.to_ascii_lowercase();
+    let status_is_labeled = matches!(
+        status.as_str(),
+        "implemented" | "heuristic" | "planned" | "stub" | "deprecated"
+    );
+
+    has_identity && has_test_scope && has_artifact && has_next_step && status_is_labeled
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureRow {
     site_id: String,
@@ -6381,9 +6530,10 @@ mod tests {
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
-        parse_iowa511_events, parse_mdot_midrive_events, parse_standards_proof_ledger,
-        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
-        parse_t1_source_health, parse_tdot_smartway_events, rounded_score,
+        parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
+        parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
+        parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract, rounded_score,
         scenario_edge_candidates, standards_blueprint_gate_failures, summarize_t1_failure_events,
         tier_for_score, write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
@@ -6530,6 +6680,24 @@ T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,
         let failures = standards_blueprint_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].standard_id, "T1-DIAMOND-K");
+    }
+
+    #[test]
+    fn pressure_scenarios_require_bounded_l2_contracts() {
+        let csv = "\
+scenario_id,scenario_name,adversity_class,standards_tested,current_status,existing_artifact,blocking_gap,next_evidence_step
+S-L2-DES-MOINES,des-moines-interchange,T1/T1 closure,T1-DIAMOND-K; T1-FLYOVER,Heuristic,scenario.toml,gap,next
+BAD,unnamed,,T1-DIAMOND-K,unknown,,gap,
+";
+
+        let rows = parse_pressure_scenarios(csv.as_bytes()).expect("parse pressure scenarios");
+
+        assert_eq!(rows.len(), 2);
+        assert!(pressure_scenario_has_bounded_contract(&rows[0]));
+        assert!(!pressure_scenario_has_bounded_contract(&rows[1]));
+        let failures = pressure_scenario_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].scenario_id, "BAD");
     }
 
     #[test]
