@@ -390,6 +390,7 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 
 fn score_b3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     // Stepped scoring: port terminus → 10, border crossing → 8, else distance-based
+    let mut missing_data = false;
     let (score, justification) = if attrs.port_terminus_flag {
         (
             10.0,
@@ -413,12 +414,18 @@ fn score_b3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             None => (0.0, "No port or border crossing data available.".into()),
         }
     };
+    if !attrs.port_terminus_flag
+        && !attrs.border_crossing_flag
+        && attrs.nearest_top25_port_miles.is_none()
+    {
+        missing_data = true;
+    }
     ScoredDimension {
         dim: Dimension::B3PortBorderAccess,
         score,
         justification,
         sources: vec!["BTS Port Rankings 2023".into()],
-        estimated: false,
+        estimated: missing_data,
     }
 }
 
@@ -512,6 +519,8 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
     let has_extended = attrs.wildfire_risk.is_some()
         || attrs.tornado_risk.is_some()
         || attrs.seismic_risk.is_some();
+    let has_flood_data =
+        attrs.max_consecutive_sfha_miles.is_some() || attrs.fema_sfha_miles.is_some();
 
     let composite = if has_extended {
         // Four-component weighted composite
@@ -548,7 +557,7 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             attrs.fema_sfha_miles.unwrap_or(0.0)
         ),
         sources,
-        estimated: false,
+        estimated: !has_flood_data && !has_extended,
     }
 }
 
@@ -619,5 +628,228 @@ fn format_pop(pop: u64) -> String {
         format!("{:.1}M", pop as f64 / 1_000_000.0)
     } else {
         format!("{:.0}K", pop as f64 / 1_000.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn cfg() -> ScoringConfig {
+        ScoringConfig::default_config()
+    }
+
+    fn dims(scores: &DimensionScores) -> [&ScoredDimension; 16] {
+        [
+            &scores.a1, &scores.a2, &scores.a3, &scores.a4, &scores.a5, &scores.b1, &scores.b2,
+            &scores.b3, &scores.b4, &scores.c1, &scores.c2, &scores.c3, &scores.c4, &scores.d1,
+            &scores.d2, &scores.d3,
+        ]
+    }
+
+    fn assert_close(left: f64, right: f64) {
+        assert!(
+            (left - right).abs() < 1e-6,
+            "left {left} should be within epsilon of right {right}"
+        );
+    }
+
+    #[test]
+    fn dimension_registry_exposes_sixteen_stable_codes() {
+        let dimensions = [
+            Dimension::A1ThroughputGap,
+            Dimension::A2FreightIntensity,
+            Dimension::A3SpeedReliability,
+            Dimension::A4InternationalTrade,
+            Dimension::A5SafetyRecord,
+            Dimension::B1Redundancy,
+            Dimension::B2NetworkCentrality,
+            Dimension::B3PortBorderAccess,
+            Dimension::B4MilitaryStrategic,
+            Dimension::C1PopulationReach,
+            Dimension::C2RuralConnectivity,
+            Dimension::C3EconomicOpportunity,
+            Dimension::C4AgriculturalExport,
+            Dimension::D1ClimateResilience,
+            Dimension::D2MultimodalIntegration,
+            Dimension::D3InfrastructureVintage,
+        ];
+        let codes: Vec<&str> = dimensions.iter().map(Dimension::code).collect();
+
+        assert_eq!(
+            codes,
+            [
+                "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
+                "D2", "D3",
+            ]
+        );
+        assert!(dimensions.iter().all(|d| !d.name().is_empty()));
+    }
+
+    #[test]
+    fn sparse_corridor_scores_all_dimensions_with_truth_labels() {
+        let scores = score_corridor(&CorridorAttributes::default(), &cfg());
+        let dims = dims(&scores);
+
+        assert_eq!(dims.len(), 16);
+        assert!(dims.iter().all(|d| d.score.is_finite()));
+        assert!(dims.iter().all(|d| (0.0..=10.0).contains(&d.score)));
+        assert!(scores.any_estimated());
+
+        for dim in [
+            &scores.a1, &scores.a2, &scores.a3, &scores.a5, &scores.b1, &scores.b2, &scores.b3,
+            &scores.c1, &scores.c2, &scores.c3, &scores.d1, &scores.d2, &scores.d3,
+        ] {
+            assert!(
+                dim.estimated,
+                "{} should be marked estimated",
+                dim.dim.code()
+            );
+        }
+
+        for dim in [&scores.a4, &scores.b4, &scores.c4] {
+            assert!(
+                !dim.estimated,
+                "{} is a deterministic designation score",
+                dim.dim.code()
+            );
+        }
+    }
+
+    #[test]
+    fn populated_corridor_scores_are_bounded_and_labeled() {
+        let attrs = CorridorAttributes {
+            p90_aadt: Some(90_000.0),
+            mean_aadt: Some(60_000.0),
+            annual_freight_value_b: Some(500.0),
+            mean_pct_truck: Some(0.22),
+            p90_pti: Some(1.8),
+            intl_trade_score: 8.0,
+            fatal_crash_rate: Some(2.0),
+            detour_penalty_miles: Some(250.0),
+            nearest_parallel_miles: Some(70.0),
+            betweenness_centrality: Some(0.8),
+            nearest_top25_port_miles: Some(40.0),
+            pop_within_50mi: Some(12_000_000),
+            pct_rural_in_buffer: Some(0.35),
+            max_rural_interchange_gap_miles: Some(45.0),
+            gdp_per_capita_relative: Some(0.75),
+            agricultural_export_score: 6.0,
+            max_consecutive_sfha_miles: Some(18.0),
+            fema_sfha_miles: Some(75.0),
+            wildfire_risk: Some(4.0),
+            tornado_risk: Some(5.0),
+            seismic_risk: Some(2.0),
+            intermodal_hub_count: 3,
+            dcfc_per_100mi: Some(22.0),
+            bridge_count: 100,
+            pct_bridges_poor: Some(0.08),
+            mean_year_built: Some(1970.0),
+            military_strategic_score: 5.0,
+            ..Default::default()
+        };
+
+        let scores = score_corridor(&attrs, &cfg());
+
+        assert!(dims(&scores)
+            .iter()
+            .all(|d| (0.0..=10.0).contains(&d.score)));
+        assert!(!scores.a1.estimated);
+        assert!(scores.a2.estimated, "FAF5 zone traversal remains a proxy");
+        assert!(!scores.a3.estimated, "real PTI is authoritative");
+        assert!(!scores.a5.estimated);
+        assert!(!scores.b1.estimated);
+        assert!(
+            scores.b2.estimated,
+            "centrality is corpus-wide until score-all"
+        );
+        assert!(!scores.b3.estimated);
+        assert!(!scores.c1.estimated);
+        assert!(!scores.c2.estimated);
+        assert!(!scores.c3.estimated);
+        assert!(!scores.d1.estimated);
+        assert!(!scores.d2.estimated);
+        assert!(!scores.d3.estimated);
+    }
+
+    #[test]
+    fn a3_prefers_real_pti_then_bpr_then_capped_iri() {
+        let cfg = cfg();
+
+        let real = score_corridor(
+            &CorridorAttributes {
+                p90_pti: Some(1.8),
+                pti_bpr_estimate: Some(2.2),
+                mean_iri: Some(9.0),
+                ..Default::default()
+            },
+            &cfg,
+        );
+        assert!(!real.a3.estimated);
+        assert_close(real.a3.score, cfg.a3.score_pti(1.8));
+
+        let bpr = score_corridor(
+            &CorridorAttributes {
+                pti_bpr_estimate: Some(2.2),
+                mean_iri: Some(9.0),
+                ..Default::default()
+            },
+            &cfg,
+        );
+        assert!(bpr.a3.estimated);
+        assert_close(bpr.a3.score, cfg.a3.score_bpr_pti(2.2));
+
+        let iri = score_corridor(
+            &CorridorAttributes {
+                mean_iri: Some(30.0),
+                ..Default::default()
+            },
+            &cfg,
+        );
+        assert!(iri.a3.estimated);
+        assert_eq!(iri.a3.score, cfg.a3.iri_fallback_max);
+    }
+
+    #[test]
+    fn b1_rail_parallel_discount_reduces_redundancy_score() {
+        let cfg = cfg();
+        let attrs = CorridorAttributes {
+            detour_penalty_miles: Some(250.0),
+            nearest_parallel_miles: Some(60.0),
+            ..Default::default()
+        };
+        let no_rail = score_corridor(&attrs, &cfg).b1.score;
+        let with_rail = score_corridor(
+            &CorridorAttributes {
+                rail_parallel_flag: true,
+                rail_parallel_name: Some("UP Overland Route".into()),
+                ..attrs
+            },
+            &cfg,
+        )
+        .b1
+        .score;
+
+        assert_eq!(with_rail, no_rail * 0.8);
+    }
+
+    #[test]
+    fn stepped_designation_dimensions_keep_literal_scores() {
+        let scores = score_corridor(
+            &CorridorAttributes {
+                intl_trade_score: 7.0,
+                military_strategic_score: 5.0,
+                agricultural_export_score: 6.0,
+                ..Default::default()
+            },
+            &cfg(),
+        );
+
+        assert_eq!(scores.a4.score, 7.0);
+        assert_eq!(scores.b4.score, 5.0);
+        assert_eq!(scores.c4.score, 6.0);
+        assert!(!scores.a4.estimated);
+        assert!(!scores.b4.estimated);
+        assert!(!scores.c4.estimated);
     }
 }
