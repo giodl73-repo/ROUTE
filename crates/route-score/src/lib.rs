@@ -3,4 +3,4 @@ pub mod ledger;
 pub mod score;
 
 pub use config::ScoringConfig;
-pub use score::{score_corridor, Dimension, DimensionScores, ScoredDimension};
+pub use score::{confidence_label, score_corridor, Dimension, DimensionScores, ScoredDimension};

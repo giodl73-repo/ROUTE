@@ -804,6 +804,8 @@ fn main() -> Result<()> {
                 "estimated",
                 "confidence",
                 "score_confidence",
+                "confidence_label",
+                "score_confidence_label",
             ];
             header.extend(DIMENSION_CODES);
             header.extend([
@@ -832,6 +834,8 @@ fn main() -> Result<()> {
                     estimated.to_string(),
                     format!("{confidence:.2}"),
                     format!("{score_confidence:.2}"),
+                    route_score::confidence_label(*confidence).to_string(),
+                    route_score::confidence_label(*score_confidence).to_string(),
                 ];
                 row.extend(dims.iter().map(|value| format!("{value:.1}")));
                 row.extend(confs.iter().map(|value| format!("{value:.2}")));
@@ -2336,6 +2340,8 @@ fn main() -> Result<()> {
                 "tier",
                 "confidence",
                 "score_confidence",
+                "confidence_label",
+                "score_confidence_label",
                 "review",
                 "risk_dimensions",
             ])?;
@@ -2347,6 +2353,8 @@ fn main() -> Result<()> {
                     risk.tier.to_string(),
                     format!("{:.2}", risk.mean_confidence),
                     format!("{:.2}", risk.score_confidence),
+                    route_score::confidence_label(risk.mean_confidence).to_string(),
+                    route_score::confidence_label(risk.score_confidence).to_string(),
                     review.to_string(),
                     risk.risk_dimensions.clone(),
                 ])?;

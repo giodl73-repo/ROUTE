@@ -151,9 +151,11 @@ fn format_corpus_entry(corridor: &Corridor, scores: &DimensionScores) -> String 
     md.push_str(&format!("\n**Band totals**: A: {:.1}/50 · B: {:.1}/40 · C: {:.1}/40 · D: {:.1}/30 · **Total: {:.1}/160**\n\n",
         scores.band_a(), scores.band_b(), scores.band_c(), scores.band_d(), scores.total()));
     md.push_str(&format!(
-        "**Confidence**: mean {:.2} · score-weighted {:.2}\n\n",
+        "**Confidence**: mean {:.2} ({}) · score-weighted {:.2} ({})\n\n",
         scores.mean_confidence(),
-        scores.score_weighted_confidence()
+        route_score::confidence_label(scores.mean_confidence()),
+        scores.score_weighted_confidence(),
+        route_score::confidence_label(scores.score_weighted_confidence())
     ));
 
     if scores.any_estimated() {
@@ -245,6 +247,8 @@ mod tests {
         assert!(md.contains("/30"));
         assert!(md.contains("Total: "));
         assert!(md.contains("/160"));
+        assert!(md.contains("score-weighted"));
+        assert!(md.contains("(Medium)") || md.contains("(Low)") || md.contains("(High)"));
         assert!(md.contains("† Estimated value"));
     }
 

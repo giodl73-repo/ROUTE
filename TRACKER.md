@@ -33,8 +33,8 @@ Goal: make the 16-dimension scorer boringly reliable enough that Atlas work can 
 | FPM PTI/TTI can flow into graph edges for observed A3 scoring | ✅ done | `route build --fpm`, `build_graph_with_fpm` test |
 | Dimension registry table exists in docs and is checked against code | ✅ done | `docs/DIMENSIONS.md`; `dimension_registry_doc_mentions_every_code_and_name` |
 | L0/L1 tests cover missing-data behavior and anchor extremes for all 16 dimensions | ✅ done | `sparse_corridor_scores_all_dimensions_with_truth_labels`; `dimension_anchor_extremes_score_zero_and_ten` |
-| Proxy and missing-data labels are consistent across score table, corpus report, and CSVs | 🔄 in progress | Confidence labels exist; audit report/CSV wording |
-| `route score-all` refreshed under current rubric and confidence columns | ⏳ pending | Run after Instrument checks settle |
+| Proxy and missing-data labels are consistent across score table, corpus report, and CSVs | ✅ done | Shared `confidence_label`; corpus and CSV outputs include labels |
+| `route score-all` refreshed under current rubric and confidence columns | ✅ done | `data/scores-all.csv` regenerated with v1.4 confidence labels |
 | Stale docs/handoff warnings about old A3/score-all outputs are reconciled | ⏳ pending | Update or archive stale notes |
 
 Milestone 1 is done when every task above is ✅ and `cargo test --workspace` plus `route calibrate` pass from a clean worktree.

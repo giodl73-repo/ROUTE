@@ -100,15 +100,19 @@ pub struct ScoredDimension {
 
 impl ScoredDimension {
     pub fn quality_label(&self) -> &'static str {
-        if self.confidence >= 0.85 {
-            "High"
-        } else if self.confidence >= 0.60 {
-            "Medium"
-        } else if self.confidence > 0.0 {
-            "Low"
-        } else {
-            "Missing"
-        }
+        confidence_label(self.confidence)
+    }
+}
+
+pub fn confidence_label(confidence: f32) -> &'static str {
+    if confidence >= 0.85 {
+        "High"
+    } else if confidence >= 0.60 {
+        "Medium"
+    } else if confidence > 0.0 {
+        "Low"
+    } else {
+        "Missing"
     }
 }
 
@@ -802,6 +806,25 @@ mod tests {
                 dimension.name()
             );
         }
+    }
+
+    #[test]
+    fn confidence_label_thresholds_match_quality_label() {
+        assert_eq!(confidence_label(0.90), "High");
+        assert_eq!(confidence_label(0.85), "High");
+        assert_eq!(confidence_label(0.60), "Medium");
+        assert_eq!(confidence_label(0.10), "Low");
+        assert_eq!(confidence_label(0.0), "Missing");
+
+        let scored = ScoredDimension {
+            dim: Dimension::A1ThroughputGap,
+            score: 1.0,
+            justification: String::new(),
+            sources: vec![],
+            confidence: 0.60,
+            estimated: false,
+        };
+        assert_eq!(scored.quality_label(), confidence_label(scored.confidence));
     }
 
     #[test]
