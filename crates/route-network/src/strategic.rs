@@ -43,22 +43,33 @@ pub fn load_designations(data_dir: &Path) -> HashMap<String, CorridorDesignation
             continue;
         } // header
 
-        let route_id = fields[0].trim().to_string();
+        let route_id = normalise_route_id(fields[0].trim());
         let a4: f64 = fields[1].trim().parse().unwrap_or(0.0);
         let b4: f64 = fields[2].trim().parse().unwrap_or(0.0);
         let c4: f64 = fields[3].trim().parse().unwrap_or(0.0);
 
-        map.insert(
-            route_id,
-            CorridorDesignation {
+        map.entry(route_id)
+            .and_modify(|existing: &mut CorridorDesignation| {
+                existing.a4_usmca = existing.a4_usmca.max(a4);
+                existing.b4_military = existing.b4_military.max(b4);
+                existing.c4_ag_export = existing.c4_ag_export.max(c4);
+            })
+            .or_insert(CorridorDesignation {
                 a4_usmca: a4,
                 b4_military: b4,
                 c4_ag_export: c4,
-            },
-        );
+            });
     }
 
     map
+}
+
+fn normalise_route_id(input: &str) -> String {
+    input
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>()
+        .to_uppercase()
 }
 
 /// Global designation cache — loaded once at program start.
@@ -103,4 +114,35 @@ pub fn military_strategic_score(route_id: &str) -> f64 {
 
 pub fn agricultural_export_score(route_id: &str) -> f64 {
     get_designation(route_id).c4_ag_export
+}
+
+#[cfg(test)]
+mod tests {
+    use super::load_designations;
+    use std::io::Write;
+
+    #[test]
+    fn load_designations_normalises_and_merges_duplicate_rows() {
+        let dir = std::env::temp_dir().join(format!(
+            "route-network-designations-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create temp dir");
+        let path = dir.join("corridor-designations.csv");
+        let mut file = std::fs::File::create(path).expect("create csv");
+        writeln!(
+            file,
+            "ROUTE_ID,A4_USMCA,B4_MILITARY,C4_AG_EXPORT,NOTES\nUS-30,0.0,0.0,7.5,old\nUS30,0.0,5.0,6.0,new"
+        )
+        .expect("write csv");
+
+        let designations = load_designations(&dir);
+        let us30 = designations.get("US30").expect("US30 merged");
+
+        assert_eq!(us30.a4_usmca, 0.0);
+        assert_eq!(us30.b4_military, 5.0);
+        assert_eq!(us30.c4_ag_export, 7.5);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
