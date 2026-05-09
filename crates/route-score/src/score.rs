@@ -22,6 +22,25 @@ pub enum Dimension {
 }
 
 impl Dimension {
+    pub const ALL: [Dimension; 16] = [
+        Dimension::A1ThroughputGap,
+        Dimension::A2FreightIntensity,
+        Dimension::A3SpeedReliability,
+        Dimension::A4InternationalTrade,
+        Dimension::A5SafetyRecord,
+        Dimension::B1Redundancy,
+        Dimension::B2NetworkCentrality,
+        Dimension::B3PortBorderAccess,
+        Dimension::B4MilitaryStrategic,
+        Dimension::C1PopulationReach,
+        Dimension::C2RuralConnectivity,
+        Dimension::C3EconomicOpportunity,
+        Dimension::C4AgriculturalExport,
+        Dimension::D1ClimateResilience,
+        Dimension::D2MultimodalIntegration,
+        Dimension::D3InfrastructureVintage,
+    ];
+
     pub fn code(&self) -> &'static str {
         match self {
             Dimension::A1ThroughputGap => "A1",
@@ -754,25 +773,7 @@ mod tests {
 
     #[test]
     fn dimension_registry_exposes_sixteen_stable_codes() {
-        let dimensions = [
-            Dimension::A1ThroughputGap,
-            Dimension::A2FreightIntensity,
-            Dimension::A3SpeedReliability,
-            Dimension::A4InternationalTrade,
-            Dimension::A5SafetyRecord,
-            Dimension::B1Redundancy,
-            Dimension::B2NetworkCentrality,
-            Dimension::B3PortBorderAccess,
-            Dimension::B4MilitaryStrategic,
-            Dimension::C1PopulationReach,
-            Dimension::C2RuralConnectivity,
-            Dimension::C3EconomicOpportunity,
-            Dimension::C4AgriculturalExport,
-            Dimension::D1ClimateResilience,
-            Dimension::D2MultimodalIntegration,
-            Dimension::D3InfrastructureVintage,
-        ];
-        let codes: Vec<&str> = dimensions.iter().map(Dimension::code).collect();
+        let codes: Vec<&str> = Dimension::ALL.iter().map(Dimension::code).collect();
 
         assert_eq!(
             codes,
@@ -781,7 +782,26 @@ mod tests {
                 "D2", "D3",
             ]
         );
-        assert!(dimensions.iter().all(|d| !d.name().is_empty()));
+        assert!(Dimension::ALL.iter().all(|d| !d.name().is_empty()));
+    }
+
+    #[test]
+    fn dimension_registry_doc_mentions_every_code_and_name() {
+        let doc = include_str!("../../../docs/DIMENSIONS.md");
+
+        for dimension in Dimension::ALL {
+            assert!(
+                doc.contains(&format!("| {} |", dimension.code())),
+                "{} missing from docs/DIMENSIONS.md",
+                dimension.code()
+            );
+            assert!(
+                doc.contains(dimension.name()),
+                "{} ({}) name missing from docs/DIMENSIONS.md",
+                dimension.code(),
+                dimension.name()
+            );
+        }
     }
 
     #[test]
@@ -867,6 +887,98 @@ mod tests {
         assert!(!scores.d1.estimated);
         assert!(!scores.d2.estimated);
         assert!(!scores.d3.estimated);
+    }
+
+    #[test]
+    fn dimension_anchor_extremes_score_zero_and_ten() {
+        let cfg = cfg();
+        let low = score_corridor(
+            &CorridorAttributes {
+                p90_aadt: Some(cfg.a1.anchor_0),
+                annual_freight_value_b: Some(cfg.a2.anchor_0),
+                p90_pti: Some(cfg.a3.anchor_0 as f32),
+                fatal_crash_rate: Some(cfg.a5.anchor_0 as f32),
+                detour_penalty_miles: Some(cfg.b1.anchor_0),
+                betweenness_centrality: Some(cfg.b2.anchor_0),
+                nearest_top25_port_miles: Some(cfg.b3.anchor_0 as f32),
+                pop_within_50mi: Some(cfg.c1.anchor_0 as u64),
+                pct_rural_in_buffer: Some(cfg.c2.rural_share.anchor_0 as f32),
+                max_rural_interchange_gap_miles: Some(cfg.c2.interchange_gap.anchor_0 as f32),
+                gdp_per_capita_relative: Some(cfg.c3.anchor_0 as f32),
+                max_consecutive_sfha_miles: Some(cfg.d1.consecutive_sfha.anchor_0 as f32),
+                fema_sfha_miles: Some(cfg.d1.total_sfha.anchor_0),
+                dcfc_per_100mi: Some(cfg.d2.dcfc_per_100mi.anchor_0 as f32),
+                pct_bridges_poor: Some(cfg.d3.bridges_poor.anchor_0 as f32),
+                mean_year_built: Some(cfg.d3.mean_year_built.anchor_0 as f32),
+                intl_trade_score: 0.0,
+                military_strategic_score: 0.0,
+                agricultural_export_score: 0.0,
+                ..Default::default()
+            },
+            &cfg,
+        );
+
+        assert_close(low.a1.score, 0.0);
+        assert_close(low.a2.score, 0.0);
+        assert_close(low.a3.score, 0.0);
+        assert_close(low.a4.score, 0.0);
+        assert_close(low.a5.score, 0.0);
+        assert_close(low.b1.score, 0.0);
+        assert_close(low.b2.score, 0.0);
+        assert_close(low.b3.score, 0.0);
+        assert_close(low.b4.score, 0.0);
+        assert_close(low.c1.score, 0.0);
+        assert_close(low.c2.score, 0.0);
+        assert_close(low.c3.score, 0.0);
+        assert_close(low.c4.score, 0.0);
+        assert_close(low.d1.score, 0.0);
+        assert_close(low.d2.score, 0.0);
+        assert_close(low.d3.score, 0.0);
+
+        let high = score_corridor(
+            &CorridorAttributes {
+                p90_aadt: Some(cfg.a1.anchor_10),
+                annual_freight_value_b: Some(cfg.a2.anchor_10),
+                p90_pti: Some(cfg.a3.anchor_10 as f32),
+                fatal_crash_rate: Some(cfg.a5.anchor_10 as f32),
+                detour_penalty_miles: Some(cfg.b1.anchor_10),
+                betweenness_centrality: Some(cfg.b2.anchor_10),
+                nearest_top25_port_miles: Some(cfg.b3.anchor_10 as f32),
+                pop_within_50mi: Some(cfg.c1.anchor_10 as u64),
+                pct_rural_in_buffer: Some(cfg.c2.rural_share.anchor_10 as f32),
+                max_rural_interchange_gap_miles: Some(cfg.c2.interchange_gap.anchor_10 as f32),
+                gdp_per_capita_relative: Some(cfg.c3.anchor_10 as f32),
+                max_consecutive_sfha_miles: Some(cfg.d1.consecutive_sfha.anchor_10 as f32),
+                fema_sfha_miles: Some(cfg.d1.total_sfha.anchor_10),
+                intermodal_hub_count: cfg.d2.intermodal_hubs.anchor_10 as u8,
+                dcfc_per_100mi: Some(cfg.d2.dcfc_per_100mi.anchor_10 as f32),
+                bridge_count: 250,
+                pct_bridges_poor: Some(cfg.d3.bridges_poor.anchor_10 as f32),
+                mean_year_built: Some(cfg.d3.mean_year_built.anchor_10 as f32),
+                intl_trade_score: 10.0,
+                military_strategic_score: 10.0,
+                agricultural_export_score: 10.0,
+                ..Default::default()
+            },
+            &cfg,
+        );
+
+        assert_close(high.a1.score, 10.0);
+        assert_close(high.a2.score, 10.0);
+        assert_close(high.a3.score, 10.0);
+        assert_close(high.a4.score, 10.0);
+        assert_close(high.a5.score, 10.0);
+        assert_close(high.b1.score, 10.0);
+        assert_close(high.b2.score, 10.0);
+        assert_close(high.b3.score, 10.0);
+        assert_close(high.b4.score, 10.0);
+        assert_close(high.c1.score, 10.0);
+        assert_close(high.c2.score, 10.0);
+        assert_close(high.c3.score, 10.0);
+        assert_close(high.c4.score, 10.0);
+        assert_close(high.d1.score, 10.0);
+        assert_close(high.d2.score, 10.0);
+        assert_close(high.d3.score, 10.0);
     }
 
     #[test]

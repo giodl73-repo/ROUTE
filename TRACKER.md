@@ -21,6 +21,26 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 
 ---
 
+## Current Sprint — Milepost 1 Instrument
+
+Goal: make the 16-dimension scorer boringly reliable enough that Atlas work can depend on it.
+
+| Task | Status | Evidence / Next Step |
+|---|---|---|
+| Calibration ledger emits score, tier, confidence, score-confidence, and review flags | ✅ done | `data/confidence-risks.csv`, `route calibrate` |
+| Corridor ledger names the weak dimensions driving each low-confidence ranking | ✅ done | `risk_dimensions` column in `data/confidence-risks.csv` |
+| Dimension risk summary separates broad confidence debt from tier-sensitive review risk | ✅ done | `data/confidence-risk-summary.csv` |
+| FPM PTI/TTI can flow into graph edges for observed A3 scoring | ✅ done | `route build --fpm`, `build_graph_with_fpm` test |
+| Dimension registry table exists in docs and is checked against code | ✅ done | `docs/DIMENSIONS.md`; `dimension_registry_doc_mentions_every_code_and_name` |
+| L0/L1 tests cover missing-data behavior and anchor extremes for all 16 dimensions | ✅ done | `sparse_corridor_scores_all_dimensions_with_truth_labels`; `dimension_anchor_extremes_score_zero_and_ten` |
+| Proxy and missing-data labels are consistent across score table, corpus report, and CSVs | 🔄 in progress | Confidence labels exist; audit report/CSV wording |
+| `route score-all` refreshed under current rubric and confidence columns | ⏳ pending | Run after Instrument checks settle |
+| Stale docs/handoff warnings about old A3/score-all outputs are reconciled | ⏳ pending | Update or archive stale notes |
+
+Milestone 1 is done when every task above is ✅ and `cargo test --workspace` plus `route calibrate` pass from a clean worktree.
+
+---
+
 ## Corpus
 
 ### Existing corridors scored
