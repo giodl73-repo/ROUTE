@@ -509,11 +509,19 @@ fn main() -> Result<()> {
             let bc = bc_raw.into_iter().map(|(k, v)| (k, (v / bc_norm).min(1.0))).collect();
             graph.edge_betweenness = Some(bc);
 
-            // Load ACS population once for all corridors
+            // Load all data sources (mirrors calibrate command)
             let acs_counties = load_acs_counties_for_scoring(&manifest);
-            if acs_counties.is_some() {
-                println!("  ACS population loaded — C1/C3 will use real census data");
-            }
+            if acs_counties.is_some() { println!("  ACS population loaded"); }
+            let ports = load_ports();
+            if !ports.is_empty() { println!("  {} port/border locations loaded", ports.len()); }
+            let dcfc = load_dcfc_stations();
+            if !dcfc.is_empty() { println!("  {} DCFC stations loaded", dcfc.len()); }
+            let intermodal = load_intermodal_terminals();
+            if !intermodal.is_empty() { println!("  {} intermodal terminals loaded", intermodal.len()); }
+            let fema_tiles = load_fema_tiles();
+            if !fema_tiles.is_empty() { println!("  {} FEMA tiles loaded", fema_tiles.len()); }
+            let nbi = load_nbi_bridges();
+            if !nbi.is_empty() { println!("  {} NBI bridge records loaded", nbi.len()); }
 
             // Score all interstates
             let ids = graph.interstate_ids();
@@ -522,16 +530,32 @@ fn main() -> Result<()> {
             let mut all_scores = Vec::new();
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
-                    // Join population if available
-                    if let Some(ref counties) = acs_counties {
-                        let (pop, rural_pop) = route_network::corridor_pop_within_50mi(
-                            &graph, id, counties,
-                        );
-                        if pop > 0 {
-                            let rural_share = if pop > 0 { rural_pop as f32 / pop as f32 } else { 0.0 };
-                            corridor.attributes.pop_within_50mi = Some(pop);
-                            corridor.attributes.rural_pop_within_50mi = Some(rural_pop);
-                            corridor.attributes.pct_rural_in_buffer = Some(rural_share);
+                    // Apply all data joins (same as calibrate)
+                    if acs_counties.is_some() {
+                        join_acs_population_to_corridor(&manifest, &graph, id, &mut corridor.attributes);
+                    }
+                    if !ports.is_empty() {
+                        join_port_access_to_corridor(&graph, id, &mut corridor.attributes, &ports);
+                    }
+                    if !dcfc.is_empty() {
+                        join_dcfc_to_corridor(&graph, id, corridor.total_miles, &mut corridor.attributes, &dcfc);
+                    }
+                    if !intermodal.is_empty() {
+                        join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
+                    }
+                    if !fema_tiles.is_empty() {
+                        join_fema_d1_to_corridor(&graph, id, &mut corridor.attributes, &fema_tiles);
+                    }
+                    if !nbi.is_empty() {
+                        join_nbi_to_corridor(id, &mut corridor.attributes, &nbi);
+                    }
+                    join_d3_iri_proxy(&mut corridor.attributes);
+                    // A2 freight proxy from HPMS
+                    if corridor.attributes.annual_freight_value_b.is_none() {
+                        if let Some(aadt) = corridor.attributes.p90_aadt {
+                            let truck_pct = corridor.attributes.mean_pct_truck.unwrap_or(0.084) as f64;
+                            let freight_b = aadt * truck_pct * 365.0 * corridor.total_miles * 3.50 / 1_000_000_000.0;
+                            corridor.attributes.annual_freight_value_b = Some(freight_b);
                         }
                     }
                     let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
@@ -1281,6 +1305,16 @@ fn main() -> Result<()> {
             if !intermodal.is_empty() {
                 println!("  {} intermodal terminals loaded — D2 hub count will use real values", intermodal.len());
             }
+            // Load NBI bridge condition data for D3
+            let nbi = load_nbi_bridges();
+            if !nbi.is_empty() {
+                println!("  {} NBI bridge records loaded — D3 will use real condition data", nbi.len());
+            }
+            // Load FEMA SFHA tile counts for D1 scoring
+            let fema_tiles = load_fema_tiles();
+            if !fema_tiles.is_empty() {
+                println!("  {} FEMA SFHA tiles loaded — D1 will use real flood-zone data", fema_tiles.len());
+            }
 
             // Collect per-dimension scores for all corridors
             const N_DIMS: usize = 15;
@@ -1315,6 +1349,16 @@ fn main() -> Result<()> {
                     if !intermodal.is_empty() {
                         join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
                     }
+                    // Join FEMA SFHA tile counts for D1 flood-zone scoring
+                    if !fema_tiles.is_empty() {
+                        join_fema_d1_to_corridor(&graph, id, &mut corridor.attributes, &fema_tiles);
+                    }
+                    // Apply D3 IRI proxy when NBI bridge data is unavailable
+                    // D3: join NBI real data first; fall back to IRI proxy if unavailable
+                    if !nbi.is_empty() {
+                        join_nbi_to_corridor(id, &mut corridor.attributes, &nbi);
+                    }
+                    join_d3_iri_proxy(&mut corridor.attributes); // no-op if NBI already set
                     // Estimate A2 freight value from HPMS truck AADT × corridor miles
                     // Proxy: annual_freight_value = truck_aadt × 365 × corridor_miles × $3.50/truck-mi ÷ 1e9
                     if corridor.attributes.annual_freight_value_b.is_none() {
@@ -2492,6 +2536,154 @@ fn join_port_access_to_corridor(
     if min_dist < f64::MAX {
         attrs.nearest_top25_port_miles = Some(min_dist as f32);
     }
+}
+
+/// A 1°×1° FEMA NFHL tile with an SFHA feature count.
+struct FemaTile {
+    xmin: f64,
+    ymin: f64,
+    xmax: f64,
+    ymax: f64,
+    sfha_count: u32,
+}
+
+/// Load FEMA SFHA tile counts from data/cache/fema_sfha_tile_counts.csv.
+/// Returns an empty Vec if the file is not present or cannot be parsed.
+fn load_fema_tiles() -> Vec<FemaTile> {
+    let path = std::path::Path::new("data/cache/fema_sfha_tile_counts.csv");
+    if !path.exists() { return Vec::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return Vec::new(); };
+    rdr.records()
+        .filter_map(|r| r.ok())
+        .filter_map(|rec| {
+            if rec.len() < 6 { return None; }
+            let xmin: f64 = rec[1].trim().parse().ok()?;
+            let ymin: f64 = rec[2].trim().parse().ok()?;
+            let xmax: f64 = rec[3].trim().parse().ok()?;
+            let ymax: f64 = rec[4].trim().parse().ok()?;
+            let sfha_count: u32 = rec[5].trim().parse().ok()?;
+            Some(FemaTile { xmin, ymin, xmax, ymax, sfha_count })
+        })
+        .collect()
+}
+
+/// Join FEMA D1 SFHA data onto a corridor's CorridorAttributes.
+///
+/// Algorithm:
+/// 1. Collect all graph node (lon, lat) pairs for the corridor.
+/// 2. Compute corridor bounding box (xmin, ymin, xmax, ymax).
+/// 3. Sum sfha_count for every tile whose bbox overlaps the corridor bbox.
+/// 4. Estimate fema_sfha_miles = sum × 0.3 (avg SFHA polygon ~0.3 mi span).
+/// 5. Set max_consecutive_sfha_miles as a 70% proxy (coastal/valley assumption).
+fn join_fema_d1_to_corridor(
+    graph: &route_network::HighwayGraph,
+    route_id: &str,
+    attrs: &mut route_network::CorridorAttributes,
+    tiles: &[FemaTile],
+) {
+    if tiles.is_empty() { return; }
+
+    // Collect corridor node coords (lon = x, lat = y)
+    let node_coords: Vec<(f64, f64)> = graph.graph.node_indices()
+        .filter(|&ni| graph.graph.edges(ni).any(|er| er.weight().route_id == route_id))
+        .map(|ni| { let c = graph.graph[ni].coord; (c.x, c.y) })
+        .collect();
+    if node_coords.is_empty() { return; }
+
+    // Compute corridor bounding box
+    let corr_xmin = node_coords.iter().map(|&(x, _)| x).fold(f64::MAX, f64::min);
+    let corr_xmax = node_coords.iter().map(|&(x, _)| x).fold(f64::MIN, f64::max);
+    let corr_ymin = node_coords.iter().map(|&(_, y)| y).fold(f64::MAX, f64::min);
+    let corr_ymax = node_coords.iter().map(|&(_, y)| y).fold(f64::MIN, f64::max);
+
+    // Sum sfha_count for overlapping tiles
+    let total_sfha: u64 = tiles.iter()
+        .filter(|t| {
+            // Bboxes overlap unless one is entirely outside the other on any axis
+            !(corr_xmax < t.xmin || corr_xmin > t.xmax
+              || corr_ymax < t.ymin || corr_ymin > t.ymax)
+        })
+        .map(|t| t.sfha_count as u64)
+        .sum();
+
+    if total_sfha == 0 { return; }
+
+    // Avg SFHA polygon spans ~0.3 miles → convert feature count to miles
+    let sfha_miles = total_sfha as f64 * 0.3;
+    attrs.fema_sfha_miles = Some(sfha_miles);
+    // Proxy: 70% of total is consecutive for coastal/valley corridors
+    attrs.max_consecutive_sfha_miles = Some((sfha_miles * 0.7) as f32);
+}
+
+/// Apply a D3 IRI proxy when NBI bridge data is unavailable.
+///
+/// Maps mean_iri to an estimated mean_year_built and pct_bridges_poor:
+///   IRI < 50  → post-2000 construction/resurfacing  → year 2005
+///   IRI 50-80 → 1985–2000 era                       → year 1990
+///   IRI 80-120→ 1970–1985 era                       → year 1975
+///   IRI > 120 → pre-1970 Eisenhower era              → year 1965
+///
+/// pct_bridges_poor proxy = (IRI / 170.0).min(0.30)
+/// (IRI 170 ≈ "poor" pavement threshold; maps 0–170 IRI → 0–30% poor bridges)
+
+// NBI data record for joining
+struct NbiBridgeRecord {
+    pct_bridges_poor: f32,
+    mean_year_built: f32,
+    bridge_count: u32,
+}
+
+/// Load NBI per-corridor summary from data/cache/nbi_bridges.csv.
+fn load_nbi_bridges() -> std::collections::HashMap<String, NbiBridgeRecord> {
+    let path = std::path::Path::new("data/cache/nbi_bridges.csv");
+    if !path.exists() { return std::collections::HashMap::new(); }
+    let Ok(mut rdr) = csv::Reader::from_path(path) else { return std::collections::HashMap::new(); };
+    let mut map = std::collections::HashMap::new();
+    for result in rdr.records().filter_map(|r| r.ok()) {
+        if result.len() < 5 { continue; }
+        let route_id = result[0].to_string();
+        let bridge_count: u32 = result[1].parse().unwrap_or(0);
+        let pct: f32 = result[3].parse().unwrap_or(0.0);
+        let year: f32 = result[4].parse().unwrap_or(1970.0);
+        map.insert(route_id, NbiBridgeRecord { pct_bridges_poor: pct, mean_year_built: year, bridge_count });
+    }
+    map
+}
+
+/// Join NBI bridge condition data to a corridor.
+fn join_nbi_to_corridor(
+    route_id: &str,
+    attrs: &mut route_network::CorridorAttributes,
+    nbi: &std::collections::HashMap<String, NbiBridgeRecord>,
+) {
+    if let Some(rec) = nbi.get(route_id) {
+        attrs.pct_bridges_poor = Some(rec.pct_bridges_poor);
+        attrs.mean_year_built = Some(rec.mean_year_built);
+        attrs.bridge_count = rec.bridge_count as usize;
+    }
+}
+///
+/// Only fills in fields that are currently None.
+fn join_d3_iri_proxy(attrs: &mut route_network::CorridorAttributes) {
+    // Only apply when NBI data is absent
+    if attrs.pct_bridges_poor.is_some() { return; }
+    let Some(iri) = attrs.mean_iri else { return; };
+
+    let estimated_year = if iri < 50.0 {
+        2005.0_f32
+    } else if iri < 80.0 {
+        1990.0
+    } else if iri < 120.0 {
+        1975.0
+    } else {
+        1965.0
+    };
+
+    if attrs.mean_year_built.is_none() {
+        attrs.mean_year_built = Some(estimated_year);
+    }
+    let iri_proxy = (iri / 170.0).min(0.30);
+    attrs.pct_bridges_poor = Some(iri_proxy);
 }
 
 /// Join ACS population onto a single corridor's CorridorAttributes.
