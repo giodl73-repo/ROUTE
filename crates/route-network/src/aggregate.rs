@@ -11,7 +11,7 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         return None;
     }
 
-    let total_miles: f64 = edges.iter().map(|&ei| g.graph[ei].length_miles).sum();
+    let total_miles = corridor_total_miles(g, edges);
     let edge_count = edges.len();
     let is_upgrade = edges
         .first()
@@ -26,6 +26,9 @@ pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> 
         .collect::<std::collections::HashSet<_>>()
         .into_iter()
         .collect();
+    if states.is_empty() {
+        states = infer_states_from_geometry(g, edges);
+    }
     states.sort();
 
     // Termini — westernmost and easternmost nodes from geometry
@@ -198,9 +201,93 @@ fn find_termini(g: &HighwayGraph, edges: &[EdgeIndex]) -> [String; 2] {
     }
 
     [
-        format!("{:.2}°N {:.2}°W", west_lat, -west_lon),
-        format!("{:.2}°N {:.2}°E", east_lat, east_lon.abs()),
+        format_coord(west_lat, west_lon),
+        format_coord(east_lat, east_lon),
     ]
+}
+
+fn corridor_total_miles(g: &HighwayGraph, edges: &[EdgeIndex]) -> f64 {
+    let raw_total: f64 = edges.iter().map(|&ei| g.graph[ei].length_miles).sum();
+    let tiger_interstate = edges.iter().all(|&ei| {
+        g.graph[ei].state.is_empty() && g.graph[ei].road_class == route_data::RoadClass::Interstate
+    });
+
+    if tiger_interstate {
+        raw_total / 2.0
+    } else {
+        raw_total
+    }
+}
+
+fn format_coord(lat: f64, lon: f64) -> String {
+    let ns = if lat < 0.0 { "S" } else { "N" };
+    let ew = if lon < 0.0 { "W" } else { "E" };
+    format!("{:.2}°{} {:.2}°{}", lat.abs(), ns, lon.abs(), ew)
+}
+
+fn infer_states_from_geometry(g: &HighwayGraph, edges: &[EdgeIndex]) -> Vec<String> {
+    edges
+        .iter()
+        .flat_map(|&ei| g.graph[ei].geometry.0.iter())
+        .filter_map(|coord| approx_state_code(coord.y, coord.x).map(str::to_string))
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
+fn approx_state_code(lat: f64, lon: f64) -> Option<&'static str> {
+    match (lat, lon) {
+        (35.0..=42.5, -120.2..=-114.0) => Some("NV"),
+        (32.0..=42.2, -124.5..=-114.0) => Some("CA"),
+        (36.8..=42.2, -114.2..=-108.8) => Some("UT"),
+        (40.8..=45.2, -111.2..=-104.0) => Some("WY"),
+        (39.8..=43.2, -104.2..=-95.2) => Some("NE"),
+        (40.2..=43.8, -96.8..=-90.0) => Some("IA"),
+        (36.8..=42.6, -91.8..=-87.0) => Some("IL"),
+        (37.6..=41.9, -88.2..=-84.5) => Some("IN"),
+        (38.2..=42.4, -84.9..=-80.4) => Some("OH"),
+        (39.4..=42.6, -80.6..=-74.6) => Some("PA"),
+        (38.8..=41.5, -75.7..=-73.8) => Some("NJ"),
+        (31.0..=37.2, -114.9..=-108.8) => Some("AZ"),
+        (31.0..=37.2, -109.2..=-103.0) => Some("NM"),
+        (25.5..=36.8, -106.7..=-93.4) => Some("TX"),
+        (33.5..=37.2, -103.2..=-94.2) => Some("OK"),
+        (36.8..=40.2, -102.2..=-94.4) => Some("KS"),
+        (35.8..=40.8, -95.9..=-89.0) => Some("MO"),
+        (33.0..=36.8, -94.8..=-89.5) => Some("AR"),
+        (28.8..=33.2, -94.2..=-88.6) => Some("LA"),
+        (30.0..=35.2, -91.8..=-88.0) => Some("MS"),
+        (30.0..=35.2, -88.6..=-84.8) => Some("AL"),
+        (30.2..=35.2, -85.8..=-80.6) => Some("GA"),
+        (24.0..=31.2, -87.8..=-80.0) => Some("FL"),
+        (32.0..=35.4, -83.6..=-78.4) => Some("SC"),
+        (33.7..=36.8, -84.4..=-75.2) => Some("NC"),
+        (35.8..=39.6, -83.8..=-75.0) => Some("VA"),
+        (37.0..=40.8, -82.8..=-77.4) => Some("WV"),
+        (35.8..=39.4, -89.8..=-81.8) => Some("KY"),
+        (34.8..=36.8, -90.4..=-81.6) => Some("TN"),
+        (38.8..=39.9, -77.2..=-75.0) => Some("MD"),
+        (38.4..=39.9, -75.8..=-74.8) => Some("DE"),
+        (41.0..=42.2, -73.8..=-71.7) => Some("CT"),
+        (41.2..=42.9, -73.6..=-69.8) => Some("MA"),
+        (41.1..=42.1, -71.9..=-71.0) => Some("RI"),
+        (42.6..=45.2, -73.5..=-70.6) => Some("VT"),
+        (42.6..=45.4, -72.6..=-70.6) => Some("NH"),
+        (43.0..=47.6, -71.2..=-66.8) => Some("ME"),
+        (40.4..=45.2, -79.9..=-71.7) => Some("NY"),
+        (42.4..=47.4, -92.9..=-86.2) => Some("WI"),
+        (41.4..=48.4, -92.9..=-82.0) => Some("MI"),
+        (43.2..=49.2, -97.5..=-89.4) => Some("MN"),
+        (42.2..=45.2, -104.2..=-96.2) => Some("SD"),
+        (45.0..=49.2, -104.2..=-96.2) => Some("ND"),
+        (44.2..=49.2, -116.2..=-104.0) => Some("MT"),
+        (41.8..=49.2, -117.4..=-111.0) => Some("ID"),
+        (41.8..=46.4, -124.8..=-116.2) => Some("OR"),
+        (45.4..=49.2, -124.8..=-116.8) => Some("WA"),
+        (18.8..=22.4, -160.4..=-154.4) => Some("HI"),
+        (51.0..=72.0, -170.0..=-129.0) => Some("AK"),
+        _ => None,
+    }
 }
 
 /// Longest gap (miles) between consecutive interchange nodes along the corridor.
@@ -347,5 +434,179 @@ fn mean_f32(vals: &[f32]) -> Option<f32> {
         None
     } else {
         Some(vals.iter().sum::<f32>() / vals.len() as f32)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{aggregate_corridor, approx_state_code, format_coord};
+    use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
+    use geo_types::{Coord, LineString};
+
+    #[test]
+    fn format_coord_uses_correct_hemispheres() {
+        assert_eq!(format_coord(40.87, -74.00), "40.87°N 74.00°W");
+        assert_eq!(format_coord(-33.87, 151.21), "33.87°S 151.21°E");
+    }
+
+    #[test]
+    fn tiger_interstate_corridor_miles_are_carriageway_adjusted() {
+        let mut graph = HighwayGraph::new();
+        let a = node(&mut graph, 0, -122.0, 37.0);
+        let b = node(&mut graph, 1, -121.0, 37.0);
+        let c = node(&mut graph, 2, -122.0, 37.001);
+        let d = node(&mut graph, 3, -121.0, 37.001);
+
+        let e1 = graph.graph.add_edge(
+            a,
+            b,
+            edge(
+                "I80",
+                "",
+                route_data::RoadClass::Interstate,
+                100.0,
+                -122.0,
+                -121.0,
+            ),
+        );
+        let e2 = graph.graph.add_edge(
+            c,
+            d,
+            edge(
+                "I80",
+                "",
+                route_data::RoadClass::Interstate,
+                100.0,
+                -122.0,
+                -121.0,
+            ),
+        );
+        graph.route_index.insert("I80".to_string(), vec![e1, e2]);
+
+        let corridor = aggregate_corridor(&graph, "I80").expect("aggregate I80");
+
+        assert_eq!(corridor.total_miles, 100.0);
+        assert_eq!(corridor.termini[1], "37.00°N 121.00°W");
+    }
+
+    #[test]
+    fn stateful_nhs_corridor_miles_are_not_carriageway_adjusted() {
+        let mut graph = HighwayGraph::new();
+        let a = node(&mut graph, 0, -90.0, 40.0);
+        let b = node(&mut graph, 1, -89.0, 40.0);
+        let e = graph.graph.add_edge(
+            a,
+            b,
+            edge(
+                "I80",
+                "IL",
+                route_data::RoadClass::Interstate,
+                100.0,
+                -90.0,
+                -89.0,
+            ),
+        );
+        graph.route_index.insert("I80".to_string(), vec![e]);
+
+        let corridor = aggregate_corridor(&graph, "I80").expect("aggregate I80");
+
+        assert_eq!(corridor.total_miles, 100.0);
+        assert_eq!(corridor.states, ["IL"]);
+    }
+
+    #[test]
+    fn tiger_corridor_states_can_be_inferred_from_geometry() {
+        let mut graph = HighwayGraph::new();
+        let ca = node(&mut graph, 0, -122.0, 37.0);
+        let nv = node(&mut graph, 1, -118.0, 39.0);
+        let nj = node(&mut graph, 2, -74.1, 40.8);
+        let e1 = graph.graph.add_edge(
+            ca,
+            nv,
+            edge(
+                "I80",
+                "",
+                route_data::RoadClass::Interstate,
+                100.0,
+                -122.0,
+                -118.0,
+            ),
+        );
+        let e2 = graph.graph.add_edge(
+            nv,
+            nj,
+            edge_at(
+                "I80",
+                "",
+                route_data::RoadClass::Interstate,
+                100.0,
+                (-118.0, 39.0),
+                (-74.1, 40.8),
+            ),
+        );
+        graph.route_index.insert("I80".to_string(), vec![e1, e2]);
+
+        let corridor = aggregate_corridor(&graph, "I80").expect("aggregate I80");
+
+        assert!(corridor.states.contains(&"CA".to_string()));
+        assert!(corridor.states.contains(&"NV".to_string()));
+        assert!(corridor.states.contains(&"NJ".to_string()));
+    }
+
+    #[test]
+    fn approx_state_code_covers_i80_endpoints() {
+        assert_eq!(approx_state_code(37.77, -122.41), Some("CA"));
+        assert_eq!(approx_state_code(40.87, -74.00), Some("NJ"));
+    }
+
+    fn node(graph: &mut HighwayGraph, id: u64, lon: f64, lat: f64) -> petgraph::graph::NodeIndex {
+        graph.graph.add_node(HighwayNode {
+            id,
+            coord: Coord { x: lon, y: lat },
+            is_interchange: false,
+        })
+    }
+
+    fn edge(
+        route_id: &str,
+        state: &str,
+        road_class: route_data::RoadClass,
+        length_miles: f64,
+        lon0: f64,
+        lon1: f64,
+    ) -> HighwayEdge {
+        edge_at(
+            route_id,
+            state,
+            road_class,
+            length_miles,
+            (lon0, 37.0),
+            (lon1, 37.0),
+        )
+    }
+
+    fn edge_at(
+        route_id: &str,
+        state: &str,
+        road_class: route_data::RoadClass,
+        length_miles: f64,
+        start: (f64, f64),
+        end: (f64, f64),
+    ) -> HighwayEdge {
+        HighwayEdge {
+            id: 0,
+            route_id: route_id.to_string(),
+            state: state.to_string(),
+            road_class,
+            geometry: LineString::from(vec![start, end]),
+            length_miles,
+            lane_count: None,
+            aadt: None,
+            pct_truck: None,
+            iri: None,
+            tti: None,
+            pti: None,
+            speed_limit: None,
+        }
     }
 }
