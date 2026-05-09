@@ -41,6 +41,23 @@ Milestone 1 is done when every task above is ✅ and `cargo test --workspace` pl
 
 ---
 
+## Current Sprint — Milepost 2 Atlas
+
+Goal: make the existing network corpus and tier map reproducible from commands.
+
+| Task | Status | Evidence / Next Step |
+|---|---|---|
+| Current v1.4 score ledger exists for all atlas candidates | ✅ done | `data/scores-all.csv`, 386 corridors |
+| Tier table can be regenerated from `route score-all` | ✅ done | `data/tier-table.csv`, `data/tier-table.md`; written by `route score-all` |
+| Historical v1.2 candidate docs are clearly labeled as non-current | ✅ done | `data/t1-candidates.md`, `data/t2-candidates.md`, `data/t3-candidates.md` historical banners |
+| Corpus report entries record command, rubric version, data version, confidence, and estimation flags | 🔄 partial | `route report` writes rubric/confidence; audit command/data provenance |
+| Tier map can be regenerated from current score ledger | ⏳ pending | Verify `route map all` consumes current score ledger and renders nonblank output |
+| Basemap claim is either implemented or downgraded explicitly | ⏳ pending | Inspect `route-map`; update spec or renderer |
+
+Milestone 2 is done when `route score-all`, `route calibrate`, and the tier map command regenerate tracked Atlas artifacts from a clean worktree.
+
+---
+
 ## Corpus
 
 ### Existing corridors scored

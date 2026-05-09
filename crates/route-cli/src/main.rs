@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const T1_THRESHOLD: f64 = 70.0;
 const T2_THRESHOLD: f64 = 50.0;
@@ -16,6 +16,18 @@ struct ConfidenceRisk {
     mean_confidence: f32,
     score_confidence: f32,
     risk_dimensions: String,
+}
+
+struct ScoreAllRow {
+    route: String,
+    score: f64,
+    tier: &'static str,
+    rubric_version: String,
+    estimated: bool,
+    confidence: f32,
+    score_confidence: f32,
+    dimensions: [f64; 16],
+    dimension_confidences: [f32; 16],
 }
 
 #[derive(Parser)]
@@ -703,17 +715,7 @@ fn main() -> Result<()> {
             println!("  scoring {} corridors…", ids.len());
 
             let mut all_scores = Vec::new();
-            let mut score_rows: Vec<(
-                String,
-                f64,
-                &'static str,
-                String,
-                bool,
-                f32,
-                f32,
-                [f64; 16],
-                [f32; 16],
-            )> = Vec::new();
+            let mut score_rows: Vec<ScoreAllRow> = Vec::new();
             for id in &ids {
                 if let Some(mut corridor) = route_network::aggregate_corridor(&graph, id) {
                     // Apply all data joins (same as calibrate)
@@ -778,17 +780,17 @@ fn main() -> Result<()> {
                     );
                     let total = rounded_score(scores.total());
                     let tier = tier_for_score(total);
-                    score_rows.push((
-                        corridor.designation.clone(),
-                        total,
+                    score_rows.push(ScoreAllRow {
+                        route: corridor.designation.clone(),
+                        score: total,
                         tier,
-                        scores.rubric_version.clone(),
-                        scores.any_estimated(),
-                        scores.mean_confidence(),
-                        scores.score_weighted_confidence(),
-                        dimension_score_values(&scores),
-                        dimension_confidence_values(&scores),
-                    ));
+                        rubric_version: scores.rubric_version.clone(),
+                        estimated: scores.any_estimated(),
+                        confidence: scores.mean_confidence(),
+                        score_confidence: scores.score_weighted_confidence(),
+                        dimensions: dimension_score_values(&scores),
+                        dimension_confidences: dimension_confidence_values(&scores),
+                    });
                     all_scores.push(scores);
                 }
             }
@@ -814,32 +816,25 @@ fn main() -> Result<()> {
                 "D2_conf", "D3_conf",
             ]);
             wtr.write_record(header)?;
-            for (
-                route,
-                score,
-                tier,
-                rubric_version,
-                estimated,
-                confidence,
-                score_confidence,
-                dims,
-                confs,
-            ) in &score_rows
-            {
-                let mut row = vec![
-                    route.clone(),
-                    format!("{score:.1}"),
-                    tier.to_string(),
-                    rubric_version.clone(),
-                    estimated.to_string(),
-                    format!("{confidence:.2}"),
-                    format!("{score_confidence:.2}"),
-                    route_score::confidence_label(*confidence).to_string(),
-                    route_score::confidence_label(*score_confidence).to_string(),
+            for row in &score_rows {
+                let mut csv_row = vec![
+                    row.route.clone(),
+                    format!("{:.1}", row.score),
+                    row.tier.to_string(),
+                    row.rubric_version.clone(),
+                    row.estimated.to_string(),
+                    format!("{:.2}", row.confidence),
+                    format!("{:.2}", row.score_confidence),
+                    route_score::confidence_label(row.confidence).to_string(),
+                    route_score::confidence_label(row.score_confidence).to_string(),
                 ];
-                row.extend(dims.iter().map(|value| format!("{value:.1}")));
-                row.extend(confs.iter().map(|value| format!("{value:.2}")));
-                wtr.write_record(row)?;
+                csv_row.extend(row.dimensions.iter().map(|value| format!("{value:.1}")));
+                csv_row.extend(
+                    row.dimension_confidences
+                        .iter()
+                        .map(|value| format!("{value:.2}")),
+                );
+                wtr.write_record(csv_row)?;
             }
             wtr.flush()?;
             println!(
@@ -847,6 +842,7 @@ fn main() -> Result<()> {
                 score_rows.len(),
                 out.display()
             );
+            write_tier_artifacts(&score_rows)?;
             println!("score-all complete: {} corridors scored.", all_scores.len());
         }
 
@@ -3616,6 +3612,76 @@ fn confidence_risk_dimensions(scores: &[f64; 16], confidences: &[f32; 16]) -> St
         .join(";")
 }
 
+fn write_tier_artifacts(score_rows: &[ScoreAllRow]) -> Result<()> {
+    write_tier_artifacts_to(score_rows, Path::new("data"))
+}
+
+fn write_tier_artifacts_to(score_rows: &[ScoreAllRow], output_dir: &Path) -> Result<()> {
+    let mut rows: Vec<&ScoreAllRow> = score_rows.iter().collect();
+    rows.sort_by(|a, b| {
+        a.tier
+            .cmp(b.tier)
+            .then_with(|| b.score.total_cmp(&a.score))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+
+    std::fs::create_dir_all(output_dir)?;
+    let csv_path = output_dir.join("tier-table.csv");
+    let mut wtr = csv::Writer::from_path(&csv_path)?;
+    wtr.write_record([
+        "tier",
+        "route",
+        "score",
+        "rubric_version",
+        "estimated",
+        "confidence",
+        "score_confidence",
+        "confidence_label",
+        "score_confidence_label",
+    ])?;
+    for row in &rows {
+        wtr.write_record([
+            row.tier.to_string(),
+            row.route.clone(),
+            format!("{:.1}", row.score),
+            row.rubric_version.clone(),
+            row.estimated.to_string(),
+            format!("{:.2}", row.confidence),
+            format!("{:.2}", row.score_confidence),
+            route_score::confidence_label(row.confidence).to_string(),
+            route_score::confidence_label(row.score_confidence).to_string(),
+        ])?;
+    }
+    wtr.flush()?;
+
+    let md_path = output_dir.join("tier-table.md");
+    let mut md = String::new();
+    md.push_str("# ROUTE Atlas Tier Table\n\n");
+    md.push_str("Generated by `route score-all` from `data/scores-all.csv` inputs and the current scoring config.\n\n");
+    md.push_str("| Tier | Corridors |\n|---|---:|\n");
+    for tier in ["T1", "T2", "T3", "T4"] {
+        let count = rows.iter().filter(|row| row.tier == tier).count();
+        md.push_str(&format!("| {tier} | {count} |\n"));
+    }
+    md.push_str("\n| Tier | Route | Score | Score Confidence | Label | Estimated |\n|---|---|---:|---:|---|---|\n");
+    for row in &rows {
+        md.push_str(&format!(
+            "| {} | {} | {:.1} | {:.2} | {} | {} |\n",
+            row.tier,
+            row.route,
+            row.score,
+            row.score_confidence,
+            route_score::confidence_label(row.score_confidence),
+            row.estimated
+        ));
+    }
+    std::fs::write(&md_path, md)?;
+
+    println!("  wrote tier table → {}", csv_path.display());
+    println!("  wrote tier table markdown → {}", md_path.display());
+    Ok(())
+}
+
 fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     let mut ids = graph.interstate_ids();
     ids.extend(graph.us_highway_ids());
@@ -3629,7 +3695,8 @@ mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
+        join_fema_d1_to_corridor, rounded_score, tier_for_score, write_tier_artifacts_to, FemaTile,
+        ScoreAllRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -3695,6 +3762,31 @@ mod tests {
 
         assert_eq!(risks[0], 10.0);
         assert_eq!(risks[1], 0.0);
+    }
+
+    #[test]
+    fn tier_artifacts_sort_by_tier_then_descending_score() {
+        let rows = vec![
+            score_row("I2", 55.0, "T2"),
+            score_row("I1", 75.0, "T1"),
+            score_row("I3", 82.0, "T1"),
+        ];
+
+        let dir = std::env::temp_dir().join(format!("route-tier-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+
+        write_tier_artifacts_to(&rows, &dir).expect("write tier artifacts");
+
+        let csv = std::fs::read_to_string(dir.join("tier-table.csv")).expect("read tier csv");
+        let route_order: Vec<&str> = csv
+            .lines()
+            .skip(1)
+            .filter_map(|line| line.split(',').nth(1))
+            .take(3)
+            .collect();
+        assert_eq!(route_order, ["I3", "I1", "I2"]);
+
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]
@@ -3874,6 +3966,20 @@ mod tests {
         assert_eq!(i5.seismic, 8.5);
         assert_eq!(i80.wildfire, 3.5);
         assert_eq!(i80.tornado, 0.5);
+    }
+
+    fn score_row(route: &str, score: f64, tier: &'static str) -> ScoreAllRow {
+        ScoreAllRow {
+            route: route.to_string(),
+            score,
+            tier,
+            rubric_version: "test".to_string(),
+            estimated: false,
+            confidence: 0.9,
+            score_confidence: 0.8,
+            dimensions: [0.0; 16],
+            dimension_confidences: [0.0; 16],
+        }
     }
 }
 
