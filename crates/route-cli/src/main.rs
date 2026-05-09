@@ -252,6 +252,19 @@ enum Commands {
         lookup_needed: bool,
     },
 
+    /// Show source health for T1/T1 failure evidence ingestion
+    T1SourceHealth {
+        /// Path to T1/T1 source health ledger CSV
+        #[arg(long, default_value = "data/t1-source-health.csv", value_name = "FILE")]
+        ledger: PathBuf,
+        /// Show only rows that are not live/implemented
+        #[arg(long)]
+        blockers: bool,
+        /// Print detailed blocker and next-step fields
+        #[arg(long)]
+        details: bool,
+    },
+
     /// Summarize raw T1/T1 failure event observations into rates and durations
     T1FailureEvents {
         /// Path to normalized T1/T1 failure event observations CSV
@@ -1972,6 +1985,16 @@ fn run_cli() -> Result<()> {
             let rows = load_t1_failure_source_plan(&ledger)
                 .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
             print_t1_failure_sources(&rows, lookup_needed);
+        }
+
+        Commands::T1SourceHealth {
+            ledger,
+            blockers,
+            details,
+        } => {
+            let rows = load_t1_source_health(&ledger)
+                .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
+            print_t1_source_health(&rows, blockers, details);
         }
 
         Commands::T1FailureEvents {
@@ -4838,6 +4861,115 @@ fn print_t1_failure_sources(rows: &[T1FailureSourceRow], lookup_needed: bool) {
     }
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1SourceHealthRow {
+    site_id: String,
+    source_name: String,
+    source_url: String,
+    source_kind: String,
+    access_health: String,
+    ingestion_status: String,
+    history_status: String,
+    last_checked: String,
+    blocking_gap: String,
+    next_step: String,
+}
+
+fn load_t1_source_health(path: &Path) -> Result<Vec<T1SourceHealthRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_source_health(file)
+}
+
+fn parse_t1_source_health<R: std::io::Read>(reader: R) -> Result<Vec<T1SourceHealthRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_source_health(rows: &[T1SourceHealthRow], blockers: bool, details: bool) {
+    let filtered = rows
+        .iter()
+        .filter(|row| !blockers || t1_source_health_is_blocked(row))
+        .collect::<Vec<_>>();
+
+    let mut by_access: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    let mut by_ingestion: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_access.entry(row.access_health.clone()).or_insert(0) += 1;
+        *by_ingestion
+            .entry(row.ingestion_status.clone())
+            .or_insert(0) += 1;
+    }
+
+    println!("route t1-source-health");
+    println!("  sources: {} shown / {} total", filtered.len(), rows.len());
+    println!("  access: {}", format_count_map(&by_access));
+    println!("  ingestion: {}", format_count_map(&by_ingestion));
+    println!();
+    println!(
+        "{:<18} {:<24} {:<16} {:<14} {:<14} {}",
+        "Site", "Source", "Access", "Ingestion", "History", "Gap"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<24} {:<16} {:<14} {:<14} {}",
+            row.site_id,
+            truncate_for_table(&row.source_name, 24),
+            row.access_health,
+            row.ingestion_status,
+            row.history_status,
+            row.blocking_gap
+        );
+        if details {
+            println!("  kind: {}", row.source_kind);
+            println!("  last checked: {}", row.last_checked);
+            println!("  url: {}", row.source_url);
+            println!("  next: {}", row.next_step);
+        }
+    }
+}
+
+fn t1_source_health_is_blocked(row: &T1SourceHealthRow) -> bool {
+    !matches!(
+        (
+            row.access_health.as_str(),
+            row.ingestion_status.as_str(),
+            row.history_status.as_str()
+        ),
+        ("live", "implemented", "snapshot_only") | ("live", "documented", "historical_method")
+    )
+}
+
+fn format_count_map(counts: &std::collections::BTreeMap<String, usize>) -> String {
+    if counts.is_empty() {
+        "none".to_string()
+    } else {
+        counts
+            .iter()
+            .map(|(key, count)| format!("{key}: {count}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
+fn truncate_for_table(value: &str, width: usize) -> String {
+    if value.chars().count() <= width {
+        value.to_string()
+    } else {
+        value
+            .chars()
+            .take(width.saturating_sub(1))
+            .collect::<String>()
+            + "…"
+    }
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureEventRow {
     site_id: String,
@@ -5536,9 +5668,10 @@ mod tests {
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events,
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_tdot_smartway_events, rounded_score,
-        scenario_edge_candidates, standards_blueprint_gate_failures, summarize_t1_failure_events,
-        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        summarize_t1_failure_events, tier_for_score, write_tier_artifacts_to, FemaTile, GapType,
+        ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -5713,6 +5846,21 @@ T1X-I35-I40,I-35 x I-40,Oklahoma City OK,Oklahoma 511,NPMRDS,duration,lookup_nee
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].access_status, "identified");
         assert_eq!(rows[1].source_url, "");
+    }
+
+    #[test]
+    fn t1_source_health_parses_and_flags_blockers() {
+        let csv = "\
+site_id,source_name,source_url,source_kind,access_health,ingestion_status,history_status,last_checked,blocking_gap,next_step
+T1X-I35-I80,Iowa DOT 511,https://example.invalid,live_event_feed,live,implemented,snapshot_only,2026-05-09,gap,next
+T1X-I40-I75,TDOT SmartWay,https://example.invalid,live_event_feed,blocked_query,scaffolded,unknown,2026-05-09,gap,next
+";
+
+        let rows = parse_t1_source_health(csv.as_bytes()).expect("parse source health");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].access_health, "live");
+        assert!(!super::t1_source_health_is_blocked(&rows[0]));
+        assert!(super::t1_source_health_is_blocked(&rows[1]));
     }
 
     #[test]

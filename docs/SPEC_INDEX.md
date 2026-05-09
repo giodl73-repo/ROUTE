@@ -10,6 +10,7 @@ Start here when deciding which document owns a claim.
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
 | `data/t1-failure-source-plan.csv` | Source acquisition plan for T1/T1 failure-rate and reroute fields | You need to know which DOT/FHWA data systems can fill failure evidence gaps |
+| `data/t1-source-health.csv` | Source health/status ledger for T1/T1 evidence ingestion | You need to know whether a source is live, blocked, key-gated, or archive-only |
 | `data/t1-failure-events.csv` | Normalized raw T1/T1 incident, closure, and work-zone observations | You need to compute empirical annual failure rates and duration percentiles |
 | `specs/2026-05-06-route-design.md` | Core ROUTE method: corpus, dimensions, gap map, parliament, design proposals | You need the conceptual process |
 | `specs/2026-05-06-route-rust-architecture.md` | Rust workspace architecture, CLI contracts, data model, output formats | You need implementation boundaries |

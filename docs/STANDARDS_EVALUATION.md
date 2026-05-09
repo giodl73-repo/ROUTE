@@ -10,6 +10,8 @@ The T1/T1 failure-rate and reroute evidence ledger is `data/t1-intersection-fail
 
 The source acquisition plan for that ledger is `data/t1-failure-source-plan.csv`.
 
+The source-health ledger is `data/t1-source-health.csv`.
+
 ## Evaluation Rule
 
 A standard is ready for Blueprint only when it has:
@@ -115,6 +117,8 @@ route standards-proof --gate-blueprint
 route t1-failures
 route t1-failures --needs-sources
 route t1-failure-sources
+route t1-source-health
+route t1-source-health --blockers --details
 route t1-failure-events
 route t1-failure-events --write-ledger data/t1-intersection-failures.csv
 route t1-fetch-iowa511
