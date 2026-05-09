@@ -13,7 +13,7 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 | 0 — Ground Survey | Repo, specs, roles, data inventory, and CLI scaffold | ✅ substantially complete |
 | 1 — Instrument | 16-dimension scorer, calibration ledger, tests, truth labels | ✅ complete |
 | 2 — Atlas | Reproducible existing-corridor corpus and tier map | ✅ complete |
-| 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | 🔄 partial; artifact checks needed |
+| 3 — Fault Lines | Missing-link, bottleneck, resilience, port, and coverage gaps | ✅ complete |
 | 4 — Pressure Test | Flow, incident, relay, SLA, and investment simulations | 🔄 partial; test coverage needed |
 | 5 — The Forum | Parliament, stakeholder, editorial, and panel review records | 🔄 partial; formal gates needed |
 | 6 — Blueprint | Interstate 2.0 feature packages and investment sequence | 🔄 partial; claims need evidence labels |
@@ -67,8 +67,8 @@ Goal: separate true network gaps from source and geometry artifacts.
 | Corridor geometry QA catches impossible termini, empty states, and carriageway-inflated mileage | ✅ done | I-80 report now has west longitudes, inferred states, and TIGER interstate centerline miles |
 | Coverage gaps distinguish large-county centroid artifacts from true access gaps | ✅ done | `data/coverage-gaps.csv` includes gap class and artifact reason columns |
 | `route gap --type ...` writes reproducible gap artifacts instead of planned-only output | ✅ done | `gaps/missing-link.md`, `gaps/bottleneck.md`, `gaps/resilience.md`, `gaps/intermodal.md` |
-| Bottleneck findings separate congestion, capacity, and graph topology failures | ⏳ pending | Compare ATRI seeds, A1/A3 scores, and `route flow` outputs |
-| Resilience and port-connector gap claims have source/confidence labels | ⏳ pending | Tie D1/B3 weak claims to source coverage and review flags |
+| Bottleneck findings separate congestion, capacity, and graph topology failures | ✅ done | `gaps/bottleneck.md` labels corridor stress, topology chokepoints, and flow-needed capacity seeds |
+| Resilience and port-connector gap claims have source/confidence labels | ✅ done | `gaps/resilience.md` and `gaps/intermodal.md` include confidence labels |
 
 Milestone 3 is done when each gap artifact names whether it is a true system gap, a data gap, or a geometry/source artifact, and `cargo test --workspace` passes.
 
