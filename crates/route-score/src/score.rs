@@ -373,8 +373,7 @@ fn score_b2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 "Normalised betweenness centrality {bc:.3} (0=peripheral, 1=spine)."
             ),
             sources: vec!["HighwayGraph Brandes centrality".into()],
-            // Always estimated until score-all completes full national graph
-            estimated: true,
+            estimated: false,
         },
         None => ScoredDimension {
             dim: Dimension::B2NetworkCentrality,
@@ -759,10 +758,7 @@ mod tests {
         assert!(!scores.a3.estimated, "real PTI is authoritative");
         assert!(!scores.a5.estimated);
         assert!(!scores.b1.estimated);
-        assert!(
-            scores.b2.estimated,
-            "centrality is corpus-wide until score-all"
-        );
+        assert!(!scores.b2.estimated, "provided centrality is authoritative");
         assert!(!scores.b3.estimated);
         assert!(!scores.c1.estimated);
         assert!(!scores.c2.estimated);

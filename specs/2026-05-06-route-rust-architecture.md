@@ -140,7 +140,7 @@ pub struct HighwayGraph {
     pub graph: petgraph::Graph<HighwayNode, HighwayEdge, petgraph::Directed>,
     pub node_index: rstar::RTree<[f64; 2]>,
     pub route_index: HashMap<String, Vec<EdgeIndex>>,
-    // Centrality scores — None until route score-all completes full national graph
+    // Centrality scores — None until route score-all computes the full national graph
     pub edge_betweenness: Option<HashMap<EdgeIndex, f64>>,
 }
 ```
@@ -175,7 +175,7 @@ pub struct CorridorAttributes {
     // Network (Band B)
     pub nearest_parallel_miles: Option<f64>,  // distance to nearest parallel interstate-quality route (B1)
     pub detour_penalty_miles: Option<f64>,    // added miles via best alternate full route (B1)
-    pub betweenness_centrality: Option<f64>,  // Brandes approximation; None until score-all (B2)
+    pub betweenness_centrality: Option<f64>,  // Brandes centrality; None until score-all (B2)
     pub port_terminus_flag: bool,             // true if a terminus is within 30mi of top-25 port (B3)
     pub nearest_top25_port_miles: Option<f32>,// distance to nearest top-25 port by tonnage (B3)
     pub border_crossing_flag: bool,           // true if route serves a major US-CA/MX crossing (B3)
@@ -286,7 +286,7 @@ pub struct ScoredDimension {
 
 **B1 — Redundancy**: primary inputs `nearest_parallel_miles` and `detour_penalty_miles`. Score from detour penalty: 0 = <30 miles added, 10 = >300 miles added or no alternative.
 
-**B2 — Network Centrality**: input `betweenness_centrality`. **Marked `estimated: true` for all corridors until `route score-all` completes the full national graph** (G1 amendment). Partial-graph centrality is computed and stored but flagged — a corridor's centrality score is only stable when all corridors are in the graph.
+**B2 — Network Centrality**: input `betweenness_centrality`. Marked `estimated: true` when absent from single-corridor scoring; `route score-all` computes full national Brandes centrality and clears the B2 estimate flag. Partial-graph centrality must not be persisted as authoritative — a corridor's centrality score is only stable when all atlas candidates are in the graph.
 
 **B3 — Port/Border Access**: inputs `port_terminus_flag`, `nearest_top25_port_miles`, `border_crossing_flag`. Score: 10 if port terminus flag true; 8 if border crossing flag true; scale by distance otherwise.
 
@@ -318,7 +318,7 @@ route build
 route score <designation> [--estimated]
     Score one corridor against the 16-dimension pool using config/scoring.toml anchors.
     Outputs: terminal table + corpus/existing/{slug}.md (or proposed/ with --estimated).
-    B2 marked estimated until score-all completes.
+    B2 omitted from the fixture until score-all computes national centrality.
 
 route score-all
     Score all corridors. Computes full national betweenness centrality (unlocks B2).
@@ -407,7 +407,7 @@ Once I-80 passes human review: `route score-all` for all NHS trunk routes. Then 
 
 | Date | Gap | Amendment |
 |---|---|---|
-| 2026-05-06 | G1 — B2 partial graph | Graph changed to directed; B2 marked `estimated` until `score-all` completes full national graph |
+| 2026-05-06 | G1 — B2 partial graph | Graph changed to directed; B2 remains estimated when absent; `score-all` computes national B2 and clears the estimate flag |
 | 2026-05-06 | G2 — A1 high variance | A1 scores from p90 segment AADT, not mean; added §4.5 |
 | 2026-05-06 | G3 — FAF5 attribution | Added §4.6: v1.0 uses FAF zone traversal, marked estimated; v2.0 path is routing-based |
 | 2026-05-06 | G4 — B3 missing impl | Added `port_terminus_flag`, `nearest_top25_port_miles`, `border_crossing_flag` to `CorridorAttributes`; B3 scoring function specified in §5 |

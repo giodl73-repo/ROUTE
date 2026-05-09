@@ -9,8 +9,9 @@ use std::collections::HashMap;
 /// multiplicity (`sigma`) tracking.
 /// For 5,000 nodes and 6,000 edges this completes in a few seconds.
 ///
-/// NOTE: Only meaningful when the full national graph is loaded.
-/// Mark B2 as `estimated: true` until `score-all` runs.
+/// NOTE: Only meaningful when the full national graph is loaded. Callers should
+/// leave B2 unset for single-corridor scoring and populate it only from
+/// `score-all`/calibration runs over the national graph.
 pub fn compute_edge_betweenness(g: &HighwayGraph) -> HashMap<EdgeIndex, f64> {
     let node_count = g.graph.node_count();
     if node_count == 0 {
