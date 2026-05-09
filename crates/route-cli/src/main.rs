@@ -238,6 +238,20 @@ enum Commands {
         details: bool,
     },
 
+    /// Show source-acquisition plan for T1/T1 failure evidence
+    T1FailureSources {
+        /// Path to T1/T1 failure source plan CSV
+        #[arg(
+            long,
+            default_value = "data/t1-failure-source-plan.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows whose source endpoint still needs lookup
+        #[arg(long)]
+        lookup_needed: bool,
+    },
+
     /// Analyze diamond intersection k-connectivity for a T1/T1 node
     Diamond {
         /// Intersection name (e.g. I35xI80, I35xI40) or "all" for all T1/T1 intersections
@@ -1804,6 +1818,15 @@ fn main() -> Result<()> {
             let rows = load_t1_failure_ledger(&ledger)
                 .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
             print_t1_failures(&rows, needs_sources, details);
+        }
+
+        Commands::T1FailureSources {
+            ledger,
+            lookup_needed,
+        } => {
+            let rows = load_t1_failure_source_plan(&ledger)
+                .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
+            print_t1_failure_sources(&rows, lookup_needed);
         }
 
         Commands::Sim { mode } => {
@@ -4493,15 +4516,83 @@ fn fmt_opt(value: Option<f64>) -> String {
         .unwrap_or_else(|| "-".to_string())
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1FailureSourceRow {
+    site_id: String,
+    intersection: String,
+    location: String,
+    primary_state_sources: String,
+    national_sources: String,
+    fields_to_populate: String,
+    access_status: String,
+    source_url: String,
+    notes: String,
+}
+
+fn load_t1_failure_source_plan(path: &Path) -> Result<Vec<T1FailureSourceRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_failure_source_plan(file)
+}
+
+fn parse_t1_failure_source_plan<R: std::io::Read>(reader: R) -> Result<Vec<T1FailureSourceRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_failure_sources(rows: &[T1FailureSourceRow], lookup_needed: bool) {
+    let filtered: Vec<&T1FailureSourceRow> = rows
+        .iter()
+        .filter(|row| !lookup_needed || row.access_status.eq_ignore_ascii_case("lookup_needed"))
+        .collect();
+    let identified = rows
+        .iter()
+        .filter(|row| row.access_status.eq_ignore_ascii_case("identified"))
+        .count();
+    let lookup = rows
+        .iter()
+        .filter(|row| row.access_status.eq_ignore_ascii_case("lookup_needed"))
+        .count();
+
+    println!("route t1-failure-sources");
+    println!("  sources: {} shown / {} total", filtered.len(), rows.len());
+    println!("  access: identified {identified}, lookup_needed {lookup}");
+    println!();
+    println!(
+        "{:<18} {:<14} {:<18} {:<14} {}",
+        "Site", "Intersection", "Location", "Access", "Primary sources"
+    );
+    println!("{}", "-".repeat(120));
+    for row in filtered {
+        println!(
+            "{:<18} {:<14} {:<18} {:<14} {}",
+            row.site_id,
+            row.intersection,
+            row.location,
+            row.access_status,
+            row.primary_state_sources
+        );
+        println!("  fields: {}", row.fields_to_populate);
+        println!("  national: {}", row.national_sources);
+        if !row.source_url.trim().is_empty() {
+            println!("  url: {}", row.source_url);
+        }
+        println!("  notes: {}", row.notes);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_standards_proof_ledger,
-        parse_t1_failure_ledger, rounded_score, scenario_edge_candidates,
-        standards_blueprint_gate_failures, tier_for_score, write_tier_artifacts_to, FemaTile,
-        GapType, ScoreAllRow, ScoreSignalRow,
+        parse_t1_failure_ledger, parse_t1_failure_source_plan, rounded_score,
+        scenario_edge_candidates, standards_blueprint_gate_failures, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -4662,6 +4753,20 @@ T1X-I40-I75,I-40 x I-75,Chattanooga TN,closure,,,,,,,,source_needed,unknown,arti
         assert_eq!(rows[0].throughput_retention_current, Some(0.962));
         assert_eq!(rows[0].annual_probability, None);
         assert_eq!(rows[1].source_status, "source_needed");
+    }
+
+    #[test]
+    fn t1_failure_source_plan_parses_source_targets() {
+        let csv = "\
+site_id,intersection,location,primary_state_sources,national_sources,fields_to_populate,access_status,source_url,notes
+T1X-I35-I80,I-35 x I-80,Des Moines IA,Iowa DOT 511,NPMRDS,annual_probability,identified,https://example.invalid,notes
+T1X-I35-I40,I-35 x I-40,Oklahoma City OK,Oklahoma 511,NPMRDS,duration,lookup_needed,,notes
+";
+
+        let rows = parse_t1_failure_source_plan(csv.as_bytes()).expect("parse source plan");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].access_status, "identified");
+        assert_eq!(rows[1].source_url, "");
     }
 
     #[test]

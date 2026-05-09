@@ -8,6 +8,8 @@ The L2 scenario catalog is `data/pressure-test-scenarios.csv`.
 
 The T1/T1 failure-rate and reroute evidence ledger is `data/t1-intersection-failures.csv`.
 
+The source acquisition plan for that ledger is `data/t1-failure-source-plan.csv`.
+
 ## Evaluation Rule
 
 A standard is ready for Blueprint only when it has:
@@ -56,7 +58,7 @@ The acceptance gate is stricter than graph connectivity alone:
 
 Current status: Heuristic. `route diamond --at all`, `data/t1-intersections.md`, and the B.4 paper establish the right framing, but manual validation and usable-throughput scenarios are still needed before this becomes a Blueprint-grade claim.
 
-The failure-rate evidence is currently the weakest piece. `data/t1-intersection-failures.csv` separates modeled scenario outputs from empirical evidence. Most rows are `source_needed`; the Des Moines row is only `modeled`, because it comes from `route sim scenario des-moines-interchange --intervention` rather than observed closure history.
+The failure-rate evidence is currently the weakest piece. `data/t1-intersection-failures.csv` separates modeled scenario outputs from empirical evidence. Most rows are `source_needed`; the Des Moines row is only `modeled`, because it comes from `route sim scenario des-moines-interchange --intervention` rather than observed closure history. `data/t1-failure-source-plan.csv` lists the first source targets for replacing those blanks with observed incident, work-zone, travel-time, and reroute evidence.
 
 ## SLA And Throughput Proof
 
