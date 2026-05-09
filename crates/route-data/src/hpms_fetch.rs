@@ -189,6 +189,13 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
         }
     }
 
+    if all_records.is_empty() {
+        anyhow::bail!(
+            "HPMS fetch returned zero records; preserving existing cache at {}",
+            output_path.display()
+        );
+    }
+
     // Write to CSV
     let mut wtr = csv::Writer::from_path(output_path)?;
     wtr.write_record([

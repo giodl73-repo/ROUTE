@@ -465,6 +465,12 @@ fn main() -> Result<()> {
                         }
                     }
                 }
+                if all.is_empty() {
+                    anyhow::bail!(
+                        "HPMS fetch returned zero records; preserving existing cache at {}",
+                        out.display()
+                    );
+                }
                 // Write subset CSV
                 let mut wtr = csv::Writer::from_path(&out)?;
                 wtr.write_record([
