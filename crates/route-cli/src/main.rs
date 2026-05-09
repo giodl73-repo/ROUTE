@@ -72,7 +72,7 @@ enum Commands {
         workers: Option<usize>,
     },
 
-    /// Analyze scored corpus; identify gap corridors by type
+    /// [planned] Analyze scored corpus; identify gap corridors by type
     Gap {
         /// Gap type to detect
         #[arg(long, value_enum)]
@@ -94,7 +94,7 @@ enum Commands {
         color_by: Option<String>,
     },
 
-    /// (Re)generate corpus entry markdown from current scores
+    /// Regenerate corpus entry markdown from current graph attributes and scores
     Report {
         /// Interstate designation
         designation: String,
@@ -694,7 +694,11 @@ fn main() -> Result<()> {
         Commands::Gap { r#type, slug } => {
             println!("route gap --type {:?}", r#type);
             let out_slug = slug.unwrap_or_else(|| format!("{:?}", r#type).to_lowercase());
-            println!("  [stub] gap analysis output → gaps/{out_slug}.md");
+            println!("  status: planned");
+            println!("  no gap file written yet: gaps/{out_slug}.md");
+            println!(
+                "  next: move gap logic into route-network and label heuristic inputs explicitly"
+            );
         }
 
         Commands::Map {
@@ -833,15 +837,41 @@ fn main() -> Result<()> {
                 corridor.total_miles
             );
             println!(
-                "  score: {:.1}/120  T90-PTI: {:.2}",
+                "  score: {:.1}/160  A3: {:.2}",
                 scores.total(),
                 scores.a3.score
             );
         }
 
         Commands::Report { designation } => {
-            println!("route report {designation}");
-            println!("  [stub] corpus entry regeneration — scores required first.");
+            let norm = normalise_designation(&designation);
+            println!("route report {norm}");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+            let mut corridor =
+                route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "Route '{}' not found in graph. Available: {:?}",
+                        norm,
+                        &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
+                    )
+                })?;
+
+            join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes);
+            let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
+            let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
+            route_report::write_corpus_entry(&corridor, &scores, &output_path)?;
+
+            println!(
+                "  regenerated: {} ({:.1}/160{})",
+                output_path.display(),
+                scores.total(),
+                if scores.any_estimated() { "†" } else { "" }
+            );
+            if scores.any_estimated() {
+                println!("  † Some scores are estimated — see report justifications.");
+            }
         }
 
         Commands::Flow { designation } => {
