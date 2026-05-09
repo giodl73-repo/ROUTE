@@ -591,17 +591,25 @@ fn score_d3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
         .pct_bridges_poor
         .map(|p| cfg.d3.bridges_poor.score(p as f64))
         .unwrap_or(0.0);
+    let poor_bridge_count = attrs
+        .pct_bridges_poor
+        .map(|p| p as f64 * attrs.bridge_count as f64)
+        .unwrap_or(0.0);
+    let backlog_score = cfg.d3.poor_bridge_count.score(poor_bridge_count);
     let vintage_score = attrs
         .mean_year_built
         .map(|y| cfg.d3.mean_year_built.score(y as f64))
         .unwrap_or(0.0);
-    let composite = 0.6 * bridge_score + 0.4 * vintage_score;
+    let condition_score = 0.6 * bridge_score + 0.4 * vintage_score;
+    let backlog_priority_score = 0.2 * bridge_score + 0.5 * backlog_score + 0.3 * vintage_score;
+    let composite = condition_score.max(backlog_priority_score);
     ScoredDimension {
         dim: Dimension::D3InfrastructureVintage,
         score: composite,
         justification: format!(
-            "{} bridges; {:.0}% poor condition; mean construction year {:.0}.",
+            "{} bridges; {:.0} poor; {:.0}% poor condition; mean construction year {:.0}.",
             attrs.bridge_count,
+            poor_bridge_count,
             attrs.pct_bridges_poor.unwrap_or(0.0) * 100.0,
             attrs.mean_year_built.unwrap_or(0.0)
         ),
@@ -804,6 +812,34 @@ mod tests {
         );
         assert!(iri.a3.estimated);
         assert_eq!(iri.a3.score, cfg.a3.iri_fallback_max);
+    }
+
+    #[test]
+    fn d3_counts_absolute_poor_bridge_backlog() {
+        let cfg = cfg();
+        let small_backlog = score_corridor(
+            &CorridorAttributes {
+                bridge_count: 10,
+                pct_bridges_poor: Some(0.02),
+                mean_year_built: Some(1975.0),
+                ..Default::default()
+            },
+            &cfg,
+        );
+        let large_backlog = score_corridor(
+            &CorridorAttributes {
+                bridge_count: 1_000,
+                pct_bridges_poor: Some(0.02),
+                mean_year_built: Some(1975.0),
+                ..Default::default()
+            },
+            &cfg,
+        );
+
+        assert!(
+            large_backlog.d3.score > small_backlog.d3.score,
+            "same percent poor should score higher when the absolute backlog is larger"
+        );
     }
 
     #[test]

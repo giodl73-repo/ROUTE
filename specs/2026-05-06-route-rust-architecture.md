@@ -300,7 +300,7 @@ pub struct ScoredDimension {
 
 **D2 — Multimodal Integration**: inputs `intermodal_hub_count` and `dcfc_per_100mi`.
 
-**D3 — Infrastructure Vintage**: inputs `pct_bridges_poor`, `mean_year_built`, `mean_iri`.
+**D3 — Infrastructure Vintage**: inputs `pct_bridges_poor`, absolute poor bridge count (`bridge_count × pct_bridges_poor`), `mean_year_built`, and `mean_iri` fallback. Score is the stronger of condition/vintage risk and absolute maintenance-backlog risk, so long corridors with many poor bridges are visible even when their percentage poor is modest.
 
 ---
 

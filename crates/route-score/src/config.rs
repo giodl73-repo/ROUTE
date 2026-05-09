@@ -87,6 +87,7 @@ pub struct D2Anchors {
 #[derive(Debug, Clone, Deserialize)]
 pub struct D3Anchors {
     pub bridges_poor: AnchorMap,
+    pub poor_bridge_count: AnchorMap,
     pub mean_year_built: AnchorMap,
 }
 

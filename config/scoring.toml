@@ -216,11 +216,18 @@ anchor_5  = 1.5         # marginal EV viability
 anchor_10 = 4.0         # excellent EV corridor (avg gap <25mi)
 
 [d3]
-# Infrastructure Vintage — composite of pct_bridges_poor + mean_year_built
+# Infrastructure Vintage — composite of pct_bridges_poor + absolute poor-bridge backlog + mean_year_built
 [d3.bridges_poor]
 anchor_0  = 0.02        # <2% poor condition; well-maintained
 anchor_5  = 0.12        # 12% poor; maintenance backlog accumulating
 anchor_10 = 0.30        # 30%+ poor; systemic deferred maintenance
+
+[d3.poor_bridge_count]
+# Absolute count matters for national maintenance priority: a long corridor with many
+# poor bridges can be a major backlog even when the percentage is modest.
+anchor_0  = 0           # no poor bridges
+anchor_5  = 20          # meaningful corridor backlog
+anchor_10 = 75          # severe multi-state backlog
 
 [d3.mean_year_built]
 anchor_0  = 1995.0      # post-1990 construction; modern standards
