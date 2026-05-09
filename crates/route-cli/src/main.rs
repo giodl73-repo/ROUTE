@@ -374,6 +374,50 @@ enum Commands {
         radius_miles: f64,
     },
 
+    /// Fetch current MDOT Mi Drive incident JSON for source-cache ingestion
+    T1FetchMdotMidrive {
+        /// Output JSON file
+        #[arg(
+            long,
+            default_value = "data/cache/mdot-midrive-incidents.json",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+    },
+
+    /// Normalize MDOT Mi Drive incident JSON into T1/T1 failure event rows
+    T1ImportMdotMidrive {
+        /// Cached MDOT Mi Drive incident JSON
+        #[arg(
+            long,
+            default_value = "data/cache/mdot-midrive-incidents.json",
+            value_name = "FILE"
+        )]
+        input: PathBuf,
+        /// Output normalized T1/T1 event CSV
+        #[arg(
+            long,
+            default_value = "data/cache/mdot-midrive-t1-failure-events.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// T1/T1 site id to assign
+        #[arg(long, default_value = "T1X-I75-I90")]
+        site_id: String,
+        /// Site latitude for radius filtering
+        #[arg(long, default_value_t = 42.31)]
+        lat: f64,
+        /// Site longitude for radius filtering
+        #[arg(long, default_value_t = -83.07)]
+        lon: f64,
+        /// Maximum event distance from site center
+        #[arg(long, default_value_t = 60.0)]
+        radius_miles: f64,
+        /// Observation year for current-state snapshots
+        #[arg(long)]
+        observation_year: Option<u16>,
+    },
+
     /// Merge normalized T1/T1 event observations into an accumulated event table
     T1AccumulateEvents {
         /// Existing accumulated T1/T1 event CSV
@@ -2081,6 +2125,41 @@ fn run_cli() -> Result<()> {
             write_t1_failure_events(&output, &rows)
                 .with_context(|| format!("writing normalized events {}", output.display()))?;
             println!("route t1-import-tdot-smartway");
+            println!("  rows: {}", rows.len());
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1FetchMdotMidrive { output } => {
+            fetch_mdot_midrive_events(&output).with_context(|| {
+                format!("fetching MDOT Mi Drive events to {}", output.display())
+            })?;
+            println!("route t1-fetch-mdot-midrive");
+            println!("  wrote {}", output.display());
+        }
+
+        Commands::T1ImportMdotMidrive {
+            input,
+            output,
+            site_id,
+            lat,
+            lon,
+            radius_miles,
+            observation_year,
+        } => {
+            let json = std::fs::read_to_string(&input)
+                .with_context(|| format!("reading MDOT Mi Drive JSON {}", input.display()))?;
+            let rows = parse_mdot_midrive_events(
+                &json,
+                &site_id,
+                lat,
+                lon,
+                radius_miles,
+                observation_year.unwrap_or_else(current_utc_year),
+            )
+            .with_context(|| format!("normalizing MDOT Mi Drive JSON {}", input.display()))?;
+            write_t1_failure_events(&output, &rows)
+                .with_context(|| format!("writing normalized events {}", output.display()))?;
+            println!("route t1-import-mdot-midrive");
             println!("  rows: {}", rows.len());
             println!("  wrote {}", output.display());
         }
@@ -5101,6 +5180,16 @@ fn fetch_tdot_smartway_events(output: &Path, timeout_seconds: u64) -> Result<()>
     Ok(())
 }
 
+fn fetch_mdot_midrive_events(output: &Path) -> Result<()> {
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let url = "https://mdotjboss.state.mi.us/MiDrive/incidents/AllForMap/";
+    let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
+    std::fs::write(output, body)?;
+    Ok(())
+}
+
 fn ensure_no_arcgis_error(json: &str) -> Result<()> {
     let value: serde_json::Value = serde_json::from_str(json)?;
     if let Some(error) = value.get("error") {
@@ -5306,6 +5395,71 @@ fn parse_tdot_smartway_events(
     Ok(rows)
 }
 
+fn parse_mdot_midrive_events(
+    json: &str,
+    site_id: &str,
+    lat: f64,
+    lon: f64,
+    radius_miles: f64,
+    observation_year: u16,
+) -> Result<Vec<T1FailureEventRow>> {
+    let value: serde_json::Value = serde_json::from_str(json)?;
+    let Some(events) = value.as_array() else {
+        return Ok(Vec::new());
+    };
+
+    let mut rows = Vec::new();
+    let mut seen_event_ids = std::collections::BTreeSet::new();
+    for event in events {
+        let event_lat = event.get("latitude").and_then(|value| value.as_f64());
+        let event_lon = event.get("longitude").and_then(|value| value.as_f64());
+        if let (Some(event_lat), Some(event_lon)) = (event_lat, event_lon) {
+            if haversine_miles(lat, lon, event_lat, event_lon) > radius_miles {
+                continue;
+            }
+        }
+
+        let title = json_value_string(event, "title");
+        let message = strip_html_tags(&json_value_string(event, "message"));
+        let text = compact_note(&format!("{title} {message}"));
+        if !mdot_midrive_is_t1_relevant(&text) {
+            continue;
+        }
+
+        let source_event_id = event
+            .get("id")
+            .map(json_scalar_to_string)
+            .unwrap_or_default();
+        let event_id = if source_event_id.trim().is_empty() {
+            format!("MDOT-MIDRIVE-{}", rows.len() + 1)
+        } else {
+            format!("MDOT-MIDRIVE-{source_event_id}")
+        };
+        if !seen_event_ids.insert(event_id.clone()) {
+            continue;
+        }
+
+        let reported_time = extract_after_label(&message, "Reported:");
+        rows.push(T1FailureEventRow {
+            site_id: site_id.to_string(),
+            event_id,
+            source: "MDOT Mi Drive".to_string(),
+            source_event_id,
+            observation_year,
+            start_time: reported_time.unwrap_or_default(),
+            end_time: String::new(),
+            duration_hours: None,
+            event_type: mdot_midrive_event_type(&text).to_string(),
+            full_closure: mdot_midrive_full_closure(&text),
+            lanes_closed: mdot_midrive_lanes_closed(&text),
+            freight_relevant: true,
+            confidence: "low".to_string(),
+            notes: text,
+        });
+    }
+    Ok(rows)
+}
+
 fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
     attrs
         .get(key)
@@ -5313,6 +5467,24 @@ fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) ->
         .unwrap_or("")
         .trim()
         .to_string()
+}
+
+fn json_value_string(value: &serde_json::Value, key: &str) -> String {
+    value
+        .get(key)
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+fn json_scalar_to_string(value: &serde_json::Value) -> String {
+    value
+        .as_str()
+        .map(str::to_string)
+        .or_else(|| value.as_i64().map(|value| value.to_string()))
+        .or_else(|| value.as_u64().map(|value| value.to_string()))
+        .unwrap_or_default()
 }
 
 fn json_f64(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<f64> {
@@ -5359,7 +5531,37 @@ fn tdot_smartway_is_t1_relevant(road_names: &str, text: &str) -> bool {
             .any(|needle| text.to_ascii_uppercase().contains(needle))
 }
 
+fn mdot_midrive_is_t1_relevant(text: &str) -> bool {
+    let text_norm = text.to_ascii_uppercase().replace(' ', "");
+    (text_norm.contains("I-75")
+        || text_norm.contains("I75")
+        || text_norm.contains("I-94")
+        || text_norm.contains("I94")
+        || text_norm.contains("I-96")
+        || text_norm.contains("I96")
+        || text_norm.contains("I-275")
+        || text_norm.contains("I275")
+        || text_norm.contains("I-696")
+        || text_norm.contains("I696"))
+        && ["CLOSURE", "CLOSED", "CRASH", "INCIDENT", "CONSTRUCTION"]
+            .iter()
+            .any(|needle| text.to_ascii_uppercase().contains(needle))
+}
+
 fn tdot_smartway_event_type(text: &str) -> &'static str {
+    let text = text.to_ascii_lowercase();
+    if text.contains("construction") || text.contains("maintenance") {
+        "work_zone"
+    } else if text.contains("crash") {
+        "crash"
+    } else if text.contains("closure") || text.contains("closed") {
+        "closure"
+    } else {
+        "incident"
+    }
+}
+
+fn mdot_midrive_event_type(text: &str) -> &'static str {
     let text = text.to_ascii_lowercase();
     if text.contains("construction") || text.contains("maintenance") {
         "work_zone"
@@ -5396,6 +5598,33 @@ fn iowa511_full_closure(text: &str) -> bool {
         || text.contains(": closed")
 }
 
+fn mdot_midrive_full_closure(text: &str) -> bool {
+    let text = text.to_ascii_lowercase();
+    text.contains("all lanes")
+        || text.contains("road closed")
+        || text.contains("freeway closed")
+        || text.contains("ramp closed")
+}
+
+fn mdot_midrive_lanes_closed(text: &str) -> Option<u8> {
+    let text = text.to_ascii_lowercase();
+    if text.contains("center lane") && (text.contains("left lane") || text.contains("right lane")) {
+        Some(2)
+    } else if text.contains("left lane") && text.contains("right lane") {
+        Some(2)
+    } else if text.contains("two lanes") || text.contains("2 lanes") {
+        Some(2)
+    } else if text.contains("three lanes") || text.contains("3 lanes") {
+        Some(3)
+    } else if text.contains("left lane") || text.contains("right lane") || text.contains("1 lane") {
+        Some(1)
+    } else if text.contains("left shoulder") || text.contains("right shoulder") {
+        Some(0)
+    } else {
+        None
+    }
+}
+
 fn epoch_millis_year(millis: i64) -> Option<u16> {
     epoch_millis_ymd(millis).and_then(|(year, _, _)| u16::try_from(year).ok())
 }
@@ -5422,8 +5651,50 @@ fn epoch_millis_ymd(millis: i64) -> Option<(i32, u32, u32)> {
     Some((year as i32, month as u32, day as u32))
 }
 
+fn current_utc_year() -> u16 {
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or(0);
+    epoch_millis_year(millis).unwrap_or(1970)
+}
+
 fn compact_note(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn strip_html_tags(input: &str) -> String {
+    let mut output = String::new();
+    let mut in_tag = false;
+    for ch in input.chars() {
+        match ch {
+            '<' => {
+                in_tag = true;
+                output.push(' ');
+            }
+            '>' => {
+                in_tag = false;
+                output.push(' ');
+            }
+            _ if !in_tag => output.push(ch),
+            _ => {}
+        }
+    }
+    output
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&#39;", "'")
+        .replace("&quot;", "\"")
+}
+
+fn extract_after_label(text: &str, label: &str) -> Option<String> {
+    let (_, tail) = text.split_once(label)?;
+    let value = tail.split('|').next().unwrap_or(tail).trim().to_string();
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
+    }
 }
 
 fn combine_iowa_date_time(issue_date: &str, time: &str) -> String {
@@ -5687,7 +5958,7 @@ mod tests {
     use super::{
         atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events,
+        gap_type_slug, join_fema_d1_to_corridor, parse_iowa511_events, parse_mdot_midrive_events,
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
         parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
         rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
@@ -6093,6 +6364,45 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         assert_eq!(rows[0].duration_hours, Some(4.0));
         assert_eq!(rows[0].event_type, "work_zone");
         assert!(rows[0].full_closure);
+    }
+
+    #[test]
+    fn mdot_midrive_import_filters_radius_and_normalizes_events() {
+        let json = r#"[
+  {
+    "latitude": 42.31,
+    "longitude": -83.08,
+    "id": 1092974,
+    "title": "Crash on NB  I-75",
+    "message": "<div><strong>Location: </strong>NB I-75 at I-94</div><div><strong>Lanes Blocked: </strong>Left Lane</div><div><strong>Event Type: </strong> Crash</div><div><strong>County: </strong>Wayne</div><div><strong>Reported:</strong> 5:14 PM</div>"
+  },
+  {
+    "latitude": 42.31,
+    "longitude": -83.08,
+    "id": 1092975,
+    "title": "Crash on US-23",
+    "message": "<div><strong>Event Type: </strong> Crash</div>"
+  },
+  {
+    "latitude": 43.60,
+    "longitude": -84.20,
+    "id": 1092976,
+    "title": "Crash on SB I-75",
+    "message": "<div><strong>Event Type: </strong> Crash</div>"
+  }
+]"#;
+
+        let rows = parse_mdot_midrive_events(json, "T1X-I75-I90", 42.31, -83.07, 60.0, 2026)
+            .expect("parse MDOT Mi Drive fixture");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].site_id, "T1X-I75-I90");
+        assert_eq!(rows[0].source_event_id, "1092974");
+        assert_eq!(rows[0].observation_year, 2026);
+        assert_eq!(rows[0].start_time, "5:14 PM");
+        assert_eq!(rows[0].event_type, "crash");
+        assert_eq!(rows[0].lanes_closed, Some(1));
+        assert_eq!(rows[0].confidence, "low");
     }
 
     #[test]
