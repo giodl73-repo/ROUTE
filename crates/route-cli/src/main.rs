@@ -3335,8 +3335,8 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, dimension_estimated_values, dimension_score_values, rounded_score,
-        tier_for_score,
+        atlas_candidate_ids, dimension_estimated_values, dimension_score_values,
+        join_fema_d1_to_corridor, rounded_score, tier_for_score, FemaTile,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -3433,6 +3433,101 @@ mod tests {
             .collect::<HashMap<_, _>>();
 
         assert_eq!(atlas_candidate_ids(&graph), vec!["I80", "US30"]);
+    }
+
+    #[test]
+    fn fema_d1_join_uses_route_edge_boxes_not_whole_corridor_box() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let c = graph.graph.add_node(HighwayNode {
+            id: 3,
+            coord: coord! { x: 10.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let d = graph.graph.add_node(HighwayNode {
+            id: 4,
+            coord: coord! { x: 11.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let edge_a = graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 1,
+                route_id: "I1".to_string(),
+                state: "TS".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 1.0, y: 0.0 },
+                ]),
+                length_miles: 1.0,
+                lane_count: None,
+                aadt: None,
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        let edge_b = graph.graph.add_edge(
+            c,
+            d,
+            HighwayEdge {
+                id: 2,
+                route_id: "I1".to_string(),
+                state: "TS".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 10.0, y: 0.0 },
+                    coord! { x: 11.0, y: 0.0 },
+                ]),
+                length_miles: 1.0,
+                lane_count: None,
+                aadt: None,
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph
+            .route_index
+            .insert("I1".to_string(), vec![edge_a, edge_b]);
+
+        let tiles = vec![
+            FemaTile {
+                xmin: 5.0,
+                ymin: -0.5,
+                xmax: 6.0,
+                ymax: 0.5,
+                sfha_count: 100,
+            },
+            FemaTile {
+                xmin: 0.25,
+                ymin: -0.5,
+                xmax: 0.75,
+                ymax: 0.5,
+                sfha_count: 7,
+            },
+        ];
+        let mut attrs = CorridorAttributes::default();
+
+        join_fema_d1_to_corridor(&graph, "I1", &mut attrs, &tiles);
+
+        assert_eq!(attrs.fema_sfha_miles, Some(2.1));
+        assert_eq!(attrs.max_consecutive_sfha_miles, Some(1.47));
     }
 }
 
@@ -3821,11 +3916,10 @@ fn load_fema_tiles() -> Vec<FemaTile> {
 /// Join FEMA D1 SFHA data onto a corridor's CorridorAttributes.
 ///
 /// Algorithm:
-/// 1. Collect all graph node (lon, lat) pairs for the corridor.
-/// 2. Compute corridor bounding box (xmin, ymin, xmax, ymax).
-/// 3. Sum sfha_count for every tile whose bbox overlaps the corridor bbox.
-/// 4. Estimate fema_sfha_miles = sum × 0.3 (avg SFHA polygon ~0.3 mi span).
-/// 5. Set max_consecutive_sfha_miles as a 70% proxy (coastal/valley assumption).
+/// 1. Collect edge geometry bounding boxes for the corridor.
+/// 2. Sum each SFHA tile whose bbox overlaps at least one route edge bbox.
+/// 3. Estimate fema_sfha_miles = sum × 0.3 (avg SFHA polygon ~0.3 mi span).
+/// 4. Set max_consecutive_sfha_miles as a 70% proxy (coastal/valley assumption).
 fn join_fema_d1_to_corridor(
     graph: &route_network::HighwayGraph,
     route_id: &str,
@@ -3836,37 +3930,33 @@ fn join_fema_d1_to_corridor(
         return;
     }
 
-    // Collect corridor node coords (lon = x, lat = y)
-    let node_coords: Vec<(f64, f64)> = graph
-        .graph
-        .node_indices()
-        .filter(|&ni| {
-            graph
-                .graph
-                .edges(ni)
-                .any(|er| er.weight().route_id == route_id)
-        })
-        .map(|ni| {
-            let c = graph.graph[ni].coord;
-            (c.x, c.y)
+    let edge_boxes: Vec<(f64, f64, f64, f64)> = graph
+        .route_edges(route_id)
+        .iter()
+        .filter_map(|&ei| {
+            let edge = &graph.graph[ei];
+            let mut coords = edge.geometry.points().map(|p| (p.x(), p.y()));
+            let first = coords.next()?;
+            let (mut xmin, mut ymin, mut xmax, mut ymax) = (first.0, first.1, first.0, first.1);
+            for (x, y) in coords {
+                xmin = xmin.min(x);
+                xmax = xmax.max(x);
+                ymin = ymin.min(y);
+                ymax = ymax.max(y);
+            }
+            Some((xmin, ymin, xmax, ymax))
         })
         .collect();
-    if node_coords.is_empty() {
+    if edge_boxes.is_empty() {
         return;
     }
 
-    // Compute corridor bounding box
-    let corr_xmin = node_coords.iter().map(|&(x, _)| x).fold(f64::MAX, f64::min);
-    let corr_xmax = node_coords.iter().map(|&(x, _)| x).fold(f64::MIN, f64::max);
-    let corr_ymin = node_coords.iter().map(|&(_, y)| y).fold(f64::MAX, f64::min);
-    let corr_ymax = node_coords.iter().map(|&(_, y)| y).fold(f64::MIN, f64::max);
-
-    // Sum sfha_count for overlapping tiles
     let total_sfha: u64 = tiles
         .iter()
         .filter(|t| {
-            // Bboxes overlap unless one is entirely outside the other on any axis
-            !(corr_xmax < t.xmin || corr_xmin > t.xmax || corr_ymax < t.ymin || corr_ymin > t.ymax)
+            edge_boxes.iter().any(|&(xmin, ymin, xmax, ymax)| {
+                !(xmax < t.xmin || xmin > t.xmax || ymax < t.ymin || ymin > t.ymax)
+            })
         })
         .map(|t| t.sfha_count as u64)
         .sum();

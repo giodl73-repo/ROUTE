@@ -296,7 +296,7 @@ pub struct ScoredDimension {
 
 **C3 — Economic Opportunity Access**: measures whether the corridor connects people to economic activity, not historical harm. Primary inputs `gdp_per_capita_relative` and `corridor_gdp_b`. A corridor serving a region with below-national-average GDP per capita scores higher — it has higher opportunity value because the region has more to gain from connectivity. High score = below-average regional GDP, limited alternatives. Secondary: `pct_pop_below_poverty`.
 
-**D1 — Climate Resilience**: primary `max_consecutive_sfha_miles` (contiguous flood exposure is the operational risk); secondary `fema_sfha_miles` (total exposure).
+**D1 — Climate Resilience**: primary `max_consecutive_sfha_miles` (contiguous flood exposure is the operational risk); secondary `fema_sfha_miles` (total exposure). FEMA SFHA tile joins must intersect route-edge geometry bounding boxes rather than whole-corridor bounding boxes, so sparse or long corridors do not inherit flood exposure from empty space between disjoint route segments.
 
 **D2 — Multimodal Integration**: inputs `intermodal_hub_count` and `dcfc_per_100mi`.
 
