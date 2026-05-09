@@ -147,6 +147,7 @@ Access notes from source probing:
 - NCDOT DriveNC/TIMS: DriveNC is public, guessed event/API paths returned 404, and TIMS presented a login page on May 9, 2026; treat it as access-blocked pending export access or an allowed public endpoint.
 - MDOT Mi Drive: the public map references `/MiDrive/incidents/AllForMap/`, which returned JSON incident snapshots on May 9, 2026; treat it as live snapshot-only until polling/history and the Ohio/OHGO join are added.
 - INDOT TrafficWise: `https://511in.org/api/graphql` returned public `mapFeaturesQuery` event snapshots for `incidents` and `construction` layers on May 9, 2026; treat it as live snapshot-only until polling/history and the Ohio turnpike/OHGO join are added.
+- FHWA NPMRDS/FPM: FHWA identifies NPMRDS as the historical speed/travel-time data source for freight performance measurement, with access through RITIS after the necessary license/data agreement. Treat it as access-gated historical reliability data, not a live public feed; the repo already has an FPM CSV input path for route-level TTI/PTI once an extract is obtained.
 
 The next build step is to move the ledger parser and gate rules out of the CLI into a small library module once additional commands need to consume the same proof model.
 
