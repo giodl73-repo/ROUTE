@@ -63,6 +63,12 @@ pub struct Scenario {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ActiveProject {
+    pub slug: String,
+    pub remaining_seasons: u8,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GameState {
     pub scenario_id: String,
     pub season: u8,
@@ -72,7 +78,7 @@ pub struct GameState {
     pub public_patience: i32,
     pub operations_capacity: i32,
     pub evidence_confidence: i32,
-    pub active_projects: Vec<String>,
+    pub active_projects: Vec<ActiveProject>,
     pub completed_projects: Vec<String>,
     pub first_closure_seen: bool,
     pub connector_package_complete: bool,
@@ -536,6 +542,28 @@ pub fn run_season(
             ));
             continue;
         }
+        if state
+            .active_projects
+            .iter()
+            .any(|active| active.slug == project.slug)
+        {
+            rejected_actions.push(format!(
+                "{} rejected: project is already active.",
+                project.name
+            ));
+            continue;
+        }
+        if state
+            .completed_projects
+            .iter()
+            .any(|completed| completed == project.slug)
+        {
+            rejected_actions.push(format!(
+                "{} rejected: project is already complete.",
+                project.name
+            ));
+            continue;
+        }
 
         state.budget -= cost;
         state.construction_crews -= project.crew;
@@ -544,14 +572,15 @@ pub fn run_season(
 
         if project.time <= 1 {
             complete_project(&mut state, project);
-        } else if !state
-            .active_projects
-            .iter()
-            .any(|active| active == project.slug)
-        {
-            state.active_projects.push(project.slug.to_string());
+        } else {
+            state.active_projects.push(ActiveProject {
+                slug: project.slug.to_string(),
+                remaining_seasons: project.time as u8,
+            });
         }
     }
+
+    tick_active_projects(&mut state)?;
 
     let event_result = apply_event(&mut state, event);
     if state.budget < 0 {
@@ -615,6 +644,28 @@ pub fn render_season_result(result: &SeasonResult) -> String {
         result.state.public_patience,
         result.state.operations_capacity,
         result.state.evidence_confidence
+    ));
+    out.push_str(&format!(
+        "  active_projects: {}\n",
+        if result.state.active_projects.is_empty() {
+            "none".to_string()
+        } else {
+            result
+                .state
+                .active_projects
+                .iter()
+                .map(|active| format!("{}:{} seasons", active.slug, active.remaining_seasons))
+                .collect::<Vec<_>>()
+                .join("; ")
+        }
+    ));
+    out.push_str(&format!(
+        "  completed_projects: {}\n",
+        if result.state.completed_projects.is_empty() {
+            "none".to_string()
+        } else {
+            result.state.completed_projects.join("; ")
+        }
     ));
     out.push_str(&format!(
         "  throughput_retention: {:.3} heuristic\n",
@@ -681,6 +732,22 @@ fn complete_project(state: &mut GameState, project: &ProjectCard) {
         }
         _ => {}
     }
+}
+
+fn tick_active_projects(state: &mut GameState) -> Result<()> {
+    let mut still_active = Vec::new();
+    let active_projects = std::mem::take(&mut state.active_projects);
+    for mut active in active_projects {
+        active.remaining_seasons = active.remaining_seasons.saturating_sub(1);
+        if active.remaining_seasons == 0 {
+            let project = project_by_slug(&active.slug)?;
+            complete_project(state, project);
+        } else {
+            still_active.push(active);
+        }
+    }
+    state.active_projects = still_active;
+    Ok(())
 }
 
 fn apply_event(state: &mut GameState, event: &EventCard) -> String {
@@ -877,5 +944,51 @@ mod tests {
         assert!(rendered.contains("accepted_projects: work-zone-sequencing"));
         assert!(rendered.contains("sla_status: bounded heuristic"));
         assert!(rendered.contains("publication_gate: locked"));
+    }
+
+    #[test]
+    fn active_projects_count_down_and_complete_before_event_resolution() {
+        let state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+        let projects = vec!["diamond-connector-package".to_string()];
+        let result = run_season(state, 1, "night-work-zone-closure", &projects).expect("season 1");
+
+        assert_eq!(
+            result.state.active_projects[0].slug,
+            "diamond-connector-package"
+        );
+        assert_eq!(result.state.active_projects[0].remaining_seasons, 2);
+        assert!(!result.state.connector_package_complete);
+
+        let result = run_season(
+            result.state,
+            2,
+            "night-work-zone-closure",
+            &Vec::<String>::new(),
+        )
+        .expect("season 2");
+        assert_eq!(result.state.active_projects[0].remaining_seasons, 1);
+
+        let result = run_season(
+            result.state,
+            3,
+            "full-interchange-zone-closure",
+            &Vec::<String>::new(),
+        )
+        .expect("season 3");
+        assert!(result.state.active_projects.is_empty());
+        assert!(result.state.connector_package_complete);
+        assert!(result.event_result.contains("redundant transfer paths"));
+        assert_eq!(result.throughput_retention, 1.0);
+    }
+
+    #[test]
+    fn active_project_cannot_be_started_twice() {
+        let state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+        let projects = vec!["diamond-connector-package".to_string()];
+        let result = run_season(state, 1, "night-work-zone-closure", &projects).expect("season 1");
+        let result =
+            run_season(result.state, 2, "night-work-zone-closure", &projects).expect("season 2");
+
+        assert!(result.rejected_actions[0].contains("already active"));
     }
 }

@@ -219,7 +219,7 @@ L1 tests:
 1. Add static Des Moines game definitions in Rust.
 2. Add `Game` subcommand enum under `route-cli`.
 3. Implement `scenarios` and `inspect`. Done in G1-A slice 1.
-4. Implement deterministic `run-season` with JSON state. Partial in G1-A slice 2; active-project countdown and scoring still pending.
+4. Implement deterministic `run-season` with JSON state. Done through G1-A slice 3; scoring still pending.
 5. Implement `score` against a fixture log.
 6. Add L0/L1 tests.
 7. Only then consider moving scenario data to TOML/JSON.

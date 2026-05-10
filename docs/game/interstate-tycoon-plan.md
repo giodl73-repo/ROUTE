@@ -35,6 +35,7 @@ The game succeeds when a non-specialist can say:
 | G0 panel review | Complete | `docs/game/des-moines-diamond-panel-g0.md`; G0-B pass, G0-C held for human blind playtest or owner acceptance of simulated evidence |
 | First CLI playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-001.md`; list/inspect passes against live scenario and diamond hooks |
 | First run-season playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-002.md`; deterministic event/project resolution, state write, log append, and resume pass |
+| Active countdown playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-003.md`; multi-season connector completes before closure resolution |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
@@ -42,7 +43,7 @@ The game succeeds when a non-specialist can say:
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
-| CLI game command | G1-A partial | `route game scenarios`, `inspect`, and deterministic `run-season` exist; countdown/scoring still pending |
+| CLI game command | G1-A partial | `route game scenarios`, `inspect`, and deterministic `run-season` exist; scoring still pending |
 | Browser prototype | Not started | Map-first UI |
 
 ## Learning Inputs Folded In
@@ -278,8 +279,8 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Add active-project countdown and completion to `route game run-season`.
-2. Add `route game score` against a fixture session log.
+1. Add `route game score` against a fixture session log.
+2. Preserve publication-gate separation in score output.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
 5. Expand curated/validated T1/T1 anchors beyond Des Moines.

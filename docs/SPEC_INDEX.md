@@ -19,6 +19,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/des-moines-diamond-panel-g0.md` | TIGRIS/HUNT/ASPECT/PROSE/SCORE/QUEST panel decision for the first Des Moines paper scenario | You need the G0-B pass, G0-C hold, or G1-A implementation requirements |
 | `docs/game/des-moines-diamond-cli-playtest-001.md` | First G1-A terminal playtest for `route game scenarios`, `inspect`, and live engine hooks | You need to verify the first game CLI slice against the paper scenario |
 | `docs/game/des-moines-diamond-cli-playtest-002.md` | First deterministic `run-season` CLI playtest with state write, log append, and resume | You need to verify season resolution before scoring |
+| `docs/game/des-moines-diamond-cli-playtest-003.md` | Active-project countdown playtest for multi-season connector completion | You need to verify construction timing before score bands |
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
