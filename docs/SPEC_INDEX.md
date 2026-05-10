@@ -22,6 +22,8 @@ Start here when deciding which document owns a claim.
 | `docs/game/des-moines-diamond-cli-playtest-003.md` | Active-project countdown playtest for multi-season connector completion | You need to verify construction timing before score bands |
 | `docs/game/des-moines-diamond-cli-playtest-004.md` | First score-command playtest for operational score versus publication hold | You need to verify the full G1-A CLI loop |
 | `docs/game/des-moines-diamond-g2-plan.md` | Browser-prototype plan for the map-first Des Moines scenario board | You need to start or review G2-A UI work |
+| `docs/game/des-moines-diamond-browser-playtest.md` | Human browser blind-playtest packet for the G2-A prototype | You need to run or review the browser comprehension/export/aha gate |
+| `docs/game/des-moines-diamond-browser-playtest-001.md` | Simulated browser playtest baseline for the G2-A prototype | You need the reproducible browser baseline before a human run |
 | `docs/game/browser/des-moines-diamond.html` | Static first G2-A browser prototype for fixture playback | You need to open or inspect the map-first Des Moines game board |
 | `docs/game/browser/check-des-moines-browser.ps1` | Static fixture-contract check for the Des Moines browser prototype | You need to verify browser fixture copy and required regions without a browser harness |
 | `docs/game/browser/des-moines-browser.spec.js` | Playwright desktop/mobile smoke check for the Des Moines browser prototype | You need screenshot-era browser regression coverage |
