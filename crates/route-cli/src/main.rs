@@ -7786,8 +7786,8 @@ fn apply_t1_failure_events_to_ledger(
                 row.source_status = "empirical".to_string();
                 row.confidence = summary.confidence.clone();
                 row.current_artifact = append_artifact(&row.current_artifact, event_artifact);
-                row.blocking_gap = "Empirical event observations loaded; reroute time and throughput retention still require route simulation/source validation".to_string();
-                row.next_evidence_step = "Join event windows to NPMRDS/FPM travel-time traces and reroute simulations to validate throughput retention under closure".to_string();
+                row.blocking_gap = "Snapshot empirical event observations loaded, but annual closure probability is not stable until a polling/archive window is built; reroute time and throughput retention still require source validation".to_string();
+                row.next_evidence_step = "Join event windows to NPMRDS/FPM travel-time traces and reroute simulations; continue polling or obtain DOT history before publication".to_string();
             }
             row
         })
