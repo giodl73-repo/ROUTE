@@ -4,6 +4,8 @@ Interstate Tycoon is the game-facing layer for ROUTE: a highway network strategy
 
 The sell is simple: players do not read a standards paper first. They inherit today's interstate network, watch it fail under freight growth and adversity, then discover why managed freight lanes, T1/T1 diamonds, relay hubs, EV/rest-area standards, flood hardening, and T2 relief corridors matter.
 
+Execution plan: [`docs/game/interstate-tycoon-plan.md`](game/interstate-tycoon-plan.md).
+
 ## TIGRIS Transfer
 
 TIGRIS contributes the design discipline, not the subject matter.
