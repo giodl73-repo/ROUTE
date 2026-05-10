@@ -304,6 +304,9 @@ enum Commands {
         /// Show only rows not yet manually validated
         #[arg(long)]
         blockers: bool,
+        /// Show only one priority band, e.g. A, B, or C
+        #[arg(long)]
+        priority: Option<String>,
         /// Print detailed validation blockers and next steps
         #[arg(long)]
         details: bool,
@@ -2360,13 +2363,14 @@ fn run_cli() -> Result<()> {
         Commands::T1DiamondValidation {
             ledger,
             blockers,
+            priority,
             details,
             gate_catalog,
         } => {
             let rows = load_t1_diamond_validation(&ledger).with_context(|| {
                 format!("loading T1 diamond validation ledger {}", ledger.display())
             })?;
-            print_t1_diamond_validation(&rows, blockers, details);
+            print_t1_diamond_validation(&rows, blockers, priority.as_deref(), details);
 
             if gate_catalog {
                 let failures = t1_diamond_validation_gate_failures(&rows);
@@ -5809,10 +5813,20 @@ fn parse_t1_diamond_validation<R: std::io::Read>(reader: R) -> Result<Vec<T1Diam
     Ok(rows)
 }
 
-fn print_t1_diamond_validation(rows: &[T1DiamondValidationRow], blockers: bool, details: bool) {
+fn print_t1_diamond_validation(
+    rows: &[T1DiamondValidationRow],
+    blockers: bool,
+    priority: Option<&str>,
+    details: bool,
+) {
     let filtered: Vec<&T1DiamondValidationRow> = rows
         .iter()
         .filter(|row| !blockers || !row.validation_status.eq_ignore_ascii_case("validated"))
+        .filter(|row| {
+            priority
+                .map(|priority| row.priority_band.eq_ignore_ascii_case(priority))
+                .unwrap_or(true)
+        })
         .collect();
 
     let mut by_status: std::collections::BTreeMap<String, usize> =
