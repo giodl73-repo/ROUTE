@@ -28,6 +28,8 @@ The game succeeds when a non-specialist can say:
 | Game concept | Drafted | `docs/INTERSTATE_TYCOON.md` |
 | First paper scenario | Drafted | `docs/game/des-moines-diamond-g0.md` |
 | First playtest packet | Drafted | `docs/game/des-moines-diamond-playtest.md` |
+| Second paper scenario | Drafted | `docs/game/donner-weather-closure-g0.md`; Mountain Pass teaches I-80 weather resilience, alternate capacity, recovery, and evidence locks |
+| Second playtest packet | Drafted | `docs/game/donner-weather-closure-playtest.md` |
 | First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
 | First simulated blind playtest | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md` |
 | Simulated playtest set | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md`, `002.md`, `003.md` |
@@ -290,7 +292,7 @@ Done criteria:
 
 1. Run the human browser blind playtest or record owner acceptance of simulated evidence.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
-3. Draft the Mountain Pass paper scenario from `data/game/campaign-spine.csv`.
+3. Run or simulate the first Mountain Pass paper playtest from `docs/game/donner-weather-closure-playtest.md`.
 4. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 5. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
 6. Work the A-band queue from `route t1-diamond-validation --priority A --docket --with-access`.
