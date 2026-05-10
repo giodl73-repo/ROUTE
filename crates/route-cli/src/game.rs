@@ -1,4 +1,8 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::Path;
 
 pub const DES_MOINES_SCENARIO_ID: &str = "des-moines-diamond";
 
@@ -56,6 +60,37 @@ pub struct Scenario {
     pub projects: &'static [ProjectCard],
     pub events: &'static [EventCard],
     pub evidence: &'static [EvidenceCard],
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GameState {
+    pub scenario_id: String,
+    pub season: u8,
+    pub budget: i32,
+    pub construction_crews: i32,
+    pub political_capital: i32,
+    pub public_patience: i32,
+    pub operations_capacity: i32,
+    pub evidence_confidence: i32,
+    pub active_projects: Vec<String>,
+    pub completed_projects: Vec<String>,
+    pub first_closure_seen: bool,
+    pub connector_package_complete: bool,
+    pub source_requested: bool,
+    pub validated_evidence_available: bool,
+    pub fiscal_crisis: bool,
+    pub publication_gate: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct SeasonResult {
+    pub state: GameState,
+    pub accepted_projects: Vec<String>,
+    pub rejected_actions: Vec<String>,
+    pub event_result: String,
+    pub throughput_retention: f64,
+    pub recovery_hours: f64,
+    pub sla_status: String,
 }
 
 const TRACKS: &[Track] = &[
@@ -382,6 +417,346 @@ pub fn print_inspect(scenario_id: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn run_season_cli(
+    scenario_id: &str,
+    season: u8,
+    event_slug: &str,
+    project_slugs: &[String],
+    state_path: Option<&Path>,
+    write_state_path: Option<&Path>,
+    append_log_path: Option<&Path>,
+) -> Result<()> {
+    let state = if let Some(path) = state_path {
+        let body = std::fs::read_to_string(path)?;
+        serde_json::from_str(&body)?
+    } else {
+        default_state(scenario_id)?
+    };
+    let result = run_season(state, season, event_slug, project_slugs)?;
+
+    if let Some(path) = write_state_path {
+        if let Some(parent) = path.parent() {
+            if !parent.as_os_str().is_empty() {
+                std::fs::create_dir_all(parent)?;
+            }
+        }
+        std::fs::write(path, serde_json::to_string_pretty(&result.state)?)?;
+    }
+
+    if let Some(path) = append_log_path {
+        append_session_log(path, &result)?;
+    }
+
+    print!("{}", render_season_result(&result));
+    Ok(())
+}
+
+pub fn default_state(scenario_id: &str) -> Result<GameState> {
+    scenario_by_id(scenario_id)?;
+    Ok(GameState {
+        scenario_id: scenario_id.to_string(),
+        season: 0,
+        budget: 12,
+        construction_crews: 3,
+        political_capital: 5,
+        public_patience: 6,
+        operations_capacity: 4,
+        evidence_confidence: 2,
+        active_projects: Vec::new(),
+        completed_projects: Vec::new(),
+        first_closure_seen: false,
+        connector_package_complete: false,
+        source_requested: false,
+        validated_evidence_available: false,
+        fiscal_crisis: false,
+        publication_gate:
+            "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
+                .to_string(),
+    })
+}
+
+pub fn run_season(
+    mut state: GameState,
+    season: u8,
+    event_slug: &str,
+    project_slugs: &[String],
+) -> Result<SeasonResult> {
+    scenario_by_id(&state.scenario_id)?;
+    let event = event_by_slug(event_slug)?;
+    state.season = season;
+    state.construction_crews = 3;
+
+    let mut accepted_projects = Vec::new();
+    let mut rejected_actions = Vec::new();
+    let political_lane_pressure = event.slug == "political-lane-mile-pressure";
+
+    for slug in project_slugs {
+        let project = project_by_slug(slug)?;
+        let mut cost = project.cost;
+        let mut political_cost = 0;
+        if political_lane_pressure && project.slug == "general-purpose-widening" {
+            cost -= 1;
+        }
+        if political_lane_pressure && project.slug == "diamond-connector-package" {
+            political_cost = 1;
+        }
+
+        if project.slug == "validated-evidence" && !state.source_requested {
+            rejected_actions.push(format!(
+                "{} rejected: source request must be completed first.",
+                project.name
+            ));
+            continue;
+        }
+        if project.slug == "validated-evidence" && !state.validated_evidence_available {
+            rejected_actions.push(format!(
+                "{} rejected: validated evidence unavailable; no observed artifact exists yet.",
+                project.name
+            ));
+            continue;
+        }
+        if state.budget < cost {
+            rejected_actions.push(format!(
+                "{} rejected: budget {} is below required cost {}.",
+                project.name, state.budget, cost
+            ));
+            continue;
+        }
+        if state.construction_crews < project.crew {
+            rejected_actions.push(format!(
+                "{} rejected: construction crews {} are below required crew {}.",
+                project.name, state.construction_crews, project.crew
+            ));
+            continue;
+        }
+        if state.political_capital < political_cost {
+            rejected_actions.push(format!(
+                "{} rejected: political capital {} is below required cost {}.",
+                project.name, state.political_capital, political_cost
+            ));
+            continue;
+        }
+
+        state.budget -= cost;
+        state.construction_crews -= project.crew;
+        state.political_capital -= political_cost;
+        accepted_projects.push(project.slug.to_string());
+
+        if project.time <= 1 {
+            complete_project(&mut state, project);
+        } else if !state
+            .active_projects
+            .iter()
+            .any(|active| active == project.slug)
+        {
+            state.active_projects.push(project.slug.to_string());
+        }
+    }
+
+    let event_result = apply_event(&mut state, event);
+    if state.budget < 0 {
+        state.fiscal_crisis = true;
+    }
+    state.publication_gate =
+        "locked: empirical closure evidence and direct PTI/NPMRDS validation missing".to_string();
+
+    let throughput_retention = if state.connector_package_complete {
+        1.0
+    } else {
+        0.962
+    };
+    let recovery_hours = 0.9;
+    let sla_status = if state.operations_capacity >= 0 {
+        "bounded heuristic".to_string()
+    } else {
+        "missed: operations capacity below zero".to_string()
+    };
+
+    Ok(SeasonResult {
+        state,
+        accepted_projects,
+        rejected_actions,
+        event_result,
+        throughput_retention,
+        recovery_hours,
+        sla_status,
+    })
+}
+
+pub fn render_season_result(result: &SeasonResult) -> String {
+    let mut out = String::new();
+    out.push_str(&format!(
+        "route game run-season {}\n",
+        result.state.scenario_id
+    ));
+    out.push_str(&format!("  season: {}\n", result.state.season));
+    out.push_str(&format!(
+        "  accepted_projects: {}\n",
+        if result.accepted_projects.is_empty() {
+            "none".to_string()
+        } else {
+            result.accepted_projects.join("; ")
+        }
+    ));
+    out.push_str("  rejected_actions:\n");
+    if result.rejected_actions.is_empty() {
+        out.push_str("    none\n");
+    } else {
+        for action in &result.rejected_actions {
+            out.push_str(&format!("    - {action}\n"));
+        }
+    }
+    out.push_str(&format!("  event_result: {}\n", result.event_result));
+    out.push_str(&format!(
+        "  tracks: budget={} crews={} political_capital={} public_patience={} operations_capacity={} evidence_confidence={}\n",
+        result.state.budget,
+        result.state.construction_crews,
+        result.state.political_capital,
+        result.state.public_patience,
+        result.state.operations_capacity,
+        result.state.evidence_confidence
+    ));
+    out.push_str(&format!(
+        "  throughput_retention: {:.3} heuristic\n",
+        result.throughput_retention
+    ));
+    out.push_str(&format!(
+        "  recovery_hours: {:.1} heuristic\n",
+        result.recovery_hours
+    ));
+    out.push_str(&format!("  sla_status: {}\n", result.sla_status));
+    out.push_str(&format!(
+        "  publication_gate: {}\n",
+        result.state.publication_gate
+    ));
+    out
+}
+
+fn append_session_log(path: &Path, result: &SeasonResult) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
+    let needs_header = !path.exists() || std::fs::metadata(path)?.len() == 0;
+    let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+    if needs_header {
+        writeln!(
+            file,
+            "season,accepted_projects,rejected_count,budget_remaining,political_capital,public_patience,operations_capacity,evidence_confidence,throughput_retention,recovery_hours,sla_status,publication_gate"
+        )?;
+    }
+    writeln!(
+        file,
+        "{},\"{}\",{},{},{},{},{},{},{:.3},{:.1},\"{}\",\"{}\"",
+        result.state.season,
+        result.accepted_projects.join("; "),
+        result.rejected_actions.len(),
+        result.state.budget,
+        result.state.political_capital,
+        result.state.public_patience,
+        result.state.operations_capacity,
+        result.state.evidence_confidence,
+        result.throughput_retention,
+        result.recovery_hours,
+        result.sla_status,
+        result.state.publication_gate
+    )?;
+    Ok(())
+}
+
+fn complete_project(state: &mut GameState, project: &ProjectCard) {
+    if !state
+        .completed_projects
+        .iter()
+        .any(|completed| completed == project.slug)
+    {
+        state.completed_projects.push(project.slug.to_string());
+    }
+    match project.slug {
+        "diamond-connector-package" => state.connector_package_complete = true,
+        "source-request" => {
+            state.source_requested = true;
+            state.evidence_confidence += 1;
+        }
+        _ => {}
+    }
+}
+
+fn apply_event(state: &mut GameState, event: &EventCard) -> String {
+    match event.slug {
+        "full-interchange-zone-closure" => {
+            state.first_closure_seen = true;
+            if state.connector_package_complete {
+                "Closure stress applied; redundant transfer paths are available.".to_string()
+            } else {
+                "Closure stress applied; transfer remains fragile because no independent transfer path is complete.".to_string()
+            }
+        }
+        "night-work-zone-closure" => {
+            if state
+                .completed_projects
+                .iter()
+                .any(|project| project == "work-zone-sequencing")
+            {
+                "Night closure sequenced; public patience protected.".to_string()
+            } else {
+                state.public_patience -= 1;
+                "Night closure unsequenced; public patience loses 1.".to_string()
+            }
+        }
+        "relay-hub-surge" => {
+            if state
+                .completed_projects
+                .iter()
+                .any(|project| project == "relay-hub-reserve-staffing")
+            {
+                "Relay surge absorbed by reserve staffing.".to_string()
+            } else {
+                state.operations_capacity -= 1;
+                "Relay surge strains operations; operations capacity loses 1.".to_string()
+            }
+        }
+        "ev-rest-queue" => {
+            if state
+                .completed_projects
+                .iter()
+                .any(|project| project == "ev-rest-hardening")
+            {
+                "EV/rest queue absorbed by hardening.".to_string()
+            } else {
+                state.operations_capacity -= 1;
+                "EV/rest queue adds dwell risk; operations capacity loses 1.".to_string()
+            }
+        }
+        "political-lane-mile-pressure" => {
+            "Lane-mile pressure applied; widening is cheaper and connector package costs political capital.".to_string()
+        }
+        "source-challenge" => {
+            if state.evidence_confidence >= 4 {
+                "Source challenge answered; evidence confidence clears the game threshold.".to_string()
+            } else {
+                "Source challenge holds publication locked; evidence confidence is below 4.".to_string()
+            }
+        }
+        _ => unreachable!("event slug was validated before apply_event"),
+    }
+}
+
+fn project_by_slug(slug: &str) -> Result<&'static ProjectCard> {
+    PROJECTS
+        .iter()
+        .find(|project| project.slug == slug)
+        .ok_or_else(|| anyhow::anyhow!("unknown project card slug '{slug}'"))
+}
+
+fn event_by_slug(slug: &str) -> Result<&'static EventCard> {
+    EVENTS
+        .iter()
+        .find(|event| event.slug == slug)
+        .ok_or_else(|| anyhow::anyhow!("unknown event card slug '{slug}'"))
+}
+
 fn scenario_by_id(scenario_id: &str) -> Result<&'static Scenario> {
     SCENARIOS
         .iter()
@@ -394,39 +769,6 @@ fn scenario_by_id(scenario_id: &str) -> Result<&'static Scenario> {
                 .join(", ");
             anyhow::anyhow!("unknown game scenario '{scenario_id}'. Available scenarios: {ids}")
         })
-}
-
-#[cfg(test)]
-fn validate_project_slug(slug: &str) -> Result<&'static ProjectCard> {
-    PROJECTS
-        .iter()
-        .find(|project| project.slug == slug)
-        .ok_or_else(|| anyhow::anyhow!("unknown project card slug '{slug}'"))
-}
-
-#[cfg(test)]
-fn validate_event_slug(slug: &str) -> Result<&'static EventCard> {
-    EVENTS
-        .iter()
-        .find(|event| event.slug == slug)
-        .ok_or_else(|| anyhow::anyhow!("unknown event card slug '{slug}'"))
-}
-
-#[cfg(test)]
-fn validate_default_state() -> Result<()> {
-    if !TRACKS
-        .iter()
-        .any(|track| track.name == "Budget" && track.start == 12)
-    {
-        anyhow::bail!("Des Moines default budget drifted from paper scenario");
-    }
-    if !TRACKS
-        .iter()
-        .any(|track| track.name == "Evidence confidence" && track.start == 2)
-    {
-        anyhow::bail!("Des Moines default evidence confidence drifted from paper scenario");
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -467,23 +809,73 @@ mod tests {
     #[test]
     fn project_and_event_slugs_validate_against_paper_cards() {
         assert_eq!(
-            validate_project_slug("source-request")
-                .expect("source card")
-                .name,
+            project_by_slug("source-request").expect("source card").name,
             "Source request"
         );
         assert_eq!(
-            validate_event_slug("full-interchange-zone-closure")
+            event_by_slug("full-interchange-zone-closure")
                 .expect("closure event")
                 .name,
             "Full interchange-zone closure"
         );
-        assert!(validate_project_slug("evidence-acquisition").is_err());
-        assert!(validate_event_slug("unknown-event").is_err());
+        assert!(project_by_slug("evidence-acquisition").is_err());
+        assert!(event_by_slug("unknown-event").is_err());
     }
 
     #[test]
     fn default_state_matches_g0_tracks() {
-        validate_default_state().expect("default state matches paper scenario");
+        let state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+
+        assert_eq!(state.budget, 12);
+        assert_eq!(state.construction_crews, 3);
+        assert_eq!(state.political_capital, 5);
+        assert_eq!(state.public_patience, 6);
+        assert_eq!(state.operations_capacity, 4);
+        assert_eq!(state.evidence_confidence, 2);
+        assert!(state.publication_gate.contains("locked"));
+    }
+
+    #[test]
+    fn run_season_rejects_unaffordable_projects_with_reasons() {
+        let mut state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+        state.budget = 1;
+
+        let projects = vec!["diamond-connector-package".to_string()];
+        let result =
+            run_season(state, 1, "full-interchange-zone-closure", &projects).expect("run season");
+
+        assert!(result.accepted_projects.is_empty());
+        assert_eq!(result.state.budget, 1);
+        assert!(result.rejected_actions[0].contains("budget 1 is below required cost 5"));
+        assert!(result.event_result.contains("no independent transfer path"));
+    }
+
+    #[test]
+    fn run_season_splits_source_request_from_validated_evidence() {
+        let state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+        let projects = vec![
+            "source-request".to_string(),
+            "validated-evidence".to_string(),
+        ];
+        let result = run_season(state, 2, "source-challenge", &projects).expect("run season");
+
+        assert_eq!(result.accepted_projects, vec!["source-request"]);
+        assert_eq!(result.state.evidence_confidence, 3);
+        assert!(result.state.source_requested);
+        assert!(result.rejected_actions[0].contains("validated evidence unavailable"));
+        assert!(result.state.publication_gate.contains("locked"));
+    }
+
+    #[test]
+    fn render_season_result_keeps_publication_separate_from_operations() {
+        let state = default_state(DES_MOINES_SCENARIO_ID).expect("default state");
+        let projects = vec!["work-zone-sequencing".to_string()];
+        let result =
+            run_season(state, 1, "night-work-zone-closure", &projects).expect("run season");
+        let rendered = render_season_result(&result);
+
+        assert!(rendered.contains("accepted_projects: work-zone-sequencing"));
+        assert!(rendered.contains("sla_status: bounded heuristic"));
+        assert!(rendered.contains("publication_gate: locked"));
     }
 }

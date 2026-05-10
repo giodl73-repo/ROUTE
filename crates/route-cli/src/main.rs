@@ -768,6 +768,29 @@ enum GameCommand {
         /// Scenario id, e.g. des-moines-diamond
         scenario: String,
     },
+    /// Resolve one deterministic game season
+    RunSeason {
+        /// Scenario id, e.g. des-moines-diamond
+        scenario: String,
+        /// Season number
+        #[arg(long)]
+        season: u8,
+        /// Event card slug
+        #[arg(long)]
+        event: String,
+        /// Project card slug; repeatable
+        #[arg(long)]
+        project: Vec<String>,
+        /// Optional prior JSON state
+        #[arg(long, value_name = "FILE")]
+        state: Option<PathBuf>,
+        /// Optional output JSON state
+        #[arg(long, value_name = "FILE")]
+        write_state: Option<PathBuf>,
+        /// Optional append-only CSV session log
+        #[arg(long, value_name = "FILE")]
+        append_log: Option<PathBuf>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -2534,6 +2557,23 @@ fn run_cli() -> Result<()> {
         Commands::Game { command } => match command {
             GameCommand::Scenarios => game::print_scenarios(),
             GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
+            GameCommand::RunSeason {
+                scenario,
+                season,
+                event,
+                project,
+                state,
+                write_state,
+                append_log,
+            } => game::run_season_cli(
+                &scenario,
+                season,
+                &event,
+                &project,
+                state.as_deref(),
+                write_state.as_deref(),
+                append_log.as_deref(),
+            )?,
         },
 
         Commands::Sim { mode } => {
