@@ -84,7 +84,7 @@ and 80% of freight flow is maintained via the northern and southern connectors.
 
 **Data correction (2026-05-09)**: earlier drafts incorrectly located the I-35 × I-80 T1/T1 junction at Omaha and cited I-680 as the relevant bypass. `route sim bind` confirmed that Omaha-area I-80/I-680/I-29 edges are present, but no I-35 edges exist near Omaha. The active T1/T1 fixture is now `des-moines-interchange`. `route diamond I35xI80` now recognizes the curated Des Moines anchor and reports current k=0 with 3 connectors needed; the k-class, connector geometry, and alternate-capacity design still require manual validation before publication use.
 
-**Catalog correction (2026-05-10)**: the curated analyzer catalog now covers all 15 named T1/T1 pairs. Three labels were corrected before promotion: I-35 × I-90 is anchored at Albert Lea MN, I-40 × I-95 at Benson NC, and I-75 × I-90 in the Toledo/Perrysburg turnpike zone. These remain heuristic geometry anchors until manual validation and observed failure evidence are attached.
+**Catalog correction (2026-05-10)**: the curated analyzer catalog now covers all 15 named T1/T1 pairs. Three labels were corrected before promotion: I-35 × I-90 is anchored at Albert Lea MN, I-40 × I-95 at Benson NC, and I-75 × I-90 in the Toledo/Perrysburg turnpike zone. These remain heuristic geometry anchors until `data/t1-diamond-validation.csv` records manual geometry validation, alternate-capacity evidence, and observed failure evidence.
 
 ### What a 50-mile diamond looks like: I-40 × I-75 at Knoxville
 

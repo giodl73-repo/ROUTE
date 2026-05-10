@@ -292,6 +292,26 @@ enum Commands {
         gate_evidence: bool,
     },
 
+    /// Show T1/T1 diamond anchor manual-validation status
+    T1DiamondValidation {
+        /// Path to T1/T1 diamond anchor validation ledger CSV
+        #[arg(
+            long,
+            default_value = "data/t1-diamond-validation.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows not yet manually validated
+        #[arg(long)]
+        blockers: bool,
+        /// Print detailed validation blockers and next steps
+        #[arg(long)]
+        details: bool,
+        /// Fail if the anchor catalog is incomplete or rows lack validation contracts
+        #[arg(long)]
+        gate_catalog: bool,
+    },
+
     /// Show source-acquisition plan for T1/T1 failure evidence
     T1FailureSources {
         /// Path to T1/T1 failure source plan CSV
@@ -2334,6 +2354,43 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T1/T1 failure evidence gate: PASS");
+            }
+        }
+
+        Commands::T1DiamondValidation {
+            ledger,
+            blockers,
+            details,
+            gate_catalog,
+        } => {
+            let rows = load_t1_diamond_validation(&ledger).with_context(|| {
+                format!("loading T1 diamond validation ledger {}", ledger.display())
+            })?;
+            print_t1_diamond_validation(&rows, blockers, details);
+
+            if gate_catalog {
+                let failures = t1_diamond_validation_gate_failures(&rows);
+                let missing = t1_diamond_validation_missing_sites(&rows);
+                if !failures.is_empty() || !missing.is_empty() {
+                    println!();
+                    println!("T1/T1 diamond validation catalog gate: FAIL");
+                    println!(
+                        "  {} validation rows lack required catalog contracts.",
+                        failures.len()
+                    );
+                    if !missing.is_empty() {
+                        println!("  missing sites: {}", missing.join(", "));
+                    }
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.site_id, row.validation_status, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("T1/T1 diamond validation catalog gate failed");
+                }
+                println!();
+                println!("T1/T1 diamond validation catalog gate: PASS");
             }
         }
 
@@ -5702,6 +5759,147 @@ fn fmt_opt(value: Option<f64>) -> String {
         .unwrap_or_else(|| "-".to_string())
 }
 
+const EXPECTED_T1_DIAMOND_SITES: &[&str] = &[
+    "T1X-I80-I90",
+    "T1X-I35-I80",
+    "T1X-I35-I40",
+    "T1X-I40-I75",
+    "T1X-I10-I35",
+    "T1X-I75-I80",
+    "T1X-I90-I95",
+    "T1X-I10-I95",
+    "T1X-I5-I10",
+    "T1X-I5-I80",
+    "T1X-I5-I90",
+    "T1X-I35-I90",
+    "T1X-I40-I95",
+    "T1X-I75-I90",
+    "T1X-I5-I40",
+];
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1DiamondValidationRow {
+    site_id: String,
+    intersection: String,
+    location: String,
+    priority_band: String,
+    anchor_lon: f64,
+    anchor_lat: f64,
+    analyzer_status: String,
+    manual_geometry_status: String,
+    alternate_capacity_status: String,
+    observed_failure_status: String,
+    validation_status: String,
+    current_artifact: String,
+    blocking_gap: String,
+    next_validation_step: String,
+}
+
+fn load_t1_diamond_validation(path: &Path) -> Result<Vec<T1DiamondValidationRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_diamond_validation(file)
+}
+
+fn parse_t1_diamond_validation<R: std::io::Read>(reader: R) -> Result<Vec<T1DiamondValidationRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_diamond_validation(rows: &[T1DiamondValidationRow], blockers: bool, details: bool) {
+    let filtered: Vec<&T1DiamondValidationRow> = rows
+        .iter()
+        .filter(|row| !blockers || !row.validation_status.eq_ignore_ascii_case("validated"))
+        .collect();
+
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status.entry(row.validation_status.clone()).or_insert(0) += 1;
+    }
+
+    println!("route t1-diamond-validation");
+    println!("  sites: {} shown / {} total", filtered.len(), rows.len());
+    println!("  validation: {}", format_count_map(&by_status));
+    println!();
+    println!(
+        "{:<18} {:<14} {:<20} {:<8} {:<12} {:<12} {}",
+        "Site", "Intersection", "Location", "Priority", "Analyzer", "Validation", "Gap"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<14} {:<20} {:<8} {:<12} {:<12} {}",
+            row.site_id,
+            row.intersection,
+            truncate_for_table(&row.location, 20),
+            row.priority_band,
+            row.analyzer_status,
+            row.validation_status,
+            row.blocking_gap
+        );
+        if details {
+            println!("  anchor: {:.3}, {:.3}", row.anchor_lon, row.anchor_lat);
+            println!("  geometry: {}", row.manual_geometry_status);
+            println!("  alternate capacity: {}", row.alternate_capacity_status);
+            println!("  observed failure: {}", row.observed_failure_status);
+            println!("  artifact: {}", row.current_artifact);
+            println!("  next: {}", row.next_validation_step);
+        }
+    }
+}
+
+fn t1_diamond_validation_gate_failures(
+    rows: &[T1DiamondValidationRow],
+) -> Vec<&T1DiamondValidationRow> {
+    rows.iter()
+        .filter(|row| !t1_diamond_validation_row_has_contract(row))
+        .collect()
+}
+
+fn t1_diamond_validation_missing_sites(rows: &[T1DiamondValidationRow]) -> Vec<String> {
+    let present: std::collections::HashSet<_> =
+        rows.iter().map(|row| row.site_id.as_str()).collect();
+    EXPECTED_T1_DIAMOND_SITES
+        .iter()
+        .filter(|site_id| !present.contains(**site_id))
+        .map(|site_id| (*site_id).to_string())
+        .collect()
+}
+
+fn t1_diamond_validation_row_has_contract(row: &T1DiamondValidationRow) -> bool {
+    let analyzer = row.analyzer_status.trim().to_ascii_lowercase();
+    let geometry = row.manual_geometry_status.trim().to_ascii_lowercase();
+    let alternate = row.alternate_capacity_status.trim().to_ascii_lowercase();
+    let observed = row.observed_failure_status.trim().to_ascii_lowercase();
+    let validation = row.validation_status.trim().to_ascii_lowercase();
+
+    !row.site_id.trim().is_empty()
+        && EXPECTED_T1_DIAMOND_SITES.contains(&row.site_id.as_str())
+        && !row.intersection.trim().is_empty()
+        && !row.location.trim().is_empty()
+        && !row.priority_band.trim().is_empty()
+        && row.anchor_lon.is_finite()
+        && row.anchor_lat.is_finite()
+        && matches!(analyzer.as_str(), "recognized" | "missing" | "conflict")
+        && matches!(
+            geometry.as_str(),
+            "validated" | "heuristic" | "pending" | "conflict"
+        )
+        && matches!(alternate.as_str(), "validated" | "heuristic" | "pending")
+        && matches!(observed.as_str(), "empirical" | "modeled" | "source_needed")
+        && matches!(
+            validation.as_str(),
+            "validated" | "heuristic" | "pending" | "conflict"
+        )
+        && !row.current_artifact.trim().is_empty()
+        && !row.next_validation_step.trim().is_empty()
+        && (validation == "validated" || !row.blocking_gap.trim().is_empty())
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct T1FailureSourceRow {
     site_id: String,
@@ -7133,9 +7331,9 @@ mod tests {
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
         parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        parse_throughput_proof_matrix, pressure_scenario_gate_failures,
+        parse_standards_proof_ledger, parse_t1_diamond_validation, parse_t1_failure_events,
+        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_source_health,
+        parse_tdot_smartway_events, parse_throughput_proof_matrix, pressure_scenario_gate_failures,
         pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
         pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
         rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
@@ -7445,6 +7643,35 @@ T1X-BAD,I-5 x I-10,Los Angeles CA,closure,,,,,,,,maybe,unknown,artifact,gap,
         let failures = t1_failure_evidence_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].site_id, "T1X-BAD");
+    }
+
+    #[test]
+    fn t1_diamond_validation_gate_requires_complete_catalog_contracts() {
+        let csv = "\
+site_id,intersection,location,priority_band,anchor_lon,anchor_lat,analyzer_status,manual_geometry_status,alternate_capacity_status,observed_failure_status,validation_status,current_artifact,blocking_gap,next_validation_step
+T1X-I35-I80,I-35 x I-80,Des Moines IA,A,-93.573,41.659,recognized,heuristic,heuristic,modeled,heuristic,artifact,gap,next
+T1X-BAD,I-5 x I-10,Los Angeles CA,B,-118.230,34.050,unknown,heuristic,pending,source_needed,heuristic,artifact,gap,next
+";
+
+        let rows = parse_t1_diamond_validation(csv.as_bytes()).expect("parse validation");
+        let failures = super::t1_diamond_validation_gate_failures(&rows);
+        let missing = super::t1_diamond_validation_missing_sites(&rows);
+
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].site_id, "T1X-BAD");
+        assert!(missing.contains(&"T1X-I80-I90".to_string()));
+    }
+
+    #[test]
+    fn t1_diamond_validation_canonical_catalog_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/t1-diamond-validation.csv");
+        let file = std::fs::File::open(path).expect("open canonical validation ledger");
+        let rows = parse_t1_diamond_validation(file).expect("parse validation ledger");
+
+        assert_eq!(rows.len(), super::EXPECTED_T1_DIAMOND_SITES.len());
+        assert!(super::t1_diamond_validation_gate_failures(&rows).is_empty());
+        assert!(super::t1_diamond_validation_missing_sites(&rows).is_empty());
     }
 
     #[test]

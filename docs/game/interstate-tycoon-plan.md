@@ -288,7 +288,7 @@ Done criteria:
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
-5. Expand curated/validated T1/T1 anchors beyond Des Moines.
+5. Promote top-priority T1/T1 anchors from heuristic to manually validated in `data/t1-diamond-validation.csv`.
 6. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 
 ## Open Decisions
