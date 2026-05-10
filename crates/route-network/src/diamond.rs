@@ -311,3 +311,111 @@ fn bfs_path(
     path.reverse();
     path
 }
+
+#[cfg(test)]
+mod tests {
+    use super::compute_k_connectivity;
+    use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
+    use geo_types::{coord, LineString};
+    use petgraph::graph::{EdgeIndex, NodeIndex};
+    use std::collections::HashSet;
+
+    fn node(id: u64, x: f64, y: f64) -> HighwayNode {
+        HighwayNode {
+            id,
+            coord: coord! { x: x, y: y },
+            is_interchange: false,
+        }
+    }
+
+    fn edge(id: u64, route_id: &str) -> HighwayEdge {
+        HighwayEdge {
+            id,
+            route_id: route_id.to_string(),
+            state: "TS".to_string(),
+            road_class: route_data::RoadClass::Interstate,
+            geometry: LineString::from(vec![coord! { x: 0.0, y: 0.0 }, coord! { x: 1.0, y: 0.0 }]),
+            length_miles: 1.0,
+            lane_count: Some(2),
+            aadt: None,
+            pct_truck: None,
+            iri: None,
+            tti: None,
+            pti: None,
+            speed_limit: Some(65),
+        }
+    }
+
+    fn add_path(
+        graph: &mut HighwayGraph,
+        source: NodeIndex,
+        sink: NodeIndex,
+        route_id: &str,
+        edge_id: &mut u64,
+    ) -> Vec<EdgeIndex> {
+        let mid = graph
+            .graph
+            .add_node(node(*edge_id + 1_000, *edge_id as f64, 1.0));
+        let first = graph.graph.add_edge(source, mid, edge(*edge_id, route_id));
+        *edge_id += 1;
+        let second = graph.graph.add_edge(mid, sink, edge(*edge_id, route_id));
+        *edge_id += 1;
+        vec![first, second]
+    }
+
+    #[test]
+    fn k_connectivity_returns_zero_when_either_zone_is_empty() {
+        let mut graph = HighwayGraph::new();
+        let source = graph.graph.add_node(node(1, 0.0, 0.0));
+        let zone_edges = HashSet::new();
+
+        assert_eq!(compute_k_connectivity(&graph, &[source], &[], &zone_edges), 0);
+        assert_eq!(compute_k_connectivity(&graph, &[], &[source], &zone_edges), 0);
+    }
+
+    #[test]
+    fn k_connectivity_counts_single_edge_disjoint_path() {
+        let mut graph = HighwayGraph::new();
+        let source = graph.graph.add_node(node(1, 0.0, 0.0));
+        let sink = graph.graph.add_node(node(2, 2.0, 0.0));
+        let mut edge_id = 10;
+        let zone_edges: HashSet<_> =
+            add_path(&mut graph, source, sink, "I35", &mut edge_id).into_iter().collect();
+
+        let k = compute_k_connectivity(&graph, &[source], &[sink], &zone_edges);
+
+        assert_eq!(k, 1);
+    }
+
+    #[test]
+    fn k_connectivity_counts_parallel_edge_disjoint_paths() {
+        let mut graph = HighwayGraph::new();
+        let source = graph.graph.add_node(node(1, 0.0, 0.0));
+        let sink = graph.graph.add_node(node(2, 2.0, 0.0));
+        let mut edge_id = 10;
+        let mut zone_edges = HashSet::new();
+        zone_edges.extend(add_path(&mut graph, source, sink, "I35", &mut edge_id));
+        zone_edges.extend(add_path(&mut graph, source, sink, "I80", &mut edge_id));
+        zone_edges.extend(add_path(&mut graph, source, sink, "I90", &mut edge_id));
+
+        let k = compute_k_connectivity(&graph, &[source], &[sink], &zone_edges);
+
+        assert_eq!(k, 3);
+    }
+
+    #[test]
+    fn k_connectivity_respects_zone_edge_filter() {
+        let mut graph = HighwayGraph::new();
+        let source = graph.graph.add_node(node(1, 0.0, 0.0));
+        let sink = graph.graph.add_node(node(2, 2.0, 0.0));
+        let mut edge_id = 10;
+        let included = add_path(&mut graph, source, sink, "I35", &mut edge_id);
+        let excluded = add_path(&mut graph, source, sink, "I80", &mut edge_id);
+        let mut zone_edges: HashSet<_> = included.into_iter().collect();
+        zone_edges.insert(excluded[0]);
+
+        let k = compute_k_connectivity(&graph, &[source], &[sink], &zone_edges);
+
+        assert_eq!(k, 1);
+    }
+}
