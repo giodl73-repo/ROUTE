@@ -6,6 +6,7 @@ Status: G0 paper prototype
 Evidence level: Heuristic  
 Primary ROUTE scenario: `crates/route-sim/src/scenarios/des-moines-interchange.toml`  
 Primary pressure row: `S-L2-DES-MOINES` in `data/pressure-test-scenarios.csv`
+Playtest packet: `docs/game/des-moines-diamond-playtest.md`
 
 ## Player Promise
 
@@ -209,9 +210,9 @@ Each paper playtest should write one row per season.
 G0 is complete when:
 
 - A player can run a 10-season paper game from this document without ROUTE internals.
+- The playtest packet records a season log, score, aha check, surprise log, and promotion decision.
 - The forced tutorial turn produces the intended topology aha.
 - The after-action report separates operational win from publication proof.
 - The diamond analyzer mismatch is either fixed in code/data or remains visibly labeled as a blocker.
 - `route sim scenario des-moines-interchange --intervention` still runs.
 - `data/pressure-test-scenarios.csv` still lists `S-L2-DES-MOINES` as executable heuristic evidence.
-

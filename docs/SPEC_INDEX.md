@@ -10,6 +10,7 @@ Start here when deciding which document owns a claim.
 | `docs/INTERSTATE_TYCOON.md` | Game-facing product concept that translates ROUTE simulations into a highway tycoon experience | You need to explain or prototype ROUTE as a playable game |
 | `docs/game/interstate-tycoon-plan.md` | Execution plan for the Interstate Tycoon paper, CLI, browser, campaign, and public-demo phases | You need the current game build sequence and gates |
 | `docs/game/des-moines-diamond-g0.md` | First playable paper prototype for the Interstate Tycoon T1/T1 tutorial scenario | You need the G0 rules, cards, screen/copy/audio contracts, or session-log shape |
+| `docs/game/des-moines-diamond-playtest.md` | Score sheet, season log, surprise log, and promotion checklist for Des Moines Diamond playtests | You need to run or review a G0 playtest |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
 | `data/t1-failure-source-plan.csv` | Source acquisition plan for T1/T1 failure-rate and reroute fields | You need to know which DOT/FHWA data systems can fill failure evidence gaps |
