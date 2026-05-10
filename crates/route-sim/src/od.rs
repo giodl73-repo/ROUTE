@@ -1889,6 +1889,17 @@ impl RelayNetwork {
 mod tests {
     use super::*;
 
+    fn benchmark_result<'a>(
+        benchmark: &'a InterventionBenchmark,
+        label: &str,
+    ) -> &'a InterventionResult {
+        benchmark
+            .results
+            .iter()
+            .find(|result| result.label == label)
+            .expect("benchmark result exists")
+    }
+
     fn test_corridor(miles: f64) -> OdCorridor {
         OdCorridor {
             name: "Test freight corridor".to_string(),
@@ -2028,5 +2039,44 @@ mod tests {
         assert_eq!(dist.commitment_window_hours, 92.0);
         assert_eq!(dist.pct_under_48h, 0.0);
         assert_eq!(dist.pct_sla_met, 0.0);
+    }
+
+    #[test]
+    fn l2_ny_la_full_stack_reaches_48_hour_sla_under_seeded_proxy_model() {
+        let benchmark = InterventionBenchmark::run(&ny_la_corridor(), 200, 11);
+        let full_stack = benchmark_result(&benchmark, "Full I2.0 stack");
+
+        assert!(benchmark.baseline.p95_hours > 72.0);
+        assert_eq!(benchmark.baseline.pct_under_48h, 0.0);
+        assert!(full_stack.dist.p95_hours <= 48.0);
+        assert!(full_stack.p95_delta_hours < -30.0);
+        assert_eq!(full_stack.pct_under_48h, 100.0);
+        assert!(full_stack.sla_achieved);
+    }
+
+    #[test]
+    fn l2_houston_chicago_i69_direct_route_improves_seeded_proxy_sla_window() {
+        let current = run_od_simulation(&hou_chi_current(), false, 200, 11);
+        let i69 = run_od_simulation(&hou_chi_i69(), false, 200, 11);
+
+        assert!(i69.free_flow_hours < current.free_flow_hours);
+        assert!(i69.p95_hours < current.p95_hours);
+        assert!(i69.pti <= current.pti);
+        assert_eq!(current.pct_under_48h, 100.0);
+        assert_eq!(i69.pct_under_48h, 100.0);
+    }
+
+    #[test]
+    fn l2_miami_new_york_port_corridor_managed_lanes_bound_p95() {
+        let corridor = mia_nyc();
+        let solo_gp = run_od_simulation(&corridor, false, 200, 11);
+        let solo_managed = run_od_simulation(&corridor, true, 200, 11);
+
+        assert!(corridor.name.contains("MIA"));
+        assert!(corridor.total_miles() > 1_000.0);
+        assert!(solo_gp.p95_hours.is_finite());
+        assert!(solo_managed.p95_hours.is_finite());
+        assert!(solo_managed.p95_hours <= solo_gp.p95_hours);
+        assert!(solo_managed.pti <= solo_gp.pti);
     }
 }
