@@ -1884,3 +1884,105 @@ impl RelayNetwork {
         Self::for_miles(corridor.total_miles())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_corridor(miles: f64) -> OdCorridor {
+        OdCorridor {
+            name: "Test freight corridor".to_string(),
+            origin: "Origin".to_string(),
+            destination: "Destination".to_string(),
+            segments: vec![CorridorSegment {
+                name: "Rural T1 segment".to_string(),
+                miles,
+                base_vc: 0.55,
+                free_flow_mph: 65.0,
+                incident_prob: 0.0,
+                incident_delay_mean_hours: 0.0,
+                incident_delay_std_hours: 0.0,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: 0.45,
+            }],
+            hos_driving_hours: 11.0,
+            hos_rest_hours: 10.0,
+            fixed_overhead_hours: 2.0,
+        }
+    }
+
+    #[test]
+    fn relay_network_spacing_uses_500_mile_station_intervals() {
+        let corridor = test_corridor(1_000.0);
+
+        let relay = RelayNetwork::for_corridor(&corridor);
+
+        assert_eq!(relay.corridor_miles, 1_000.0);
+        assert_eq!(relay.stations, 2);
+        assert!((relay.avg_leg_miles - (1_000.0 / 3.0)).abs() < 1e-9);
+        assert!((relay.avg_leg_hours - (1_000.0 / 3.0 / 65.0)).abs() < 1e-9);
+        assert_eq!(relay.swap_time_min, 20.0);
+        assert_eq!(relay.station_cost_m, 5.0);
+        assert_eq!(relay.total_capex_m, 10.0);
+    }
+
+    #[test]
+    fn relay_network_always_allocates_at_least_one_station() {
+        let corridor = test_corridor(120.0);
+
+        let relay = RelayNetwork::for_corridor(&corridor);
+
+        assert_eq!(relay.stations, 1);
+        assert_eq!(relay.avg_leg_miles, 60.0);
+        assert!((relay.avg_leg_hours - (60.0 / 65.0)).abs() < 1e-9);
+        assert_eq!(relay.total_capex_m, 5.0);
+    }
+
+    #[test]
+    fn driver_relay_intervention_preserves_station_count_and_swap_minutes() {
+        let corridor = test_corridor(1_000.0);
+
+        let (_corridor, driver_mode) = apply_interventions(
+            &corridor,
+            &[
+                Intervention::DriverRelay {
+                    stations: 3,
+                    swap_minutes: 15.0,
+                },
+                Intervention::TeamDrivers,
+            ],
+        );
+
+        assert_eq!(
+            driver_mode,
+            DriverMode::Relay {
+                stations: 3,
+                swap_minutes: 15.0,
+            }
+        );
+    }
+
+    #[test]
+    fn team_drivers_do_not_override_existing_relay_mode() {
+        let corridor = test_corridor(1_000.0);
+
+        let (_corridor, driver_mode) = apply_interventions(
+            &corridor,
+            &[
+                Intervention::TeamDrivers,
+                Intervention::DriverRelay {
+                    stations: 4,
+                    swap_minutes: 18.0,
+                },
+            ],
+        );
+
+        assert_eq!(
+            driver_mode,
+            DriverMode::Relay {
+                stations: 4,
+                swap_minutes: 18.0,
+            }
+        );
+    }
+}
