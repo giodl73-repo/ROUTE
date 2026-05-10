@@ -23,6 +23,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/des-moines-diamond-cli-playtest-004.md` | First score-command playtest for operational score versus publication hold | You need to verify the full G1-A CLI loop |
 | `docs/game/des-moines-diamond-g2-plan.md` | Browser-prototype plan for the map-first Des Moines scenario board | You need to start or review G2-A UI work |
 | `docs/game/browser/des-moines-diamond.html` | Static first G2-A browser prototype for fixture playback | You need to open or inspect the map-first Des Moines game board |
+| `docs/game/browser/check-des-moines-browser.ps1` | Static fixture-contract check for the Des Moines browser prototype | You need to verify browser fixture copy and required regions without a browser harness |
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
 | `data/game/des-moines-diamond-session-fixture.csv` | Canonical G1-A score fixture for operational win with publication hold | You need stable score-output regression coverage |
 | `data/game/des-moines-diamond-state-fixture.json` | Canonical G2 seed state showing completed connector with publication hold | You need browser/campaign state fixture data |
