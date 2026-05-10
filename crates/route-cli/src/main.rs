@@ -244,12 +244,25 @@ enum Commands {
         /// Print full scenario proof details
         #[arg(long)]
         details: bool,
+        /// Also print standard-to-scenario coverage for pressure-tested standards
+        #[arg(long)]
+        coverage: bool,
+        /// Path to standards proof ledger used by --coverage and --gate-coverage
+        #[arg(
+            long,
+            default_value = "data/standards-proof-ledger.csv",
+            value_name = "FILE"
+        )]
+        standards_ledger: PathBuf,
         /// Fail if any scenario catalog row lacks a bounded proof contract
         #[arg(long)]
         gate_l2: bool,
         /// Fail if any required L2 scenario is still only planned or stubbed
         #[arg(long)]
         gate_readiness: bool,
+        /// Fail if high-stakes T1 throughput/resilience standards lack a scenario hook
+        #[arg(long)]
+        gate_coverage: bool,
     },
 
     /// Show throughput proof matrix separating congestion and resilience chokepoints
@@ -2267,13 +2280,31 @@ fn run_cli() -> Result<()> {
             ledger,
             blockers,
             details,
+            coverage,
+            standards_ledger,
             gate_l2,
             gate_readiness,
+            gate_coverage,
         } => {
             let rows = load_pressure_scenarios(&ledger).with_context(|| {
                 format!("loading pressure scenario ledger {}", ledger.display())
             })?;
             print_pressure_scenarios(&rows, blockers, details);
+            let standards_rows = if coverage || gate_coverage {
+                Some(
+                    load_standards_proof_ledger(&standards_ledger).with_context(|| {
+                        format!(
+                            "loading standards proof ledger {}",
+                            standards_ledger.display()
+                        )
+                    })?,
+                )
+            } else {
+                None
+            };
+            if let Some(standards_rows) = standards_rows.as_ref() {
+                print_pressure_standard_coverage(standards_rows, &rows);
+            }
 
             if gate_l2 {
                 let failures = pressure_scenario_gate_failures(&rows);
@@ -2321,6 +2352,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("L2 scenario readiness gate: PASS");
+            }
+            if let Some(standards_rows) = standards_rows.as_ref() {
+                if gate_coverage {
+                    let failures = pressure_standard_coverage_failures(standards_rows, &rows);
+                    let unknown = pressure_scenario_unknown_standard_refs(standards_rows, &rows);
+                    if !failures.is_empty() || !unknown.is_empty() {
+                        println!();
+                        println!("Pressure standard coverage gate: FAIL");
+                        if !failures.is_empty() {
+                            println!(
+                                "  {} high-stakes T1 standards lack scenario hooks.",
+                                failures.len()
+                            );
+                            for row in failures.iter().take(10) {
+                                println!(
+                                    "  - {} [{} {}]: {}",
+                                    row.standard_id,
+                                    row.tier,
+                                    row.standard_family,
+                                    row.primary_stressor
+                                );
+                            }
+                        }
+                        if !unknown.is_empty() {
+                            println!("  unknown scenario standard refs: {}", unknown.join(", "));
+                        }
+                        anyhow::bail!("pressure standard coverage gate failed");
+                    }
+                    println!();
+                    println!("Pressure standard coverage gate: PASS");
+                }
             }
         }
 
@@ -5595,6 +5657,114 @@ fn pressure_scenario_missing_required_adversity(rows: &[PressureScenarioRow]) ->
         .collect()
 }
 
+fn print_pressure_standard_coverage(
+    standards: &[StandardsProofRow],
+    scenarios: &[PressureScenarioRow],
+) {
+    let scenario_refs = pressure_standard_scenario_refs(scenarios);
+    let focus = pressure_standard_coverage_focus(standards);
+    let failures = pressure_standard_coverage_failures(standards, scenarios);
+    let unknown = pressure_scenario_unknown_standard_refs(standards, scenarios);
+
+    println!();
+    println!("Pressure standard coverage");
+    println!(
+        "  high-stakes T1 throughput/resilience standards: {}",
+        focus.len()
+    );
+    println!(
+        "  scenario-covered: {}",
+        focus
+            .iter()
+            .filter(|row| scenario_refs.contains_key(row.standard_id.as_str()))
+            .count()
+    );
+    println!("  missing hooks: {}", failures.len());
+    println!("  unknown refs: {}", unknown.len());
+    println!();
+    println!(
+        "{:<22} {:<12} {:<8} {:<22} {}",
+        "Standard", "Family", "Evidence", "Scenario", "Stressor"
+    );
+    println!("{}", "-".repeat(112));
+    for row in focus {
+        let scenario = scenario_refs
+            .get(row.standard_id.as_str())
+            .map(|ids| ids.join("; "))
+            .unwrap_or_else(|| "missing".to_string());
+        println!(
+            "{:<22} {:<12} {:<8} {:<22} {}",
+            row.standard_id,
+            row.standard_family,
+            row.evidence_level,
+            truncate_for_table(&scenario, 22),
+            row.primary_stressor
+        );
+    }
+    if !unknown.is_empty() {
+        println!();
+        println!("  unknown scenario standard refs: {}", unknown.join(", "));
+    }
+}
+
+fn pressure_standard_coverage_failures<'a>(
+    standards: &'a [StandardsProofRow],
+    scenarios: &[PressureScenarioRow],
+) -> Vec<&'a StandardsProofRow> {
+    let scenario_refs = pressure_standard_scenario_refs(scenarios);
+    pressure_standard_coverage_focus(standards)
+        .into_iter()
+        .filter(|row| !scenario_refs.contains_key(row.standard_id.as_str()))
+        .collect()
+}
+
+fn pressure_standard_coverage_focus(standards: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
+    standards
+        .iter()
+        .filter(|row| {
+            row.tier == "T1"
+                && matches!(row.standard_family.as_str(), "throughput" | "resilience")
+                && !row.evidence_level.eq_ignore_ascii_case("deprecated")
+        })
+        .collect()
+}
+
+fn pressure_scenario_unknown_standard_refs(
+    standards: &[StandardsProofRow],
+    scenarios: &[PressureScenarioRow],
+) -> Vec<String> {
+    let known = standards
+        .iter()
+        .map(|row| row.standard_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut unknown = pressure_standard_scenario_refs(scenarios)
+        .keys()
+        .filter(|standard_id| !known.contains(**standard_id))
+        .map(|standard_id| (*standard_id).to_string())
+        .collect::<Vec<_>>();
+    unknown.sort();
+    unknown
+}
+
+fn pressure_standard_scenario_refs(
+    scenarios: &[PressureScenarioRow],
+) -> std::collections::BTreeMap<&str, Vec<String>> {
+    let mut refs = std::collections::BTreeMap::new();
+    for row in scenarios {
+        for standard_id in row
+            .standards_tested
+            .split(';')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            refs.entry(standard_id)
+                .or_insert_with(Vec::new)
+                .push(row.scenario_id.clone());
+        }
+    }
+    refs
+}
+
 fn pressure_scenario_is_executable(row: &PressureScenarioRow) -> bool {
     matches!(
         row.current_status.trim().to_ascii_lowercase().as_str(),
@@ -7773,7 +7943,8 @@ mod tests {
         parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
         pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
         pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
-        pressure_scenario_readiness_gate_failures, rounded_score, scenario_edge_candidates,
+        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
+        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
         standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
         summarize_t1_failure_events, t1_failure_event_has_observation_contract,
         t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
@@ -8005,6 +8176,34 @@ S-L2-RELAY-HUB,relay-hub-outage,relay hub outage,T1-TRANSIT-HUB,Planned,route hu
     }
 
     #[test]
+    fn pressure_standard_coverage_focuses_high_stakes_t1_hooks() {
+        let standards_csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-OPS-PTI,T1,throughput,pti,outcome,mechanism,peak,gate,Heuristic,artifact,gap,next,C.1
+T1-OPS-SPEED,T1,throughput,speed,outcome,mechanism,weather,gate,Heuristic,artifact,gap,next,C.1
+T1-DIAMOND-K,T1,resilience,k,outcome,mechanism,closure,gate,Heuristic,artifact,gap,next,B.4
+T1-REST,T1,operations,rest,outcome,mechanism,outage,gate,Planned,artifact,gap,next,F
+T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,next,B.1
+";
+        let scenarios_csv = "\
+scenario_id,scenario_name,adversity_class,standards_tested,current_status,existing_artifact,blocking_gap,next_evidence_step
+S-L2-SLA,ny-la-sla,long-haul SLA,T1-OPS-PTI; T1-OPS-SPEED,Heuristic,route od,gap,next
+S-L2-DES-MOINES,des-moines,T1/T1 closure,T1-DIAMOND-K; T1-UNKNOWN,Heuristic,scenario.toml,gap,next
+";
+
+        let standards =
+            parse_standards_proof_ledger(standards_csv.as_bytes()).expect("parse standards");
+        let scenarios =
+            parse_pressure_scenarios(scenarios_csv.as_bytes()).expect("parse scenarios");
+
+        assert!(pressure_standard_coverage_failures(&standards, &scenarios).is_empty());
+        assert_eq!(
+            pressure_scenario_unknown_standard_refs(&standards, &scenarios),
+            vec!["T1-UNKNOWN".to_string()]
+        );
+    }
+
+    #[test]
     fn pressure_scenarios_canonical_ledger_passes_l2_and_readiness_gates() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../data/pressure-test-scenarios.csv");
@@ -8015,6 +8214,22 @@ S-L2-RELAY-HUB,relay-hub-outage,relay hub outage,T1-TRANSIT-HUB,Planned,route hu
         assert!(pressure_scenario_gate_failures(&rows).is_empty());
         assert!(pressure_scenario_missing_required_adversity(&rows).is_empty());
         assert!(pressure_scenario_readiness_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn pressure_scenarios_cover_canonical_high_stakes_t1_standards() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let scenarios_file = std::fs::File::open(root.join("data/pressure-test-scenarios.csv"))
+            .expect("open canonical pressure scenarios");
+        let standards_file = std::fs::File::open(root.join("data/standards-proof-ledger.csv"))
+            .expect("open canonical standards proof ledger");
+        let scenarios =
+            parse_pressure_scenarios(scenarios_file).expect("parse canonical pressure scenarios");
+        let standards =
+            parse_standards_proof_ledger(standards_file).expect("parse canonical standards");
+
+        assert!(pressure_standard_coverage_failures(&standards, &scenarios).is_empty());
+        assert!(pressure_scenario_unknown_standard_refs(&standards, &scenarios).is_empty());
     }
 
     #[test]

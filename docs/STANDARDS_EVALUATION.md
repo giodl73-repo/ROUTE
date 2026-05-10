@@ -109,6 +109,8 @@ Important current limitation: embedded TOML scenarios now bind stable graph edge
 
 `route pressure-scenarios` reads `data/pressure-test-scenarios.csv` and checks that each L2 scenario row has a named adversity class, tested standards, an artifact, a labeled status, and a next evidence step. This is a catalog contract, not proof that the scenarios already pass their acceptance gates.
 
+`route pressure-scenarios --coverage --gate-coverage` joins the scenario catalog to `data/standards-proof-ledger.csv` and verifies that every high-stakes T1 throughput/resilience standard has at least one L2 pressure-test hook. That gate is intentionally narrower than Blueprint readiness: energy, rest, operations, access, and asset-condition standards may still need L1 inventories or separate L2 scenarios, but the T1 standards that can make or break national SLA/resilience claims cannot remain implicit.
+
 Useful forms:
 
 ```text
@@ -120,6 +122,7 @@ route pressure-scenarios
 route pressure-scenarios --blockers --details
 route pressure-scenarios --gate-l2
 route pressure-scenarios --gate-readiness
+route pressure-scenarios --coverage --gate-coverage
 route hub-outage
 route ev-rest-outage
 route t1-failures
