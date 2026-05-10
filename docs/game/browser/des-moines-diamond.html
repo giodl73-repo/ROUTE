@@ -183,6 +183,7 @@
     }
 
     .project button,
+    .evidence button,
     .toolbar button {
       border: 1px solid var(--line);
       background: #ffffff;
@@ -193,6 +194,7 @@
     }
 
     .project button:focus,
+    .evidence button:focus,
     .toolbar button:focus {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
@@ -404,6 +406,7 @@
         <h2 style="margin-top:16px">Event Log</h2>
         <div class="event-log" id="event-log"></div>
         <h2 style="margin-top:16px">Session Log</h2>
+        <button type="button" id="download-log">Download CSV</button>
         <textarea id="session-log-output" aria-label="CLI-compatible session log" readonly rows="8"></textarea>
       </aside>
     </main>
@@ -585,6 +588,19 @@
       document.getElementById("session-log-output").value = lines.join("\n");
     }
 
+    function downloadSessionLog() {
+      const csv = document.getElementById("session-log-output").value;
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "des-moines-diamond-session.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
     function applyProject(project) {
       if (state.budget < project.cost) {
         eventLog.push(`Season ${state.season}: ${project.name} rejected; budget ${state.budget} is below cost ${project.cost}.`);
@@ -680,6 +696,7 @@
     document.getElementById("before").addEventListener("click", () => setPlayback("before"));
     document.getElementById("after").addEventListener("click", () => setPlayback("after"));
     document.getElementById("advance-season").addEventListener("click", advanceSeason);
+    document.getElementById("download-log").addEventListener("click", downloadSessionLog);
 
     updateTracks();
     renderProjects();

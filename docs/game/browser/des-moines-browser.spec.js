@@ -47,5 +47,16 @@ test.describe("Des Moines Diamond browser prototype", () => {
     await expect(page.getByText("Season 4: Source request completed.")).toBeVisible();
     await expect(page.getByText("Season 4: source challenge; publication remains locked.")).toBeVisible();
     await expect(page.getByLabel("CLI-compatible session log")).toHaveValue(/4,"source-request",0,6,5,4,4,3,1\.000,0\.9,"bounded heuristic"/);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download CSV" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("des-moines-diamond-session.csv");
+    const stream = await download.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const csv = Buffer.concat(chunks).toString("utf8");
+    expect(csv).toContain("accepted_projects");
+    expect(csv).toContain('4,"source-request",0,6,5,4,4,3,1.000,0.9,"bounded heuristic"');
   });
 });

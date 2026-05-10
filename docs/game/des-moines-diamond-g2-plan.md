@@ -82,7 +82,7 @@ G2-A second slice:
 
 1. Let the player choose projects for a season. Done in the static prototype.
 2. Resolve season in browser using the same deterministic rules as G1. Partial for immediate project effects and source challenge.
-3. Export or display a session log compatible with `route game score`. Done as the `CLI-compatible session log` panel; file export is still pending.
+3. Export or display a session log compatible with `route game score`. Done as the `CLI-compatible session log` panel and CSV download.
 
 ## Accessibility Gates
 
