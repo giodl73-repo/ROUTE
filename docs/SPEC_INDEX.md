@@ -10,6 +10,7 @@ Start here when deciding which document owns a claim.
 | `docs/INTERSTATE_TYCOON.md` | Game-facing product concept that translates ROUTE simulations into a highway tycoon experience | You need to explain or prototype ROUTE as a playable game |
 | `docs/game/interstate-tycoon-plan.md` | Execution plan for the Interstate Tycoon paper, CLI, browser, campaign, and public-demo phases | You need the current game build sequence and gates |
 | `docs/game/des-moines-diamond-g0.md` | First playable paper prototype for the Interstate Tycoon T1/T1 tutorial scenario | You need the G0 rules, cards, screen/copy/audio contracts, or session-log shape |
+| `docs/game/des-moines-diamond-amendments.md` | Forward-only amendment log for Des Moines Diamond rules and copy | You need to see which playtest findings changed the scenario |
 | `docs/game/des-moines-diamond-playtest.md` | Score sheet, season log, surprise log, and promotion checklist for Des Moines Diamond playtests | You need to run or review a G0 playtest |
 | `docs/game/des-moines-diamond-playthrough.md` | Narrated reference playthrough showing the intended topology aha and publication lock | You need the Tier-B transcript for review or blind-playtest comparison |
 | `docs/game/des-moines-diamond-blind-playtest-001.md` | First simulated blind-player playtest log and amendment candidates | You need the first G0 playtest evidence record |

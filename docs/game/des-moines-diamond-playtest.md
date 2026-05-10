@@ -2,7 +2,7 @@
 
 Use this packet to run and score a G0 paper playtest of `docs/game/des-moines-diamond-g0.md`.
 
-Scenario version: G0 v0.1  
+Scenario version: G0 v0.2
 Rubric version: Interstate Tycoon scenario rubric v0.1  
 Promotion target: G0-B Paper Playable, then G0-C Aha Proven
 
@@ -15,7 +15,7 @@ Promotion target: G0-B Paper Playable, then G0-C Aha Proven
 | Player / persona |  |
 | Familiarity with highway engineering | none / low / medium / high |
 | Familiarity with strategy games | none / low / medium / high |
-| Scenario version | G0 v0.1 |
+| Scenario version | G0 v0.2 |
 | Rules used | `docs/game/des-moines-diamond-g0.md` |
 | Notes path |  |
 
@@ -69,6 +69,15 @@ Result band:
 | 80-100 operational win |  |
 | 60-79 partial win |  |
 | 0-59 failure |  |
+
+Fiscal crisis:
+
+| Check | Value |
+|---|---|
+| Did budget go below zero? |  |
+| If yes, was debt explicitly enabled by scenario rule? | no |
+| Fiscal crisis triggered? |  |
+| Result cap applied? |  |
 
 Publication gate:
 
@@ -131,6 +140,7 @@ Promotion rule:
 |---|---|---|
 | Player completed a run from paper rules |  |  |
 | Forced tutorial closure produced the intended aha |  |  |
+| Player explained independent transfer paths before `k-connectivity` was named |  |  |
 | Player made at least one meaningful tradeoff |  |  |
 | Evidence labels stayed visible in scoring |  |  |
 | Operational win/loss separated from publication gate |  |  |

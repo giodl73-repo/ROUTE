@@ -3,11 +3,13 @@
 Des Moines Diamond is the first Interstate Tycoon paper scenario. It turns the Milepost 4 T1/T1 pressure-test work into a playable proof: the player should discover that a national freight interchange can fail because of topology, not only because of lane capacity.
 
 Status: G0 paper prototype  
+Scenario version: G0 v0.2
 Evidence level: Heuristic  
 Primary ROUTE scenario: `crates/route-sim/src/scenarios/des-moines-interchange.toml`  
 Primary pressure row: `S-L2-DES-MOINES` in `data/pressure-test-scenarios.csv`
 Playtest packet: `docs/game/des-moines-diamond-playtest.md`
 Reference playthrough: `docs/game/des-moines-diamond-playthrough.md`
+Amendment log: `docs/game/des-moines-diamond-amendments.md`
 
 ## Player Promise
 
@@ -87,10 +89,13 @@ Prototype interpretation:
 | Intelligent routing | 2 | 1 | 1 | Reduces incident delay penalty | Heuristic | Poor reroute timing |
 | Relay hub reserve staffing | 2 | 1 | 1 | Protects driver swaps during outage | Heuristic | Missed relay windows |
 | EV/rest hardening | 2 | 1 | 1 | Protects queue and dwell-time buffers | Heuristic | Rest/charging outage |
-| General-purpose widening | 4 | 2 | 3 | Improves local capacity but does not add k-connectivity | Heuristic | Congestion-binding stress |
-| Evidence acquisition | 1 | 0 | 1 | Raises evidence confidence by 1 | Implemented as artifact plan | Locked publication gate |
+| General-purpose widening | 4 | 2 | 3 | Improves local capacity but does not add independent transfer paths | Heuristic | Congestion-binding stress |
+| Source request | 1 | 0 | 1 | Raises evidence confidence by 1 and names the missing source | Implemented as artifact plan | Unknown evidence blocker |
+| Validated evidence | 2 | 0 | 1 | Requires source request; raises evidence confidence by 2 if a matching observed artifact exists | Planned | Publication-grade proof |
 
 Project rule: the player may win the game with heuristic project effects, but the after-action report must keep publication gates locked when evidence remains weak.
+
+Budget rule: budget may not go below zero. A project the player cannot pay for cannot start. If an event forces an unpaid cost, mark fiscal crisis; Budget Discipline scores 0 and the result is capped at Partial Win.
 
 ## Event Cards
 
@@ -145,10 +150,12 @@ Publication gate:
 | Tier | Hint |
 |---|---|
 | Nudge | "The backup route is not failing everywhere. The transfer is failing." |
-| Push | "Count edge-disjoint paths through the 50-mile zone." |
+| Push | "Count independent transfer paths through the 50-mile zone." |
 | Shove | "Build redundancy first; then buy capacity." |
 
 Hints are free in G0. Later campaign mode can subtract mastery score for push/shove use.
+
+Language rule: before the first closure, say "backup path" or "transfer path." After the player sees the failure, say "independent transfer path." Only introduce `k-connectivity` after the player understands the path-count idea.
 
 ## Screen Sketches
 
@@ -169,7 +176,7 @@ No screen may rely on audio or prose alone to communicate a state change.
 | First warning | "Transfer capacity is collapsing at the interchange zone." |
 | Widening warning | "More lanes help congestion, but they do not create another path through the failure." |
 | Connector unlock | "Redundant transfer paths are now available. Test them under closure." |
-| Publication lock | "Operational win recorded. Publication claim locked: the Des Moines diamond node is not validated in the diamond ledger." |
+| Publication lock | "Operational win recorded. Publication claim locked: observed closure evidence is still missing." |
 | Full win | "You protected the transfer and told the truth about the evidence." |
 
 ## Audio Cue List
@@ -205,6 +212,15 @@ Each paper playtest should write one row per season.
 | `evidence_confidence` | `2` |
 | `publication_gate` | `locked: empirical closure evidence missing` |
 | `player_note` | `Widening did not solve topology` |
+
+## Tutorial End Condition
+
+The G0 tutorial can end before season 10 when:
+
+- The player completes or selects the diamond connector package.
+- The after-action report has been scored.
+- The player can explain capacity versus independent transfer paths.
+- Publication status is explicitly locked or unlocked.
 
 ## Verification Checklist
 
