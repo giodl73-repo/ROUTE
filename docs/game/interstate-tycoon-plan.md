@@ -45,6 +45,7 @@ The game succeeds when a non-specialist can say:
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
 | CLI game command | G1-B starting | `route game score` now derives Des Moines engine facts from route-sim and route-network when run from the CLI |
+| Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
 | Browser prototype | Not started | Map-first UI |
 
 ## Learning Inputs Folded In
@@ -280,8 +281,8 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Add a checked-in state fixture once browser or campaign persistence needs it.
-2. Start browser-prototype planning from the stable CLI loop.
+1. Start the G2-A browser prototype from `docs/game/des-moines-diamond-g2-plan.md`.
+2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
 5. Expand curated/validated T1/T1 anchors beyond Des Moines.

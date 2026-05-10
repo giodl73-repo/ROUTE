@@ -1,0 +1,20 @@
+{
+  "scenario_id": "des-moines-diamond",
+  "season": 3,
+  "budget": 7,
+  "construction_crews": 3,
+  "political_capital": 5,
+  "public_patience": 4,
+  "operations_capacity": 4,
+  "evidence_confidence": 2,
+  "active_projects": [],
+  "completed_projects": [
+    "diamond-connector-package"
+  ],
+  "first_closure_seen": true,
+  "connector_package_complete": true,
+  "source_requested": false,
+  "validated_evidence_available": false,
+  "fiscal_crisis": false,
+  "publication_gate": "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
+}
