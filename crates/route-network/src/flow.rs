@@ -204,3 +204,91 @@ fn bfs_augmenting_path(
     path.reverse();
     path
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{corridor_max_flow, national_max_flow};
+    use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
+    use geo_types::{coord, LineString};
+
+    fn node(id: u64, x: f64) -> HighwayNode {
+        HighwayNode {
+            id,
+            coord: coord! { x: x, y: 0.0 },
+            is_interchange: false,
+        }
+    }
+
+    fn edge(id: u64, route_id: &str, lane_count: Option<u8>, aadt: Option<u32>) -> HighwayEdge {
+        HighwayEdge {
+            id,
+            route_id: route_id.to_string(),
+            state: "TS".to_string(),
+            road_class: route_data::RoadClass::Interstate,
+            geometry: LineString::from(vec![coord! { x: 0.0, y: 0.0 }, coord! { x: 1.0, y: 0.0 }]),
+            length_miles: 1.0,
+            lane_count,
+            aadt,
+            pct_truck: None,
+            iri: None,
+            tti: None,
+            pti: None,
+            speed_limit: Some(65),
+        }
+    }
+
+    #[test]
+    fn corridor_max_flow_uses_minimum_capacity_segment_as_bottleneck() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(node(1, 0.0));
+        let b = graph.graph.add_node(node(2, 1.0));
+        let c = graph.graph.add_node(node(3, 2.0));
+        let wide = graph.graph.add_edge(a, b, edge(10, "I1", Some(4), None));
+        let narrow = graph.graph.add_edge(b, c, edge(20, "I1", Some(2), None));
+        graph.route_index.insert("I1".to_string(), vec![wide, narrow]);
+
+        let result = corridor_max_flow(&graph, "I1").expect("corridor result");
+
+        assert_eq!(result.max_flow_vpd, 91_200.0);
+        assert_eq!(result.mean_capacity_vpd, 136_800.0);
+        assert_eq!(result.bottleneck_edges, vec![narrow]);
+        assert_eq!(result.bottleneck_capacities, vec![91_200.0]);
+        assert_eq!(result.lane_addition_gain, vec![45_600.0]);
+        assert!(result.has_lane_data);
+    }
+
+    #[test]
+    fn national_max_flow_sums_parallel_paths_and_respects_sink_bottleneck() {
+        let mut graph = HighwayGraph::new();
+        let source = graph.graph.add_node(node(1, 0.0));
+        let a = graph.graph.add_node(node(2, 1.0));
+        let b = graph.graph.add_node(node(3, 1.0));
+        let merge = graph.graph.add_node(node(4, 2.0));
+        let sink = graph.graph.add_node(node(5, 3.0));
+        graph.graph.add_edge(source, a, edge(10, "I1", Some(2), None));
+        graph.graph.add_edge(a, merge, edge(11, "I1", Some(2), None));
+        graph.graph.add_edge(source, b, edge(20, "I2", Some(2), None));
+        graph.graph.add_edge(b, merge, edge(21, "I2", Some(2), None));
+        graph.graph.add_edge(merge, sink, edge(30, "I3", Some(3), None));
+
+        let max_flow = national_max_flow(&graph, source, sink);
+
+        assert_eq!(max_flow, 136_800.0);
+    }
+
+    #[test]
+    fn corridor_max_flow_uses_aadt_fallback_when_lane_count_is_missing() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(node(1, 0.0));
+        let b = graph.graph.add_node(node(2, 1.0));
+        let edge_idx = graph
+            .graph
+            .add_edge(a, b, edge(10, "I1", None, Some(70_000)));
+        graph.route_index.insert("I1".to_string(), vec![edge_idx]);
+
+        let result = corridor_max_flow(&graph, "I1").expect("corridor result");
+
+        assert_eq!(result.max_flow_vpd, 100_000.0);
+        assert!(!result.has_lane_data);
+    }
+}
