@@ -1746,6 +1746,74 @@ pub fn analyze_ev_charging(
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct EvRestOutageConfig {
+    pub station_spacing_miles: f64,
+    pub outage_station_fraction: f64,
+    pub backup_power_fraction: f64,
+    pub queue_delay_minutes: f64,
+}
+
+impl Default for EvRestOutageConfig {
+    fn default() -> Self {
+        Self {
+            station_spacing_miles: 50.0,
+            outage_station_fraction: 0.20,
+            backup_power_fraction: 0.50,
+            queue_delay_minutes: 45.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EvRestOutageResult {
+    pub corridor_name: String,
+    pub ev_name: String,
+    pub planned_stops: usize,
+    pub disrupted_stops: usize,
+    pub backup_absorbed_stops: usize,
+    pub queue_delay_hours: f64,
+    pub uncovered_stops: usize,
+    pub throughput_retention: f64,
+    pub viable: bool,
+}
+
+pub fn analyze_ev_rest_outage(
+    corridor: &OdCorridor,
+    ev: &EvProfile,
+    config: EvRestOutageConfig,
+) -> EvRestOutageResult {
+    let planned_stops = ev.stops_needed(corridor.total_miles());
+    let outage_fraction = config.outage_station_fraction.clamp(0.0, 1.0);
+    let backup_fraction = config.backup_power_fraction.clamp(0.0, 1.0);
+    let disrupted_stops = ((planned_stops as f64) * outage_fraction).ceil() as usize;
+    let backup_absorbed_stops = ((disrupted_stops as f64) * backup_fraction).floor() as usize;
+    let queue_exposed_stops = disrupted_stops.saturating_sub(backup_absorbed_stops);
+    let queue_delay_hours = queue_exposed_stops as f64 * config.queue_delay_minutes.max(0.0) / 60.0;
+
+    let spacing = config.station_spacing_miles.max(1.0);
+    let skippable_consecutive_stations =
+        ((ev.highway_range_miles / spacing).floor() as usize).saturating_sub(1);
+    let uncovered_stops = queue_exposed_stops.saturating_sub(skippable_consecutive_stations);
+    let throughput_retention = if planned_stops == 0 {
+        1.0
+    } else {
+        1.0 - (uncovered_stops as f64 / planned_stops as f64).clamp(0.0, 1.0)
+    };
+
+    EvRestOutageResult {
+        corridor_name: corridor.name.clone(),
+        ev_name: ev.name.to_string(),
+        planned_stops,
+        disrupted_stops,
+        backup_absorbed_stops,
+        queue_delay_hours,
+        uncovered_stops,
+        throughput_retention,
+        viable: uncovered_stops == 0,
+    }
+}
+
 /// Run passenger SLA simulation on a freight corridor definition (reuses segment geography).
 pub fn run_passenger_simulation(
     corridor: &OdCorridor,
@@ -2142,6 +2210,54 @@ mod tests {
         assert!(relay_managed.p95_hours.is_finite());
         assert!(relay_managed.pti.is_finite());
         assert!((0.0..=100.0).contains(&relay_managed.pct_under_48h));
+    }
+
+    #[test]
+    fn ev_rest_outage_bounds_queue_delay_and_viability() {
+        let corridor = test_corridor(1_000.0);
+        let ev = average_ev_2026();
+        let config = EvRestOutageConfig {
+            station_spacing_miles: 50.0,
+            outage_station_fraction: 0.50,
+            backup_power_fraction: 0.50,
+            queue_delay_minutes: 30.0,
+        };
+
+        let result = analyze_ev_rest_outage(&corridor, &ev, config);
+
+        assert_eq!(result.planned_stops, 4);
+        assert_eq!(result.disrupted_stops, 2);
+        assert_eq!(result.backup_absorbed_stops, 1);
+        assert_eq!(result.queue_delay_hours, 0.5);
+        assert_eq!(result.uncovered_stops, 0);
+        assert_eq!(result.throughput_retention, 1.0);
+        assert!(result.viable);
+    }
+
+    #[test]
+    fn ev_rest_outage_marks_uncovered_stops_when_range_buffer_is_exhausted() {
+        let corridor = test_corridor(1_000.0);
+        let ev = EvProfile {
+            name: "short range test EV",
+            highway_range_miles: 100.0,
+            charge_rate_kw: 100.0,
+            battery_kwh: 50.0,
+            kwh_per_mile: 0.5,
+        };
+        let config = EvRestOutageConfig {
+            station_spacing_miles: 50.0,
+            outage_station_fraction: 0.50,
+            backup_power_fraction: 0.0,
+            queue_delay_minutes: 45.0,
+        };
+
+        let result = analyze_ev_rest_outage(&corridor, &ev, config);
+
+        assert_eq!(result.planned_stops, 9);
+        assert_eq!(result.disrupted_stops, 5);
+        assert_eq!(result.uncovered_stops, 4);
+        assert!(result.throughput_retention < 1.0);
+        assert!(!result.viable);
     }
 
     #[test]

@@ -348,6 +348,100 @@ pub struct NetworkSummary {
     pub hub_staffings: Vec<HubStaffing>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct HubOutageConfig {
+    pub outage_hours: f64,
+    pub reserve_driver_fraction: f64,
+    pub adjacent_absorption_fraction: f64,
+}
+
+impl Default for HubOutageConfig {
+    fn default() -> Self {
+        Self {
+            outage_hours: 8.0,
+            reserve_driver_fraction: 0.15,
+            adjacent_absorption_fraction: 0.35,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HubOutageResult {
+    pub hub_name: String,
+    pub outage_hours: f64,
+    pub affected_swaps: f64,
+    pub reserve_absorbed_swaps: f64,
+    pub adjacent_absorbed_swaps: f64,
+    pub missed_swaps: f64,
+    pub throughput_retention: f64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HubOutageSummary {
+    pub results: Vec<HubOutageResult>,
+    pub total_affected_swaps: f64,
+    pub total_missed_swaps: f64,
+    pub network_throughput_retention: f64,
+    pub worst_hub_throughput_retention: f64,
+}
+
+pub fn run_hub_outage_sensitivity(
+    staffings: &[HubStaffing],
+    config: HubOutageConfig,
+) -> HubOutageSummary {
+    let outage_share = (config.outage_hours / 24.0).clamp(0.0, 1.0);
+    let reserve_fraction = config.reserve_driver_fraction.clamp(0.0, 1.0);
+    let adjacent_fraction = config.adjacent_absorption_fraction.clamp(0.0, 1.0);
+
+    let results = staffings
+        .iter()
+        .map(|staffing| {
+            let affected_swaps = staffing.daily_total_swaps as f64 * outage_share;
+            let reserve_absorbed_swaps =
+                (staffing.freight_relay_drivers as f64 * reserve_fraction).min(affected_swaps);
+            let remaining_after_reserve = (affected_swaps - reserve_absorbed_swaps).max(0.0);
+            let adjacent_absorbed_swaps = remaining_after_reserve * adjacent_fraction;
+            let missed_swaps = (remaining_after_reserve - adjacent_absorbed_swaps).max(0.0);
+            let throughput_retention = if affected_swaps > 0.0 {
+                1.0 - (missed_swaps / affected_swaps)
+            } else {
+                1.0
+            };
+
+            HubOutageResult {
+                hub_name: staffing.hub_name.clone(),
+                outage_hours: config.outage_hours,
+                affected_swaps,
+                reserve_absorbed_swaps,
+                adjacent_absorbed_swaps,
+                missed_swaps,
+                throughput_retention,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let total_affected_swaps = results.iter().map(|result| result.affected_swaps).sum();
+    let total_missed_swaps = results.iter().map(|result| result.missed_swaps).sum();
+    let network_throughput_retention = if total_affected_swaps > 0.0 {
+        1.0 - (total_missed_swaps / total_affected_swaps)
+    } else {
+        1.0
+    };
+    let worst_hub_throughput_retention = results
+        .iter()
+        .map(|result| result.throughput_retention)
+        .reduce(f64::min)
+        .unwrap_or(1.0);
+
+    HubOutageSummary {
+        results,
+        total_affected_swaps,
+        total_missed_swaps,
+        network_throughput_retention,
+        worst_hub_throughput_retention,
+    }
+}
+
 pub fn compute_network_summary(hubs: &[RelayHub]) -> NetworkSummary {
     let staffings: Vec<HubStaffing> = hubs.iter().map(|h| h.freight_drivers_needed()).collect();
     NetworkSummary {
@@ -358,5 +452,67 @@ pub fn compute_network_summary(hubs: &[RelayHub]) -> NetworkSummary {
         total_direct_jobs: staffings.iter().map(|s| s.total_direct_jobs).sum(),
         total_hub_employment: staffings.iter().map(|s| s.total_hub_employment).sum(),
         hub_staffings: staffings,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{run_hub_outage_sensitivity, HubOutageConfig, HubStaffing};
+
+    fn staffing(name: &str, swaps: u32, freight_drivers: u32) -> HubStaffing {
+        HubStaffing {
+            hub_name: name.to_string(),
+            daily_truck_swaps: swaps,
+            daily_bus_swaps: 0,
+            freight_relay_drivers: freight_drivers,
+            bus_relay_drivers: 0,
+            dispatchers: 0,
+            maintenance_staff: 0,
+            admin_scheduling: 0,
+            total_direct_jobs: freight_drivers,
+            total_indirect_jobs: 0,
+            total_hub_employment: freight_drivers,
+            avg_leg_miles: 440.0,
+            avg_leg_hours: 6.8,
+            daily_total_swaps: swaps,
+        }
+    }
+
+    #[test]
+    fn hub_outage_sensitivity_bounds_missed_swaps_and_retention() {
+        let staffings = vec![staffing("A", 240, 60), staffing("B", 120, 30)];
+        let config = HubOutageConfig {
+            outage_hours: 6.0,
+            reserve_driver_fraction: 0.10,
+            adjacent_absorption_fraction: 0.50,
+        };
+
+        let summary = run_hub_outage_sensitivity(&staffings, config);
+
+        assert_eq!(summary.results.len(), 2);
+        assert_eq!(summary.results[0].affected_swaps, 60.0);
+        assert_eq!(summary.results[0].reserve_absorbed_swaps, 6.0);
+        assert_eq!(summary.results[0].adjacent_absorbed_swaps, 27.0);
+        assert_eq!(summary.results[0].missed_swaps, 27.0);
+        assert!((summary.results[0].throughput_retention - 0.55).abs() < 1e-9);
+        assert!((summary.network_throughput_retention - 0.55).abs() < 1e-9);
+        assert!((summary.worst_hub_throughput_retention - 0.55).abs() < 1e-9);
+    }
+
+    #[test]
+    fn hub_outage_sensitivity_clamps_invalid_fractions() {
+        let staffings = vec![staffing("A", 24, 10)];
+        let config = HubOutageConfig {
+            outage_hours: 48.0,
+            reserve_driver_fraction: 2.0,
+            adjacent_absorption_fraction: -1.0,
+        };
+
+        let summary = run_hub_outage_sensitivity(&staffings, config);
+
+        assert_eq!(summary.results[0].affected_swaps, 24.0);
+        assert_eq!(summary.results[0].reserve_absorbed_swaps, 10.0);
+        assert_eq!(summary.results[0].adjacent_absorbed_swaps, 0.0);
+        assert_eq!(summary.results[0].missed_swaps, 14.0);
     }
 }

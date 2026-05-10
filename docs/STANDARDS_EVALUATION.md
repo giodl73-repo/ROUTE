@@ -120,6 +120,8 @@ route pressure-scenarios
 route pressure-scenarios --blockers --details
 route pressure-scenarios --gate-l2
 route pressure-scenarios --gate-readiness
+route hub-outage
+route ev-rest-outage
 route t1-failures
 route t1-failures --needs-sources
 route t1-failure-sources

@@ -584,8 +584,37 @@ enum Commands {
         include_proposed: bool,
     },
 
+    /// Relay hub outage sensitivity — missed swaps and absorption under hub disruption
+    HubOutage {
+        /// Include proposed hubs from missing link corridors
+        #[arg(long)]
+        include_proposed: bool,
+        /// Hub outage duration in hours
+        #[arg(long, default_value_t = 8.0)]
+        outage_hours: f64,
+        /// Reserve-driver fraction available for immediate absorption
+        #[arg(long, default_value_t = 0.15)]
+        reserve_driver_fraction: f64,
+        /// Remaining disrupted swaps adjacent hubs can absorb
+        #[arg(long, default_value_t = 0.35)]
+        adjacent_absorption_fraction: f64,
+    },
+
     /// EV charging analysis — guaranteed DCFC every 50mi enables overnight AV travel
     EvAnalysis,
+
+    /// EV/rest-area outage sensitivity — charger outage queues and range-buffer viability
+    EvRestOutage {
+        /// Fraction of planned charging/rest stops disrupted
+        #[arg(long, default_value_t = 0.20)]
+        outage_station_fraction: f64,
+        /// Fraction of disrupted stations covered by backup power or mobile charging
+        #[arg(long, default_value_t = 0.50)]
+        backup_power_fraction: f64,
+        /// Added queue/dwell minutes per disrupted unbacked stop
+        #[arg(long, default_value_t = 45.0)]
+        queue_delay_minutes: f64,
+    },
 
     /// Passenger travel matrix — what does I2.0 unlock for people, not just freight?
     PassengerMatrix {
@@ -3492,9 +3521,46 @@ fn run_cli() -> Result<()> {
             print_hub_staffing(&net, include_proposed);
         }
 
+        Commands::HubOutage {
+            include_proposed,
+            outage_hours,
+            reserve_driver_fraction,
+            adjacent_absorption_fraction,
+        } => {
+            let data_dir = std::path::PathBuf::from("data");
+            let confirmed_only = !include_proposed;
+            let hubs = route_sim::load_hubs(&data_dir, confirmed_only);
+            if hubs.is_empty() {
+                eprintln!("No hubs loaded — check data/relay-hubs.toml");
+            }
+            let net = route_sim::compute_network_summary(&hubs);
+            let config = route_sim::HubOutageConfig {
+                outage_hours,
+                reserve_driver_fraction,
+                adjacent_absorption_fraction,
+            };
+            let summary = route_sim::run_hub_outage_sensitivity(&net.hub_staffings, config);
+            print_hub_outage(&summary, config);
+        }
+
         Commands::EvAnalysis => {
             let data_dir = std::path::PathBuf::from("data");
             print_ev_analysis(&data_dir);
+        }
+
+        Commands::EvRestOutage {
+            outage_station_fraction,
+            backup_power_fraction,
+            queue_delay_minutes,
+        } => {
+            let data_dir = std::path::PathBuf::from("data");
+            let config = route_sim::EvRestOutageConfig {
+                station_spacing_miles: 50.0,
+                outage_station_fraction,
+                backup_power_fraction,
+                queue_delay_minutes,
+            };
+            print_ev_rest_outage(&data_dir, config);
         }
 
         Commands::PassengerMatrix { trips, seed } => {
@@ -3809,6 +3875,57 @@ fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool) {
     println!("  The operational model is identical. The regulation is the gap.");
 }
 
+fn print_hub_outage(summary: &route_sim::HubOutageSummary, config: route_sim::HubOutageConfig) {
+    println!("route hub-outage — relay hub outage sensitivity\n");
+    println!(
+        "Model: {:.1}h outage, {:.0}% reserve-driver absorption, {:.0}% adjacent-hub absorption of remaining swaps.\n",
+        config.outage_hours,
+        config.reserve_driver_fraction * 100.0,
+        config.adjacent_absorption_fraction * 100.0
+    );
+
+    println!(
+        "{:<35} {:>10}  {:>10}  {:>10}  {:>10}  {:>9}",
+        "Hub", "Affected", "Reserve", "Adjacent", "Missed", "Retain"
+    );
+    println!("{}", "─".repeat(95));
+
+    for result in &summary.results {
+        println!(
+            "{:<35} {:>10.1}  {:>10.1}  {:>10.1}  {:>10.1}  {:>8.1}%",
+            result
+                .hub_name
+                .split('(')
+                .next()
+                .unwrap_or(&result.hub_name)
+                .trim(),
+            result.affected_swaps,
+            result.reserve_absorbed_swaps,
+            result.adjacent_absorbed_swaps,
+            result.missed_swaps,
+            result.throughput_retention * 100.0
+        );
+    }
+
+    println!("{}", "─".repeat(95));
+    println!(
+        "{:<35} {:>10.1}  {:>10}  {:>10}  {:>10.1}  {:>8.1}%",
+        "NETWORK",
+        summary.total_affected_swaps,
+        "",
+        "",
+        summary.total_missed_swaps,
+        summary.network_throughput_retention * 100.0
+    );
+    println!(
+        "\n  Worst-hub retention: {:.1}%",
+        summary.worst_hub_throughput_retention * 100.0
+    );
+    println!(
+        "  Gate interpretation: this is a heuristic L2 outage bound; publication-grade proof still needs actual adjacent-hub capacity, driver reserve rosters, and dispatch recovery rules."
+    );
+}
+
 fn print_ev_analysis(data_dir: &std::path::Path) {
     use route_sim::analyze_ev_charging;
 
@@ -3915,6 +4032,62 @@ fn print_ev_analysis(data_dir: &std::path::Path) {
     println!(
         "    {} at relay hubs (driver swap + charge simultaneously)",
         a2.overnight_note
+    );
+}
+
+fn print_ev_rest_outage(data_dir: &std::path::Path, config: route_sim::EvRestOutageConfig) {
+    let corridors = vec![
+        route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
+        route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
+        route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
+        route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
+        route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
+        route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
+    ];
+    let evs = load_ev_profiles(data_dir);
+
+    println!("route ev-rest-outage — EV/rest-area outage sensitivity\n");
+    println!(
+        "Model: T1 charging every {:.0}mi, {:.0}% station outage, {:.0}% backup power/mobile charging, {:.0}min queue penalty.\n",
+        config.station_spacing_miles,
+        config.outage_station_fraction * 100.0,
+        config.backup_power_fraction * 100.0,
+        config.queue_delay_minutes
+    );
+    println!(
+        "{:<28} {:<24} {:>5}  {:>5}  {:>6}  {:>7}  {:>8}  {}",
+        "Corridor", "Vehicle", "Stops", "Out", "Backup", "Delay", "Retain", "Viable"
+    );
+    println!("{}", "─".repeat(106));
+
+    let mut worst_retention = 1.0_f64;
+    let mut failing = 0usize;
+    for corridor in &corridors {
+        for ev in &evs {
+            let result = route_sim::analyze_ev_rest_outage(corridor, ev, config);
+            worst_retention = worst_retention.min(result.throughput_retention);
+            if !result.viable {
+                failing += 1;
+            }
+            println!(
+                "{:<28} {:<24} {:>5}  {:>5}  {:>6}  {:>6.1}h  {:>7.1}%  {}",
+                truncate_for_table(&result.corridor_name, 28),
+                truncate_for_table(&result.ev_name, 24),
+                result.planned_stops,
+                result.disrupted_stops,
+                result.backup_absorbed_stops,
+                result.queue_delay_hours,
+                result.throughput_retention * 100.0,
+                if result.viable { "yes" } else { "no" }
+            );
+        }
+    }
+
+    println!("{}", "─".repeat(106));
+    println!("  Worst retention: {:.1}%", worst_retention * 100.0);
+    println!("  Non-viable corridor/vehicle pairs: {failing}");
+    println!(
+        "  Gate interpretation: this is a heuristic L2 outage bound; publication-grade proof still needs station inventory, grid outage distributions, and observed queue data."
     );
 }
 
