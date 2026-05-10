@@ -77,6 +77,7 @@ G2-A first slice:
 3. Render track strip and evidence drawer.
 4. Render publication hold separately from operational win.
 5. Provide pressure playback for the closure result.
+6. Render after-action score while keeping publication status separate. Done in the static prototype.
 
 G2-A second slice:
 

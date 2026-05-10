@@ -398,6 +398,19 @@
             <strong id="intervention-value">86,671</strong>
           </div>
         </div>
+
+        <div class="playback" aria-label="After-action report">
+          <div class="toolbar">
+            <strong>After-Action</strong>
+            <span class="badge locked"><strong>Publication</strong> <span id="after-publication">locked</span></span>
+          </div>
+          <div class="meter">
+            <span>Operational</span>
+            <div class="bar"><span id="score-bar" style="width:100%"></span></div>
+            <strong id="score-value">100/100</strong>
+          </div>
+          <p class="meta" id="after-action-copy">Operational win recorded. Publication claim locked: observed closure evidence is still missing.</p>
+        </div>
       </section>
 
       <aside class="evidence" aria-label="Evidence">
@@ -588,6 +601,28 @@
       document.getElementById("session-log-output").value = lines.join("\n");
     }
 
+    function scoreRows() {
+      const last = sessionRows.at(-1);
+      const throughput = sessionRows.some((row) => Number(row.throughput_retention) >= 0.8) ? 25 : 0;
+      const recovery = sessionRows.some((row) => Number(row.recovery_hours) <= 4.0) ? 20 : 0;
+      const sla = sessionRows.every((row) => row.sla_status.includes("bounded") || row.sla_status.includes("pass")) ? 15 : 0;
+      const budget = last.budget_remaining >= 0 ? 10 : 0;
+      const support = last.political_capital >= 0 && last.public_patience >= 0 ? 10 : 0;
+      const evidence = sessionRows.every((row) => row.publication_gate.includes("locked") || row.publication_gate.includes("unlocked")) ? 20 : 0;
+      return throughput + recovery + sla + budget + support + evidence;
+    }
+
+    function renderAfterAction() {
+      const score = scoreRows();
+      const locked = state.publication_gate.includes("locked");
+      document.getElementById("score-value").textContent = `${score}/100`;
+      document.getElementById("score-bar").style.width = `${score}%`;
+      document.getElementById("after-publication").textContent = locked ? "locked" : "unlocked";
+      document.getElementById("after-action-copy").textContent = locked
+        ? "Operational win recorded. Publication claim locked: observed closure evidence is still missing."
+        : "Operational win recorded. Publication claim unlocked.";
+    }
+
     function downloadSessionLog() {
       const csv = document.getElementById("session-log-output").value;
       const blob = new Blob([csv], { type: "text/csv" });
@@ -683,6 +718,7 @@
       renderProjects();
       renderEvents();
       renderSessionLog();
+      renderAfterAction();
     }
 
     function setPlayback(mode) {
@@ -703,6 +739,7 @@
     renderEvidence();
     renderEvents();
     renderSessionLog();
+    renderAfterAction();
   </script>
 </body>
 </html>

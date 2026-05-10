@@ -10,7 +10,7 @@ test.describe("Des Moines Diamond browser prototype", () => {
 
     await expect(page.getByRole("heading", { name: "Des Moines Diamond", exact: true })).toBeVisible();
     await expect(page.getByLabel("I-35 and I-80 Des Moines transfer topology")).toBeVisible();
-    await expect(page.getByText("Publication claim locked")).toBeVisible();
+    await expect(page.locator("footer").getByText("Publication claim locked until observed closure evidence")).toBeVisible();
     await expect(page.getByText("I35xI80 recognized; k=0; 3 connectors needed.")).toBeVisible();
     await expect(page.locator("#connector")).toBeVisible();
 
@@ -46,6 +46,8 @@ test.describe("Des Moines Diamond browser prototype", () => {
     await expect(page.locator("#evidence")).toHaveText("3");
     await expect(page.getByText("Season 4: Source request completed.")).toBeVisible();
     await expect(page.getByText("Season 4: source challenge; publication remains locked.")).toBeVisible();
+    await expect(page.locator("#score-value")).toHaveText("100/100");
+    await expect(page.locator("#after-publication")).toHaveText("locked");
     await expect(page.getByLabel("CLI-compatible session log")).toHaveValue(/4,"source-request",0,6,5,4,4,3,1\.000,0\.9,"bounded heuristic"/);
 
     const downloadPromise = page.waitForEvent("download");
