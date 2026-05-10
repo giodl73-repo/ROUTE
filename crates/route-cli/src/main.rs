@@ -259,6 +259,22 @@ enum Commands {
         gate_planned: bool,
     },
 
+    /// Show NBI bridge-condition coverage for tier bridge standards
+    StandardsBridges {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Tier to check, e.g. T1
+        #[arg(long, default_value = "T1")]
+        tier: String,
+        /// Show per-route bridge coverage rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if selected tier routes lack cached NBI bridge-condition coverage
+        #[arg(long)]
+        gate_l1: bool,
+    },
+
     /// Show L2 pressure-test scenario catalog readiness
     PressureScenarios {
         /// Path to L2 pressure-test scenario catalog CSV
@@ -2367,6 +2383,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Planned standard inventory gate: PASS");
+            }
+        }
+
+        Commands::StandardsBridges {
+            tier_table,
+            tier,
+            details,
+            gate_l1,
+        } => {
+            let routes = load_tier_routes(&tier_table, &tier)
+                .with_context(|| format!("loading tier table {}", tier_table.display()))?;
+            let nbi = load_nbi_bridges();
+            print_bridge_standard_coverage(&tier, &routes, &nbi, details);
+            if gate_l1 {
+                let missing = bridge_standard_missing_routes(&routes, &nbi);
+                if routes.is_empty() || nbi.is_empty() || !missing.is_empty() {
+                    println!();
+                    println!("Bridge standards L1 gate: FAIL");
+                    if routes.is_empty() {
+                        println!("  no routes found for tier {tier}");
+                    }
+                    if nbi.is_empty() {
+                        println!("  no cached NBI bridge summary rows loaded");
+                    }
+                    if !missing.is_empty() {
+                        println!("  missing NBI coverage: {}", missing.join(", "));
+                    }
+                    anyhow::bail!("bridge standards L1 gate failed");
+                }
+                println!();
+                println!("Bridge standards L1 gate: PASS");
             }
         }
 
@@ -5745,6 +5792,107 @@ fn planned_standard_inventory_missing<'a>(
         .collect()
 }
 
+fn load_tier_routes(path: &Path, tier: &str) -> Result<Vec<String>> {
+    let mut rdr = csv::Reader::from_path(path)?;
+    let headers = rdr.headers()?.clone();
+    let tier_idx = headers
+        .iter()
+        .position(|value| value == "tier")
+        .context("tier table missing tier column")?;
+    let route_idx = headers
+        .iter()
+        .position(|value| value == "route")
+        .context("tier table missing route column")?;
+    let mut routes = Vec::new();
+    for result in rdr.records() {
+        let row = result?;
+        if row
+            .get(tier_idx)
+            .unwrap_or("")
+            .trim()
+            .eq_ignore_ascii_case(tier)
+        {
+            let route = normalise_designation(row.get(route_idx).unwrap_or("").trim());
+            if !route.is_empty() {
+                routes.push(route);
+            }
+        }
+    }
+    routes.sort();
+    routes.dedup();
+    Ok(routes)
+}
+
+fn print_bridge_standard_coverage(
+    tier: &str,
+    routes: &[String],
+    nbi: &std::collections::HashMap<String, NbiBridgeRecord>,
+    details: bool,
+) {
+    let covered = routes
+        .iter()
+        .filter(|route| nbi.contains_key(*route))
+        .count();
+    let total_bridges: u32 = routes
+        .iter()
+        .filter_map(|route| nbi.get(route))
+        .map(|row| row.bridge_count)
+        .sum();
+    let total_poor: f32 = routes
+        .iter()
+        .filter_map(|route| nbi.get(route))
+        .map(|row| row.pct_bridges_poor * row.bridge_count as f32)
+        .sum();
+    let poor_pct = if total_bridges > 0 {
+        total_poor / total_bridges as f32
+    } else {
+        0.0
+    };
+    let missing = bridge_standard_missing_routes(routes, nbi);
+
+    println!("route standards-bridges");
+    println!("  tier: {tier}");
+    println!("  routes: {}", routes.len());
+    println!("  routes with NBI coverage: {covered}");
+    println!("  total bridges: {total_bridges}");
+    println!("  poor/critical bridge share: {:.2}%", poor_pct * 100.0);
+    println!("  missing coverage: {}", missing.len());
+    println!("  note: clearance and load-posting joins remain separate source gaps");
+
+    if details {
+        println!();
+        println!(
+            "{:<10} {:>8} {:>9} {:>10}",
+            "Route", "Bridges", "Poor %", "Mean Year"
+        );
+        println!("{}", "-".repeat(44));
+        for route in routes {
+            if let Some(row) = nbi.get(route) {
+                println!(
+                    "{:<10} {:>8} {:>8.2}% {:>10.0}",
+                    route,
+                    row.bridge_count,
+                    row.pct_bridges_poor * 100.0,
+                    row.mean_year_built
+                );
+            } else {
+                println!("{:<10} {:>8} {:>9} {:>10}", route, "-", "-", "-");
+            }
+        }
+    }
+}
+
+fn bridge_standard_missing_routes(
+    routes: &[String],
+    nbi: &std::collections::HashMap<String, NbiBridgeRecord>,
+) -> Vec<String> {
+    routes
+        .iter()
+        .filter(|route| !nbi.contains_key(*route))
+        .cloned()
+        .collect()
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct PressureScenarioRow {
     scenario_id: String,
@@ -8133,25 +8281,25 @@ fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, confidence_risk_dimensions, dimension_confidence_risks,
-        dimension_confidence_values, dimension_estimated_values, dimension_score_values,
-        gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
-        parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_standards_inventory, parse_standards_proof_ledger, parse_t1_diamond_validation,
-        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
-        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        parse_throughput_proof_matrix, planned_standard_inventory_missing,
-        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
-        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
-        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
-        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
-        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
-        standards_inventory_gate_failures, standards_inventory_row_has_contract,
-        summarize_t1_failure_events, t1_failure_event_has_observation_contract,
-        t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
-        t1_failure_row_has_evidence_contract, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
-        GapType, ScoreAllRow, ScoreSignalRow,
+        atlas_candidate_ids, bridge_standard_missing_routes, confidence_risk_dimensions,
+        dimension_confidence_risks, dimension_confidence_values, dimension_estimated_values,
+        dimension_score_values, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
+        parse_indot_trafficwise_events, parse_iowa511_events, parse_mdot_midrive_events,
+        parse_pressure_scenarios, parse_standards_inventory, parse_standards_proof_ledger,
+        parse_t1_diamond_validation, parse_t1_failure_events, parse_t1_failure_ledger,
+        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
+        parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        planned_standard_inventory_missing, pressure_scenario_gate_failures,
+        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
+        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
+        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
+        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
+        standards_inventory_row_has_contract, summarize_t1_failure_events,
+        t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
+        t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -8376,6 +8524,38 @@ T1-REST,rest ledger,state DOT,source_needed,artifact,T1 rest areas,gap,next
 
         assert!(standards_inventory_gate_failures(&inventory).is_empty());
         assert!(planned_standard_inventory_missing(&standards, &inventory).is_empty());
+    }
+
+    #[test]
+    fn bridge_standards_gate_flags_missing_nbi_routes() {
+        let routes = vec!["I10".to_string(), "I95".to_string()];
+        let mut nbi = std::collections::HashMap::new();
+        nbi.insert(
+            "I10".to_string(),
+            NbiBridgeRecord {
+                pct_bridges_poor: 0.01,
+                mean_year_built: 1980.0,
+                bridge_count: 100,
+            },
+        );
+
+        assert_eq!(bridge_standard_missing_routes(&routes, &nbi), vec!["I95"]);
+    }
+
+    #[test]
+    fn tier_route_loader_normalizes_generated_tier_table_routes() {
+        let path =
+            std::env::temp_dir().join(format!("route-tier-routes-{}.csv", std::process::id()));
+        std::fs::write(
+            &path,
+            "tier,route,score\nT1,I-95,98.3\nT1,I-10,95.9\nT2,I-64,55.0\n",
+        )
+        .expect("write tier table fixture");
+
+        let routes = load_tier_routes(&path, "T1").expect("load tier routes");
+
+        assert_eq!(routes, vec!["I10".to_string(), "I95".to_string()]);
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]
