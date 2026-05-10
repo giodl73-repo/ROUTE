@@ -7,6 +7,7 @@ Evidence level: Heuristic
 Primary ROUTE scenario: `crates/route-sim/src/scenarios/des-moines-interchange.toml`  
 Primary pressure row: `S-L2-DES-MOINES` in `data/pressure-test-scenarios.csv`
 Playtest packet: `docs/game/des-moines-diamond-playtest.md`
+Reference playthrough: `docs/game/des-moines-diamond-playthrough.md`
 
 ## Player Promise
 

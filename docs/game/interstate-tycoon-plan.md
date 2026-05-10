@@ -28,6 +28,7 @@ The game succeeds when a non-specialist can say:
 | Game concept | Drafted | `docs/INTERSTATE_TYCOON.md` |
 | First paper scenario | Drafted | `docs/game/des-moines-diamond-g0.md` |
 | First playtest packet | Drafted | `docs/game/des-moines-diamond-playtest.md` |
+| First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
 | Intervention hook | Heuristic executable | `route sim scenario des-moines-interchange --intervention` |
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
@@ -152,7 +153,7 @@ Immediate tasks:
 |---|---|---|
 | Write G0 scenario artifact | Done | `docs/game/des-moines-diamond-g0.md` |
 | Add playtest score sheet | Done | `docs/game/des-moines-diamond-playtest.md` |
-| Add first narrated playthrough | Next | A Tier-B transcript showing the intended aha |
+| Add first narrated playthrough | Done | `docs/game/des-moines-diamond-playthrough.md` |
 | Decide mismatch handling | Next | Fix diamond detection or add explicit blocker ledger row |
 | Run first panel pass | Pending | TIGRIS/HUNT/ASPECT/PROSE/SCORE/QUEST review notes |
 
@@ -269,9 +270,9 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Add a narrated playthrough that demonstrates the intended topology aha.
-2. Investigate the Des Moines diamond mismatch between `des-moines-interchange` and `route diamond`.
-3. Add a small CLI design note for `route game` state shape.
+1. Investigate the Des Moines diamond mismatch between `des-moines-interchange` and `route diamond`.
+2. Add a small CLI design note for `route game` state shape.
+3. Run a blind G0 playtest or simulated blind-player pass against the playtest packet.
 4. Run the first G0 panel pass after a playtest log exists.
 5. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 
