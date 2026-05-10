@@ -1,0 +1,11 @@
+map_id,path,map_type,render_command,expected_width,expected_height,min_bytes,tier_role,game_use
+national-tier,maps/all-tiers.png,national-tier,"route map all --output maps/all-tiers.png",2400,1350,400000,"T1/T2/T3/T4 national tier overview","Game campaign atlas and public project overview"
+beck-schematic,maps/beck-schematic.png,schematic,"route map beck --output maps/beck-schematic.png",2400,1350,250000,"T1 relay topology and hub graph","Tutorial topology explanation and campaign route network"
+i5-region,maps/i5.png,t1-region,"route map I-5 --output maps/i5.png",1800,1000,80000,"T1 corridor regional context","West Coast campaign node and corridor lesson"
+i10-region,maps/i10.png,t1-region,"route map I-10 --output maps/i10.png",1800,1000,100000,"T1 corridor regional context","Southern tier campaign node and port/surge lesson"
+i35-region,maps/i35.png,t1-region,"route map I-35 --output maps/i35.png",1800,1000,100000,"T1 corridor regional context","Des Moines tutorial and central spine campaign node"
+i40-region,maps/i40.png,t1-region,"route map I-40 --output maps/i40.png",1800,1000,100000,"T1 corridor regional context","East-west resilience and Appalachian gap lesson"
+i75-region,maps/i75.png,t1-region,"route map I-75 --output maps/i75.png",1800,1000,100000,"T1 corridor regional context","Great Lakes/Florida freight campaign node"
+i80-region,maps/i80.png,t1-region,"route map I-80 --output maps/i80.png",1800,1000,150000,"T1 corridor regional context","National cross-country resilience and Donner/Des Moines lessons"
+i90-region,maps/i90.png,t1-region,"route map I-90 --output maps/i90.png",1800,1000,150000,"T1 corridor regional context","Northern tier relay and winter resilience lesson"
+i95-region,maps/i95.png,t1-region,"route map I-95 --output maps/i95.png",1800,1000,100000,"T1 corridor regional context","Eastern seaboard metro/PTI campaign node"

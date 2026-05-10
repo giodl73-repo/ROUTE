@@ -50,6 +50,7 @@ The game succeeds when a non-specialist can say:
 | Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
 | First browser prototype | Drafted | `docs/game/browser/des-moines-diamond.html`; static map-first fixture playback with static and Playwright browser checks |
 | Browser prototype | Not started | Map-first UI |
+| Map atlas contract | Ready | `data/map-atlas.csv`; `route map-atlas --gate` verifies national, schematic, and T1 regional PNGs for campaign/game reuse |
 
 ## Learning Inputs Folded In
 

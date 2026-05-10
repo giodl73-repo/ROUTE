@@ -30,6 +30,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
 | `data/game/des-moines-diamond-session-fixture.csv` | Canonical G1-A score fixture for operational win with publication hold | You need stable score-output regression coverage |
 | `data/game/des-moines-diamond-state-fixture.json` | Canonical G2 seed state showing completed connector with publication hold | You need browser/campaign state fixture data |
+| `data/map-atlas.csv` | Map artifact manifest for national, schematic, and T1 regional maps | You need to regenerate or gate maps used by tier presentation and the game |
 | `data/standards-l1-inventory.csv` | L1 inventory/source ledger for standards blocked on asset or operations data | You need to know what source table must exist before a Planned standard can become testable |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |

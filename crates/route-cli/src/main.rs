@@ -127,6 +127,19 @@ enum Commands {
         color_by: Option<String>,
     },
 
+    /// Show tracked map atlas artifacts and verify PNG contracts
+    MapAtlas {
+        /// Path to map atlas manifest CSV
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        ledger: PathBuf,
+        /// Show full render command and game use
+        #[arg(long)]
+        details: bool,
+        /// Fail if tracked map artifacts are missing, tiny, or wrong dimensions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Regenerate corpus entry markdown from current graph attributes and scores
     Report {
         /// Interstate designation
@@ -1590,6 +1603,30 @@ fn run_cli() -> Result<()> {
                 scores.total(),
                 scores.a3.score
             );
+        }
+
+        Commands::MapAtlas {
+            ledger,
+            details,
+            gate,
+        } => {
+            let rows = load_map_atlas(&ledger)
+                .with_context(|| format!("loading map atlas {}", ledger.display()))?;
+            print_map_atlas(&rows, details);
+            if gate {
+                let failures = map_atlas_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Map atlas gate: FAIL");
+                    println!("  {} map artifacts failed contract.", failures.len());
+                    for failure in failures.iter().take(12) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("map atlas gate failed");
+                }
+                println!();
+                println!("Map atlas gate: PASS");
+            }
         }
 
         Commands::Report { designation } => {
@@ -5509,6 +5546,133 @@ fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<String> {
     ids
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct MapAtlasRow {
+    map_id: String,
+    path: String,
+    map_type: String,
+    render_command: String,
+    expected_width: u32,
+    expected_height: u32,
+    min_bytes: u64,
+    tier_role: String,
+    game_use: String,
+}
+
+fn load_map_atlas(path: &Path) -> Result<Vec<MapAtlasRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_map_atlas(file)
+}
+
+fn parse_map_atlas<R: std::io::Read>(reader: R) -> Result<Vec<MapAtlasRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_map_atlas(rows: &[MapAtlasRow], details: bool) {
+    let failures = map_atlas_gate_failures(rows);
+    let mut by_type = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_type.entry(row.map_type.clone()).or_insert(0usize) += 1;
+    }
+
+    println!("route map-atlas");
+    println!("  maps: {}", rows.len());
+    println!("  types: {}", format_count_map(&by_type));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<18} {:<22} {:<14} {:<12} {}",
+        "Map", "Path", "Type", "Contract", "Use"
+    );
+    println!("{}", "-".repeat(112));
+    for row in rows {
+        let contract = match png_dimensions(&map_atlas_artifact_path(&row.path)) {
+            Some((width, height)) => format!("{width}x{height}"),
+            None => "missing".to_string(),
+        };
+        println!(
+            "{:<18} {:<22} {:<14} {:<12} {}",
+            row.map_id,
+            truncate_for_table(&row.path, 22),
+            row.map_type,
+            contract,
+            row.tier_role
+        );
+        if details {
+            println!("  command: {}", row.render_command);
+            println!("  game: {}", row.game_use);
+        }
+    }
+}
+
+fn map_atlas_gate_failures(rows: &[MapAtlasRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("map atlas has no rows".to_string());
+    }
+    for row in rows {
+        if row.map_id.trim().is_empty()
+            || row.path.trim().is_empty()
+            || row.map_type.trim().is_empty()
+            || row.render_command.trim().is_empty()
+            || row.tier_role.trim().is_empty()
+            || row.game_use.trim().is_empty()
+        {
+            failures.push(format!("{} has empty manifest fields", row.map_id));
+            continue;
+        }
+        let path = map_atlas_artifact_path(&row.path);
+        let Ok(metadata) = std::fs::metadata(&path) else {
+            failures.push(format!("{} missing {}", row.map_id, row.path));
+            continue;
+        };
+        if metadata.len() < row.min_bytes {
+            failures.push(format!(
+                "{} too small: {} bytes < {}",
+                row.map_id,
+                metadata.len(),
+                row.min_bytes
+            ));
+        }
+        match png_dimensions(&path) {
+            Some((width, height))
+                if width == row.expected_width && height == row.expected_height => {}
+            Some((width, height)) => failures.push(format!(
+                "{} dimensions {}x{} != {}x{}",
+                row.map_id, width, height, row.expected_width, row.expected_height
+            )),
+            None => failures.push(format!("{} is not a readable PNG", row.map_id)),
+        }
+    }
+    failures
+}
+
+fn png_dimensions(path: &Path) -> Option<(u32, u32)> {
+    let bytes = std::fs::read(path).ok()?;
+    if bytes.len() < 24 || &bytes[0..8] != b"\x89PNG\r\n\x1a\n" {
+        return None;
+    }
+    let width = u32::from_be_bytes(bytes[16..20].try_into().ok()?);
+    let height = u32::from_be_bytes(bytes[20..24].try_into().ok()?);
+    Some((width, height))
+}
+
+fn map_atlas_artifact_path(path: &str) -> PathBuf {
+    let direct = PathBuf::from(path);
+    if direct.exists() || direct.is_absolute() {
+        direct
+    } else {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(path)
+    }
+}
+
 #[derive(Debug, Clone)]
 struct ScenarioEdgeCandidate {
     edge_id: u64,
@@ -8284,22 +8448,23 @@ mod tests {
         atlas_candidate_ids, bridge_standard_missing_routes, confidence_risk_dimensions,
         dimension_confidence_risks, dimension_confidence_values, dimension_estimated_values,
         dimension_score_values, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
-        parse_indot_trafficwise_events, parse_iowa511_events, parse_mdot_midrive_events,
-        parse_pressure_scenarios, parse_standards_inventory, parse_standards_proof_ledger,
-        parse_t1_diamond_validation, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
-        parse_tdot_smartway_events, parse_throughput_proof_matrix,
-        planned_standard_inventory_missing, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
-        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
-        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
-        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
-        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
-        standards_inventory_row_has_contract, summarize_t1_failure_events,
-        t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
-        t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
-        throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
+        map_atlas_gate_failures, parse_indot_trafficwise_events, parse_iowa511_events,
+        parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
+        parse_standards_inventory, parse_standards_proof_ledger, parse_t1_diamond_validation,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        parse_throughput_proof_matrix, planned_standard_inventory_missing,
+        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
+        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
+        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
+        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
+        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        standards_inventory_gate_failures, standards_inventory_row_has_contract,
+        summarize_t1_failure_events, t1_failure_event_has_observation_contract,
+        t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
+        t1_failure_row_has_evidence_contract, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
+        GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -8556,6 +8721,31 @@ T1-REST,rest ledger,state DOT,source_needed,artifact,T1 rest areas,gap,next
 
         assert_eq!(routes, vec!["I10".to_string(), "I95".to_string()]);
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn map_atlas_manifest_requires_existing_png_contracts() {
+        let csv = "\
+map_id,path,map_type,render_command,expected_width,expected_height,min_bytes,tier_role,game_use
+missing,maps/does-not-exist.png,national,route map all,2400,1350,100,tier overview,campaign atlas
+";
+
+        let rows = parse_map_atlas(csv.as_bytes()).expect("parse map atlas");
+        let failures = map_atlas_gate_failures(&rows);
+
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("missing maps/does-not-exist.png"));
+    }
+
+    #[test]
+    fn map_atlas_canonical_manifest_passes_contract_gate() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/map-atlas.csv");
+        let file = std::fs::File::open(path).expect("open canonical map atlas");
+        let rows = parse_map_atlas(file).expect("parse canonical map atlas");
+
+        assert!(!rows.is_empty());
+        assert!(map_atlas_gate_failures(&rows).is_empty());
     }
 
     #[test]

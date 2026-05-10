@@ -52,6 +52,7 @@ Goal: make the existing network corpus and tier map reproducible from commands.
 | Historical v1.2 candidate docs are clearly labeled as non-current | ✅ done | `data/t1-candidates.md`, `data/t2-candidates.md`, `data/t3-candidates.md` historical banners |
 | Corpus report entries record command, rubric version, data version, confidence, and estimation flags | ✅ done | `route report I80` writes provenance and matches `data/scores-all.csv` score/confidence |
 | Tier map can be regenerated from current score ledger | ✅ done | `route map all` reads `data/scores-all.csv` and regenerates `maps/all-tiers.png` |
+| Core map atlas has a manifest and gate before game reuse | ✅ done | `data/map-atlas.csv` tracks the national tier map, Beck schematic, and T1 regional maps; `route map-atlas --gate` checks PNG existence, dimensions, and minimum size |
 | Basemap claim is either implemented or downgraded explicitly | ✅ done | Spec now labels current map as projected network + state/city labels; polygon basemap deferred |
 
 Milestone 2 is done when `route score-all`, `route calibrate`, and the tier map command regenerate tracked Atlas artifacts from a clean worktree.
