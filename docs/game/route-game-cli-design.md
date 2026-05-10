@@ -183,7 +183,7 @@ The CLI score must match the paper dimensions.
 
 G1-A can use fixed heuristic values from the current Des Moines engine facts. G1-B should call/summarize ROUTE outputs more directly.
 
-Current G1-B bridge: `route game score` prints a compact Des Moines engine-facts block with baseline throughput, incident throughput, intervention throughput, recovery hours, current diamond k, connectors needed, and evidence level. These facts are still static constants copied from live ROUTE outputs; the next step is to derive them directly from `route-sim` and `route-network`.
+Current G1-B bridge: `route game score` prints a compact Des Moines engine-facts block with baseline throughput, incident throughput, intervention throughput, recovery hours, current diamond k, connectors needed, and evidence level. The CLI derives these values from the embedded `des-moines-interchange` scenario plus the current diamond analyzer when scoring from the command line. Unit tests still keep a fixture-level fallback for fast output-contract checks.
 
 ## Publication Gate
 

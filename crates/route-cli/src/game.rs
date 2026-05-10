@@ -511,10 +511,14 @@ pub fn score_cli(
     log_path: &Path,
     details: bool,
     gate_promotion: bool,
+    engine_facts_override: Option<EngineFacts>,
 ) -> Result<()> {
     scenario_by_id(scenario_id)?;
     let body = std::fs::read_to_string(log_path)?;
-    let result = score_session_log(scenario_id, body.as_bytes())?;
+    let mut result = score_session_log(scenario_id, body.as_bytes())?;
+    if let Some(engine_facts) = engine_facts_override {
+        result.engine_facts = Some(engine_facts);
+    }
     if gate_promotion && !result.promotion_readiness.starts_with("ready") {
         anyhow::bail!("{}", result.promotion_readiness);
     }
