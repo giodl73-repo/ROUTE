@@ -4869,10 +4869,18 @@ fn parse_standards_proof_ledger<R: std::io::Read>(reader: R) -> Result<Vec<Stand
     Ok(rows)
 }
 
+fn standards_evidence_level_is_allowed(level: &str) -> bool {
+    matches!(
+        level.trim().to_ascii_lowercase().as_str(),
+        "implemented" | "heuristic" | "stub" | "planned" | "deprecated"
+    )
+}
+
 fn standards_blueprint_gate_failures(rows: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
     rows.iter()
         .filter(|row| {
-            !row.evidence_level.eq_ignore_ascii_case("Implemented")
+            !standards_evidence_level_is_allowed(&row.evidence_level)
+                || !row.evidence_level.eq_ignore_ascii_case("Implemented")
                 || !row.blocking_gap.trim().is_empty()
         })
         .collect()
@@ -6534,8 +6542,9 @@ mod tests {
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
         parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
         pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract, rounded_score,
-        scenario_edge_candidates, standards_blueprint_gate_failures, summarize_t1_failure_events,
-        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        scenario_edge_candidates, standards_blueprint_gate_failures,
+        standards_evidence_level_is_allowed, summarize_t1_failure_events, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -6680,6 +6689,30 @@ T3-COVERAGE,T3,access,coverage,outcome,mechanism,gap,gate,Implemented,artifact,,
         let failures = standards_blueprint_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].standard_id, "T1-DIAMOND-K");
+    }
+
+    #[test]
+    fn standards_proof_evidence_levels_use_blueprint_vocabulary() {
+        for level in ["Implemented", "Heuristic", "Stub", "Planned", "Deprecated"] {
+            assert!(standards_evidence_level_is_allowed(level));
+        }
+        assert!(standards_evidence_level_is_allowed(" heuristic "));
+        assert!(!standards_evidence_level_is_allowed("unknown"));
+        assert!(!standards_evidence_level_is_allowed(""));
+    }
+
+    #[test]
+    fn standards_blueprint_gate_rejects_unknown_evidence_levels() {
+        let csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-UNKNOWN,T1,resilience,claim,outcome,mechanism,closure,gate,Unlabeled,artifact,,next,B.4
+";
+
+        let rows = parse_standards_proof_ledger(csv.as_bytes()).expect("parse proof ledger");
+        let failures = standards_blueprint_gate_failures(&rows);
+
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].standard_id, "T1-UNKNOWN");
     }
 
     #[test]

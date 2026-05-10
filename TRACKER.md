@@ -94,7 +94,7 @@ The central blocker is T1/T1 interchange resilience. The current system concentr
 | L0 tests cover primitive invariants for max-flow, incident degradation, SLA arithmetic, relay timing, and k-connectivity | ✅ done | Incident degradation/restoration, max-flow bottleneck/parallel-path behavior, relay spacing/driver-mode behavior, SLA arithmetic, and k-connectivity edge-disjoint path behavior are covered |
 | L1 tests verify generated pressure-test artifacts are reproducible from stable fixtures | 🔄 partial | `route standards-proof` parses `data/standards-proof-ledger.csv`; `route pressure-scenarios` parses `data/pressure-test-scenarios.csv`; embedded scenario TOMLs parse and expose readiness warnings |
 | L2 tests run representative scenarios and assert bounded outputs rather than headline-only claims | 🔄 partial | Synthetic T1 closure, NY-LA SLA, Houston-Chicago/I-69, and Miami-NYC port-corridor fixtures now bound representative outputs; remaining work is calibrated demand/empirical sensitivity |
-| Unproven standards are labeled before Blueprint work consumes them | ⏳ not started | Standards should enter Milepost 6 only as Implemented, Heuristic, Stub, Planned, or Deprecated |
+| Unproven standards are labeled before Blueprint work consumes them | ✅ done | `route standards-proof --gate-blueprint` now rejects unknown evidence labels and unresolved non-Implemented standards; allowed labels are Implemented, Heuristic, Stub, Planned, or Deprecated |
 
 Milestone 4 is done when every active standard has a proof record, T1/T1 interchange resilience has passed or been explicitly downgraded, and `cargo test --workspace` protects the L0/L1/L2 pressure-test path.
 
