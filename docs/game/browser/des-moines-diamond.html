@@ -137,6 +137,19 @@
       gap: 10px;
     }
 
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      border: 1px solid var(--line);
+      padding: 8px;
+      resize: vertical;
+      font-family: Consolas, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
     .project,
     .evidence-item,
     .event-item {
@@ -390,6 +403,8 @@
         <div class="evidence-list" id="evidence-list"></div>
         <h2 style="margin-top:16px">Event Log</h2>
         <div class="event-log" id="event-log"></div>
+        <h2 style="margin-top:16px">Session Log</h2>
+        <textarea id="session-log-output" aria-label="CLI-compatible session log" readonly rows="8"></textarea>
       </aside>
     </main>
 
@@ -435,6 +450,37 @@
       "Season 2: connector package under construction.",
       "Season 3: closure stress sees redundant transfer paths.",
       "After-action: operational win, publication locked."
+    ];
+
+    const sessionRows = [
+      {
+        season: 1,
+        accepted_projects: "work-zone-sequencing",
+        rejected_count: 0,
+        budget_remaining: 11,
+        political_capital: 5,
+        public_patience: 6,
+        operations_capacity: 4,
+        evidence_confidence: 2,
+        throughput_retention: "0.962",
+        recovery_hours: "0.9",
+        sla_status: "bounded heuristic",
+        publication_gate: state.publication_gate
+      },
+      {
+        season: 2,
+        accepted_projects: "relay-hub-reserve-staffing",
+        rejected_count: 0,
+        budget_remaining: 9,
+        political_capital: 5,
+        public_patience: 6,
+        operations_capacity: 4,
+        evidence_confidence: 2,
+        throughput_retention: "0.962",
+        recovery_hours: "0.9",
+        sla_status: "bounded heuristic",
+        publication_gate: state.publication_gate
+      }
     ];
 
     function renderProjects() {
@@ -499,6 +545,46 @@
       document.getElementById("evidence").textContent = state.evidence_confidence;
     }
 
+    function csvCell(value) {
+      const text = String(value);
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+
+    function renderSessionLog() {
+      const columns = [
+        "season",
+        "accepted_projects",
+        "rejected_count",
+        "budget_remaining",
+        "political_capital",
+        "public_patience",
+        "operations_capacity",
+        "evidence_confidence",
+        "throughput_retention",
+        "recovery_hours",
+        "sla_status",
+        "publication_gate"
+      ];
+      const lines = [columns.join(",")];
+      for (const row of sessionRows) {
+        lines.push([
+          row.season,
+          csvCell(row.accepted_projects),
+          row.rejected_count,
+          row.budget_remaining,
+          row.political_capital,
+          row.public_patience,
+          row.operations_capacity,
+          row.evidence_confidence,
+          row.throughput_retention,
+          row.recovery_hours,
+          csvCell(row.sla_status),
+          csvCell(row.publication_gate)
+        ].join(","));
+      }
+      document.getElementById("session-log-output").value = lines.join("\n");
+    }
+
     function applyProject(project) {
       if (state.budget < project.cost) {
         eventLog.push(`Season ${state.season}: ${project.name} rejected; budget ${state.budget} is below cost ${project.cost}.`);
@@ -546,17 +632,41 @@
       state.season += 1;
       state.construction_crews = 3;
       const eventSlug = document.getElementById("event-select").value;
+      const accepted = [];
+      let rejected = 0;
       for (const slug of selectedProjects) {
         const project = projects.find((item) => item.slug === slug);
         if (project) {
+          const beforeBudget = state.budget;
+          const beforeCompleted = state.completed_projects.length;
           applyProject(project);
+          if (state.budget !== beforeBudget || state.completed_projects.length > beforeCompleted) {
+            accepted.push(project.slug);
+          } else {
+            rejected += 1;
+          }
         }
       }
       selectedProjects.clear();
       applyEvent(eventSlug);
+      sessionRows.push({
+        season: state.season,
+        accepted_projects: accepted.join("; "),
+        rejected_count: rejected,
+        budget_remaining: state.budget,
+        political_capital: state.political_capital,
+        public_patience: state.public_patience,
+        operations_capacity: state.operations_capacity,
+        evidence_confidence: state.evidence_confidence,
+        throughput_retention: state.completed_projects.includes("diamond-connector-package") ? "1.000" : "0.962",
+        recovery_hours: "0.9",
+        sla_status: state.operations_capacity >= 0 ? "bounded heuristic" : "missed: operations capacity below zero",
+        publication_gate: state.publication_gate
+      });
       updateTracks();
       renderProjects();
       renderEvents();
+      renderSessionLog();
     }
 
     function setPlayback(mode) {
@@ -575,6 +685,7 @@
     renderProjects();
     renderEvidence();
     renderEvents();
+    renderSessionLog();
   </script>
 </body>
 </html>

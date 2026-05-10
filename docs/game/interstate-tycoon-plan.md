@@ -282,7 +282,7 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Export or display a browser session log compatible with `route game score`.
+1. Add one-click browser session-log download.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.

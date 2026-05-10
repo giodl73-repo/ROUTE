@@ -46,5 +46,6 @@ test.describe("Des Moines Diamond browser prototype", () => {
     await expect(page.locator("#evidence")).toHaveText("3");
     await expect(page.getByText("Season 4: Source request completed.")).toBeVisible();
     await expect(page.getByText("Season 4: source challenge; publication remains locked.")).toBeVisible();
+    await expect(page.getByLabel("CLI-compatible session log")).toHaveValue(/4,"source-request",0,6,5,4,4,3,1\.000,0\.9,"bounded heuristic"/);
   });
 });
