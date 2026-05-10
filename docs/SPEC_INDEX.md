@@ -8,6 +8,7 @@ Start here when deciding which document owns a claim.
 | `docs/DIMENSIONS.md` | Current 16-dimension registry, evidence path, and truth label | You need the canonical rubric dimension list |
 | `docs/STANDARDS_EVALUATION.md` | Standards proof obligations, pressure-test gates, and T1/T1 evaluation framing | You need to know whether a tier standard has earned its place |
 | `docs/INTERSTATE_TYCOON.md` | Game-facing product concept that translates ROUTE simulations into a highway tycoon experience | You need to explain or prototype ROUTE as a playable game |
+| `docs/game/des-moines-diamond-g0.md` | First playable paper prototype for the Interstate Tycoon T1/T1 tutorial scenario | You need the G0 rules, cards, screen/copy/audio contracts, or session-log shape |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
 | `data/t1-failure-source-plan.csv` | Source acquisition plan for T1/T1 failure-rate and reroute fields | You need to know which DOT/FHWA data systems can fill failure evidence gaps |

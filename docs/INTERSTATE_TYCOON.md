@@ -393,7 +393,7 @@ Each scenario should have a playable win condition and a publication gate. Winni
 
 ### Phase G0 - Paper Prototype
 
-Write the Des Moines Diamond scenario as board-game rules:
+Write the Des Moines Diamond scenario as board-game rules. Current artifact: [`docs/game/des-moines-diamond-g0.md`](game/des-moines-diamond-g0.md).
 
 - Map zones
 - Project cards
