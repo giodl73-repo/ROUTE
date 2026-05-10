@@ -378,6 +378,9 @@ enum Commands {
         /// Print fetch/import/accumulate command details
         #[arg(long)]
         details: bool,
+        /// Print runnable fetch/import/accumulate commands in execution order
+        #[arg(long)]
+        script: bool,
         /// Fail if snapshot rows lack cadence, commands, or output paths
         #[arg(long)]
         gate_plan: bool,
@@ -2485,11 +2488,16 @@ fn run_cli() -> Result<()> {
             ledger,
             priority,
             details,
+            script,
             gate_plan,
         } => {
             let rows = load_t1_snapshot_plan(&ledger)
                 .with_context(|| format!("loading T1 snapshot plan {}", ledger.display()))?;
-            print_t1_snapshot_plan(&rows, priority.as_deref(), details);
+            if script {
+                print_t1_snapshot_script(&rows, priority.as_deref());
+            } else {
+                print_t1_snapshot_plan(&rows, priority.as_deref(), details);
+            }
 
             if gate_plan {
                 let failures = t1_snapshot_plan_gate_failures(&rows);
@@ -6507,6 +6515,37 @@ fn print_t1_snapshot_plan(rows: &[T1SnapshotPlanRow], priority: Option<&str>, de
     }
 }
 
+fn print_t1_snapshot_script(rows: &[T1SnapshotPlanRow], priority: Option<&str>) {
+    let filtered = filtered_t1_snapshot_rows(rows, priority);
+
+    println!("route t1-snapshot-plan --script");
+    println!("  feeds: {} shown / {} total", filtered.len(), rows.len());
+    println!();
+    for row in filtered {
+        println!(
+            "# {} {} ({})",
+            row.site_id, row.intersection, row.source_name
+        );
+        println!("{}", row.fetch_command);
+        println!("{}", row.import_command);
+        println!("{}", row.accumulate_command);
+        println!();
+    }
+}
+
+fn filtered_t1_snapshot_rows<'a>(
+    rows: &'a [T1SnapshotPlanRow],
+    priority: Option<&str>,
+) -> Vec<&'a T1SnapshotPlanRow> {
+    rows.iter()
+        .filter(|row| {
+            priority
+                .map(|priority| row.priority_band.eq_ignore_ascii_case(priority))
+                .unwrap_or(true)
+        })
+        .collect()
+}
+
 fn t1_snapshot_plan_gate_failures(rows: &[T1SnapshotPlanRow]) -> Vec<&T1SnapshotPlanRow> {
     rows.iter()
         .filter(|row| !t1_snapshot_plan_row_has_contract(row))
@@ -8149,6 +8188,21 @@ T1X-BAD,I-35 x I-40,B,Bad Source,live/implemented/snapshot_only,eventually,fetch
 
         assert_eq!(rows.len(), 2);
         assert!(super::t1_snapshot_plan_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn t1_snapshot_plan_priority_filter_drives_script_scope() {
+        let csv = "\
+site_id,intersection,priority_band,source_name,source_health,cadence,fetch_command,import_command,accumulate_command,raw_output,normalized_output,accumulated_output,blocking_gap,next_step
+T1X-I35-I80,I-35 x I-80,A,Iowa DOT 511,live/implemented/snapshot_only,daily,route t1-fetch-iowa511,route t1-import-iowa511,route t1-accumulate-events,data/cache/iowa.json,data/cache/iowa.csv,data/t1-failure-events.csv,gap,next
+T1X-I5-I10,I-5 x I-10,B,Caltrans PeMS,live/implemented/snapshot_only,daily,route t1-fetch-caltrans,route t1-import-caltrans,route t1-accumulate-events,data/cache/caltrans.json,data/cache/caltrans.csv,data/t1-failure-events.csv,gap,next
+";
+
+        let rows = parse_t1_snapshot_plan(csv.as_bytes()).expect("parse snapshot plan");
+        let filtered = super::filtered_t1_snapshot_rows(&rows, Some("A"));
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].site_id, "T1X-I35-I80");
     }
 
     #[test]
