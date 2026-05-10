@@ -1,5 +1,6 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
@@ -117,6 +118,21 @@ struct SessionLogRow {
     recovery_hours: f64,
     sla_status: String,
     publication_gate: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CampaignRow {
+    order: u8,
+    phase_name: String,
+    scenario_id: String,
+    scenario_name: String,
+    map_id: String,
+    tier_focus: String,
+    standard_lesson: String,
+    evidence_gate: String,
+    playable_status: String,
+    publication_gate: String,
+    next_artifact: String,
 }
 
 #[derive(Clone, Debug)]
@@ -526,6 +542,21 @@ pub fn score_cli(
     Ok(())
 }
 
+pub fn campaign_cli(ledger_path: &Path, map_atlas_path: &Path, gate: bool) -> Result<()> {
+    let rows = load_campaign_spine(ledger_path)?;
+    let atlas_ids = load_map_atlas_ids(map_atlas_path)?;
+    let blockers = campaign_gate_blockers(&rows, &atlas_ids);
+
+    print!("{}", render_campaign_spine(&rows, blockers.len()));
+    if gate && !blockers.is_empty() {
+        anyhow::bail!("campaign spine gate failed: {}", blockers.join("; "));
+    }
+    if gate {
+        println!("Campaign spine gate: PASS");
+    }
+    Ok(())
+}
+
 pub fn default_state(scenario_id: &str) -> Result<GameState> {
     scenario_by_id(scenario_id)?;
     Ok(GameState {
@@ -548,6 +579,106 @@ pub fn default_state(scenario_id: &str) -> Result<GameState> {
             "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
                 .to_string(),
     })
+}
+
+fn load_campaign_spine(path: &Path) -> Result<Vec<CampaignRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_campaign_spine(file)
+}
+
+fn parse_campaign_spine<R: std::io::Read>(reader: R) -> Result<Vec<CampaignRow>> {
+    let mut reader = csv::Reader::from_reader(reader);
+    let rows = reader
+        .deserialize()
+        .collect::<std::result::Result<Vec<CampaignRow>, csv::Error>>()?;
+    Ok(rows)
+}
+
+fn load_map_atlas_ids(path: &Path) -> Result<HashSet<String>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    map_atlas_ids_from_reader(&mut reader)
+}
+
+fn map_atlas_ids_from_reader<R: std::io::Read>(
+    reader: &mut csv::Reader<R>,
+) -> Result<HashSet<String>> {
+    let headers = reader.headers()?.clone();
+    let map_id_idx = headers
+        .iter()
+        .position(|header| header == "map_id")
+        .ok_or_else(|| anyhow::anyhow!("map atlas is missing map_id column"))?;
+    let mut ids = HashSet::new();
+    for record in reader.records() {
+        let record = record?;
+        let map_id = record.get(map_id_idx).unwrap_or_default().trim();
+        if !map_id.is_empty() {
+            ids.insert(map_id.to_string());
+        }
+    }
+    Ok(ids)
+}
+
+fn campaign_gate_blockers(rows: &[CampaignRow], atlas_ids: &HashSet<String>) -> Vec<String> {
+    let mut blockers = Vec::new();
+    if rows.len() != 8 {
+        blockers.push(format!("expected 8 campaign rows, found {}", rows.len()));
+    }
+    for (idx, row) in rows.iter().enumerate() {
+        let expected_order = (idx + 1) as u8;
+        if row.order != expected_order {
+            blockers.push(format!(
+                "{} order is {}, expected {}",
+                row.scenario_id, row.order, expected_order
+            ));
+        }
+        if row.phase_name.trim().is_empty()
+            || row.scenario_id.trim().is_empty()
+            || row.scenario_name.trim().is_empty()
+            || row.tier_focus.trim().is_empty()
+            || row.standard_lesson.trim().is_empty()
+            || row.evidence_gate.trim().is_empty()
+            || row.playable_status.trim().is_empty()
+            || row.publication_gate.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            blockers.push(format!("{} has a blank required field", row.scenario_id));
+        }
+        if !atlas_ids.contains(&row.map_id) {
+            blockers.push(format!(
+                "{} references unknown map_id {}",
+                row.scenario_id, row.map_id
+            ));
+        }
+        if !row.publication_gate.starts_with("locked:") {
+            blockers.push(format!(
+                "{} publication gate must stay explicit and locked",
+                row.scenario_id
+            ));
+        }
+    }
+    if rows.first().map(|row| row.scenario_id.as_str()) != Some(DES_MOINES_SCENARIO_ID) {
+        blockers.push("campaign must start with des-moines-diamond".to_string());
+    }
+    blockers
+}
+
+fn render_campaign_spine(rows: &[CampaignRow], blocker_count: usize) -> String {
+    let mut out = String::from("route game campaign\n");
+    out.push_str(&format!("  stops: {}\n", rows.len()));
+    out.push_str(&format!("  gate blockers: {blocker_count}\n\n"));
+    out.push_str(
+        "Order  Phase            Scenario                       Map              Status\n",
+    );
+    out.push_str(
+        "--------------------------------------------------------------------------------\n",
+    );
+    for row in rows {
+        out.push_str(&format!(
+            "{:<6} {:<16} {:<30} {:<16} {}\n",
+            row.order, row.phase_name, row.scenario_name, row.map_id, row.playable_status
+        ));
+    }
+    out
 }
 
 pub fn run_season(
@@ -1081,6 +1212,39 @@ mod tests {
         assert!(rendered.contains(DES_MOINES_SCENARIO_ID));
         assert!(rendered.contains("G0-B pass; G1-A start"));
         assert!(rendered.contains("locked: empirical closure evidence"));
+    }
+
+    #[test]
+    fn campaign_spine_links_all_stops_to_map_atlas() {
+        let campaign = include_str!("../../../data/game/campaign-spine.csv");
+        let atlas = include_str!("../../../data/map-atlas.csv");
+        let rows = parse_campaign_spine(campaign.as_bytes()).expect("campaign spine");
+        let mut atlas_reader = csv::Reader::from_reader(atlas.as_bytes());
+        let atlas_ids = map_atlas_ids_from_reader(&mut atlas_reader).expect("map atlas ids");
+        let blockers = campaign_gate_blockers(&rows, &atlas_ids);
+        let rendered = render_campaign_spine(&rows, blockers.len());
+
+        assert!(blockers.is_empty(), "{blockers:?}");
+        assert_eq!(rows.len(), 8);
+        assert_eq!(rows[0].scenario_id, DES_MOINES_SCENARIO_ID);
+        assert!(rendered.contains("Ignition"));
+        assert!(rendered.contains("i35-region"));
+        assert!(rendered.contains("Blueprint Hearing"));
+    }
+
+    #[test]
+    fn campaign_spine_gate_rejects_unknown_map_ids() {
+        let campaign = "\
+order,phase_name,scenario_id,scenario_name,map_id,tier_focus,standard_lesson,evidence_gate,playable_status,publication_gate,next_artifact
+1,Ignition,des-moines-diamond,Des Moines Diamond,missing-map,T1/T1,lesson,evidence,G0-A seed,locked: missing evidence,next
+";
+        let rows = parse_campaign_spine(campaign.as_bytes()).expect("campaign spine");
+        let atlas_ids = HashSet::new();
+        let blockers = campaign_gate_blockers(&rows, &atlas_ids);
+
+        assert!(blockers
+            .iter()
+            .any(|blocker| blocker.contains("references unknown map_id missing-map")));
     }
 
     #[test]

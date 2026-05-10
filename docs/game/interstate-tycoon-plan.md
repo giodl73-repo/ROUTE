@@ -46,6 +46,7 @@ The game succeeds when a non-specialist can say:
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
+| Campaign spine ledger | Ready | `data/game/campaign-spine.csv`; `route game campaign --gate` ties all 8 stops to map atlas ids, lessons, evidence gates, and publication gates |
 | CLI game command | G1-B starting | `route game score` now derives Des Moines engine facts from route-sim and route-network when run from the CLI |
 | Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
 | First browser prototype | Drafted | `docs/game/browser/des-moines-diamond.html`; static map-first fixture playback with static and Playwright browser checks |
@@ -235,14 +236,16 @@ Scenario order:
 
 | Order | Scenario | Standard lesson |
 |---:|---|---|
-| 1 | Des Moines Diamond | T1/T1 topology and recovery |
-| 2 | Donner Weather Closure | climate resilience and alternate capacity |
-| 3 | Atlanta Managed-Lane Stress | managed freight lanes and downstream merge honesty |
-| 4 | Houston Port Surge | port access, flood stress, and relief corridors |
-| 5 | NY-LA 48-Hour SLA | relay buffers, PTI, and shipper planning windows |
-| 6 | Relay Network Outage | operations capacity and workforce reliability |
-| 7 | EV/Rest Hardening | energy/rest standards under outages |
-| 8 | Blueprint Hearing | evidence labels and public proof |
+| 1 | Ignition: Des Moines Diamond | T1/T1 topology and recovery |
+| 2 | Mountain Pass: Donner Weather Closure | climate resilience and alternate capacity |
+| 3 | Merge Test: Atlanta Managed-Lane Stress | managed freight lanes and downstream merge honesty |
+| 4 | Port Surge: Houston Port Surge | port access, flood stress, and relief corridors |
+| 5 | Time Trial: NY-LA 48-Hour SLA | relay buffers, PTI, and shipper planning windows |
+| 6 | Relay Blackout: Relay Network Outage | operations capacity and workforce reliability |
+| 7 | Hardening Stop: EV/Rest Hardening | energy/rest standards under outages |
+| 8 | Hearing Room: Blueprint Hearing | evidence labels and public proof |
+
+Canonical campaign rows live in `data/game/campaign-spine.csv`. The prose table is a readable mirror; the gate owns map-id and publication-gate completeness.
 
 Done criteria:
 
@@ -287,10 +290,11 @@ Done criteria:
 
 1. Run the human browser blind playtest or record owner acceptance of simulated evidence.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
-3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
-4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
-5. Work the A-band queue from `route t1-diamond-validation --priority A --docket --with-access`.
-6. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
+3. Draft the Mountain Pass paper scenario from `data/game/campaign-spine.csv`.
+4. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
+5. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
+6. Work the A-band queue from `route t1-diamond-validation --priority A --docket --with-access`.
+7. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 
 ## Open Decisions
 

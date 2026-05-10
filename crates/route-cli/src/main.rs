@@ -886,6 +886,22 @@ enum SimMode {
 enum GameCommand {
     /// List playable Interstate Tycoon scenarios
     Scenarios,
+    /// Show the map-backed Interstate Tycoon campaign spine
+    Campaign {
+        /// Path to campaign spine CSV
+        #[arg(
+            long,
+            default_value = "data/game/campaign-spine.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to map atlas manifest CSV
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        map_atlas: PathBuf,
+        /// Fail if the campaign spine is incomplete or references missing map ids
+        #[arg(long)]
+        gate: bool,
+    },
     /// Print setup, cards, gates, and engine hooks for a scenario
     Inspect {
         /// Scenario id, e.g. des-moines-diamond
@@ -2952,6 +2968,11 @@ fn run_cli() -> Result<()> {
 
         Commands::Game { command } => match command {
             GameCommand::Scenarios => game::print_scenarios(),
+            GameCommand::Campaign {
+                ledger,
+                map_atlas,
+                gate,
+            } => game::campaign_cli(&ledger, &map_atlas, gate)?,
             GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
             GameCommand::RunSeason {
                 scenario,

@@ -28,6 +28,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/browser/check-des-moines-browser.ps1` | Static fixture-contract check for the Des Moines browser prototype | You need to verify browser fixture copy and required regions without a browser harness |
 | `docs/game/browser/des-moines-browser.spec.js` | Playwright desktop/mobile smoke check for the Des Moines browser prototype | You need screenshot-era browser regression coverage |
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
+| `data/game/campaign-spine.csv` | Map-backed Interstate Tycoon campaign sequence with lessons, evidence gates, publication gates, and next artifacts | You need to know what game scenario comes after Des Moines or verify `route game campaign --gate` |
 | `data/game/des-moines-diamond-session-fixture.csv` | Canonical G1-A score fixture for operational win with publication hold | You need stable score-output regression coverage |
 | `data/game/des-moines-diamond-state-fixture.json` | Canonical G2 seed state showing completed connector with publication hold | You need browser/campaign state fixture data |
 | `data/map-atlas.csv` | Map artifact manifest for national, schematic, and T1 regional maps | You need to regenerate or gate maps used by tier presentation and the game |
