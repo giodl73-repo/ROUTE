@@ -37,6 +37,80 @@ HUNT contributes reveal structure: how a player learns a complex system through 
 
 The design principle to steal hardest is: solving should leave the player knowing more. If a player beats Des Moines Diamond, they should be able to explain why a single T1/T1 interchange is fragile and why redundancy is not the same thing as raw capacity.
 
+## ASPECT Transfer
+
+ASPECT contributes the screen grammar. Interstate Tycoon should not merely show maps; every screen should make a specific infrastructure claim visible, legible, and honest.
+
+| ASPECT element | ROUTE game translation |
+|---|---|
+| Aim | Each screen has one job: diagnose, choose, stress, replay, or justify |
+| School | Each screen names its visual grammar: Beck topology, Minard flow, Tufte small multiples, Rosling playback, Neurath icons, Nightingale accountability |
+| Precision | Encodings are explicit and stable across the game |
+| Effect | The player feels the right pressure: scarcity, fragility, recovery, or public accountability |
+| Clarity | The first read is map-first and decision-ready, not a decorative dashboard |
+| Truth | Every claim exposes evidence level, source status, and uncertainty |
+
+Screen families:
+
+| Screen | Visual school | Job |
+|---|---|---|
+| National map | Beck topology plus Minard flow | Show tier structure, freight flows, bottlenecks, and fragile transfers |
+| Scenario board | Board-game map | Make projects, events, resources, and turns playable |
+| Evidence drawer | Tufte table | Separate observed, modeled, heuristic, planned, and source-needed claims |
+| Pressure playback | Rosling/Minard animation | Show before/after flow retention under adversity |
+| Public scorecard | Nightingale/Du Bois accountability | Explain who benefits, who waits, and which promises were met |
+
+Visual encoding contract:
+
+| Data element | Encoding |
+|---|---|
+| Corridor tier | Route hue and label |
+| Throughput | Stroke width |
+| Failure or stress | Warning overlay and event icon |
+| Confidence | Opacity plus evidence badge |
+| `source_needed` | Dashed outline and lock icon |
+| Time | Season scrubber and event log |
+| Project cost | Card cost, crew slots, and budget track |
+| SLA | Commitment-window meter |
+
+The screen rule is simple: every visual claim gets one encoding and one evidence label.
+
+## PROSE Transfer
+
+PROSE contributes the writing contract. The game should explain complex infrastructure without flattening it into slogans.
+
+| PROSE element | ROUTE game translation |
+|---|---|
+| Purpose | Each sentence must help the player decide, understand, or trust the claim |
+| Reader | Text assumes an intelligent player who may not know highway engineering |
+| Organization | Scenario copy moves from hook, to evidence, to choice, to consequence |
+| Style | Plain, concrete, and operational; no bureaucratic fog |
+| Economy | Short labels in UI; longer explanations only in evidence and after-action views |
+
+Writing rules:
+
+- A project name should imply its mechanism: "Diamond connector package" beats "Mobility improvement."
+- A warning should name the failing system: "Transfer capacity is collapsing at the interchange zone."
+- A win/loss summary should teach the lesson the scenario was built to reveal.
+- A public claim should carry its evidence level in the same sentence or table row.
+- Flavor can dramatize pressure, but cannot hide uncertainty.
+
+## QUEST Transfer
+
+QUEST contributes campaign structure, continuity, and the engine/narrative split.
+
+| QUEST element | ROUTE game translation |
+|---|---|
+| Treasures are the story | Projects are not generic upgrades; each one changes the network's future options |
+| Deterministic engine | ROUTE owns state, metrics, event resolution, and reproducibility |
+| Narrative layer | Advisors, stakeholders, and briefings explain consequences without changing math |
+| Session log | Each season writes decisions, events, evidence labels, and score changes |
+| Checkpoint/resume | Campaign state is re-entrant and auditable |
+| Surprise log | Playtests record where players learned, stalled, or found an unintended strategy |
+| Forward-only rubric | Scenario scoring can improve over time without rewriting old campaign records |
+
+Campaign consequence rule: if a player underbuilds resilience, that debt should follow them. If they overbuild a corridor, the opportunity cost should appear somewhere else. The campaign should feel like a civic system remembering what happened.
+
 ## Target Experience Profile
 
 The game should not be a spreadsheet wearing a map. It should have a board-game-clear loop with a serious engine underneath.
@@ -249,7 +323,7 @@ Using hints can cost public confidence, score, or nothing depending on audience.
 
 ## Scenario Authoring Contract
 
-Every playable scenario should have a HUNT/TIGRIS-style artifact bundle:
+Every playable scenario should have a HUNT/TIGRIS/ASPECT/PROSE/QUEST artifact bundle:
 
 - Concept: one-sentence player-facing hook
 - Map: corridors, nodes, and stress points
@@ -260,9 +334,29 @@ Every playable scenario should have a HUNT/TIGRIS-style artifact bundle:
 - Scoring gates: success, partial success, failure
 - ROUTE commands: exact engine hooks behind the scenario
 - Hints: nudge, push, shove
+- Screen contract: aim, visual school, encodings, and evidence badges
+- Copy contract: player-facing labels, warning text, and after-action explanation
+- Campaign contract: persistent consequences, save/resume fields, and session log shape
 - Verification: tests or CLI gates proving the scenario still runs
 
 This keeps game design from drifting away from the engine.
+
+## Campaign Spine
+
+The first campaign should turn the pressure-test library into a playable proof arc.
+
+| Scenario | Lesson | ROUTE proof path |
+|---|---|---|
+| Des Moines Diamond | T1/T1 redundancy is topology, not lane count | k-connectivity, throughput retention, failure observations |
+| Donner Weather Closure | Resilience depends on alternate winter capacity and recovery windows | incident degradation, weather closure, SLA buffers |
+| Atlanta Managed-Lane Stress | Managed lanes protect reliability only if demand and merge behavior are honest | managed-lane sensitivity and PTI proof |
+| Houston Port Surge | Port access fails differently under flood, surge, and connector stress | intermodal gaps and port-corridor scenarios |
+| NY-LA 48-Hour SLA | Relay buffers and p95 planning windows decide whether promises survive incidents | SLA proof table and relay timing |
+| Relay Network Outage | Operations capacity can be the bottleneck even when pavement exists | `route hub-outage` |
+| EV/Rest Hardening | Energy and rest standards protect freight only when outages are modeled | `route ev-rest-outage` |
+| Blueprint Hearing | Public proof requires evidence labels, not just a winning score | standards proof ledger and panel review |
+
+Each scenario should have a playable win condition and a publication gate. Winning teaches the system; publication proves the claim.
 
 ## Build Plan
 
@@ -275,9 +369,12 @@ Write the Des Moines Diamond scenario as board-game rules:
 - Event cards
 - Evidence cards
 - Layered hints
+- Screen sketches with ASPECT encodings
+- Player-facing copy with PROSE labels
 - Resource tracks
 - Turn sequence
 - Win/loss conditions
+- Session log and checkpoint fields
 
 ### Phase G1 - CLI Prototype
 
@@ -294,6 +391,14 @@ Likely commands:
 
 Build a small map-first UI around one scenario. The first screen is the playable map, not a landing page.
 
+Required checks:
+
+- The map has stable encodings for tier, throughput, stress, confidence, and SLA.
+- Every project card exposes cost, effect, evidence, and failure mode.
+- The evidence drawer separates observed from modeled claims.
+- The pressure playback shows what changed after the player's intervention.
+- No screen relies on explanatory wall text to make the game playable.
+
 ### Phase G3 - Campaign
 
 Add a national campaign:
@@ -305,6 +410,16 @@ Add a national campaign:
 - NY-LA 48-hour SLA
 - Relay network outage
 - EV/rest-area outage
+- Blueprint hearing
+
+### Phase G4 - Public Demo
+
+Package the campaign as the friendly proof surface for Interstate 2.0:
+
+- A player can learn why each standard exists.
+- A reviewer can inspect the evidence behind each effect.
+- A policymaker can see the cost of ignoring resilience.
+- A developer can reproduce the scenario from ROUTE commands.
 
 ## Design Rule
 
