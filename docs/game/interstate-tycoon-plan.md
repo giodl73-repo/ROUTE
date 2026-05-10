@@ -29,6 +29,7 @@ The game succeeds when a non-specialist can say:
 | First paper scenario | Drafted | `docs/game/des-moines-diamond-g0.md` |
 | First playtest packet | Drafted | `docs/game/des-moines-diamond-playtest.md` |
 | First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
+| CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
 | Intervention hook | Heuristic executable | `route sim scenario des-moines-interchange --intervention` |
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
@@ -270,9 +271,9 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Add a small CLI design note for `route game` state shape.
-2. Run a blind G0 playtest or simulated blind-player pass against the playtest packet.
-3. Start the first G0 panel pass after a playtest log exists.
+1. Run a blind G0 playtest or simulated blind-player pass against the playtest packet.
+2. Start the first G0 panel pass after a playtest log exists.
+3. Implement `route game scenarios` and `route game inspect des-moines-diamond`.
 4. Expand curated/validated T1/T1 anchors beyond Des Moines.
 5. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 
