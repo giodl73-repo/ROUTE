@@ -95,6 +95,36 @@ Writing rules:
 - A public claim should carry its evidence level in the same sentence or table row.
 - Flavor can dramatize pressure, but cannot hide uncertainty.
 
+PROSE also gives the review lenses for scenario text:
+
+| Lens | Interstate Tycoon use |
+|---|---|
+| Copy Editor | UI labels, card text, and warnings are correct and consistent |
+| Developmental Editor | The scenario opens, escalates, and resolves in the right order |
+| First Reader | A new player can tell what changed and why it matters |
+| Subject Expert | Highway, freight, SLA, and evidence claims are technically defensible |
+| Rhetorician | The demo persuades without hiding uncertainty or overselling heuristics |
+
+## SCORE Transfer
+
+SCORE contributes the audio and tempo contract. Interstate Tycoon does not need a large soundtrack at first, but it does need sound and pacing that help the player feel system pressure without manipulating the evidence.
+
+| SCORE element | ROUTE game translation |
+|---|---|
+| Structure | Seasons, events, closures, recovery, and hearings have a clear rhythmic arc |
+| Craft | Sound cues and pacing reinforce real state changes, not decoration |
+| Originality | The game should sound like logistics, infrastructure, and public consequence, not generic city-builder music |
+| Resonance | Audio should make fragility, relief, and accountability legible |
+| Economy | Every cue earns its place; silence is allowed when the player needs to think |
+
+Audio contract:
+
+- Closure, recovery, SLA miss, budget exhaustion, evidence unlock, and publication gate each get distinct cues.
+- Cue intensity follows modeled severity, not dramatic convenience.
+- Repeated turns use variation so the campaign does not punish long strategic play.
+- Audio can guide attention, but it cannot be the only place a state change is communicated.
+- Demo mode can use stronger musical identity; analysis mode should stay quieter.
+
 ## QUEST Transfer
 
 QUEST contributes campaign structure, continuity, and the engine/narrative split.
@@ -323,7 +353,7 @@ Using hints can cost public confidence, score, or nothing depending on audience.
 
 ## Scenario Authoring Contract
 
-Every playable scenario should have a HUNT/TIGRIS/ASPECT/PROSE/QUEST artifact bundle:
+Every playable scenario should have a HUNT/TIGRIS/ASPECT/PROSE/SCORE/QUEST artifact bundle:
 
 - Concept: one-sentence player-facing hook
 - Map: corridors, nodes, and stress points
@@ -336,6 +366,7 @@ Every playable scenario should have a HUNT/TIGRIS/ASPECT/PROSE/QUEST artifact bu
 - Hints: nudge, push, shove
 - Screen contract: aim, visual school, encodings, and evidence badges
 - Copy contract: player-facing labels, warning text, and after-action explanation
+- Audio contract: cues, intensity rules, silence points, and accessibility fallback
 - Campaign contract: persistent consequences, save/resume fields, and session log shape
 - Verification: tests or CLI gates proving the scenario still runs
 
@@ -371,6 +402,7 @@ Write the Des Moines Diamond scenario as board-game rules:
 - Layered hints
 - Screen sketches with ASPECT encodings
 - Player-facing copy with PROSE labels
+- Audio cue list with SCORE economy rules
 - Resource tracks
 - Turn sequence
 - Win/loss conditions
@@ -398,6 +430,7 @@ Required checks:
 - The evidence drawer separates observed from modeled claims.
 - The pressure playback shows what changed after the player's intervention.
 - No screen relies on explanatory wall text to make the game playable.
+- Audio cues are mirrored visually and can be disabled without losing game state.
 
 ### Phase G3 - Campaign
 
