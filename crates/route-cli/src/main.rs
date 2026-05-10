@@ -7279,6 +7279,19 @@ S-L2-RELAY-HUB,relay-hub-outage,relay hub outage,T1-TRANSIT-HUB,Planned,route hu
     }
 
     #[test]
+    fn pressure_scenarios_canonical_ledger_passes_l2_and_readiness_gates() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/pressure-test-scenarios.csv");
+        let file = std::fs::File::open(path).expect("open canonical pressure scenarios");
+        let rows = parse_pressure_scenarios(file).expect("parse canonical pressure scenarios");
+
+        assert!(!rows.is_empty());
+        assert!(pressure_scenario_gate_failures(&rows).is_empty());
+        assert!(pressure_scenario_missing_required_adversity(&rows).is_empty());
+        assert!(pressure_scenario_readiness_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
     fn throughput_proof_matrix_separates_congestion_and_resilience_contracts() {
         let csv = "\
 proof_id,proof_name,binding_type,stressor,primary_metric,existing_artifact,current_status,blocking_gap,next_evidence_step
@@ -7296,6 +7309,17 @@ BAD,Missing binding,unknown,peak demand,,artifact,unknown,gap,
         let failures = throughput_proof_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].proof_id, "BAD");
+    }
+
+    #[test]
+    fn throughput_proof_canonical_matrix_passes_contract_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/throughput-proof-matrix.csv");
+        let file = std::fs::File::open(path).expect("open canonical throughput proof matrix");
+        let rows = parse_throughput_proof_matrix(file).expect("parse canonical throughput proof");
+
+        assert!(!rows.is_empty());
+        assert!(throughput_proof_gate_failures(&rows).is_empty());
     }
 
     #[test]
