@@ -6,6 +6,8 @@ The sell is simple: players do not read a standards paper first. They inherit to
 
 Execution plan: [`docs/game/interstate-tycoon-plan.md`](game/interstate-tycoon-plan.md).
 
+Growth model: scenarios move through seed, paper playtest, session log, surprise log, panel review, amendment, CLI encoding, browser playtest, and campaign promotion. The game grows only from evidence: repeated findings become rule amendments, and recurring cross-scenario patterns can earn new skills, gates, cards, or player-style labels.
+
 ## TIGRIS Transfer
 
 TIGRIS contributes the design discipline, not the subject matter.

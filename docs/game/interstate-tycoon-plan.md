@@ -35,6 +35,94 @@ The game succeeds when a non-specialist can say:
 | CLI game command | Not started | Planned `route game ...` |
 | Browser prototype | Not started | Map-first UI |
 
+## Learning Inputs Folded In
+
+Interstate Tycoon is not inventing a new process. It folds the portfolio's working loops into one game-building machine.
+
+| Source | Learning absorbed | Game consequence |
+|---|---|---|
+| ROUTE | Standards must earn their place under pressure | Every scenario maps fun choices to proof gates |
+| TIGRIS | Board games grow through axes, gaps, Parliament, and playthroughs | Each scenario gets a TIGER BEAT target, design review, and promotion gate |
+| HUNT | Complex systems are learned through fair reveal and one aha | Each tutorial teaches one infrastructure insight through play |
+| ASPECT | Screens need aim, school, precision, effect, clarity, and truth | Every screen has explicit encodings and visible evidence labels |
+| PROSE | Purpose, reader, organization, style, and economy govern text | UI copy and after-action reports are reviewed as writing |
+| SCORE | Structure, craft, originality, resonance, and economy govern audio/tempo | Cues follow real state changes and silence remains a tool |
+| QUEST | Campaigns learn from session logs, surprises, and persistent consequences | Seasons write logs; consequences carry forward |
+| SIGNALS | Skills are earned from repeated decision evidence | Repeated playtest findings can become new game skills or gates |
+| PANEL | Claims improve through adversarial review before publication | Scenario promotion requires panel findings resolved or logged |
+| PROOF/MDPATH | Artifacts should compile, link, and survive refactors | Game docs and future score sheets should be addressable, validated artifacts |
+
+## Growth Loop
+
+The game grows by running the same forward-only evidence loop as the rest of the portfolio.
+
+```
+SCENARIO SEED
+  -> PAPER PLAYTEST
+  -> SESSION LOG
+  -> SURPRISE LOG
+  -> PANEL REVIEW
+  -> RUBRIC / RULE AMENDMENT
+  -> CLI ENCODING
+  -> BROWSER PLAYTEST
+  -> CAMPAIGN PROMOTION
+```
+
+Rules:
+
+- Old playtests are judged by the rubric version they used.
+- New scenarios must meet the current rubric.
+- Findings do not become rules after one anecdote.
+- Two repeated findings create an amendment candidate.
+- Three repeated findings across scenarios create a candidate skill, gate, card type, or player-style label.
+- A scenario can be fun and still fail publication if evidence is weak.
+- A scenario can be technically correct and still fail if players do not learn the intended aha.
+
+## Promotion Ladder
+
+| Level | Name | Entry condition | Exit condition |
+|---|---|---|---|
+| G0-A | Seed | Standard, stressor, and intended aha are named | Paper rules exist |
+| G0-B | Paper playable | Cards, tracks, scoring, and session log exist | Blind player can complete one run |
+| G0-C | Aha proven | Playtest shows the intended lesson landed | Panel issues are resolved or logged |
+| G1-A | CLI encoded | State, events, projects, and scoring are deterministic | L0/L1 tests pass |
+| G1-B | Engine-backed | CLI calls or summarizes ROUTE proof artifacts | Evidence labels survive scoring |
+| G2-A | Browser playable | Map-first UI supports a full run | Playwright layout checks pass |
+| G2-B | Public preview | Evidence drawer, after-action, and accessibility pass | Non-specialist player can explain the lesson |
+| G3 | Campaign node | Scenario has persistence consequences | It fits the campaign spine |
+| G4 | Demo-ready | Scenario is polished and honest | Public claims link to artifacts |
+
+## Game Rubric
+
+Each scenario gets scored on six dimensions before promotion.
+
+| Dimension | Question | Gate |
+|---|---|---|
+| Proof | Does the scenario test a real ROUTE standard under a named stressor? | Required |
+| Aha | Does play make the intended infrastructure lesson visible? | Required |
+| Choice | Are there meaningful tradeoffs, not a disguised correct answer? | Required |
+| Evidence | Are observed, modeled, heuristic, planned, and source-needed labels visible? | Required |
+| Experience | Does the scenario have tension, clarity, and replayable texture? | Required for browser |
+| Reproducibility | Can the same inputs regenerate the same result? | Required for CLI |
+
+Promotion requires no required dimension below "pass." A scenario with weak evidence can promote as a game lesson, but not as a publication proof.
+
+## Artifact Trail
+
+Each scenario should eventually have the following artifacts.
+
+| Artifact | Purpose |
+|---|---|
+| Scenario brief | Hook, standard, stressor, aha, audience |
+| Paper rules | Cards, tracks, turn order, scoring |
+| Session log | Per-season decisions, events, scores, evidence labels |
+| Surprise log | Where players learned, stalled, exploited, or misunderstood |
+| Panel notes | TIGRIS/HUNT/ASPECT/PROSE/SCORE/QUEST review findings |
+| Amendment log | Rule, rubric, or card changes caused by evidence |
+| CLI fixture | Deterministic state and expected score |
+| Browser fixture | Screenshot and interaction checks |
+| Publication gate | Observed/model/heuristic/source-needed status |
+
 ## Phase G0 - Paper Prototype
 
 Goal: prove that Des Moines Diamond teaches the T1/T1 topology lesson before we build software around it.
@@ -199,4 +287,3 @@ Done criteria:
 ## Rule
 
 The game can make ROUTE easier to feel. It cannot make ROUTE less true.
-
