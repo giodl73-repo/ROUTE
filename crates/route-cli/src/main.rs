@@ -276,6 +276,9 @@ enum Commands {
         /// Print detailed blocker and next-evidence fields
         #[arg(long)]
         details: bool,
+        /// Fail if failure evidence rows are unlabeled or lack next evidence steps
+        #[arg(long)]
+        gate_evidence: bool,
     },
 
     /// Show source-acquisition plan for T1/T1 failure evidence
@@ -2194,10 +2197,32 @@ fn run_cli() -> Result<()> {
             ledger,
             needs_sources,
             details,
+            gate_evidence,
         } => {
             let rows = load_t1_failure_ledger(&ledger)
                 .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
             print_t1_failures(&rows, needs_sources, details);
+
+            if gate_evidence {
+                let failures = t1_failure_evidence_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1/T1 failure evidence gate: FAIL");
+                    println!(
+                        "  {} failure rows are unlabeled or lack evidence next steps.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{} {}]: {}",
+                            row.site_id, row.source_status, row.confidence, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("T1/T1 failure evidence gate failed");
+                }
+                println!();
+                println!("T1/T1 failure evidence gate: PASS");
+            }
         }
 
         Commands::T1FailureSources {
@@ -5321,6 +5346,30 @@ fn print_t1_failures(rows: &[T1FailureRow], needs_sources: bool, details: bool) 
     }
 }
 
+fn t1_failure_evidence_gate_failures(rows: &[T1FailureRow]) -> Vec<&T1FailureRow> {
+    rows.iter()
+        .filter(|row| !t1_failure_row_has_evidence_contract(row))
+        .collect()
+}
+
+fn t1_failure_row_has_evidence_contract(row: &T1FailureRow) -> bool {
+    let status = row.source_status.trim().to_ascii_lowercase();
+    let status_is_labeled = matches!(status.as_str(), "empirical" | "modeled" | "source_needed");
+    let confidence = row.confidence.trim().to_ascii_lowercase();
+    let confidence_is_labeled =
+        matches!(confidence.as_str(), "high" | "medium" | "low" | "unknown");
+    let source_needed_has_gap = status != "source_needed" || !row.blocking_gap.trim().is_empty();
+
+    !row.site_id.trim().is_empty()
+        && !row.intersection.trim().is_empty()
+        && !row.failure_mode.trim().is_empty()
+        && status_is_labeled
+        && confidence_is_labeled
+        && !row.current_artifact.trim().is_empty()
+        && !row.next_evidence_step.trim().is_empty()
+        && source_needed_has_gap
+}
+
 fn fmt_opt(value: Option<f64>) -> String {
     value
         .map(|v| format!("{v:.3}"))
@@ -6721,6 +6770,7 @@ mod tests {
         pressure_scenario_has_bounded_contract, pressure_scenario_missing_required_adversity,
         rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
         standards_evidence_level_is_allowed, summarize_t1_failure_events,
+        t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
         write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
@@ -6964,6 +7014,25 @@ T1X-I40-I75,I-40 x I-75,Knoxville TN,closure,,,,,,,,source_needed,unknown,artifa
         assert_eq!(rows[0].throughput_retention_current, Some(0.962));
         assert_eq!(rows[0].annual_probability, None);
         assert_eq!(rows[1].source_status, "source_needed");
+    }
+
+    #[test]
+    fn t1_failure_evidence_gate_requires_labeled_source_status_and_next_steps() {
+        let csv = "\
+site_id,intersection,location,failure_mode,annual_probability,duration_p50_hours,duration_p95_hours,throughput_retention_current,throughput_retention_i2,reroute_time_p50_hours,reroute_time_p95_hours,source_status,confidence,current_artifact,blocking_gap,next_evidence_step
+T1X-I35-I80,I-35 x I-80,Des Moines IA,closure,,,,0.962,1.000,0.9,,modeled,low,artifact,gap,next
+T1X-I40-I75,I-40 x I-75,Knoxville TN,closure,,,,,,,,source_needed,unknown,artifact,gap,next
+T1X-BAD,I-5 x I-10,Los Angeles CA,closure,,,,,,,,maybe,unknown,artifact,gap,
+";
+
+        let rows = parse_t1_failure_ledger(csv.as_bytes()).expect("parse T1 failure ledger");
+
+        assert!(t1_failure_row_has_evidence_contract(&rows[0]));
+        assert!(t1_failure_row_has_evidence_contract(&rows[1]));
+        assert!(!t1_failure_row_has_evidence_contract(&rows[2]));
+        let failures = t1_failure_evidence_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].site_id, "T1X-BAD");
     }
 
     #[test]
