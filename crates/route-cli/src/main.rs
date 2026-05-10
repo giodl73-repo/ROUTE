@@ -367,6 +367,22 @@ enum Commands {
         details: bool,
     },
 
+    /// Show polling plan for live snapshot-only T1/T1 event feeds
+    T1SnapshotPlan {
+        /// Path to T1/T1 snapshot polling plan CSV
+        #[arg(long, default_value = "data/t1-snapshot-plan.csv", value_name = "FILE")]
+        ledger: PathBuf,
+        /// Show only one priority band, e.g. A, B, or C
+        #[arg(long)]
+        priority: Option<String>,
+        /// Print fetch/import/accumulate command details
+        #[arg(long)]
+        details: bool,
+        /// Fail if snapshot rows lack cadence, commands, or output paths
+        #[arg(long)]
+        gate_plan: bool,
+    },
+
     /// Summarize raw T1/T1 failure event observations into rates and durations
     T1FailureEvents {
         /// Path to normalized T1/T1 failure event observations CSV
@@ -2463,6 +2479,35 @@ fn run_cli() -> Result<()> {
             let rows = load_t1_source_health(&ledger)
                 .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
             print_t1_access_docket(&rows, category.as_deref(), details);
+        }
+
+        Commands::T1SnapshotPlan {
+            ledger,
+            priority,
+            details,
+            gate_plan,
+        } => {
+            let rows = load_t1_snapshot_plan(&ledger)
+                .with_context(|| format!("loading T1 snapshot plan {}", ledger.display()))?;
+            print_t1_snapshot_plan(&rows, priority.as_deref(), details);
+
+            if gate_plan {
+                let failures = t1_snapshot_plan_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1/T1 snapshot plan gate: FAIL");
+                    println!("  {} snapshot rows lack executable plans.", failures.len());
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.site_id, row.source_name, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("T1/T1 snapshot plan gate failed");
+                }
+                println!();
+                println!("T1/T1 snapshot plan gate: PASS");
+            }
         }
 
         Commands::T1FailureEvents {
@@ -6383,6 +6428,114 @@ fn t1_access_priority_rank(priority: &str) -> u8 {
     }
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1SnapshotPlanRow {
+    site_id: String,
+    intersection: String,
+    priority_band: String,
+    source_name: String,
+    source_health: String,
+    cadence: String,
+    fetch_command: String,
+    import_command: String,
+    accumulate_command: String,
+    raw_output: String,
+    normalized_output: String,
+    accumulated_output: String,
+    blocking_gap: String,
+    next_step: String,
+}
+
+fn load_t1_snapshot_plan(path: &Path) -> Result<Vec<T1SnapshotPlanRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_snapshot_plan(file)
+}
+
+fn parse_t1_snapshot_plan<R: std::io::Read>(reader: R) -> Result<Vec<T1SnapshotPlanRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_snapshot_plan(rows: &[T1SnapshotPlanRow], priority: Option<&str>, details: bool) {
+    let filtered: Vec<&T1SnapshotPlanRow> = rows
+        .iter()
+        .filter(|row| {
+            priority
+                .map(|priority| row.priority_band.eq_ignore_ascii_case(priority))
+                .unwrap_or(true)
+        })
+        .collect();
+    let mut by_cadence: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_cadence.entry(row.cadence.clone()).or_insert(0) += 1;
+    }
+
+    println!("route t1-snapshot-plan");
+    println!("  feeds: {} shown / {} total", filtered.len(), rows.len());
+    println!("  cadence: {}", format_count_map(&by_cadence));
+    println!();
+    println!(
+        "{:<18} {:<14} {:<8} {:<24} {:<14} {}",
+        "Site", "Intersection", "Priority", "Source", "Cadence", "Next"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<14} {:<8} {:<24} {:<14} {}",
+            row.site_id,
+            row.intersection,
+            row.priority_band,
+            truncate_for_table(&row.source_name, 24),
+            row.cadence,
+            row.next_step
+        );
+        if details {
+            println!("  source health: {}", row.source_health);
+            println!("  fetch: {}", row.fetch_command);
+            println!("  import: {}", row.import_command);
+            println!("  accumulate: {}", row.accumulate_command);
+            println!("  raw: {}", row.raw_output);
+            println!("  normalized: {}", row.normalized_output);
+            println!("  accumulated: {}", row.accumulated_output);
+            println!("  gap: {}", row.blocking_gap);
+        }
+    }
+}
+
+fn t1_snapshot_plan_gate_failures(rows: &[T1SnapshotPlanRow]) -> Vec<&T1SnapshotPlanRow> {
+    rows.iter()
+        .filter(|row| !t1_snapshot_plan_row_has_contract(row))
+        .collect()
+}
+
+fn t1_snapshot_plan_row_has_contract(row: &T1SnapshotPlanRow) -> bool {
+    !row.site_id.trim().is_empty()
+        && !row.intersection.trim().is_empty()
+        && !row.priority_band.trim().is_empty()
+        && !row.source_name.trim().is_empty()
+        && row.source_health.trim() == "live/implemented/snapshot_only"
+        && matches!(
+            row.cadence.trim(),
+            "daily" | "twice_daily" | "hourly" | "weekly"
+        )
+        && row.fetch_command.trim().starts_with("route t1-fetch-")
+        && row.import_command.trim().starts_with("route t1-import-")
+        && row
+            .accumulate_command
+            .trim()
+            .starts_with("route t1-accumulate-events")
+        && row.raw_output.trim().ends_with(".json")
+        && row.normalized_output.trim().ends_with(".csv")
+        && row.accumulated_output.trim().ends_with(".csv")
+        && !row.blocking_gap.trim().is_empty()
+        && !row.next_step.trim().is_empty()
+}
+
 fn format_count_map(counts: &std::collections::BTreeMap<String, usize>) -> String {
     if counts.is_empty() {
         "none".to_string()
@@ -7526,16 +7679,17 @@ mod tests {
         gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
         parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
         parse_standards_proof_ledger, parse_t1_diamond_validation, parse_t1_failure_events,
-        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_source_health,
-        parse_tdot_smartway_events, parse_throughput_proof_matrix, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
-        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
-        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
-        standards_evidence_level_is_allowed, summarize_t1_failure_events,
-        t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
-        t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
-        throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
+        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
+        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
+        pressure_scenario_readiness_gate_failures, rounded_score, scenario_edge_candidates,
+        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        summarize_t1_failure_events, t1_failure_event_has_observation_contract,
+        t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
+        t1_failure_row_has_evidence_contract, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
+        GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -7967,6 +8121,34 @@ ALL,FHWA NPMRDS,https://example.invalid,travel_time_reliability,requires_access,
         assert_eq!(items[0].priority, "high");
         assert_eq!(items[1].category, "access_request");
         assert_eq!(items[1].priority, "critical");
+    }
+
+    #[test]
+    fn t1_snapshot_plan_requires_executable_polling_contract() {
+        let csv = "\
+site_id,intersection,priority_band,source_name,source_health,cadence,fetch_command,import_command,accumulate_command,raw_output,normalized_output,accumulated_output,blocking_gap,next_step
+T1X-I35-I80,I-35 x I-80,A,Iowa DOT 511,live/implemented/snapshot_only,daily,route t1-fetch-iowa511,route t1-import-iowa511,route t1-accumulate-events,data/cache/iowa.json,data/cache/iowa.csv,data/t1-failure-events.csv,gap,next
+T1X-BAD,I-35 x I-40,B,Bad Source,live/implemented/snapshot_only,eventually,fetch,import,accumulate,raw.txt,norm.txt,out.txt,gap,next
+";
+
+        let rows = parse_t1_snapshot_plan(csv.as_bytes()).expect("parse snapshot plan");
+        let failures = super::t1_snapshot_plan_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert!(super::t1_snapshot_plan_row_has_contract(&rows[0]));
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].site_id, "T1X-BAD");
+    }
+
+    #[test]
+    fn t1_snapshot_plan_canonical_plan_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/t1-snapshot-plan.csv");
+        let file = std::fs::File::open(path).expect("open canonical snapshot plan");
+        let rows = parse_t1_snapshot_plan(file).expect("parse snapshot plan");
+
+        assert_eq!(rows.len(), 2);
+        assert!(super::t1_snapshot_plan_gate_failures(&rows).is_empty());
     }
 
     #[test]
