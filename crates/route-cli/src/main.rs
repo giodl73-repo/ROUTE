@@ -241,6 +241,26 @@ enum Commands {
         gate_l2: bool,
     },
 
+    /// Show throughput proof matrix separating congestion and resilience chokepoints
+    ThroughputProof {
+        /// Path to throughput proof matrix CSV
+        #[arg(
+            long,
+            default_value = "data/throughput-proof-matrix.csv",
+            value_name = "FILE"
+        )]
+        matrix: PathBuf,
+        /// Show only rows that still have blocking gaps
+        #[arg(long)]
+        blockers: bool,
+        /// Print full proof details
+        #[arg(long)]
+        details: bool,
+        /// Fail if any row lacks the required proof contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show T1/T1 failure-rate and reroute evidence status
     T1Failures {
         /// Path to T1/T1 failure evidence ledger CSV
@@ -2128,6 +2148,38 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("L2 scenario gate: PASS");
+            }
+        }
+
+        Commands::ThroughputProof {
+            matrix,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_throughput_proof_matrix(&matrix)
+                .with_context(|| format!("loading throughput proof matrix {}", matrix.display()))?;
+            print_throughput_proof_matrix(&rows, blockers, details);
+
+            if gate {
+                let failures = throughput_proof_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Throughput proof gate: FAIL");
+                    println!(
+                        "  {} proof rows still lack bounded congestion/resilience contracts.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{} {}]: {}",
+                            row.proof_id, row.binding_type, row.current_status, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("throughput proof gate failed");
+                }
+                println!();
+                println!("Throughput proof gate: PASS");
             }
         }
 
@@ -5043,6 +5095,96 @@ fn pressure_scenario_has_bounded_contract(row: &PressureScenarioRow) -> bool {
     has_identity && has_test_scope && has_artifact && has_next_step && status_is_labeled
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct ThroughputProofRow {
+    proof_id: String,
+    proof_name: String,
+    binding_type: String,
+    stressor: String,
+    primary_metric: String,
+    existing_artifact: String,
+    current_status: String,
+    blocking_gap: String,
+    next_evidence_step: String,
+}
+
+fn load_throughput_proof_matrix(path: &Path) -> Result<Vec<ThroughputProofRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_throughput_proof_matrix(file)
+}
+
+fn parse_throughput_proof_matrix<R: std::io::Read>(reader: R) -> Result<Vec<ThroughputProofRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_throughput_proof_matrix(rows: &[ThroughputProofRow], blockers: bool, details: bool) {
+    let failures = throughput_proof_gate_failures(rows);
+    let filtered = if blockers {
+        failures.clone()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+    let mut by_binding: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_binding.entry(row.binding_type.clone()).or_insert(0) += 1;
+    }
+
+    println!("route throughput-proof");
+    println!("  rows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  binding: {}", format_count_map(&by_binding));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<18} {:<26} {:<20} {:<12} {}",
+        "Proof", "Name", "Binding", "Status", "Gap"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<26} {:<20} {:<12} {}",
+            row.proof_id,
+            truncate_for_table(&row.proof_name, 26),
+            row.binding_type,
+            row.current_status,
+            row.blocking_gap
+        );
+        if details {
+            println!("  stressor: {}", row.stressor);
+            println!("  metric: {}", row.primary_metric);
+            println!("  artifact: {}", row.existing_artifact);
+            println!("  next: {}", row.next_evidence_step);
+        }
+    }
+}
+
+fn throughput_proof_gate_failures(rows: &[ThroughputProofRow]) -> Vec<&ThroughputProofRow> {
+    rows.iter()
+        .filter(|row| !throughput_proof_has_bounded_contract(row))
+        .collect()
+}
+
+fn throughput_proof_has_bounded_contract(row: &ThroughputProofRow) -> bool {
+    let binding = row.binding_type.trim().to_ascii_lowercase();
+    let binding_is_labeled = matches!(
+        binding.as_str(),
+        "congestion_binding" | "resilience_binding"
+    );
+    row.proof_id.starts_with("TP-")
+        && !row.proof_name.trim().is_empty()
+        && binding_is_labeled
+        && !row.stressor.trim().is_empty()
+        && !row.primary_metric.trim().is_empty()
+        && !row.existing_artifact.trim().is_empty()
+        && standards_evidence_level_is_allowed(&row.current_status)
+        && !row.next_evidence_step.trim().is_empty()
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureRow {
     site_id: String,
@@ -6541,10 +6683,12 @@ mod tests {
         parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
         parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract, rounded_score,
-        scenario_edge_candidates, standards_blueprint_gate_failures,
-        standards_evidence_level_is_allowed, summarize_t1_failure_events, tier_for_score,
-        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
+        parse_throughput_proof_matrix, pressure_scenario_gate_failures,
+        pressure_scenario_has_bounded_contract, rounded_score, scenario_edge_candidates,
+        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        summarize_t1_failure_events, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
+        GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -6731,6 +6875,26 @@ BAD,unnamed,,T1-DIAMOND-K,unknown,,gap,
         let failures = pressure_scenario_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].scenario_id, "BAD");
+    }
+
+    #[test]
+    fn throughput_proof_matrix_separates_congestion_and_resilience_contracts() {
+        let csv = "\
+proof_id,proof_name,binding_type,stressor,primary_metric,existing_artifact,current_status,blocking_gap,next_evidence_step
+TP-CONG-I80,I-80 bottleneck,congestion_binding,peak demand,max_flow_vpd,route flow I-80,Heuristic,gap,next
+TP-RES-DM,Des Moines closure,resilience_binding,T1 closure,k_connectivity; t90_hours,route diamond,Heuristic,gap,next
+BAD,Missing binding,unknown,peak demand,,artifact,unknown,gap,
+";
+
+        let rows = parse_throughput_proof_matrix(csv.as_bytes()).expect("parse throughput proof");
+
+        assert_eq!(rows.len(), 3);
+        assert!(throughput_proof_has_bounded_contract(&rows[0]));
+        assert!(throughput_proof_has_bounded_contract(&rows[1]));
+        assert!(!throughput_proof_has_bounded_contract(&rows[2]));
+        let failures = throughput_proof_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].proof_id, "BAD");
     }
 
     #[test]
