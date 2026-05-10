@@ -307,6 +307,9 @@ enum Commands {
         /// Show only one priority band, e.g. A, B, or C
         #[arg(long)]
         priority: Option<String>,
+        /// Print one actionable validation task per unresolved evidence dimension
+        #[arg(long)]
+        docket: bool,
         /// Print detailed validation blockers and next steps
         #[arg(long)]
         details: bool,
@@ -2364,13 +2367,18 @@ fn run_cli() -> Result<()> {
             ledger,
             blockers,
             priority,
+            docket,
             details,
             gate_catalog,
         } => {
             let rows = load_t1_diamond_validation(&ledger).with_context(|| {
                 format!("loading T1 diamond validation ledger {}", ledger.display())
             })?;
-            print_t1_diamond_validation(&rows, blockers, priority.as_deref(), details);
+            if docket {
+                print_t1_diamond_validation_docket(&rows, priority.as_deref(), details);
+            } else {
+                print_t1_diamond_validation(&rows, blockers, priority.as_deref(), details);
+            }
 
             if gate_catalog {
                 let failures = t1_diamond_validation_gate_failures(&rows);
@@ -5866,6 +5874,127 @@ fn print_t1_diamond_validation(
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct T1DiamondValidationTask {
+    priority_band: String,
+    category: &'static str,
+    site_id: String,
+    intersection: String,
+    location: String,
+    action: String,
+}
+
+fn print_t1_diamond_validation_docket(
+    rows: &[T1DiamondValidationRow],
+    priority: Option<&str>,
+    details: bool,
+) {
+    let tasks = t1_diamond_validation_tasks(rows, priority);
+    let mut by_category: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for task in &tasks {
+        *by_category.entry(task.category.to_string()).or_insert(0) += 1;
+    }
+
+    println!("route t1-diamond-validation --docket");
+    println!("  tasks: {} shown", tasks.len());
+    println!("  categories: {}", format_count_map(&by_category));
+    println!();
+    println!(
+        "{:<8} {:<20} {:<18} {:<14} {}",
+        "Priority", "Category", "Site", "Intersection", "Action"
+    );
+    println!("{}", "-".repeat(132));
+    for task in tasks {
+        println!(
+            "{:<8} {:<20} {:<18} {:<14} {}",
+            task.priority_band, task.category, task.site_id, task.intersection, task.action
+        );
+        if details {
+            println!("  location: {}", task.location);
+        }
+    }
+}
+
+fn t1_diamond_validation_tasks(
+    rows: &[T1DiamondValidationRow],
+    priority: Option<&str>,
+) -> Vec<T1DiamondValidationTask> {
+    let mut tasks = Vec::new();
+    for row in rows.iter().filter(|row| {
+        priority
+            .map(|priority| row.priority_band.eq_ignore_ascii_case(priority))
+            .unwrap_or(true)
+    }) {
+        if !row.analyzer_status.eq_ignore_ascii_case("recognized") {
+            tasks.push(t1_diamond_validation_task(
+                row,
+                "analyzer_anchor",
+                "Fix analyzer recognition for the curated T1/T1 pair",
+            ));
+        }
+        if !row.manual_geometry_status.eq_ignore_ascii_case("validated") {
+            tasks.push(t1_diamond_validation_task(
+                row,
+                "manual_geometry",
+                "Validate anchor coordinates, interchange shape, and independent transfer paths",
+            ));
+        }
+        if !row
+            .alternate_capacity_status
+            .eq_ignore_ascii_case("validated")
+        {
+            tasks.push(t1_diamond_validation_task(
+                row,
+                "alternate_capacity",
+                "Validate truck-capable alternate capacity and restrictions",
+            ));
+        }
+        if !row
+            .observed_failure_status
+            .eq_ignore_ascii_case("empirical")
+        {
+            tasks.push(t1_diamond_validation_task(
+                row,
+                "observed_failure",
+                "Attach observed closure, work-zone, duration, or incident evidence",
+            ));
+        }
+    }
+
+    tasks.sort_by(|a, b| {
+        t1_diamond_priority_rank(&a.priority_band)
+            .cmp(&t1_diamond_priority_rank(&b.priority_band))
+            .then_with(|| a.category.cmp(b.category))
+            .then_with(|| a.site_id.cmp(&b.site_id))
+    });
+    tasks
+}
+
+fn t1_diamond_validation_task(
+    row: &T1DiamondValidationRow,
+    category: &'static str,
+    action: &str,
+) -> T1DiamondValidationTask {
+    T1DiamondValidationTask {
+        priority_band: row.priority_band.clone(),
+        category,
+        site_id: row.site_id.clone(),
+        intersection: row.intersection.clone(),
+        location: row.location.clone(),
+        action: action.to_string(),
+    }
+}
+
+fn t1_diamond_priority_rank(priority: &str) -> usize {
+    match priority.trim().to_ascii_uppercase().as_str() {
+        "A" => 0,
+        "B" => 1,
+        "C" => 2,
+        _ => 99,
+    }
+}
+
 fn t1_diamond_validation_gate_failures(
     rows: &[T1DiamondValidationRow],
 ) -> Vec<&T1DiamondValidationRow> {
@@ -7686,6 +7815,28 @@ T1X-BAD,I-5 x I-10,Los Angeles CA,B,-118.230,34.050,unknown,heuristic,pending,so
         assert_eq!(rows.len(), super::EXPECTED_T1_DIAMOND_SITES.len());
         assert!(super::t1_diamond_validation_gate_failures(&rows).is_empty());
         assert!(super::t1_diamond_validation_missing_sites(&rows).is_empty());
+    }
+
+    #[test]
+    fn t1_diamond_validation_tasks_split_unresolved_dimensions() {
+        let csv = "\
+site_id,intersection,location,priority_band,anchor_lon,anchor_lat,analyzer_status,manual_geometry_status,alternate_capacity_status,observed_failure_status,validation_status,current_artifact,blocking_gap,next_validation_step
+T1X-I35-I80,I-35 x I-80,Des Moines IA,A,-93.573,41.659,recognized,validated,heuristic,modeled,heuristic,artifact,gap,next
+T1X-I35-I40,I-35 x I-40,Oklahoma City OK,B,-97.530,35.460,recognized,heuristic,pending,source_needed,heuristic,artifact,gap,next
+";
+
+        let rows = parse_t1_diamond_validation(csv.as_bytes()).expect("parse validation");
+        let all_tasks = super::t1_diamond_validation_tasks(&rows, None);
+        let a_tasks = super::t1_diamond_validation_tasks(&rows, Some("A"));
+
+        assert_eq!(all_tasks.len(), 5);
+        assert_eq!(a_tasks.len(), 2);
+        assert!(a_tasks
+            .iter()
+            .any(|task| task.category == "alternate_capacity"));
+        assert!(a_tasks
+            .iter()
+            .any(|task| task.category == "observed_failure"));
     }
 
     #[test]
