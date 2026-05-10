@@ -7110,24 +7110,68 @@ fn parse_indot_trafficwise_events(
             continue;
         }
 
-        rows.push(T1FailureEventRow {
+        let start_ms = indot_trafficwise_event_millis(feature, "beginTime");
+        let end_ms = indot_trafficwise_event_millis(feature, "endTime");
+        let duration_hours = match (start_ms, end_ms) {
+            (Some(start), Some(end)) if end >= start => Some((end - start) as f64 / 3_600_000.0),
+            _ => None,
+        };
+        let observation_year = start_ms
+            .and_then(epoch_millis_year)
+            .unwrap_or(observation_year);
+
+        let row = T1FailureEventRow {
             site_id: site_id.to_string(),
             event_id,
             source: "INDOT TrafficWise GraphQL".to_string(),
             source_event_id,
             observation_year,
-            start_time: String::new(),
-            end_time: String::new(),
-            duration_hours: None,
+            start_time: start_ms.and_then(epoch_millis_date).unwrap_or_default(),
+            end_time: end_ms.and_then(epoch_millis_date).unwrap_or_default(),
+            duration_hours,
             event_type: indot_trafficwise_event_type(&text).to_string(),
             full_closure: indot_trafficwise_full_closure(&text),
             lanes_closed: mdot_midrive_lanes_closed(&text),
             freight_relevant: true,
-            confidence: "low".to_string(),
+            confidence: if duration_hours.is_some() {
+                "medium".to_string()
+            } else {
+                "low".to_string()
+            },
             notes: text,
-        });
+        };
+        if t1_failure_event_has_observation_contract(&row) {
+            rows.push(row);
+        }
     }
     Ok(rows)
+}
+
+fn indot_trafficwise_event_millis(feature: &serde_json::Value, key: &str) -> Option<i64> {
+    feature
+        .get("_eventReport")
+        .and_then(|value| value.get(key))
+        .and_then(|value| value.get("time"))
+        .and_then(json_value_i64)
+        .or_else(|| {
+            feature
+                .get(key)
+                .and_then(|value| value.get("timestamp"))
+                .and_then(json_value_i64)
+        })
+        .or_else(|| {
+            feature
+                .get("_eventMapFeature")
+                .and_then(|value| {
+                    if key == "beginTime" {
+                        value.get("startTime")
+                    } else {
+                        value.get(key)
+                    }
+                })
+                .and_then(|value| value.get("time"))
+                .and_then(json_value_i64)
+        })
 }
 
 fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
@@ -7155,6 +7199,13 @@ fn json_scalar_to_string(value: &serde_json::Value) -> String {
         .or_else(|| value.as_i64().map(|value| value.to_string()))
         .or_else(|| value.as_u64().map(|value| value.to_string()))
         .unwrap_or_default()
+}
+
+fn json_value_i64(value: &serde_json::Value) -> Option<i64> {
+    value
+        .as_i64()
+        .or_else(|| value.as_u64().and_then(|value| i64::try_from(value).ok()))
+        .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
 }
 
 fn json_f64(attrs: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<f64> {
@@ -8497,7 +8548,11 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
           "title": "I-80 westbound: Entrance ramp closed.",
           "tooltip": "I-80 westbound: Entrance ramp closed, because of roadwork.",
           "uri": "event/CARSx-333174",
-          "__typename": "Event"
+          "__typename": "Event",
+          "_eventReport": {
+            "beginTime": {"time": 1778065200000},
+            "endTime": {"time": 1778079600000}
+          }
         },
         {
           "title": "US 30 in both directions: Paving operations.",
@@ -8523,9 +8578,35 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         assert_eq!(rows[0].site_id, "T1X-I80-I90");
         assert_eq!(rows[0].source_event_id, "CARSx-333174");
         assert_eq!(rows[0].observation_year, 2026);
+        assert_eq!(rows[0].start_time, "2026-05-06");
+        assert_eq!(rows[0].end_time, "2026-05-06");
+        assert_eq!(rows[0].duration_hours, Some(4.0));
         assert_eq!(rows[0].event_type, "work_zone");
         assert!(rows[0].full_closure);
-        assert_eq!(rows[0].confidence, "low");
+        assert_eq!(rows[0].confidence, "medium");
+    }
+
+    #[test]
+    fn indot_trafficwise_import_skips_untimed_rows() {
+        let json = r#"{
+  "data": {
+    "mapFeaturesQuery": {
+      "mapFeatures": [
+        {
+          "title": "I-80 westbound: Entrance ramp closed.",
+          "tooltip": "I-80 westbound: Entrance ramp closed, because of roadwork.",
+          "uri": "event/CARSx-333174",
+          "__typename": "Event"
+        }
+      ],
+      "error": null
+    }
+  }
+}"#;
+
+        let rows = parse_indot_trafficwise_events(json, "T1X-I80-I90", 2026).expect("parse INDOT");
+
+        assert!(rows.is_empty());
     }
 
     #[test]
