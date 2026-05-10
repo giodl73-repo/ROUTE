@@ -1897,13 +1897,13 @@ mod tests {
             segments: vec![CorridorSegment {
                 name: "Rural T1 segment".to_string(),
                 miles,
-                base_vc: 0.55,
+                base_vc: 0.0,
                 free_flow_mph: 65.0,
                 incident_prob: 0.0,
                 incident_delay_mean_hours: 0.0,
                 incident_delay_std_hours: 0.0,
                 managed_lane_bypasses_incident: false,
-                managed_lane_vc: 0.45,
+                managed_lane_vc: 0.0,
             }],
             hos_driving_hours: 11.0,
             hos_rest_hours: 10.0,
@@ -1984,5 +1984,49 @@ mod tests {
                 swap_minutes: 18.0,
             }
         );
+    }
+
+    #[test]
+    fn free_flow_elapsed_hours_adds_hos_rest_and_fixed_overhead() {
+        let under_hos_window = test_corridor(650.0);
+        let over_hos_window = test_corridor(780.0);
+
+        assert_eq!(under_hos_window.free_flow_driving_hours(), 10.0);
+        assert_eq!(under_hos_window.free_flow_elapsed_hours(), 12.0);
+
+        assert_eq!(over_hos_window.free_flow_driving_hours(), 12.0);
+        assert_eq!(over_hos_window.free_flow_elapsed_hours(), 24.0);
+    }
+
+    #[test]
+    fn solo_sla_distribution_reports_p95_window_pti_and_48_hour_share() {
+        let corridor = test_corridor(650.0);
+
+        let dist = run_od_simulation_with_driver(&corridor, true, &DriverMode::Solo, 5, 42);
+
+        assert_eq!(dist.n_trips, 5);
+        assert_eq!(dist.free_flow_hours, 12.0);
+        assert_eq!(dist.mean_hours, 12.0);
+        assert_eq!(dist.p95_hours, 12.0);
+        assert_eq!(dist.pti, 1.0);
+        assert_eq!(dist.commitment_window_hours, 12.0);
+        assert_eq!(dist.commitment_window_days, 0.5);
+        assert_eq!(dist.pct_under_48h, 100.0);
+        assert_eq!(dist.pct_sla_met, 100.0);
+        assert_eq!(dist.sla_hours(), 12.0);
+        assert!(dist.managed_lanes);
+    }
+
+    #[test]
+    fn trips_above_48_hours_fail_the_sla_share_even_when_deterministic() {
+        let corridor = test_corridor(3_250.0);
+
+        let dist = run_od_simulation_with_driver(&corridor, true, &DriverMode::Solo, 5, 7);
+
+        assert_eq!(dist.free_flow_hours, 92.0);
+        assert_eq!(dist.p95_hours, 92.0);
+        assert_eq!(dist.commitment_window_hours, 92.0);
+        assert_eq!(dist.pct_under_48h, 0.0);
+        assert_eq!(dist.pct_sla_met, 0.0);
     }
 }
