@@ -3,12 +3,13 @@
 Donner Weather Closure is the second Interstate Tycoon campaign stop. It turns the I-80 mountain-pass resilience standard into a playable lesson: a national corridor can fail even when the map shows alternate lines, because weather, truck suitability, capacity, and recovery windows decide whether freight can actually route around the closure in time.
 
 Status: G0-A seed to G0-B paper prototype  
-Scenario version: G0 v0.1  
+Scenario version: G0 v0.2
 Evidence level: Heuristic  
 Primary ROUTE scenario: `crates/route-sim/src/scenarios/donner-closure.toml`  
 Primary pressure row: `S-L2-DONNER` in `data/pressure-test-scenarios.csv`  
 Campaign stop: `Mountain Pass` in `data/game/campaign-spine.csv`  
 Playtest packet: `docs/game/donner-weather-closure-playtest.md`
+Amendment log: `docs/game/donner-weather-closure-amendments.md`
 
 ## Player Promise
 
@@ -85,7 +86,7 @@ Prototype interpretation:
 | Early egress spurs | 3 | 1 | 2 | Lets trucks leave before the closure zone instead of queueing at the pass | Planned | Trapped freight and late reroute |
 | Winter operations package | 2 | 1 | 1 | Raises weather readiness by 2 and reduces reopening delay | Heuristic | Slow clearance and chain-control shock |
 | Lower-elevation freight bypass | 6 | 2 | 4 | Adds independent road capacity below the storm zone | Planned | Pass closure with no road alternate |
-| Managed freight tunnel | 5 | 2 | 3 | Protects eligible priority freight from snow closure | Planned | High-value SLA misses |
+| Managed freight tunnel | 5 | 2 | 3 | Protects eligible priority freight after it opens; not an instant first-storm fix | Planned | High-value SLA misses |
 | Rail/intermodal surge slots | 3 | 1 | 2 | Moves eligible freight before the road queue grows | Heuristic | Overloaded road detour |
 | Dynamic closure routing | 2 | 0 | 1 | Reduces operations loss when storms are forecast | Heuristic | Late route decisions |
 | General snow storage / shoulders | 2 | 1 | 1 | Helps reopening but does not create alternate capacity | Heuristic | Recovery delay |
@@ -94,16 +95,20 @@ Prototype interpretation:
 
 Project rule: road capacity, operations, and evidence are separate. A player cannot buy publication proof with a construction project.
 
+Timing rule: the managed freight tunnel is a long-term SLA project. It does not prevent the first forced whiteout from creating a queue unless paired with egress, routing, operations, or intermodal capacity.
+
 ## Storm Cards
 
 | Card | Trigger | Effect | Visible warning |
 |---|---|---|
-| Whiteout closure | Forced tutorial, then rare | Close the pass for 48 hours; test throughput and recovery | "The pass is closed; the queue is forming before the alternate decision." |
+| Whiteout closure | Forced tutorial, then rare | Close the pass for 48 hours; add a trapped-queue marker unless early egress or dynamic closure routing is ready; test throughput and recovery | "The pass is closed; the queue is forming before the alternate decision." |
 | Chain-control slowdown | Common | Lose 1 weather readiness unless winter operations are active | "The route is open, but speed and compliance are binding." |
 | Detour capacity pinch | Common | Lose 1 operations unless a bypass or rail slots are active | "The alternate exists on the map, but it is not absorbing T1 freight." |
 | Reopening surge | Medium | Lose 1 public patience unless snow storage/shoulders or routing is active | "The closure ended; the queue did not." |
 | High-value SLA wave | Medium | Lose SLA margin unless tunnel or intermodal slots are active | "Not all freight can wait for the road to reopen." |
 | Evidence challenge | Medium | Publication gate checks evidence confidence and observed-source status | "A reviewer asks how many closures, how long, and what the alternate carried." |
+
+Trapped-queue rule: a trapped-queue marker means freight reached the closure zone before the system could meter or redirect it. The marker reduces throughput scoring until the player builds or completes a response that creates usable egress, routing, bypass, tunnel, or intermodal capacity.
 
 ## Evidence Cards
 
@@ -144,6 +149,10 @@ Publication gate:
 - Pass requires direct PTI/SLA validation for the pass and chosen alternate.
 - Until then, final publication status is locked.
 
+Recovery-window note: Donner uses an 8-hour tutorial recovery window because the scenario models a pass reopening plus queue-drain problem after a 48-hour weather closure. Des Moines uses a 4-hour transfer-recovery window because that scenario tests an interchange-zone disruption. Both are heuristic teaching thresholds until direct PTI/SLA evidence is attached.
+
+Evidence rule: source requested is not source observed. `Source request` names the missing evidence path and raises confidence, but `Validated weather evidence` remains unavailable until observed closure history and alternate-capacity validation exist.
+
 ## Hint Ladder
 
 | Tier | Hint |
@@ -175,6 +184,8 @@ No screen may rely on audio or prose alone to communicate a state change.
 | Detour warning | "A route on the map is not yet a freight alternate." |
 | Egress unlock | "Trucks can leave before the queue hardens." |
 | Intermodal unlock | "Eligible freight moves before the road queue consumes the SLA." |
+| Tunnel framing | "The tunnel protects priority freight after it opens; it does not erase the first storm queue." |
+| Evidence rejection | "Source requested is not source observed." |
 | Publication lock | "Operational winter win recorded. Publication claim locked: observed closure and alternate-capacity evidence are still missing." |
 
 ## Session Log Schema

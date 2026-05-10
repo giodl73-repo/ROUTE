@@ -31,6 +31,7 @@ The game succeeds when a non-specialist can say:
 | Second paper scenario | Drafted | `docs/game/donner-weather-closure-g0.md`; Mountain Pass teaches I-80 weather resilience, alternate capacity, recovery, and evidence locks |
 | Second playtest packet | Drafted | `docs/game/donner-weather-closure-playtest.md` |
 | Second simulated playtest | Drafted | `docs/game/donner-weather-closure-playtest-001.md`; Mountain Pass aha landed in simulation, but amendments and human/owner acceptance remain |
+| Second amendment log | Drafted | `docs/game/donner-weather-closure-amendments.md`; v0.2 adds trapped-queue marker, tunnel timing, source-observed copy, and recovery-window note |
 | First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
 | First simulated blind playtest | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md` |
 | Simulated playtest set | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md`, `002.md`, `003.md` |
@@ -293,7 +294,7 @@ Done criteria:
 
 1. Run the human browser blind playtest or record owner acceptance of simulated evidence.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
-3. Add a Mountain Pass amendment log or v0.2 rules update from `docs/game/donner-weather-closure-playtest-001.md`.
+3. Run the Mountain Pass v0.2 simulated playtest or owner review pass.
 4. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 5. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
 6. Work the A-band queue from `route t1-diamond-validation --priority A --docket --with-access`.

@@ -2,7 +2,7 @@
 
 Use this packet to run and score a G0 paper playtest of `docs/game/donner-weather-closure-g0.md`.
 
-Scenario version: G0 v0.1  
+Scenario version: G0 v0.2
 Rubric version: Interstate Tycoon scenario rubric v0.1  
 Promotion target: G0-B Paper Playable, then G0-C Aha Proven
 
@@ -15,7 +15,7 @@ Promotion target: G0-B Paper Playable, then G0-C Aha Proven
 | Player / persona |  |
 | Familiarity with highway engineering | none / low / medium / high |
 | Familiarity with strategy games | none / low / medium / high |
-| Scenario version | G0 v0.1 |
+| Scenario version | G0 v0.2 |
 | Rules used | `docs/game/donner-weather-closure-g0.md` |
 | Notes path |  |
 

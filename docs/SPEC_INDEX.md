@@ -11,6 +11,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/interstate-tycoon-plan.md` | Execution plan for the Interstate Tycoon paper, CLI, browser, campaign, and public-demo phases | You need the current game build sequence and gates |
 | `docs/game/des-moines-diamond-g0.md` | First playable paper prototype for the Interstate Tycoon T1/T1 tutorial scenario | You need the G0 rules, cards, screen/copy/audio contracts, or session-log shape |
 | `docs/game/donner-weather-closure-g0.md` | Second campaign paper prototype for the I-80 mountain-pass weather resilience lesson | You need the G0 rules, cards, evidence labels, or session-log shape for Stop 2 |
+| `docs/game/donner-weather-closure-amendments.md` | Forward-only amendment log for Donner Weather Closure rules and copy | You need to see which Stop 2 playtest findings changed the scenario |
 | `docs/game/donner-weather-closure-playtest.md` | Score sheet, season log, surprise log, and promotion checklist for Donner Weather Closure playtests | You need to run or review the Stop 2 paper playtest |
 | `docs/game/donner-weather-closure-playtest-001.md` | First simulated blind-player playtest log for the Mountain Pass scenario | You need the first Stop 2 playtest evidence record and amendment candidates |
 | `docs/game/des-moines-diamond-amendments.md` | Forward-only amendment log for Des Moines Diamond rules and copy | You need to see which playtest findings changed the scenario |
