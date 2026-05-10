@@ -19,6 +19,24 @@ TIGRIS contributes the design discipline, not the subject matter.
 | Forbidden vague claims | Every upgrade must name the metric it improves |
 | Design-gap search | Find scenarios where existing infrastructure games do not explain real network resilience |
 
+## HUNT Transfer
+
+HUNT contributes reveal structure: how a player learns a complex system through discovery, confirmation, and fair surprise.
+
+| HUNT element | ROUTE game translation |
+|---|---|
+| Riven Standard | The puzzle is the infrastructure system itself, not a quiz pasted onto a map |
+| Solving = Proving Understanding | A successful project choice proves the player understood the bottleneck |
+| Blame the Player | Failures must be fair in retrospect: the warning signs were visible |
+| One Aha | Each tutorial scenario teaches one core infrastructure insight |
+| No Over-Scaffolding | UI gives evidence and tools, not step-by-step optimization instructions |
+| 80% Rule | Scenarios should remain solvable when one evidence source or project path is unavailable |
+| Layered hints | Advisor nudges can reveal diagnosis, mechanism, then recommended intervention |
+| Blind solver testing | New scenario tutorials should be tested by naive player personas before shipping |
+| World-as-puzzle | Maps, ledgers, event cards, and dashboards are all clue surfaces |
+
+The design principle to steal hardest is: solving should leave the player knowing more. If a player beats Des Moines Diamond, they should be able to explain why a single T1/T1 interchange is fragile and why redundancy is not the same thing as raw capacity.
+
 ## Target Experience Profile
 
 The game should not be a spreadsheet wearing a map. It should have a board-game-clear loop with a serious engine underneath.
@@ -75,6 +93,61 @@ Win gates:
 | Budget | Stay within authorized program budget |
 | Evidence honesty | No publication-grade claim may use `source_needed` evidence |
 
+### Tutorial Aha
+
+The first scenario should not start by explaining T1/T1 resilience. It should make the player discover it.
+
+1. The player sees a normal-looking national freight map.
+2. The game asks them to meet a routine SLA target.
+3. A closure hits I-35 x I-80.
+4. The player tries obvious fixes: add lane capacity, accelerate cleanup, reroute trucks.
+5. Those fixes help but do not solve the transfer collapse.
+6. The aha: the problem is not only congestion; it is network topology.
+7. Diamond connectors and flyovers become legible because the failure has already happened.
+
+That is HUNT's "solving = proving understanding" applied to infrastructure.
+
+### Scenario Card
+
+```text
+Name: Des Moines Diamond
+Hook: The national freight grid looks healthy until one interchange closure breaks the transfer.
+Hidden lesson: Redundancy and recovery depend on topology, not only spare lane capacity.
+Player promise: By the end, the player can explain why k-connectivity earns a T1 standard.
+
+Starting evidence:
+- T1/T1 node: I-35 x I-80
+- Current modeled throughput retention
+- Iowa 511 work-zone observation sample
+- Source confidence warnings
+
+Event deck:
+- Night work-zone closure
+- Full interchange-zone closure
+- Relay hub surge
+- EV/rest-area queue
+- Political pressure to buy lane miles instead of connectors
+
+Project deck:
+- General-purpose widening
+- Diamond connector package
+- Express freight flyovers
+- Intelligent routing
+- Relay hub reserve staffing
+- EV/rest hardening
+
+Hints:
+- Nudge: "The backup route is not failing everywhere. The transfer is failing."
+- Push: "Count edge-disjoint paths through the 50-mile zone."
+- Shove: "Build redundancy first; then buy capacity."
+
+Win gates:
+- Post-build k >= 3
+- Closure stress retains target transfer throughput
+- Recovery gate is met or honestly labeled unproven
+- Evidence labels remain visible
+```
+
 ## ROUTE Engine as Game State
 
 | Game state | Existing ROUTE source |
@@ -127,6 +200,26 @@ Event cards are generated from pressure-test classes:
 - Bridge restriction
 - Work-zone sequencing conflict
 
+### Evidence Cards
+
+Evidence cards are the bridge between serious ROUTE claims and playable discovery.
+
+Each card should expose:
+
+- What is known
+- What is modeled
+- What is missing
+- Which source would improve confidence
+- Which project or event it affects
+
+Example:
+
+| Card | Known | Missing | Game effect |
+|---|---|---|---|
+| Iowa 511 work-zone sample | Normalized observations exist for I-35/I-80 | Annual history depth | Unlocks low-confidence closure probability |
+| NPMRDS access gated | Historical PTI source identified | Direct extract | Blocks publication-grade SLA proof |
+| Des Moines diamond model | Scenario runs and restores throughput proxy | Geometry validation | Unlocks heuristic diamond project |
+
 ### Scoring
 
 The scoreboard should expose both game points and engineering truth:
@@ -142,6 +235,35 @@ The scoreboard should expose both game points and engineering truth:
 
 The player can win a game scenario with heuristic evidence, but cannot unlock Blueprint/publication mode until the evidence labels clear.
 
+## Hint And Advisor System
+
+The advisor system should be HUNT-style layered hints, not a tutorial rail.
+
+| Tier | In-game form | Example |
+|---|---|---|
+| Nudge | Advisor points at a clue surface | "Throughput did not collapse everywhere. It collapsed at the transfer." |
+| Push | Advisor names the mechanism | "This is a k-connectivity problem, not only a lane-count problem." |
+| Shove | Advisor recommends an intervention | "Build the diamond connector package before adding more general-purpose lanes." |
+
+Using hints can cost public confidence, score, or nothing depending on audience. For a demo, hints should be free and visible; for a campaign, hints can reduce final mastery score.
+
+## Scenario Authoring Contract
+
+Every playable scenario should have a HUNT/TIGRIS-style artifact bundle:
+
+- Concept: one-sentence player-facing hook
+- Map: corridors, nodes, and stress points
+- Hidden lesson: the intended aha
+- Starting evidence: what the player can inspect
+- Event deck: adversity cards and probabilities
+- Project deck: available interventions
+- Scoring gates: success, partial success, failure
+- ROUTE commands: exact engine hooks behind the scenario
+- Hints: nudge, push, shove
+- Verification: tests or CLI gates proving the scenario still runs
+
+This keeps game design from drifting away from the engine.
+
 ## Build Plan
 
 ### Phase G0 - Paper Prototype
@@ -151,6 +273,8 @@ Write the Des Moines Diamond scenario as board-game rules:
 - Map zones
 - Project cards
 - Event cards
+- Evidence cards
+- Layered hints
 - Resource tracks
 - Turn sequence
 - Win/loss conditions
