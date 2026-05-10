@@ -310,6 +310,12 @@ enum Commands {
         /// Print one actionable validation task per unresolved evidence dimension
         #[arg(long)]
         docket: bool,
+        /// Join source-health blocker details into observed-failure docket rows
+        #[arg(long)]
+        with_access: bool,
+        /// Path to T1/T1 source health ledger CSV for --with-access
+        #[arg(long, default_value = "data/t1-source-health.csv", value_name = "FILE")]
+        source_health: PathBuf,
         /// Print detailed validation blockers and next steps
         #[arg(long)]
         details: bool,
@@ -2368,6 +2374,8 @@ fn run_cli() -> Result<()> {
             blockers,
             priority,
             docket,
+            with_access,
+            source_health,
             details,
             gate_catalog,
         } => {
@@ -2375,7 +2383,19 @@ fn run_cli() -> Result<()> {
                 format!("loading T1 diamond validation ledger {}", ledger.display())
             })?;
             if docket {
-                print_t1_diamond_validation_docket(&rows, priority.as_deref(), details);
+                let source_rows = if with_access {
+                    Some(load_t1_source_health(&source_health).with_context(|| {
+                        format!("loading T1 source health {}", source_health.display())
+                    })?)
+                } else {
+                    None
+                };
+                print_t1_diamond_validation_docket(
+                    &rows,
+                    priority.as_deref(),
+                    source_rows.as_deref(),
+                    details,
+                );
             } else {
                 print_t1_diamond_validation(&rows, blockers, priority.as_deref(), details);
             }
@@ -5882,14 +5902,16 @@ struct T1DiamondValidationTask {
     intersection: String,
     location: String,
     action: String,
+    source_action: Option<String>,
 }
 
 fn print_t1_diamond_validation_docket(
     rows: &[T1DiamondValidationRow],
     priority: Option<&str>,
+    source_rows: Option<&[T1SourceHealthRow]>,
     details: bool,
 ) {
-    let tasks = t1_diamond_validation_tasks(rows, priority);
+    let tasks = t1_diamond_validation_tasks(rows, priority, source_rows);
     let mut by_category: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
     for task in &tasks {
@@ -5912,6 +5934,9 @@ fn print_t1_diamond_validation_docket(
         );
         if details {
             println!("  location: {}", task.location);
+            if let Some(source_action) = &task.source_action {
+                println!("  source: {source_action}");
+            }
         }
     }
 }
@@ -5919,7 +5944,9 @@ fn print_t1_diamond_validation_docket(
 fn t1_diamond_validation_tasks(
     rows: &[T1DiamondValidationRow],
     priority: Option<&str>,
+    source_rows: Option<&[T1SourceHealthRow]>,
 ) -> Vec<T1DiamondValidationTask> {
+    let source_by_site = t1_source_health_by_site(source_rows.unwrap_or(&[]));
     let mut tasks = Vec::new();
     for row in rows.iter().filter(|row| {
         priority
@@ -5931,6 +5958,7 @@ fn t1_diamond_validation_tasks(
                 row,
                 "analyzer_anchor",
                 "Fix analyzer recognition for the curated T1/T1 pair",
+                None,
             ));
         }
         if !row.manual_geometry_status.eq_ignore_ascii_case("validated") {
@@ -5938,6 +5966,7 @@ fn t1_diamond_validation_tasks(
                 row,
                 "manual_geometry",
                 "Validate anchor coordinates, interchange shape, and independent transfer paths",
+                None,
             ));
         }
         if !row
@@ -5948,6 +5977,7 @@ fn t1_diamond_validation_tasks(
                 row,
                 "alternate_capacity",
                 "Validate truck-capable alternate capacity and restrictions",
+                None,
             ));
         }
         if !row
@@ -5958,6 +5988,15 @@ fn t1_diamond_validation_tasks(
                 row,
                 "observed_failure",
                 "Attach observed closure, work-zone, duration, or incident evidence",
+                source_by_site.get(row.site_id.as_str()).map(|source| {
+                    format!(
+                        "{} [{} / {}]: {}",
+                        source.source_name,
+                        source.access_health,
+                        source.history_status,
+                        source.next_step
+                    )
+                }),
             ));
         }
     }
@@ -5975,6 +6014,7 @@ fn t1_diamond_validation_task(
     row: &T1DiamondValidationRow,
     category: &'static str,
     action: &str,
+    source_action: Option<String>,
 ) -> T1DiamondValidationTask {
     T1DiamondValidationTask {
         priority_band: row.priority_band.clone(),
@@ -5983,7 +6023,18 @@ fn t1_diamond_validation_task(
         intersection: row.intersection.clone(),
         location: row.location.clone(),
         action: action.to_string(),
+        source_action,
     }
+}
+
+fn t1_source_health_by_site(
+    rows: &[T1SourceHealthRow],
+) -> std::collections::HashMap<&str, &T1SourceHealthRow> {
+    let mut by_site = std::collections::HashMap::new();
+    for row in rows {
+        by_site.entry(row.site_id.as_str()).or_insert(row);
+    }
+    by_site
 }
 
 fn t1_diamond_priority_rank(priority: &str) -> usize {
@@ -7826,8 +7877,8 @@ T1X-I35-I40,I-35 x I-40,Oklahoma City OK,B,-97.530,35.460,recognized,heuristic,p
 ";
 
         let rows = parse_t1_diamond_validation(csv.as_bytes()).expect("parse validation");
-        let all_tasks = super::t1_diamond_validation_tasks(&rows, None);
-        let a_tasks = super::t1_diamond_validation_tasks(&rows, Some("A"));
+        let all_tasks = super::t1_diamond_validation_tasks(&rows, None, None);
+        let a_tasks = super::t1_diamond_validation_tasks(&rows, Some("A"), None);
 
         assert_eq!(all_tasks.len(), 5);
         assert_eq!(a_tasks.len(), 2);
@@ -7837,6 +7888,32 @@ T1X-I35-I40,I-35 x I-40,Oklahoma City OK,B,-97.530,35.460,recognized,heuristic,p
         assert!(a_tasks
             .iter()
             .any(|task| task.category == "observed_failure"));
+    }
+
+    #[test]
+    fn t1_diamond_validation_observed_failure_tasks_include_source_access() {
+        let validation_csv = "\
+site_id,intersection,location,priority_band,anchor_lon,anchor_lat,analyzer_status,manual_geometry_status,alternate_capacity_status,observed_failure_status,validation_status,current_artifact,blocking_gap,next_validation_step
+T1X-I10-I35,I-10 x I-35,San Antonio TX,A,-98.500,29.430,recognized,validated,validated,source_needed,heuristic,artifact,gap,next
+";
+        let source_csv = "\
+site_id,source_name,source_url,source_kind,access_health,ingestion_status,history_status,last_checked,blocking_gap,next_step
+T1X-I10-I35,DriveTexas API,https://example.invalid,live_event_feed,requires_key,not_started,unknown,2026-05-09,gap,Obtain DriveTexas API credentials
+";
+
+        let validation_rows =
+            parse_t1_diamond_validation(validation_csv.as_bytes()).expect("parse validation");
+        let source_rows = parse_t1_source_health(source_csv.as_bytes()).expect("parse source");
+        let tasks =
+            super::t1_diamond_validation_tasks(&validation_rows, Some("A"), Some(&source_rows));
+
+        assert_eq!(tasks.len(), 1);
+        assert_eq!(tasks[0].category, "observed_failure");
+        assert!(tasks[0]
+            .source_action
+            .as_ref()
+            .expect("source action")
+            .contains("DriveTexas API [requires_key / unknown]"));
     }
 
     #[test]
