@@ -14,6 +14,8 @@ Start here when deciding which document owns a claim.
 | `docs/game/des-moines-diamond-playtest.md` | Score sheet, season log, surprise log, and promotion checklist for Des Moines Diamond playtests | You need to run or review a G0 playtest |
 | `docs/game/des-moines-diamond-playthrough.md` | Narrated reference playthrough showing the intended topology aha and publication lock | You need the Tier-B transcript for review or blind-playtest comparison |
 | `docs/game/des-moines-diamond-blind-playtest-001.md` | First simulated blind-player playtest log and amendment candidates | You need the first G0 playtest evidence record |
+| `docs/game/des-moines-diamond-blind-playtest-002.md` and `003.md` | Follow-on v0.2 simulated playtests for optimizer and evidence-first personas | You need post-amendment playtest evidence |
+| `docs/game/des-moines-diamond-playtest-synthesis.md` | Cross-playtest synthesis and promotion readiness decision | You need the current G0-B/G0-C evidence summary |
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |

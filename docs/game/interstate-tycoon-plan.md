@@ -30,6 +30,8 @@ The game succeeds when a non-specialist can say:
 | First playtest packet | Drafted | `docs/game/des-moines-diamond-playtest.md` |
 | First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
 | First simulated blind playtest | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md` |
+| Simulated playtest set | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md`, `002.md`, `003.md` |
+| Playtest synthesis | Drafted | `docs/game/des-moines-diamond-playtest-synthesis.md` |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
@@ -273,8 +275,8 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Run two more simulated G0 playtests against v0.2 rules.
-2. Start the first G0 panel pass after the playtest logs.
+1. Start the first G0 panel pass after the playtest logs.
+2. Decide whether simulated G0-C readiness is enough to begin G1 implementation.
 3. Implement `route game scenarios` and `route game inspect des-moines-diamond`.
 4. Expand curated/validated T1/T1 anchors beyond Des Moines.
 5. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
