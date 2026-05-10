@@ -38,6 +38,7 @@ The game succeeds when a non-specialist can say:
 | Active countdown playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-003.md`; multi-season connector completes before closure resolution |
 | First score playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-004.md`; operational win and publication hold are scored separately |
 | Browser blind playtest packet | Drafted | `docs/game/des-moines-diamond-browser-playtest.md`; ready for human G2-A/G0-C pass |
+| First browser playtest | Simulated pass | `docs/game/des-moines-diamond-browser-playtest-001.md`; G2-A pass in simulation, G0-C still held for human/owner acceptance |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
