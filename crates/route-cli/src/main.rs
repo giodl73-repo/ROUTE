@@ -2760,7 +2760,7 @@ fn run_cli() -> Result<()> {
                 // Analyze all T1/T1 intersections
                 let intersections = route_network::find_t1_intersections(&graph);
                 println!(
-                    "route diamond --at all  ({} T1/T1 intersections found)",
+                    "route diamond all  ({} T1/T1 intersections found)",
                     intersections.len()
                 );
                 println!(
@@ -2792,10 +2792,10 @@ fn run_cli() -> Result<()> {
                 );
             } else {
                 // Analyze one specific intersection
-                println!("route diamond --at {at}");
+                println!("route diamond {at}");
                 let intersection = route_network::find_intersection(&graph, &at)
                     .ok_or_else(|| anyhow::anyhow!(
-                        "No T1/T1 intersection found matching '{}'. Try 'route diamond --at all' to list all.",
+                        "No T1/T1 intersection found matching '{}'. Try 'route diamond all' to list all.",
                         at
                     ))?;
                 println!(

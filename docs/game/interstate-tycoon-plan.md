@@ -297,7 +297,7 @@ Done criteria:
 |---|---|---|
 | Scenario source of truth | Markdown first, TOML later, or TOML now | Markdown first until G0 playtest stabilizes |
 | First implementation | CLI-only or browser-first | CLI-first for reproducibility |
-| Diamond mismatch | Fix analyzer/data or choose a recognized T1/T1 node | Fixed with a curated Des Moines analyzer anchor; expand to all 15 later |
+| Diamond mismatch | Fix analyzer/data or choose a recognized T1/T1 node | Curated analyzer catalog now covers all 15 named T1/T1 pairs; manual validation still required |
 | Audio | Generated cues, simple web audio, or silent first demo | Silent-capable first demo with cue contract |
 | Campaign persistence | JSON session log or custom save format | JSON session log shaped by G0 table |
 

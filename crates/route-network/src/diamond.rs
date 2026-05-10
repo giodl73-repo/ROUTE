@@ -28,13 +28,113 @@ struct CuratedT1Intersection {
 // TIGER primary-road segments do not always share an endpoint at major interchanges.
 // Keep scenario-backed T1/T1 anchors here so pressure tests can bind to the same
 // locations as the standards and failure ledgers.
-const CURATED_T1_INTERSECTIONS: &[CuratedT1Intersection] = &[CuratedT1Intersection {
-    name: "I-35/I-80",
-    route_a: "I35",
-    route_b: "I80",
-    lon: -93.573,
-    lat: 41.659,
-}];
+const CURATED_T1_INTERSECTIONS: &[CuratedT1Intersection] = &[
+    CuratedT1Intersection {
+        name: "I-80/I-90",
+        route_a: "I80",
+        route_b: "I90",
+        lon: -84.8,
+        lat: 41.6,
+    },
+    CuratedT1Intersection {
+        name: "I-35/I-80",
+        route_a: "I35",
+        route_b: "I80",
+        lon: -93.573,
+        lat: 41.659,
+    },
+    CuratedT1Intersection {
+        name: "I-35/I-40",
+        route_a: "I35",
+        route_b: "I40",
+        lon: -97.53,
+        lat: 35.46,
+    },
+    CuratedT1Intersection {
+        name: "I-40/I-75",
+        route_a: "I40",
+        route_b: "I75",
+        lon: -84.05,
+        lat: 35.9,
+    },
+    CuratedT1Intersection {
+        name: "I-10/I-35",
+        route_a: "I10",
+        route_b: "I35",
+        lon: -98.5,
+        lat: 29.43,
+    },
+    CuratedT1Intersection {
+        name: "I-75/I-80",
+        route_a: "I75",
+        route_b: "I80",
+        lon: -83.65,
+        lat: 41.55,
+    },
+    CuratedT1Intersection {
+        name: "I-90/I-95",
+        route_a: "I90",
+        route_b: "I95",
+        lon: -71.26,
+        lat: 42.35,
+    },
+    CuratedT1Intersection {
+        name: "I-10/I-95",
+        route_a: "I10",
+        route_b: "I95",
+        lon: -81.66,
+        lat: 30.32,
+    },
+    CuratedT1Intersection {
+        name: "I-5/I-10",
+        route_a: "I5",
+        route_b: "I10",
+        lon: -118.23,
+        lat: 34.05,
+    },
+    CuratedT1Intersection {
+        name: "I-5/I-80",
+        route_a: "I5",
+        route_b: "I80",
+        lon: -121.5,
+        lat: 38.58,
+    },
+    CuratedT1Intersection {
+        name: "I-5/I-90",
+        route_a: "I5",
+        route_b: "I90",
+        lon: -122.33,
+        lat: 47.59,
+    },
+    CuratedT1Intersection {
+        name: "I-35/I-90",
+        route_a: "I35",
+        route_b: "I90",
+        lon: -93.37,
+        lat: 43.65,
+    },
+    CuratedT1Intersection {
+        name: "I-40/I-95",
+        route_a: "I40",
+        route_b: "I95",
+        lon: -78.55,
+        lat: 35.38,
+    },
+    CuratedT1Intersection {
+        name: "I-75/I-90",
+        route_a: "I75",
+        route_b: "I90",
+        lon: -83.65,
+        lat: 41.55,
+    },
+    CuratedT1Intersection {
+        name: "I-5/I-40",
+        route_a: "I5",
+        route_b: "I40",
+        lon: -117.02,
+        lat: 34.9,
+    },
+];
 
 /// A T1/T1 intersection point.
 #[derive(Debug, Clone)]
@@ -377,7 +477,10 @@ fn bfs_path(
 
 #[cfg(test)]
 mod tests {
-    use super::{compute_k_connectivity, find_intersection, find_t1_intersections};
+    use super::{
+        compute_k_connectivity, find_intersection, find_t1_intersections, CURATED_T1_INTERSECTIONS,
+        T1_ROUTES,
+    };
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{coord, LineString};
     use petgraph::graph::{EdgeIndex, NodeIndex};
@@ -528,5 +631,38 @@ mod tests {
             .count();
 
         assert_eq!(matches, 1);
+    }
+
+    #[test]
+    fn curated_anchor_catalog_covers_all_known_t1_pairs() {
+        let mut graph = HighwayGraph::new();
+        let mut edge_id = 1;
+        for route_id in T1_ROUTES {
+            let source = graph
+                .graph
+                .add_node(node(edge_id, edge_id as f64, edge_id as f64));
+            edge_id += 1;
+            let sink = graph
+                .graph
+                .add_node(node(edge_id, edge_id as f64, edge_id as f64));
+            let route_edge = graph.graph.add_edge(source, sink, edge(edge_id, route_id));
+            graph
+                .route_index
+                .insert((*route_id).to_string(), vec![route_edge]);
+            edge_id += 1;
+        }
+
+        let intersections = find_t1_intersections(&graph);
+        for curated in CURATED_T1_INTERSECTIONS {
+            assert!(
+                intersections.iter().any(|ix| {
+                    (ix.route_a == curated.route_a && ix.route_b == curated.route_b)
+                        || (ix.route_a == curated.route_b && ix.route_b == curated.route_a)
+                }),
+                "missing curated pair {}x{}",
+                curated.route_a,
+                curated.route_b
+            );
+        }
     }
 }

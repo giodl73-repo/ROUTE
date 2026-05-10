@@ -183,7 +183,7 @@ Available projects:
 
 | Project | Game effect | ROUTE engine hook |
 |---|---|---|
-| Diamond connectors | Adds redundant transfer paths | `route diamond --at I35xI80` |
+| Diamond connectors | Adds redundant transfer paths | `route diamond I35xI80` |
 | Express freight flyovers | Protects T1 transfer capacity from local traffic | `route throughput-proof --gate` plus scenario fixture |
 | Relay hub expansion | Absorbs driver-swap disruption | `route hub-outage` |
 | EV/rest-area hardening | Reduces charging/rest outage penalties | `route ev-rest-outage` |
