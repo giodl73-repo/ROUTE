@@ -258,8 +258,40 @@ pub fn run_scenario(
 
 #[cfg(test)]
 mod tests {
-    use super::{scenario_validation_warnings, Scenario};
+    use super::{run_scenario, scenario_validation_warnings, Intervention, Scenario};
+    use crate::demand::OdDemand;
     use crate::incident::{IncidentSpec, IncidentType};
+    use geo_types::{coord, LineString};
+    use route_network::{HighwayEdge, HighwayGraph, HighwayNode};
+
+    fn node(id: u64, x: f64) -> HighwayNode {
+        HighwayNode {
+            id,
+            coord: coord! { x: x, y: 0.0 },
+            is_interchange: false,
+        }
+    }
+
+    fn edge(id: u64, route_id: &str, miles: f64) -> HighwayEdge {
+        HighwayEdge {
+            id,
+            route_id: route_id.to_string(),
+            state: "TS".to_string(),
+            road_class: route_data::RoadClass::Interstate,
+            geometry: LineString::from(vec![
+                coord! { x: 0.0, y: 0.0 },
+                coord! { x: miles, y: 0.0 },
+            ]),
+            length_miles: miles,
+            lane_count: Some(4),
+            aadt: None,
+            pct_truck: Some(0.5),
+            iri: None,
+            tti: None,
+            pti: None,
+            speed_limit: Some(65),
+        }
+    }
 
     #[test]
     fn embedded_scenarios_parse() {
@@ -290,6 +322,73 @@ mod tests {
         let warnings = scenario_validation_warnings(&scenario);
 
         assert!(warnings.iter().any(|w| w.contains("no affected_edges")));
+    }
+
+    #[test]
+    fn l2_scenario_run_bounds_incident_and_intervention_outputs() {
+        let mut graph = HighwayGraph::new();
+        let origin = graph.graph.add_node(node(1, 0.0));
+        let destination = graph.graph.add_node(node(2, 10.0));
+        let primary = graph
+            .graph
+            .add_edge(origin, destination, edge(10, "I80", 10.0));
+        let alternate = graph
+            .graph
+            .add_edge(origin, destination, edge(20, "US30", 12.0));
+        graph.route_index.insert("I80".to_string(), vec![primary]);
+        graph
+            .route_index
+            .insert("US30".to_string(), vec![alternate]);
+
+        let demand = vec![OdDemand {
+            origin,
+            destination,
+            truck_vph: 1_000.0,
+            car_vph: 1_000.0,
+            freight_value_b: 1.0,
+        }];
+
+        let scenario = Scenario {
+            name: "fixture-t1-closure".to_string(),
+            description: "Synthetic T1 closure with one parallel alternate".to_string(),
+            incident: IncidentSpec {
+                name: "primary closure".to_string(),
+                affected_edges: vec![10],
+                incident_type: IncidentType::Closure,
+                duration_hours: 8.0,
+                annual_occurrences: 1.0,
+            },
+            intervention: Some(Intervention::Diamond {
+                intersection_name: "fixture".to_string(),
+                connector_capacity_vph: 3_800.0,
+            }),
+            report_corridors: vec!["I80".to_string(), "US30".to_string()],
+            fw_max_iter: 8,
+            fw_tolerance: 0.001,
+        };
+
+        let result = run_scenario(&graph, &demand, &scenario);
+        let baseline_i80 = result.baseline.corridor_ptis["I80"];
+        let incident_i80 = result.incident.corridor_ptis["I80"];
+        let intervention_i80 = result
+            .intervention
+            .as_ref()
+            .expect("intervention result")
+            .corridor_ptis["I80"];
+
+        assert_eq!(result.scenario_name, "fixture-t1-closure");
+        assert!(baseline_i80 >= 1.0 && baseline_i80 < 1.2);
+        assert!(incident_i80 >= 10.0);
+        assert!(intervention_i80 < incident_i80);
+        assert!(intervention_i80 < 1.2);
+        assert!(result.baseline.metrics.total_throughput_vph > 0.0);
+        assert!(result.incident.metrics.total_throughput_vph > 0.0);
+        assert!(result
+            .incident
+            .t90_hours
+            .is_some_and(|hours| (0.0..=4.0).contains(&hours)));
+        assert!(result.baseline.fw_iterations <= scenario.fw_max_iter);
+        assert!(result.incident.fw_iterations <= scenario.fw_max_iter);
     }
 }
 
