@@ -7458,6 +7458,18 @@ T1X-I35-I80,,Iowa 511,,2023,,,,incident,true,2,false,unknown,missing id and timi
     }
 
     #[test]
+    fn t1_failure_events_canonical_ledger_passes_observation_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/t1-failure-events.csv");
+        let file = std::fs::File::open(path).expect("open canonical T1 failure events");
+        let rows = parse_t1_failure_events(file).expect("parse canonical T1 failure events");
+
+        assert!(!rows.is_empty());
+        assert!(t1_failure_event_observation_gate_failures(&rows).is_empty());
+        assert!(!summarize_t1_failure_events(&rows).is_empty());
+    }
+
+    #[test]
     fn t1_failure_events_apply_empirical_fields_to_ledger() {
         let ledger_csv = "\
 site_id,intersection,location,failure_mode,annual_probability,duration_p50_hours,duration_p95_hours,throughput_retention_current,throughput_retention_i2,reroute_time_p50_hours,reroute_time_p95_hours,source_status,confidence,current_artifact,blocking_gap,next_evidence_step
