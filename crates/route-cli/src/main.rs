@@ -229,6 +229,36 @@ enum Commands {
         gate_blueprint: bool,
     },
 
+    /// Show L1 inventory/source plan for standards blocked on asset or operations data
+    StandardsInventory {
+        /// Path to standards L1 inventory ledger CSV
+        #[arg(
+            long,
+            default_value = "data/standards-l1-inventory.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to standards proof ledger CSV used by --gate-planned
+        #[arg(
+            long,
+            default_value = "data/standards-proof-ledger.csv",
+            value_name = "FILE"
+        )]
+        standards_ledger: PathBuf,
+        /// Show only inventory rows that still have blocking gaps
+        #[arg(long)]
+        blockers: bool,
+        /// Print full source, scope, and next-step details
+        #[arg(long)]
+        details: bool,
+        /// Fail if inventory rows lack status, artifact, scope, gap, or next-step contracts
+        #[arg(long)]
+        gate: bool,
+        /// Fail if any Planned standard lacks an L1 inventory row
+        #[arg(long)]
+        gate_planned: bool,
+    },
+
     /// Show L2 pressure-test scenario catalog readiness
     PressureScenarios {
         /// Path to L2 pressure-test scenario catalog CSV
@@ -2273,6 +2303,70 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Blueprint gate: PASS");
+            }
+        }
+
+        Commands::StandardsInventory {
+            ledger,
+            standards_ledger,
+            blockers,
+            details,
+            gate,
+            gate_planned,
+        } => {
+            let rows = load_standards_inventory(&ledger)
+                .with_context(|| format!("loading standards inventory {}", ledger.display()))?;
+            print_standards_inventory(&rows, blockers, details);
+
+            let standards_rows = if gate_planned {
+                Some(
+                    load_standards_proof_ledger(&standards_ledger).with_context(|| {
+                        format!(
+                            "loading standards proof ledger {}",
+                            standards_ledger.display()
+                        )
+                    })?,
+                )
+            } else {
+                None
+            };
+
+            if gate {
+                let failures = standards_inventory_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Standards inventory gate: FAIL");
+                    println!(
+                        "  {} inventory rows lack L1 source contracts.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.standard_id, row.source_status, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("standards inventory gate failed");
+                }
+                println!();
+                println!("Standards inventory gate: PASS");
+            }
+            if let Some(standards_rows) = standards_rows.as_ref() {
+                let missing = planned_standard_inventory_missing(standards_rows, &rows);
+                if !missing.is_empty() {
+                    println!();
+                    println!("Planned standard inventory gate: FAIL");
+                    println!("  {} Planned standards lack inventory rows.", missing.len());
+                    for row in missing.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.standard_id, row.standard_family, row.blocking_gap
+                        );
+                    }
+                    anyhow::bail!("planned standard inventory gate failed");
+                }
+                println!();
+                println!("Planned standard inventory gate: PASS");
             }
         }
 
@@ -5547,6 +5641,111 @@ fn print_standards_proof(
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
+struct StandardsInventoryRow {
+    standard_id: String,
+    inventory_name: String,
+    source_kind: String,
+    source_status: String,
+    current_artifact: String,
+    coverage_scope: String,
+    blocking_gap: String,
+    next_step: String,
+}
+
+fn load_standards_inventory(path: &Path) -> Result<Vec<StandardsInventoryRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_standards_inventory(file)
+}
+
+fn parse_standards_inventory<R: std::io::Read>(reader: R) -> Result<Vec<StandardsInventoryRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_standards_inventory(rows: &[StandardsInventoryRow], blockers: bool, details: bool) {
+    let failures = standards_inventory_gate_failures(rows);
+    let filtered = if blockers {
+        failures.clone()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status.entry(row.source_status.clone()).or_insert(0) += 1;
+    }
+
+    println!("route standards-inventory");
+    println!("  rows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  source status: {}", format_count_map(&by_status));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<24} {:<22} {:<14} {:<18} {}",
+        "Standard", "Inventory", "Status", "Source", "Gap"
+    );
+    println!("{}", "-".repeat(122));
+    for row in filtered {
+        println!(
+            "{:<24} {:<22} {:<14} {:<18} {}",
+            row.standard_id,
+            truncate_for_table(&row.inventory_name, 22),
+            row.source_status,
+            truncate_for_table(&row.source_kind, 18),
+            row.blocking_gap
+        );
+        if details {
+            println!("  artifact: {}", row.current_artifact);
+            println!("  scope: {}", row.coverage_scope);
+            println!("  next: {}", row.next_step);
+        }
+    }
+}
+
+fn standards_inventory_gate_failures(
+    rows: &[StandardsInventoryRow],
+) -> Vec<&StandardsInventoryRow> {
+    rows.iter()
+        .filter(|row| !standards_inventory_row_has_contract(row))
+        .collect()
+}
+
+fn standards_inventory_row_has_contract(row: &StandardsInventoryRow) -> bool {
+    let status = row.source_status.trim().to_ascii_lowercase();
+    let status_is_labeled = matches!(
+        status.as_str(),
+        "implemented" | "partial" | "source_needed" | "access_gated" | "planned"
+    );
+    !row.standard_id.trim().is_empty()
+        && !row.inventory_name.trim().is_empty()
+        && !row.source_kind.trim().is_empty()
+        && status_is_labeled
+        && !row.current_artifact.trim().is_empty()
+        && !row.coverage_scope.trim().is_empty()
+        && !row.blocking_gap.trim().is_empty()
+        && !row.next_step.trim().is_empty()
+}
+
+fn planned_standard_inventory_missing<'a>(
+    standards: &'a [StandardsProofRow],
+    inventories: &[StandardsInventoryRow],
+) -> Vec<&'a StandardsProofRow> {
+    let covered = inventories
+        .iter()
+        .map(|row| row.standard_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    standards
+        .iter()
+        .filter(|row| row.evidence_level.eq_ignore_ascii_case("Planned"))
+        .filter(|row| !covered.contains(row.standard_id.as_str()))
+        .collect()
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 struct PressureScenarioRow {
     scenario_id: String,
     scenario_name: String,
@@ -7938,14 +8137,16 @@ mod tests {
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         gap_type_slug, join_fema_d1_to_corridor, parse_indot_trafficwise_events,
         parse_iowa511_events, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_standards_proof_ledger, parse_t1_diamond_validation, parse_t1_failure_events,
-        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
-        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        parse_standards_inventory, parse_standards_proof_ledger, parse_t1_diamond_validation,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        parse_throughput_proof_matrix, planned_standard_inventory_missing,
         pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
         pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
         pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
         pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
         standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        standards_inventory_gate_failures, standards_inventory_row_has_contract,
         summarize_t1_failure_events, t1_failure_event_has_observation_contract,
         t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
         t1_failure_row_has_evidence_contract, throughput_proof_gate_failures,
@@ -8119,6 +8320,62 @@ T1-UNKNOWN,T1,resilience,claim,outcome,mechanism,closure,gate,Unlabeled,artifact
 
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].standard_id, "T1-UNKNOWN");
+    }
+
+    #[test]
+    fn standards_inventory_requires_l1_source_contracts() {
+        let csv = "\
+standard_id,inventory_name,source_kind,source_status,current_artifact,coverage_scope,blocking_gap,next_step
+T1-BRIDGE,bridge ledger,FHWA NBI,partial,data/cache/nbi_bridges.csv,T1 bridges,gap,next
+T1-REST,rest ledger,state DOT,unknown,,T1 rest areas,gap,
+";
+
+        let rows = parse_standards_inventory(csv.as_bytes()).expect("parse standards inventory");
+
+        assert!(standards_inventory_row_has_contract(&rows[0]));
+        assert!(!standards_inventory_row_has_contract(&rows[1]));
+        let failures = standards_inventory_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].standard_id, "T1-REST");
+    }
+
+    #[test]
+    fn planned_standard_inventory_gate_requires_rows_for_planned_standards() {
+        let standards_csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-REST,T1,operations,rest,outcome,mechanism,outage,gate,Planned,artifact,gap,next,F
+T1-BRIDGE,T1,safety,bridge,outcome,mechanism,posting,gate,Planned,artifact,gap,next,E.2
+T1-OPS-PTI,T1,throughput,pti,outcome,mechanism,peak,gate,Heuristic,artifact,gap,next,C.1
+";
+        let inventory_csv = "\
+standard_id,inventory_name,source_kind,source_status,current_artifact,coverage_scope,blocking_gap,next_step
+T1-REST,rest ledger,state DOT,source_needed,artifact,T1 rest areas,gap,next
+";
+
+        let standards =
+            parse_standards_proof_ledger(standards_csv.as_bytes()).expect("parse standards");
+        let inventory =
+            parse_standards_inventory(inventory_csv.as_bytes()).expect("parse inventory");
+        let missing = planned_standard_inventory_missing(&standards, &inventory);
+
+        assert_eq!(missing.len(), 1);
+        assert_eq!(missing[0].standard_id, "T1-BRIDGE");
+    }
+
+    #[test]
+    fn standards_inventory_canonical_ledger_covers_planned_standards() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let standards_file = std::fs::File::open(root.join("data/standards-proof-ledger.csv"))
+            .expect("open canonical standards proof ledger");
+        let inventory_file = std::fs::File::open(root.join("data/standards-l1-inventory.csv"))
+            .expect("open canonical standards inventory");
+        let standards =
+            parse_standards_proof_ledger(standards_file).expect("parse canonical standards");
+        let inventory =
+            parse_standards_inventory(inventory_file).expect("parse canonical inventory");
+
+        assert!(standards_inventory_gate_failures(&inventory).is_empty());
+        assert!(planned_standard_inventory_missing(&standards, &inventory).is_empty());
     }
 
     #[test]

@@ -4,6 +4,8 @@ This document is the proof plan for Milepost 4, Pressure Test. The tier standard
 
 The machine-readable ledger is `data/standards-proof-ledger.csv`.
 
+The L1 inventory/source ledger for standards blocked on asset or operations data is `data/standards-l1-inventory.csv`.
+
 The L2 scenario catalog is `data/pressure-test-scenarios.csv`.
 
 The T1/T1 failure-rate and reroute evidence ledger is `data/t1-intersection-failures.csv`.
@@ -107,6 +109,8 @@ Important current limitation: embedded TOML scenarios now bind stable graph edge
 
 `route standards-proof` reads `data/standards-proof-ledger.csv`, prints the proof status table, and can fail a Blueprint gate when unresolved standards would be promoted.
 
+`route standards-inventory` reads `data/standards-l1-inventory.csv` and checks that every Planned standard has an explicit L1 inventory/source row. This keeps WIM, rest/truck parking, bridge, C-D, spur, regional operations, and maintenance standards from remaining as generic data gaps.
+
 `route pressure-scenarios` reads `data/pressure-test-scenarios.csv` and checks that each L2 scenario row has a named adversity class, tested standards, an artifact, a labeled status, and a next evidence step. This is a catalog contract, not proof that the scenarios already pass their acceptance gates.
 
 `route pressure-scenarios --coverage --gate-coverage` joins the scenario catalog to `data/standards-proof-ledger.csv` and verifies that every high-stakes T1 throughput/resilience standard has at least one L2 pressure-test hook. That gate is intentionally narrower than Blueprint readiness: energy, rest, operations, access, and asset-condition standards may still need L1 inventories or separate L2 scenarios, but the T1 standards that can make or break national SLA/resilience claims cannot remain implicit.
@@ -118,6 +122,8 @@ route standards-proof
 route standards-proof --tier T1 --family resilience
 route standards-proof --tier T1 --family resilience --details
 route standards-proof --gate-blueprint
+route standards-inventory
+route standards-inventory --gate --gate-planned
 route pressure-scenarios
 route pressure-scenarios --blockers --details
 route pressure-scenarios --gate-l2
