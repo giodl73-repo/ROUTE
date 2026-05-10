@@ -37,6 +37,7 @@ The game succeeds when a non-specialist can say:
 | First run-season playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-002.md`; deterministic event/project resolution, state write, log append, and resume pass |
 | Active countdown playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-003.md`; multi-season connector completes before closure resolution |
 | First score playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-004.md`; operational win and publication hold are scored separately |
+| Browser blind playtest packet | Drafted | `docs/game/des-moines-diamond-browser-playtest.md`; ready for human G2-A/G0-C pass |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
@@ -282,7 +283,7 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Add a human blind-playtest script for the browser prototype.
+1. Run the human browser blind playtest or record owner acceptance of simulated evidence.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
