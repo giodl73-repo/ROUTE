@@ -32,6 +32,7 @@ The game succeeds when a non-specialist can say:
 | First simulated blind playtest | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md` |
 | Simulated playtest set | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md`, `002.md`, `003.md` |
 | Playtest synthesis | Drafted | `docs/game/des-moines-diamond-playtest-synthesis.md` |
+| G0 panel review | Complete | `docs/game/des-moines-diamond-panel-g0.md`; G0-B pass, G0-C held for human blind playtest or owner acceptance of simulated evidence |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
@@ -39,7 +40,7 @@ The game succeeds when a non-specialist can say:
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
-| CLI game command | Not started | Planned `route game ...` |
+| CLI game command | Starting | G1-A approved for `route game scenarios` and `route game inspect des-moines-diamond` |
 | Browser prototype | Not started | Map-first UI |
 
 ## Learning Inputs Folded In
@@ -160,7 +161,7 @@ Immediate tasks:
 | Add playtest score sheet | Done | `docs/game/des-moines-diamond-playtest.md` |
 | Add first narrated playthrough | Done | `docs/game/des-moines-diamond-playthrough.md` |
 | Decide mismatch handling | Done | Curated Des Moines anchor added to diamond analyzer |
-| Run first panel pass | Pending | TIGRIS/HUNT/ASPECT/PROSE/SCORE/QUEST review notes |
+| Run first panel pass | Done | `docs/game/des-moines-diamond-panel-g0.md`; G1-A implementation may begin |
 
 ## Phase G1 - CLI Prototype
 
@@ -275,9 +276,9 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Start the first G0 panel pass after the playtest logs.
-2. Decide whether simulated G0-C readiness is enough to begin G1 implementation.
-3. Implement `route game scenarios` and `route game inspect des-moines-diamond`.
+1. Implement `route game scenarios` and `route game inspect des-moines-diamond`.
+2. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
+3. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
 4. Expand curated/validated T1/T1 anchors beyond Des Moines.
 5. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 

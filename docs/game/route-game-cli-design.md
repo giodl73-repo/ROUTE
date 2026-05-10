@@ -127,6 +127,9 @@ projects:
 flags:
   first_closure_seen
   connector_package_complete
+  source_requested
+  validated_evidence_available
+  fiscal_crisis
   analyzer_anchor_recognized
   empirical_closure_evidence
 last_result:
@@ -151,7 +154,8 @@ Project cards:
 | `relay-hub-reserve-staffing` | Relay hub reserve staffing |
 | `ev-rest-hardening` | EV/rest hardening |
 | `general-purpose-widening` | General-purpose widening |
-| `evidence-acquisition` | Evidence acquisition |
+| `source-request` | Source request |
+| `validated-evidence` | Validated evidence |
 
 Event cards:
 
@@ -226,6 +230,5 @@ L1 tests:
 |---|---|
 | Should season logs be CSV, JSONL, or both? | Accept CSV first; JSON state for checkpoints |
 | Should G1-A call `route sim scenario` internally? | Not yet; use fixed engine facts, call directly in G1-B |
-| Should budget below zero fail instantly? | Open; playthrough exposed this as an amendment candidate |
-| Should `source-challenge` affect evidence confidence? | Yes, but only if evidence acquisition was purchased |
-
+| Should budget below zero fail instantly? | Yes; v0.2 uses fiscal crisis, Budget Discipline 0, and Partial Win cap |
+| Should `source-challenge` affect evidence confidence? | Yes, but only through the Source request / Validated evidence split |
