@@ -44,7 +44,7 @@ The game succeeds when a non-specialist can say:
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
-| CLI game command | G1-A loop implemented | `route game scenarios`, `inspect`, `run-season`, and `score` exist; `data/game/des-moines-diamond-session-fixture.csv` hardens score output |
+| CLI game command | G1-B starting | `route game score` now prints Des Moines engine facts beside operational score and publication gate |
 | Browser prototype | Not started | Map-first UI |
 
 ## Learning Inputs Folded In
@@ -280,7 +280,7 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Start G1-B by summarizing live ROUTE engine facts inside scoring.
+1. Replace static Des Moines engine facts with direct summaries from live ROUTE scenario/diamond code.
 2. Add a checked-in state fixture once browser or campaign persistence needs it.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.

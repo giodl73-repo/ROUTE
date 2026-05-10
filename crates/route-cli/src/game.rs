@@ -134,6 +134,18 @@ pub struct ScoreResult {
     pub win_band: &'static str,
     pub publication_gate: String,
     pub promotion_readiness: String,
+    pub engine_facts: Option<EngineFacts>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct EngineFacts {
+    pub baseline_throughput_vph: u32,
+    pub incident_throughput_vph: u32,
+    pub intervention_throughput_vph: u32,
+    pub recovery_hours: f64,
+    pub diamond_k_current: u8,
+    pub connectors_needed: u8,
+    pub evidence_level: &'static str,
 }
 
 const TRACKS: &[Track] = &[
@@ -813,6 +825,7 @@ pub fn score_session_log<R: std::io::Read>(scenario_id: &str, reader: R) -> Resu
         win_band,
         publication_gate,
         promotion_readiness,
+        engine_facts: engine_facts_for(scenario_id),
     })
 }
 
@@ -831,6 +844,34 @@ pub fn render_score_result(result: &ScoreResult, details: bool) -> String {
         "  promotion_readiness: {}\n",
         result.promotion_readiness
     ));
+    if let Some(engine) = result.engine_facts {
+        out.push_str("  engine_facts:\n");
+        out.push_str(&format!(
+            "    baseline_throughput_vph: {}\n",
+            engine.baseline_throughput_vph
+        ));
+        out.push_str(&format!(
+            "    incident_throughput_vph: {}\n",
+            engine.incident_throughput_vph
+        ));
+        out.push_str(&format!(
+            "    intervention_throughput_vph: {}\n",
+            engine.intervention_throughput_vph
+        ));
+        out.push_str(&format!(
+            "    recovery_hours: {:.1}\n",
+            engine.recovery_hours
+        ));
+        out.push_str(&format!(
+            "    diamond_k_current: {}\n",
+            engine.diamond_k_current
+        ));
+        out.push_str(&format!(
+            "    connectors_needed_for_k3: {}\n",
+            engine.connectors_needed
+        ));
+        out.push_str(&format!("    evidence_level: {}\n", engine.evidence_level));
+    }
     if details {
         out.push_str("  dimensions:\n");
         out.push_str(&format!(
@@ -853,6 +894,21 @@ pub fn render_score_result(result: &ScoreResult, details: bool) -> String {
         ));
     }
     out
+}
+
+fn engine_facts_for(scenario_id: &str) -> Option<EngineFacts> {
+    match scenario_id {
+        DES_MOINES_SCENARIO_ID => Some(EngineFacts {
+            baseline_throughput_vph: 86_671,
+            incident_throughput_vph: 83_423,
+            intervention_throughput_vph: 86_671,
+            recovery_hours: 0.9,
+            diamond_k_current: 0,
+            connectors_needed: 3,
+            evidence_level: "Heuristic",
+        }),
+        _ => None,
+    }
 }
 
 fn append_session_log(path: &Path, result: &SeasonResult) -> Result<()> {
@@ -1199,6 +1255,11 @@ season,accepted_projects,rejected_count,budget_remaining,political_capital,publi
         assert!(rendered.contains("operational_score: 100/100"));
         assert!(rendered.contains("publication_gate: locked"));
         assert!(rendered.contains("promotion_readiness: hold"));
+        assert!(rendered.contains("engine_facts:"));
+        assert!(rendered.contains("baseline_throughput_vph: 86671"));
+        assert!(rendered.contains("intervention_throughput_vph: 86671"));
+        assert!(rendered.contains("diamond_k_current: 0"));
+        assert!(rendered.contains("connectors_needed_for_k3: 3"));
         assert!(rendered.contains("throughput_retention: 25/25"));
         assert!(rendered.contains("evidence_honesty: 20/20"));
     }
