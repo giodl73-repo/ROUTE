@@ -68,13 +68,13 @@ Current CLI outputs on this repo:
 |---|---|
 | `cargo run -q -p route -- sim scenario des-moines-interchange` | Baseline 86,671 vph; incident 83,423 vph; PTI 1.17; T90 0.9h |
 | `cargo run -q -p route -- sim scenario des-moines-interchange --intervention` | Intervention restores throughput to 86,671 vph; incident PTI 1.37 to intervention PTI 1.36 |
-| `cargo run -q -p route -- diamond all` | Current diamond ledger lists I-40/I-75 and I-80/I-90, not I-35/I-80 |
-| `cargo run -q -p route -- diamond I35xI80` | Fails to find a matching T1/T1 intersection |
+| `cargo run -q -p route -- diamond all` | Current diamond analyzer includes I-35/I-80, I-40/I-75, and I-80/I-90 |
+| `cargo run -q -p route -- diamond I35xI80` | Finds I-35/I-80 at 41.66 N, 93.57 W; current k=0; 3 connectors needed |
 
 Prototype interpretation:
 
 - Game win gate may use the scenario throughput restoration as heuristic evidence.
-- Publication gate is locked until the diamond ledger and scenario naming agree on the I-35/I-80 node.
+- Publication gate no longer blocks on analyzer recognition, but still blocks on empirical closure and PTI evidence.
 - The PTI intervention result is not strong enough to oversell; the teaching claim is topology and throughput restoration, not publication-grade PTI.
 
 ## Project Cards
@@ -108,7 +108,7 @@ Project rule: the player may win the game with heuristic project effects, but th
 | Card | Known | Missing | Game effect |
 |---|---|---|---|
 | Scenario run | The closure scenario runs and gives bounded throughput outputs | Geometry validation for the intervention | Unlocks heuristic win scoring |
-| Diamond ledger mismatch | `route diamond all` does not include I-35/I-80 | Node binding between scenario and diamond analyzer | Locks publication gate |
+| Des Moines diamond analyzer | `route diamond I35xI80` recognizes the curated Des Moines anchor | Full empirical k-class and alternate-capacity validation | Unlocks analyzer consistency; publication still needs observed evidence |
 | Iowa 511 sample | Normalized observations exist for I-35/I-80 work-zone rows | Annual depth and closure-rate confidence | Unlocks low-confidence failure probability |
 | NPMRDS/PTI | Source target is identified | Direct extract and validation | Locks publication-grade SLA proof |
 | Standards proof ledger | T1/T1 standards have acceptance gates | Empirical top-site validation | Shows why the project matters |
@@ -136,7 +136,7 @@ Win bands:
 
 Publication gate:
 
-- Pass requires the diamond analyzer to recognize the Des Moines node.
+- Pass requires the diamond analyzer to recognize the Des Moines node. This now passes for the curated anchor.
 - Pass requires no `source_needed` field for the headline claim.
 - Pass requires the after-action report to cite observed versus modeled failure data.
 
@@ -203,7 +203,7 @@ Each paper playtest should write one row per season.
 | `recovery_hours` | `0.9 heuristic` |
 | `sla_status` | `bounded heuristic` |
 | `evidence_confidence` | `2` |
-| `publication_gate` | `locked: diamond ledger mismatch` |
+| `publication_gate` | `locked: empirical closure evidence missing` |
 | `player_note` | `Widening did not solve topology` |
 
 ## Verification Checklist
@@ -214,6 +214,6 @@ G0 is complete when:
 - The playtest packet records a season log, score, aha check, surprise log, and promotion decision.
 - The forced tutorial turn produces the intended topology aha.
 - The after-action report separates operational win from publication proof.
-- The diamond analyzer mismatch is either fixed in code/data or remains visibly labeled as a blocker.
+- The diamond analyzer recognizes the Des Moines anchor and any remaining blocker is evidence-specific.
 - `route sim scenario des-moines-interchange --intervention` still runs.
 - `data/pressure-test-scenarios.csv` still lists `S-L2-DES-MOINES` as executable heuristic evidence.

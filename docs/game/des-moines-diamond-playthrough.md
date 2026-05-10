@@ -49,7 +49,7 @@ Resolution:
 | Evidence confidence | 2 |
 | Throughput | Incident stress still exposes transfer fragility |
 | Recovery | Heuristic recovery remains bounded, but the transfer lesson has not landed |
-| Publication gate | Locked: diamond ledger mismatch |
+| Publication gate | Locked: empirical closure evidence missing |
 
 Narration:
 
@@ -114,7 +114,7 @@ Resolution:
 | Evidence confidence | 3 |
 | Throughput | No new construction effect |
 | Recovery | No new construction effect |
-| Publication gate | Still locked: evidence improved, diamond mismatch remains |
+| Publication gate | Still locked: evidence improved, empirical closure history remains missing |
 
 Narration:
 
@@ -145,7 +145,7 @@ Resolution:
 | Evidence confidence | 3 |
 | Throughput | Heuristic transfer retention clears the operational threshold |
 | Recovery | Heuristic T90 clears the 4-hour threshold |
-| Publication gate | Locked: analyzer/data mismatch |
+| Publication gate | Locked: observed failure-rate evidence missing |
 
 Narration:
 
@@ -179,7 +179,7 @@ Publication gate:
 
 | Gate | Result | Note |
 |---|---|---|
-| Diamond analyzer recognizes Des Moines node | Locked | Current `route diamond all` mismatch |
+| Diamond analyzer recognizes Des Moines node | Pass | Curated Des Moines anchor recognized by `route diamond I35xI80` |
 | No headline claim uses `source_needed` | Partial | Failure rates still need empirical depth |
 | Observed versus modeled evidence is cited | Partial | Scenario output is modeled/heuristic |
 | Final publication result | Locked | Operational win only |
@@ -191,7 +191,7 @@ Publication gate:
 | What actually failed in the first closure? | "The transfer point, not the whole corridor." |
 | Why did widening help or fail? | "It helped capacity, but it did not create another transfer path." |
 | What did the diamond connector package change? | "It gave the system redundant paths through the 50-mile zone." |
-| What evidence would make this publication-grade? | "The analyzer has to validate the Des Moines node, and the closure evidence needs real observed data." |
+| What evidence would make this publication-grade? | "The analyzer can find the Des Moines node now; the closure evidence still needs real observed data." |
 
 Aha status: Landed.
 
@@ -215,7 +215,7 @@ What needs tightening:
 
 - Budget rules need a firm failure/penalty definition.
 - Evidence acquisition should not be buyable when budget is already exhausted unless debt is a deliberate rule.
-- The Des Moines diamond mismatch needs either code/data repair or a formal blocker artifact.
+- The Des Moines diamond analyzer anchor is fixed; the remaining blocker is empirical closure and PTI evidence.
 
 Promotion decision:
 
@@ -226,4 +226,3 @@ Promotion decision:
 | Rewrite |  | Not indicated |
 
 Next action: run or simulate one blind playtest using `docs/game/des-moines-diamond-playtest.md`, then compare surprises against this narrated reference.
-

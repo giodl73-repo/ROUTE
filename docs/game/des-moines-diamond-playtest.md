@@ -74,7 +74,7 @@ Publication gate:
 
 | Gate | Pass / lock | Note |
 |---|---|---|
-| Diamond analyzer recognizes Des Moines node | locked | Current known blocker |
+| Diamond analyzer recognizes Des Moines node | pass | Curated Des Moines anchor recognized by `route diamond I35xI80` |
 | No headline claim uses `source_needed` |  |  |
 | Observed versus modeled evidence is cited |  |  |
 | Final publication result |  |  |
@@ -144,4 +144,3 @@ Promotion decision:
 | Hold at G0-B |  | Paper playable, aha not proven |
 | Promote to G0-C |  | Aha proven and panel-ready |
 | Rewrite |  | Core rules or lesson failed |
-

@@ -32,7 +32,7 @@ The game succeeds when a non-specialist can say:
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
 | Intervention hook | Heuristic executable | `route sim scenario des-moines-interchange --intervention` |
 | Pressure-test catalog row | Present | `S-L2-DES-MOINES` |
-| Diamond analyzer link | Blocking mismatch | `route diamond all` does not include I-35/I-80 |
+| Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
 | CLI game command | Not started | Planned `route game ...` |
 | Browser prototype | Not started | Map-first UI |
@@ -144,7 +144,7 @@ Done criteria:
 - A player can run the game from the document without reading Rust code.
 - The first forced closure produces the topology aha.
 - The after-action report clearly separates heuristic win from publication proof.
-- The Des Moines diamond mismatch is either fixed or visibly carried as a blocker.
+- The Des Moines diamond anchor remains recognized by `route diamond I35xI80`.
 - `route sim scenario des-moines-interchange --intervention` still runs.
 
 Immediate tasks:
@@ -154,7 +154,7 @@ Immediate tasks:
 | Write G0 scenario artifact | Done | `docs/game/des-moines-diamond-g0.md` |
 | Add playtest score sheet | Done | `docs/game/des-moines-diamond-playtest.md` |
 | Add first narrated playthrough | Done | `docs/game/des-moines-diamond-playthrough.md` |
-| Decide mismatch handling | Next | Fix diamond detection or add explicit blocker ledger row |
+| Decide mismatch handling | Done | Curated Des Moines anchor added to diamond analyzer |
 | Run first panel pass | Pending | TIGRIS/HUNT/ASPECT/PROSE/SCORE/QUEST review notes |
 
 ## Phase G1 - CLI Prototype
@@ -270,10 +270,10 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Investigate the Des Moines diamond mismatch between `des-moines-interchange` and `route diamond`.
-2. Add a small CLI design note for `route game` state shape.
-3. Run a blind G0 playtest or simulated blind-player pass against the playtest packet.
-4. Run the first G0 panel pass after a playtest log exists.
+1. Add a small CLI design note for `route game` state shape.
+2. Run a blind G0 playtest or simulated blind-player pass against the playtest packet.
+3. Start the first G0 panel pass after a playtest log exists.
+4. Expand curated/validated T1/T1 anchors beyond Des Moines.
 5. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 
 ## Open Decisions
@@ -282,7 +282,7 @@ Done criteria:
 |---|---|---|
 | Scenario source of truth | Markdown first, TOML later, or TOML now | Markdown first until G0 playtest stabilizes |
 | First implementation | CLI-only or browser-first | CLI-first for reproducibility |
-| Diamond mismatch | Fix analyzer/data or choose a recognized T1/T1 node | Fix analyzer/data if Des Moines remains the tutorial |
+| Diamond mismatch | Fix analyzer/data or choose a recognized T1/T1 node | Fixed with a curated Des Moines analyzer anchor; expand to all 15 later |
 | Audio | Generated cues, simple web audio, or silent first demo | Silent-capable first demo with cue contract |
 | Campaign persistence | JSON session log or custom save format | JSON session log shaped by G0 table |
 

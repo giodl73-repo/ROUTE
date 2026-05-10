@@ -17,6 +17,25 @@ use std::collections::{HashMap, HashSet, VecDeque};
 const T1_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
 const DIAMOND_RADIUS_DEG: f64 = 0.7; // ~50 miles at mid-latitude
 
+struct CuratedT1Intersection {
+    name: &'static str,
+    route_a: &'static str,
+    route_b: &'static str,
+    lon: f64,
+    lat: f64,
+}
+
+// TIGER primary-road segments do not always share an endpoint at major interchanges.
+// Keep scenario-backed T1/T1 anchors here so pressure tests can bind to the same
+// locations as the standards and failure ledgers.
+const CURATED_T1_INTERSECTIONS: &[CuratedT1Intersection] = &[CuratedT1Intersection {
+    name: "I-35/I-80",
+    route_a: "I35",
+    route_b: "I80",
+    lon: -93.573,
+    lat: 41.659,
+}];
+
 /// A T1/T1 intersection point.
 #[derive(Debug, Clone)]
 pub struct T1Intersection {
@@ -103,7 +122,51 @@ pub fn find_t1_intersections(g: &HighwayGraph) -> Vec<T1Intersection> {
         }
     }
 
+    for curated in CURATED_T1_INTERSECTIONS {
+        let key = pair_key(curated.route_a, curated.route_b);
+        if seen.contains(&key) {
+            continue;
+        }
+        if g.route_edges(curated.route_a).is_empty() || g.route_edges(curated.route_b).is_empty() {
+            continue;
+        }
+        let Some(center) = nearest_node(g, curated.lon, curated.lat) else {
+            continue;
+        };
+        seen.insert(key);
+        intersections.push(T1Intersection {
+            name: curated.name.to_string(),
+            route_a: curated.route_a.to_string(),
+            route_b: curated.route_b.to_string(),
+            center,
+            lon: curated.lon,
+            lat: curated.lat,
+        });
+    }
+
     intersections
+}
+
+fn pair_key(route_a: &str, route_b: &str) -> String {
+    let mut routes = [route_a, route_b];
+    routes.sort();
+    format!("{}x{}", routes[0], routes[1])
+}
+
+fn nearest_node(g: &HighwayGraph, lon: f64, lat: f64) -> Option<NodeIndex> {
+    g.graph.node_indices().min_by(|&a, &b| {
+        let ca = &g.graph[a].coord;
+        let cb = &g.graph[b].coord;
+        let da = squared_distance(ca.x, ca.y, lon, lat);
+        let db = squared_distance(cb.x, cb.y, lon, lat);
+        da.total_cmp(&db)
+    })
+}
+
+fn squared_distance(lon: f64, lat: f64, target_lon: f64, target_lat: f64) -> f64 {
+    let dx = lon - target_lon;
+    let dy = lat - target_lat;
+    dx * dx + dy * dy
 }
 
 /// Find T1 intersection by name or route pair (e.g. "I35xI80", "I-35xI-80").
@@ -314,7 +377,7 @@ fn bfs_path(
 
 #[cfg(test)]
 mod tests {
-    use super::compute_k_connectivity;
+    use super::{compute_k_connectivity, find_intersection, find_t1_intersections};
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{coord, LineString};
     use petgraph::graph::{EdgeIndex, NodeIndex};
@@ -369,8 +432,14 @@ mod tests {
         let source = graph.graph.add_node(node(1, 0.0, 0.0));
         let zone_edges = HashSet::new();
 
-        assert_eq!(compute_k_connectivity(&graph, &[source], &[], &zone_edges), 0);
-        assert_eq!(compute_k_connectivity(&graph, &[], &[source], &zone_edges), 0);
+        assert_eq!(
+            compute_k_connectivity(&graph, &[source], &[], &zone_edges),
+            0
+        );
+        assert_eq!(
+            compute_k_connectivity(&graph, &[], &[source], &zone_edges),
+            0
+        );
     }
 
     #[test]
@@ -379,8 +448,9 @@ mod tests {
         let source = graph.graph.add_node(node(1, 0.0, 0.0));
         let sink = graph.graph.add_node(node(2, 2.0, 0.0));
         let mut edge_id = 10;
-        let zone_edges: HashSet<_> =
-            add_path(&mut graph, source, sink, "I35", &mut edge_id).into_iter().collect();
+        let zone_edges: HashSet<_> = add_path(&mut graph, source, sink, "I35", &mut edge_id)
+            .into_iter()
+            .collect();
 
         let k = compute_k_connectivity(&graph, &[source], &[sink], &zone_edges);
 
@@ -417,5 +487,46 @@ mod tests {
         let k = compute_k_connectivity(&graph, &[source], &[sink], &zone_edges);
 
         assert_eq!(k, 1);
+    }
+
+    #[test]
+    fn curated_des_moines_anchor_is_available_when_routes_do_not_share_endpoint() {
+        let mut graph = HighwayGraph::new();
+        let i35_south = graph.graph.add_node(node(1, -93.58, 41.1));
+        let i35_north = graph.graph.add_node(node(2, -93.58, 42.1));
+        let i80_west = graph.graph.add_node(node(3, -94.2, 41.66));
+        let i80_east = graph.graph.add_node(node(4, -93.0, 41.66));
+        let i35 = graph.graph.add_edge(i35_south, i35_north, edge(1, "I35"));
+        let i80 = graph.graph.add_edge(i80_west, i80_east, edge(2, "I80"));
+        graph.route_index.insert("I35".to_string(), vec![i35]);
+        graph.route_index.insert("I80".to_string(), vec![i80]);
+
+        let intersection = find_intersection(&graph, "I35xI80").expect("curated Des Moines anchor");
+
+        assert_eq!(intersection.name, "I-35/I-80");
+        assert_eq!(intersection.route_a, "I35");
+        assert_eq!(intersection.route_b, "I80");
+    }
+
+    #[test]
+    fn curated_anchor_is_listed_once() {
+        let mut graph = HighwayGraph::new();
+        let shared = graph.graph.add_node(node(1, -93.573, 41.659));
+        let i35_north = graph.graph.add_node(node(2, -93.58, 42.1));
+        let i80_east = graph.graph.add_node(node(3, -93.0, 41.66));
+        let i35 = graph.graph.add_edge(shared, i35_north, edge(1, "I35"));
+        let i80 = graph.graph.add_edge(shared, i80_east, edge(2, "I80"));
+        graph.route_index.insert("I35".to_string(), vec![i35]);
+        graph.route_index.insert("I80".to_string(), vec![i80]);
+
+        let matches = find_t1_intersections(&graph)
+            .into_iter()
+            .filter(|ix| {
+                (ix.route_a == "I35" && ix.route_b == "I80")
+                    || (ix.route_a == "I80" && ix.route_b == "I35")
+            })
+            .count();
+
+        assert_eq!(matches, 1);
     }
 }
