@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Des Moines Diamond</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172026;
+      --muted: #5c6770;
+      --line: #d2d8dd;
+      --panel: #f7f9fb;
+      --panel-strong: #edf2f6;
+      --route-a: #126e82;
+      --route-b: #8d4f1f;
+      --local: #66717a;
+      --connector: #24824d;
+      --warn: #b83b32;
+      --proof: #3b5ea8;
+      --focus: #111827;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .status-row,
+    .tracks,
+    .actions,
+    .score-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge,
+    .track,
+    .score-pill {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 6px 8px;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .badge strong,
+    .track strong,
+    .score-pill strong {
+      font-weight: 700;
+    }
+
+    .badge.locked {
+      border-color: #d58b84;
+      background: #fff3f1;
+      color: #84251e;
+    }
+
+    .badge.heuristic {
+      border-color: #9db2dc;
+      background: #f1f5ff;
+      color: #264a98;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(250px, 1fr) minmax(360px, 1.45fr) minmax(260px, 0.9fr);
+      min-height: 0;
+    }
+
+    aside,
+    section.board {
+      min-width: 0;
+    }
+
+    aside {
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      overflow: auto;
+    }
+
+    aside.evidence {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .project-list,
+    .evidence-list,
+    .event-log {
+      display: grid;
+      gap: 10px;
+    }
+
+    .project,
+    .evidence-item,
+    .event-item {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      padding: 10px;
+    }
+
+    .project.selected {
+      border-color: var(--connector);
+      box-shadow: inset 3px 0 0 var(--connector);
+    }
+
+    .project.unselected {
+      opacity: 0.72;
+    }
+
+    .project h3,
+    .evidence-item h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .project button,
+    .toolbar button {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      min-height: 34px;
+      padding: 6px 9px;
+      cursor: pointer;
+    }
+
+    .project button:focus,
+    .toolbar button:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .project button[aria-pressed="true"] {
+      border-color: var(--connector);
+      background: #e9f7ef;
+    }
+
+    .board {
+      display: grid;
+      grid-template-rows: auto minmax(360px, 1fr) auto;
+      gap: 12px;
+      padding: 16px;
+      background: #ffffff;
+      min-height: 0;
+    }
+
+    .map-wrap {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, rgba(23, 32, 38, 0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(23, 32, 38, 0.04) 1px, transparent 1px),
+        #fbfcfd;
+      background-size: 48px 48px;
+      position: relative;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      min-height: 360px;
+      display: block;
+    }
+
+    .route-label {
+      font-size: 14px;
+      font-weight: 700;
+      fill: var(--ink);
+    }
+
+    .zone-label {
+      font-size: 12px;
+      fill: var(--muted);
+    }
+
+    .core-label {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #84251e;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .playback {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .meter {
+      display: grid;
+      grid-template-columns: 110px 1fr 52px;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .bar {
+      height: 12px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      background: var(--connector);
+    }
+
+    footer {
+      padding: 10px 18px;
+      border-top: 1px solid var(--line);
+      background: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      aside,
+      aside.evidence {
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .board {
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Des Moines Diamond</h1>
+        <div class="status-row" aria-label="Scenario status">
+          <span class="badge heuristic"><strong>Evidence</strong> Heuristic live ROUTE summary</span>
+          <span class="badge locked"><strong>Publication</strong> locked</span>
+          <span class="badge"><strong>Season</strong> <span id="season">3</span></span>
+        </div>
+      </div>
+      <div class="score-strip" aria-label="Score summary">
+        <span class="score-pill"><strong>Operational</strong> 100/100</span>
+        <span class="score-pill"><strong>Win band</strong> Operational win</span>
+      </div>
+    </header>
+
+    <main>
+      <aside aria-label="Projects">
+        <h2>Projects</h2>
+        <div class="project-list" id="projects"></div>
+      </aside>
+
+      <section class="board" aria-label="Scenario board">
+        <div class="tracks" aria-label="Resource tracks">
+          <span class="track"><strong>Budget</strong> <span id="budget">7</span></span>
+          <span class="track"><strong>Crews</strong> <span id="crews">3</span></span>
+          <span class="track"><strong>Political</strong> <span id="political">5</span></span>
+          <span class="track"><strong>Patience</strong> <span id="patience">4</span></span>
+          <span class="track"><strong>Ops</strong> <span id="ops">4</span></span>
+          <span class="track"><strong>Evidence</strong> <span id="evidence">2</span></span>
+        </div>
+
+        <div class="map-wrap">
+          <svg viewBox="0 0 900 560" role="img" aria-label="I-35 and I-80 Des Moines transfer topology">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#172026"></path>
+              </marker>
+            </defs>
+            <line x1="450" y1="48" x2="450" y2="512" stroke="var(--route-a)" stroke-width="26" stroke-linecap="round"></line>
+            <line x1="70" y1="280" x2="830" y2="280" stroke="var(--route-b)" stroke-width="26" stroke-linecap="round"></line>
+            <path d="M 155 388 C 310 442, 590 442, 745 388" fill="none" stroke="var(--local)" stroke-width="12" stroke-linecap="round"></path>
+            <path id="connector" d="M 360 190 C 310 240, 315 330, 370 375" fill="none" stroke="var(--connector)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0"></path>
+            <path d="M 540 190 C 590 240, 585 330, 530 375" fill="none" stroke="var(--connector)" stroke-width="14" stroke-linecap="round"></path>
+            <circle cx="450" cy="280" r="54" fill="#fff3f1" stroke="var(--warn)" stroke-width="4"></circle>
+            <circle cx="450" cy="280" r="15" fill="var(--warn)"></circle>
+            <rect x="340" y="222" width="220" height="116" fill="none" stroke="var(--warn)" stroke-width="2" stroke-dasharray="8 7"></rect>
+            <text x="462" y="92" class="route-label">I-35 north</text>
+            <text x="462" y="505" class="route-label">I-35 south</text>
+            <text x="74" y="260" class="route-label">I-80 west</text>
+            <text x="735" y="260" class="route-label">I-80 east</text>
+            <text x="358" y="460" class="zone-label">I-235 local bypass</text>
+            <text x="500" y="168" class="zone-label">independent transfer paths</text>
+            <text x="378" y="285" class="core-label">fragile core</text>
+            <text x="600" y="372" class="zone-label">relay/rest node</text>
+            <circle cx="650" cy="392" r="20" fill="#ffffff" stroke="var(--proof)" stroke-width="4"></circle>
+            <path d="M 650 392 L 650 360" stroke="var(--proof)" stroke-width="3" marker-end="url(#arrow)"></path>
+          </svg>
+        </div>
+
+        <div class="playback" aria-label="Pressure playback">
+          <div class="toolbar">
+            <strong>Closure Playback</strong>
+            <div class="actions">
+              <button type="button" id="before">Before</button>
+              <button type="button" id="after">After</button>
+            </div>
+          </div>
+          <div class="meter">
+            <span>Incident</span>
+            <div class="bar"><span id="incident-bar" style="width:96%"></span></div>
+            <strong id="incident-value">83,423</strong>
+          </div>
+          <div class="meter">
+            <span>Intervention</span>
+            <div class="bar"><span id="intervention-bar" style="width:100%"></span></div>
+            <strong id="intervention-value">86,671</strong>
+          </div>
+        </div>
+      </section>
+
+      <aside class="evidence" aria-label="Evidence">
+        <h2>Evidence</h2>
+        <div class="evidence-list" id="evidence-list"></div>
+        <h2 style="margin-top:16px">Event Log</h2>
+        <div class="event-log" id="event-log"></div>
+      </aside>
+    </main>
+
+    <footer>
+      <span>Game result: operational win.</span>
+      <span>Publication claim locked until observed closure evidence and direct PTI/NPMRDS validation exist.</span>
+    </footer>
+  </div>
+
+  <script>
+    const state = {
+      season: 3,
+      budget: 7,
+      construction_crews: 3,
+      political_capital: 5,
+      public_patience: 4,
+      operations_capacity: 4,
+      evidence_confidence: 2,
+      completed_projects: ["diamond-connector-package"],
+      publication_gate: "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
+    };
+
+    const projects = [
+      ["diamond-connector-package", "Diamond connector package", "Cost 5, crew 2, time 3", "Heuristic", "Adds independent transfer paths."],
+      ["express-freight-flyovers", "Express freight flyovers", "Cost 4, crew 2, time 2", "Planned", "Protects freight transfer from local capture."],
+      ["work-zone-sequencing", "Work-zone sequencing", "Cost 1, crew 1, time 1", "Heuristic", "Protects public patience during closures."],
+      ["general-purpose-widening", "General-purpose widening", "Cost 4, crew 2, time 3", "Heuristic", "Adds capacity, not independent transfer paths."],
+      ["source-request", "Source request", "Cost 1, crew 0, time 1", "Implemented as artifact plan", "Names the missing observed source."]
+    ];
+
+    const evidence = [
+      ["Scenario run", "Known", "Bounded throughput outputs exist."],
+      ["Des Moines diamond analyzer", "Known", "I35xI80 recognized; k=0; 3 connectors needed."],
+      ["Iowa 511 sample", "Partial", "Annual depth and closure-rate confidence missing."],
+      ["NPMRDS/PTI", "Missing", "Direct extract and validation still required."],
+      ["Standards proof ledger", "Known", "T1/T1 acceptance gates exist."]
+    ];
+
+    const events = [
+      "Season 1: connector package started.",
+      "Season 2: connector package under construction.",
+      "Season 3: closure stress sees redundant transfer paths.",
+      "After-action: operational win, publication locked."
+    ];
+
+    function renderProjects() {
+      const root = document.getElementById("projects");
+      root.innerHTML = "";
+      for (const [slug, name, cost, label, effect] of projects) {
+        const selected = state.completed_projects.includes(slug);
+        const el = document.createElement("article");
+        el.className = `project ${selected ? "selected" : "unselected"}`;
+        el.innerHTML = `
+          <h3>${name}</h3>
+          <p class="meta">${cost}</p>
+          <p class="meta">Evidence: ${label}</p>
+          <p class="meta">${effect}</p>
+          <button type="button" aria-pressed="${selected}">${selected ? "Selected" : "Inspect"}</button>
+        `;
+        root.appendChild(el);
+      }
+    }
+
+    function renderEvidence() {
+      const root = document.getElementById("evidence-list");
+      root.innerHTML = "";
+      for (const [name, status, body] of evidence) {
+        const el = document.createElement("article");
+        el.className = "evidence-item";
+        el.innerHTML = `<h3>${name}</h3><p class="meta">${status}: ${body}</p>`;
+        root.appendChild(el);
+      }
+    }
+
+    function renderEvents() {
+      const root = document.getElementById("event-log");
+      root.innerHTML = "";
+      for (const event of events) {
+        const el = document.createElement("div");
+        el.className = "event-item";
+        el.textContent = event;
+        root.appendChild(el);
+      }
+    }
+
+    function setPlayback(mode) {
+      const after = mode === "after";
+      document.getElementById("incident-bar").style.width = after ? "96%" : "100%";
+      document.getElementById("incident-value").textContent = after ? "83,423" : "86,671";
+      document.getElementById("intervention-bar").style.width = after ? "100%" : "100%";
+      document.getElementById("intervention-value").textContent = "86,671";
+    }
+
+    document.getElementById("before").addEventListener("click", () => setPlayback("before"));
+    document.getElementById("after").addEventListener("click", () => setPlayback("after"));
+
+    renderProjects();
+    renderEvidence();
+    renderEvents();
+  </script>
+</body>
+</html>

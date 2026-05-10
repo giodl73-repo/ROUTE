@@ -46,6 +46,7 @@ The game succeeds when a non-specialist can say:
 | Campaign spine | Drafted | 8-scenario proof arc |
 | CLI game command | G1-B starting | `route game score` now derives Des Moines engine facts from route-sim and route-network when run from the CLI |
 | Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
+| First browser prototype | Drafted | `docs/game/browser/des-moines-diamond.html`; static map-first fixture playback |
 | Browser prototype | Not started | Map-first UI |
 
 ## Learning Inputs Folded In
@@ -281,7 +282,7 @@ Done criteria:
 
 ## Immediate Next Actions
 
-1. Start the G2-A browser prototype from `docs/game/des-moines-diamond-g2-plan.md`.
+1. Add browser screenshot/layout checks for `docs/game/browser/des-moines-diamond.html`.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
 3. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
 4. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
