@@ -1183,6 +1183,27 @@ season,accepted_projects,rejected_count,budget_remaining,political_capital,publi
     }
 
     #[test]
+    fn checked_in_score_fixture_preserves_g1_a_output_contract() {
+        let fixture = include_str!("../../../data/game/des-moines-diamond-session-fixture.csv");
+
+        let score = score_session_log(DES_MOINES_SCENARIO_ID, fixture.as_bytes()).expect("score");
+        let rendered = render_score_result(&score, true);
+
+        assert_eq!(score.seasons, 2);
+        assert_eq!(score.final_season, 2);
+        assert_eq!(score.total, 100);
+        assert_eq!(score.win_band, "Operational win");
+        assert!(score.publication_gate.contains("locked"));
+        assert!(score.promotion_readiness.starts_with("hold"));
+        assert!(rendered.contains("route game score des-moines-diamond"));
+        assert!(rendered.contains("operational_score: 100/100"));
+        assert!(rendered.contains("publication_gate: locked"));
+        assert!(rendered.contains("promotion_readiness: hold"));
+        assert!(rendered.contains("throughput_retention: 25/25"));
+        assert!(rendered.contains("evidence_honesty: 20/20"));
+    }
+
+    #[test]
     fn score_session_log_rejects_empty_logs() {
         let csv = "season,accepted_projects,rejected_count,budget_remaining,political_capital,public_patience,operations_capacity,evidence_confidence,throughput_retention,recovery_hours,sla_status,publication_gate\n";
 

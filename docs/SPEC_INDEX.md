@@ -22,6 +22,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/des-moines-diamond-cli-playtest-003.md` | Active-project countdown playtest for multi-season connector completion | You need to verify construction timing before score bands |
 | `docs/game/des-moines-diamond-cli-playtest-004.md` | First score-command playtest for operational score versus publication hold | You need to verify the full G1-A CLI loop |
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
+| `data/game/des-moines-diamond-session-fixture.csv` | Canonical G1-A score fixture for operational win with publication hold | You need stable score-output regression coverage |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
 | `data/t1-failure-source-plan.csv` | Source acquisition plan for T1/T1 failure-rate and reroute fields | You need to know which DOT/FHWA data systems can fill failure evidence gaps |
