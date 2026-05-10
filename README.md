@@ -6,6 +6,8 @@ ROUTE is a research and design project for what comes next.
 
 See [docs/SYSTEM_PLAN.md](docs/SYSTEM_PLAN.md) for the living milepost roadmap that connects the specs, Rust implementation, research tracks, and `.roles` review process. See [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md) for spec ownership.
 
+ROUTE also has a game-facing path: [Interstate Tycoon](docs/INTERSTATE_TYCOON.md), a highway strategy game concept that puts the simulation engine under a playable infrastructure loop.
+
 ---
 
 ## The argument
