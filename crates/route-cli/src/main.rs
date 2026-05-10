@@ -2,6 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
 
+mod game;
+
 const T1_THRESHOLD: f64 = 70.0;
 const T2_THRESHOLD: f64 = 50.0;
 const T3_THRESHOLD: f64 = 30.0;
@@ -154,6 +156,12 @@ enum Commands {
     Sim {
         #[command(subcommand)]
         mode: SimMode,
+    },
+
+    /// Interstate Tycoon paper/CLI game prototype commands
+    Game {
+        #[command(subcommand)]
+        command: GameCommand,
     },
 
     /// Compute highway network coverage — how far is anyone from an on-ramp?
@@ -749,6 +757,17 @@ enum SimMode {
     },
     /// List available scenarios
     List,
+}
+
+#[derive(clap::Subcommand, Clone, Debug)]
+enum GameCommand {
+    /// List playable Interstate Tycoon scenarios
+    Scenarios,
+    /// Print setup, cards, gates, and engine hooks for a scenario
+    Inspect {
+        /// Scenario id, e.g. des-moines-diamond
+        scenario: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -2511,6 +2530,11 @@ fn run_cli() -> Result<()> {
             println!("  net new rows: {added}");
             println!("  wrote {}", output.display());
         }
+
+        Commands::Game { command } => match command {
+            GameCommand::Scenarios => game::print_scenarios(),
+            GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
+        },
 
         Commands::Sim { mode } => {
             match mode {
