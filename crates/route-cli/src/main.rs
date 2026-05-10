@@ -2131,13 +2131,20 @@ fn run_cli() -> Result<()> {
 
             if gate_l2 {
                 let failures = pressure_scenario_gate_failures(&rows);
-                if !failures.is_empty() {
+                let missing_adversity = pressure_scenario_missing_required_adversity(&rows);
+                if !failures.is_empty() || !missing_adversity.is_empty() {
                     println!();
                     println!("L2 scenario gate: FAIL");
                     println!(
                         "  {} scenario rows still lack bounded proof contracts.",
                         failures.len()
                     );
+                    if !missing_adversity.is_empty() {
+                        println!(
+                            "  missing required adversity classes: {}",
+                            missing_adversity.join(", ")
+                        );
+                    }
                     for row in failures.iter().take(10) {
                         println!(
                             "  - {} [{}]: {}",
@@ -5075,6 +5082,33 @@ fn pressure_scenario_gate_failures(rows: &[PressureScenarioRow]) -> Vec<&Pressur
         .collect()
 }
 
+fn pressure_scenario_missing_required_adversity(rows: &[PressureScenarioRow]) -> Vec<&'static str> {
+    const REQUIRED: &[(&str, &[&str])] = &[
+        ("T1/T1 closure", &["t1/t1"]),
+        ("corridor segment closure", &["corridor segment", "closure"]),
+        ("port surge", &["port surge"]),
+        ("weather/flood disruption", &["weather", "flood"]),
+        ("relay hub outage", &["relay hub outage"]),
+        ("EV/rest-area outage", &["ev/rest-area outage"]),
+        ("managed-lane sensitivity", &["managed-lane"]),
+    ];
+
+    REQUIRED
+        .iter()
+        .filter_map(|(label, terms)| {
+            let covered = rows.iter().any(|row| {
+                let class = row.adversity_class.to_ascii_lowercase();
+                if *label == "weather/flood disruption" {
+                    terms.iter().any(|term| class.contains(term))
+                } else {
+                    terms.iter().all(|term| class.contains(term))
+                }
+            });
+            (!covered).then_some(*label)
+        })
+        .collect()
+}
+
 fn pressure_scenario_has_bounded_contract(row: &PressureScenarioRow) -> bool {
     let has_identity = row.scenario_id.starts_with("S-L2-")
         && !row.scenario_name.trim().is_empty()
@@ -6684,11 +6718,11 @@ mod tests {
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
         parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
         parse_throughput_proof_matrix, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, rounded_score, scenario_edge_candidates,
-        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
-        summarize_t1_failure_events, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
-        GapType, ScoreAllRow, ScoreSignalRow,
+        pressure_scenario_has_bounded_contract, pressure_scenario_missing_required_adversity,
+        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        standards_evidence_level_is_allowed, summarize_t1_failure_events,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
+        write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -6875,6 +6909,25 @@ BAD,unnamed,,T1-DIAMOND-K,unknown,,gap,
         let failures = pressure_scenario_gate_failures(&rows);
         assert_eq!(failures.len(), 1);
         assert_eq!(failures[0].scenario_id, "BAD");
+    }
+
+    #[test]
+    fn pressure_scenarios_cover_required_adversity_classes() {
+        let csv = "\
+scenario_id,scenario_name,adversity_class,standards_tested,current_status,existing_artifact,blocking_gap,next_evidence_step
+S-L2-DES-MOINES,des-moines-interchange,T1/T1 closure,T1-DIAMOND-K,Heuristic,scenario.toml,gap,next
+S-L2-DONNER,donner-closure,corridor segment weather closure,T1-SPURS,Heuristic,scenario.toml,gap,next
+S-L2-HOUSTON,houston-surge,hurricane/flood disruption and port surge,T1-RECOVERY,Heuristic,scenario.toml,gap,next
+S-L2-ATLANTA,atlanta-peak,urban peak and managed-lane stress,T1-OPS-PTI,Heuristic,scenario.toml,gap,next
+S-L2-RELAY-HUB,relay-hub-outage,relay hub outage,T1-TRANSIT-HUB,Planned,route sla-matrix,gap,next
+S-L2-EV-REST,ev-rest-area-outage,EV/rest-area outage,T1-EV-TRUCK,Planned,route ev-analysis,gap,next
+";
+
+        let rows = parse_pressure_scenarios(csv.as_bytes()).expect("parse pressure scenarios");
+        assert!(pressure_scenario_missing_required_adversity(&rows).is_empty());
+
+        let missing = pressure_scenario_missing_required_adversity(&rows[..5]);
+        assert_eq!(missing, vec!["EV/rest-area outage"]);
     }
 
     #[test]
