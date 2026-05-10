@@ -239,6 +239,9 @@ enum Commands {
         /// Fail if any scenario catalog row lacks a bounded proof contract
         #[arg(long)]
         gate_l2: bool,
+        /// Fail if any required L2 scenario is still only planned or stubbed
+        #[arg(long)]
+        gate_readiness: bool,
     },
 
     /// Show throughput proof matrix separating congestion and resilience chokepoints
@@ -2129,6 +2132,7 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate_l2,
+            gate_readiness,
         } => {
             let rows = load_pressure_scenarios(&ledger).with_context(|| {
                 format!("loading pressure scenario ledger {}", ledger.display())
@@ -2161,6 +2165,26 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("L2 scenario gate: PASS");
+            }
+            if gate_readiness {
+                let failures = pressure_scenario_readiness_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("L2 scenario readiness gate: FAIL");
+                    println!(
+                        "  {} scenario rows are not executable pressure tests yet.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{}]: {}",
+                            row.scenario_id, row.current_status, row.next_evidence_step
+                        );
+                    }
+                    anyhow::bail!("pressure scenario readiness gate failed");
+                }
+                println!();
+                println!("L2 scenario readiness gate: PASS");
             }
         }
 
@@ -5131,6 +5155,14 @@ fn pressure_scenario_gate_failures(rows: &[PressureScenarioRow]) -> Vec<&Pressur
         .collect()
 }
 
+fn pressure_scenario_readiness_gate_failures(
+    rows: &[PressureScenarioRow],
+) -> Vec<&PressureScenarioRow> {
+    rows.iter()
+        .filter(|row| !pressure_scenario_is_executable(row))
+        .collect()
+}
+
 fn pressure_scenario_missing_required_adversity(rows: &[PressureScenarioRow]) -> Vec<&'static str> {
     const REQUIRED: &[(&str, &[&str])] = &[
         ("T1/T1 closure", &["t1/t1"]),
@@ -5156,6 +5188,13 @@ fn pressure_scenario_missing_required_adversity(rows: &[PressureScenarioRow]) ->
             (!covered).then_some(*label)
         })
         .collect()
+}
+
+fn pressure_scenario_is_executable(row: &PressureScenarioRow) -> bool {
+    matches!(
+        row.current_status.trim().to_ascii_lowercase().as_str(),
+        "implemented" | "heuristic"
+    )
 }
 
 fn pressure_scenario_has_bounded_contract(row: &PressureScenarioRow) -> bool {
@@ -6834,7 +6873,8 @@ mod tests {
         parse_standards_proof_ledger, parse_t1_failure_events, parse_t1_failure_ledger,
         parse_t1_failure_source_plan, parse_t1_source_health, parse_tdot_smartway_events,
         parse_throughput_proof_matrix, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, pressure_scenario_missing_required_adversity,
+        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
+        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
         rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
         standards_evidence_level_is_allowed, summarize_t1_failure_events,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
@@ -7046,6 +7086,23 @@ S-L2-EV-REST,ev-rest-area-outage,EV/rest-area outage,T1-EV-TRUCK,Planned,route e
 
         let missing = pressure_scenario_missing_required_adversity(&rows[..5]);
         assert_eq!(missing, vec!["EV/rest-area outage"]);
+    }
+
+    #[test]
+    fn pressure_scenario_readiness_gate_rejects_planned_rows() {
+        let csv = "\
+scenario_id,scenario_name,adversity_class,standards_tested,current_status,existing_artifact,blocking_gap,next_evidence_step
+S-L2-DES-MOINES,des-moines-interchange,T1/T1 closure,T1-DIAMOND-K,Heuristic,scenario.toml,gap,next
+S-L2-RELAY-HUB,relay-hub-outage,relay hub outage,T1-TRANSIT-HUB,Planned,route hub-staff,gap,next
+";
+
+        let rows = parse_pressure_scenarios(csv.as_bytes()).expect("parse pressure scenarios");
+
+        assert!(pressure_scenario_is_executable(&rows[0]));
+        assert!(!pressure_scenario_is_executable(&rows[1]));
+        let failures = pressure_scenario_readiness_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].scenario_id, "S-L2-RELAY-HUB");
     }
 
     #[test]

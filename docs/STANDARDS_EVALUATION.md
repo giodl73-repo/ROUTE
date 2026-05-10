@@ -119,6 +119,7 @@ route standards-proof --gate-blueprint
 route pressure-scenarios
 route pressure-scenarios --blockers --details
 route pressure-scenarios --gate-l2
+route pressure-scenarios --gate-readiness
 route t1-failures
 route t1-failures --needs-sources
 route t1-failure-sources
