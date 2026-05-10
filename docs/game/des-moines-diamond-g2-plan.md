@@ -99,6 +99,7 @@ Before G2-A promotion:
 | Check | Viewport |
 |---|---|
 | Static fixture contract passes `docs/game/browser/check-des-moines-browser.ps1` | local |
+| Playwright spec passes `npm run check:game-browser` | desktop and mobile |
 | Scenario board renders nonblank | desktop and mobile |
 | Map routes and connector are visible | desktop and mobile |
 | Track strip text does not overlap | desktop and mobile |
