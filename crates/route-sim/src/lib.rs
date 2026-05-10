@@ -33,8 +33,9 @@ pub use od::{
     analyze_ev_charging, apply_interventions, apply_seasonal, atl_chi, average_ev_2026, chi_la,
     dal_nyc, hou_chi_current, hou_chi_i69, la_sea, load_corridor, mia_nyc, ny_chi, ny_la_corridor,
     run_intervention_stack, run_od_simulation, run_od_simulation_with_driver,
-    run_passenger_simulation, sea_chi, tesla_model_y, tesla_semi, DriverMode, EvChargingAnalysis,
-    EvProfile, Intervention, InterventionBenchmark, InterventionResult, OdComparison, OdCorridor,
-    PassengerMode, PassengerTripDistribution, RelayNetwork, TransitDistribution,
+    run_passenger_simulation, sea_chi, sla_proof_table, tesla_model_y, tesla_semi, DriverMode,
+    EvChargingAnalysis, EvProfile, Intervention, InterventionBenchmark, InterventionResult,
+    OdComparison, OdCorridor, PassengerMode, PassengerTripDistribution, RelayNetwork, SlaProofRow,
+    TransitDistribution,
 };
 pub use scenario::{run_scenario, scenario_validation_warnings, Scenario, ScenarioResult};

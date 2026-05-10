@@ -481,6 +481,84 @@ impl InterventionBenchmark {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct SlaProofRow {
+    pub scenario: String,
+    pub driver_mode: String,
+    pub lane_mode: String,
+    pub relay_stations: usize,
+    pub p95_hours: f64,
+    pub pti: f64,
+    pub pct_under_48h: f64,
+    pub sla_48h_met: bool,
+    pub evidence_level: String,
+}
+
+/// Build the shared SLA proof rows used by the pressure-test docs and CLI.
+///
+/// This is intentionally labeled Heuristic because the OD model still uses
+/// simulated incidents and BPR-derived PTI rather than direct NPMRDS/FPM
+/// reliability observations.
+pub fn sla_proof_table(corridor: &OdCorridor, n_trips: usize, seed: u64) -> Vec<SlaProofRow> {
+    let relay_stations = ((corridor.total_miles() / 500.0).ceil() as usize).max(1);
+    let scenarios: Vec<(&str, DriverMode, bool, usize)> = vec![
+        ("Solo / GP", DriverMode::Solo, false, 0),
+        ("Solo / managed freight lanes", DriverMode::Solo, true, 0),
+        (
+            "Relay / GP",
+            DriverMode::Relay {
+                stations: relay_stations,
+                swap_minutes: 20.0,
+            },
+            false,
+            relay_stations,
+        ),
+        (
+            "Relay / managed freight lanes",
+            DriverMode::Relay {
+                stations: relay_stations,
+                swap_minutes: 20.0,
+            },
+            true,
+            relay_stations,
+        ),
+    ];
+
+    scenarios
+        .into_iter()
+        .enumerate()
+        .map(|(i, (scenario, driver, managed_lanes, stations))| {
+            let dist = run_od_simulation_with_driver(
+                corridor,
+                managed_lanes,
+                &driver,
+                n_trips,
+                seed + i as u64,
+            );
+            SlaProofRow {
+                scenario: scenario.to_string(),
+                driver_mode: match driver {
+                    DriverMode::Solo => "solo".to_string(),
+                    DriverMode::Team => "team".to_string(),
+                    DriverMode::Relay { .. } => "relay".to_string(),
+                },
+                lane_mode: if managed_lanes {
+                    "managed freight lanes".to_string()
+                } else {
+                    "general purpose".to_string()
+                },
+                relay_stations: stations,
+                p95_hours: dist.p95_hours,
+                pti: dist.pti,
+                pct_under_48h: dist.pct_under_48h,
+                sla_48h_met: dist.p95_hours <= 48.0,
+                evidence_level: "Heuristic".to_string(),
+            }
+        })
+        .collect()
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DriverMode {
     /// Single driver: mandatory 10h rest stop after every 11h driving.
@@ -2039,6 +2117,31 @@ mod tests {
         assert_eq!(dist.commitment_window_hours, 92.0);
         assert_eq!(dist.pct_under_48h, 0.0);
         assert_eq!(dist.pct_sla_met, 0.0);
+    }
+
+    #[test]
+    fn sla_proof_table_separates_lane_driver_relay_and_confidence_fields() {
+        let corridor = test_corridor(1_000.0);
+
+        let rows = sla_proof_table(&corridor, 5, 11);
+
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[0].scenario, "Solo / GP");
+        assert_eq!(rows[0].driver_mode, "solo");
+        assert_eq!(rows[0].lane_mode, "general purpose");
+        assert_eq!(rows[0].relay_stations, 0);
+        assert_eq!(rows[0].evidence_level, "Heuristic");
+
+        let relay_managed = rows
+            .iter()
+            .find(|row| row.scenario == "Relay / managed freight lanes")
+            .expect("relay managed proof row");
+        assert_eq!(relay_managed.driver_mode, "relay");
+        assert_eq!(relay_managed.lane_mode, "managed freight lanes");
+        assert_eq!(relay_managed.relay_stations, 2);
+        assert!(relay_managed.p95_hours.is_finite());
+        assert!(relay_managed.pti.is_finite());
+        assert!((0.0..=100.0).contains(&relay_managed.pct_under_48h));
     }
 
     #[test]
