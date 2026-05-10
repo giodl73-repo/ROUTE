@@ -791,6 +791,20 @@ enum GameCommand {
         #[arg(long, value_name = "FILE")]
         append_log: Option<PathBuf>,
     },
+    /// Score an append-only game session log
+    Score {
+        /// Scenario id, e.g. des-moines-diamond
+        scenario: String,
+        /// CSV session log written by run-season
+        #[arg(long, value_name = "FILE")]
+        log: PathBuf,
+        /// Print dimension-by-dimension scoring
+        #[arg(long)]
+        details: bool,
+        /// Fail if promotion gates are not met
+        #[arg(long)]
+        gate_promotion: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -2574,6 +2588,12 @@ fn run_cli() -> Result<()> {
                 write_state.as_deref(),
                 append_log.as_deref(),
             )?,
+            GameCommand::Score {
+                scenario,
+                log,
+                details,
+                gate_promotion,
+            } => game::score_cli(&scenario, &log, details, gate_promotion)?,
         },
 
         Commands::Sim { mode } => {

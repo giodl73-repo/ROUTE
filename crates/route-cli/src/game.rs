@@ -99,6 +99,43 @@ pub struct SeasonResult {
     pub sla_status: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct SessionLogRow {
+    season: u8,
+    #[serde(rename = "accepted_projects")]
+    _accepted_projects: String,
+    #[serde(rename = "rejected_count")]
+    _rejected_count: usize,
+    budget_remaining: i32,
+    political_capital: i32,
+    public_patience: i32,
+    #[serde(rename = "operations_capacity")]
+    _operations_capacity: i32,
+    #[serde(rename = "evidence_confidence")]
+    _evidence_confidence: i32,
+    throughput_retention: f64,
+    recovery_hours: f64,
+    sla_status: String,
+    publication_gate: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ScoreResult {
+    pub scenario_id: String,
+    pub seasons: usize,
+    pub final_season: u8,
+    pub throughput_points: u8,
+    pub recovery_points: u8,
+    pub sla_points: u8,
+    pub budget_points: u8,
+    pub support_points: u8,
+    pub evidence_points: u8,
+    pub total: u8,
+    pub win_band: &'static str,
+    pub publication_gate: String,
+    pub promotion_readiness: String,
+}
+
 const TRACKS: &[Track] = &[
     Track {
         name: "Budget",
@@ -457,6 +494,22 @@ pub fn run_season_cli(
     Ok(())
 }
 
+pub fn score_cli(
+    scenario_id: &str,
+    log_path: &Path,
+    details: bool,
+    gate_promotion: bool,
+) -> Result<()> {
+    scenario_by_id(scenario_id)?;
+    let body = std::fs::read_to_string(log_path)?;
+    let result = score_session_log(scenario_id, body.as_bytes())?;
+    if gate_promotion && !result.promotion_readiness.starts_with("ready") {
+        anyhow::bail!("{}", result.promotion_readiness);
+    }
+    print!("{}", render_score_result(&result, details));
+    Ok(())
+}
+
 pub fn default_state(scenario_id: &str) -> Result<GameState> {
     scenario_by_id(scenario_id)?;
     Ok(GameState {
@@ -680,6 +733,125 @@ pub fn render_season_result(result: &SeasonResult) -> String {
         "  publication_gate: {}\n",
         result.state.publication_gate
     ));
+    out
+}
+
+pub fn score_session_log<R: std::io::Read>(scenario_id: &str, reader: R) -> Result<ScoreResult> {
+    scenario_by_id(scenario_id)?;
+    let mut csv = csv::Reader::from_reader(reader);
+    let rows = csv
+        .deserialize::<SessionLogRow>()
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    let last = rows
+        .last()
+        .ok_or_else(|| anyhow::anyhow!("session log is empty"))?;
+
+    let throughput_points = if rows.iter().any(|row| row.throughput_retention >= 0.8) {
+        25
+    } else {
+        0
+    };
+    let recovery_points = if rows.iter().any(|row| row.recovery_hours <= 4.0) {
+        20
+    } else {
+        0
+    };
+    let sla_points = if rows
+        .iter()
+        .all(|row| row.sla_status.contains("bounded") || row.sla_status.contains("pass"))
+    {
+        15
+    } else {
+        0
+    };
+    let budget_points = if last.budget_remaining >= 0 { 10 } else { 0 };
+    let support_points = if last.political_capital >= 0 && last.public_patience >= 0 {
+        10
+    } else {
+        0
+    };
+    let evidence_points = if rows.iter().all(|row| {
+        !row.publication_gate.trim().is_empty()
+            && (row.publication_gate.contains("locked")
+                || row.publication_gate.contains("unlocked"))
+    }) {
+        20
+    } else {
+        0
+    };
+    let total = throughput_points
+        + recovery_points
+        + sla_points
+        + budget_points
+        + support_points
+        + evidence_points;
+    let win_band = if total >= 80 {
+        "Operational win"
+    } else if total >= 60 {
+        "Partial win"
+    } else {
+        "Failure"
+    };
+    let publication_gate = last.publication_gate.clone();
+    let promotion_readiness = if publication_gate.contains("unlocked") {
+        "ready: publication gate unlocked".to_string()
+    } else {
+        "hold: publication gate locked; needs human blind playtest or owner acceptance plus observed evidence".to_string()
+    };
+
+    Ok(ScoreResult {
+        scenario_id: scenario_id.to_string(),
+        seasons: rows.len(),
+        final_season: last.season,
+        throughput_points,
+        recovery_points,
+        sla_points,
+        budget_points,
+        support_points,
+        evidence_points,
+        total,
+        win_band,
+        publication_gate,
+        promotion_readiness,
+    })
+}
+
+pub fn render_score_result(result: &ScoreResult, details: bool) -> String {
+    let mut out = String::new();
+    out.push_str(&format!("route game score {}\n", result.scenario_id));
+    out.push_str(&format!("  seasons: {}\n", result.seasons));
+    out.push_str(&format!("  final_season: {}\n", result.final_season));
+    out.push_str(&format!("  operational_score: {}/100\n", result.total));
+    out.push_str(&format!("  win_band: {}\n", result.win_band));
+    out.push_str(&format!(
+        "  publication_gate: {}\n",
+        result.publication_gate
+    ));
+    out.push_str(&format!(
+        "  promotion_readiness: {}\n",
+        result.promotion_readiness
+    ));
+    if details {
+        out.push_str("  dimensions:\n");
+        out.push_str(&format!(
+            "    throughput_retention: {}/25\n",
+            result.throughput_points
+        ));
+        out.push_str(&format!("    recovery: {}/20\n", result.recovery_points));
+        out.push_str(&format!("    sla: {}/15\n", result.sla_points));
+        out.push_str(&format!(
+            "    budget_discipline: {}/10\n",
+            result.budget_points
+        ));
+        out.push_str(&format!(
+            "    public_support: {}/10\n",
+            result.support_points
+        ));
+        out.push_str(&format!(
+            "    evidence_honesty: {}/20\n",
+            result.evidence_points
+        ));
+    }
     out
 }
 
@@ -990,5 +1162,33 @@ mod tests {
             run_season(result.state, 2, "night-work-zone-closure", &projects).expect("season 2");
 
         assert!(result.rejected_actions[0].contains("already active"));
+    }
+
+    #[test]
+    fn score_session_log_reports_operational_win_but_locked_publication() {
+        let csv = "\
+season,accepted_projects,rejected_count,budget_remaining,political_capital,public_patience,operations_capacity,evidence_confidence,throughput_retention,recovery_hours,sla_status,publication_gate
+1,\"work-zone-sequencing\",0,11,5,6,4,2,0.962,0.9,\"bounded heuristic\",\"locked: empirical closure evidence missing\"
+2,\"relay-hub-reserve-staffing\",0,9,5,6,4,2,0.962,0.9,\"bounded heuristic\",\"locked: empirical closure evidence missing\"
+";
+
+        let score = score_session_log(DES_MOINES_SCENARIO_ID, csv.as_bytes()).expect("score");
+        let rendered = render_score_result(&score, true);
+
+        assert_eq!(score.total, 100);
+        assert_eq!(score.win_band, "Operational win");
+        assert!(score.publication_gate.contains("locked"));
+        assert!(score.promotion_readiness.starts_with("hold"));
+        assert!(rendered.contains("evidence_honesty: 20/20"));
+    }
+
+    #[test]
+    fn score_session_log_rejects_empty_logs() {
+        let csv = "season,accepted_projects,rejected_count,budget_remaining,political_capital,public_patience,operations_capacity,evidence_confidence,throughput_retention,recovery_hours,sla_status,publication_gate\n";
+
+        let error =
+            score_session_log(DES_MOINES_SCENARIO_ID, csv.as_bytes()).expect_err("empty log");
+
+        assert!(error.to_string().contains("session log is empty"));
     }
 }

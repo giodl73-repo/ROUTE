@@ -220,7 +220,7 @@ L1 tests:
 2. Add `Game` subcommand enum under `route-cli`.
 3. Implement `scenarios` and `inspect`. Done in G1-A slice 1.
 4. Implement deterministic `run-season` with JSON state. Done through G1-A slice 3; scoring still pending.
-5. Implement `score` against a fixture log.
+5. Implement `score` against a fixture log. Command exists; checked-in fixture and L1 output stability test pending.
 6. Add L0/L1 tests.
 7. Only then consider moving scenario data to TOML/JSON.
 
