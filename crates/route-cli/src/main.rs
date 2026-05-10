@@ -343,6 +343,9 @@ enum Commands {
         /// Write an updated evidence ledger with empirical event summaries applied
         #[arg(long, value_name = "FILE")]
         write_ledger: Option<PathBuf>,
+        /// Fail if normalized event observations are empty or missing required evidence fields
+        #[arg(long)]
+        gate_observations: bool,
     },
 
     /// Fetch current Iowa 511 ArcGIS event JSON for source-cache ingestion
@@ -2268,10 +2271,31 @@ fn run_cli() -> Result<()> {
             events,
             ledger,
             write_ledger,
+            gate_observations,
         } => {
             let event_rows = load_t1_failure_events(&events)
                 .with_context(|| format!("loading T1 failure events {}", events.display()))?;
             print_t1_failure_event_summary(&event_rows);
+            if gate_observations {
+                let failures = t1_failure_event_observation_gate_failures(&event_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1/T1 event observation gate: FAIL");
+                    println!(
+                        "  {} event rows are empty or missing normalized evidence fields.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(10) {
+                        println!("  - {}", failure);
+                    }
+                    if failures.len() > 10 {
+                        println!("  ... {} more", failures.len() - 10);
+                    }
+                    anyhow::bail!("T1/T1 event observation gate failed");
+                }
+                println!();
+                println!("T1/T1 event observation gate: PASS");
+            }
             if let Some(output) = write_ledger {
                 let ledger_rows = load_t1_failure_ledger(&ledger)
                     .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
@@ -6749,6 +6773,49 @@ fn print_t1_failure_event_summary(rows: &[T1FailureEventRow]) {
     }
 }
 
+fn t1_failure_event_observation_gate_failures(rows: &[T1FailureEventRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["event ledger has no observation rows".to_string()];
+    }
+
+    let mut failures = Vec::new();
+    for row in rows {
+        let label = if row.event_id.trim().is_empty() {
+            format!("{}:<missing-event-id>", row.site_id)
+        } else {
+            format!("{}:{}", row.site_id, row.event_id)
+        };
+
+        if !t1_failure_event_has_observation_contract(row) {
+            failures.push(format!(
+                "{label} missing site/event/source/year/type/confidence/timing contract"
+            ));
+        }
+    }
+
+    if !rows.iter().any(|row| row.freight_relevant) {
+        failures.push("event ledger has no freight-relevant observations".to_string());
+    }
+
+    failures
+}
+
+fn t1_failure_event_has_observation_contract(row: &T1FailureEventRow) -> bool {
+    let confidence = row.confidence.trim().to_ascii_lowercase();
+    let confidence_is_labeled = matches!(confidence.as_str(), "high" | "medium" | "low");
+    let has_timing = row.duration_hours.is_some()
+        || (!row.start_time.trim().is_empty() && !row.end_time.trim().is_empty());
+
+    !row.site_id.trim().is_empty()
+        && !row.event_id.trim().is_empty()
+        && !row.source.trim().is_empty()
+        && !row.source_event_id.trim().is_empty()
+        && row.observation_year >= 2000
+        && !row.event_type.trim().is_empty()
+        && confidence_is_labeled
+        && has_timing
+}
+
 fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
     if values.is_empty() {
         "none".to_string()
@@ -6770,6 +6837,7 @@ mod tests {
         pressure_scenario_has_bounded_contract, pressure_scenario_missing_required_adversity,
         rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
         standards_evidence_level_is_allowed, summarize_t1_failure_events,
+        t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract, tier_for_score,
         write_tier_artifacts_to, FemaTile, GapType, ScoreAllRow, ScoreSignalRow,
@@ -7112,6 +7180,27 @@ T1X-I35-I80,e4,Iowa 511,103,2024,2024-07-01T00:00:00Z,2024-07-01T08:00:00Z,8.0,i
         assert_eq!(summary.duration_p50_hours, Some(4.0));
         assert_eq!(summary.duration_p95_hours, Some(10.0));
         assert_eq!(summary.confidence, "medium");
+    }
+
+    #[test]
+    fn t1_failure_event_observation_gate_requires_normalized_evidence_fields() {
+        let csv = "\
+site_id,event_id,source,source_event_id,observation_year,start_time,end_time,duration_hours,event_type,full_closure,lanes_closed,freight_relevant,confidence,notes
+T1X-I35-I80,e1,Iowa 511,100,2023,2023-01-01T00:00:00Z,2023-01-01T02:00:00Z,,incident,true,2,true,medium,first
+T1X-I35-I80,,Iowa 511,,2023,,,,incident,true,2,false,unknown,missing id and timing
+";
+
+        let rows = parse_t1_failure_events(csv.as_bytes()).expect("parse event rows");
+
+        assert!(t1_failure_event_has_observation_contract(&rows[0]));
+        assert!(!t1_failure_event_has_observation_contract(&rows[1]));
+        let failures = t1_failure_event_observation_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("<missing-event-id>"));
+        assert_eq!(
+            t1_failure_event_observation_gate_failures(&[]),
+            vec!["event ledger has no observation rows".to_string()]
+        );
     }
 
     #[test]

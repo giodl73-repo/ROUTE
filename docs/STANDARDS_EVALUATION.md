@@ -128,6 +128,7 @@ route t1-source-health --gate-ingestion
 route t1-access-docket
 route t1-access-docket --category api_key --details
 route t1-failure-events
+route t1-failure-events --gate-observations
 route t1-failure-events --write-ledger data/t1-intersection-failures.csv
 route t1-fetch-iowa511
 route t1-import-iowa511
