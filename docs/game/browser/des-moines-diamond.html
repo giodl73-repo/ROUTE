@@ -361,6 +361,13 @@
           <div class="toolbar">
             <strong>Closure Playback</strong>
             <div class="actions">
+              <label class="meta" for="event-select">Event</label>
+              <select id="event-select" aria-label="Event card">
+                <option value="source-challenge">Source challenge</option>
+                <option value="night-work-zone-closure">Night work-zone closure</option>
+                <option value="relay-hub-surge">Relay hub surge</option>
+              </select>
+              <button type="button" id="advance-season">Advance Season</button>
               <button type="button" id="before">Before</button>
               <button type="button" id="after">After</button>
             </div>
@@ -405,12 +412,14 @@
       publication_gate: "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
     };
 
+    const selectedProjects = new Set();
+
     const projects = [
-      ["diamond-connector-package", "Diamond connector package", "Cost 5, crew 2, time 3", "Heuristic", "Adds independent transfer paths."],
-      ["express-freight-flyovers", "Express freight flyovers", "Cost 4, crew 2, time 2", "Planned", "Protects freight transfer from local capture."],
-      ["work-zone-sequencing", "Work-zone sequencing", "Cost 1, crew 1, time 1", "Heuristic", "Protects public patience during closures."],
-      ["general-purpose-widening", "General-purpose widening", "Cost 4, crew 2, time 3", "Heuristic", "Adds capacity, not independent transfer paths."],
-      ["source-request", "Source request", "Cost 1, crew 0, time 1", "Implemented as artifact plan", "Names the missing observed source."]
+      { slug: "diamond-connector-package", name: "Diamond connector package", cost: 5, crew: 2, time: 3, label: "Heuristic", effect: "Adds independent transfer paths." },
+      { slug: "express-freight-flyovers", name: "Express freight flyovers", cost: 4, crew: 2, time: 2, label: "Planned", effect: "Protects freight transfer from local capture." },
+      { slug: "work-zone-sequencing", name: "Work-zone sequencing", cost: 1, crew: 1, time: 1, label: "Heuristic", effect: "Protects public patience during closures." },
+      { slug: "general-purpose-widening", name: "General-purpose widening", cost: 4, crew: 2, time: 3, label: "Heuristic", effect: "Adds capacity, not independent transfer paths." },
+      { slug: "source-request", name: "Source request", cost: 1, crew: 0, time: 1, label: "Implemented as artifact plan", effect: "Names the missing observed source." }
     ];
 
     const evidence = [
@@ -421,7 +430,7 @@
       ["Standards proof ledger", "Known", "T1/T1 acceptance gates exist."]
     ];
 
-    const events = [
+    const eventLog = [
       "Season 1: connector package started.",
       "Season 2: connector package under construction.",
       "Season 3: closure stress sees redundant transfer paths.",
@@ -431,18 +440,30 @@
     function renderProjects() {
       const root = document.getElementById("projects");
       root.innerHTML = "";
-      for (const [slug, name, cost, label, effect] of projects) {
-        const selected = state.completed_projects.includes(slug);
+      for (const project of projects) {
+        const completed = state.completed_projects.includes(project.slug);
+        const selected = selectedProjects.has(project.slug);
         const el = document.createElement("article");
-        el.className = `project ${selected ? "selected" : "unselected"}`;
+        el.className = `project ${completed || selected ? "selected" : "unselected"}`;
         el.innerHTML = `
-          <h3>${name}</h3>
-          <p class="meta">${cost}</p>
-          <p class="meta">Evidence: ${label}</p>
-          <p class="meta">${effect}</p>
-          <button type="button" aria-pressed="${selected}">${selected ? "Selected" : "Inspect"}</button>
+          <h3>${project.name}</h3>
+          <p class="meta">Cost ${project.cost}, crew ${project.crew}, time ${project.time}</p>
+          <p class="meta">Evidence: ${project.label}</p>
+          <p class="meta">${project.effect}</p>
+          <button type="button" data-project="${project.slug}" aria-pressed="${selected || completed}" ${completed ? "disabled" : ""}>${completed ? "Complete" : selected ? "Selected" : "Select"}</button>
         `;
         root.appendChild(el);
+      }
+      for (const button of root.querySelectorAll("button[data-project]")) {
+        button.addEventListener("click", () => {
+          const slug = button.getAttribute("data-project");
+          if (selectedProjects.has(slug)) {
+            selectedProjects.delete(slug);
+          } else {
+            selectedProjects.add(slug);
+          }
+          renderProjects();
+        });
       }
     }
 
@@ -460,12 +481,82 @@
     function renderEvents() {
       const root = document.getElementById("event-log");
       root.innerHTML = "";
-      for (const event of events) {
+      for (const event of eventLog) {
         const el = document.createElement("div");
         el.className = "event-item";
         el.textContent = event;
         root.appendChild(el);
       }
+    }
+
+    function updateTracks() {
+      document.getElementById("season").textContent = state.season;
+      document.getElementById("budget").textContent = state.budget;
+      document.getElementById("crews").textContent = state.construction_crews;
+      document.getElementById("political").textContent = state.political_capital;
+      document.getElementById("patience").textContent = state.public_patience;
+      document.getElementById("ops").textContent = state.operations_capacity;
+      document.getElementById("evidence").textContent = state.evidence_confidence;
+    }
+
+    function applyProject(project) {
+      if (state.budget < project.cost) {
+        eventLog.push(`Season ${state.season}: ${project.name} rejected; budget ${state.budget} is below cost ${project.cost}.`);
+        return;
+      }
+      if (state.construction_crews < project.crew) {
+        eventLog.push(`Season ${state.season}: ${project.name} rejected; crews ${state.construction_crews} are below need ${project.crew}.`);
+        return;
+      }
+      state.budget -= project.cost;
+      state.construction_crews -= project.crew;
+      if (!state.completed_projects.includes(project.slug)) {
+        state.completed_projects.push(project.slug);
+      }
+      if (project.slug === "source-request") {
+        state.evidence_confidence += 1;
+      }
+      eventLog.push(`Season ${state.season}: ${project.name} completed.`);
+    }
+
+    function applyEvent(slug) {
+      if (slug === "night-work-zone-closure") {
+        if (state.completed_projects.includes("work-zone-sequencing")) {
+          eventLog.push(`Season ${state.season}: night closure sequenced; patience protected.`);
+        } else {
+          state.public_patience -= 1;
+          eventLog.push(`Season ${state.season}: night closure unsequenced; patience loses 1.`);
+        }
+      }
+      if (slug === "relay-hub-surge") {
+        if (state.completed_projects.includes("relay-hub-reserve-staffing")) {
+          eventLog.push(`Season ${state.season}: relay surge absorbed by reserve staffing.`);
+        } else {
+          state.operations_capacity -= 1;
+          eventLog.push(`Season ${state.season}: relay surge strains operations; capacity loses 1.`);
+        }
+      }
+      if (slug === "source-challenge") {
+        const status = state.evidence_confidence >= 4 ? "evidence threshold cleared" : "publication remains locked";
+        eventLog.push(`Season ${state.season}: source challenge; ${status}.`);
+      }
+    }
+
+    function advanceSeason() {
+      state.season += 1;
+      state.construction_crews = 3;
+      const eventSlug = document.getElementById("event-select").value;
+      for (const slug of selectedProjects) {
+        const project = projects.find((item) => item.slug === slug);
+        if (project) {
+          applyProject(project);
+        }
+      }
+      selectedProjects.clear();
+      applyEvent(eventSlug);
+      updateTracks();
+      renderProjects();
+      renderEvents();
     }
 
     function setPlayback(mode) {
@@ -478,7 +569,9 @@
 
     document.getElementById("before").addEventListener("click", () => setPlayback("before"));
     document.getElementById("after").addEventListener("click", () => setPlayback("after"));
+    document.getElementById("advance-season").addEventListener("click", advanceSeason);
 
+    updateTracks();
     renderProjects();
     renderEvidence();
     renderEvents();

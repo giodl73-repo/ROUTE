@@ -80,8 +80,8 @@ G2-A first slice:
 
 G2-A second slice:
 
-1. Let the player choose projects for a season.
-2. Resolve season in browser using the same deterministic rules as G1.
+1. Let the player choose projects for a season. Done in the static prototype.
+2. Resolve season in browser using the same deterministic rules as G1. Partial for immediate project effects and source challenge.
 3. Export or display a session log compatible with `route game score`.
 
 ## Accessibility Gates

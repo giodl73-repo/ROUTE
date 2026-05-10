@@ -32,4 +32,19 @@ test.describe("Des Moines Diamond browser prototype", () => {
     const box = await board.boundingBox();
     expect(box.y).toBeLessThan(220);
   });
+
+  test("local season mutation updates tracks and event log", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+
+    await page.locator('button[data-project="source-request"]').click();
+    await page.getByLabel("Event card").selectOption("source-challenge");
+    await page.getByRole("button", { name: "Advance Season" }).click();
+
+    await expect(page.locator("#season")).toHaveText("4");
+    await expect(page.locator("#budget")).toHaveText("6");
+    await expect(page.locator("#evidence")).toHaveText("3");
+    await expect(page.getByText("Season 4: Source request completed.")).toBeVisible();
+    await expect(page.getByText("Season 4: source challenge; publication remains locked.")).toBeVisible();
+  });
 });
