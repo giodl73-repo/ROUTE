@@ -24,6 +24,7 @@ The first screen has four persistent regions:
 | Project rail | Choose investments under scarcity | Cost, crew, time, evidence label, protected failure mode |
 | Track strip | Show pressure and resources | Budget, crews, political capital, public patience, operations capacity, evidence confidence |
 | Evidence drawer | Keep proof honest | Scenario run, diamond analyzer, Iowa 511 sample, NPMRDS/PTI, standards proof ledger |
+| Campaign atlas | Tie the tutorial board to the national map set | `maps/all-tiers.png`, `maps/i35.png`, `maps/beck-schematic.png` links gated by `data/map-atlas.csv` |
 
 The map board owns the center of the viewport. Project and evidence controls are panels around it, not cards nested inside cards.
 
@@ -46,6 +47,7 @@ The map board owns the center of the viewport. Project and evidence controls are
 |---|---|
 | Pick a project | Button on project row |
 | Inspect evidence | Drawer toggle |
+| Inspect atlas context | Campaign map links |
 | Advance season | Primary action button |
 | Replay pressure | Playback button with step markers |
 | View after-action | Tab or report panel after score |
@@ -84,6 +86,7 @@ G2-A second slice:
 1. Let the player choose projects for a season. Done in the static prototype.
 2. Resolve season in browser using the same deterministic rules as G1. Partial for immediate project effects and source challenge.
 3. Export or display a session log compatible with `route game score`. Done as the `CLI-compatible session log` panel and CSV download.
+4. Link the playable board to the gated campaign map atlas. Done for national tiers, I-35 regional context, and relay schematic.
 
 ## Accessibility Gates
 
@@ -103,6 +106,7 @@ Before G2-A promotion:
 | Playwright spec passes `npm run check:game-browser` | desktop and mobile |
 | Scenario board renders nonblank | desktop and mobile |
 | Map routes and connector are visible | desktop and mobile |
+| Campaign atlas links resolve to gated map artifacts | desktop |
 | Track strip text does not overlap | desktop and mobile |
 | Evidence drawer opens and labels remain visible | desktop and mobile |
 | Publication lock is visible apart from score | desktop and mobile |
@@ -113,7 +117,7 @@ Before G2-A promotion:
 | Question | Current leaning |
 |---|---|
 | Framework | Use the repo's existing frontend stack if one appears; otherwise keep first prototype minimal |
-| Map source | Draw a simplified topology board first; real map tiles are not required for G2-A |
+| Map source | Keep the simplified topology board for play, then attach gated atlas links for national and regional context |
 | State mutation | Browser-local for prototype; CLI-compatible session log for reproducibility |
 | Audio | Silent-capable first; cue contract only |
 

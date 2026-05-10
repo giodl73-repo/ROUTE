@@ -261,6 +261,40 @@
       gap: 8px;
     }
 
+    .atlas-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .atlas-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .atlas-links a {
+      min-height: 32px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 8px;
+      text-decoration: none;
+    }
+
+    .atlas-links a:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
     .meter {
       display: grid;
       grid-template-columns: 110px 1fr 52px;
@@ -342,6 +376,15 @@
           <span class="track"><strong>Patience</strong> <span id="patience">4</span></span>
           <span class="track"><strong>Ops</strong> <span id="ops">4</span></span>
           <span class="track"><strong>Evidence</strong> <span id="evidence">2</span></span>
+        </div>
+
+        <div class="atlas-strip" aria-label="Campaign map atlas">
+          <span><strong>Atlas</strong> T1/T2/T3/T4 national context plus I-35 regional campaign map.</span>
+          <span class="atlas-links">
+            <a href="../../../maps/all-tiers.png">National tiers</a>
+            <a href="../../../maps/i35.png">I-35 regional</a>
+            <a href="../../../maps/beck-schematic.png">Relay schematic</a>
+          </span>
         </div>
 
         <div class="map-wrap">
@@ -456,6 +499,7 @@
     const evidence = [
       ["Scenario run", "Known", "Bounded throughput outputs exist."],
       ["Des Moines diamond analyzer", "Known", "I35xI80 recognized; k=0; 3 connectors needed."],
+      ["Campaign map atlas", "Known", "National tiers, I-35 regional map, and relay schematic are gated by data/map-atlas.csv."],
       ["Iowa 511 sample", "Partial", "Annual depth and closure-rate confidence missing."],
       ["NPMRDS/PTI", "Missing", "Direct extract and validation still required."],
       ["Standards proof ledger", "Known", "T1/T1 acceptance gates exist."]

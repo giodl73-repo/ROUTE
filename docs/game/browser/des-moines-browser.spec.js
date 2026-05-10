@@ -10,8 +10,12 @@ test.describe("Des Moines Diamond browser prototype", () => {
 
     await expect(page.getByRole("heading", { name: "Des Moines Diamond", exact: true })).toBeVisible();
     await expect(page.getByLabel("I-35 and I-80 Des Moines transfer topology")).toBeVisible();
+    await expect(page.getByLabel("Campaign map atlas")).toBeVisible();
+    await expect(page.getByRole("link", { name: "National tiers" })).toHaveAttribute("href", "../../../maps/all-tiers.png");
+    await expect(page.getByRole("link", { name: "I-35 regional" })).toHaveAttribute("href", "../../../maps/i35.png");
     await expect(page.locator("footer").getByText("Publication claim locked until observed closure evidence")).toBeVisible();
     await expect(page.getByText("I35xI80 recognized; k=0; 3 connectors needed.")).toBeVisible();
+    await expect(page.getByText("National tiers, I-35 regional map, and relay schematic are gated by data/map-atlas.csv.")).toBeVisible();
     await expect(page.locator("#connector")).toBeVisible();
 
     await page.getByRole("button", { name: "Before" }).click();
