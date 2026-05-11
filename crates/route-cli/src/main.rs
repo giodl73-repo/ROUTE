@@ -2100,7 +2100,7 @@ fn run_cli() -> Result<()> {
             if gate {
                 let flagged = rows
                     .iter()
-                    .filter(|row| row.review_flag != "ok")
+                    .filter(|row| beck_t2_diagnostics_gate_failure(row.review_flag))
                     .collect::<Vec<_>>();
                 if flagged.is_empty() {
                     println!("Beck T2 diagnostics gate: PASS");
@@ -10659,6 +10659,16 @@ fn truncate_for_table(value: &str, width: usize) -> String {
     }
 }
 
+fn beck_t2_diagnostics_gate_failure(review_flag: &str) -> bool {
+    matches!(
+        review_flag,
+        "unstopped-t1-contact-review"
+            | "parallel-spacing-review"
+            | "split-anchor-review"
+            | "dense-label-review"
+    )
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1FailureEventRow {
     site_id: String,
@@ -11824,21 +11834,22 @@ fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, blueprint_cost_gate_failures, blueprint_cost_row_failure,
-        blueprint_evidence_gate_failures, blueprint_evidence_row_failure, blueprint_gate_failures,
-        blueprint_row_contract_failure, bridge_standard_missing_routes, confidence_risk_dimensions,
-        dimension_confidence_risks, dimension_confidence_values, dimension_estimated_values,
-        dimension_score_values, endpoint_exception_gate_failures,
-        endpoint_exception_is_terminal_worthy, filter_endpoint_exceptions, filter_stop_candidates,
-        forum_docket_gate_failures, forum_docket_row_failure, gap_type_slug,
-        join_fema_d1_to_corridor, load_tier_routes, map_atlas_gate_failures,
-        parse_blueprint_cost_ranges, parse_blueprint_evidence_map, parse_blueprint_packages,
-        parse_endpoint_exceptions, parse_forum_docket, parse_indot_trafficwise_events,
-        parse_iowa511_events, parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_standards_inventory, parse_standards_proof_ledger, parse_stop_candidates,
-        parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
-        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
-        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        atlas_candidate_ids, beck_t2_diagnostics_gate_failure, blueprint_cost_gate_failures,
+        blueprint_cost_row_failure, blueprint_evidence_gate_failures,
+        blueprint_evidence_row_failure, blueprint_gate_failures, blueprint_row_contract_failure,
+        bridge_standard_missing_routes, confidence_risk_dimensions, dimension_confidence_risks,
+        dimension_confidence_values, dimension_estimated_values, dimension_score_values,
+        endpoint_exception_gate_failures, endpoint_exception_is_terminal_worthy,
+        filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
+        forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
+        map_atlas_gate_failures, parse_blueprint_cost_ranges, parse_blueprint_evidence_map,
+        parse_blueprint_packages, parse_endpoint_exceptions, parse_forum_docket,
+        parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
+        parse_mdot_midrive_events, parse_pressure_scenarios, parse_standards_inventory,
+        parse_standards_proof_ledger, parse_stop_candidates, parse_t1_diamond_validation,
+        parse_t1_evidence_windows, parse_t1_failure_events, parse_t1_failure_ledger,
+        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
+        parse_tdot_smartway_events, parse_throughput_proof_matrix,
         planned_standard_inventory_missing, pressure_scenario_gate_failures,
         pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
         pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
@@ -11881,6 +11892,33 @@ mod tests {
         assert_eq!(gap_type_slug(&GapType::Bottleneck), "bottleneck");
         assert_eq!(gap_type_slug(&GapType::Resilience), "resilience");
         assert_eq!(gap_type_slug(&GapType::Intermodal), "intermodal");
+    }
+
+    #[test]
+    fn beck_t2_gate_only_fails_structural_layout_defects() {
+        for accepted in [
+            "ok",
+            "dense-transfer-review",
+            "transfer-complexity-review",
+            "long-connector-review",
+        ] {
+            assert!(
+                !beck_t2_diagnostics_gate_failure(accepted),
+                "{accepted} should not fail the structural gate"
+            );
+        }
+
+        for rejected in [
+            "unstopped-t1-contact-review",
+            "parallel-spacing-review",
+            "split-anchor-review",
+            "dense-label-review",
+        ] {
+            assert!(
+                beck_t2_diagnostics_gate_failure(rejected),
+                "{rejected} should fail the structural gate"
+            );
+        }
     }
 
     #[test]

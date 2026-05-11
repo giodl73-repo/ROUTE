@@ -116,3 +116,6 @@ should mean something in the SLA graph.
 - T2 service standards now expose a `service_class` in diagnostics and SVG
   paths: compact services are accepted, transfer spines are weighted, and long
   connectors keep a dashed center convention over continuous parent colors.
+- T2 diagnostics gate now fails only structural layout defects while service
+  classes such as transfer spines and long connectors remain standards-backed
+  review categories rather than release blockers.

@@ -69,6 +69,7 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "beck-t2-diagnostics",
         "--output",
         t2_diagnostics_out.to_str().expect("utf-8 output path"),
+        "--gate",
     ]);
     let t2_diagnostics =
         std::fs::read_to_string(&t2_diagnostics_out).expect("read T2 diagnostics CSV");

@@ -4142,6 +4142,35 @@ mod tests {
     }
 
     #[test]
+    fn beck_t2_service_classes_are_stable_contracts() {
+        let rows = beck_t2_diagnostics();
+
+        let corridors_for = |class_name: &str| {
+            let mut corridors = rows
+                .iter()
+                .filter(|row| row.service_class == class_name)
+                .map(|row| row.corridor)
+                .collect::<Vec<_>>();
+            corridors.sort_unstable();
+            corridors
+        };
+
+        assert_eq!(
+            corridors_for("compact-service"),
+            vec!["I-22", "I-37", "US95"]
+        );
+        assert_eq!(
+            corridors_for("long-connector"),
+            vec!["US30", "US6", "US83", "US90"]
+        );
+        assert_eq!(
+            corridors_for("transfer-spine"),
+            vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US70", "US80"]
+        );
+        assert_eq!(corridors_for("connector").len(), 11);
+    }
+
+    #[test]
     fn beck_paths_resolve_from_stop_catalog() {
         let stops = beck_stops();
         let lines = t1_line_segments(&stops);
