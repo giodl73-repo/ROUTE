@@ -2926,7 +2926,15 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
             LabelDir::Up => (x, y - 18.0, "middle"),
             LabelDir::Down => (x, y + 24.0, "middle"),
         };
-        let font_size = if is_primary_terminal(station.id) {
+        let font_size = if t2_only {
+            if is_primary_terminal(station.id) || station.is_hub {
+                12.5_f64
+            } else if station.is_interchange {
+                10.5_f64
+            } else {
+                9.0_f64
+            }
+        } else if is_primary_terminal(station.id) {
             15.0_f64
         } else if station.is_hub {
             13.0_f64
@@ -2935,12 +2943,19 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
         };
         let fill = if station.is_hub || is_primary_terminal(station.id) {
             "white"
+        } else if t2_only {
+            "#b6c2d1"
         } else {
             "#94a3b8"
         };
+        let label_opacity = if t2_only && !station.is_hub && !station.is_interchange {
+            0.82
+        } else {
+            1.0
+        };
         s += &format!(
             "<text x=\"{lx:.1}\" y=\"{ly:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
-             font-size=\"{font_size}\" font-weight=\"{}\" fill=\"{fill}\" \
+             font-size=\"{font_size}\" font-weight=\"{}\" fill=\"{fill}\" opacity=\"{label_opacity}\" \
              text-anchor=\"{anchor}\">{label}</text>\n",
             if station.is_hub || is_primary_terminal(station.id) {
                 "800"
@@ -2989,24 +3004,26 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                 sy + 3.5
             );
 
-            let (x, y) = line.badge;
-            let lx = match line.label_anchor {
-                "end" => x - 17.0,
-                "middle" => x,
-                _ => x + 17.0,
-            };
-            let ly = if line.label_anchor == "middle" {
-                y - 18.0
-            } else {
-                y + 3.5
-            };
-            s += &format!(
-                "<text x=\"{lx:.1}\" y=\"{ly:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
-                 font-size=\"8.5\" font-weight=\"600\" fill=\"#cbd5e1\" opacity=\"0.78\" \
-                 text-anchor=\"{}\">{}</text>\n",
-                line.label_anchor,
-                line.service_label
-            );
+            if !t2_only {
+                let (x, y) = line.badge;
+                let lx = match line.label_anchor {
+                    "end" => x - 17.0,
+                    "middle" => x,
+                    _ => x + 17.0,
+                };
+                let ly = if line.label_anchor == "middle" {
+                    y - 18.0
+                } else {
+                    y + 3.5
+                };
+                s += &format!(
+                    "<text x=\"{lx:.1}\" y=\"{ly:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
+                     font-size=\"8.5\" font-weight=\"600\" fill=\"#cbd5e1\" opacity=\"0.78\" \
+                     text-anchor=\"{}\">{}</text>\n",
+                    line.label_anchor,
+                    line.service_label
+                );
+            }
         }
     }
 
@@ -3554,7 +3571,7 @@ mod tests {
         assert!(svg.contains("T2 service line"));
         assert!(svg.contains("stroke-width=\"7.5\""));
         assert!(svg.contains("data-corridor=\"I-15\""));
-        assert!(svg.contains("Inland West"));
+        assert!(!svg.contains("Inland West"));
         assert!(!svg.contains("PRIMARY FREIGHT LINES"));
     }
 
