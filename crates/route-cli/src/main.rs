@@ -140,6 +140,21 @@ enum Commands {
         gate: bool,
     },
 
+    /// Export T2-only Beck map diagnostics for clutter and service-line review
+    BeckT2Diagnostics {
+        /// Output CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/beck-t2-diagnostics.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any T2 line is flagged for visual review
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Regenerate corpus entry markdown from current graph attributes and scores
     Report {
         /// Interstate designation
@@ -2037,6 +2052,54 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Map atlas gate: PASS");
+            }
+        }
+
+        Commands::BeckT2Diagnostics { output, gate } => {
+            println!("route beck-t2-diagnostics");
+            let rows = route_map::beck_t2_diagnostics();
+            let csv = route_map::build_beck_t2_diagnostics_csv();
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(&output, csv)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("  T2 lines: {}", rows.len());
+            println!("  wrote diagnostics: {}", output.display());
+            println!(
+                "  {:<8} {:<18} {:>5} {:>5} {:>5} {:>7} Flag",
+                "Line", "Service", "Stops", "Drawn", "Xfer", "Label"
+            );
+            for row in rows.iter().take(12) {
+                println!(
+                    "  {:<8} {:<18} {:>5} {:>5} {:>5} {:>7.2} {}",
+                    row.corridor,
+                    truncate_for_table(row.service_label, 18),
+                    row.stop_count,
+                    row.drawn_stop_count,
+                    row.transfer_stop_count,
+                    row.label_density_per_100px,
+                    row.review_flag
+                );
+            }
+            if gate {
+                let flagged = rows
+                    .iter()
+                    .filter(|row| row.review_flag != "ok")
+                    .collect::<Vec<_>>();
+                if flagged.is_empty() {
+                    println!("Beck T2 diagnostics gate: PASS");
+                } else {
+                    println!("Beck T2 diagnostics gate: FAIL");
+                    for row in flagged.iter().take(10) {
+                        println!("  - {} {}", row.corridor, row.review_flag);
+                    }
+                    anyhow::bail!("Beck T2 diagnostics gate failed");
+                }
             }
         }
 

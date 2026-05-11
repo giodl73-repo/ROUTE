@@ -98,3 +98,5 @@ should mean something in the SLA graph.
   >250-mile promotion docket.
 - Added a T2-only Beck service map so local connector geometry can be inspected
   without the bold T1 trunk layer.
+- Added a T2 diagnostics CSV to rank dense labels, transfer complexity, and long
+  connectors on the T2-only service map.

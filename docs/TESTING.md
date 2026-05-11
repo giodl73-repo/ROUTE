@@ -16,6 +16,7 @@ It verifies:
 
 - Beck T2 map generation writes a real PNG artifact.
 - Beck T2-only service map generation writes a real PNG artifact.
+- Beck T2 diagnostics export writes a reviewable clutter/complexity CSV.
 - Stop-to-stop SLA surface generation writes a CSV with heuristic evidence labels.
 - Stop SLA summary gate keeps max stop gaps at or under 250 miles.
 - Stop SLA candidate scoring produces a reviewable candidate docket for oversized

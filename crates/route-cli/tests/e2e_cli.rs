@@ -38,6 +38,7 @@ fn target_artifact(name: &str) -> PathBuf {
 fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     let map_out = target_artifact("beck-schematic-t2-e2e.png");
     let t2_only_map_out = target_artifact("beck-schematic-t2-only-e2e.png");
+    let t2_diagnostics_out = target_artifact("beck-t2-diagnostics-e2e.csv");
     let csv_out = target_artifact("beck-stop-sla-e2e.csv");
 
     assert_success(&[
@@ -64,6 +65,15 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
             > 100_000,
         "Beck T2-only PNG should be a rendered artifact"
     );
+    assert_success(&[
+        "beck-t2-diagnostics",
+        "--output",
+        t2_diagnostics_out.to_str().expect("utf-8 output path"),
+    ]);
+    let t2_diagnostics =
+        std::fs::read_to_string(&t2_diagnostics_out).expect("read T2 diagnostics CSV");
+    assert!(t2_diagnostics.starts_with("corridor,trunk,service_label"));
+    assert!(t2_diagnostics.contains("dense-label-review"));
 
     assert_success(&[
         "stop-sla-surface",

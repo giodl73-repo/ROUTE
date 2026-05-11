@@ -72,6 +72,22 @@ pub struct BeckStopCatalogRow {
     pub stop_class: &'static str,
 }
 
+pub struct BeckT2DiagnosticRow {
+    pub corridor: &'static str,
+    pub trunk: &'static str,
+    pub service_label: &'static str,
+    pub stop_count: usize,
+    pub drawn_stop_count: usize,
+    pub transfer_stop_count: usize,
+    pub schematic_length_px: f64,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    pub label_density_per_100px: f64,
+    pub review_flag: &'static str,
+}
+
 /// A line segment on the Beck diagram.
 /// Beck lines are sequences of waypoints connected at 0°/45°/90°.
 struct LineSegment {
@@ -2371,6 +2387,97 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
         .collect()
 }
 
+pub fn build_beck_t2_diagnostics_csv() -> String {
+    let mut csv = String::from(
+        "corridor,trunk,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+    );
+    for row in beck_t2_diagnostics() {
+        push_csv_row(
+            &mut csv,
+            &[
+                row.corridor,
+                row.trunk,
+                row.service_label,
+                &row.stop_count.to_string(),
+                &row.drawn_stop_count.to_string(),
+                &row.transfer_stop_count.to_string(),
+                &format!("{:.0}", row.schematic_length_px),
+                &format!("{:.0}", row.min_x),
+                &format!("{:.0}", row.min_y),
+                &format!("{:.0}", row.max_x),
+                &format!("{:.0}", row.max_y),
+                &format!("{:.2}", row.label_density_per_100px),
+                row.review_flag,
+            ],
+        );
+    }
+    csv
+}
+
+pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
+    let stops = beck_stops();
+    let mut rows = t2_line_segments(&stops)
+        .into_iter()
+        .map(|line| {
+            let points = line.routed_waypoints();
+            let (min_x, min_y, max_x, max_y) = bounds(&points);
+            let schematic_length_px = polyline_length(&points);
+            let drawn_stop_count = line
+                .stop_ids
+                .iter()
+                .filter(|id| stop_by_id(&stops, id).draw)
+                .count();
+            let transfer_stop_count = line
+                .stop_ids
+                .iter()
+                .filter(|id| {
+                    let stop = stop_by_id(&stops, id);
+                    stop.is_hub || stop.is_interchange
+                })
+                .count();
+            let label_density_per_100px = if schematic_length_px > 0.0 {
+                drawn_stop_count as f64 / schematic_length_px * 100.0
+            } else {
+                0.0
+            };
+            let review_flag = if label_density_per_100px >= 0.95 {
+                "dense-label-review"
+            } else if transfer_stop_count >= 5 {
+                "transfer-complexity-review"
+            } else if schematic_length_px >= 900.0 {
+                "long-connector-review"
+            } else {
+                "ok"
+            };
+            BeckT2DiagnosticRow {
+                corridor: line.corridor,
+                trunk: line.trunk,
+                service_label: line.service_label,
+                stop_count: line.stop_ids.len(),
+                drawn_stop_count,
+                transfer_stop_count,
+                schematic_length_px,
+                min_x,
+                min_y,
+                max_x,
+                max_y,
+                label_density_per_100px,
+                review_flag,
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        a.review_flag
+            .cmp(b.review_flag)
+            .then_with(|| {
+                b.label_density_per_100px
+                    .total_cmp(&a.label_density_per_100px)
+            })
+            .then_with(|| a.corridor.cmp(b.corridor))
+    });
+    rows
+}
+
 /// Generate the stop-to-stop SLA surface implied by the Beck T1/T2 topology.
 ///
 /// These are heuristic planning commitments, not publication-grade performance
@@ -2489,6 +2596,35 @@ fn add_sla_edge(
         tier,
         miles,
     });
+}
+
+fn bounds(points: &[(f64, f64)]) -> (f64, f64, f64, f64) {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    for (x, y) in points {
+        min_x = min_x.min(*x);
+        min_y = min_y.min(*y);
+        max_x = max_x.max(*x);
+        max_y = max_y.max(*y);
+    }
+    if points.is_empty() {
+        (0.0, 0.0, 0.0, 0.0)
+    } else {
+        (min_x, min_y, max_x, max_y)
+    }
+}
+
+fn polyline_length(points: &[(f64, f64)]) -> f64 {
+    points
+        .windows(2)
+        .map(|pair| {
+            let dx = pair[1].0 - pair[0].0;
+            let dy = pair[1].1 - pair[0].1;
+            (dx * dx + dy * dy).sqrt()
+        })
+        .sum()
 }
 
 fn shortest_sla_path(
@@ -3145,9 +3281,10 @@ fn draw_generated_bends(
 #[cfg(test)]
 mod tests {
     use super::{
-        beck_stop_class, beck_stops, build_beck_stop_sla_csv, build_beck_svg,
-        build_beck_t2_only_svg, build_beck_t2_svg, is_primary_terminal, stop_by_id, stop_class,
-        t1_badges, t1_line_segments, t1_route_stop_ids, t2_line_segments, LineSegment,
+        beck_stop_class, beck_stops, beck_t2_diagnostics, build_beck_stop_sla_csv, build_beck_svg,
+        build_beck_t2_diagnostics_csv, build_beck_t2_only_svg, build_beck_t2_svg,
+        is_primary_terminal, stop_by_id, stop_class, t1_badges, t1_line_segments,
+        t1_route_stop_ids, t2_line_segments, LineSegment,
     };
     use route_network::{minimum_system_contacts_for_tier, RouteTier};
 
@@ -3573,6 +3710,18 @@ mod tests {
         assert!(svg.contains("data-corridor=\"I-15\""));
         assert!(!svg.contains("Inland West"));
         assert!(!svg.contains("PRIMARY FREIGHT LINES"));
+    }
+
+    #[test]
+    fn beck_t2_diagnostics_exports_review_flags() {
+        let csv = build_beck_t2_diagnostics_csv();
+        assert!(csv.starts_with("corridor,trunk,service_label"));
+        assert!(csv.contains("I-495,I-95,Capital Beltway"));
+        assert!(csv.contains("dense-label-review"));
+
+        let rows = beck_t2_diagnostics();
+        assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
+        assert!(rows.iter().any(|row| row.corridor == "US70"));
     }
 
     #[test]
