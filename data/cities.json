@@ -39,6 +39,19 @@
     {"name": "Fresno",        "abbr": "FAT", "lat": 36.736, "lon": -119.787},
     {"name": "Sacramento",    "abbr": "SMF", "lat": 38.576, "lon": -121.495},
     {"name": "St Louis",      "abbr": "STL", "lat": 38.627, "lon": -90.198},
-    {"name": "Laredo",        "abbr": "LRD", "lat": 27.506, "lon": -99.507}
+    {"name": "Laredo",        "abbr": "LRD", "lat": 27.506, "lon": -99.507},
+    {"name": "Eau Claire",    "abbr": "EAU", "lat": 44.812, "lon": -91.498},
+    {"name": "Texarkana",     "abbr": "TXK", "lat": 33.425, "lon": -94.048},
+    {"name": "Gillette",      "abbr": "GCC", "lat": 44.291, "lon": -105.502},
+    {"name": "Tucumcari",     "abbr": "TCC", "lat": 35.172, "lon": -103.725},
+    {"name": "Dalhart",       "abbr": "DHT", "lat": 36.060, "lon": -102.514},
+    {"name": "Raton",         "abbr": "RTN", "lat": 36.903, "lon": -104.439},
+    {"name": "Trinidad",      "abbr": "TAD", "lat": 37.169, "lon": -104.501},
+    {"name": "Cedar City",    "abbr": "CDC", "lat": 37.678, "lon": -113.062},
+    {"name": "Lordsburg",     "abbr": "LSB", "lat": 32.350, "lon": -108.709},
+    {"name": "Deming",        "abbr": "DMN", "lat": 32.269, "lon": -107.759},
+    {"name": "Quartzsite",    "abbr": "QRT", "lat": 33.664, "lon": -114.230},
+    {"name": "Syracuse",      "abbr": "SYR", "lat": 43.048, "lon": -76.147},
+    {"name": "Rochester",     "abbr": "ROC", "lat": 43.157, "lon": -77.609}
   ]
 }

@@ -1073,6 +1073,9 @@ enum Commands {
         /// Include rows that already exist in the stop ledger
         #[arg(long)]
         include_ledger: bool,
+        /// Include non-rank-1 alternate candidates
+        #[arg(long)]
+        include_alternates: bool,
         /// Fail if generated promotion rows do not pass the stop candidate contract
         #[arg(long)]
         gate: bool,
@@ -4897,6 +4900,7 @@ fn run_cli() -> Result<()> {
             input,
             output,
             include_ledger,
+            include_alternates,
             gate,
         } => {
             println!("route stop-sla-promotions");
@@ -4904,7 +4908,7 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("opening SLA candidate docket {}", input.display()))?;
             let docket = parse_stop_sla_candidate_docket(file)
                 .with_context(|| format!("parsing SLA candidate docket {}", input.display()))?;
-            let promotions = stop_sla_promotion_rows(&docket, include_ledger);
+            let promotions = stop_sla_promotion_rows(&docket, include_ledger, include_alternates);
             write_stop_sla_promotions(&output, &promotions)
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("  source docket: {}", input.display());
@@ -6538,12 +6542,20 @@ fn parse_stop_sla_candidate_docket<R: std::io::Read>(
 fn stop_sla_promotion_rows(
     docket: &[StopSlaCandidateDocketRow],
     include_ledger: bool,
+    include_alternates: bool,
 ) -> Vec<StopCandidateRow> {
-    docket
-        .iter()
-        .filter(|row| include_ledger || row.candidate_source_type != "stop-ledger")
-        .map(stop_sla_promotion_row)
-        .collect()
+    let mut seen_gaps = std::collections::BTreeSet::new();
+    let mut rows = Vec::new();
+    for row in docket {
+        if !include_ledger && row.candidate_source_type == "stop-ledger" {
+            continue;
+        }
+        if !include_alternates && !seen_gaps.insert(row.gap_segment.clone()) {
+            continue;
+        }
+        rows.push(stop_sla_promotion_row(row));
+    }
+    rows
 }
 
 fn stop_sla_promotion_row(row: &StopSlaCandidateDocketRow) -> StopCandidateRow {

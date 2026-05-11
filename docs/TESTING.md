@@ -21,6 +21,8 @@ It verifies:
   recurring gaps and gates that inspected gaps have candidates.
 - Stop SLA promotion scaffolding converts the candidate docket into
   stop-candidate-shaped source-needed rows and gates the result.
+- Stop SLA promotion defaults to the best non-ledger candidate per gap, keeping
+  alternates opt-in for review.
 - Map atlas gate passes.
 - L2 pressure-scenario coverage gates pass.
 - T1 stop coverage remains visible and reports the known `I395` blocker.

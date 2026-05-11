@@ -82,3 +82,6 @@ should mean something in the SLA graph.
 - `route stop-sla-promotions` converts the SLA candidate docket into
   `tier-stop-candidates`-shaped source-needed rows and gates that the promotion
   scaffold is structurally append-ready.
+- The city seed layer now covers the current >300-mile recurring gaps, so the
+  default promotion docket recommends named review targets instead of pure
+  spacing midpoints.
