@@ -82,6 +82,7 @@ pub struct BeckT2DiagnosticRow {
     pub start_trunk: &'static str,
     pub end_trunk: &'static str,
     pub color_mode: &'static str,
+    pub service_class: &'static str,
     pub split_anchor: &'static str,
     pub split_anchor_offset_pct: f64,
     pub unstopped_t1_contact_count: usize,
@@ -2517,7 +2518,7 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
 
 pub fn build_beck_t2_diagnostics_csv() -> String {
     let mut csv = String::from(
-        "corridor,trunk,start_trunk,end_trunk,color_mode,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+        "corridor,trunk,start_trunk,end_trunk,color_mode,service_class,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
     );
     for row in beck_t2_diagnostics() {
         push_csv_row(
@@ -2528,6 +2529,7 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
                 row.start_trunk,
                 row.end_trunk,
                 row.color_mode,
+                row.service_class,
                 row.split_anchor,
                 &format!("{:.0}", row.split_anchor_offset_pct),
                 &row.unstopped_t1_contact_count.to_string(),
@@ -2583,21 +2585,23 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             } else {
                 0.0
             };
+            let service_class =
+                t2_service_class(schematic_length_px, drawn_stop_count, transfer_stop_count);
             let review_flag = if unstopped_t1_contact_count > 0 {
                 "unstopped-t1-contact-review"
             } else if close_parallel_count >= 2 {
                 "parallel-spacing-review"
             } else if line.is_split_color() && split_anchor.is_none() {
                 "split-anchor-review"
-            } else if schematic_length_px < 240.0 && drawn_stop_count <= 3 {
-                "compact-service-ok"
+            } else if service_class == "compact-service" {
+                "ok"
             } else if label_density_per_100px >= 1.35 {
                 "dense-label-review"
-            } else if transfer_stop_count >= 5 && label_density_per_100px >= 0.95 {
+            } else if service_class == "transfer-spine" && label_density_per_100px >= 0.95 {
                 "dense-transfer-review"
-            } else if transfer_stop_count >= 5 {
+            } else if service_class == "transfer-spine" {
                 "transfer-complexity-review"
-            } else if schematic_length_px >= 900.0 {
+            } else if service_class == "long-connector" {
                 "long-connector-review"
             } else {
                 "ok"
@@ -2612,6 +2616,7 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 } else {
                     "single-parent"
                 },
+                service_class,
                 split_anchor: split_anchor
                     .as_ref()
                     .map(|anchor| anchor.stop_id)
@@ -2648,6 +2653,44 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             .then_with(|| a.corridor.cmp(b.corridor))
     });
     rows
+}
+
+fn t2_service_class(
+    schematic_length_px: f64,
+    drawn_stop_count: usize,
+    transfer_stop_count: usize,
+) -> &'static str {
+    if schematic_length_px < 240.0 && drawn_stop_count <= 3 {
+        "compact-service"
+    } else if transfer_stop_count >= 5 {
+        "transfer-spine"
+    } else if schematic_length_px >= 900.0 {
+        "long-connector"
+    } else {
+        "connector"
+    }
+}
+
+fn t2_line_service_class(
+    line: &T2LineSegment,
+    points: &[(f64, f64)],
+    stops: &[BeckStop],
+) -> &'static str {
+    let drawn_stop_count = line
+        .stop_ids
+        .iter()
+        .filter(|id| stop_by_id(stops, id).draw)
+        .count();
+    let transfer_stop_count = line
+        .stop_ids
+        .iter()
+        .filter(|id| stop_by_id(stops, id).is_transfer_point())
+        .count();
+    t2_service_class(
+        polyline_length(points),
+        drawn_stop_count,
+        transfer_stop_count,
+    )
 }
 
 /// Generate the stop-to-stop SLA surface implied by the Beck T1/T2 topology.
@@ -3254,14 +3297,35 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                 continue;
             }
             let corridor = line.corridor;
+            let service_class = t2_line_service_class(line, &points, &stops);
             let halo_width = if t2_only { 13.0 } else { 9.0 };
-            let main_width = if t2_only { 7.5 } else { 5.5 };
-            let center_width = if t2_only { 1.1 } else { 0.8 };
+            let base_main_width = if t2_only { 7.5 } else { 5.5 };
+            let main_width = match service_class {
+                "transfer-spine" => base_main_width + 0.8,
+                "compact-service" => base_main_width - 0.5,
+                _ => base_main_width,
+            };
+            let center_width = if service_class == "transfer-spine" {
+                if t2_only {
+                    1.35
+                } else {
+                    1.0
+                }
+            } else if t2_only {
+                1.1
+            } else {
+                0.8
+            };
+            let center_dash = if service_class == "long-connector" {
+                " stroke-dasharray=\"12 10\""
+            } else {
+                ""
+            };
             let main_opacity = if t2_only { 0.96 } else { 0.88 };
             let start_color = t1_line_color(line.start_trunk);
             let end_color = t1_line_color(line.end_trunk);
             s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#020617\" stroke-width=\"{halo_width}\" fill=\"none\" \
+                "<path data-corridor=\"{corridor}\" data-service-class=\"{service_class}\" d=\"{d}\" stroke=\"#020617\" stroke-width=\"{halo_width}\" fill=\"none\" \
                  opacity=\"0.78\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
             if line.is_split_color() {
@@ -3273,25 +3337,25 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                 let left_d = svg_path(&left);
                 let right_d = svg_path(&right);
                 s += &format!(
-                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{left_d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                    "<path data-corridor=\"{corridor}\" data-service-class=\"{service_class}\" data-parent=\"{}\" d=\"{left_d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
                      opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
                     line.start_trunk
                 );
                 s += &format!(
-                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{right_d}\" stroke=\"{end_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                    "<path data-corridor=\"{corridor}\" data-service-class=\"{service_class}\" data-parent=\"{}\" d=\"{right_d}\" stroke=\"{end_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
                      opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
                     line.end_trunk
                 );
             } else {
                 s += &format!(
-                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                    "<path data-corridor=\"{corridor}\" data-service-class=\"{service_class}\" data-parent=\"{}\" d=\"{d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
                      opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
                     line.start_trunk
                 );
             }
             s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"{center_width}\" fill=\"none\" \
-                opacity=\"0.22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+                "<path data-corridor=\"{corridor}\" data-service-class=\"{service_class}\" d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"{center_width}\" fill=\"none\" \
+                opacity=\"0.22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"{center_dash}/>\n"
             );
         }
     }
@@ -4040,6 +4104,8 @@ mod tests {
         assert!(svg.matches("stroke-width=\"5.5\"").count() > t2_routes.len());
         assert!(svg.contains("data-parent=\"I-20\""));
         assert!(svg.contains("data-parent=\"I-95\""));
+        assert!(svg.contains("data-service-class=\"long-connector\""));
+        assert!(svg.contains("data-service-class=\"transfer-spine\""));
     }
 
     #[test]
@@ -4056,16 +4122,20 @@ mod tests {
     #[test]
     fn beck_t2_diagnostics_exports_review_flags() {
         let csv = build_beck_t2_diagnostics_csv();
-        assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode,split_anchor"));
-        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,"));
+        assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode,service_class"));
+        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,transfer-spine,"));
         assert!(csv.contains("split-parent"));
+        assert!(csv.contains("compact-service"));
         assert!(csv.contains("long-connector-review"));
         assert!(csv.contains("dense-transfer-review"));
-        assert!(csv.contains("compact-service-ok"));
 
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
         assert!(rows.iter().any(|row| row.corridor == "US70"));
+        assert!(rows
+            .iter()
+            .any(|row| row.service_class == "compact-service"));
+        assert!(rows.iter().any(|row| row.service_class == "long-connector"));
         assert!(rows
             .iter()
             .any(|row| row.color_mode == "split-parent" && !row.split_anchor.is_empty()));

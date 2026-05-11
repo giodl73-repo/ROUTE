@@ -113,3 +113,6 @@ should mean something in the SLA graph.
 - T2 diagnostics now separate compact short services from true dense/transfer
   reviews, and the Capital Beltway loop is expanded so it no longer reads as a
   cramped label knot.
+- T2 service standards now expose a `service_class` in diagnostics and SVG
+  paths: compact services are accepted, transfer spines are weighted, and long
+  connectors keep a dashed center convention over continuous parent colors.
