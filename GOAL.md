@@ -119,3 +119,6 @@ should mean something in the SLA graph.
 - T2 diagnostics gate now fails only structural layout defects while service
   classes such as transfer spines and long connectors remain standards-backed
   review categories rather than release blockers.
+- T2 service classes now export to `data/beck-t2-service-standards.csv` via
+  `route beck-t2-service-standards`, giving diagnostics, maps, and game overlays
+  one machine-readable service-class contract.

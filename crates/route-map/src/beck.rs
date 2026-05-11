@@ -102,6 +102,19 @@ pub struct BeckT2DiagnosticRow {
     pub review_flag: &'static str,
 }
 
+pub struct BeckT2ServiceStandardRow {
+    pub service_class: &'static str,
+    pub definition: &'static str,
+    pub min_schematic_px: &'static str,
+    pub max_schematic_px: &'static str,
+    pub max_drawn_stops: &'static str,
+    pub min_transfer_stops: &'static str,
+    pub visual_convention: &'static str,
+    pub review_policy: &'static str,
+    pub gate_policy: &'static str,
+    pub game_use: &'static str,
+}
+
 /// A line segment on the Beck diagram.
 /// Beck lines are sequences of waypoints connected at 0°/45°/90°.
 struct LineSegment {
@@ -2553,6 +2566,83 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
     csv
 }
 
+pub fn build_beck_t2_service_standards_csv() -> String {
+    let mut csv = String::from(
+        "service_class,definition,min_schematic_px,max_schematic_px,max_drawn_stops,min_transfer_stops,visual_convention,review_policy,gate_policy,game_use\n",
+    );
+    for row in beck_t2_service_standards() {
+        push_csv_row(
+            &mut csv,
+            &[
+                row.service_class,
+                row.definition,
+                row.min_schematic_px,
+                row.max_schematic_px,
+                row.max_drawn_stops,
+                row.min_transfer_stops,
+                row.visual_convention,
+                row.review_policy,
+                row.gate_policy,
+                row.game_use,
+            ],
+        );
+    }
+    csv
+}
+
+pub fn beck_t2_service_standards() -> Vec<BeckT2ServiceStandardRow> {
+    vec![
+        BeckT2ServiceStandardRow {
+            service_class: "connector",
+            definition: "standard T2 bridge between parent trunks with ordinary transfer load",
+            min_schematic_px: "240",
+            max_schematic_px: "899",
+            max_drawn_stops: "",
+            min_transfer_stops: "0",
+            visual_convention: "thin continuous parent-colored service line",
+            review_policy: "ok unless structural diagnostics fail",
+            gate_policy: "structural defects block release",
+            game_use: "default T2 service, incident reroute, and upgrade candidate",
+        },
+        BeckT2ServiceStandardRow {
+            service_class: "compact-service",
+            definition: "short local T2 service whose high stop density is expected",
+            min_schematic_px: "0",
+            max_schematic_px: "239",
+            max_drawn_stops: "3",
+            min_transfer_stops: "0",
+            visual_convention: "slightly lighter thin service line",
+            review_policy: "accepted compact service",
+            gate_policy: "structural defects block release",
+            game_use: "local access, short shuttle, local disruption surface",
+        },
+        BeckT2ServiceStandardRow {
+            service_class: "transfer-spine",
+            definition: "T2 service carrying five or more transfer stops",
+            min_schematic_px: "",
+            max_schematic_px: "",
+            max_drawn_stops: "",
+            min_transfer_stops: "5",
+            visual_convention: "slightly heavier thin service line",
+            review_policy: "review transfer complexity and label density",
+            gate_policy: "review category does not block release",
+            game_use: "throughput-sensitive spine, interchange investment, reroute pressure",
+        },
+        BeckT2ServiceStandardRow {
+            service_class: "long-connector",
+            definition: "long T2 connector crossing condensed schematic distance",
+            min_schematic_px: "900",
+            max_schematic_px: "",
+            max_drawn_stops: "",
+            min_transfer_stops: "0",
+            visual_convention: "continuous parent-colored line with dashed center cue",
+            review_policy: "review corridor length and regional inset need",
+            gate_policy: "review category does not block release",
+            game_use: "long-haul thin-line service, staged upgrade, regional split candidate",
+        },
+    ]
+}
+
 pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
     let stops = beck_stops();
     let t2_lines = t2_line_segments(&stops);
@@ -3685,9 +3775,9 @@ fn draw_generated_bends(
 mod tests {
     use super::{
         beck_stop_class, beck_stops, beck_t2_diagnostics, build_beck_stop_sla_csv, build_beck_svg,
-        build_beck_t2_diagnostics_csv, build_beck_t2_only_svg, build_beck_t2_svg,
-        is_primary_terminal, stop_by_id, stop_class, t1_badges, t1_line_segments,
-        t1_route_stop_ids, t2_line_segments, LineSegment,
+        build_beck_t2_diagnostics_csv, build_beck_t2_only_svg, build_beck_t2_service_standards_csv,
+        build_beck_t2_svg, is_primary_terminal, stop_by_id, stop_class, t1_badges,
+        t1_line_segments, t1_route_stop_ids, t2_line_segments, LineSegment,
     };
     use route_network::{minimum_system_contacts_for_tier, RouteTier};
 
@@ -4168,6 +4258,29 @@ mod tests {
             vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US70", "US80"]
         );
         assert_eq!(corridors_for("connector").len(), 11);
+    }
+
+    #[test]
+    fn beck_t2_service_standards_cover_diagnostic_classes() {
+        let csv = build_beck_t2_service_standards_csv();
+        assert!(csv.starts_with("service_class,definition,min_schematic_px"));
+        assert!(csv.contains("compact-service"));
+        assert!(csv.contains("transfer-spine"));
+        assert!(csv.contains("long-connector"));
+        assert!(csv.contains("dashed center cue"));
+
+        let standard_classes = super::beck_t2_service_standards()
+            .iter()
+            .map(|row| row.service_class)
+            .collect::<std::collections::HashSet<_>>();
+        for row in beck_t2_diagnostics() {
+            assert!(
+                standard_classes.contains(row.service_class),
+                "{} uses uncovered service class {}",
+                row.corridor,
+                row.service_class
+            );
+        }
     }
 
     #[test]
