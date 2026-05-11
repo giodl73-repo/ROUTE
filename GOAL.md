@@ -88,3 +88,6 @@ should mean something in the SLA graph.
 - Named city-seed targets for the >300-mile queue are now promoted into the Beck
   stop graph, regenerating the national SLA surface and shifting the next
   candidate docket to the >250-mile queue.
+- The current top >250-mile candidate and promotion dockets now resolve to named
+  service-city or stop-ledger candidates instead of algorithmic midpoint
+  placeholders.

@@ -52,6 +52,22 @@
     {"name": "Deming",        "abbr": "DMN", "lat": 32.269, "lon": -107.759},
     {"name": "Quartzsite",    "abbr": "QRT", "lat": 33.664, "lon": -114.230},
     {"name": "Syracuse",      "abbr": "SYR", "lat": 43.048, "lon": -76.147},
-    {"name": "Rochester",     "abbr": "ROC", "lat": 43.157, "lon": -77.609}
+    {"name": "Rochester",     "abbr": "ROC", "lat": 43.157, "lon": -77.609},
+    {"name": "Fort Smith",    "abbr": "FSM", "lat": 35.386, "lon": -94.399},
+    {"name": "Fort Pierce",   "abbr": "FPR", "lat": 27.446, "lon": -80.326},
+    {"name": "Elk City",      "abbr": "ELK", "lat": 35.412, "lon": -99.405},
+    {"name": "Columbia MO",   "abbr": "COU", "lat": 38.951, "lon": -92.328},
+    {"name": "Mason City",    "abbr": "MCW", "lat": 43.153, "lon": -93.201},
+    {"name": "Clarion",       "abbr": "CIO", "lat": 41.214, "lon": -79.385},
+    {"name": "Effingham",     "abbr": "EFF", "lat": 39.121, "lon": -88.543},
+    {"name": "Sheridan",      "abbr": "SHR", "lat": 44.797, "lon": -106.956},
+    {"name": "Rawlins",       "abbr": "RWL", "lat": 41.791, "lon": -107.239},
+    {"name": "Moses Lake",    "abbr": "MWH", "lat": 47.131, "lon": -119.278},
+    {"name": "Pensacola",     "abbr": "PNS", "lat": 30.421, "lon": -87.216},
+    {"name": "Panama City",   "abbr": "ECP", "lat": 30.159, "lon": -85.660},
+    {"name": "Fillmore",      "abbr": "FIL", "lat": 38.968, "lon": -112.323},
+    {"name": "Junction",      "abbr": "JCT", "lat": 30.489, "lon": -99.772},
+    {"name": "Eugene",        "abbr": "EUG", "lat": 44.052, "lon": -123.087},
+    {"name": "Tifton",        "abbr": "TIF", "lat": 31.451, "lon": -83.508}
   ]
 }
