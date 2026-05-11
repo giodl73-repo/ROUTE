@@ -54,12 +54,12 @@ should mean something in the SLA graph.
 
 - `route stop-sla-summary` reports pair counts, SLA windows, gap status,
   evidence labels, mode-comparison notes, and worst gaps.
-- `route stop-sla-summary --gate-max-gap 400` is wired into L2 CLI e2e.
+- `route stop-sla-summary --gate-max-gap 360` is wired into L2 CLI e2e.
 - Shared `StopServiceClass` and `StopNodeClass` primitives live in
   `route-network`.
 - The Beck SLA graph now uses deterministic Dijkstra pathing.
 - The national SLA surface has no `needs-intermediate-stops` rows; current max
-  stop gap is under 400 miles.
+  stop gap is under 360 miles.
 - Added visible intermediate stops for the largest western, mountain, and
   Appalachian gaps.
 - T1/T2 route endpoint/contact policy is now shared through `route-network` and
@@ -70,3 +70,6 @@ should mean something in the SLA graph.
   oversized OD rows point back to concrete stop investments.
 - Added Wichita Falls, Show Low, and Daytona Beach as stop-first anchors; the
   national SLA surface max stop gap is now 382 miles.
+- Added Wheeling, Iowa City, Hattiesburg, Fort Smith, Pueblo, Texarkana, Macon,
+  and Wichita as route-rhythm stops; the national SLA surface max stop gap is
+  now 352 miles.
