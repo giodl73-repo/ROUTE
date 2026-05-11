@@ -1,0 +1,21 @@
+route,requested_tier,endpoint_name,endpoint_role,exception_type,evidence_level,artifact,next_step
+I395,T1,Washington DC / Northern Virginia approach,local_access_end,demote,heuristic,data/tier-table.csv,Review why I-395 scored into T1; likely demote to T3/T4 local capital approach instead of forcing a national stop chain
+I110,T2,Los Angeles port approach,local_access_end,demote,heuristic,data/tier-stop-candidates.csv,Treat as S5/local port access under LA/LB instead of national thin-line service unless port connector evidence is separated
+I195,T2,Numbered I-195 route family,graph_endpoint_gap,missing_graph_geometry,missing_graph_data,data/tier-table.csv,Disambiguate which I-195 segment the graph route represents before assigning stop chain or tier
+I25,T2,Front Range / Denver,national_terminal,regional_terminal,heuristic,data/tier-table.csv,Validate whether I-25 should be T2 terminal corridor or T3 regional spine under endpoint standard
+I65,T2,Mobile / Louisville corridor,t2_terminal_exception,port_terminal,heuristic,data/corridor-designations.csv,Validate T1/T2 contacts and terminal role before retaining T2
+I220,T2,Local I-220 loop family,local_access_end,demote,heuristic,data/tier-table.csv,Demote local loop/spur family unless a specific segment proves regional relief value
+I225,T2,Denver local connector,local_access_end,demote,heuristic,data/tier-table.csv,Treat as Denver S5/S4 local access rather than national thin-line service
+I240,T2,Memphis local loop,local_access_end,demote,heuristic,data/tier-table.csv,Treat as local Memphis access under STOP-MEM unless source-backed national relief value appears
+I264,T2,Local I-264 loop family,local_access_end,demote,heuristic,data/tier-table.csv,Demote local loop family or split by city before stop-chain assignment
+I205,T2,Portland local loop,local_access_end,missing_graph_geometry,missing_graph_data,data/tier-table.csv,Confirm graph contact; likely T3/T4 local relief unless national bypass evidence exists
+I405,T2,Los Angeles basin loop,local_access_end,metro_beltway_relief,heuristic,data/atri-bottlenecks.csv,Require source-backed national relief role or demote to T3/T4
+I285,T2,Atlanta loop,local_access_end,metro_beltway_relief,heuristic,data/atri-bottlenecks.csv,Require source-backed national relief role or demote to T3/T4
+I270,T2,St. Louis / Columbus beltway,one_ended_feeder,metro_beltway_relief,heuristic,data/atri-bottlenecks.csv,Split route family or validate endpoint contacts before tier decision
+I275,T2,Local I-275 loop family,local_access_end,demote,heuristic,data/tier-table.csv,Demote or split Cincinnati/Tampa loop family before assigning a national thin-line stop chain
+I295,T2,Local I-295 loop family,local_access_end,missing_graph_geometry,missing_graph_data,data/tier-table.csv,Split by metro area and validate graph contacts before retaining any T2 segment
+I610,T2,Houston local loop,local_access_end,demote,heuristic,data/tier-stop-candidates.csv,Treat as Houston S5/S4 local access unless source-backed national relief loop evidence appears
+I635,T2,Dallas local loop,local_access_end,demote,heuristic,data/tier-table.csv,Treat as DFW local access under STOP-DFW rather than national thin-line service
+I664,T2,Hampton Roads local connector,local_access_end,demote,heuristic,data/tier-stop-candidates.csv,Treat as Hampton Roads local access under STOP-HAMPTON-ROADS unless regional port relief is proved
+I680,T2,Local I-680 loop family,local_access_end,demote,heuristic,data/tier-table.csv,Demote or split by metro area before assigning a national thin-line stop chain
+US2,T2,Northern local US2 segment,local_access_end,demote,heuristic,data/tier-table.csv,Graph shows only local spur behavior; demote unless a northern-tier regional map explicitly needs it

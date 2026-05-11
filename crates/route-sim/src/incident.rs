@@ -114,9 +114,7 @@ pub fn restore_incident(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        apply_incident, restore_incident, IncidentSpec, IncidentType, WeatherType,
-    };
+    use super::{apply_incident, restore_incident, IncidentSpec, IncidentType, WeatherType};
     use petgraph::graph::EdgeIndex;
     use std::collections::HashMap;
 

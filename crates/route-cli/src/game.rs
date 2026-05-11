@@ -6,6 +6,7 @@ use std::io::Write;
 use std::path::Path;
 
 pub const DES_MOINES_SCENARIO_ID: &str = "des-moines-diamond";
+pub const DONNER_SCENARIO_ID: &str = "donner-weather-closure";
 
 #[derive(Clone, Copy, Debug)]
 pub struct Track {
@@ -79,6 +80,8 @@ pub struct GameState {
     pub public_patience: i32,
     pub operations_capacity: i32,
     pub evidence_confidence: i32,
+    #[serde(default)]
+    pub weather_readiness: i32,
     pub active_projects: Vec<ActiveProject>,
     pub completed_projects: Vec<String>,
     pub first_closure_seen: bool,
@@ -86,6 +89,8 @@ pub struct GameState {
     pub source_requested: bool,
     pub validated_evidence_available: bool,
     pub fiscal_crisis: bool,
+    #[serde(default)]
+    pub trapped_queue: bool,
     pub publication_gate: String,
 }
 
@@ -368,24 +373,248 @@ const EVIDENCE: &[EvidenceCard] = &[
     },
 ];
 
-pub const SCENARIOS: &[Scenario] = &[Scenario {
-    id: DES_MOINES_SCENARIO_ID,
-    name: "Des Moines Diamond",
-    phase: "G0-B pass; G1-A start",
-    version: "G0 v0.2",
-    evidence_level: "Heuristic",
-    standards: "T1-DIAMOND-K; T1-FLYOVER; T1-RECOVERY",
-    hook: "The national freight grid looks healthy until one interchange closure breaks the transfer.",
-    one_aha: "Capacity is not topology: widening can help congestion without creating independent transfer paths.",
-    time_limit: "10 seasons; tutorial can end early after connector selection/completion, scoring, explanation, and publication status.",
-    publication_gate: "locked: empirical closure evidence and direct PTI/NPMRDS validation missing",
-    engine_hook: "route sim scenario des-moines-interchange --intervention",
-    panel_status: "G0-C held for human blind playtest or owner acceptance of simulated evidence",
-    tracks: TRACKS,
-    projects: PROJECTS,
-    events: EVENTS,
-    evidence: EVIDENCE,
-}];
+const DONNER_TRACKS: &[Track] = &[
+    Track {
+        name: "Budget",
+        start: 13,
+        failure_condition: "Below 0",
+    },
+    Track {
+        name: "Construction crews",
+        start: 3,
+        failure_condition: "No available crew for a required project",
+    },
+    Track {
+        name: "Weather readiness",
+        start: 3,
+        failure_condition: "Below 0 during a storm",
+    },
+    Track {
+        name: "Public patience",
+        start: 5,
+        failure_condition: "Below 0",
+    },
+    Track {
+        name: "Operations capacity",
+        start: 4,
+        failure_condition: "Below 0 during reroute or reopening",
+    },
+    Track {
+        name: "Evidence confidence",
+        start: 1,
+        failure_condition: "Publication gate locked below 4",
+    },
+];
+
+const DONNER_PROJECTS: &[ProjectCard] = &[
+    ProjectCard {
+        slug: "early-egress-spurs",
+        name: "Early egress spurs",
+        cost: 3,
+        crew: 1,
+        time: 2,
+        effect: "Lets trucks leave before the closure zone instead of queueing at the pass",
+        evidence: "Planned",
+        protects: "Trapped freight and late reroute",
+    },
+    ProjectCard {
+        slug: "winter-operations-package",
+        name: "Winter operations package",
+        cost: 2,
+        crew: 1,
+        time: 1,
+        effect: "Raises weather readiness by 2 and reduces reopening delay",
+        evidence: "Heuristic",
+        protects: "Slow clearance and chain-control shock",
+    },
+    ProjectCard {
+        slug: "lower-elevation-freight-bypass",
+        name: "Lower-elevation freight bypass",
+        cost: 6,
+        crew: 2,
+        time: 4,
+        effect: "Adds independent road capacity below the storm zone",
+        evidence: "Planned",
+        protects: "Pass closure with no road alternate",
+    },
+    ProjectCard {
+        slug: "managed-freight-tunnel",
+        name: "Managed freight tunnel",
+        cost: 5,
+        crew: 2,
+        time: 3,
+        effect: "Protects eligible priority freight after it opens; not an instant first-storm fix",
+        evidence: "Planned",
+        protects: "High-value SLA misses",
+    },
+    ProjectCard {
+        slug: "rail-intermodal-surge-slots",
+        name: "Rail/intermodal surge slots",
+        cost: 3,
+        crew: 1,
+        time: 2,
+        effect: "Moves eligible freight before the road queue grows",
+        evidence: "Heuristic",
+        protects: "Overloaded road detour",
+    },
+    ProjectCard {
+        slug: "dynamic-closure-routing",
+        name: "Dynamic closure routing",
+        cost: 2,
+        crew: 0,
+        time: 1,
+        effect: "Reduces operations loss when storms are forecast",
+        evidence: "Heuristic",
+        protects: "Late route decisions",
+    },
+    ProjectCard {
+        slug: "general-snow-storage-shoulders",
+        name: "General snow storage / shoulders",
+        cost: 2,
+        crew: 1,
+        time: 1,
+        effect: "Helps reopening but does not create alternate capacity",
+        evidence: "Heuristic",
+        protects: "Recovery delay",
+    },
+    ProjectCard {
+        slug: "source-request",
+        name: "Source request",
+        cost: 1,
+        crew: 0,
+        time: 1,
+        effect: "Raises evidence confidence by 1 and names the missing weather/closure sources",
+        evidence: "Implemented as artifact plan",
+        protects: "Unknown evidence blocker",
+    },
+    ProjectCard {
+        slug: "validated-weather-evidence",
+        name: "Validated weather evidence",
+        cost: 2,
+        crew: 0,
+        time: 1,
+        effect: "Requires source request; raises evidence confidence only when observed closure history exists",
+        evidence: "Planned",
+        protects: "Publication-grade proof",
+    },
+];
+
+const DONNER_EVENTS: &[EventCard] = &[
+    EventCard {
+        slug: "whiteout-closure",
+        name: "Whiteout closure",
+        trigger: "Forced tutorial, then rare",
+        effect: "Close the pass for 48 hours; add a trapped-queue marker unless egress or routing is ready",
+        warning: "The pass is closed; the queue is forming before the alternate decision.",
+    },
+    EventCard {
+        slug: "chain-control-slowdown",
+        name: "Chain-control slowdown",
+        trigger: "Common",
+        effect: "Lose 1 weather readiness unless winter operations are active",
+        warning: "The route is open, but speed and compliance are binding.",
+    },
+    EventCard {
+        slug: "detour-capacity-pinch",
+        name: "Detour capacity pinch",
+        trigger: "Common",
+        effect: "Lose 1 operations unless a bypass or rail slots are active",
+        warning: "The alternate exists on the map, but it is not absorbing T1 freight.",
+    },
+    EventCard {
+        slug: "reopening-surge",
+        name: "Reopening surge",
+        trigger: "Medium",
+        effect: "Lose 1 public patience unless snow storage or routing is active",
+        warning: "The closure ended; the queue did not.",
+    },
+    EventCard {
+        slug: "high-value-sla-wave",
+        name: "High-value SLA wave",
+        trigger: "Medium",
+        effect: "Lose SLA margin unless tunnel or intermodal slots are active",
+        warning: "Not all freight can wait for the road to reopen.",
+    },
+    EventCard {
+        slug: "evidence-challenge",
+        name: "Evidence challenge",
+        trigger: "Medium",
+        effect: "Publication gate checks evidence confidence and observed-source status",
+        warning: "A reviewer asks how many closures, how long, and what the alternate carried.",
+    },
+];
+
+const DONNER_EVIDENCE: &[EvidenceCard] = &[
+    EvidenceCard {
+        name: "Donner scenario fixture",
+        known: "Bound weather closure scenario exists",
+        missing: "Focused I-80 mountain demand and intervention acceptance gate",
+        effect: "Unlocks heuristic storm scoring",
+    },
+    EvidenceCard {
+        name: "Weather closure history",
+        known: "Source need is named",
+        missing: "Observed annual frequency and duration distribution",
+        effect: "Locks publication-grade closure probability",
+    },
+    EvidenceCard {
+        name: "Alternate road capacity",
+        known: "Standards need is named",
+        missing: "Truck-capable capacity, winter reliability, and detour time",
+        effect: "Locks reroute throughput claim",
+    },
+    EvidenceCard {
+        name: "NPMRDS/PTI",
+        known: "Source target is known",
+        missing: "Direct pass and alternate travel-time validation",
+        effect: "Locks SLA proof",
+    },
+    EvidenceCard {
+        name: "Rail/intermodal relief",
+        known: "Design concept exists",
+        missing: "Eligible freight share and surge slot capacity",
+        effect: "Keeps intermodal project heuristic",
+    },
+];
+
+pub const SCENARIOS: &[Scenario] = &[
+    Scenario {
+        id: DES_MOINES_SCENARIO_ID,
+        name: "Des Moines Diamond",
+        phase: "G0-B pass; G1-A start",
+        version: "G0 v0.2",
+        evidence_level: "Heuristic",
+        standards: "T1-DIAMOND-K; T1-FLYOVER; T1-RECOVERY",
+        hook: "The national freight grid looks healthy until one interchange closure breaks the transfer.",
+        one_aha: "Capacity is not topology: widening can help congestion without creating independent transfer paths.",
+        time_limit: "10 seasons; tutorial can end early after connector selection/completion, scoring, explanation, and publication status.",
+        publication_gate: "locked: empirical closure evidence and direct PTI/NPMRDS validation missing",
+        engine_hook: "route sim scenario des-moines-interchange --intervention",
+        panel_status: "G0-C held for human blind playtest or owner acceptance of simulated evidence",
+        tracks: TRACKS,
+        projects: PROJECTS,
+        events: EVENTS,
+        evidence: EVIDENCE,
+    },
+    Scenario {
+        id: DONNER_SCENARIO_ID,
+        name: "Donner Weather Closure",
+        phase: "G0-B paper prototype; G1-A seed",
+        version: "G0 v0.2",
+        evidence_level: "Heuristic",
+        standards: "T1-SPURS; T1-CLIMATE; T1-RECOVERY; T1-INTERMODAL",
+        hook: "I-80 looks like a line across the mountains until winter turns it into a timed gate.",
+        one_aha: "The route around the storm is not free capacity.",
+        time_limit: "8 seasons; tutorial can end early after one whiteout, a response, scoring, and publication status.",
+        publication_gate: "locked: weather closure and alternate-capacity evidence missing",
+        engine_hook: "route sim scenario donner-closure",
+        panel_status: "G0-C held for human blind playtest or owner acceptance of simulated evidence",
+        tracks: DONNER_TRACKS,
+        projects: DONNER_PROJECTS,
+        events: DONNER_EVENTS,
+        evidence: DONNER_EVIDENCE,
+    },
+];
 
 pub fn render_scenarios() -> String {
     let mut out = String::from(
@@ -468,13 +697,27 @@ pub fn render_inspect(scenario_id: &str) -> Result<String> {
 
     out.push_str("\nPublication Gate\n");
     out.push_str(&format!("- {}\n", scenario.publication_gate));
-    out.push_str("- analyzer recognition: pass via curated I-35/I-80 anchor\n");
-    out.push_str("- observed versus modeled failure data: required\n");
+    if scenario.id == DES_MOINES_SCENARIO_ID {
+        out.push_str("- analyzer recognition: pass via curated I-35/I-80 anchor\n");
+        out.push_str("- observed versus modeled failure data: required\n");
+    } else {
+        out.push_str("- observed weather closure frequency/duration: required\n");
+        out.push_str(
+            "- truck-capable alternate capacity and direct PTI/SLA validation: required\n",
+        );
+        out.push_str("- source requested is not source observed\n");
+    }
 
     out.push_str("\nROUTE Engine Hooks\n");
-    out.push_str("- route sim scenario des-moines-interchange\n");
-    out.push_str("- route sim scenario des-moines-interchange --intervention\n");
-    out.push_str("- route diamond I35xI80\n");
+    if scenario.id == DES_MOINES_SCENARIO_ID {
+        out.push_str("- route sim scenario des-moines-interchange\n");
+        out.push_str("- route sim scenario des-moines-interchange --intervention\n");
+        out.push_str("- route diamond I35xI80\n");
+    } else {
+        out.push_str("- route sim scenario donner-closure\n");
+        out.push_str("- route pressure-scenarios --gate-l2\n");
+        out.push_str("- route game campaign --gate\n");
+    }
 
     Ok(out)
 }
@@ -559,6 +802,29 @@ pub fn campaign_cli(ledger_path: &Path, map_atlas_path: &Path, gate: bool) -> Re
 
 pub fn default_state(scenario_id: &str) -> Result<GameState> {
     scenario_by_id(scenario_id)?;
+    if scenario_id == DONNER_SCENARIO_ID {
+        return Ok(GameState {
+            scenario_id: scenario_id.to_string(),
+            season: 0,
+            budget: 13,
+            construction_crews: 3,
+            political_capital: 0,
+            public_patience: 5,
+            operations_capacity: 4,
+            evidence_confidence: 1,
+            weather_readiness: 3,
+            active_projects: Vec::new(),
+            completed_projects: Vec::new(),
+            first_closure_seen: false,
+            connector_package_complete: false,
+            source_requested: false,
+            validated_evidence_available: false,
+            fiscal_crisis: false,
+            trapped_queue: false,
+            publication_gate: "locked: weather closure and alternate-capacity evidence missing"
+                .to_string(),
+        });
+    }
     Ok(GameState {
         scenario_id: scenario_id.to_string(),
         season: 0,
@@ -568,6 +834,7 @@ pub fn default_state(scenario_id: &str) -> Result<GameState> {
         public_patience: 6,
         operations_capacity: 4,
         evidence_confidence: 2,
+        weather_readiness: 0,
         active_projects: Vec::new(),
         completed_projects: Vec::new(),
         first_closure_seen: false,
@@ -575,6 +842,7 @@ pub fn default_state(scenario_id: &str) -> Result<GameState> {
         source_requested: false,
         validated_evidence_available: false,
         fiscal_crisis: false,
+        trapped_queue: false,
         publication_gate:
             "locked: empirical closure evidence and direct PTI/NPMRDS validation missing"
                 .to_string(),
@@ -688,7 +956,8 @@ pub fn run_season(
     project_slugs: &[String],
 ) -> Result<SeasonResult> {
     scenario_by_id(&state.scenario_id)?;
-    let event = event_by_slug(event_slug)?;
+    let scenario_id = state.scenario_id.clone();
+    let event = event_by_slug(&scenario_id, event_slug)?;
     state.season = season;
     state.construction_crews = 3;
 
@@ -697,7 +966,7 @@ pub fn run_season(
     let political_lane_pressure = event.slug == "political-lane-mile-pressure";
 
     for slug in project_slugs {
-        let project = project_by_slug(slug)?;
+        let project = project_by_slug(&scenario_id, slug)?;
         let mut cost = project.cost;
         let mut political_cost = 0;
         if political_lane_pressure && project.slug == "general-purpose-widening" {
@@ -707,16 +976,24 @@ pub fn run_season(
             political_cost = 1;
         }
 
-        if project.slug == "validated-evidence" && !state.source_requested {
+        if matches!(
+            project.slug,
+            "validated-evidence" | "validated-weather-evidence"
+        ) && !state.source_requested
+        {
             rejected_actions.push(format!(
                 "{} rejected: source request must be completed first.",
                 project.name
             ));
             continue;
         }
-        if project.slug == "validated-evidence" && !state.validated_evidence_available {
+        if matches!(
+            project.slug,
+            "validated-evidence" | "validated-weather-evidence"
+        ) && !state.validated_evidence_available
+        {
             rejected_actions.push(format!(
-                "{} rejected: validated evidence unavailable; no observed artifact exists yet.",
+                "{} rejected: source requested is not source observed; no observed artifact exists yet.",
                 project.name
             ));
             continue;
@@ -786,16 +1063,23 @@ pub fn run_season(
     if state.budget < 0 {
         state.fiscal_crisis = true;
     }
-    state.publication_gate =
-        "locked: empirical closure evidence and direct PTI/NPMRDS validation missing".to_string();
+    state.publication_gate = scenario_by_id(&scenario_id)?.publication_gate.to_string();
 
-    let throughput_retention = if state.connector_package_complete {
+    let throughput_retention = if scenario_id == DONNER_SCENARIO_ID {
+        donner_throughput_retention(&state)
+    } else if state.connector_package_complete {
         1.0
     } else {
         0.962
     };
-    let recovery_hours = 0.9;
-    let sla_status = if state.operations_capacity >= 0 {
+    let recovery_hours = if scenario_id == DONNER_SCENARIO_ID {
+        donner_recovery_hours(&state)
+    } else {
+        0.9
+    };
+    let sla_status = if scenario_id == DONNER_SCENARIO_ID {
+        donner_sla_status(&state)
+    } else if state.operations_capacity >= 0 {
         "bounded heuristic".to_string()
     } else {
         "missed: operations capacity below zero".to_string()
@@ -845,6 +1129,12 @@ pub fn render_season_result(result: &SeasonResult) -> String {
         result.state.operations_capacity,
         result.state.evidence_confidence
     ));
+    if result.state.scenario_id == DONNER_SCENARIO_ID {
+        out.push_str(&format!(
+            "  mountain_tracks: weather_readiness={} trapped_queue={}\n",
+            result.state.weather_readiness, result.state.trapped_queue
+        ));
+    }
     out.push_str(&format!(
         "  active_projects: {}\n",
         if result.state.active_projects.is_empty() {
@@ -898,7 +1188,15 @@ pub fn score_session_log<R: std::io::Read>(scenario_id: &str, reader: R) -> Resu
     } else {
         0
     };
-    let recovery_points = if rows.iter().any(|row| row.recovery_hours <= 4.0) {
+    let recovery_gate_hours = if scenario_id == DONNER_SCENARIO_ID {
+        8.0
+    } else {
+        4.0
+    };
+    let recovery_points = if rows
+        .iter()
+        .any(|row| row.recovery_hours <= recovery_gate_hours)
+    {
         20
     } else {
         0
@@ -981,30 +1279,46 @@ pub fn render_score_result(result: &ScoreResult, details: bool) -> String {
     ));
     if let Some(engine) = result.engine_facts {
         out.push_str("  engine_facts:\n");
-        out.push_str(&format!(
-            "    baseline_throughput_vph: {}\n",
-            engine.baseline_throughput_vph
-        ));
-        out.push_str(&format!(
-            "    incident_throughput_vph: {}\n",
-            engine.incident_throughput_vph
-        ));
-        out.push_str(&format!(
-            "    intervention_throughput_vph: {}\n",
-            engine.intervention_throughput_vph
-        ));
-        out.push_str(&format!(
-            "    recovery_hours: {:.1}\n",
-            engine.recovery_hours
-        ));
-        out.push_str(&format!(
-            "    diamond_k_current: {}\n",
-            engine.diamond_k_current
-        ));
-        out.push_str(&format!(
-            "    connectors_needed_for_k3: {}\n",
-            engine.connectors_needed
-        ));
+        if result.scenario_id == DONNER_SCENARIO_ID {
+            out.push_str(&format!(
+                "    baseline_throughput_vph: {}\n",
+                engine.baseline_throughput_vph
+            ));
+            out.push_str(&format!(
+                "    incident_throughput_vph: {}\n",
+                engine.incident_throughput_vph
+            ));
+            out.push_str("    synthetic_fixture_note: current sim shows no throughput delta; game scoring remains heuristic\n");
+            out.push_str(&format!(
+                "    tutorial_recovery_window_hours: {:.1}\n",
+                engine.recovery_hours
+            ));
+        } else {
+            out.push_str(&format!(
+                "    baseline_throughput_vph: {}\n",
+                engine.baseline_throughput_vph
+            ));
+            out.push_str(&format!(
+                "    incident_throughput_vph: {}\n",
+                engine.incident_throughput_vph
+            ));
+            out.push_str(&format!(
+                "    intervention_throughput_vph: {}\n",
+                engine.intervention_throughput_vph
+            ));
+            out.push_str(&format!(
+                "    recovery_hours: {:.1}\n",
+                engine.recovery_hours
+            ));
+            out.push_str(&format!(
+                "    diamond_k_current: {}\n",
+                engine.diamond_k_current
+            ));
+            out.push_str(&format!(
+                "    connectors_needed_for_k3: {}\n",
+                engine.connectors_needed
+            ));
+        }
         out.push_str(&format!("    evidence_level: {}\n", engine.evidence_level));
     }
     if details {
@@ -1040,6 +1354,15 @@ fn engine_facts_for(scenario_id: &str) -> Option<EngineFacts> {
             recovery_hours: 0.9,
             diamond_k_current: 0,
             connectors_needed: 3,
+            evidence_level: "Heuristic",
+        }),
+        DONNER_SCENARIO_ID => Some(EngineFacts {
+            baseline_throughput_vph: 86_671,
+            incident_throughput_vph: 86_671,
+            intervention_throughput_vph: 86_671,
+            recovery_hours: 8.0,
+            diamond_k_current: 0,
+            connectors_needed: 0,
             evidence_level: "Heuristic",
         }),
         _ => None,
@@ -1089,6 +1412,12 @@ fn complete_project(state: &mut GameState, project: &ProjectCard) {
     }
     match project.slug {
         "diamond-connector-package" => state.connector_package_complete = true,
+        "winter-operations-package" => state.weather_readiness += 2,
+        "early-egress-spurs" | "dynamic-closure-routing" => {
+            if state.trapped_queue {
+                state.trapped_queue = false;
+            }
+        }
         "source-request" => {
             state.source_requested = true;
             state.evidence_confidence += 1;
@@ -1103,7 +1432,7 @@ fn tick_active_projects(state: &mut GameState) -> Result<()> {
     for mut active in active_projects {
         active.remaining_seasons = active.remaining_seasons.saturating_sub(1);
         if active.remaining_seasons == 0 {
-            let project = project_by_slug(&active.slug)?;
+            let project = project_by_slug(&state.scenario_id, &active.slug)?;
             complete_project(state, project);
         } else {
             still_active.push(active);
@@ -1169,19 +1498,126 @@ fn apply_event(state: &mut GameState, event: &EventCard) -> String {
                 "Source challenge holds publication locked; evidence confidence is below 4.".to_string()
             }
         }
+        "whiteout-closure" => {
+            state.first_closure_seen = true;
+            let egress_ready = state
+                .completed_projects
+                .iter()
+                .any(|project| project == "early-egress-spurs" || project == "dynamic-closure-routing");
+            if egress_ready {
+                "Whiteout closure applied; trucks can leave before the queue hardens.".to_string()
+            } else {
+                state.trapped_queue = true;
+                "Whiteout closure applied; trapped-queue marker added before alternate capacity can absorb freight.".to_string()
+            }
+        }
+        "chain-control-slowdown" => {
+            if state
+                .completed_projects
+                .iter()
+                .any(|project| project == "winter-operations-package")
+            {
+                "Chain control absorbed by winter operations.".to_string()
+            } else {
+                state.weather_readiness -= 1;
+                "Chain control strains readiness; weather readiness loses 1.".to_string()
+            }
+        }
+        "detour-capacity-pinch" => {
+            if state.completed_projects.iter().any(|project| {
+                project == "lower-elevation-freight-bypass"
+                    || project == "rail-intermodal-surge-slots"
+            }) {
+                "Detour pinch absorbed by usable alternate capacity.".to_string()
+            } else {
+                state.operations_capacity -= 1;
+                "Detour exists on the map but lacks capacity; operations capacity loses 1.".to_string()
+            }
+        }
+        "reopening-surge" => {
+            if state.completed_projects.iter().any(|project| {
+                project == "general-snow-storage-shoulders"
+                    || project == "dynamic-closure-routing"
+            }) {
+                "Reopening surge managed; queue drain stays inside the tutorial window.".to_string()
+            } else {
+                state.public_patience -= 1;
+                "The pass reopened but the queue did not; public patience loses 1.".to_string()
+            }
+        }
+        "high-value-sla-wave" => {
+            if state.completed_projects.iter().any(|project| {
+                project == "managed-freight-tunnel" || project == "rail-intermodal-surge-slots"
+            }) {
+                "Priority freight protected by tunnel or intermodal capacity.".to_string()
+            } else {
+                "Priority freight misses the bounded SLA because no protected capacity is ready.".to_string()
+            }
+        }
+        "evidence-challenge" => {
+            if state.evidence_confidence >= 4 && state.validated_evidence_available {
+                "Evidence challenge answered with observed source artifacts.".to_string()
+            } else {
+                "Evidence challenge holds publication locked; source requested is not source observed.".to_string()
+            }
+        }
         _ => unreachable!("event slug was validated before apply_event"),
     }
 }
 
-fn project_by_slug(slug: &str) -> Result<&'static ProjectCard> {
-    PROJECTS
+fn donner_throughput_retention(state: &GameState) -> f64 {
+    if state.completed_projects.iter().any(|project| {
+        project == "lower-elevation-freight-bypass"
+            || project == "managed-freight-tunnel"
+            || project == "rail-intermodal-surge-slots"
+    }) {
+        0.82
+    } else if state.completed_projects.iter().any(|project| {
+        project == "early-egress-spurs"
+            || project == "dynamic-closure-routing"
+            || project == "winter-operations-package"
+    }) {
+        0.70
+    } else if state.trapped_queue {
+        0.50
+    } else {
+        0.62
+    }
+}
+
+fn donner_recovery_hours(state: &GameState) -> f64 {
+    if state.completed_projects.iter().any(|project| {
+        project == "winter-operations-package"
+            || project == "general-snow-storage-shoulders"
+            || project == "dynamic-closure-routing"
+    }) {
+        8.0
+    } else {
+        14.0
+    }
+}
+
+fn donner_sla_status(state: &GameState) -> String {
+    if state.completed_projects.iter().any(|project| {
+        project == "managed-freight-tunnel" || project == "rail-intermodal-surge-slots"
+    }) {
+        "bounded heuristic".to_string()
+    } else {
+        "missed: no protected priority-freight capacity".to_string()
+    }
+}
+
+fn project_by_slug(scenario_id: &str, slug: &str) -> Result<&'static ProjectCard> {
+    scenario_by_id(scenario_id)?
+        .projects
         .iter()
         .find(|project| project.slug == slug)
         .ok_or_else(|| anyhow::anyhow!("unknown project card slug '{slug}'"))
 }
 
-fn event_by_slug(slug: &str) -> Result<&'static EventCard> {
-    EVENTS
+fn event_by_slug(scenario_id: &str, slug: &str) -> Result<&'static EventCard> {
+    scenario_by_id(scenario_id)?
+        .events
         .iter()
         .find(|event| event.slug == slug)
         .ok_or_else(|| anyhow::anyhow!("unknown event card slug '{slug}'"))
@@ -1272,17 +1708,19 @@ order,phase_name,scenario_id,scenario_name,map_id,tier_focus,standard_lesson,evi
     #[test]
     fn project_and_event_slugs_validate_against_paper_cards() {
         assert_eq!(
-            project_by_slug("source-request").expect("source card").name,
+            project_by_slug(DES_MOINES_SCENARIO_ID, "source-request")
+                .expect("source card")
+                .name,
             "Source request"
         );
         assert_eq!(
-            event_by_slug("full-interchange-zone-closure")
+            event_by_slug(DES_MOINES_SCENARIO_ID, "full-interchange-zone-closure")
                 .expect("closure event")
                 .name,
             "Full interchange-zone closure"
         );
-        assert!(project_by_slug("evidence-acquisition").is_err());
-        assert!(event_by_slug("unknown-event").is_err());
+        assert!(project_by_slug(DES_MOINES_SCENARIO_ID, "evidence-acquisition").is_err());
+        assert!(event_by_slug(DES_MOINES_SCENARIO_ID, "unknown-event").is_err());
     }
 
     #[test]
@@ -1325,8 +1763,71 @@ order,phase_name,scenario_id,scenario_name,map_id,tier_focus,standard_lesson,evi
         assert_eq!(result.accepted_projects, vec!["source-request"]);
         assert_eq!(result.state.evidence_confidence, 3);
         assert!(result.state.source_requested);
-        assert!(result.rejected_actions[0].contains("validated evidence unavailable"));
+        assert!(result.rejected_actions[0].contains("source requested is not source observed"));
         assert!(result.state.publication_gate.contains("locked"));
+    }
+
+    #[test]
+    fn scenario_list_includes_donner_with_locked_publication_gate() {
+        let rendered = render_scenarios();
+
+        assert!(rendered.contains(DONNER_SCENARIO_ID));
+        assert!(rendered.contains("T1-SPURS; T1-CLIMATE; T1-RECOVERY; T1-INTERMODAL"));
+        assert!(
+            rendered.contains("locked: weather closure and alternate-capacity evidence missing")
+        );
+    }
+
+    #[test]
+    fn inspect_includes_donner_v0_2_trapped_queue_and_source_observed_copy() {
+        let rendered = render_inspect(DONNER_SCENARIO_ID).expect("render inspect");
+
+        assert!(rendered.contains("Scenario: Donner Weather Closure"));
+        assert!(rendered.contains("version: G0 v0.2"));
+        assert!(rendered.contains("Early egress spurs (early-egress-spurs)"));
+        assert!(rendered.contains("Managed freight tunnel (managed-freight-tunnel)"));
+        assert!(rendered.contains("trapped-queue marker"));
+        assert!(rendered.contains("source requested is not source observed"));
+        assert!(rendered.contains("route sim scenario donner-closure"));
+    }
+
+    #[test]
+    fn donner_whiteout_adds_trapped_queue_until_egress_or_routing_is_ready() {
+        let state = default_state(DONNER_SCENARIO_ID).expect("default state");
+        let result =
+            run_season(state, 1, "whiteout-closure", &Vec::<String>::new()).expect("whiteout");
+
+        assert!(result.state.trapped_queue);
+        assert_eq!(result.throughput_retention, 0.50);
+        assert!(result.event_result.contains("trapped-queue marker"));
+
+        let projects = vec!["dynamic-closure-routing".to_string()];
+        let result =
+            run_season(result.state, 2, "whiteout-closure", &projects).expect("routing season");
+
+        assert!(!result.state.trapped_queue);
+        assert_eq!(result.throughput_retention, 0.70);
+        assert!(result
+            .event_result
+            .contains("leave before the queue hardens"));
+    }
+
+    #[test]
+    fn donner_source_request_does_not_unlock_validated_weather_evidence() {
+        let state = default_state(DONNER_SCENARIO_ID).expect("default state");
+        let projects = vec![
+            "source-request".to_string(),
+            "validated-weather-evidence".to_string(),
+        ];
+        let result = run_season(state, 1, "evidence-challenge", &projects).expect("evidence");
+
+        assert_eq!(result.accepted_projects, vec!["source-request"]);
+        assert_eq!(result.state.evidence_confidence, 2);
+        assert!(result.rejected_actions[0].contains("source requested is not source observed"));
+        assert!(result.state.publication_gate.contains("alternate-capacity"));
+        assert!(result
+            .event_result
+            .contains("source requested is not source observed"));
     }
 
     #[test]
@@ -1429,6 +1930,26 @@ season,accepted_projects,rejected_count,budget_remaining,political_capital,publi
         assert!(rendered.contains("diamond_k_current: 0"));
         assert!(rendered.contains("connectors_needed_for_k3: 3"));
         assert!(rendered.contains("throughput_retention: 25/25"));
+        assert!(rendered.contains("evidence_honesty: 20/20"));
+    }
+
+    #[test]
+    fn checked_in_donner_fixture_scores_operational_win_with_locked_publication() {
+        let fixture = include_str!("../../../data/game/donner-weather-closure-session-fixture.csv");
+
+        let score = score_session_log(DONNER_SCENARIO_ID, fixture.as_bytes()).expect("score");
+        let rendered = render_score_result(&score, true);
+
+        assert_eq!(score.seasons, 2);
+        assert_eq!(score.final_season, 2);
+        assert_eq!(score.total, 85);
+        assert_eq!(score.win_band, "Operational win");
+        assert!(score.publication_gate.contains("locked"));
+        assert!(score.promotion_readiness.starts_with("hold"));
+        assert!(rendered.contains("route game score donner-weather-closure"));
+        assert!(rendered.contains("synthetic_fixture_note"));
+        assert!(rendered.contains("tutorial_recovery_window_hours: 8.0"));
+        assert!(rendered.contains("sla: 0/15"));
         assert!(rendered.contains("evidence_honesty: 20/20"));
     }
 

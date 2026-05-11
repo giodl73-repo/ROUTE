@@ -10,6 +10,7 @@ pub mod graph;
 pub mod invest;
 pub mod join;
 pub mod strategic;
+pub mod tier;
 
 pub use aggregate::aggregate_corridor;
 pub use build::{build_graph, build_graph_with_fpm};
@@ -28,4 +29,8 @@ pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, Upgra
 pub use strategic::{
     agricultural_export_score, init_designations, load_designations, military_strategic_score,
     usmca_corridor_score,
+};
+pub use tier::{
+    analyze_tier_connectivity, tier_connectivity_gate_failures, TierConnectivityRow, TierNodeClass,
+    TierTouchNode,
 };

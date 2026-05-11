@@ -245,7 +245,9 @@ mod tests {
         let c = graph.graph.add_node(node(3, 2.0));
         let wide = graph.graph.add_edge(a, b, edge(10, "I1", Some(4), None));
         let narrow = graph.graph.add_edge(b, c, edge(20, "I1", Some(2), None));
-        graph.route_index.insert("I1".to_string(), vec![wide, narrow]);
+        graph
+            .route_index
+            .insert("I1".to_string(), vec![wide, narrow]);
 
         let result = corridor_max_flow(&graph, "I1").expect("corridor result");
 
@@ -265,11 +267,21 @@ mod tests {
         let b = graph.graph.add_node(node(3, 1.0));
         let merge = graph.graph.add_node(node(4, 2.0));
         let sink = graph.graph.add_node(node(5, 3.0));
-        graph.graph.add_edge(source, a, edge(10, "I1", Some(2), None));
-        graph.graph.add_edge(a, merge, edge(11, "I1", Some(2), None));
-        graph.graph.add_edge(source, b, edge(20, "I2", Some(2), None));
-        graph.graph.add_edge(b, merge, edge(21, "I2", Some(2), None));
-        graph.graph.add_edge(merge, sink, edge(30, "I3", Some(3), None));
+        graph
+            .graph
+            .add_edge(source, a, edge(10, "I1", Some(2), None));
+        graph
+            .graph
+            .add_edge(a, merge, edge(11, "I1", Some(2), None));
+        graph
+            .graph
+            .add_edge(source, b, edge(20, "I2", Some(2), None));
+        graph
+            .graph
+            .add_edge(b, merge, edge(21, "I2", Some(2), None));
+        graph
+            .graph
+            .add_edge(merge, sink, edge(30, "I3", Some(3), None));
 
         let max_flow = national_max_flow(&graph, source, sink);
 

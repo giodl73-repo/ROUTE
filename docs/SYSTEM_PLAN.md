@@ -35,6 +35,8 @@ ROUTE is not an engineering drawing set, a construction promise, or a pure advoc
 | 5 | The Forum | Which claims survive adversarial review? | Parliament, stakeholder, editorial, and panel-review records attached |
 | 6 | Blueprint | What should Interstate 2.0 build first? | Feature packages, cost ranges, NPV cases, and phase sequencing written |
 | 7 | Program | How does this become a repeatable public artifact? | Reproducible builds, CI, release docs, maps, papers, and public corpus |
+| 8 | Evidence Campaign | Can a visible release hold survive source acquisition and review? | Target hold, source attempt, normalized evidence result, propagated claim update, and review decision exist |
+| 9 | Evidence Operations | Can the evidence campaign become repeatable enough to support or reject promotion? | Repeat-window or archive path, freshness metadata, snapshot-history guard, review decision, and closeout exist |
 
 The mileposts are sequential in logic but iterative in practice. A failed Pressure Test can send a corridor back to Instrument; a Parliament collision can create a new dimension; a panel review can rewrite a paper's quantification contract.
 
@@ -257,6 +259,38 @@ Deliverables:
 Primary risks:
 - Generated data and prose drift out of sync.
 - The repo becomes impressive but not reproducible.
+
+### Milepost 8 — Evidence Campaign
+
+Goal: take one visible release hold and run it through source acquisition, ingestion, validation, review, and claim update.
+
+Deliverables:
+- A selected target hold with a written rationale.
+- Source-access plan, cache policy, and ingestion script or documented blocker.
+- Normalized evidence ledger with source labels, confidence, and limitations.
+- Updated claim status in the relevant pressure, Blueprint, release, and spec artifacts.
+- Review record that decides whether the claim is promoted, remains held, or is downgraded.
+
+Primary risks:
+- Chasing too many holds at once.
+- Treating source acquisition as proof before validation.
+- Updating a headline claim without propagating the downgrade/promotion through every ledger that references it.
+
+### Milepost 9 — Evidence Operations
+
+Goal: turn the first evidence campaign into a repeatable source operation with freshness metadata, archive/repeated-window paths, and gates that prevent snapshot-only rows from supporting annual or recovery claims.
+
+Deliverables:
+- Repeated-window or archive-access path for the selected T1/T1 failure evidence target.
+- Source-window metadata that distinguishes snapshot-only rows from historical evidence.
+- INDOT/OHGO enrichment or blocker record for the I-80/I-90 shared-corridor target.
+- Snapshot-history guard in a gate or review checklist.
+- Updated pressure, Blueprint, release, and closeout artifacts after the review decision.
+
+Primary risks:
+- Confusing more snapshots with stable annual evidence.
+- Building polling before naming the claim it can actually support.
+- Letting a source blocker disappear from the release surface.
 
 ---
 

@@ -262,7 +262,8 @@ fn pline(pts: &[(f64, f64)], color: &str, width: f64, opacity: f64) -> String {
 }
 
 pub fn svg_to_png(svg: &str, output: &Path, width: u32, height: u32) -> Result<()> {
-    let opt = resvg::usvg::Options::default();
+    let mut opt = resvg::usvg::Options::default();
+    opt.fontdb_mut().load_system_fonts();
     let tree = resvg::usvg::Tree::from_str(svg, &opt).context("parsing SVG")?;
     let mut pixmap = tiny_skia::Pixmap::new(width, height)
         .ok_or_else(|| anyhow::anyhow!("failed to allocate pixmap {width}x{height}"))?;

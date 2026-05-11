@@ -32,6 +32,8 @@ The game succeeds when a non-specialist can say:
 | Second playtest packet | Drafted | `docs/game/donner-weather-closure-playtest.md` |
 | Second simulated playtest | Drafted | `docs/game/donner-weather-closure-playtest-001.md`; Mountain Pass aha landed in simulation, but amendments and human/owner acceptance remain |
 | Second amendment log | Drafted | `docs/game/donner-weather-closure-amendments.md`; v0.2 adds trapped-queue marker, tunnel timing, source-observed copy, and recovery-window note |
+| Second CLI seed | Drafted | `route game scenarios`, `route game inspect donner-weather-closure`, `route game run-season donner-weather-closure`, and `route game score donner-weather-closure` expose the v0.2 paper rules with trapped-queue and source-observed checks |
+| Second CLI playtest | Complete; G0-C held | `docs/game/donner-weather-closure-cli-playtest-001.md`; G1-A seed passes with an operational winter win, SLA hold, and publication hold; human/owner acceptance is still absent |
 | First narrated playthrough | Drafted | `docs/game/des-moines-diamond-playthrough.md` |
 | First simulated blind playtest | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md` |
 | Simulated playtest set | Drafted | `docs/game/des-moines-diamond-blind-playtest-001.md`, `002.md`, `003.md` |
@@ -42,7 +44,7 @@ The game succeeds when a non-specialist can say:
 | Active countdown playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-003.md`; multi-season connector completes before closure resolution |
 | First score playtest | Complete | `docs/game/des-moines-diamond-cli-playtest-004.md`; operational win and publication hold are scored separately |
 | Browser blind playtest packet | Drafted | `docs/game/des-moines-diamond-browser-playtest.md`; ready for human G2-A/G0-C pass |
-| First browser playtest | Simulated pass | `docs/game/des-moines-diamond-browser-playtest-001.md`; G2-A pass in simulation, G0-C still held for human/owner acceptance |
+| First browser playtest | Simulated pass; G0-C held | `docs/game/des-moines-diamond-browser-playtest-001.md`; G2-A pass in simulation, G0-C still held for human/owner acceptance |
 | First amendment log | Drafted | `docs/game/des-moines-diamond-amendments.md` |
 | CLI design note | Drafted | `docs/game/route-game-cli-design.md` |
 | Scenario engine hook | Heuristic executable | `route sim scenario des-moines-interchange` |
@@ -51,7 +53,7 @@ The game succeeds when a non-specialist can say:
 | Diamond analyzer link | Fixed | `route diamond I35xI80` recognizes the curated Des Moines anchor |
 | Campaign spine | Drafted | 8-scenario proof arc |
 | Campaign spine ledger | Ready | `data/game/campaign-spine.csv`; `route game campaign --gate` ties all 8 stops to map atlas ids, lessons, evidence gates, and publication gates |
-| CLI game command | G1-B starting | `route game score` now derives Des Moines engine facts from route-sim and route-network when run from the CLI |
+| CLI game command | G1-B starting | `route game score` derives Des Moines engine facts and reports the current Donner synthetic no-delta fixture honestly while keeping game scoring heuristic |
 | Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
 | First browser prototype | Drafted | `docs/game/browser/des-moines-diamond.html`; static map-first fixture playback with static and Playwright browser checks |
 | Browser prototype | G2-A simulated pass | Map-first UI with browser-local season mutation, CLI-compatible session export, and campaign atlas links |
@@ -294,9 +296,9 @@ Done criteria:
 
 1. Run the human browser blind playtest or record owner acceptance of simulated evidence.
 2. Keep browser state compatible with `data/game/des-moines-diamond-state-fixture.json`.
-3. Run the Mountain Pass v0.2 simulated playtest or owner review pass.
-4. Decide whether simulated G0-C readiness is enough after the first CLI inspect/playtest pass.
-5. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence.
+3. Keep Des Moines and Donner G0-C held until a human blind playtest or explicit owner acceptance exists.
+4. Tighten the underlying `donner-closure` sim with calibrated alternate-capacity evidence before treating Mountain Pass as a proof-grade browser scenario.
+5. Run at least one human blind playtest or record explicit owner acceptance of simulated G0 evidence before campaign promotion.
 6. Work the A-band queue from `route t1-diamond-validation --priority A --docket --with-access`.
 7. Run `cargo test --workspace` after any Rust changes; doc-only changes use `git diff --check`.
 

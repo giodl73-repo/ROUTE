@@ -240,6 +240,106 @@ enum Commands {
         /// Fail if unresolved standards would be promoted into Blueprint
         #[arg(long)]
         gate_blueprint: bool,
+        /// Fail if any standard lacks a complete Milepost 4 pressure proof record
+        #[arg(long)]
+        gate_pressure: bool,
+    },
+
+    /// Show Milepost 5 Forum review docket and gate review contracts
+    Forum {
+        /// Path to Forum review docket CSV
+        #[arg(long, default_value = "data/forum-docket.csv", value_name = "FILE")]
+        docket: PathBuf,
+        /// Show only rows that are held, planned, or missing completion
+        #[arg(long)]
+        blockers: bool,
+        /// Print full review target and next-action details
+        #[arg(long)]
+        details: bool,
+        /// Fail if the Forum docket lacks complete review contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Show Milepost 6 Blueprint feature packages and gate Forum intake rules
+    Blueprint {
+        /// Path to Blueprint feature-package ledger CSV
+        #[arg(
+            long,
+            default_value = "data/blueprint-feature-packages.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only packages that still have blocking gaps
+        #[arg(long)]
+        blockers: bool,
+        /// Print full package evidence, delivery, and Forum constraints
+        #[arg(long)]
+        details: bool,
+        /// Fail if feature packages violate Forum intake rules
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Show Milepost 6 Blueprint evidence downgrade map and gate proof links
+    BlueprintEvidence {
+        /// Path to Blueprint feature-package ledger CSV
+        #[arg(
+            long,
+            default_value = "data/blueprint-feature-packages.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to Blueprint evidence map CSV
+        #[arg(
+            long,
+            default_value = "data/blueprint-evidence-map.csv",
+            value_name = "FILE"
+        )]
+        evidence_map: PathBuf,
+        /// Path to standards proof ledger CSV
+        #[arg(
+            long,
+            default_value = "data/standards-proof-ledger.csv",
+            value_name = "FILE"
+        )]
+        standards_ledger: PathBuf,
+        /// Show only evidence rows that remain held or downgraded
+        #[arg(long)]
+        blockers: bool,
+        /// Print full evidence, downgrade, and next-step details
+        #[arg(long)]
+        details: bool,
+        /// Fail if evidence rows are detached from package/proof ledgers or promote held claims
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Show Milepost 6 Blueprint cost and lifecycle range ledger
+    BlueprintCosts {
+        /// Path to Blueprint feature-package ledger CSV
+        #[arg(
+            long,
+            default_value = "data/blueprint-feature-packages.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to Blueprint cost range ledger CSV
+        #[arg(
+            long,
+            default_value = "data/blueprint-cost-ranges.csv",
+            value_name = "FILE"
+        )]
+        costs: PathBuf,
+        /// Show only rows that still need source-backed cost evidence
+        #[arg(long)]
+        blockers: bool,
+        /// Print full cost basis, lifecycle, and next-step details
+        #[arg(long)]
+        details: bool,
+        /// Fail if cost rows are detached from packages or lack claim labels
+        #[arg(long)]
+        gate: bool,
     },
 
     /// Show L1 inventory/source plan for standards blocked on asset or operations data
@@ -456,6 +556,26 @@ enum Commands {
         /// Fail if snapshot rows lack cadence, commands, or output paths
         #[arg(long)]
         gate_plan: bool,
+    },
+
+    /// Show source-window metadata for T1/T1 failure evidence operations
+    T1EvidenceWindows {
+        /// Path to T1/T1 evidence-window ledger CSV
+        #[arg(
+            long,
+            default_value = "data/t1-evidence-windows.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows that are not promotion eligible
+        #[arg(long)]
+        blockers: bool,
+        /// Print detailed artifacts, gaps, and next steps
+        #[arg(long)]
+        details: bool,
+        /// Fail if source windows lack freshness metadata or over-promote snapshot-only evidence
+        #[arg(long)]
+        gate_windows: bool,
     },
 
     /// Summarize raw T1/T1 failure event observations into rates and durations
@@ -693,6 +813,120 @@ enum Commands {
         /// Show all pairs, not just gaps
         #[arg(long)]
         all_pairs: bool,
+    },
+
+    /// Analyze tier graph semantics: do T2 routes connect into the T1 network?
+    TierConnectivity {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Path to endpoint exception ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
+        /// Tier to analyze against the T1 backbone
+        #[arg(long, default_value = "T2")]
+        tier: String,
+        /// Print full per-route touch-node details
+        #[arg(long)]
+        details: bool,
+        /// Fail if selected tier routes touch fewer than two T1 nodes
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Review route endpoint exception records for tier promotion/demotion decisions
+    EndpointExceptions {
+        /// Path to endpoint exception ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Filter by requested tier, e.g. T2
+        #[arg(long)]
+        tier: Option<String>,
+        /// Filter by route, e.g. I-65
+        #[arg(long)]
+        route: Option<String>,
+        /// Show only incomplete or non-terminal-worthy exception rows
+        #[arg(long)]
+        blockers: bool,
+        /// Print full artifact and next-step fields
+        #[arg(long)]
+        details: bool,
+        /// Fail if exception rows are incomplete; with --blockers, also fail non-terminal rows
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Evaluate proposed stop investments and endpoint-worthy nodes by service class
+    StopCandidates {
+        /// Path to stop investment candidate ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Filter by stop class, e.g. S1, S2, S3
+        #[arg(long = "class")]
+        stop_class: Option<String>,
+        /// Filter to candidates touching this route, e.g. I-95
+        #[arg(long)]
+        route: Option<String>,
+        /// Print full evidence and next-step fields
+        #[arg(long)]
+        details: bool,
+        /// Fail if candidate rows are not reviewable for their requested class
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Show a route-ordered stop chain for a corridor map or schematic line
+    StopPlan {
+        /// Route to inspect, e.g. I-5
+        route: String,
+        /// Path to stop investment candidate ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Print full evidence and next-step fields
+        #[arg(long)]
+        details: bool,
+        /// Fail if the route has no S1/S2 endpoints or fewer than three stops
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Check which routes in a tier have enough candidate stops for schematic use
+    StopCoverage {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Path to stop investment candidate ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Tier to inspect
+        #[arg(long, default_value = "T1")]
+        tier: String,
+        /// Show only routes whose stop plans fail the route-level gate
+        #[arg(long)]
+        blockers: bool,
+        /// Fail if any route in the tier lacks a viable stop plan
+        #[arg(long)]
+        gate: bool,
     },
 
     /// Run rubric calibration pass — compute variance stats, flag retirement candidates
@@ -1486,10 +1720,16 @@ fn run_cli() -> Result<()> {
         } => {
             let norm = normalise_designation(&designation);
             let out = output.unwrap_or_else(|| {
-                let slug = if norm == "ALL" {
-                    "all-tiers".to_string()
-                } else {
-                    norm.to_lowercase()
+                let slug = match norm.as_str() {
+                    "ALL" => "all-tiers".to_string(),
+                    "BECK" => "beck-schematic".to_string(),
+                    "BECKT2" => "beck-schematic-t2".to_string(),
+                    "T3ZGREATLAKES" => "t3-great-lakes".to_string(),
+                    "T3ZSOUTHEAST" => "t3-southeast".to_string(),
+                    "T3ZTEXASBORDER" => "t3-texas-border".to_string(),
+                    "T3ZMOUNTAINWEST" => "t3-mountain-west".to_string(),
+                    "T3ZMIDSOUTH" => "t3-mid-south".to_string(),
+                    _ => norm.to_lowercase(),
                 };
                 PathBuf::from(format!("maps/{slug}.png"))
             });
@@ -1498,14 +1738,64 @@ fn run_cli() -> Result<()> {
             // Beck schematic — topological relay network (0°/45°/90° geometry, no geography)
             if norm == "BECK" {
                 std::fs::create_dir_all("maps")?;
-                let out_path = PathBuf::from("maps/beck-schematic.png");
                 let svg = route_map::build_beck_svg();
-                route_map::svg_to_png(&svg, &out_path, 2400, 1350)?;
-                println!(
-                    "  rendered Beck schematic: {} (2400×1350)",
-                    out_path.display()
-                );
+                route_map::svg_to_png(&svg, &out, 2400, 1350)?;
+                println!("  rendered Beck schematic: {} (2400×1350)", out.display());
                 println!("  T1 relay network topology · 0°/45°/90° · inspired by Beck 1933");
+                return Ok(());
+            }
+
+            if norm == "BECKT2" {
+                std::fs::create_dir_all("maps")?;
+                let svg = route_map::build_beck_t2_svg();
+                route_map::svg_to_png(&svg, &out, 2400, 1350)?;
+                println!(
+                    "  rendered Beck schematic with T2 connectors: {} (2400×1350)",
+                    out.display()
+                );
+                println!(
+                    "  T1 trunks bold · T2 connectors thin and tinted to their trunk families"
+                );
+                return Ok(());
+            }
+
+            if norm.starts_with("T3Z") {
+                let manifest = route_data::Manifest::load(&manifest_path).with_context(|| {
+                    format!("loading manifest from {}", manifest_path.display())
+                })?;
+                let graph = load_graph(&manifest)?;
+                let scores =
+                    route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"))
+                        .into_iter()
+                        .map(|(route, score)| (route, score as f32))
+                        .collect::<std::collections::HashMap<_, _>>();
+                let stop_file = std::fs::File::open("data/tier-stop-candidates.csv")
+                    .context("reading data/tier-stop-candidates.csv")?;
+                let stop_rows = parse_stop_candidates(stop_file)?;
+                let stops = stop_rows
+                    .iter()
+                    .filter_map(|row| {
+                        Some(route_map::t3_zone::T3Stop {
+                            id: row.stop_id.clone(),
+                            name: row.name.clone(),
+                            class_name: row.requested_class.clone(),
+                            lat: parse_coord(&row.lat)?,
+                            lon: parse_coord(&row.lon)?,
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                let svg = route_map::build_t3_zone_svg(&graph, &norm, &stops, &scores)?;
+                if let Some(parent) = out.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                route_map::svg_to_png(&svg, &out, 1800, 1000)?;
+                println!(
+                    "  rendered T3 Beck zone schematic: {} (1800x1000)",
+                    out.display()
+                );
+                println!(
+                    "  regional Beck schematic · stops define endpoints, bends, and transfers"
+                );
                 return Ok(());
             }
 
@@ -2347,10 +2637,37 @@ fn run_cli() -> Result<()> {
             family,
             details,
             gate_blueprint,
+            gate_pressure,
         } => {
             let rows = load_standards_proof_ledger(&ledger)
                 .with_context(|| format!("loading standards proof ledger {}", ledger.display()))?;
             print_standards_proof(&rows, tier.as_deref(), family.as_deref(), details);
+
+            if gate_pressure {
+                let failures = standards_pressure_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Pressure proof-record gate: FAIL");
+                    println!(
+                        "  {} standards lack complete Milepost 4 proof records.",
+                        failures.len()
+                    );
+                    for row in failures.iter().take(10) {
+                        println!(
+                            "  - {} [{} {}]: evidence={}, artifact={}, next={}",
+                            row.standard_id,
+                            row.tier,
+                            row.standard_family,
+                            row.evidence_level,
+                            row.current_artifact,
+                            row.next_command_or_test
+                        );
+                    }
+                    anyhow::bail!("standards pressure proof-record gate failed");
+                }
+                println!();
+                println!("Pressure proof-record gate: PASS");
+            }
 
             if gate_blueprint {
                 let failures = standards_blueprint_gate_failures(&rows);
@@ -2372,6 +2689,133 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Blueprint gate: PASS");
+            }
+        }
+
+        Commands::Forum {
+            docket,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_forum_docket(&docket)
+                .with_context(|| format!("loading Forum docket {}", docket.display()))?;
+            print_forum_docket(&rows, blockers, details);
+
+            if gate {
+                let failures = forum_docket_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Forum docket gate: FAIL");
+                    println!("  {} review rows lack complete contracts.", failures.len());
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("forum docket gate failed");
+                }
+                println!();
+                println!("Forum docket gate: PASS");
+            }
+        }
+
+        Commands::Blueprint {
+            ledger,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_blueprint_packages(&ledger).with_context(|| {
+                format!("loading Blueprint package ledger {}", ledger.display())
+            })?;
+            print_blueprint_packages(&rows, blockers, details);
+
+            if gate {
+                let failures = blueprint_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Blueprint intake gate: FAIL");
+                    println!(
+                        "  {} package rows violate Forum intake rules.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(12) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("blueprint intake gate failed");
+                }
+                println!();
+                println!("Blueprint intake gate: PASS");
+            }
+        }
+
+        Commands::BlueprintEvidence {
+            ledger,
+            evidence_map,
+            standards_ledger,
+            blockers,
+            details,
+            gate,
+        } => {
+            let packages = load_blueprint_packages(&ledger).with_context(|| {
+                format!("loading Blueprint package ledger {}", ledger.display())
+            })?;
+            let standards = load_standards_proof_ledger(&standards_ledger).with_context(|| {
+                format!(
+                    "loading standards proof ledger {}",
+                    standards_ledger.display()
+                )
+            })?;
+            let rows = load_blueprint_evidence_map(&evidence_map).with_context(|| {
+                format!("loading Blueprint evidence map {}", evidence_map.display())
+            })?;
+            print_blueprint_evidence_map(&rows, blockers, details);
+
+            if gate {
+                let failures = blueprint_evidence_gate_failures(&rows, &packages, &standards);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Blueprint evidence gate: FAIL");
+                    println!(
+                        "  {} evidence rows violate downgrade rules.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(12) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("blueprint evidence gate failed");
+                }
+                println!();
+                println!("Blueprint evidence gate: PASS");
+            }
+        }
+
+        Commands::BlueprintCosts {
+            ledger,
+            costs,
+            blockers,
+            details,
+            gate,
+        } => {
+            let packages = load_blueprint_packages(&ledger).with_context(|| {
+                format!("loading Blueprint package ledger {}", ledger.display())
+            })?;
+            let rows = load_blueprint_cost_ranges(&costs)
+                .with_context(|| format!("loading Blueprint cost ledger {}", costs.display()))?;
+            print_blueprint_cost_ranges(&rows, blockers, details);
+
+            if gate {
+                let failures = blueprint_cost_gate_failures(&rows, &packages);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Blueprint cost gate: FAIL");
+                    println!("  {} cost rows violate range rules.", failures.len());
+                    for failure in failures.iter().take(12) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("blueprint cost gate failed");
+                }
+                println!();
+                println!("Blueprint cost gate: PASS");
             }
         }
 
@@ -2771,6 +3215,38 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T1/T1 snapshot plan gate: PASS");
+            }
+        }
+
+        Commands::T1EvidenceWindows {
+            ledger,
+            blockers,
+            details,
+            gate_windows,
+        } => {
+            let rows = load_t1_evidence_windows(&ledger)
+                .with_context(|| format!("loading T1 evidence windows {}", ledger.display()))?;
+            print_t1_evidence_windows(&rows, blockers, details);
+
+            if gate_windows {
+                let failures = t1_evidence_window_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1/T1 evidence-window gate: FAIL");
+                    println!(
+                        "  {} source-window rows lack metadata or violate promotion rules.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(10) {
+                        println!("  - {}", failure);
+                    }
+                    if failures.len() > 10 {
+                        println!("  ... {} more", failures.len() - 10);
+                    }
+                    anyhow::bail!("T1/T1 evidence-window gate failed");
+                }
+                println!();
+                println!("T1/T1 evidence-window gate: PASS");
             }
         }
 
@@ -3367,6 +3843,175 @@ fn run_cli() -> Result<()> {
                         r.from_route, r.to_route, t1, all, det
                     );
                 }
+            }
+        }
+
+        Commands::TierConnectivity {
+            tier_table,
+            exceptions,
+            tier,
+            details,
+            gate,
+        } => {
+            println!("route tier-connectivity --tier {tier}");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+            let t1_routes = load_tier_routes(&tier_table, "T1")
+                .with_context(|| format!("loading T1 routes from {}", tier_table.display()))?;
+            let tier_routes = load_tier_routes(&tier_table, &tier)
+                .with_context(|| format!("loading {tier} routes from {}", tier_table.display()))?;
+            let rows = route_network::analyze_tier_connectivity(&graph, &tier_routes, &t1_routes);
+            let exception_rows = load_endpoint_exceptions(&exceptions)
+                .with_context(|| format!("loading endpoint exceptions {}", exceptions.display()))?;
+            print_tier_connectivity(&tier, &rows, &exception_rows, details);
+
+            if gate {
+                let failures =
+                    tier_connectivity_gate_failures_with_exceptions(&rows, &exception_rows, &tier);
+                if !failures.is_empty() {
+                    println!();
+                    println!("{tier} connectivity gate: FAIL");
+                    println!(
+                        "  {} routes remain blocked after endpoint exception review.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(12) {
+                        println!(
+                            "  - {}: {} T1 nodes, {} T1 trunks, {:.0} mi ({}) — {}",
+                            failure.row.route,
+                            failure.row.t1_node_count,
+                            failure.row.t1_routes.len(),
+                            failure.row.route_miles,
+                            failure.row.classification.as_str(),
+                            failure.reason
+                        );
+                    }
+                    anyhow::bail!("{tier} connectivity gate failed");
+                }
+                println!();
+                println!("{tier} connectivity gate: PASS");
+            }
+        }
+
+        Commands::EndpointExceptions {
+            ledger,
+            tier,
+            route,
+            blockers,
+            details,
+            gate,
+        } => {
+            println!("route endpoint-exceptions");
+            let rows = load_endpoint_exceptions(&ledger)
+                .with_context(|| format!("loading endpoint exceptions {}", ledger.display()))?;
+            let filtered = filter_endpoint_exceptions(&rows, tier.as_deref(), route.as_deref());
+            print_endpoint_exceptions(&filtered, blockers, details);
+
+            if gate {
+                let failures = endpoint_exception_gate_failures(&filtered, blockers);
+                if !failures.is_empty() {
+                    println!();
+                    println!("endpoint exception gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("endpoint exception gate failed");
+                }
+                println!();
+                println!("endpoint exception gate: PASS");
+            }
+        }
+
+        Commands::StopCandidates {
+            ledger,
+            stop_class,
+            route,
+            details,
+            gate,
+        } => {
+            println!("route stop-candidates");
+            let file = std::fs::File::open(&ledger)
+                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
+            let rows = parse_stop_candidates(file)
+                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
+            let filtered = filter_stop_candidates(&rows, stop_class.as_deref(), route.as_deref());
+            print_stop_candidates(&filtered, details);
+
+            if gate {
+                let failures = stop_candidate_gate_failures(&filtered);
+                if !failures.is_empty() {
+                    println!();
+                    println!("stop candidate gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("stop candidate gate failed");
+                }
+                println!();
+                println!("stop candidate gate: PASS");
+            }
+        }
+
+        Commands::StopPlan {
+            route,
+            ledger,
+            details,
+            gate,
+        } => {
+            let route = normalise_designation(&route);
+            println!("route stop-plan --route {route}");
+            let file = std::fs::File::open(&ledger)
+                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
+            let rows = parse_stop_candidates(file)
+                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
+            let plan = stop_plan_for_route(&rows, &route);
+            print_stop_plan(&route, &plan, details);
+
+            if gate {
+                let failures = stop_plan_gate_failures(&route, &plan);
+                if !failures.is_empty() {
+                    println!();
+                    println!("stop plan gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("stop plan gate failed");
+                }
+                println!();
+                println!("stop plan gate: PASS");
+            }
+        }
+
+        Commands::StopCoverage {
+            tier_table,
+            ledger,
+            tier,
+            blockers,
+            gate,
+        } => {
+            println!("route stop-coverage --tier {tier}");
+            let routes = load_tier_routes(&tier_table, &tier)
+                .with_context(|| format!("loading {tier} routes from {}", tier_table.display()))?;
+            let file = std::fs::File::open(&ledger)
+                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
+            let rows = parse_stop_candidates(file)
+                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
+            let coverage = stop_coverage_for_routes(&rows, &routes, &tier);
+            print_stop_coverage(&tier, &coverage, blockers);
+
+            if gate {
+                let failures = stop_coverage_gate_failures(&coverage);
+                if !failures.is_empty() {
+                    println!();
+                    println!("stop coverage gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("stop coverage gate failed");
+                }
+                println!();
+                println!("stop coverage gate: PASS");
             }
         }
 
@@ -5811,6 +6456,28 @@ fn standards_blueprint_gate_failures(rows: &[StandardsProofRow]) -> Vec<&Standar
         .collect()
 }
 
+fn standards_pressure_gate_failures(rows: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
+    rows.iter()
+        .filter(|row| !standards_pressure_row_has_contract(row))
+        .collect()
+}
+
+fn standards_pressure_row_has_contract(row: &StandardsProofRow) -> bool {
+    !row.standard_id.trim().is_empty()
+        && !row.tier.trim().is_empty()
+        && !row.standard_family.trim().is_empty()
+        && !row.standard.trim().is_empty()
+        && !row.outcome.trim().is_empty()
+        && !row.mechanism.trim().is_empty()
+        && !row.primary_stressor.trim().is_empty()
+        && !row.acceptance_gate.trim().is_empty()
+        && standards_evidence_level_is_allowed(&row.evidence_level)
+        && !row.current_artifact.trim().is_empty()
+        && !row.blocking_gap.trim().is_empty()
+        && !row.next_command_or_test.trim().is_empty()
+        && !row.owner_track.trim().is_empty()
+}
+
 fn print_standards_proof(
     rows: &[StandardsProofRow],
     tier: Option<&str>,
@@ -5869,6 +6536,675 @@ fn print_standards_proof(
             println!("  next: {}", row.next_command_or_test);
             println!("  owner: {}", row.owner_track);
         }
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct ForumDocketRow {
+    review_id: String,
+    artifact: String,
+    review_type: String,
+    status: String,
+    roles: String,
+    claim_target: String,
+    blocking_question: String,
+    next_action: String,
+    output_artifact: String,
+}
+
+fn load_forum_docket(path: &Path) -> Result<Vec<ForumDocketRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_forum_docket(file)
+}
+
+fn parse_forum_docket<R: std::io::Read>(reader: R) -> Result<Vec<ForumDocketRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_forum_docket(rows: &[ForumDocketRow], blockers: bool, details: bool) {
+    let failures = forum_docket_gate_failures(rows);
+    let failure_ids = failures
+        .iter()
+        .filter_map(|failure| failure.split_whitespace().next())
+        .collect::<std::collections::HashSet<_>>();
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| {
+                row.status.eq_ignore_ascii_case("planned")
+                    || row.status.eq_ignore_ascii_case("held")
+                    || failure_ids.contains(row.review_id.as_str())
+            })
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status.entry(row.status.clone()).or_insert(0) += 1;
+    }
+
+    println!("route forum");
+    println!("  reviews: {} shown / {} total", filtered.len(), rows.len());
+    println!("  status: {}", format_count_map(&by_status));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<18} {:<12} {:<10} {:<30} {}",
+        "Review", "Type", "Status", "Artifact", "Question"
+    );
+    println!("{}", "-".repeat(122));
+    for row in filtered {
+        println!(
+            "{:<18} {:<12} {:<10} {:<30} {}",
+            row.review_id,
+            row.review_type,
+            row.status,
+            truncate_for_table(&row.artifact, 30),
+            row.blocking_question
+        );
+        if details {
+            println!("  roles: {}", row.roles);
+            println!("  claim: {}", row.claim_target);
+            println!("  next: {}", row.next_action);
+            println!("  output: {}", row.output_artifact);
+        }
+    }
+}
+
+fn forum_docket_gate_failures(rows: &[ForumDocketRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["forum docket has no review rows".to_string()];
+    }
+
+    rows.iter()
+        .filter_map(|row| forum_docket_row_failure(row))
+        .collect()
+}
+
+fn forum_docket_row_failure(row: &ForumDocketRow) -> Option<String> {
+    let review_type = row.review_type.trim().to_ascii_lowercase();
+    let status = row.status.trim().to_ascii_lowercase();
+    let type_ok = matches!(
+        review_type.as_str(),
+        "parliament" | "stakeholder" | "editorial" | "panel" | "owner"
+    );
+    let status_ok = matches!(status.as_str(), "planned" | "complete" | "held");
+    let required_filled = !row.review_id.trim().is_empty()
+        && !row.artifact.trim().is_empty()
+        && !row.roles.trim().is_empty()
+        && !row.claim_target.trim().is_empty()
+        && !row.blocking_question.trim().is_empty()
+        && !row.next_action.trim().is_empty()
+        && !row.output_artifact.trim().is_empty();
+
+    if !type_ok || !status_ok || !required_filled {
+        Some(format!(
+            "{} invalid contract: type={} status={} artifact={} output={}",
+            if row.review_id.trim().is_empty() {
+                "<missing-review-id>"
+            } else {
+                row.review_id.as_str()
+            },
+            row.review_type,
+            row.status,
+            row.artifact,
+            row.output_artifact
+        ))
+    } else {
+        None
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct BlueprintPackageRow {
+    package_id: String,
+    phase: String,
+    feature_package: String,
+    stakeholder_class: String,
+    standards: String,
+    evidence_level: String,
+    status: String,
+    cost_range: String,
+    value_case: String,
+    source_label: String,
+    pressure_artifact: String,
+    forum_constraint: String,
+    mitigation_companion: String,
+    row_complexity: String,
+    maintenance_burden: String,
+    community_exposure_check: String,
+    rural_access_exception: String,
+    blueprint_action: String,
+    blocking_gap: String,
+    next_evidence_step: String,
+}
+
+fn load_blueprint_packages(path: &Path) -> Result<Vec<BlueprintPackageRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_blueprint_packages(file)
+}
+
+fn parse_blueprint_packages<R: std::io::Read>(reader: R) -> Result<Vec<BlueprintPackageRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_blueprint_packages(rows: &[BlueprintPackageRow], blockers: bool, details: bool) {
+    let failures = blueprint_gate_failures(rows);
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| {
+                !row.blocking_gap.trim().is_empty()
+                    || failures
+                        .iter()
+                        .any(|failure| failure.starts_with(row.package_id.as_str()))
+            })
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_phase: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    let mut by_class: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_phase.entry(row.phase.clone()).or_insert(0) += 1;
+        *by_class.entry(row.stakeholder_class.clone()).or_insert(0) += 1;
+    }
+
+    println!("route blueprint");
+    println!(
+        "  packages: {} shown / {} total",
+        filtered.len(),
+        rows.len()
+    );
+    println!("  phases: {}", format_count_map(&by_phase));
+    println!("  stakeholder classes: {}", format_count_map(&by_class));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<14} {:<8} {:<30} {:<24} {:<10} {}",
+        "Package", "Phase", "Feature", "Class", "Evidence", "Action"
+    );
+    println!("{}", "-".repeat(126));
+    for row in filtered {
+        println!(
+            "{:<14} {:<8} {:<30} {:<24} {:<10} {}",
+            row.package_id,
+            row.phase,
+            truncate_for_table(&row.feature_package, 30),
+            truncate_for_table(&row.stakeholder_class, 24),
+            row.evidence_level,
+            row.blueprint_action
+        );
+        if details {
+            println!("  standards: {}", row.standards);
+            println!("  cost_range: {}", row.cost_range);
+            println!("  value_case: {}", row.value_case);
+            println!("  source_label: {}", row.source_label);
+            println!("  pressure_artifact: {}", row.pressure_artifact);
+            println!("  forum_constraint: {}", row.forum_constraint);
+            println!("  mitigation_companion: {}", row.mitigation_companion);
+            println!("  row_complexity: {}", row.row_complexity);
+            println!("  maintenance_burden: {}", row.maintenance_burden);
+            println!(
+                "  community_exposure_check: {}",
+                row.community_exposure_check
+            );
+            println!("  rural_access_exception: {}", row.rural_access_exception);
+            println!("  gap: {}", row.blocking_gap);
+            println!("  next: {}", row.next_evidence_step);
+        }
+    }
+}
+
+fn blueprint_gate_failures(rows: &[BlueprintPackageRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["blueprint package ledger has no rows".to_string()];
+    }
+
+    let mut failures = Vec::new();
+    for row in rows {
+        if let Some(failure) = blueprint_row_contract_failure(row) {
+            failures.push(failure);
+        }
+        if row
+            .stakeholder_class
+            .trim()
+            .eq_ignore_ascii_case("conditional_expansion")
+        {
+            for (field, value) in [
+                ("mitigation_companion", row.mitigation_companion.as_str()),
+                ("row_complexity", row.row_complexity.as_str()),
+                ("maintenance_burden", row.maintenance_burden.as_str()),
+                (
+                    "community_exposure_check",
+                    row.community_exposure_check.as_str(),
+                ),
+            ] {
+                if blueprint_field_is_not_applicable(value) {
+                    failures.push(format!(
+                        "{} conditional expansion lacks required {}",
+                        row.package_id, field
+                    ));
+                }
+            }
+        }
+        if row
+            .stakeholder_class
+            .trim()
+            .eq_ignore_ascii_case("source_gated_must_have")
+            && row.rural_access_exception.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} source-gated package lacks rural_access_exception field",
+                row.package_id
+            ));
+        }
+    }
+    failures
+}
+
+fn blueprint_row_contract_failure(row: &BlueprintPackageRow) -> Option<String> {
+    let class = row.stakeholder_class.trim().to_ascii_lowercase();
+    let evidence = row.evidence_level.trim();
+    let status = row.status.trim().to_ascii_lowercase();
+    let class_ok = matches!(
+        class.as_str(),
+        "operational_must_have"
+            | "source_gated_must_have"
+            | "conditional_expansion"
+            | "mitigation_companion"
+    );
+    let status_ok = matches!(
+        status.as_str(),
+        "blueprint_candidate" | "held" | "backlog" | "downgraded"
+    );
+    let filled = !row.package_id.trim().is_empty()
+        && !row.phase.trim().is_empty()
+        && !row.feature_package.trim().is_empty()
+        && class_ok
+        && !row.standards.trim().is_empty()
+        && standards_evidence_level_is_allowed(evidence)
+        && status_ok
+        && !row.cost_range.trim().is_empty()
+        && !row.value_case.trim().is_empty()
+        && !row.source_label.trim().is_empty()
+        && !row.pressure_artifact.trim().is_empty()
+        && !row.forum_constraint.trim().is_empty()
+        && !row.mitigation_companion.trim().is_empty()
+        && !row.row_complexity.trim().is_empty()
+        && !row.maintenance_burden.trim().is_empty()
+        && !row.community_exposure_check.trim().is_empty()
+        && !row.rural_access_exception.trim().is_empty()
+        && !row.blueprint_action.trim().is_empty()
+        && !row.blocking_gap.trim().is_empty()
+        && !row.next_evidence_step.trim().is_empty();
+
+    if filled {
+        None
+    } else {
+        Some(format!(
+            "{} invalid contract: class={} evidence={} status={}",
+            if row.package_id.trim().is_empty() {
+                "<missing-package-id>"
+            } else {
+                row.package_id.as_str()
+            },
+            row.stakeholder_class,
+            row.evidence_level,
+            row.status
+        ))
+    }
+}
+
+fn blueprint_field_is_not_applicable(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "" | "n/a" | "not_applicable" | "none"
+    )
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct BlueprintEvidenceRow {
+    package_id: String,
+    standard_id: String,
+    proof_evidence_level: String,
+    blueprint_claim_status: String,
+    promotion_rule: String,
+    proof_artifact: String,
+    forum_hold: String,
+    blocking_gap: String,
+    required_next_evidence: String,
+}
+
+fn load_blueprint_evidence_map(path: &Path) -> Result<Vec<BlueprintEvidenceRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_blueprint_evidence_map(file)
+}
+
+fn parse_blueprint_evidence_map<R: std::io::Read>(reader: R) -> Result<Vec<BlueprintEvidenceRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_blueprint_evidence_map(rows: &[BlueprintEvidenceRow], blockers: bool, details: bool) {
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| {
+                matches!(
+                    row.blueprint_claim_status
+                        .trim()
+                        .to_ascii_lowercase()
+                        .as_str(),
+                    "held" | "downgraded" | "planned"
+                )
+            })
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status
+            .entry(row.blueprint_claim_status.clone())
+            .or_insert(0) += 1;
+    }
+
+    println!("route blueprint-evidence");
+    println!("  rows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  claim status: {}", format_count_map(&by_status));
+    println!();
+    println!(
+        "{:<24} {:<22} {:<10} {:<12} {}",
+        "Package", "Standard", "Proof", "Claim", "Promotion rule"
+    );
+    println!("{}", "-".repeat(126));
+    for row in filtered {
+        println!(
+            "{:<24} {:<22} {:<10} {:<12} {}",
+            row.package_id,
+            row.standard_id,
+            row.proof_evidence_level,
+            row.blueprint_claim_status,
+            row.promotion_rule
+        );
+        if details {
+            println!("  artifact: {}", row.proof_artifact);
+            println!("  forum_hold: {}", row.forum_hold);
+            println!("  gap: {}", row.blocking_gap);
+            println!("  next: {}", row.required_next_evidence);
+        }
+    }
+}
+
+fn blueprint_evidence_gate_failures(
+    rows: &[BlueprintEvidenceRow],
+    packages: &[BlueprintPackageRow],
+    standards: &[StandardsProofRow],
+) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["blueprint evidence map has no rows".to_string()];
+    }
+
+    let package_ids = packages
+        .iter()
+        .map(|row| row.package_id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let standard_evidence = standards
+        .iter()
+        .map(|row| (row.standard_id.as_str(), row.evidence_level.as_str()))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    let mut failures = Vec::new();
+    for row in rows {
+        if let Some(failure) = blueprint_evidence_row_failure(row, &package_ids, &standard_evidence)
+        {
+            failures.push(failure);
+        }
+    }
+
+    for package in packages {
+        for standard_id in package
+            .standards
+            .split(';')
+            .map(|part| part.trim())
+            .filter(|part| !part.is_empty())
+        {
+            if !rows.iter().any(|row| {
+                row.package_id.trim() == package.package_id.trim()
+                    && row.standard_id.trim() == standard_id
+            }) {
+                failures.push(format!(
+                    "{} missing evidence-map row for {}",
+                    package.package_id, standard_id
+                ));
+            }
+        }
+    }
+
+    failures
+}
+
+fn blueprint_evidence_row_failure(
+    row: &BlueprintEvidenceRow,
+    package_ids: &std::collections::HashSet<&str>,
+    standard_evidence: &std::collections::HashMap<&str, &str>,
+) -> Option<String> {
+    let claim_status = row.blueprint_claim_status.trim().to_ascii_lowercase();
+    let claim_status_ok = matches!(
+        claim_status.as_str(),
+        "implemented" | "heuristic" | "planned" | "held" | "downgraded"
+    );
+    let standard_id = row.standard_id.trim();
+    let expected_evidence = standard_evidence.get(standard_id).copied();
+    let evidence_matches = expected_evidence
+        .map(|expected| expected.trim() == row.proof_evidence_level.trim())
+        .unwrap_or(false);
+    let no_premature_promotion = if standards_evidence_level_is_allowed(&row.proof_evidence_level) {
+        row.proof_evidence_level
+            .trim()
+            .eq_ignore_ascii_case("Implemented")
+            || !claim_status.eq("implemented")
+    } else {
+        false
+    };
+    let filled = !row.package_id.trim().is_empty()
+        && package_ids.contains(row.package_id.trim())
+        && !standard_id.is_empty()
+        && expected_evidence.is_some()
+        && evidence_matches
+        && claim_status_ok
+        && no_premature_promotion
+        && !row.promotion_rule.trim().is_empty()
+        && !row.proof_artifact.trim().is_empty()
+        && !row.forum_hold.trim().is_empty()
+        && !row.blocking_gap.trim().is_empty()
+        && !row.required_next_evidence.trim().is_empty();
+
+    if filled {
+        None
+    } else {
+        Some(format!(
+            "{}:{} invalid evidence map row: proof={} claim={}",
+            if row.package_id.trim().is_empty() {
+                "<missing-package-id>"
+            } else {
+                row.package_id.as_str()
+            },
+            if standard_id.is_empty() {
+                "<missing-standard-id>"
+            } else {
+                row.standard_id.as_str()
+            },
+            row.proof_evidence_level,
+            row.blueprint_claim_status
+        ))
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct BlueprintCostRow {
+    package_id: String,
+    cost_basis: String,
+    capital_range_2026_usd: String,
+    lifecycle_burden: String,
+    source_status: String,
+    source_artifact: String,
+    cost_claim_status: String,
+    risk_note: String,
+    next_cost_step: String,
+}
+
+fn load_blueprint_cost_ranges(path: &Path) -> Result<Vec<BlueprintCostRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_blueprint_cost_ranges(file)
+}
+
+fn parse_blueprint_cost_ranges<R: std::io::Read>(reader: R) -> Result<Vec<BlueprintCostRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_blueprint_cost_ranges(rows: &[BlueprintCostRow], blockers: bool, details: bool) {
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| {
+                matches!(
+                    row.source_status.trim().to_ascii_lowercase().as_str(),
+                    "source_needed" | "corridor_specific" | "planning_range"
+                )
+            })
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_status: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+    for row in rows {
+        *by_status.entry(row.source_status.clone()).or_insert(0) += 1;
+    }
+
+    println!("route blueprint-costs");
+    println!("  rows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  source status: {}", format_count_map(&by_status));
+    println!();
+    println!(
+        "{:<24} {:<18} {:<24} {:<16} {}",
+        "Package", "Source", "Capital range", "Claim", "Cost basis"
+    );
+    println!("{}", "-".repeat(126));
+    for row in filtered {
+        println!(
+            "{:<24} {:<18} {:<24} {:<16} {}",
+            row.package_id,
+            row.source_status,
+            row.capital_range_2026_usd,
+            row.cost_claim_status,
+            row.cost_basis
+        );
+        if details {
+            println!("  lifecycle_burden: {}", row.lifecycle_burden);
+            println!("  source_artifact: {}", row.source_artifact);
+            println!("  risk: {}", row.risk_note);
+            println!("  next: {}", row.next_cost_step);
+        }
+    }
+}
+
+fn blueprint_cost_gate_failures(
+    rows: &[BlueprintCostRow],
+    packages: &[BlueprintPackageRow],
+) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["blueprint cost ledger has no rows".to_string()];
+    }
+
+    let package_ids = packages
+        .iter()
+        .map(|row| row.package_id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    let mut failures = Vec::new();
+    for row in rows {
+        if let Some(failure) = blueprint_cost_row_failure(row, &package_ids) {
+            failures.push(failure);
+        }
+    }
+
+    for package in packages {
+        if !rows
+            .iter()
+            .any(|row| row.package_id.trim() == package.package_id.trim())
+        {
+            failures.push(format!("{} missing cost range row", package.package_id));
+        }
+    }
+
+    failures
+}
+
+fn blueprint_cost_row_failure(
+    row: &BlueprintCostRow,
+    package_ids: &std::collections::HashSet<&str>,
+) -> Option<String> {
+    let source_status = row.source_status.trim().to_ascii_lowercase();
+    let claim_status = row.cost_claim_status.trim().to_ascii_lowercase();
+    let source_status_ok = matches!(
+        source_status.as_str(),
+        "source_backed" | "planning_range" | "corridor_specific" | "source_needed"
+    );
+    let claim_status_ok = matches!(
+        claim_status.as_str(),
+        "source_backed" | "planning_only" | "placeholder" | "held"
+    );
+    let no_premature_source_claim =
+        source_status == "source_backed" || claim_status != "source_backed";
+    let filled = !row.package_id.trim().is_empty()
+        && package_ids.contains(row.package_id.trim())
+        && !row.cost_basis.trim().is_empty()
+        && !row.capital_range_2026_usd.trim().is_empty()
+        && !row.lifecycle_burden.trim().is_empty()
+        && source_status_ok
+        && !row.source_artifact.trim().is_empty()
+        && claim_status_ok
+        && no_premature_source_claim
+        && !row.risk_note.trim().is_empty()
+        && !row.next_cost_step.trim().is_empty();
+
+    if filled {
+        None
+    } else {
+        Some(format!(
+            "{} invalid cost row: source={} claim={}",
+            if row.package_id.trim().is_empty() {
+                "<missing-package-id>"
+            } else {
+                row.package_id.as_str()
+            },
+            row.source_status,
+            row.cost_claim_status
+        ))
     }
 }
 
@@ -6006,6 +7342,825 @@ fn load_tier_routes(path: &Path, tier: &str) -> Result<Vec<String>> {
     routes.sort();
     routes.dedup();
     Ok(routes)
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct EndpointExceptionRow {
+    route: String,
+    requested_tier: String,
+    endpoint_name: String,
+    endpoint_role: String,
+    exception_type: String,
+    evidence_level: String,
+    artifact: String,
+    next_step: String,
+}
+
+#[derive(Debug)]
+struct TierConnectivityGateFailure<'a> {
+    row: &'a route_network::TierConnectivityRow,
+    reason: String,
+}
+
+fn load_endpoint_exceptions(path: &Path) -> Result<Vec<EndpointExceptionRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_endpoint_exceptions(file)
+}
+
+fn parse_endpoint_exceptions<R: std::io::Read>(reader: R) -> Result<Vec<EndpointExceptionRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn endpoint_exceptions_for_route<'a>(
+    exceptions: &'a [EndpointExceptionRow],
+    route: &str,
+    tier: &str,
+) -> Vec<&'a EndpointExceptionRow> {
+    let route = normalise_designation(route);
+    exceptions
+        .iter()
+        .filter(|row| normalise_designation(&row.route) == route)
+        .filter(|row| row.requested_tier.trim().eq_ignore_ascii_case(tier.trim()))
+        .collect()
+}
+
+fn tier_connectivity_gate_failures_with_exceptions<'a>(
+    rows: &'a [route_network::TierConnectivityRow],
+    exceptions: &[EndpointExceptionRow],
+    tier: &str,
+) -> Vec<TierConnectivityGateFailure<'a>> {
+    rows.iter()
+        .filter_map(|row| {
+            if matches!(
+                row.classification,
+                route_network::TierNodeClass::TrunkConnector
+                    | route_network::TierNodeClass::ReliefLoop
+            ) {
+                return None;
+            }
+
+            let route_exceptions = endpoint_exceptions_for_route(exceptions, &row.route, tier);
+            if route_exception_allows_connectivity_gate(row, &route_exceptions) {
+                return None;
+            }
+
+            Some(TierConnectivityGateFailure {
+                row,
+                reason: endpoint_exception_failure_reason(row, &route_exceptions),
+            })
+        })
+        .collect()
+}
+
+fn route_exception_allows_connectivity_gate(
+    row: &route_network::TierConnectivityRow,
+    exceptions: &[&EndpointExceptionRow],
+) -> bool {
+    match row.classification {
+        route_network::TierNodeClass::OneEndedFeeder => exceptions
+            .iter()
+            .any(|exception| endpoint_exception_is_terminal_worthy(exception)),
+        route_network::TierNodeClass::LocalSpur => exceptions.iter().any(|exception| {
+            endpoint_exception_is_terminal_worthy(exception)
+                && exception
+                    .evidence_level
+                    .trim()
+                    .eq_ignore_ascii_case("validated")
+        }),
+        route_network::TierNodeClass::MissingGraphData => false,
+        route_network::TierNodeClass::TrunkConnector | route_network::TierNodeClass::ReliefLoop => {
+            true
+        }
+    }
+}
+
+fn endpoint_exception_is_terminal_worthy(row: &EndpointExceptionRow) -> bool {
+    if !endpoint_exception_has_contract(row) {
+        return false;
+    }
+
+    let role = row.endpoint_role.trim().to_ascii_lowercase();
+    let exception_type = row.exception_type.trim().to_ascii_lowercase();
+    let terminal_role = matches!(
+        role.as_str(),
+        "national_terminal" | "t2_terminal_exception" | "graph_endpoint_gap"
+    );
+    let terminal_exception = matches!(
+        exception_type.as_str(),
+        "port_terminal"
+            | "border_gateway"
+            | "military_logistics"
+            | "resilience_relief"
+            | "future_tier_continuation"
+            | "regional_terminal"
+    );
+    terminal_role && terminal_exception
+}
+
+fn endpoint_exception_has_contract(row: &EndpointExceptionRow) -> bool {
+    !row.endpoint_name.trim().is_empty()
+        && !row.endpoint_role.trim().is_empty()
+        && !row.exception_type.trim().is_empty()
+        && !row.artifact.trim().is_empty()
+        && !row.next_step.trim().is_empty()
+        && valid_endpoint_evidence_level(&row.evidence_level)
+}
+
+fn valid_endpoint_evidence_level(level: &str) -> bool {
+    matches!(
+        level.trim().to_ascii_lowercase().as_str(),
+        "validated" | "heuristic" | "planned" | "missing_graph_data" | "demote"
+    )
+}
+
+fn endpoint_exception_failure_reason(
+    row: &route_network::TierConnectivityRow,
+    exceptions: &[&EndpointExceptionRow],
+) -> String {
+    if exceptions.is_empty() {
+        return "no endpoint exception record".to_string();
+    }
+
+    if matches!(
+        row.classification,
+        route_network::TierNodeClass::MissingGraphData
+    ) {
+        return "graph/contact data must be fixed before endpoint exception can promote route"
+            .to_string();
+    }
+
+    let invalid_contracts = exceptions
+        .iter()
+        .filter(|exception| !endpoint_exception_has_contract(exception))
+        .count();
+    if invalid_contracts > 0 {
+        return format!(
+            "{invalid_contracts} endpoint exception record(s) lack a complete contract"
+        );
+    }
+
+    "endpoint exception is not terminal-worthy for requested tier".to_string()
+}
+
+fn endpoint_exception_summary(
+    exceptions: &[EndpointExceptionRow],
+    route: &str,
+    tier: &str,
+) -> String {
+    let route_exceptions = endpoint_exceptions_for_route(exceptions, route, tier);
+    if route_exceptions.is_empty() {
+        return "-".to_string();
+    }
+    route_exceptions
+        .iter()
+        .map(|row| {
+            format!(
+                "{}:{}:{}",
+                row.endpoint_role.trim(),
+                row.exception_type.trim(),
+                row.evidence_level.trim()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+fn filter_endpoint_exceptions<'a>(
+    rows: &'a [EndpointExceptionRow],
+    tier: Option<&str>,
+    route: Option<&str>,
+) -> Vec<&'a EndpointExceptionRow> {
+    let route = route.map(normalise_designation);
+    rows.iter()
+        .filter(|row| {
+            tier.map(|tier| row.requested_tier.trim().eq_ignore_ascii_case(tier.trim()))
+                .unwrap_or(true)
+        })
+        .filter(|row| {
+            route
+                .as_ref()
+                .map(|route| normalise_designation(&row.route) == *route)
+                .unwrap_or(true)
+        })
+        .collect()
+}
+
+fn endpoint_exception_gate_failures(
+    rows: &[&EndpointExceptionRow],
+    require_terminal_worthy: bool,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    for row in rows {
+        let route = normalise_designation(&row.route);
+        if route.is_empty() {
+            failures.push("row missing route".to_string());
+        }
+        if row.requested_tier.trim().is_empty() {
+            failures.push(format!("{route}: missing requested_tier"));
+        }
+        if !endpoint_exception_has_contract(row) {
+            failures.push(format!("{route}: incomplete endpoint exception contract"));
+        }
+        if !valid_endpoint_evidence_level(&row.evidence_level) {
+            failures.push(format!(
+                "{route}: unsupported evidence_level {}",
+                row.evidence_level
+            ));
+        }
+        if require_terminal_worthy && !endpoint_exception_is_terminal_worthy(row) {
+            failures.push(format!(
+                "{route}: endpoint exception is not terminal-worthy for requested tier"
+            ));
+        }
+    }
+    failures
+}
+
+fn print_endpoint_exceptions(rows: &[&EndpointExceptionRow], blockers: bool, details: bool) {
+    let visible = rows
+        .iter()
+        .copied()
+        .filter(|row| {
+            !blockers
+                || !endpoint_exception_has_contract(row)
+                || !endpoint_exception_is_terminal_worthy(row)
+        })
+        .collect::<Vec<_>>();
+    let mut by_tier = std::collections::BTreeMap::new();
+    let mut by_status = std::collections::BTreeMap::new();
+    for row in &visible {
+        *by_tier
+            .entry(row.requested_tier.trim().to_ascii_uppercase())
+            .or_insert(0usize) += 1;
+        *by_status
+            .entry(row.evidence_level.trim().to_ascii_lowercase())
+            .or_insert(0usize) += 1;
+    }
+
+    println!("  exceptions: {}", visible.len());
+    println!("  tier mix: {}", format_count_map(&by_tier));
+    println!("  evidence mix: {}", format_count_map(&by_status));
+    println!();
+    println!(
+        "{:<8} {:<5} {:<26} {:<24} {:<22} Worthy",
+        "Route", "Tier", "Endpoint", "Role", "Exception"
+    );
+    println!("{}", "-".repeat(104));
+    for row in visible {
+        println!(
+            "{:<8} {:<5} {:<26} {:<24} {:<22} {}",
+            normalise_designation(&row.route),
+            row.requested_tier,
+            truncate_for_table(&row.endpoint_name, 26),
+            truncate_for_table(&row.endpoint_role, 24),
+            truncate_for_table(&row.exception_type, 22),
+            if endpoint_exception_is_terminal_worthy(row) {
+                "yes"
+            } else {
+                "no"
+            }
+        );
+        if details {
+            println!("  evidence: {}", row.evidence_level);
+            println!("  artifact: {}", row.artifact);
+            println!("  next: {}", row.next_step);
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct StopCandidateRow {
+    stop_id: String,
+    name: String,
+    state: String,
+    lat: String,
+    lon: String,
+    requested_class: String,
+    route_refs: String,
+    stop_role: String,
+    transfer_value: String,
+    freight_volume: String,
+    spacing_need: String,
+    resilience_value: String,
+    energy_service: String,
+    land_ops_feasibility: String,
+    equity_community: String,
+    evidence_status: String,
+    source_artifact: String,
+    next_step: String,
+}
+
+fn parse_stop_candidates<R: std::io::Read>(reader: R) -> Result<Vec<StopCandidateRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn filter_stop_candidates<'a>(
+    rows: &'a [StopCandidateRow],
+    stop_class: Option<&str>,
+    route: Option<&str>,
+) -> Vec<&'a StopCandidateRow> {
+    let route = route.map(normalise_designation);
+    rows.iter()
+        .filter(|row| {
+            stop_class
+                .map(|class| {
+                    row.requested_class
+                        .trim()
+                        .eq_ignore_ascii_case(class.trim())
+                })
+                .unwrap_or(true)
+        })
+        .filter(|row| {
+            route
+                .as_ref()
+                .map(|route| {
+                    stop_candidate_routes(row)
+                        .iter()
+                        .any(|candidate| candidate == route)
+                })
+                .unwrap_or(true)
+        })
+        .collect()
+}
+
+fn stop_candidate_routes(row: &StopCandidateRow) -> Vec<String> {
+    row.route_refs
+        .split([';', ','])
+        .map(|route| normalise_designation(route.trim()))
+        .filter(|route| !route.is_empty())
+        .collect()
+}
+
+fn stop_plan_for_route<'a>(rows: &'a [StopCandidateRow], route: &str) -> Vec<&'a StopCandidateRow> {
+    let mut stops = filter_stop_candidates(rows, None, Some(route));
+    sort_stops_for_route(&mut stops);
+    stops
+}
+
+fn sort_stops_for_route(stops: &mut [&StopCandidateRow]) {
+    if stops.len() < 2 {
+        return;
+    }
+    let coords = stops
+        .iter()
+        .filter_map(|row| Some((parse_coord(&row.lat)?, parse_coord(&row.lon)?)))
+        .collect::<Vec<_>>();
+    if coords.len() < 2 {
+        stops.sort_by(|a, b| a.name.cmp(&b.name));
+        return;
+    }
+    let (min_lat, max_lat) = coords
+        .iter()
+        .map(|(lat, _)| *lat)
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), value| {
+            (min.min(value), max.max(value))
+        });
+    let (min_lon, max_lon) = coords
+        .iter()
+        .map(|(_, lon)| *lon)
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), value| {
+            (min.min(value), max.max(value))
+        });
+    let lat_span = max_lat - min_lat;
+    let lon_span = max_lon - min_lon;
+    if lat_span >= lon_span {
+        stops.sort_by(|a, b| coord_or_default(&a.lat).total_cmp(&coord_or_default(&b.lat)));
+    } else {
+        stops.sort_by(|a, b| coord_or_default(&a.lon).total_cmp(&coord_or_default(&b.lon)));
+    }
+}
+
+fn parse_coord(value: &str) -> Option<f64> {
+    value
+        .trim()
+        .parse::<f64>()
+        .ok()
+        .filter(|value| value.is_finite())
+}
+
+fn coord_or_default(value: &str) -> f64 {
+    parse_coord(value).unwrap_or(0.0)
+}
+
+fn print_stop_plan(route: &str, stops: &[&StopCandidateRow], details: bool) {
+    let mut by_class = std::collections::BTreeMap::new();
+    for stop in stops {
+        *by_class
+            .entry(stop.requested_class.trim().to_ascii_uppercase())
+            .or_insert(0usize) += 1;
+    }
+
+    println!("  stops: {}", stops.len());
+    println!("  class mix: {}", format_count_map(&by_class));
+    println!();
+    println!(
+        "{:<4} {:<24} {:<5} {:<26} Evidence",
+        "#", "Stop", "Class", "Role"
+    );
+    println!("{}", "-".repeat(86));
+    for (idx, stop) in stops.iter().enumerate() {
+        println!(
+            "{:<4} {:<24} {:<5} {:<26} {}",
+            idx + 1,
+            truncate_for_table(&stop.name, 24),
+            stop.requested_class,
+            truncate_for_table(&stop.stop_role, 26),
+            stop.evidence_status
+        );
+        if details {
+            println!(
+                "  id: {}  location: {},{}",
+                stop.stop_id, stop.lat, stop.lon
+            );
+            println!("  routes: {}", stop.route_refs);
+            println!(
+                "  values: transfer={} freight={} spacing={} resilience={} energy={}",
+                stop.transfer_value,
+                stop.freight_volume,
+                stop.spacing_need,
+                stop.resilience_value,
+                stop.energy_service
+            );
+            println!("  artifact: {}", stop.source_artifact);
+            println!("  next: {}", stop.next_step);
+        }
+    }
+
+    if !stops.is_empty() {
+        println!();
+        println!(
+            "  schematic chain: {}",
+            stops
+                .iter()
+                .map(|stop| stop.name.as_str())
+                .collect::<Vec<_>>()
+                .join(" -> ")
+        );
+    } else {
+        println!("  no stop candidates touch {route}");
+    }
+}
+
+fn stop_plan_gate_failures(route: &str, stops: &[&StopCandidateRow]) -> Vec<String> {
+    stop_plan_gate_failures_for_tier(route, stops, "T1")
+}
+
+fn stop_plan_gate_failures_for_tier(
+    route: &str,
+    stops: &[&StopCandidateRow],
+    tier: &str,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if stops.is_empty() {
+        failures.push(format!("{route}: no stop candidates"));
+        return failures;
+    }
+    let tier = tier.trim().to_ascii_uppercase();
+    let min_stops = match tier.as_str() {
+        "T2" | "T3" => 2,
+        _ => 3,
+    };
+    let min_endpoint_grade = match tier.as_str() {
+        "T2" | "T3" => 1,
+        _ => 2,
+    };
+
+    if stops.len() < min_stops {
+        failures.push(format!(
+            "{route}: only {} stop candidate(s); tier schematic lines need a visible chain",
+            stops.len()
+        ));
+    }
+    let endpoint_grade_count = stops
+        .iter()
+        .filter(|stop| {
+            let class = stop.requested_class.trim().to_ascii_uppercase();
+            if tier == "T3" {
+                matches!(class.as_str(), "S1" | "S2" | "S3")
+            } else {
+                matches!(class.as_str(), "S1" | "S2")
+            }
+        })
+        .count();
+    if endpoint_grade_count < min_endpoint_grade {
+        failures.push(format!(
+            "{route}: needs at least {min_endpoint_grade} terminal or transfer-grade stop(s)"
+        ));
+    }
+    failures.extend(stop_candidate_gate_failures(stops));
+    failures
+}
+
+#[derive(Debug)]
+struct StopCoverageRow {
+    route: String,
+    stop_count: usize,
+    major_stop_count: usize,
+    classes: String,
+    failures: Vec<String>,
+}
+
+fn stop_coverage_for_routes(
+    rows: &[StopCandidateRow],
+    routes: &[String],
+    tier: &str,
+) -> Vec<StopCoverageRow> {
+    routes
+        .iter()
+        .map(|route| {
+            let plan = stop_plan_for_route(rows, route);
+            let mut by_class = std::collections::BTreeMap::new();
+            for stop in &plan {
+                *by_class
+                    .entry(stop.requested_class.trim().to_ascii_uppercase())
+                    .or_insert(0usize) += 1;
+            }
+            let major_stop_count = plan
+                .iter()
+                .filter(|stop| {
+                    matches!(
+                        stop.requested_class.trim().to_ascii_uppercase().as_str(),
+                        "S1" | "S2"
+                    )
+                })
+                .count();
+            StopCoverageRow {
+                route: route.clone(),
+                stop_count: plan.len(),
+                major_stop_count,
+                classes: format_count_map(&by_class),
+                failures: stop_plan_gate_failures_for_tier(route, &plan, tier),
+            }
+        })
+        .collect()
+}
+
+fn stop_coverage_gate_failures(rows: &[StopCoverageRow]) -> Vec<String> {
+    rows.iter()
+        .filter(|row| !row.failures.is_empty())
+        .map(|row| format!("{}: {}", row.route, row.failures.join("; ")))
+        .collect()
+}
+
+fn print_stop_coverage(tier: &str, rows: &[StopCoverageRow], blockers: bool) {
+    let visible = rows
+        .iter()
+        .filter(|row| !blockers || !row.failures.is_empty())
+        .collect::<Vec<_>>();
+    let passing = rows.iter().filter(|row| row.failures.is_empty()).count();
+    println!("  tier: {tier}");
+    println!("  routes: {}", rows.len());
+    println!("  passing stop plans: {passing}");
+    println!("  blockers: {}", rows.len().saturating_sub(passing));
+    println!();
+    println!(
+        "{:<8} {:>5} {:>8} {:<22} Status",
+        "Route", "Stops", "S1/S2", "Class mix"
+    );
+    println!("{}", "-".repeat(72));
+    for row in visible {
+        println!(
+            "{:<8} {:>5} {:>8} {:<22} {}",
+            row.route,
+            row.stop_count,
+            row.major_stop_count,
+            truncate_for_table(&row.classes, 22),
+            if row.failures.is_empty() {
+                "pass".to_string()
+            } else {
+                truncate_for_table(&row.failures.join("; "), 28)
+            }
+        );
+    }
+}
+
+fn print_stop_candidates(rows: &[&StopCandidateRow], details: bool) {
+    let mut by_class = std::collections::BTreeMap::new();
+    let mut by_status = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_class
+            .entry(row.requested_class.trim().to_ascii_uppercase())
+            .or_insert(0usize) += 1;
+        *by_status
+            .entry(row.evidence_status.trim().to_ascii_lowercase())
+            .or_insert(0usize) += 1;
+    }
+
+    println!("  candidates: {}", rows.len());
+    println!("  class mix: {}", format_count_map(&by_class));
+    println!("  evidence mix: {}", format_count_map(&by_status));
+    println!();
+    println!(
+        "{:<16} {:<24} {:<6} {:<5} {:<28} Routes",
+        "Stop", "Name", "State", "Class", "Role"
+    );
+    println!("{}", "-".repeat(104));
+    for row in rows {
+        println!(
+            "{:<16} {:<24} {:<6} {:<5} {:<28} {}",
+            row.stop_id,
+            truncate_for_table(&row.name, 24),
+            row.state,
+            row.requested_class,
+            truncate_for_table(&row.stop_role, 28),
+            row.route_refs
+        );
+        if details {
+            println!("  location: {},{}", row.lat, row.lon);
+            println!(
+                "  values: transfer={} freight={} spacing={} resilience={} energy={} land={} equity={}",
+                row.transfer_value,
+                row.freight_volume,
+                row.spacing_need,
+                row.resilience_value,
+                row.energy_service,
+                row.land_ops_feasibility,
+                row.equity_community
+            );
+            println!(
+                "  evidence: {} via {}",
+                row.evidence_status, row.source_artifact
+            );
+            println!("  next: {}", row.next_step);
+        }
+    }
+}
+
+fn stop_candidate_gate_failures(rows: &[&StopCandidateRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    for row in rows {
+        let id = row.stop_id.trim();
+        let class = row.requested_class.trim().to_ascii_uppercase();
+        let routes = stop_candidate_routes(row);
+        if id.is_empty() {
+            failures.push("row missing stop_id".to_string());
+        }
+        if row.name.trim().is_empty() {
+            failures.push(format!("{id}: missing name"));
+        }
+        if !matches!(class.as_str(), "S1" | "S2" | "S3" | "S4" | "S5") {
+            failures.push(format!(
+                "{id}: unsupported requested_class {}",
+                row.requested_class
+            ));
+        }
+        if routes.is_empty() {
+            failures.push(format!("{id}: missing route_refs"));
+        }
+        if row.stop_role.trim().is_empty() {
+            failures.push(format!("{id}: missing stop_role"));
+        }
+        if row.source_artifact.trim().is_empty() {
+            failures.push(format!("{id}: missing source_artifact"));
+        }
+        if row.next_step.trim().is_empty() {
+            failures.push(format!("{id}: missing next_step"));
+        }
+        if !valid_stop_evidence_status(&row.evidence_status) {
+            failures.push(format!(
+                "{id}: unsupported evidence_status {}",
+                row.evidence_status
+            ));
+        }
+
+        if matches!(class.as_str(), "S1" | "S2") {
+            let role = row.stop_role.to_ascii_lowercase();
+            let has_terminal_role = role.contains("national_terminal")
+                || role.contains("major_interchange_hub")
+                || role.contains("port_gateway")
+                || role.contains("intermodal_gateway");
+            let one_route_terminal = class == "S1"
+                && role.contains("national_terminal")
+                && (role.contains("border_gateway") || role.contains("port_gateway"));
+            if !has_terminal_role {
+                failures.push(format!(
+                    "{id}: {class} needs national_terminal, major_interchange_hub, port_gateway, or intermodal_gateway role"
+                ));
+            }
+            if routes.len() < 2 && !one_route_terminal {
+                failures.push(format!("{id}: {class} needs at least two route_refs"));
+            }
+            if !high_or_medium(&row.transfer_value)
+                && !high_or_medium(&row.freight_volume)
+                && !high_or_medium(&row.resilience_value)
+            {
+                failures.push(format!(
+                    "{id}: {class} needs medium/high transfer, freight, or resilience value"
+                ));
+            }
+        }
+
+        if class == "S3"
+            && routes.len() < 2
+            && !row.stop_role.to_ascii_lowercase().contains("transfer")
+        {
+            failures.push(format!(
+                "{id}: S3 needs a transfer role or at least two route_refs"
+            ));
+        }
+
+        if class == "S4" && row.spacing_need.trim().is_empty() {
+            failures.push(format!("{id}: S4 needs spacing_need evidence"));
+        }
+    }
+    failures
+}
+
+fn valid_stop_evidence_status(status: &str) -> bool {
+    matches!(
+        status.trim().to_ascii_lowercase().as_str(),
+        "validated"
+            | "heuristic"
+            | "planned"
+            | "partial"
+            | "source_needed"
+            | "missing_source"
+            | "missing_graph_data"
+    )
+}
+
+fn high_or_medium(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "high" | "medium" | "met"
+    )
+}
+
+fn print_tier_connectivity(
+    tier: &str,
+    rows: &[route_network::TierConnectivityRow],
+    exceptions: &[EndpointExceptionRow],
+    details: bool,
+) {
+    let mut by_class = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_class
+            .entry(row.classification.as_str().to_string())
+            .or_insert(0usize) += 1;
+    }
+    let failures = tier_connectivity_gate_failures_with_exceptions(rows, exceptions, tier);
+
+    println!("  tier: {tier}");
+    println!("  routes analyzed: {}", rows.len());
+    println!("  node class mix: {}", format_count_map(&by_class));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<10} {:>7} {:>8} {:>7} {:<18} {:<28} T1 trunks",
+        "Route", "Miles", "T1 nodes", "T1s", "Class", "Endpoint exception"
+    );
+    println!("{}", "-".repeat(124));
+    for row in rows {
+        println!(
+            "{:<10} {:>7.0} {:>8} {:>7} {:<18} {:<28} {}",
+            row.route,
+            row.route_miles,
+            row.t1_node_count,
+            row.t1_routes.len(),
+            row.classification.as_str(),
+            truncate_for_table(
+                &endpoint_exception_summary(exceptions, &row.route, tier),
+                28
+            ),
+            if row.t1_routes.is_empty() {
+                "-".to_string()
+            } else {
+                row.t1_routes.join(",")
+            }
+        );
+        if details {
+            for touch in &row.touch_nodes {
+                println!(
+                    "  node {:>8}: {:>8.3},{:>7.3} via {}",
+                    touch.node_id,
+                    touch.lon,
+                    touch.lat,
+                    touch.t1_routes.join(",")
+                );
+            }
+        }
+    }
+
+    if !failures.is_empty() {
+        println!();
+        println!(
+            "  interpretation: {} rows look like one-ended feeders, local spurs, or missing graph data.",
+            failures.len()
+        );
+        println!(
+            "  use these as demotion candidates, graph-contact fixes, or terminal-worthy exception records."
+        );
+    }
 }
 
 fn print_bridge_standard_coverage(
@@ -7277,6 +9432,147 @@ fn t1_snapshot_plan_row_has_contract(row: &T1SnapshotPlanRow) -> bool {
         && !row.next_step.trim().is_empty()
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1EvidenceWindowRow {
+    window_id: String,
+    site_id: String,
+    source_name: String,
+    evidence_mode: String,
+    capture_started_at: String,
+    capture_ended_at: String,
+    observation_start: String,
+    observation_end: String,
+    raw_artifact: String,
+    normalized_artifact: String,
+    event_count: usize,
+    freight_relevant_count: usize,
+    promotion_eligible: bool,
+    blocking_gap: String,
+    next_step: String,
+    review_artifact: String,
+}
+
+fn load_t1_evidence_windows(path: &Path) -> Result<Vec<T1EvidenceWindowRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_evidence_windows(file)
+}
+
+fn parse_t1_evidence_windows<R: std::io::Read>(reader: R) -> Result<Vec<T1EvidenceWindowRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_evidence_windows(rows: &[T1EvidenceWindowRow], blockers: bool, details: bool) {
+    let filtered: Vec<&T1EvidenceWindowRow> = rows
+        .iter()
+        .filter(|row| !blockers || !row.promotion_eligible)
+        .collect();
+    let mut by_mode: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_mode.entry(row.evidence_mode.clone()).or_insert(0) += 1;
+    }
+    let eligible = rows.iter().filter(|row| row.promotion_eligible).count();
+
+    println!("route t1-evidence-windows");
+    println!("  windows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  evidence modes: {}", format_count_map(&by_mode));
+    println!("  promotion eligible: {}", eligible);
+    println!();
+    println!(
+        "{:<18} {:<18} {:<28} {:<16} {:>6} {:<9} {}",
+        "Window", "Site", "Source", "Mode", "Events", "Promote", "Next"
+    );
+    println!("{}", "-".repeat(132));
+    for row in filtered {
+        println!(
+            "{:<18} {:<18} {:<28} {:<16} {:>6} {:<9} {}",
+            row.window_id,
+            row.site_id,
+            truncate_for_table(&row.source_name, 28),
+            row.evidence_mode,
+            row.event_count,
+            if row.promotion_eligible { "yes" } else { "no" },
+            row.next_step
+        );
+        if details {
+            println!(
+                "  capture: {} -> {}; observations: {} -> {}",
+                row.capture_started_at,
+                row.capture_ended_at,
+                row.observation_start,
+                row.observation_end
+            );
+            println!(
+                "  artifacts: {}; {}",
+                row.raw_artifact, row.normalized_artifact
+            );
+            println!("  freight rows: {}", row.freight_relevant_count);
+            println!("  gap: {}", row.blocking_gap);
+            println!("  review: {}", row.review_artifact);
+        }
+    }
+}
+
+fn t1_evidence_window_gate_failures(rows: &[T1EvidenceWindowRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["no evidence-window rows found".to_string()];
+    }
+
+    let mut failures = Vec::new();
+    for row in rows {
+        if !t1_evidence_window_has_contract(row) {
+            failures.push(format!(
+                "{} lacks required source-window metadata",
+                row.window_id
+            ));
+        }
+        if row.promotion_eligible && !t1_evidence_window_can_promote(row) {
+            failures.push(format!(
+                "{} is promotion eligible without repeated-window or archive evidence",
+                row.window_id
+            ));
+        }
+        if row.evidence_mode.trim() == "snapshot_only" && row.promotion_eligible {
+            failures.push(format!(
+                "{} marks snapshot-only evidence as promotion eligible",
+                row.window_id
+            ));
+        }
+    }
+    failures
+}
+
+fn t1_evidence_window_has_contract(row: &T1EvidenceWindowRow) -> bool {
+    !row.window_id.trim().is_empty()
+        && !row.site_id.trim().is_empty()
+        && !row.source_name.trim().is_empty()
+        && matches!(
+            row.evidence_mode.trim(),
+            "snapshot_only" | "repeated_window" | "historical_archive" | "enrichment_blocker"
+        )
+        && !row.capture_started_at.trim().is_empty()
+        && !row.capture_ended_at.trim().is_empty()
+        && !row.raw_artifact.trim().is_empty()
+        && !row.normalized_artifact.trim().is_empty()
+        && row.freight_relevant_count <= row.event_count
+        && !row.blocking_gap.trim().is_empty()
+        && !row.next_step.trim().is_empty()
+        && !row.review_artifact.trim().is_empty()
+}
+
+fn t1_evidence_window_can_promote(row: &T1EvidenceWindowRow) -> bool {
+    matches!(
+        row.evidence_mode.trim(),
+        "repeated_window" | "historical_archive"
+    ) && !row.observation_start.trim().is_empty()
+        && !row.observation_end.trim().is_empty()
+        && row.event_count > 0
+}
+
 fn format_count_map(counts: &std::collections::BTreeMap<String, usize>) -> String {
     if counts.is_empty() {
         "none".to_string()
@@ -8466,26 +10762,35 @@ fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        atlas_candidate_ids, bridge_standard_missing_routes, confidence_risk_dimensions,
+        atlas_candidate_ids, blueprint_cost_gate_failures, blueprint_cost_row_failure,
+        blueprint_evidence_gate_failures, blueprint_evidence_row_failure, blueprint_gate_failures,
+        blueprint_row_contract_failure, bridge_standard_missing_routes, confidence_risk_dimensions,
         dimension_confidence_risks, dimension_confidence_values, dimension_estimated_values,
-        dimension_score_values, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
-        map_atlas_gate_failures, parse_indot_trafficwise_events, parse_iowa511_events,
-        parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_standards_inventory, parse_standards_proof_ledger, parse_t1_diamond_validation,
-        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
-        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        parse_throughput_proof_matrix, planned_standard_inventory_missing,
-        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
-        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
-        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
-        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
-        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
-        standards_inventory_gate_failures, standards_inventory_row_has_contract,
-        summarize_t1_failure_events, t1_failure_event_has_observation_contract,
-        t1_failure_event_observation_gate_failures, t1_failure_evidence_gate_failures,
-        t1_failure_row_has_evidence_contract, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_for_score, write_tier_artifacts_to, FemaTile,
-        GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
+        dimension_score_values, endpoint_exception_gate_failures,
+        endpoint_exception_is_terminal_worthy, filter_endpoint_exceptions, filter_stop_candidates,
+        forum_docket_gate_failures, forum_docket_row_failure, gap_type_slug,
+        join_fema_d1_to_corridor, load_tier_routes, map_atlas_gate_failures,
+        parse_blueprint_cost_ranges, parse_blueprint_evidence_map, parse_blueprint_packages,
+        parse_endpoint_exceptions, parse_forum_docket, parse_indot_trafficwise_events,
+        parse_iowa511_events, parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
+        parse_standards_inventory, parse_standards_proof_ledger, parse_stop_candidates,
+        parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
+        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
+        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        planned_standard_inventory_missing, pressure_scenario_gate_failures,
+        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
+        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
+        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
+        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
+        standards_inventory_row_has_contract, standards_pressure_gate_failures,
+        stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
+        stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
+        t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
+        t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
+        tier_connectivity_gate_failures_with_exceptions, tier_for_score, write_tier_artifacts_to,
+        FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -8657,6 +10962,190 @@ T1-UNKNOWN,T1,resilience,claim,outcome,mechanism,closure,gate,Unlabeled,artifact
     }
 
     #[test]
+    fn standards_pressure_gate_accepts_labeled_unresolved_proof_records() {
+        let csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-OPS-PTI,T1,throughput,pti,outcome,mechanism,peak,gate,Heuristic,artifact,NPMRDS direct evidence missing,next,C.1
+T1-BRIDGE,T1,safety,bridge,outcome,mechanism,posting,gate,Planned,artifact,clearance join missing,next,E.2
+BAD,T1,throughput,pti,outcome,mechanism,peak,gate,unknown,artifact,gap,next,C.1
+";
+
+        let rows = parse_standards_proof_ledger(csv.as_bytes()).expect("parse proof ledger");
+        let failures = standards_pressure_gate_failures(&rows);
+
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].standard_id, "BAD");
+    }
+
+    #[test]
+    fn standards_pressure_gate_canonical_ledger_passes_contract_check() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/standards-proof-ledger.csv");
+        let file = std::fs::File::open(path).expect("open canonical standards proof ledger");
+        let rows = parse_standards_proof_ledger(file).expect("parse canonical standards");
+
+        assert!(!rows.is_empty());
+        assert!(standards_pressure_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn forum_docket_gate_requires_review_contracts() {
+        let csv = "\
+review_id,artifact,review_type,status,roles,claim_target,blocking_question,next_action,output_artifact
+F5-01,docs/milepost-4-closeout.md,parliament,complete,traffic-engineer,claim,question,next,docs/forum/review.md
+BAD,,unknown,maybe,,claim,,next,
+";
+
+        let rows = parse_forum_docket(csv.as_bytes()).expect("parse forum docket");
+
+        assert!(forum_docket_row_failure(&rows[0]).is_none());
+        assert!(forum_docket_row_failure(&rows[1]).is_some());
+        let failures = forum_docket_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("BAD"));
+    }
+
+    #[test]
+    fn forum_docket_canonical_file_passes_gate() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/forum-docket.csv");
+        let file = std::fs::File::open(path).expect("open canonical forum docket");
+        let rows = parse_forum_docket(file).expect("parse canonical forum docket");
+
+        assert!(!rows.is_empty());
+        assert!(rows.iter().any(|row| row.review_id == "F5-01"));
+        assert!(forum_docket_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn blueprint_gate_requires_forum_intake_contracts() {
+        let csv = "\
+package_id,phase,feature_package,stakeholder_class,standards,evidence_level,status,cost_range,value_case,source_label,pressure_artifact,forum_constraint,mitigation_companion,row_complexity,maintenance_burden,community_exposure_check,rural_access_exception,blueprint_action,blocking_gap,next_evidence_step
+B6-GOOD,Phase 0,Relay operations,operational_must_have,T1-REST,Heuristic,blueprint_candidate,$40M-$250M,heuristic reliability seed,Forum F5-07,S-L2-RELAY-HUB,claims remain heuristic,not_applicable_no_new_footprint,existing hubs,low operations,no new lane footprint,not_applicable,include with heuristic label,NPMRDS absent,calibrate PTI
+B6-BAD,Phase 1,Managed lanes,conditional_expansion,T1-OPS-PTI,Unknown,candidate,$1B,benefit claim,Forum F5-07,S-L2-MANAGED-LANE,needs mitigation,not_applicable,not_applicable,not_applicable,not_applicable,,promote as proven,,none
+";
+
+        let rows = parse_blueprint_packages(csv.as_bytes()).expect("parse blueprint packages");
+
+        assert!(blueprint_row_contract_failure(&rows[0]).is_none());
+        assert!(blueprint_row_contract_failure(&rows[1]).is_some());
+        let failures = blueprint_gate_failures(&rows);
+        assert!(failures.iter().any(|failure| failure.contains("B6-BAD")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("conditional expansion lacks required")));
+    }
+
+    #[test]
+    fn blueprint_canonical_ledger_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/blueprint-feature-packages.csv");
+        let file = std::fs::File::open(path).expect("open canonical blueprint ledger");
+        let rows = parse_blueprint_packages(file).expect("parse canonical blueprint ledger");
+
+        assert!(!rows.is_empty());
+        assert!(rows.iter().any(|row| row.package_id == "B6-P0-RELAY-OPS"));
+        assert!(blueprint_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn blueprint_evidence_gate_links_packages_and_standards() {
+        let packages_csv = "\
+package_id,phase,feature_package,stakeholder_class,standards,evidence_level,status,cost_range,value_case,source_label,pressure_artifact,forum_constraint,mitigation_companion,row_complexity,maintenance_burden,community_exposure_check,rural_access_exception,blueprint_action,blocking_gap,next_evidence_step
+B6-GOOD,Phase 0,Relay operations,operational_must_have,T1-REST; T1-RECOVERY,Heuristic,blueprint_candidate,$40M-$250M,heuristic reliability seed,Forum F5-07,S-L2-RELAY-HUB,claims remain heuristic,not_applicable_no_new_footprint,existing hubs,low operations,no new lane footprint,not_applicable,include with heuristic label,NPMRDS absent,calibrate PTI
+";
+        let standards_csv = "\
+standard_id,tier,standard_family,standard,outcome,mechanism,primary_stressor,acceptance_gate,evidence_level,current_artifact,blocking_gap,next_command_or_test,owner_track
+T1-REST,T1,operations,rest,outcome,mechanism,parking,gate,Planned,artifact,gap,next,F
+T1-RECOVERY,T1,resilience,recovery,outcome,mechanism,closure,gate,Heuristic,artifact,gap,next,C.2
+";
+        let evidence_csv = "\
+package_id,standard_id,proof_evidence_level,blueprint_claim_status,promotion_rule,proof_artifact,forum_hold,blocking_gap,required_next_evidence
+B6-GOOD,T1-REST,Planned,planned,source row required before promotion,artifact,Forum F5-07,gap,next
+B6-GOOD,T1-RECOVERY,Heuristic,heuristic,keep scenario label visible,artifact,Forum F5-01,gap,next
+";
+
+        let packages = parse_blueprint_packages(packages_csv.as_bytes()).expect("packages");
+        let standards = parse_standards_proof_ledger(standards_csv.as_bytes()).expect("standards");
+        let evidence = parse_blueprint_evidence_map(evidence_csv.as_bytes()).expect("evidence");
+        let package_ids = packages
+            .iter()
+            .map(|row| row.package_id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        let standard_evidence = standards
+            .iter()
+            .map(|row| (row.standard_id.as_str(), row.evidence_level.as_str()))
+            .collect::<std::collections::HashMap<_, _>>();
+
+        assert!(
+            blueprint_evidence_row_failure(&evidence[0], &package_ids, &standard_evidence)
+                .is_none()
+        );
+        assert!(blueprint_evidence_gate_failures(&evidence, &packages, &standards).is_empty());
+    }
+
+    #[test]
+    fn blueprint_evidence_canonical_map_passes_gate() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let packages_file = std::fs::File::open(root.join("data/blueprint-feature-packages.csv"))
+            .expect("open canonical blueprint packages");
+        let standards_file = std::fs::File::open(root.join("data/standards-proof-ledger.csv"))
+            .expect("open canonical standards proof ledger");
+        let evidence_file = std::fs::File::open(root.join("data/blueprint-evidence-map.csv"))
+            .expect("open canonical blueprint evidence map");
+        let packages = parse_blueprint_packages(packages_file).expect("parse packages");
+        let standards = parse_standards_proof_ledger(standards_file).expect("parse standards");
+        let evidence = parse_blueprint_evidence_map(evidence_file).expect("parse evidence");
+
+        assert!(!evidence.is_empty());
+        assert!(evidence
+            .iter()
+            .any(|row| row.package_id == "B6-P1-MANAGED-LANE-PILOT"
+                && row.standard_id == "T1-OPS-PTI"));
+        assert!(blueprint_evidence_gate_failures(&evidence, &packages, &standards).is_empty());
+    }
+
+    #[test]
+    fn blueprint_cost_gate_links_packages_and_rejects_premature_source_claims() {
+        let packages_csv = "\
+package_id,phase,feature_package,stakeholder_class,standards,evidence_level,status,cost_range,value_case,source_label,pressure_artifact,forum_constraint,mitigation_companion,row_complexity,maintenance_burden,community_exposure_check,rural_access_exception,blueprint_action,blocking_gap,next_evidence_step
+B6-GOOD,Phase 0,Relay operations,operational_must_have,T1-REST,Heuristic,blueprint_candidate,$40M-$250M,heuristic reliability seed,Forum F5-07,S-L2-RELAY-HUB,claims remain heuristic,not_applicable_no_new_footprint,existing hubs,low operations,no new lane footprint,not_applicable,include with heuristic label,NPMRDS absent,calibrate PTI
+";
+        let costs_csv = "\
+package_id,cost_basis,capital_range_2026_usd,lifecycle_burden,source_status,source_artifact,cost_claim_status,risk_note,next_cost_step
+B6-GOOD,planning seed,$40M-$250M,low operations,planning_range,docs/blueprint/feature-packages.md,planning_only,wide proxy range,collect source costs
+B6-BAD,pretend source,$1B,high,planning_range,artifact,source_backed,risk,next
+";
+        let packages = parse_blueprint_packages(packages_csv.as_bytes()).expect("packages");
+        let costs = parse_blueprint_cost_ranges(costs_csv.as_bytes()).expect("costs");
+        let package_ids = packages
+            .iter()
+            .map(|row| row.package_id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+
+        assert!(blueprint_cost_row_failure(&costs[0], &package_ids).is_none());
+        assert!(blueprint_cost_row_failure(&costs[1], &package_ids).is_some());
+        let failures = blueprint_cost_gate_failures(&costs, &packages);
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("B6-BAD"));
+    }
+
+    #[test]
+    fn blueprint_cost_canonical_ledger_passes_gate() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let packages_file = std::fs::File::open(root.join("data/blueprint-feature-packages.csv"))
+            .expect("open canonical blueprint packages");
+        let costs_file = std::fs::File::open(root.join("data/blueprint-cost-ranges.csv"))
+            .expect("open canonical blueprint costs");
+        let packages = parse_blueprint_packages(packages_file).expect("parse packages");
+        let costs = parse_blueprint_cost_ranges(costs_file).expect("parse costs");
+
+        assert!(!costs.is_empty());
+        assert!(costs.iter().any(|row| row.package_id == "B6-P0-RELAY-OPS"));
+        assert!(blueprint_cost_gate_failures(&costs, &packages).is_empty());
+    }
+
+    #[test]
     fn standards_inventory_requires_l1_source_contracts() {
         let csv = "\
 standard_id,inventory_name,source_kind,source_status,current_artifact,coverage_scope,blocking_gap,next_step
@@ -8742,6 +11231,179 @@ T1-REST,rest ledger,state DOT,source_needed,artifact,T1 rest areas,gap,next
 
         assert_eq!(routes, vec!["I10".to_string(), "I95".to_string()]);
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn endpoint_exception_terminal_worthiness_requires_contract_and_role() {
+        let csv = "\
+route,requested_tier,endpoint_name,endpoint_role,exception_type,evidence_level,artifact,next_step
+I65,T2,Mobile,t2_terminal_exception,port_terminal,heuristic,data/ports.csv,validate terminal
+I270,T2,Beltway,local_access_end,metro_beltway_relief,heuristic,data/atri-bottlenecks.csv,validate relief
+";
+        let rows = parse_endpoint_exceptions(csv.as_bytes()).expect("parse endpoint exceptions");
+
+        assert!(endpoint_exception_is_terminal_worthy(&rows[0]));
+        assert!(!endpoint_exception_is_terminal_worthy(&rows[1]));
+    }
+
+    #[test]
+    fn endpoint_exception_filter_and_gate_find_incomplete_rows() {
+        let csv = "\
+route,requested_tier,endpoint_name,endpoint_role,exception_type,evidence_level,artifact,next_step
+I65,T2,Mobile,t2_terminal_exception,port_terminal,heuristic,data/ports.csv,validate terminal
+I25,T2,Denver,t2_terminal_exception,regional_terminal,unknown,,validate graph
+";
+        let rows = parse_endpoint_exceptions(csv.as_bytes()).expect("parse endpoint exceptions");
+        let filtered = filter_endpoint_exceptions(&rows, Some("T2"), Some("I-25"));
+        let failures = endpoint_exception_gate_failures(&filtered, false);
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(failures.len(), 2);
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("incomplete endpoint exception")));
+
+        let promotion_failures = endpoint_exception_gate_failures(&filtered, true);
+        assert!(promotion_failures
+            .iter()
+            .any(|failure| failure.contains("not terminal-worthy")));
+    }
+
+    #[test]
+    fn one_ended_t2_can_pass_with_terminal_exception_but_missing_graph_stays_blocked() {
+        let csv = "\
+route,requested_tier,endpoint_name,endpoint_role,exception_type,evidence_level,artifact,next_step
+I65,T2,Mobile,t2_terminal_exception,port_terminal,heuristic,data/ports.csv,validate terminal
+I25,T2,Denver,t2_terminal_exception,regional_terminal,heuristic,data/tier-table.csv,validate graph
+";
+        let exceptions =
+            parse_endpoint_exceptions(csv.as_bytes()).expect("parse endpoint exceptions");
+        let rows = vec![
+            route_network::TierConnectivityRow {
+                route: "I65".to_string(),
+                route_miles: 400.0,
+                t1_node_count: 1,
+                t1_routes: vec!["I10".to_string()],
+                touch_nodes: Vec::new(),
+                classification: route_network::TierNodeClass::OneEndedFeeder,
+            },
+            route_network::TierConnectivityRow {
+                route: "I25".to_string(),
+                route_miles: 1200.0,
+                t1_node_count: 0,
+                t1_routes: Vec::new(),
+                touch_nodes: Vec::new(),
+                classification: route_network::TierNodeClass::MissingGraphData,
+            },
+        ];
+
+        let failures = tier_connectivity_gate_failures_with_exceptions(&rows, &exceptions, "T2");
+
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].row.route, "I25");
+        assert!(failures[0].reason.contains("graph/contact data"));
+    }
+
+    #[test]
+    fn stop_candidates_parse_and_filter_by_route() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-ATL,Atlanta,GA,33.75,-84.35,S2,\"I-20; I-75; I-85\",major_interchange_hub,high,high,met,high,planned,low,required,heuristic,data/relay-hubs.toml,validate site
+STOP-LOCAL,Local Spur,GA,33.1,-84.1,S5,I-285,local_access_stop,low,low,met,low,planned,medium,review_needed,heuristic,data/tier-table.csv,demote if needed
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let filtered = filter_stop_candidates(&rows, Some("S2"), Some("I-75"));
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].stop_id, "STOP-ATL");
+        assert!(stop_candidate_gate_failures(&filtered).is_empty());
+    }
+
+    #[test]
+    fn stop_candidate_gate_rejects_unreviewable_major_hub() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-BAD,Bad Hub,GA,33.75,-84.35,S2,I-20,local_access_stop,low,low,met,low,planned,medium,review_needed,unknown,,
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let refs = rows.iter().collect::<Vec<_>>();
+        let failures = stop_candidate_gate_failures(&refs);
+
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("unsupported evidence_status")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("S2 needs at least two route_refs")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("missing source_artifact")));
+    }
+
+    #[test]
+    fn s1_border_terminal_can_have_one_route_ref() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-BORDER,Border Terminal,WA,48.99,-122.75,S1,I-5,national_terminal; border_gateway,high,high,met,high,planned,medium,required,heuristic,data/ports.csv,validate border
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let refs = rows.iter().collect::<Vec<_>>();
+
+        assert!(stop_candidate_gate_failures(&refs).is_empty());
+    }
+
+    #[test]
+    fn stop_plan_sorts_i5_like_chain_south_to_north() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-SEA,Seattle,WA,47.58,-122.33,S2,\"I-5; I-90\",major_interchange_hub,high,medium,met,high,planned,medium,review_needed,heuristic,data/relay-hubs.toml,next
+STOP-LA-LB,Los Angeles/Long Beach,CA,33.95,-118.20,S1,\"I-5; I-10\",national_terminal,high,high,met,high,planned,medium,required,heuristic,data/ports.csv,next
+STOP-SAC,Sacramento,CA,38.58,-121.49,S2,\"I-5; I-80\",major_interchange_hub,high,medium,met,high,planned,medium,review_needed,heuristic,data/relay-hubs.toml,next
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let plan = stop_plan_for_route(&rows, "I5");
+
+        assert_eq!(
+            plan.iter()
+                .map(|row| row.stop_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["STOP-LA-LB", "STOP-SAC", "STOP-SEA"]
+        );
+        assert!(stop_plan_gate_failures("I5", &plan).is_empty());
+    }
+
+    #[test]
+    fn stop_coverage_flags_routes_without_visible_stop_chains() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-A,A,AA,1.0,1.0,S1,I-10,national_terminal; border_gateway,high,high,met,high,planned,medium,required,heuristic,data/ports.csv,next
+STOP-B,B,BB,2.0,2.0,S2,\"I-10; I-20\",major_interchange_hub,high,medium,met,high,planned,medium,review_needed,heuristic,data/relay-hubs.toml,next
+STOP-C,C,CC,3.0,3.0,S1,I-10,national_terminal; port_gateway,high,high,met,high,planned,medium,required,heuristic,data/ports.csv,next
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let coverage =
+            stop_coverage_for_routes(&rows, &["I10".to_string(), "I95".to_string()], "T1");
+        let failures = stop_coverage_gate_failures(&coverage);
+
+        assert_eq!(coverage[0].stop_count, 3);
+        assert!(coverage[0].failures.is_empty());
+        assert_eq!(coverage[1].stop_count, 0);
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("I95"));
+    }
+
+    #[test]
+    fn t3_stop_coverage_accepts_two_stop_regional_chain() {
+        let csv = "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-XFER,Transfer Hub,AA,1.0,1.0,S3,\"I-57; I-70\",transfer_stop,medium,medium,met,medium,planned,medium,review_needed,heuristic,data/tier-table.csv,next
+STOP-TERM,Regional Terminal,BB,2.0,2.0,S4,I-57,regional_terminal,medium,medium,met,medium,planned,medium,review_needed,heuristic,data/tier-table.csv,next
+";
+        let rows = parse_stop_candidates(csv.as_bytes()).expect("parse stop candidates");
+        let coverage = stop_coverage_for_routes(&rows, &["I57".to_string()], "T3");
+
+        assert_eq!(coverage[0].stop_count, 2);
+        assert!(coverage[0].failures.is_empty());
     }
 
     #[test]
@@ -9117,6 +11779,32 @@ T1X-I5-I10,I-5 x I-10,B,Caltrans PeMS,live/implemented/snapshot_only,daily,route
 
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].site_id, "T1X-I35-I80");
+    }
+
+    #[test]
+    fn t1_evidence_windows_require_window_metadata_and_snapshot_guard() {
+        let csv = "\
+window_id,site_id,source_name,evidence_mode,capture_started_at,capture_ended_at,observation_start,observation_end,raw_artifact,normalized_artifact,event_count,freight_relevant_count,promotion_eligible,blocking_gap,next_step,review_artifact
+W1,T1X-I35-I80,Iowa DOT 511 ArcGIS,snapshot_only,2026-05-10,2026-05-10,2026-01-15,2026-05-04,data/cache/iowa511-events.json,data/t1-failure-events.csv,25,25,false,Snapshot only,next,docs/reviews/milepost-8-t1-failure-evidence-review.md
+W2,T1X-I35-I80,Iowa DOT 511 ArcGIS,snapshot_only,2026-05-10,2026-05-10,2026-01-15,2026-05-04,data/cache/iowa511-events.json,data/t1-failure-events.csv,25,25,true,Snapshot only,next,docs/reviews/milepost-8-t1-failure-evidence-review.md
+";
+        let rows = parse_t1_evidence_windows(csv.as_bytes()).expect("parse evidence windows");
+
+        assert!(super::t1_evidence_window_has_contract(&rows[0]));
+        assert!(super::t1_evidence_window_gate_failures(&rows)
+            .iter()
+            .any(|failure| failure.contains("snapshot-only evidence as promotion eligible")));
+    }
+
+    #[test]
+    fn t1_evidence_windows_canonical_ledger_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/t1-evidence-windows.csv");
+        let file = std::fs::File::open(path).expect("open canonical evidence windows");
+        let rows = parse_t1_evidence_windows(file).expect("parse canonical evidence windows");
+
+        assert!(super::t1_evidence_window_gate_failures(&rows).is_empty());
+        assert!(rows.iter().any(|row| row.evidence_mode == "snapshot_only"));
     }
 
     #[test]

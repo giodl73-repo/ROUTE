@@ -1,6 +1,7 @@
 map_id,path,map_type,render_command,expected_width,expected_height,min_bytes,tier_role,game_use
 national-tier,maps/all-tiers.png,national-tier,"route map all --output maps/all-tiers.png",2400,1350,400000,"T1/T2/T3/T4 national tier overview","Game campaign atlas and public project overview"
 beck-schematic,maps/beck-schematic.png,schematic,"route map beck --output maps/beck-schematic.png",2400,1350,250000,"T1 relay topology and hub graph","Tutorial topology explanation and campaign route network"
+beck-schematic-t2,maps/beck-schematic-t2.png,schematic,"route map beck-t2 --output maps/beck-schematic-t2.png",2400,1350,250000,"T1 relay topology with 25 coverage-passing T2 local-service connectors","Expanded network planning and feeder-route explanation"
 i5-region,maps/i5.png,t1-region,"route map I-5 --output maps/i5.png",1800,1000,80000,"T1 corridor regional context","West Coast campaign node and corridor lesson"
 i10-region,maps/i10.png,t1-region,"route map I-10 --output maps/i10.png",1800,1000,100000,"T1 corridor regional context","Southern tier campaign node and port/surge lesson"
 i35-region,maps/i35.png,t1-region,"route map I-35 --output maps/i35.png",1800,1000,100000,"T1 corridor regional context","Des Moines tutorial and central spine campaign node"
@@ -9,3 +10,8 @@ i75-region,maps/i75.png,t1-region,"route map I-75 --output maps/i75.png",1800,10
 i80-region,maps/i80.png,t1-region,"route map I-80 --output maps/i80.png",1800,1000,150000,"T1 corridor regional context","National cross-country resilience and Donner/Des Moines lessons"
 i90-region,maps/i90.png,t1-region,"route map I-90 --output maps/i90.png",1800,1000,150000,"T1 corridor regional context","Northern tier relay and winter resilience lesson"
 i95-region,maps/i95.png,t1-region,"route map I-95 --output maps/i95.png",1800,1000,100000,"T1 corridor regional context","Eastern seaboard metro/PTI campaign node"
+t3-great-lakes,maps/t3-great-lakes.png,t3-zone,"route map T3Z-GREAT-LAKES --output maps/t3-great-lakes.png",1800,1000,80000,"T3 Great Lakes / Ohio Valley Beck stop-chain schematic","Regional feeder stop-chain fixture and T3 tutorial seed"
+t3-southeast,maps/t3-southeast.png,t3-zone,"route map T3Z-SOUTHEAST --output maps/t3-southeast.png",1800,1000,80000,"T3 Southeast / Appalachia Beck stop-chain schematic","Regional feeder backlog and Appalachian/port access planning"
+t3-texas-border,maps/t3-texas-border.png,t3-zone,"route map T3Z-TEXAS-BORDER --output maps/t3-texas-border.png",1800,1000,80000,"T3 Texas Border / Gulf Access Beck stop-chain schematic","Border, desert, agricultural feeder planning"
+t3-mountain-west,maps/t3-mountain-west.png,t3-zone,"route map T3Z-MOUNTAIN-WEST --output maps/t3-mountain-west.png",1800,1000,80000,"T3 Mountain West / Interior Coverage Beck stop-chain schematic","Interior rural coverage and regional feeder planning"
+t3-mid-south,maps/t3-mid-south.png,t3-zone,"route map T3Z-MID-SOUTH --output maps/t3-mid-south.png",1800,1000,80000,"T3 Mid-South / Delta / Ozarks Beck stop-chain schematic","Delta and Ozarks access feeder planning"

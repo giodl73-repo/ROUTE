@@ -6,7 +6,7 @@ status: draft
 rubric_version: v1.0
 author: human
 created: 2026-05-06
-updated: 2026-05-06
+updated: 2026-05-10
 sources:
   - "ROUTE design spec (specs/2026-05-06-route-design.md)"
   - "ROUTE Rust architecture spec (specs/2026-05-06-route-rust-architecture.md)"
@@ -32,6 +32,30 @@ The United States built the interstate highway system in 30 years (1956–1985).
 Interstate 2.0 is not a new interstate system. It is a targeted upgrade to the existing system — organized by evidence, prioritized by tier, designed for the next 50 years.
 
 **The country chose highways. Interstate 2.0 is the evidence for which ones to invest in next, in what order, and why.**
+
+---
+
+## §1A. Milepost 6 Blueprint Status
+
+This draft now treats Interstate 2.0 features as Blueprint packages, not validated investment recommendations. The authoritative Milepost 6 package ledgers are:
+
+- `data/blueprint-feature-packages.csv` for stakeholder class, evidence level, package status, Forum constraint, blocker, and next evidence step.
+- `data/blueprint-evidence-map.csv` for package-to-standard proof links and downgrade rules.
+- `data/blueprint-cost-ranges.csv` for planning, corridor-specific, source-needed, or source-backed cost labels.
+- `data/blueprint-phase-sequence.csv` for evidence order and promotion gates.
+
+Any feature below that names managed lanes, T1/T1 diamonds, Donner hardening, rural spurs, intermodal diversion, T2 relief, EV/rest mitigation, or rest/WIM/bridge foundations inherits those package labels. A package marked `held`, `planned`, `heuristic`, `placeholder`, `planning_only`, or `corridor_specific` is not a proven benefit claim. It is a scoped Blueprint candidate or blocker docket until the referenced gate is satisfied.
+
+Current high-risk holds:
+
+| Claim family | Blueprint status |
+|---|---|
+| SLA/PTI and reliability-dollar benefits | Held or heuristic until NPMRDS/FPM or validated queueing evidence exists |
+| Managed freight lanes | Conditional expansion pilot only until corridor PTI, demand, merge, mitigation, ROW, lifecycle, and exposure evidence exists |
+| T1/T1 diamond recovery zones | Proof target only until geometry, k-connectivity, failure-rate, and restoration evidence validates top sites |
+| Donner and other no-delta scenarios | Fixture-readiness only until loaded-stressor intervention sensitivity exists |
+| Rural spurs and T2 relief | Source-gated or conditional until true gaps, alternate capacity, and per-dollar relief are validated |
+| Cost ranges | Planning, source-needed, or corridor-specific unless `data/blueprint-cost-ranges.csv` marks the row source-backed |
 
 ---
 

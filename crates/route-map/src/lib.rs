@@ -11,4 +11,7 @@ pub use megamap::{
 };
 
 pub mod beck;
-pub use beck::build_beck_svg;
+pub use beck::{build_beck_svg, build_beck_t2_svg};
+
+pub mod t3_zone;
+pub use t3_zone::build_t3_zone_svg;

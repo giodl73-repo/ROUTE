@@ -1,0 +1,51 @@
+artifact_path,artifact_class,owner_milepost,release_status,public_status,verification_command,notes
+TRACKER.md,status_board,M7,release_candidate,public,manual review,Live milestone status and handoff board
+docs/SPEC_INDEX.md,index,M7,release_candidate,public,manual review,Claim ownership index
+docs/SYSTEM_PLAN.md,roadmap,M0,release_candidate,public,manual review,Milepost operating model
+docs/DIMENSIONS.md,scoring_docs,M1,release_candidate,public,cargo test --workspace,Dimension registry checked by tests
+data/scores-all.csv,score_ledger,M1,release_candidate,public,cargo run -q -p route -- score-all,Current v1.4 score ledger
+data/map-atlas.csv,map_manifest,M2,release_candidate,public,cargo run -q -p route -- map-atlas --gate,Map atlas manifest for public maps and game context
+gaps/missing-link.md,gap_artifact,M3,release_candidate,public,cargo run -q -p route -- gap --type missing-link,Missing-link gap output
+gaps/bottleneck.md,gap_artifact,M3,release_candidate,public,cargo run -q -p route -- gap --type bottleneck,Bottleneck gap output
+gaps/resilience.md,gap_artifact,M3,release_candidate,public,cargo run -q -p route -- gap --type resilience,Resilience gap output
+gaps/intermodal.md,gap_artifact,M3,release_candidate,public,cargo run -q -p route -- gap --type intermodal,Intermodal gap output
+data/standards-proof-ledger.csv,pressure_ledger,M4,release_candidate,public,cargo run -q -p route -- standards-proof --gate-pressure,Standards proof obligations and evidence labels
+data/pressure-test-scenarios.csv,pressure_ledger,M4,release_candidate,public,cargo run -q -p route -- pressure-scenarios --gate-l2 --gate-readiness,L2 pressure scenario catalog
+data/throughput-proof-matrix.csv,pressure_ledger,M4,release_candidate,public,cargo run -q -p route -- throughput-proof --gate,Throughput and resilience proof matrix
+data/t1-intersection-failures.csv,evidence_ledger,M4,release_candidate,held_public,cargo run -q -p route -- t1-failures --gate-evidence,T1/T1 failure evidence ledger with publication blockers
+data/t1-failure-events.csv,evidence_ledger,M4,release_candidate,held_public,cargo run -q -p route -- t1-failure-events --gate-observations,Normalized incident observation sample
+data/t1-snapshot-plan.csv,source_plan,M4,release_candidate,held_public,cargo run -q -p route -- t1-snapshot-plan --gate-plan --script --priority A,Snapshot source acquisition plan
+data/standards-l1-inventory.csv,source_plan,M4,release_candidate,public,cargo run -q -p route -- standards-inventory --gate --gate-planned,Inventory/source plan for planned standards
+docs/milepost-4-closeout.md,closeout,M4,release_candidate,public,manual review,Pressure Test closeout and held claims
+data/forum-docket.csv,review_ledger,M5,release_candidate,public,cargo run -q -p route -- forum --gate,Forum review docket
+docs/milepost-5-closeout.md,closeout,M5,release_candidate,public,manual review,Forum closeout and Blueprint intake rules
+data/blueprint-feature-packages.csv,blueprint_ledger,M6,release_candidate,public,cargo run -q -p route -- blueprint --gate,Blueprint package ledger
+data/blueprint-evidence-map.csv,blueprint_ledger,M6,release_candidate,public,cargo run -q -p route -- blueprint-evidence --gate,Blueprint downgrade map
+data/blueprint-cost-ranges.csv,blueprint_ledger,M6,release_candidate,public,cargo run -q -p route -- blueprint-costs --gate,Blueprint cost label ledger
+data/blueprint-phase-sequence.csv,blueprint_ledger,M6,release_candidate,public,manual review,Blueprint phase dependency sequence
+docs/milepost-6-closeout.md,closeout,M6,release_candidate,public,manual review,Blueprint closeout and remaining holds
+docs/blueprint/feature-packages.md,blueprint_docs,M6,release_candidate,public,manual review,Human-readable package taxonomy
+docs/blueprint/phase-sequence.md,blueprint_docs,M6,release_candidate,public,manual review,Human-readable phase sequence
+data/game/campaign-spine.csv,game_ledger,M4,release_candidate,public,cargo run -q -p route -- game campaign --gate,Interstate Tycoon campaign spine
+docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype
+specs/2026-05-06-interstate-2-design.md,spec,M6,release_candidate,public,manual review,Interstate 2.0 spec with Blueprint status caveat
+scripts/check-mileposts.ps1,release_gate,M7,release_candidate,public,powershell -ExecutionPolicy Bypass -File scripts/check-mileposts.ps1,Local release gate bundle
+docs/milepost-7-plan.md,program_plan,M7,release_candidate,public,manual review,Program tasklist and release surface
+docs/milepost-7-closeout.md,closeout,M7,release_candidate,public,manual review,Program closeout and release gate result
+docs/reviews/milepost-5-7-source-release-review.md,review,M7,release_candidate,public,manual review,Post-closeout source and release review
+docs/milepost-8-plan.md,evidence_campaign_plan,M8,release_candidate,public,manual review,Next evidence campaign checklist and target candidates
+docs/milepost-8-closeout.md,closeout,M8,release_candidate,public,manual review,Milepost 8 improved-hold closeout
+docs/evidence-campaigns/milepost-8-target.md,evidence_campaign_decision,M8,release_candidate,public,manual review,Selected T1/T1 failure evidence campaign target
+data/evidence-campaign-source-plan.csv,evidence_campaign_source_plan,M8,release_candidate,public,manual review,Milepost 8 source acquisition checklist
+docs/evidence-campaigns/milepost-8-source-attempt.md,evidence_campaign_record,M8,release_candidate,public,cargo run -q -p route -- t1-failure-events --gate-observations,Milepost 8 A-band source attempt result
+docs/reviews/milepost-8-t1-failure-evidence-review.md,review,M8,release_candidate,public,manual review,Milepost 8 review decision for T1/T1 failure evidence hold
+docs/reviews/milepost-8-closeout-review.md,review,M8,release_candidate,public,manual review,Milepost 8 closeout QA review
+docs/milepost-9-plan.md,evidence_operations_plan,M9,release_candidate,public,manual review,Repeat-window evidence operation for T1/T1 failure holds
+docs/milepost-9-closeout.md,closeout,M9,release_candidate,public,manual review,Milepost 9 evidence-operations closeout
+data/t1-evidence-windows.csv,evidence_window_ledger,M9,release_candidate,held_public,cargo run -q -p route -- t1-evidence-windows --gate-windows,T1/T1 source-window and snapshot-history guard ledger
+docs/evidence-campaigns/milepost-9-iowa-repeat-window.md,evidence_operations_record,M9,release_candidate,public,manual review,Iowa 511 repeated polling path for T1/T1 evidence windows; live runner is not a release verification command
+scripts/poll-t1-iowa511.ps1,evidence_operations_script,M9,release_candidate,public,manual review,Date-stamped Iowa 511 polling/import/accumulation runner; executing it fetches live data and mutates caches
+docs/evidence-campaigns/milepost-9-indot-ohgo-enrichment.md,evidence_operations_record,M9,release_candidate,public,manual review,INDOT/OHGO enrichment path for I-80/I-90 shared-corridor evidence
+docs/evidence-campaigns/milepost-9-snapshot-history-guard.md,evidence_operations_guard,M9,release_candidate,public,cargo run -q -p route -- t1-evidence-windows --gate-windows,Snapshot-history promotion guard for T1/T1 evidence windows
+docs/reviews/milepost-9-evidence-operations-review.md,review,M9,release_candidate,public,manual review,Milepost 9 evidence operations review and continued hold decision
+docs/reviews/milepost-9-closeout-review.md,review,M9,release_candidate,public,manual review,Milepost 9 closeout QA review

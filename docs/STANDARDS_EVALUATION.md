@@ -107,7 +107,11 @@ Important current limitation: embedded TOML scenarios now bind stable graph edge
 
 ## Rust Interface
 
-`route standards-proof` reads `data/standards-proof-ledger.csv`, prints the proof status table, and can fail a Blueprint gate when unresolved standards would be promoted.
+`route standards-proof` reads `data/standards-proof-ledger.csv`, prints the proof status table, and can fail gates when proof records are incomplete or unresolved standards would be promoted.
+
+`route standards-proof --gate-pressure` is the Milepost 4 proof-record gate. It passes when every active standard has a complete record: standard, outcome, mechanism, stressor, acceptance gate, allowed evidence label, current artifact, blocking gap, next evidence step, and owner track. It does not require claims to be publication-grade. A Heuristic or Planned standard can pass Milepost 4 if its limitation is explicit.
+
+`route standards-proof --gate-blueprint` is stricter. It is expected to fail until unresolved standards are either implemented, deprecated, or prevented from feeding Blueprint claims.
 
 `route standards-inventory` reads `data/standards-l1-inventory.csv` and checks that every Planned standard has an explicit L1 inventory/source row. This keeps WIM, rest/truck parking, bridge, C-D, spur, regional operations, and maintenance standards from remaining as generic data gaps.
 
@@ -123,6 +127,7 @@ Useful forms:
 route standards-proof
 route standards-proof --tier T1 --family resilience
 route standards-proof --tier T1 --family resilience --details
+route standards-proof --gate-pressure
 route standards-proof --gate-blueprint
 route standards-inventory
 route standards-inventory --gate --gate-planned

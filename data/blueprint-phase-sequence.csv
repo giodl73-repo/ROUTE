@@ -1,0 +1,10 @@
+sequence_id,phase,package_id,depends_on,promotion_gate,blocker,next_artifact
+B6-E-01,Phase 0,B6-P0-REST-WIM-BRIDGE,Forum intake complete,route blueprint-costs --gate plus source inventory joins,rest WIM bridge clearance and maintenance sources incomplete,data/blueprint-source-foundation.csv
+B6-E-02,Phase 0,B6-P0-RELAY-OPS,B6-P0-REST-WIM-BRIDGE measurement scope,operator staffing and PTI calibration gate,operator rosters and NPMRDS/FPM absent,docs/blueprint/relay-ops-brief.md
+B6-E-03,Phase 1,B6-P1-DIAMOND-RECOVERY,B6-P0-REST-WIM-BRIDGE and A-band T1/T1 validation,L1 validated top-site geometry and failure-rate ledgers,k-connectivity and throughput restoration remain heuristic,docs/blueprint/t1-diamond-recovery-brief.md
+B6-E-04,Phase 1,B6-P1-DONNER-CALIBRATION,B6-P0-RELAY-OPS and Donner fixture readiness,loaded queue and alternate-capacity sensitivity gate,no-delta fixture has no benefit delta,docs/blueprint/donner-calibration-brief.md
+B6-E-05,Phase 1,B6-P1-EV-REST-MITIGATION,B6-P0-REST-WIM-BRIDGE,charger uptime truck parking and utility capacity source gate,charger utilization and truck parking demand absent,data/blueprint-mitigation-sources.csv
+B6-E-06,Phase 1,B6-P1-MANAGED-LANE-PILOT,B6-P1-EV-REST-MITIGATION and corridor PTI baseline,NPMRDS/FPM baseline plus mitigation companion ledger,NPMRDS/FPM and corridor mitigation proof absent,docs/blueprint/managed-lane-pilot-brief.md
+B6-E-07,Phase 2,B6-P2-INTERMODAL-DIVERSION,B6-P1-DIAMOND-RECOVERY or B6-P1-MANAGED-LANE-PILOT evidence map,terminal throughput rail capacity and drayage reliability gate,port surge and transfer capacity source gaps,docs/blueprint/intermodal-diversion-brief.md
+B6-E-08,Phase 2,B6-P2-RURAL-SPURS,B6-P0-REST-WIM-BRIDGE and coverage artifact review,rural access exception docket gate,coverage artifact and source validation incomplete,data/blueprint-rural-access-exceptions.csv
+B6-E-09,Phase 2,B6-P2-T2-RELIEF,B6-P2-INTERMODAL-DIVERSION or loaded closure stress test,intervention-sensitive T1/T2 relief comparison gate,loaded-stressor benefit delta absent,docs/blueprint/t2-relief-brief.md
