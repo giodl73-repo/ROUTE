@@ -1856,9 +1856,7 @@ fn run_cli() -> Result<()> {
                     "  rendered Beck schematic with T2 connectors: {} (2400×1350)",
                     out.display()
                 );
-                println!(
-                    "  T1 trunks bold · T2 connectors thin and tinted to their trunk families"
-                );
+                println!("  T1 trunks bold · T2 connectors thin and split-tinted to parent trunks");
                 return Ok(());
             }
 
@@ -2071,14 +2069,15 @@ fn run_cli() -> Result<()> {
             println!("  T2 lines: {}", rows.len());
             println!("  wrote diagnostics: {}", output.display());
             println!(
-                "  {:<8} {:<18} {:>5} {:>5} {:>5} {:>7} Flag",
-                "Line", "Service", "Stops", "Drawn", "Xfer", "Label"
+                "  {:<8} {:<18} {:<13} {:>5} {:>5} {:>5} {:>7} Flag",
+                "Line", "Service", "Color", "Stops", "Drawn", "Xfer", "Label"
             );
             for row in rows.iter().take(12) {
                 println!(
-                    "  {:<8} {:<18} {:>5} {:>5} {:>5} {:>7.2} {}",
+                    "  {:<8} {:<18} {:<13} {:>5} {:>5} {:>5} {:>7.2} {}",
                     row.corridor,
                     truncate_for_table(row.service_label, 18),
+                    row.color_mode,
                     row.stop_count,
                     row.drawn_stop_count,
                     row.transfer_stop_count,

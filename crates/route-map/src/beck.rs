@@ -75,6 +75,9 @@ pub struct BeckStopCatalogRow {
 pub struct BeckT2DiagnosticRow {
     pub corridor: &'static str,
     pub trunk: &'static str,
+    pub start_trunk: &'static str,
+    pub end_trunk: &'static str,
+    pub color_mode: &'static str,
     pub service_label: &'static str,
     pub stop_count: usize,
     pub drawn_stop_count: usize,
@@ -100,6 +103,8 @@ struct LineSegment {
 struct T2LineSegment {
     corridor: &'static str,
     trunk: &'static str,
+    start_trunk: &'static str,
+    end_trunk: &'static str,
     service_label: &'static str,
     badge: (f64, f64),
     label_anchor: &'static str,
@@ -136,12 +141,12 @@ impl LineSegment {
 }
 
 impl T2LineSegment {
-    fn to_svg_path(&self) -> String {
-        svg_path(&self.routed_waypoints())
-    }
-
     fn routed_waypoints(&self) -> Vec<(f64, f64)> {
         apply_lane_shift(octilinear_path(&self.waypoints), self.lane_shift)
+    }
+
+    fn is_split_color(&self) -> bool {
+        self.start_trunk != self.end_trunk
     }
 }
 
@@ -154,6 +159,38 @@ fn svg_path(points: &[(f64, f64)]) -> String {
         d += &format!(" L {:.1} {:.1}", pt.0, pt.1);
     }
     d
+}
+
+fn split_polyline_at_half(points: &[(f64, f64)]) -> (Vec<(f64, f64)>, Vec<(f64, f64)>) {
+    if points.len() <= 1 {
+        return (points.to_vec(), Vec::new());
+    }
+    let target = polyline_length(points) / 2.0;
+    let mut walked = 0.0;
+    let mut left = vec![points[0]];
+    for index in 0..points.len() - 1 {
+        let a = points[index];
+        let b = points[index + 1];
+        let segment_length = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
+        if walked + segment_length >= target && segment_length > 0.0 {
+            let t = ((target - walked) / segment_length).clamp(0.0, 1.0);
+            let midpoint = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+            if !same_point(*left.last().unwrap_or(&a), midpoint) {
+                left.push(midpoint);
+            }
+            let mut right = vec![midpoint];
+            if !same_point(midpoint, b) {
+                right.push(b);
+            }
+            right.extend(points.iter().skip(index + 2).copied());
+            return (left, right);
+        }
+        if !same_point(*left.last().unwrap_or(&a), b) {
+            left.push(b);
+        }
+        walked += segment_length;
+    }
+    (left, Vec::new())
 }
 
 fn octilinear_path(points: &[(f64, f64)]) -> Vec<(f64, f64)> {
@@ -1730,7 +1767,8 @@ fn line_segment(stops: &[BeckStop], corridor: &'static str, ids: &[&str]) -> Lin
 fn t2_line_segment(
     stops: &[BeckStop],
     corridor: &'static str,
-    trunk: &'static str,
+    start_trunk: &'static str,
+    end_trunk: &'static str,
     ids: &'static [&'static str],
     service_label: &'static str,
     badge_stop: &'static str,
@@ -1740,7 +1778,9 @@ fn t2_line_segment(
     let badge_base = point(stops, badge_stop);
     T2LineSegment {
         corridor,
-        trunk,
+        trunk: start_trunk,
+        start_trunk,
+        end_trunk,
         service_label,
         badge: (badge_base.0 + badge_offset.0, badge_base.1 + badge_offset.1),
         label_anchor,
@@ -1985,6 +2025,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-85",
+            "I-20",
             "I-95",
             &["ATL", "GREENVILLE", "CLT", "GREENSBORO", "RIC"],
             "Charlotte Crescent",
@@ -1995,6 +2036,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-65",
+            "I-10",
             "I-75",
             &[
                 "MOBILE",
@@ -2012,6 +2054,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-24",
             "I-40",
+            "I-75",
             &["MEM", "NASHVILLE", "KNX"],
             "Nashville",
             "NASHVILLE",
@@ -2021,7 +2064,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-30",
-            "I-20",
+            "I-35",
+            "I-40",
             &["DAL", "TEXARKANA", "LITTLE_ROCK", "MEM"],
             "Arkansas Link",
             "LITTLE_ROCK",
@@ -2032,6 +2076,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-15",
             "I-5",
+            "I-70",
             &[
                 "LA",
                 "BARSTOW",
@@ -2049,7 +2094,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-84",
-            "I-80",
+            "I-5",
+            "I-70",
             &["POR", "PENDLETON", "BOI", "TWIN_FALLS", "SLC"],
             "Snake River",
             "BOI",
@@ -2059,6 +2105,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US95",
+            "I-84",
             "I-90",
             &["BOI", "LEWISTON", "SPK"],
             "Inland Northwest",
@@ -2069,7 +2116,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-25",
-            "I-35",
+            "I-90",
+            "I-40",
             &[
                 "BIL",
                 "SHERIDAN",
@@ -2090,6 +2138,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US287",
             "I-35",
+            "I-70",
             &[
                 "DAL",
                 "WICHITA_FALLS",
@@ -2108,6 +2157,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-495",
             "I-95",
+            "I-95",
             &[
                 "DC",
                 "CAPITAL_BELTWAY_N",
@@ -2123,6 +2173,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-59",
+            "I-10",
             "I-75",
             &["NOLA", "HATTIESBURG", "BHM_APPROACH", "CHATTANOOGA"],
             "Birmingham Spur",
@@ -2133,6 +2184,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-49",
+            "I-20",
             "I-35",
             &["SHV", "TEXARKANA", "FORT_SMITH", "JOPLIN", "KC"],
             "Ozarks",
@@ -2143,6 +2195,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-81",
+            "I-40",
             "I-95",
             &[
                 "KNX",
@@ -2161,6 +2214,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-44",
             "I-40",
+            "I-69",
             &["OKC", "STL", "INDY_APPROACH", "FORT_WAYNE", "CHI_APPROACH"],
             "St. Louis Link",
             "FORT_WAYNE",
@@ -2170,7 +2224,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-77",
-            "I-75",
+            "I-40",
+            "I-80",
             &[
                 "CLT",
                 "WYTHEVILLE",
@@ -2187,6 +2242,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-76",
             "I-80",
+            "I-95",
             &["CLEVELAND", "PITTSBURGH", "PENNSYLVANIA", "PHILADELPHIA"],
             "Pennsylvania",
             "PENNSYLVANIA",
@@ -2196,6 +2252,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US30",
+            "I-70",
             "I-80",
             &[
                 "SLC",
@@ -2213,6 +2270,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US6",
+            "I-70",
             "I-80",
             &["SLC", "ROCK_SPRINGS", "CHEYENNE", "OMAHA", "CHI_APPROACH"],
             "Central Plains",
@@ -2223,6 +2281,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US70",
+            "I-10",
             "I-40",
             &[
                 "PHX",
@@ -2244,6 +2303,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US90",
             "I-10",
+            "I-95",
             &["SAT", "LAFAYETTE", "GULFPORT", "JAX"],
             "Gulf Local",
             "GULFPORT",
@@ -2254,6 +2314,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-22",
             "I-40",
+            "I-20",
             &["MEM", "TUPELO", "BHM_APPROACH"],
             "Memphis-Birmingham",
             "BHM_APPROACH",
@@ -2263,6 +2324,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-29",
+            "I-80",
             "I-35",
             &[
                 "OMAHA",
@@ -2280,6 +2342,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US80",
+            "I-35",
             "I-20",
             &["DAL", "ABILENE", "LITTLE_ROCK", "MONTGOMERY", "ATL"],
             "Old South",
@@ -2290,7 +2353,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "US83",
-            "I-35",
+            "I-90",
+            "I-10",
             &["MIN", "RAPID_CITY", "ABILENE", "JUNCTION", "SAT"],
             "Dakota Spine",
             "ABILENE",
@@ -2300,6 +2364,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         t2_line_segment(
             stops,
             "I-37",
+            "I-10",
             "I-10",
             &["SAT", "CORPUS"],
             "Corpus Christi",
@@ -2389,7 +2454,7 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
 
 pub fn build_beck_t2_diagnostics_csv() -> String {
     let mut csv = String::from(
-        "corridor,trunk,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+        "corridor,trunk,start_trunk,end_trunk,color_mode,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
     );
     for row in beck_t2_diagnostics() {
         push_csv_row(
@@ -2397,6 +2462,9 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
             &[
                 row.corridor,
                 row.trunk,
+                row.start_trunk,
+                row.end_trunk,
+                row.color_mode,
                 row.service_label,
                 &row.stop_count.to_string(),
                 &row.drawn_stop_count.to_string(),
@@ -2452,6 +2520,13 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             BeckT2DiagnosticRow {
                 corridor: line.corridor,
                 trunk: line.trunk,
+                start_trunk: line.start_trunk,
+                end_trunk: line.end_trunk,
+                color_mode: if line.is_split_color() {
+                    "split-parent"
+                } else {
+                    "single-parent"
+                },
                 service_label: line.service_label,
                 stop_count: line.stop_ids.len(),
                 drawn_stop_count,
@@ -2940,9 +3015,9 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
 
     if expanded || t2_only {
         for line in &t2_lines {
-            let color = t1_line_color(line.trunk);
-            let d = line.to_svg_path();
-            if d.is_empty() {
+            let points = line.routed_waypoints();
+            let d = svg_path(&points);
+            if points.len() < 2 || d.is_empty() {
                 continue;
             }
             let corridor = line.corridor;
@@ -2950,14 +3025,33 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
             let main_width = if t2_only { 7.5 } else { 5.5 };
             let center_width = if t2_only { 1.1 } else { 0.8 };
             let main_opacity = if t2_only { 0.96 } else { 0.88 };
+            let start_color = t1_line_color(line.start_trunk);
+            let end_color = t1_line_color(line.end_trunk);
             s += &format!(
                 "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#020617\" stroke-width=\"{halo_width}\" fill=\"none\" \
                  opacity=\"0.78\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
-            s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"{color}\" stroke-width=\"{main_width}\" fill=\"none\" \
-                 opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
-            );
+            if line.is_split_color() {
+                let (left, right) = split_polyline_at_half(&points);
+                let left_d = svg_path(&left);
+                let right_d = svg_path(&right);
+                s += &format!(
+                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{left_d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                     opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
+                    line.start_trunk
+                );
+                s += &format!(
+                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{right_d}\" stroke=\"{end_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                     opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
+                    line.end_trunk
+                );
+            } else {
+                s += &format!(
+                    "<path data-corridor=\"{corridor}\" data-parent=\"{}\" d=\"{d}\" stroke=\"{start_color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                     opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n",
+                    line.start_trunk
+                );
+            }
             s += &format!(
                 "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"{center_width}\" fill=\"none\" \
                 opacity=\"0.22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
@@ -2983,7 +3077,11 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                 &mut s,
                 &line.waypoints,
                 &line.routed_waypoints(),
-                t1_line_color(line.trunk),
+                if line.is_split_color() {
+                    "#f8fafc"
+                } else {
+                    t1_line_color(line.start_trunk)
+                },
                 if t2_only { 4.2 } else { 3.2 },
                 if t2_only { 0.86 } else { 0.72 },
             );
@@ -2992,7 +3090,7 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
 
     if expanded || t2_only {
         for line in &t2_lines {
-            let color = t1_line_color(line.trunk);
+            let color = t1_line_color(line.start_trunk);
             for stop_id in &line.stop_ids {
                 let stop = stop_by_id(&stops, stop_id);
                 if stop.draw {
@@ -3126,7 +3224,11 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
 
     if expanded || t2_only {
         for line in &t2_lines {
-            let color = t1_line_color(line.trunk);
+            let color = if line.is_split_color() {
+                "#f8fafc"
+            } else {
+                t1_line_color(line.start_trunk)
+            };
             let label = line.corridor.trim_start_matches("I-");
             let (sx, sy) = line.badge;
             let r = if t2_only { 15.0 } else { 13.0 };
@@ -3698,7 +3800,9 @@ mod tests {
         for held_route in ["I-405", "I-610", "US2", "I-285"] {
             assert!(!svg.contains(&format!("data-corridor=\"{held_route}\"")));
         }
-        assert_eq!(svg.matches("stroke-width=\"5.5\"").count(), t2_routes.len());
+        assert!(svg.matches("stroke-width=\"5.5\"").count() > t2_routes.len());
+        assert!(svg.contains("data-parent=\"I-20\""));
+        assert!(svg.contains("data-parent=\"I-95\""));
     }
 
     #[test]
@@ -3715,8 +3819,9 @@ mod tests {
     #[test]
     fn beck_t2_diagnostics_exports_review_flags() {
         let csv = build_beck_t2_diagnostics_csv();
-        assert!(csv.starts_with("corridor,trunk,service_label"));
-        assert!(csv.contains("I-495,I-95,Capital Beltway"));
+        assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode"));
+        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,Capital Beltway"));
+        assert!(csv.contains("split-parent"));
         assert!(csv.contains("dense-label-review"));
 
         let rows = beck_t2_diagnostics();

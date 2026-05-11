@@ -100,3 +100,5 @@ should mean something in the SLA graph.
   without the bold T1 trunk layer.
 - Added a T2 diagnostics CSV to rank dense labels, transfer complexity, and long
   connectors on the T2-only service map.
+- T2 service lines now carry explicit start/end parent trunks; bridge connectors
+  render as split-parent colors while one-ended feeders remain single-parent.
