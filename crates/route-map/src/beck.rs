@@ -1529,9 +1529,24 @@ fn beck_stops() -> Vec<BeckStop> {
 
 fn apply_schematic_adjustments(stops: &mut [BeckStop]) {
     for stop in stops {
-        if stop.id == "CORPUS" {
-            stop.x += 130.0;
-            stop.y += 45.0;
+        match stop.id {
+            "CAPITAL_BELTWAY_N" => {
+                stop.x = 1920.0;
+                stop.y = 720.0;
+            }
+            "CAPITAL_BELTWAY_E" => {
+                stop.x = 2040.0;
+                stop.y = 840.0;
+            }
+            "CAPITAL_BELTWAY_S" => {
+                stop.x = 1920.0;
+                stop.y = 960.0;
+            }
+            "CORPUS" => {
+                stop.x += 130.0;
+                stop.y += 45.0;
+            }
+            _ => {}
         }
     }
 }
@@ -2574,8 +2589,12 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 "parallel-spacing-review"
             } else if line.is_split_color() && split_anchor.is_none() {
                 "split-anchor-review"
-            } else if label_density_per_100px >= 0.95 {
+            } else if schematic_length_px < 240.0 && drawn_stop_count <= 3 {
+                "compact-service-ok"
+            } else if label_density_per_100px >= 1.35 {
                 "dense-label-review"
+            } else if transfer_stop_count >= 5 && label_density_per_100px >= 0.95 {
+                "dense-transfer-review"
             } else if transfer_stop_count >= 5 {
                 "transfer-complexity-review"
             } else if schematic_length_px >= 900.0 {
@@ -4041,7 +4060,8 @@ mod tests {
         assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,"));
         assert!(csv.contains("split-parent"));
         assert!(csv.contains("long-connector-review"));
-        assert!(csv.contains("dense-label-review"));
+        assert!(csv.contains("dense-transfer-review"));
+        assert!(csv.contains("compact-service-ok"));
 
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());

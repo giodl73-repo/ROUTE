@@ -110,3 +110,6 @@ should mean something in the SLA graph.
   rhythm on southern T2 services so the stop SLA surface stays below 250 miles.
 - T2 parallel cleanup widened the Arkansas/Old South lane offsets so I-30 and
   US80 no longer trigger close-parallel review while preserving their stop paths.
+- T2 diagnostics now separate compact short services from true dense/transfer
+  reviews, and the Capital Beltway loop is expanded so it no longer reads as a
+  cramped label knot.
