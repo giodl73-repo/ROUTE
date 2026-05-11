@@ -16,7 +16,7 @@ It verifies:
 
 - Beck T2 map generation writes a real PNG artifact.
 - Stop-to-stop SLA surface generation writes a CSV with heuristic evidence labels.
-- Stop SLA summary gate keeps max stop gaps at or under 300 miles.
+- Stop SLA summary gate keeps max stop gaps at or under 250 miles.
 - Stop SLA candidate scoring produces a reviewable candidate docket for oversized
   recurring gaps and gates that inspected gaps have named candidates instead of
   algorithmic midpoint placeholders.

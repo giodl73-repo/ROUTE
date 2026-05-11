@@ -54,12 +54,12 @@ should mean something in the SLA graph.
 
 - `route stop-sla-summary` reports pair counts, SLA windows, gap status,
   evidence labels, mode-comparison notes, and worst gaps.
-- `route stop-sla-summary --gate-max-gap 300` is wired into L2 CLI e2e.
+- `route stop-sla-summary --gate-max-gap 250` is wired into L2 CLI e2e.
 - Shared `StopServiceClass` and `StopNodeClass` primitives live in
   `route-network`.
 - The Beck SLA graph now uses deterministic Dijkstra pathing.
-- The national SLA surface has no `needs-intermediate-stops` rows; current max
-  stop gap is at or under 300 miles.
+- The national SLA surface has no `needs-intermediate-stops` or
+  `long-gap-review` rows; current max stop gap is at or under 250 miles.
 - Added visible intermediate stops for the largest western, mountain, and
   Appalachian gaps.
 - T1/T2 route endpoint/contact policy is now shared through `route-network` and
@@ -93,3 +93,6 @@ should mean something in the SLA graph.
   placeholders.
 - `route stop-sla-candidates --gate-no-algorithmic` now gates that inspected
   recurring gaps promote to named candidate rows rather than midpoint fallbacks.
+- The strongest >250-mile named candidates are now promoted into the Beck stop
+  graph; the regenerated SLA surface has a 248-mile max stop gap and no current
+  >250-mile promotion docket.
