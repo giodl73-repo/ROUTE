@@ -2328,6 +2328,7 @@ fn is_primary_terminal(id: &str) -> bool {
 enum BeckVariant {
     T1,
     T1WithT2,
+    T2Only,
 }
 
 /// Generate the Beck schematic SVG.
@@ -2345,6 +2346,11 @@ pub fn build_beck_svg() -> String {
 /// Generate the expanded Beck schematic with T2 connectors as thin trunk-tinted lines.
 pub fn build_beck_t2_svg() -> String {
     build_beck_svg_variant(BeckVariant::T1WithT2)
+}
+
+/// Generate a T2-focused Beck schematic without the bold T1 trunk layer.
+pub fn build_beck_t2_only_svg() -> String {
+    build_beck_svg_variant(BeckVariant::T2Only)
 }
 
 pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
@@ -2732,15 +2738,16 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
     );
 
     let expanded = matches!(variant, BeckVariant::T1WithT2);
-    let title = if expanded {
-        "THE CONTINENTAL METRO : T2 LOCAL SERVICES"
-    } else {
-        "THE CONTINENTAL METRO"
+    let t2_only = matches!(variant, BeckVariant::T2Only);
+    let title = match variant {
+        BeckVariant::T1 => "THE CONTINENTAL METRO",
+        BeckVariant::T1WithT2 => "THE CONTINENTAL METRO : T2 LOCAL SERVICES",
+        BeckVariant::T2Only => "THE CONTINENTAL METRO : T2 SERVICE MAP",
     };
-    let subtitle = if expanded {
-        "FULL SERVICE MAP · 25 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS"
-    } else {
-        "A SCHEMATIC OF AMERICA'S PRIMARY FREIGHT LINES"
+    let subtitle = match variant {
+        BeckVariant::T1 => "A SCHEMATIC OF AMERICA'S PRIMARY FREIGHT LINES",
+        BeckVariant::T1WithT2 => "FULL SERVICE MAP · 25 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS",
+        BeckVariant::T2Only => "T2 CONNECTORS ONLY · TRANSFER STOPS AND SERVICE RHYTHM",
     };
 
     // Title
@@ -2770,30 +2777,32 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
 
     // ── Draw lines ────────────────────────────────────────────────────────────────
     // Draw halos first, then main lines.
-    for line in &lines {
-        let color = t1_line_color(line.corridor);
-        let d = line.to_svg_path();
-        if d.is_empty() {
-            continue;
+    if !t2_only {
+        for line in &lines {
+            let color = t1_line_color(line.corridor);
+            let d = line.to_svg_path();
+            if d.is_empty() {
+                continue;
+            }
+            // Soft halo
+            s += &format!(
+                "<path d=\"{d}\" stroke=\"{color}\" stroke-width=\"18\" fill=\"none\" \
+                 opacity=\"0.12\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+            );
+            // Main line
+            s += &format!(
+                "<path d=\"{d}\" stroke=\"{color}\" stroke-width=\"11\" fill=\"none\" \
+                 opacity=\"1.0\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+            );
+            // Subtle center highlight keeps overlapping colors legible without looking glossy.
+            s += &format!(
+                "<path d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"1.25\" fill=\"none\" \
+                 opacity=\"0.16\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+            );
         }
-        // Soft halo
-        s += &format!(
-            "<path d=\"{d}\" stroke=\"{color}\" stroke-width=\"18\" fill=\"none\" \
-             opacity=\"0.12\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
-        );
-        // Main line
-        s += &format!(
-            "<path d=\"{d}\" stroke=\"{color}\" stroke-width=\"11\" fill=\"none\" \
-             opacity=\"1.0\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
-        );
-        // Subtle center highlight keeps overlapping colors legible without looking glossy.
-        s += &format!(
-            "<path d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"1.25\" fill=\"none\" \
-             opacity=\"0.16\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
-        );
     }
 
-    if expanded {
+    if expanded || t2_only {
         for line in &t2_lines {
             let color = t1_line_color(line.trunk);
             let d = line.to_svg_path();
@@ -2801,45 +2810,51 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                 continue;
             }
             let corridor = line.corridor;
+            let halo_width = if t2_only { 13.0 } else { 9.0 };
+            let main_width = if t2_only { 7.5 } else { 5.5 };
+            let center_width = if t2_only { 1.1 } else { 0.8 };
+            let main_opacity = if t2_only { 0.96 } else { 0.88 };
             s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#020617\" stroke-width=\"9\" fill=\"none\" \
+                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#020617\" stroke-width=\"{halo_width}\" fill=\"none\" \
                  opacity=\"0.78\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
             s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"{color}\" stroke-width=\"5.5\" fill=\"none\" \
-                 opacity=\"0.88\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
+                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"{color}\" stroke-width=\"{main_width}\" fill=\"none\" \
+                 opacity=\"{main_opacity}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
             s += &format!(
-                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"0.8\" fill=\"none\" \
+                "<path data-corridor=\"{corridor}\" d=\"{d}\" stroke=\"#f8fafc\" stroke-width=\"{center_width}\" fill=\"none\" \
                 opacity=\"0.22\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
         }
     }
 
-    for line in &lines {
-        draw_generated_bends(
-            &mut s,
-            &line.waypoints,
-            &line.routed_waypoints(),
-            t1_line_color(line.corridor),
-            4.0,
-            0.90,
-        );
+    if !t2_only {
+        for line in &lines {
+            draw_generated_bends(
+                &mut s,
+                &line.waypoints,
+                &line.routed_waypoints(),
+                t1_line_color(line.corridor),
+                4.0,
+                0.90,
+            );
+        }
     }
-    if expanded {
+    if expanded || t2_only {
         for line in &t2_lines {
             draw_generated_bends(
                 &mut s,
                 &line.waypoints,
                 &line.routed_waypoints(),
                 t1_line_color(line.trunk),
-                3.2,
-                0.72,
+                if t2_only { 4.2 } else { 3.2 },
+                if t2_only { 0.86 } else { 0.72 },
             );
         }
     }
 
-    if expanded {
+    if expanded || t2_only {
         for line in &t2_lines {
             let color = t1_line_color(line.trunk);
             for stop_id in &line.stop_ids {
@@ -2857,7 +2872,14 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
 
     // ── Draw stations ─────────────────────────────────────────────────────────────
     let stations = beck_stops();
+    let t2_stop_ids = t2_lines
+        .iter()
+        .flat_map(|line| line.stop_ids.iter().copied())
+        .collect::<HashSet<_>>();
     for station in stations.iter().filter(|station| station.draw) {
+        if t2_only && !t2_stop_ids.contains(station.id) {
+            continue;
+        }
         let label = station.label;
         let x = station.x;
         let y = station.y;
@@ -2931,35 +2953,39 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
     // ── Line badges ───────────────────────────────────────────────────────────────
     // Metro-style badges reveal the underlying Interstate corridors without making
     // the first read feel like a highway map.
-    for (corridor, sx, sy) in t1_badges(&stops) {
-        if corridor == "I-85" {
-            continue;
-        }
+    if !t2_only {
+        for (corridor, sx, sy) in t1_badges(&stops) {
+            if corridor == "I-85" {
+                continue;
+            }
 
-        let color = t1_line_color(corridor);
-        let label = corridor.trim_start_matches("I-");
-        s += &format!(
-            "<circle cx=\"{sx}\" cy=\"{sy}\" r=\"18\" fill=\"{color}\" opacity=\"0.95\"/>\n"
-        );
-        s += &format!("<circle cx=\"{sx}\" cy=\"{sy}\" r=\"18\" fill=\"none\" stroke=\"#f8fafc\" stroke-width=\"1.2\" opacity=\"0.38\"/>\n");
-        s += &format!(
-            "<text x=\"{sx}\" y=\"{:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
-             font-size=\"13\" font-weight=\"900\" fill=\"white\" text-anchor=\"middle\">{label}</text>\n",
-            sy + 4.0
-        );
+            let color = t1_line_color(corridor);
+            let label = corridor.trim_start_matches("I-");
+            s += &format!(
+                "<circle cx=\"{sx}\" cy=\"{sy}\" r=\"18\" fill=\"{color}\" opacity=\"0.95\"/>\n"
+            );
+            s += &format!("<circle cx=\"{sx}\" cy=\"{sy}\" r=\"18\" fill=\"none\" stroke=\"#f8fafc\" stroke-width=\"1.2\" opacity=\"0.38\"/>\n");
+            s += &format!(
+                "<text x=\"{sx}\" y=\"{:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
+                 font-size=\"13\" font-weight=\"900\" fill=\"white\" text-anchor=\"middle\">{label}</text>\n",
+                sy + 4.0
+            );
+        }
     }
 
-    if expanded {
+    if expanded || t2_only {
         for line in &t2_lines {
             let color = t1_line_color(line.trunk);
             let label = line.corridor.trim_start_matches("I-");
             let (sx, sy) = line.badge;
+            let r = if t2_only { 15.0 } else { 13.0 };
+            let font_size = if t2_only { 11.0 } else { 10.0 };
             s += &format!(
-                "<circle cx=\"{sx}\" cy=\"{sy}\" r=\"13\" fill=\"#0f1623\" stroke=\"{color}\" stroke-width=\"3\" opacity=\"0.94\"/>\n"
+                "<circle cx=\"{sx}\" cy=\"{sy}\" r=\"{r}\" fill=\"#0f1623\" stroke=\"{color}\" stroke-width=\"3\" opacity=\"0.94\"/>\n"
             );
             s += &format!(
                 "<text x=\"{sx}\" y=\"{:.1}\" font-family=\"'Helvetica Neue',Arial,sans-serif\" \
-                 font-size=\"10\" font-weight=\"900\" fill=\"#f8fafc\" text-anchor=\"middle\">{label}</text>\n",
+                 font-size=\"{font_size}\" font-weight=\"900\" fill=\"#f8fafc\" text-anchor=\"middle\">{label}</text>\n",
                 sy + 3.5
             );
 
@@ -3025,17 +3051,23 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
         );
     }
 
-    if expanded {
+    if expanded || t2_only {
         let x1 = lx + 915.0;
         let x2 = lx + 960.0;
         let y = ly + 52.0;
+        let label = if t2_only {
+            "T2 service line"
+        } else {
+            "T2 connector"
+        };
         s += &format!(
             "<path d=\"M {x1:.1} {y:.1} L {x2:.1} {y:.1}\" stroke=\"#f43f5e\" \
-             stroke-width=\"5\" opacity=\"0.58\" stroke-linecap=\"round\"/>\n"
+             stroke-width=\"{}\" opacity=\"0.72\" stroke-linecap=\"round\"/>\n",
+            if t2_only { 7 } else { 5 }
         );
         s += &format!(
             "<text x=\"{:.1}\" y=\"{y:.1}\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
-             fill=\"#94a3b8\" dominant-baseline=\"middle\">T2 connector</text>\n",
+             fill=\"#94a3b8\" dominant-baseline=\"middle\">{label}</text>\n",
             x2 + 16.0
         );
     }
@@ -3057,8 +3089,15 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
     );
 
     // ── Footer ────────────────────────────────────────────────────────────────────
-    s += "<text x=\"1200\" y=\"1320\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
-          fill=\"#475569\" text-anchor=\"middle\">Metro first, highway second: line numbers follow priority Interstate corridors; transfer hubs are national freight relay nodes. Inspired by H. Beck 1933.</text>\n";
+    let footer = if t2_only {
+        "T2-only service view: connectors are shown without the bold T1 trunk layer so local transfer geometry is easier to inspect."
+    } else {
+        "Metro first, highway second: line numbers follow priority Interstate corridors; transfer hubs are national freight relay nodes. Inspired by H. Beck 1933."
+    };
+    s += &format!(
+        "<text x=\"1200\" y=\"1320\" font-family=\"Arial,sans-serif\" font-size=\"11\" \
+          fill=\"#475569\" text-anchor=\"middle\">{footer}</text>\n"
+    );
 
     s += "</svg>\n";
     s
@@ -3089,9 +3128,9 @@ fn draw_generated_bends(
 #[cfg(test)]
 mod tests {
     use super::{
-        beck_stop_class, beck_stops, build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg,
-        is_primary_terminal, stop_by_id, stop_class, t1_badges, t1_line_segments,
-        t1_route_stop_ids, t2_line_segments, LineSegment,
+        beck_stop_class, beck_stops, build_beck_stop_sla_csv, build_beck_svg,
+        build_beck_t2_only_svg, build_beck_t2_svg, is_primary_terminal, stop_by_id, stop_class,
+        t1_badges, t1_line_segments, t1_route_stop_ids, t2_line_segments, LineSegment,
     };
     use route_network::{minimum_system_contacts_for_tier, RouteTier};
 
@@ -3506,6 +3545,17 @@ mod tests {
             assert!(!svg.contains(&format!("data-corridor=\"{held_route}\"")));
         }
         assert_eq!(svg.matches("stroke-width=\"5.5\"").count(), t2_routes.len());
+    }
+
+    #[test]
+    fn beck_t2_only_svg_draws_service_connectors_as_primary_map() {
+        let svg = build_beck_t2_only_svg();
+        assert!(svg.contains("T2 SERVICE MAP"));
+        assert!(svg.contains("T2 service line"));
+        assert!(svg.contains("stroke-width=\"7.5\""));
+        assert!(svg.contains("data-corridor=\"I-15\""));
+        assert!(svg.contains("Inland West"));
+        assert!(!svg.contains("PRIMARY FREIGHT LINES"));
     }
 
     #[test]

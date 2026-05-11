@@ -1811,6 +1811,7 @@ fn run_cli() -> Result<()> {
                     "ALL" => "all-tiers".to_string(),
                     "BECK" => "beck-schematic".to_string(),
                     "BECKT2" => "beck-schematic-t2".to_string(),
+                    "BECKT2ONLY" => "beck-schematic-t2-only".to_string(),
                     "T3ZGREATLAKES" => "t3-great-lakes".to_string(),
                     "T3ZSOUTHEAST" => "t3-southeast".to_string(),
                     "T3ZTEXASBORDER" => "t3-texas-border".to_string(),
@@ -1843,6 +1844,18 @@ fn run_cli() -> Result<()> {
                 println!(
                     "  T1 trunks bold · T2 connectors thin and tinted to their trunk families"
                 );
+                return Ok(());
+            }
+
+            if norm == "BECKT2ONLY" {
+                std::fs::create_dir_all("maps")?;
+                let svg = route_map::build_beck_t2_only_svg();
+                route_map::svg_to_png(&svg, &out, 2400, 1350)?;
+                println!(
+                    "  rendered Beck T2-only schematic: {} (2400×1350)",
+                    out.display()
+                );
+                println!("  T2 service connectors only · T1 trunk layer suppressed");
                 return Ok(());
             }
 

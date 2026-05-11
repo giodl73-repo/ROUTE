@@ -37,6 +37,7 @@ fn target_artifact(name: &str) -> PathBuf {
 #[test]
 fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     let map_out = target_artifact("beck-schematic-t2-e2e.png");
+    let t2_only_map_out = target_artifact("beck-schematic-t2-only-e2e.png");
     let csv_out = target_artifact("beck-stop-sla-e2e.csv");
 
     assert_success(&[
@@ -48,6 +49,20 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(
         map_out.metadata().expect("map output metadata").len() > 100_000,
         "Beck T2 PNG should be a rendered artifact"
+    );
+    assert_success(&[
+        "map",
+        "BECKT2ONLY",
+        "--output",
+        t2_only_map_out.to_str().expect("utf-8 output path"),
+    ]);
+    assert!(
+        t2_only_map_out
+            .metadata()
+            .expect("T2-only map output metadata")
+            .len()
+            > 100_000,
+        "Beck T2-only PNG should be a rendered artifact"
     );
 
     assert_success(&[

@@ -96,3 +96,5 @@ should mean something in the SLA graph.
 - The strongest >250-mile named candidates are now promoted into the Beck stop
   graph; the regenerated SLA surface has a 248-mile max stop gap and no current
   >250-mile promotion docket.
+- Added a T2-only Beck service map so local connector geometry can be inspected
+  without the bold T1 trunk layer.
