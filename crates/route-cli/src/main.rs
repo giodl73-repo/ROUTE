@@ -1009,6 +1009,19 @@ enum Commands {
         output: PathBuf,
     },
 
+    /// Summarize the stop-to-stop SLA surface and expose worst stop gaps
+    StopSlaSummary {
+        /// SLA surface CSV file
+        #[arg(long, default_value = "data/beck-stop-sla.csv", value_name = "FILE")]
+        input: PathBuf,
+        /// Number of worst gaps to show
+        #[arg(long, default_value_t = 12)]
+        top: usize,
+        /// Fail if any stop pair exceeds this max stop gap
+        #[arg(long, value_name = "MILES")]
+        gate_max_gap: Option<f64>,
+    },
+
     /// Benchmark all I2.0 interventions — rank each by contribution to 48h SLA
     Interventions {
         /// Which corridor to test
@@ -4744,6 +4757,32 @@ fn run_cli() -> Result<()> {
             println!("  source: Beck T1/T2 stops and lines; evidence_status=heuristic-planning");
         }
 
+        Commands::StopSlaSummary {
+            input,
+            top,
+            gate_max_gap,
+        } => {
+            let file = std::fs::File::open(&input)
+                .with_context(|| format!("reading stop SLA surface {}", input.display()))?;
+            let rows = parse_stop_sla_rows(file)?;
+            print_stop_sla_summary(&rows, top);
+            if let Some(max_gap) = gate_max_gap {
+                let blockers = stop_sla_gap_failures(&rows, max_gap);
+                if blockers.is_empty() {
+                    println!("stop SLA max-gap gate: PASS");
+                } else {
+                    println!("stop SLA max-gap gate: FAIL");
+                    for row in blockers.iter().take(top.max(1)) {
+                        println!(
+                            "  - {}→{} max gap {:.0} mi via {}",
+                            row.origin_id, row.dest_id, row.max_stop_gap_miles, row.route_path
+                        );
+                    }
+                    anyhow::bail!("stop SLA max-gap gate failed");
+                }
+            }
+        }
+
         Commands::Interventions {
             corridor,
             trips,
@@ -5798,6 +5837,93 @@ fn num_cpus() -> usize {
 
 fn tier_for_score(score: f64) -> &'static str {
     route_network::RouteTier::from_score(score).as_str()
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct StopSlaRow {
+    origin_id: String,
+    dest_id: String,
+    network_miles: f64,
+    max_stop_gap_miles: f64,
+    stop_gap_status: String,
+    route_path: String,
+    stop_path: String,
+    freight_sla_window: String,
+    passenger_competitive_with_air: String,
+    rail_competition_note: String,
+    evidence_status: String,
+}
+
+fn parse_stop_sla_rows<R: std::io::Read>(reader: R) -> Result<Vec<StopSlaRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    rdr.deserialize()
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .context("parsing stop SLA surface")
+}
+
+fn stop_sla_gap_failures(rows: &[StopSlaRow], max_gap: f64) -> Vec<&StopSlaRow> {
+    let mut failures = rows
+        .iter()
+        .filter(|row| row.max_stop_gap_miles > max_gap)
+        .collect::<Vec<_>>();
+    failures.sort_by(|a, b| b.max_stop_gap_miles.total_cmp(&a.max_stop_gap_miles));
+    failures
+}
+
+fn print_stop_sla_summary(rows: &[StopSlaRow], top: usize) {
+    let mut gap_status = std::collections::BTreeMap::<String, usize>::new();
+    let mut sla_windows = std::collections::BTreeMap::<String, usize>::new();
+    let mut evidence = std::collections::BTreeMap::<String, usize>::new();
+    let mut air = std::collections::BTreeMap::<String, usize>::new();
+    let mut rail = std::collections::BTreeMap::<String, usize>::new();
+    let mut max_gap = 0.0_f64;
+    let mut total_miles = 0.0_f64;
+
+    for row in rows {
+        *gap_status.entry(row.stop_gap_status.clone()).or_default() += 1;
+        *sla_windows
+            .entry(row.freight_sla_window.clone())
+            .or_default() += 1;
+        *evidence.entry(row.evidence_status.clone()).or_default() += 1;
+        *air.entry(row.passenger_competitive_with_air.clone())
+            .or_default() += 1;
+        *rail.entry(row.rail_competition_note.clone()).or_default() += 1;
+        max_gap = max_gap.max(row.max_stop_gap_miles);
+        total_miles += row.network_miles;
+    }
+
+    println!("route stop-sla-summary");
+    println!("  stop pairs: {}", rows.len());
+    println!(
+        "  average network miles: {:.0}",
+        total_miles / rows.len().max(1) as f64
+    );
+    println!("  max stop gap: {:.0} mi", max_gap);
+    println!("  gap status: {}", format_count_map(&gap_status));
+    println!("  freight SLA windows: {}", format_count_map(&sla_windows));
+    println!("  passenger air comparison: {}", format_count_map(&air));
+    println!("  rail competition notes: {}", format_count_map(&rail));
+    println!("  evidence: {}", format_count_map(&evidence));
+
+    let mut worst = rows.iter().collect::<Vec<_>>();
+    worst.sort_by(|a, b| b.max_stop_gap_miles.total_cmp(&a.max_stop_gap_miles));
+    println!();
+    println!(
+        "  {:<9} {:<9} {:>7} {:>7}  {:<28} {}",
+        "Origin", "Dest", "Miles", "Gap", "Routes", "Stops"
+    );
+    println!("  {}", "-".repeat(96));
+    for row in worst.into_iter().take(top) {
+        println!(
+            "  {:<9} {:<9} {:>7.0} {:>7.0}  {:<28} {}",
+            row.origin_id,
+            row.dest_id,
+            row.network_miles,
+            row.max_stop_gap_miles,
+            truncate_for_table(&row.route_path, 28),
+            truncate_for_table(&row.stop_path, 42)
+        );
+    }
 }
 
 fn rounded_score(score: f64) -> f64 {

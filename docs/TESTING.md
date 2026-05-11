@@ -16,6 +16,7 @@ It verifies:
 
 - Beck T2 map generation writes a real PNG artifact.
 - Stop-to-stop SLA surface generation writes a CSV with heuristic evidence labels.
+- Stop SLA summary gate keeps max stop gaps under 400 miles.
 - Map atlas gate passes.
 - L2 pressure-scenario coverage gates pass.
 - T1 stop coverage remains visible and reports the known `I395` blocker.

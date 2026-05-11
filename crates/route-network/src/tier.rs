@@ -43,6 +43,65 @@ impl RouteTier {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StopServiceClass {
+    S1,
+    S2,
+    S3,
+    S4,
+    S5,
+}
+
+impl StopServiceClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::S1 => "S1",
+            Self::S2 => "S2",
+            Self::S3 => "S3",
+            Self::S4 => "S4",
+            Self::S5 => "S5",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim_end_matches('?').to_ascii_uppercase().as_str() {
+            "S1" => Some(Self::S1),
+            "S2" => Some(Self::S2),
+            "S3" => Some(Self::S3),
+            "S4" => Some(Self::S4),
+            "S5" => Some(Self::S5),
+            _ => None,
+        }
+    }
+
+    pub fn is_transfer_grade(self) -> bool {
+        matches!(self, Self::S1 | Self::S2 | Self::S3)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StopNodeClass {
+    NationalTransferHub,
+    NationalTerminal,
+    TransferHub,
+    ServiceStop,
+}
+
+impl StopNodeClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NationalTransferHub => "national_transfer_hub",
+            Self::NationalTerminal => "national_terminal",
+            Self::TransferHub => "transfer_hub",
+            Self::ServiceStop => "service_stop",
+        }
+    }
+
+    pub fn is_system_contact(self) -> bool {
+        !matches!(self, Self::ServiceStop)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TierNodeClass {
     TrunkConnector,
@@ -212,8 +271,8 @@ fn incident_t1_routes(
 #[cfg(test)]
 mod tests {
     use super::{
-        analyze_tier_connectivity, tier_connectivity_gate_failures, RouteTier, TierNodeClass,
-        T1_BACKBONE_ROUTES,
+        analyze_tier_connectivity, tier_connectivity_gate_failures, RouteTier, StopNodeClass,
+        StopServiceClass, TierNodeClass, T1_BACKBONE_ROUTES,
     };
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{coord, LineString};
@@ -301,5 +360,23 @@ mod tests {
             T1_BACKBONE_ROUTES,
             &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
         );
+    }
+
+    #[test]
+    fn stop_service_classes_parse_candidate_suffixes() {
+        assert_eq!(StopServiceClass::parse("S1"), Some(StopServiceClass::S1));
+        assert_eq!(StopServiceClass::parse("s4?"), Some(StopServiceClass::S4));
+        assert!(StopServiceClass::S3.is_transfer_grade());
+        assert!(!StopServiceClass::S4.is_transfer_grade());
+    }
+
+    #[test]
+    fn stop_node_classes_expose_shared_contract_labels() {
+        assert_eq!(
+            StopNodeClass::NationalTransferHub.as_str(),
+            "national_transfer_hub"
+        );
+        assert!(StopNodeClass::NationalTerminal.is_system_contact());
+        assert!(!StopNodeClass::ServiceStop.is_system_contact());
     }
 }

@@ -59,7 +59,19 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(csv.starts_with("origin_id,origin_label,origin_tier"));
     assert!(csv.contains("freight_sla_window"));
     assert!(csv.contains("heuristic-planning"));
-    assert!(csv.contains("needs-intermediate-stops"));
+
+    let summary = assert_success(&[
+        "stop-sla-summary",
+        "--input",
+        csv_out.to_str().expect("utf-8 output path"),
+        "--top",
+        "4",
+        "--gate-max-gap",
+        "400",
+    ]);
+    let summary_stdout = String::from_utf8_lossy(&summary.stdout);
+    assert!(summary_stdout.contains("route stop-sla-summary"));
+    assert!(summary_stdout.contains("stop SLA max-gap gate: PASS"));
 }
 
 #[test]

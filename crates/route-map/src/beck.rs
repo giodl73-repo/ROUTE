@@ -10,9 +10,9 @@
 /// This is NOT a geographic map — it is a topological representation
 /// of the relay network. The traveler's question is:
 /// "Which corridor? Where do I change? How many hubs?"
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
-use route_network::RouteTier;
+use route_network::{RouteTier, StopNodeClass};
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
@@ -269,6 +269,22 @@ fn beck_stops() -> Vec<BeckStop> {
             LabelDir::Left,
         ),
         minor_stop(
+            "MEDFORD",
+            "Medford",
+            180.0,
+            560.0,
+            &["I-5"],
+            LabelDir::Right,
+        ),
+        minor_stop(
+            "REDDING",
+            "Redding",
+            180.0,
+            620.0,
+            &["I-5"],
+            LabelDir::Right,
+        ),
+        minor_stop(
             "CENTRAL_VALLEY",
             "Central Valley",
             240.0,
@@ -306,6 +322,15 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-10"],
             LabelDir::Down,
         ),
+        minor_stop(
+            "PALM_SPRINGS",
+            "Palm Springs",
+            330.0,
+            1080.0,
+            &["I-10"],
+            LabelDir::Up,
+        ),
+        minor_stop("TUCSON", "Tucson", 490.0, 1080.0, &["I-10"], LabelDir::Up),
         stop(
             "ELP",
             "El Paso",
@@ -701,6 +726,22 @@ fn beck_stops() -> Vec<BeckStop> {
             LabelDir::Up,
         ),
         minor_stop(
+            "PENDLETON",
+            "Pendleton",
+            240.0,
+            455.0,
+            &["I-84"],
+            LabelDir::Down,
+        ),
+        minor_stop(
+            "TWIN_FALLS",
+            "Twin Falls",
+            330.0,
+            485.0,
+            &["I-84"],
+            LabelDir::Right,
+        ),
+        minor_stop(
             "LEWISTON",
             "Lewiston",
             330.0,
@@ -715,6 +756,15 @@ fn beck_stops() -> Vec<BeckStop> {
             540.0,
             &["I-80", "I-25"],
             LabelDir::Up,
+        ),
+        minor_stop("CASPER", "Casper", 540.0, 380.0, &["I-25"], LabelDir::Right),
+        minor_stop(
+            "ROCK_SPRINGS",
+            "Rock Springs",
+            450.0,
+            540.0,
+            &["I-80"],
+            LabelDir::Down,
         ),
         stop(
             "OMAHA",
@@ -929,6 +979,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-15"],
             LabelDir::Right,
         ),
+        minor_stop(
+            "ST_GEORGE",
+            "St. George",
+            330.0,
+            720.0,
+            &["I-15"],
+            LabelDir::Right,
+        ),
         stop(
             "DEN",
             "Denver",
@@ -938,6 +996,14 @@ fn beck_stops() -> Vec<BeckStop> {
             true,
             &["I-70", "I-25", "US287"],
             LabelDir::Up,
+        ),
+        minor_stop(
+            "GRAND_JUNCTION",
+            "Grand Junction",
+            420.0,
+            600.0,
+            &["I-70"],
+            LabelDir::Down,
         ),
         minor_stop(
             "COLORADO_SPRINGS",
@@ -1012,6 +1078,14 @@ fn beck_stops() -> Vec<BeckStop> {
             660.0,
             &["I-70", "I-76", "I-77"],
             LabelDir::Up,
+        ),
+        minor_stop(
+            "CHARLESTON_WV",
+            "Charleston WV",
+            1560.0,
+            740.0,
+            &["I-77"],
+            LabelDir::Right,
         ),
         stop(
             "PENNSYLVANIA",
@@ -1136,11 +1210,15 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "BLAINE" => (48.99, -122.75),
         "SEA" => (47.61, -122.33),
         "POR" => (45.52, -122.68),
+        "MEDFORD" => (42.33, -122.87),
+        "REDDING" => (40.59, -122.39),
         "SAC" => (38.58, -121.49),
         "CENTRAL_VALLEY" => (36.74, -119.79),
         "LA" => (34.05, -118.24),
         "SDTJ" => (32.55, -117.05),
+        "PALM_SPRINGS" => (33.83, -116.55),
         "PHX" => (33.45, -112.07),
+        "TUCSON" => (32.22, -110.97),
         "ELP" => (31.76, -106.49),
         "SAT" => (29.42, -98.49),
         "LRD" => (27.51, -99.51),
@@ -1186,7 +1264,11 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "RENO" => (39.53, -119.81),
         "SLC" => (40.76, -111.89),
         "BOI" => (43.62, -116.20),
+        "PENDLETON" => (45.67, -118.79),
+        "TWIN_FALLS" => (42.56, -114.46),
         "LEWISTON" => (46.42, -117.02),
+        "CASPER" => (42.85, -106.31),
+        "ROCK_SPRINGS" => (41.59, -109.20),
         "CHEYENNE" => (41.14, -104.82),
         "OMAHA" => (41.26, -95.93),
         "FARGO" => (46.88, -96.79),
@@ -1214,7 +1296,9 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "MOBILE" => (30.69, -88.04),
         "LITTLE_ROCK" => (34.75, -92.29),
         "LAS_VEGAS" => (36.17, -115.14),
+        "ST_GEORGE" => (37.10, -113.58),
         "DEN" => (39.74, -104.99),
+        "GRAND_JUNCTION" => (39.06, -108.55),
         "COLORADO_SPRINGS" => (38.83, -104.82),
         "CAPITAL_BELTWAY_N" => (39.03, -77.08),
         "CAPITAL_BELTWAY_E" => (38.90, -76.90),
@@ -1224,6 +1308,7 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "HAGERSTOWN" => (39.64, -77.72),
         "STL" => (38.63, -90.20),
         "PITTSBURGH" => (40.44, -80.00),
+        "CHARLESTON_WV" => (38.35, -81.63),
         "GULFPORT" => (30.37, -89.09),
         "CORPUS" => (27.80, -97.40),
         _ => fallback_geo_from_seed_grid(stop),
@@ -1331,6 +1416,8 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
                 "BLAINE",
                 "SEA",
                 "POR",
+                "MEDFORD",
+                "REDDING",
                 "SAC",
                 "CENTRAL_VALLEY",
                 "LA",
@@ -1341,7 +1428,9 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
             "I-10",
             vec![
                 "LA",
+                "PALM_SPRINGS",
                 "PHX",
+                "TUCSON",
                 "ELP",
                 "SAT",
                 "HOU",
@@ -1391,6 +1480,7 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
             "I-70",
             vec![
                 "SLC",
+                "GRAND_JUNCTION",
                 "DEN",
                 "KC",
                 "STL",
@@ -1420,6 +1510,7 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
                 "SAC",
                 "RENO",
                 "SLC",
+                "ROCK_SPRINGS",
                 "CHEYENNE",
                 "OMAHA",
                 "DSM",
@@ -1517,7 +1608,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-15",
             "I-5",
-            &["LA", "BARSTOW", "LAS_VEGAS", "SLC"],
+            &["LA", "BARSTOW", "LAS_VEGAS", "ST_GEORGE", "SLC"],
             "Inland West",
             "LAS_VEGAS",
             (0.0, 0.0),
@@ -1527,7 +1618,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-84",
             "I-80",
-            &["POR", "BOI", "SLC"],
+            &["POR", "PENDLETON", "BOI", "TWIN_FALLS", "SLC"],
             "Snake River",
             "BOI",
             (10.0, -26.0),
@@ -1547,7 +1638,14 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-25",
             "I-35",
-            &["BIL", "CHEYENNE", "DEN", "COLORADO_SPRINGS", "ABQ"],
+            &[
+                "BIL",
+                "CASPER",
+                "CHEYENNE",
+                "DEN",
+                "COLORADO_SPRINGS",
+                "ABQ",
+            ],
             "High Plains",
             "DEN",
             (-20.0, 15.0),
@@ -1557,7 +1655,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US287",
             "I-35",
-            &["DAL", "AMA", "DEN"],
+            &["DAL", "AMA", "COLORADO_SPRINGS", "DEN"],
             "Front Range",
             "AMA",
             (5.0, 5.0),
@@ -1623,7 +1721,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-77",
             "I-75",
-            &["CLT", "PITTSBURGH", "CLEVELAND"],
+            &["CLT", "CHARLESTON_WV", "PITTSBURGH", "CLEVELAND"],
             "Appalachian North",
             "PITTSBURGH",
             (0.0, 0.0),
@@ -1643,7 +1741,14 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US30",
             "I-80",
-            &["SLC", "CHEYENNE", "OMAHA", "CHI_APPROACH", "PA_APPROACH"],
+            &[
+                "SLC",
+                "ROCK_SPRINGS",
+                "CHEYENNE",
+                "OMAHA",
+                "CHI_APPROACH",
+                "PA_APPROACH",
+            ],
             "Lincoln Highway",
             "CHI_APPROACH",
             (0.0, 0.0),
@@ -1653,7 +1758,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US6",
             "I-80",
-            &["SLC", "CHEYENNE", "OMAHA", "CHI_APPROACH"],
+            &["SLC", "ROCK_SPRINGS", "CHEYENNE", "OMAHA", "CHI_APPROACH"],
             "Central Plains",
             "OMAHA",
             (0.0, 0.0),
@@ -1663,7 +1768,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US70",
             "I-40",
-            &["PHX", "LITTLE_ROCK", "KNX"],
+            &["PHX", "ABQ", "AMA", "OKC", "LITTLE_ROCK", "MEM", "KNX"],
             "Mid-South",
             "LITTLE_ROCK",
             (-36.0, 38.0),
@@ -1910,24 +2015,28 @@ fn shortest_sla_path(
     origin: &'static str,
     dest: &'static str,
 ) -> Option<Vec<SlaStep>> {
-    let mut open = BTreeSet::from([(0_u64, origin)]);
     let mut dist: HashMap<&'static str, f64> = HashMap::from([(origin, 0.0)]);
     let mut prev: HashMap<&'static str, (&'static str, SlaEdge)> = HashMap::new();
+    let mut visited = HashSet::new();
 
-    while let Some((scaled_cost, node)) = open.pop_first() {
-        let cost = scaled_cost as f64 / 1000.0;
-        if cost > *dist.get(node).unwrap_or(&f64::INFINITY) + 0.0001 {
-            continue;
-        }
+    loop {
+        let Some((node, cost)) = dist
+            .iter()
+            .filter(|(node, _)| !visited.contains(**node))
+            .min_by(|a, b| a.1.total_cmp(b.1))
+            .map(|(node, cost)| (*node, *cost))
+        else {
+            break;
+        };
         if node == dest {
             break;
         }
+        visited.insert(node);
         for edge in graph.get(node).into_iter().flatten() {
             let next_cost = cost + sla_routing_weight(edge);
             if next_cost + 0.001 < *dist.get(edge.to).unwrap_or(&f64::INFINITY) {
                 dist.insert(edge.to, next_cost);
                 prev.insert(edge.to, (node, edge.clone()));
-                open.insert(((next_cost * 1000.0).round() as u64, edge.to));
             }
         }
     }
@@ -2021,10 +2130,10 @@ fn stop_tier(stop: &BeckStop, steps: &[SlaStep]) -> &'static str {
 
 fn stop_class(stop: &BeckStop) -> &'static str {
     match (stop.is_hub, stop.is_interchange) {
-        (true, true) => "national_transfer_hub",
-        (true, false) => "national_terminal",
-        (false, true) => "transfer_hub",
-        (false, false) => "service_stop",
+        (true, true) => StopNodeClass::NationalTransferHub.as_str(),
+        (true, false) => StopNodeClass::NationalTerminal.as_str(),
+        (false, true) => StopNodeClass::TransferHub.as_str(),
+        (false, false) => StopNodeClass::ServiceStop.as_str(),
     }
 }
 
@@ -3094,13 +3203,23 @@ mod tests {
     #[test]
     fn beck_stop_sla_surface_keeps_long_haul_paths_auditable() {
         let csv = build_beck_stop_sla_csv();
-        let ny_la = csv
+        let la_den = csv
             .lines()
-            .find(|line| line.starts_with("LA,Los Angeles") && line.contains(",NYC,New York"))
-            .expect("LA to New York SLA row");
+            .find(|line| {
+                (line.starts_with("LA,Los Angeles") && line.contains(",DEN,Denver"))
+                    || (line.starts_with("DEN,Denver") && line.contains(",LA,Los Angeles"))
+            })
+            .expect("LA to Denver SLA row");
 
-        assert!(ny_la.contains("needs-intermediate-stops"));
-        assert!(ny_la.contains("not-time-competitive"));
-        assert!(ny_la.contains("freight-rail-wins-bulk-road-wins-express"));
+        assert!(la_den.contains("long-gap-review") || la_den.contains("needs-intermediate-stops"));
+        assert!(la_den.contains("not-time-competitive"));
+        assert!(la_den.contains("freight-rail-wins-bulk-road-wins-express"));
+    }
+
+    #[test]
+    fn beck_stop_sla_surface_has_no_oversized_stop_gaps() {
+        let csv = build_beck_stop_sla_csv();
+        assert!(!csv.contains("needs-intermediate-stops"));
+        assert!(csv.contains("long-gap-review"));
     }
 }
