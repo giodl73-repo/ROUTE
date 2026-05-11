@@ -108,3 +108,5 @@ should mean something in the SLA graph.
 - T2 cleanup promoted multi-line drawn stops as transfer candidates, falls back
   split-color breaks to real service stops, and added Meridian/Memphis/Tupelo
   rhythm on southern T2 services so the stop SLA surface stays below 250 miles.
+- T2 parallel cleanup widened the Arkansas/Old South lane offsets so I-30 and
+  US80 no longer trigger close-parallel review while preserving their stop paths.

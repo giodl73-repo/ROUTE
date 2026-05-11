@@ -9,12 +9,12 @@ US287,I-35,I-35,I-70,split-parent,DALHART,4,0,,0,,Front Range,7,7,3,604,758,592,
 I-25,I-90,I-90,I-40,split-parent,DEN,1,0,,0,,High Plains,9,9,6,804,615,235,776,906,1.12,dense-label-review
 I-49,I-20,I-20,I-35,split-parent,FORT_SMITH,6,0,,0,,Ozarks,5,5,5,483,1119,622,1211,1050,1.04,dense-label-review
 I-37,I-10,I-10,I-10,single-parent,,0,0,,0,,Corpus Christi,2,2,2,201,967,1205,1138,1277,1.00,dense-label-review
-I-30,I-35,I-35,I-40,split-parent,TEXARKANA,11,0,,1,US80,Arkansas Link,4,4,4,412,1060,899,1366,1070,0.97,dense-label-review
 US30,I-70,I-70,I-80,split-parent,OMAHA,12,0,,0,,Lincoln Highway,8,8,3,1764,539,399,2112,527,0.45,long-connector-review
 US6,I-70,I-70,I-80,split-parent,OMAHA,6,0,,0,,Central Plains,5,5,3,1154,539,447,1560,563,0.43,long-connector-review
 US90,I-10,I-10,I-95,split-parent,GULFPORT,1,0,,0,,Gulf Local,4,4,4,951,967,1153,1842,1249,0.42,long-connector-review
 US83,I-90,I-90,I-10,split-parent,RAPID_CITY,20,0,,0,,Dakota Spine,5,5,4,1449,805,266,1239,1205,0.35,long-connector-review
 I-85,I-20,I-20,I-95,split-parent,CLT,3,0,,0,,Charlotte Crescent,5,5,3,529,1668,751,2098,991,0.95,ok
+I-30,I-35,I-35,I-40,split-parent,TEXARKANA,11,0,,0,,Arkansas Link,4,4,4,446,1060,899,1366,1094,0.90,ok
 I-84,I-5,I-5,I-70,split-parent,BOI,0,0,,0,,Snake River,5,5,2,566,199,200,539,527,0.88,ok
 I-76,I-80,I-80,I-95,split-parent,PITTSBURGH,10,0,,0,,Pennsylvania,4,4,4,459,1831,448,2206,578,0.87,ok
 I-77,I-40,I-40,I-80,split-parent,PITTSBURGH,21,0,,0,,Appalachian North,5,5,4,623,1831,478,2007,880,0.80,ok
@@ -22,5 +22,5 @@ I-24,I-40,I-40,I-75,split-parent,NASHVILLE,3,0,,0,,Nashville,3,3,3,423,1366,776,
 I-44,I-40,I-40,I-69,split-parent,STL,3,0,,0,,St. Louis Link,5,5,3,878,996,447,1628,854,0.57,ok
 I-81,I-40,I-40,I-95,split-parent,WYTHEVILLE,22,0,,0,,Knoxville-New York,6,6,5,687,1696,534,2225,831,0.87,transfer-complexity-review
 I-65,I-10,I-10,I-75,split-parent,NASHVILLE,10,0,,0,,Birmingham,5,5,5,592,1464,627,1645,1125,0.84,transfer-complexity-review
-US80,I-35,I-35,I-20,split-parent,LITTLE_ROCK,3,0,,1,I-30,Old South,8,8,7,1098,911,861,1668,1036,0.73,transfer-complexity-review
+US80,I-35,I-35,I-20,split-parent,LITTLE_ROCK,3,0,,0,,Old South,8,8,7,1098,911,833,1668,1036,0.73,transfer-complexity-review
 US70,I-10,I-10,I-40,split-parent,FORT_SMITH,4,0,,0,,Mid-South,9,9,6,1388,525,831,1696,1050,0.65,transfer-complexity-review
