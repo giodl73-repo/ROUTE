@@ -10,11 +10,11 @@
 /// create a distributed intersection zone with multiple independent cross-connections.
 /// k=1 = single point of failure; target k≥3 = resilient diamond.
 use crate::graph::HighwayGraph;
+use crate::tier::T1_BACKBONE_ROUTES;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use petgraph::visit::EdgeRef;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-const T1_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
 const DIAMOND_RADIUS_DEG: f64 = 0.7; // ~50 miles at mid-latitude
 
 struct CuratedT1Intersection {
@@ -183,7 +183,7 @@ pub fn find_t1_intersections(g: &HighwayGraph) -> Vec<T1Intersection> {
                         .edges_directed(ni, petgraph::Direction::Incoming)
                         .map(|er| er.weight().route_id.clone()),
                 )
-                .filter(|id| T1_ROUTES.contains(&id.as_str()))
+                .filter(|id| T1_BACKBONE_ROUTES.contains(&id.as_str()))
                 .collect();
             ids.sort();
             ids.dedup();
@@ -479,9 +479,9 @@ fn bfs_path(
 mod tests {
     use super::{
         compute_k_connectivity, find_intersection, find_t1_intersections, CURATED_T1_INTERSECTIONS,
-        T1_ROUTES,
     };
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
+    use crate::tier::T1_BACKBONE_ROUTES;
     use geo_types::{coord, LineString};
     use petgraph::graph::{EdgeIndex, NodeIndex};
     use std::collections::HashSet;
@@ -637,7 +637,7 @@ mod tests {
     fn curated_anchor_catalog_covers_all_known_t1_pairs() {
         let mut graph = HighwayGraph::new();
         let mut edge_id = 1;
-        for route_id in T1_ROUTES {
+        for route_id in T1_BACKBONE_ROUTES {
             let source = graph
                 .graph
                 .add_node(node(edge_id, edge_id as f64, edge_id as f64));

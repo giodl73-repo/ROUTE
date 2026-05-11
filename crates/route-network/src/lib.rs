@@ -31,6 +31,7 @@ pub use strategic::{
     usmca_corridor_score,
 };
 pub use tier::{
-    analyze_tier_connectivity, tier_connectivity_gate_failures, TierConnectivityRow, TierNodeClass,
-    TierTouchNode,
+    analyze_tier_connectivity, tier_connectivity_gate_failures, RouteTier, TierConnectivityRow,
+    TierNodeClass, TierTouchNode, T1_BACKBONE_ROUTES, T1_SCORE_THRESHOLD, T2_SCORE_THRESHOLD,
+    T3_SCORE_THRESHOLD,
 };

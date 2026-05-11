@@ -2,6 +2,47 @@ use crate::graph::HighwayGraph;
 use petgraph::graph::NodeIndex;
 use std::collections::{BTreeSet, HashSet};
 
+pub const T1_SCORE_THRESHOLD: f64 = 70.0;
+pub const T2_SCORE_THRESHOLD: f64 = 50.0;
+pub const T3_SCORE_THRESHOLD: f64 = 30.0;
+
+pub const T1_BACKBONE_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RouteTier {
+    T1,
+    T2,
+    T3,
+    T4,
+}
+
+impl RouteTier {
+    pub fn from_score(score: f64) -> Self {
+        if score >= T1_SCORE_THRESHOLD {
+            Self::T1
+        } else if score >= T2_SCORE_THRESHOLD {
+            Self::T2
+        } else if score >= T3_SCORE_THRESHOLD {
+            Self::T3
+        } else {
+            Self::T4
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::T1 => "T1",
+            Self::T2 => "T2",
+            Self::T3 => "T3",
+            Self::T4 => "T4",
+        }
+    }
+
+    pub fn is_backbone(self) -> bool {
+        self == Self::T1
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TierNodeClass {
     TrunkConnector,
@@ -170,7 +211,10 @@ fn incident_t1_routes(
 
 #[cfg(test)]
 mod tests {
-    use super::{analyze_tier_connectivity, tier_connectivity_gate_failures, TierNodeClass};
+    use super::{
+        analyze_tier_connectivity, tier_connectivity_gate_failures, RouteTier, TierNodeClass,
+        T1_BACKBONE_ROUTES,
+    };
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{coord, LineString};
 
@@ -239,5 +283,23 @@ mod tests {
 
         assert_eq!(rows[0].classification, TierNodeClass::LocalSpur);
         assert_eq!(tier_connectivity_gate_failures(&rows).len(), 1);
+    }
+
+    #[test]
+    fn route_tier_thresholds_are_canonical() {
+        assert_eq!(RouteTier::from_score(70.0), RouteTier::T1);
+        assert_eq!(RouteTier::from_score(69.9), RouteTier::T2);
+        assert_eq!(RouteTier::from_score(50.0), RouteTier::T2);
+        assert_eq!(RouteTier::from_score(49.9), RouteTier::T3);
+        assert_eq!(RouteTier::from_score(30.0), RouteTier::T3);
+        assert_eq!(RouteTier::from_score(29.9), RouteTier::T4);
+    }
+
+    #[test]
+    fn t1_backbone_catalog_is_shared_in_normalized_ids() {
+        assert_eq!(
+            T1_BACKBONE_ROUTES,
+            &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
+        );
     }
 }

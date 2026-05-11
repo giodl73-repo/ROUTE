@@ -7,10 +7,9 @@
 /// via a T2 or lower corridor. This is a structural deficiency —
 /// the national trunk-line system is not internally connected.
 use crate::graph::HighwayGraph;
+use crate::tier::T1_BACKBONE_ROUTES;
 use petgraph::graph::NodeIndex;
 use std::collections::{HashMap, HashSet};
-
-const T1_ROUTES: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
 
 /// An endpoint of a T1 corridor.
 #[derive(Debug, Clone)]
@@ -62,7 +61,7 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
     let t1_edge_set: HashSet<_> = g
         .graph
         .edge_indices()
-        .filter(|&ei| T1_ROUTES.contains(&g.graph[ei].route_id.as_str()))
+        .filter(|&ei| T1_BACKBONE_ROUTES.contains(&g.graph[ei].route_id.as_str()))
         .collect();
 
     let mut pair_results = Vec::new();
@@ -129,7 +128,7 @@ pub fn analyze_t1_connectivity(g: &HighwayGraph) -> T1ConnectivityReport {
 fn find_t1_endpoints(g: &HighwayGraph) -> Vec<T1Endpoint> {
     let mut endpoints = Vec::new();
 
-    for &route_id in T1_ROUTES {
+    for &route_id in T1_BACKBONE_ROUTES {
         let edges = g.route_edges(route_id);
         if edges.is_empty() {
             continue;

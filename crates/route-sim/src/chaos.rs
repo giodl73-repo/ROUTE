@@ -11,7 +11,7 @@ use crate::metrics::compute_metrics;
 use petgraph::graph::EdgeIndex;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use route_network::HighwayGraph;
+use route_network::{HighwayGraph, T1_BACKBONE_ROUTES};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -84,11 +84,10 @@ pub fn run_chaos(g: &HighwayGraph, demand: &DemandMatrix, config: &ChaosConfig) 
     let baseline_metrics = compute_metrics(g, &baseline, &capacities);
 
     // T1 edge IDs
-    let t1_routes = ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
     let candidate_edges: Vec<EdgeIndex> = if config.t1_only {
         g.graph
             .edge_indices()
-            .filter(|&ei| t1_routes.contains(&g.graph[ei].route_id.as_str()))
+            .filter(|&ei| T1_BACKBONE_ROUTES.contains(&g.graph[ei].route_id.as_str()))
             .collect()
     } else {
         g.graph.edge_indices().collect()

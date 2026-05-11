@@ -10,6 +10,9 @@
 /// This is NOT a geographic map — it is a topological representation
 /// of the relay network. The traveler's question is:
 /// "Which corridor? Where do I change? How many hubs?"
+use std::collections::{BTreeSet, HashMap};
+
+use route_network::RouteTier;
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
@@ -77,6 +80,23 @@ struct T2LineSegment {
     stop_ids: Vec<&'static str>,
     waypoints: Vec<(f64, f64)>,
     lane_shift: (f64, f64),
+}
+
+#[derive(Clone)]
+struct SlaEdge {
+    to: &'static str,
+    route: &'static str,
+    tier: RouteTier,
+    miles: f64,
+}
+
+#[derive(Clone)]
+struct SlaStep {
+    from: &'static str,
+    to: &'static str,
+    route: &'static str,
+    tier: RouteTier,
+    miles: f64,
 }
 
 impl LineSegment {
@@ -206,20 +226,6 @@ fn minor_stop(
     stop(id, label, x, y, false, false, lines, label_dir)
 }
 
-fn anchor(id: &'static str, x: f64, y: f64) -> BeckStop {
-    BeckStop {
-        id,
-        label: "",
-        x,
-        y,
-        is_hub: false,
-        is_interchange: false,
-        draw: false,
-        lines: &[],
-        label_dir: LabelDir::Right,
-    }
-}
-
 fn beck_stops() -> Vec<BeckStop> {
     let mut stops = vec![
         stop(
@@ -340,7 +346,22 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-10", "I-69"],
             LabelDir::Down,
         ),
-        anchor("BEAUMONT", 1080.0, 1020.0),
+        minor_stop(
+            "BEAUMONT",
+            "Beaumont",
+            1080.0,
+            1020.0,
+            &["I-10"],
+            LabelDir::Down,
+        ),
+        minor_stop(
+            "LAFAYETTE",
+            "Lafayette",
+            1140.0,
+            1020.0,
+            &["I-10", "US90"],
+            LabelDir::Down,
+        ),
         minor_stop(
             "NOLA",
             "New Orleans",
@@ -349,7 +370,6 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-10"],
             LabelDir::Down,
         ),
-        anchor("GULF_COAST", 1440.0, 1020.0),
         minor_stop(
             "TALLAHASSEE",
             "Tallahassee",
@@ -387,6 +407,14 @@ fn beck_stops() -> Vec<BeckStop> {
             true,
             &["I-35", "I-20"],
             LabelDir::Left,
+        ),
+        minor_stop(
+            "ABILENE",
+            "Abilene",
+            720.0,
+            960.0,
+            &["I-20", "US80", "US83"],
+            LabelDir::Down,
         ),
         minor_stop(
             "SHV",
@@ -493,7 +521,6 @@ fn beck_stops() -> Vec<BeckStop> {
             LabelDir::Down,
         ),
         minor_stop("AMA", "Amarillo", 600.0, 900.0, &["I-40"], LabelDir::Down),
-        anchor("OKC_APPROACH", 720.0, 840.0),
         stop(
             "MEM",
             "Memphis",
@@ -524,7 +551,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-40", "I-75"],
             LabelDir::Up,
         ),
-        anchor("ASHEVILLE", 1440.0, 840.0),
+        minor_stop(
+            "ASHEVILLE",
+            "Asheville",
+            1440.0,
+            840.0,
+            &["I-40"],
+            LabelDir::Up,
+        ),
         stop(
             "CLT",
             "Charlotte",
@@ -620,6 +654,14 @@ fn beck_stops() -> Vec<BeckStop> {
             LabelDir::Right,
         ),
         minor_stop(
+            "MONTGOMERY",
+            "Montgomery",
+            1320.0,
+            1020.0,
+            &["I-65", "I-85", "US80"],
+            LabelDir::Down,
+        ),
+        minor_stop(
             "GAINESVILLE",
             "Gainesville",
             1440.0,
@@ -658,7 +700,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-84", "US95"],
             LabelDir::Up,
         ),
-        anchor("LEWISTON", 330.0, 320.0),
+        minor_stop(
+            "LEWISTON",
+            "Lewiston",
+            330.0,
+            320.0,
+            &["US95"],
+            LabelDir::Left,
+        ),
         minor_stop(
             "CHEYENNE",
             "Cheyenne",
@@ -677,6 +726,7 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-80", "I-29"],
             LabelDir::Up,
         ),
+        minor_stop("FARGO", "Fargo", 780.0, 360.0, &["I-29"], LabelDir::Left),
         minor_stop(
             "CLEVELAND",
             "Cleveland",
@@ -771,7 +821,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-90", "I-95"],
             LabelDir::Right,
         ),
-        anchor("NEW_HAVEN", 1920.0, 480.0),
+        minor_stop(
+            "NEW_HAVEN",
+            "New Haven",
+            1920.0,
+            480.0,
+            &["I-95"],
+            LabelDir::Right,
+        ),
         minor_stop(
             "PHILADELPHIA",
             "Philadelphia",
@@ -820,8 +877,22 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-35"],
             LabelDir::Right,
         ),
-        anchor("GREENVILLE", 1500.0, 900.0),
-        anchor("GREENSBORO", 1740.0, 900.0),
+        minor_stop(
+            "GREENVILLE",
+            "Greenville",
+            1500.0,
+            900.0,
+            &["I-85"],
+            LabelDir::Up,
+        ),
+        minor_stop(
+            "GREENSBORO",
+            "Greensboro",
+            1740.0,
+            900.0,
+            &["I-85"],
+            LabelDir::Down,
+        ),
         minor_stop(
             "MOBILE",
             "Mobile",
@@ -830,7 +901,6 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-10", "I-65"],
             LabelDir::Down,
         ),
-        anchor("BIRMINGHAM", 1200.0, 960.0),
         stop(
             "LOUISVILLE",
             "Louisville",
@@ -841,7 +911,16 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-65", "I-70"],
             LabelDir::Left,
         ),
-        anchor("TEXARKANA", 930.0, 900.0),
+        stop(
+            "LITTLE_ROCK",
+            "Little Rock",
+            930.0,
+            900.0,
+            true,
+            true,
+            &["I-30", "I-40", "US70"],
+            LabelDir::Up,
+        ),
         minor_stop(
             "LAS_VEGAS",
             "Las Vegas",
@@ -860,8 +939,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-70", "I-25", "US287"],
             LabelDir::Up,
         ),
-        anchor("COLORADO_SPRINGS", 540.0, 720.0),
-        anchor("US287_PLAINS", 660.0, 780.0),
+        minor_stop(
+            "COLORADO_SPRINGS",
+            "Colorado Springs",
+            540.0,
+            720.0,
+            &["I-25"],
+            LabelDir::Right,
+        ),
         minor_stop(
             "CAPITAL_BELTWAY_N",
             "Capital North",
@@ -870,7 +955,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-95", "I-495"],
             LabelDir::Right,
         ),
-        anchor("CAPITAL_BELTWAY_E", 1980.0, 840.0),
+        minor_stop(
+            "CAPITAL_BELTWAY_E",
+            "Capital East",
+            1980.0,
+            840.0,
+            &["I-95", "I-495"],
+            LabelDir::Right,
+        ),
         minor_stop(
             "CAPITAL_BELTWAY_S",
             "Capital South",
@@ -879,10 +971,30 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-95", "I-495"],
             LabelDir::Right,
         ),
-        anchor("I59_TIE", 1380.0, 840.0),
-        anchor("OZARKS", 900.0, 780.0),
-        anchor("SHENANDOAH_W", 1440.0, 720.0),
-        anchor("SHENANDOAH_E", 1620.0, 720.0),
+        minor_stop(
+            "JOPLIN",
+            "Joplin",
+            900.0,
+            780.0,
+            &["I-44", "I-49"],
+            LabelDir::Down,
+        ),
+        minor_stop(
+            "ROANOKE",
+            "Roanoke",
+            1440.0,
+            720.0,
+            &["I-81"],
+            LabelDir::Down,
+        ),
+        minor_stop(
+            "HAGERSTOWN",
+            "Hagerstown",
+            1620.0,
+            720.0,
+            &["I-70", "I-81"],
+            LabelDir::Down,
+        ),
         stop(
             "STL",
             "St. Louis",
@@ -893,7 +1005,14 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-70", "I-44"],
             LabelDir::Right,
         ),
-        anchor("APPALACHIAN_NORTH", 1500.0, 660.0),
+        minor_stop(
+            "PITTSBURGH",
+            "Pittsburgh",
+            1500.0,
+            660.0,
+            &["I-70", "I-76", "I-77"],
+            LabelDir::Up,
+        ),
         stop(
             "PENNSYLVANIA",
             "Harrisburg",
@@ -904,30 +1023,40 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-70", "I-76", "I-81"],
             LabelDir::Up,
         ),
-        anchor("US30_W", 360.0, 600.0),
-        anchor("US30_C", 720.0, 600.0),
-        anchor("US6_W", 360.0, 660.0),
-        anchor("US6_C", 720.0, 660.0),
-        anchor("US6_E", 1200.0, 600.0),
-        anchor("US70_W", 420.0, 960.0),
-        anchor("US70_C", 840.0, 840.0),
-        anchor("US70_E", 1260.0, 900.0),
-        anchor("US90_W", 780.0, 1140.0),
-        anchor("US90_C", 1260.0, 1080.0),
-        anchor("US90_E", 1800.0, 1140.0),
-        anchor("I22_C", 1200.0, 960.0),
-        anchor("I29_W", 720.0, 540.0),
-        anchor("I29_C", 780.0, 480.0),
-        anchor("US80_W", 840.0, 1020.0),
-        anchor("US80_C", 1200.0, 1020.0),
-        anchor("US83_N", 720.0, 220.0),
-        anchor("US83_C", 720.0, 620.0),
-        anchor("I37_S", 780.0, 1140.0),
-        anchor("I37_E", 840.0, 1140.0),
+        stop(
+            "GULFPORT",
+            "Gulfport",
+            1260.0,
+            1080.0,
+            true,
+            true,
+            &["I-10", "US90"],
+            LabelDir::Down,
+        ),
+        stop(
+            "CORPUS",
+            "Corpus Christi",
+            780.0,
+            1140.0,
+            true,
+            true,
+            &["I-37"],
+            LabelDir::Up,
+        ),
     ];
     generate_geo_aware_beck_grid(&mut stops);
+    apply_schematic_adjustments(&mut stops);
     promote_t1_bend_anchors(&mut stops);
     stops
+}
+
+fn apply_schematic_adjustments(stops: &mut [BeckStop]) {
+    for stop in stops {
+        if stop.id == "CORPUS" {
+            stop.x += 130.0;
+            stop.y += 45.0;
+        }
+    }
 }
 
 fn promote_t1_bend_anchors(stops: &mut [BeckStop]) {
@@ -1017,21 +1146,22 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "LRD" => (27.51, -99.51),
         "HOU" => (29.76, -95.37),
         "BEAUMONT" => (30.08, -94.13),
+        "LAFAYETTE" => (30.22, -92.02),
         "NOLA" => (29.95, -90.07),
-        "GULF_COAST" => (30.42, -87.22),
         "TALLAHASSEE" => (30.44, -84.28),
         "JAX" => (30.33, -81.66),
         "MIA" => (25.76, -80.19),
         "DAL" => (32.78, -96.80),
+        "ABILENE" => (32.45, -99.73),
         "SHV" => (32.53, -93.75),
-        "BHM_APPROACH" | "BIRMINGHAM" | "I22_C" => (33.52, -86.80),
+        "BHM_APPROACH" => (33.52, -86.80),
         "ATL" => (33.75, -84.39),
         "COLUMBIA" => (34.00, -81.03),
         "FLO" => (34.20, -79.76),
         "MIN" => (44.98, -93.27),
         "DSM" => (41.59, -93.62),
         "KC" => (39.10, -94.58),
-        "OKC" | "OKC_APPROACH" => (35.47, -97.52),
+        "OKC" => (35.47, -97.52),
         "BARSTOW" => (34.90, -117.02),
         "ABQ" => (35.08, -106.65),
         "AMA" => (35.22, -101.83),
@@ -1049,7 +1179,8 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "COLUMBUS" => (39.96, -83.00),
         "CINCINNATI" => (39.10, -84.51),
         "LOUISVILLE" => (38.22, -85.75),
-        "CHATTANOOGA" | "I59_TIE" => (35.05, -85.31),
+        "CHATTANOOGA" => (35.05, -85.31),
+        "MONTGOMERY" => (32.38, -86.30),
         "GAINESVILLE" => (29.65, -82.32),
         "TAMPA" => (27.95, -82.46),
         "RENO" => (39.53, -119.81),
@@ -1057,7 +1188,8 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "BOI" => (43.62, -116.20),
         "LEWISTON" => (46.42, -117.02),
         "CHEYENNE" => (41.14, -104.82),
-        "OMAHA" | "I29_W" => (41.26, -95.93),
+        "OMAHA" => (41.26, -95.93),
+        "FARGO" => (46.88, -96.79),
         "CLEVELAND" => (41.50, -81.69),
         "PA_APPROACH" => (41.20, -77.19),
         "PENNSYLVANIA" => (40.27, -76.88),
@@ -1080,37 +1212,20 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "GREENVILLE" => (34.85, -82.40),
         "GREENSBORO" => (36.07, -79.79),
         "MOBILE" => (30.69, -88.04),
-        "TEXARKANA" => (33.43, -94.05),
+        "LITTLE_ROCK" => (34.75, -92.29),
         "LAS_VEGAS" => (36.17, -115.14),
         "DEN" => (39.74, -104.99),
         "COLORADO_SPRINGS" => (38.83, -104.82),
-        "US287_PLAINS" => (37.00, -102.00),
         "CAPITAL_BELTWAY_N" => (39.03, -77.08),
         "CAPITAL_BELTWAY_E" => (38.90, -76.90),
         "CAPITAL_BELTWAY_S" => (38.79, -77.04),
-        "OZARKS" => (36.19, -94.13),
-        "SHENANDOAH_W" => (38.07, -79.10),
-        "SHENANDOAH_E" => (38.03, -78.48),
+        "JOPLIN" => (37.08, -94.51),
+        "ROANOKE" => (37.27, -79.94),
+        "HAGERSTOWN" => (39.64, -77.72),
         "STL" => (38.63, -90.20),
-        "APPALACHIAN_NORTH" => (39.63, -79.96),
-        "US30_W" => (41.14, -100.76),
-        "US30_C" => (41.14, -95.93),
-        "US6_W" => (39.60, -110.81),
-        "US6_C" => (40.86, -96.68),
-        "US6_E" => (41.70, -86.25),
-        "US70_W" => (35.20, -111.65),
-        "US70_C" => (35.47, -97.52),
-        "US70_E" => (35.05, -85.31),
-        "US90_W" => (29.43, -98.49),
-        "US90_C" => (30.45, -91.15),
-        "US90_E" => (30.33, -81.66),
-        "I29_C" => (41.59, -93.62),
-        "US80_W" => (32.35, -95.30),
-        "US80_C" => (32.50, -89.50),
-        "US83_N" => (44.08, -103.23),
-        "US83_C" => (39.00, -100.00),
-        "I37_S" => (27.80, -97.40),
-        "I37_E" => (28.00, -96.80),
+        "PITTSBURGH" => (40.44, -80.00),
+        "GULFPORT" => (30.37, -89.09),
+        "CORPUS" => (27.80, -97.40),
         _ => fallback_geo_from_seed_grid(stop),
     }
 }
@@ -1231,9 +1346,10 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
                 "SAT",
                 "HOU",
                 "BEAUMONT",
+                "LAFAYETTE",
                 "NOLA",
+                "GULFPORT",
                 "MOBILE",
-                "GULF_COAST",
                 "TALLAHASSEE",
                 "JAX",
             ],
@@ -1249,7 +1365,6 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
                 "BARSTOW",
                 "ABQ",
                 "AMA",
-                "OKC_APPROACH",
                 "OKC",
                 "MEM",
                 "NASHVILLE",
@@ -1366,7 +1481,13 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-65",
             "I-75",
-            &["MOBILE", "BHM_APPROACH", "NASHVILLE", "LOUISVILLE", "CINCINNATI"],
+            &[
+                "MOBILE",
+                "BHM_APPROACH",
+                "NASHVILLE",
+                "LOUISVILLE",
+                "CINCINNATI",
+            ],
             "Birmingham",
             "BHM_APPROACH",
             (-15.0, -30.0),
@@ -1386,9 +1507,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-30",
             "I-20",
-            &["DAL", "TEXARKANA", "MEM"],
+            &["DAL", "LITTLE_ROCK", "MEM"],
             "Arkansas Link",
-            "TEXARKANA",
+            "LITTLE_ROCK",
             (-10.0, 30.0),
             "end",
         ),
@@ -1436,9 +1557,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US287",
             "I-35",
-            &["DAL", "US287_PLAINS", "DEN"],
+            &["DAL", "AMA", "DEN"],
             "Front Range",
-            "US287_PLAINS",
+            "AMA",
             (5.0, 5.0),
             "end",
         ),
@@ -1472,9 +1593,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-49",
             "I-35",
-            &["SHV", "OZARKS", "KC"],
+            &["SHV", "JOPLIN", "KC"],
             "Ozarks",
-            "OZARKS",
+            "JOPLIN",
             (0.0, 0.0),
             "start",
         ),
@@ -1482,16 +1603,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-81",
             "I-95",
-            &[
-                "KNX",
-                "SHENANDOAH_W",
-                "SHENANDOAH_E",
-                "APPALACHIAN_NORTH",
-                "PENNSYLVANIA",
-                "NYC",
-            ],
+            &["KNX", "ROANOKE", "HAGERSTOWN", "PENNSYLVANIA", "NYC"],
             "Knoxville-New York",
-            "SHENANDOAH_E",
+            "HAGERSTOWN",
             (0.0, 0.0),
             "start",
         ),
@@ -1509,9 +1623,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-77",
             "I-75",
-            &["CLT", "APPALACHIAN_NORTH", "CLEVELAND"],
+            &["CLT", "PITTSBURGH", "CLEVELAND"],
             "Appalachian North",
-            "APPALACHIAN_NORTH",
+            "PITTSBURGH",
             (0.0, 0.0),
             "start",
         ),
@@ -1519,7 +1633,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-76",
             "I-80",
-            &["CLEVELAND", "PENNSYLVANIA", "PHILADELPHIA"],
+            &["CLEVELAND", "PITTSBURGH", "PENNSYLVANIA", "PHILADELPHIA"],
             "Pennsylvania",
             "PENNSYLVANIA",
             (0.0, 0.0),
@@ -1529,7 +1643,7 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US30",
             "I-80",
-            &["SLC", "US30_C", "CHI_APPROACH", "PA_APPROACH"],
+            &["SLC", "CHEYENNE", "OMAHA", "CHI_APPROACH", "PA_APPROACH"],
             "Lincoln Highway",
             "CHI_APPROACH",
             (0.0, 0.0),
@@ -1539,9 +1653,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US6",
             "I-80",
-            &["SLC", "US6_C", "CHI_APPROACH"],
+            &["SLC", "CHEYENNE", "OMAHA", "CHI_APPROACH"],
             "Central Plains",
-            "US6_C",
+            "OMAHA",
             (0.0, 0.0),
             "end",
         ),
@@ -1549,19 +1663,19 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US70",
             "I-40",
-            &["PHX", "US70_C", "KNX"],
+            &["PHX", "LITTLE_ROCK", "KNX"],
             "Mid-South",
-            "US70_C",
-            (0.0, 0.0),
+            "LITTLE_ROCK",
+            (-36.0, 38.0),
             "end",
         ),
         t2_line_segment(
             stops,
             "US90",
             "I-10",
-            &["SAT", "US90_C", "JAX"],
+            &["SAT", "LAFAYETTE", "GULFPORT", "JAX"],
             "Gulf Local",
-            "US90_C",
+            "GULFPORT",
             (0.0, 0.0),
             "start",
         ),
@@ -1569,19 +1683,19 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-22",
             "I-40",
-            &["MEM", "I22_C", "BHM_APPROACH"],
+            &["MEM", "BHM_APPROACH"],
             "Memphis-Birmingham",
-            "I22_C",
-            (0.0, 0.0),
-            "start",
+            "BHM_APPROACH",
+            (-48.0, 50.0),
+            "end",
         ),
         t2_line_segment(
             stops,
             "I-29",
             "I-35",
-            &["OMAHA", "I29_C", "DSM"],
+            &["OMAHA", "FARGO", "MIN"],
             "Upper Missouri",
-            "I29_C",
+            "FARGO",
             (0.0, 0.0),
             "end",
         ),
@@ -1589,9 +1703,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US80",
             "I-20",
-            &["DAL", "US80_C", "ATL"],
+            &["DAL", "ABILENE", "LITTLE_ROCK", "MONTGOMERY", "ATL"],
             "Old South",
-            "US80_C",
+            "MONTGOMERY",
             (0.0, 0.0),
             "start",
         ),
@@ -1599,9 +1713,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "US83",
             "I-35",
-            &["MIN", "US83_C", "SAT"],
+            &["MIN", "RAPID_CITY", "ABILENE", "SAT"],
             "Dakota Spine",
-            "US83_C",
+            "ABILENE",
             (0.0, 0.0),
             "end",
         ),
@@ -1609,10 +1723,10 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-37",
             "I-10",
-            &["SAT", "I37_S", "I37_E", "SAT"],
-            "San Antonio Spur",
-            "I37_E",
-            (0.0, 0.0),
+            &["SAT", "CORPUS"],
+            "Corpus Christi",
+            "CORPUS",
+            (36.0, 26.0),
             "start",
         ),
     ]
@@ -1632,7 +1746,7 @@ fn t1_badges(stops: &[BeckStop]) -> Vec<(&'static str, f64, f64)> {
     vec![
         badge_at(stops, "I-5", "POR", (-20.0, 100.0)),
         badge_at(stops, "I-10", "ELP", (100.0, 0.0)),
-        badge_at(stops, "I-20", "BHM_APPROACH", (-20.0, 20.0)),
+        badge_at(stops, "I-20", "SHV", (-55.0, 58.0)),
         badge_at(stops, "I-35", "KC", (-35.0, 15.0)),
         badge_at(stops, "I-40", "AMA", (-40.0, 0.0)),
         badge_at(stops, "I-69", "MEM", (0.0, -55.0)),
@@ -1669,6 +1783,348 @@ pub fn build_beck_svg() -> String {
 /// Generate the expanded Beck schematic with T2 connectors as thin trunk-tinted lines.
 pub fn build_beck_t2_svg() -> String {
     build_beck_svg_variant(BeckVariant::T1WithT2)
+}
+
+/// Generate the stop-to-stop SLA surface implied by the Beck T1/T2 topology.
+///
+/// These are heuristic planning commitments, not publication-grade performance
+/// proof. They deliberately expose the stop path and evidence status so game,
+/// map, and standards workflows can tell "modeled promise" from observed SLA.
+pub fn build_beck_stop_sla_csv() -> String {
+    let stops = beck_stops();
+    let graph = sla_graph(&stops);
+    let mut csv = String::from(
+        "origin_id,origin_label,origin_tier,origin_class,dest_id,dest_label,dest_tier,dest_class,network_miles,max_stop_gap_miles,stop_gap_status,stop_count,line_changes,route_path,stop_path,dominant_tier,freight_relay_p95_h,freight_full_i20_p95_h,freight_sla_window,passenger_bus_p95_h,passenger_av_p95_h,air_door_to_door_h,passenger_competitive_with_air,rail_competition_note,evidence_status\n",
+    );
+
+    for (idx, origin) in stops.iter().filter(|stop| stop.draw).enumerate() {
+        for dest in stops.iter().filter(|stop| stop.draw).skip(idx + 1) {
+            let Some(steps) = shortest_sla_path(&graph, origin.id, dest.id) else {
+                continue;
+            };
+            let miles = steps.iter().map(|step| step.miles).sum::<f64>();
+            let max_gap = steps.iter().map(|step| step.miles).fold(0.0, f64::max);
+            let line_changes = line_changes(&steps);
+            let stop_path = stop_path(origin.id, &steps).join(";");
+            let route_path = route_path(&steps).join(";");
+            let stop_count = steps.len() + 1;
+            let dominant_tier = dominant_tier(&steps);
+
+            let freight_relay = freight_relay_p95_hours(miles, line_changes, stop_count);
+            let freight_full = freight_full_i20_p95_hours(miles, line_changes, stop_count);
+            let passenger_bus = passenger_bus_p95_hours(miles, line_changes);
+            let passenger_av = passenger_av_p95_hours(miles, line_changes);
+            let air = air_door_to_door_hours(miles);
+            let air_comp = passenger_air_competitiveness(passenger_av, air, miles);
+            let rail_note = rail_competition_note(origin, dest, miles, dominant_tier);
+
+            push_csv_row(
+                &mut csv,
+                &[
+                    origin.id,
+                    origin.label,
+                    stop_tier(origin, &steps),
+                    stop_class(origin),
+                    dest.id,
+                    dest.label,
+                    stop_tier(dest, &steps),
+                    stop_class(dest),
+                    &format!("{miles:.0}"),
+                    &format!("{max_gap:.0}"),
+                    stop_gap_status(max_gap),
+                    &stop_count.to_string(),
+                    &line_changes.to_string(),
+                    &route_path,
+                    &stop_path,
+                    dominant_tier.as_str(),
+                    &format!("{freight_relay:.1}"),
+                    &format!("{freight_full:.1}"),
+                    sla_window(freight_full),
+                    &format!("{passenger_bus:.1}"),
+                    &format!("{passenger_av:.1}"),
+                    &format!("{air:.1}"),
+                    air_comp,
+                    rail_note,
+                    "heuristic-planning",
+                ],
+            );
+        }
+    }
+
+    csv
+}
+
+fn sla_graph(stops: &[BeckStop]) -> HashMap<&'static str, Vec<SlaEdge>> {
+    let mut graph: HashMap<&'static str, Vec<SlaEdge>> = HashMap::new();
+
+    for (route, ids) in t1_route_stop_ids() {
+        add_sla_chain(stops, &mut graph, route, RouteTier::T1, &ids);
+    }
+    for line in t2_line_segments(stops) {
+        add_sla_chain(
+            stops,
+            &mut graph,
+            line.corridor,
+            RouteTier::T2,
+            &line.stop_ids,
+        );
+    }
+
+    graph
+}
+
+fn add_sla_chain(
+    stops: &[BeckStop],
+    graph: &mut HashMap<&'static str, Vec<SlaEdge>>,
+    route: &'static str,
+    tier: RouteTier,
+    ids: &[&'static str],
+) {
+    for pair in ids.windows(2) {
+        let from = pair[0];
+        let to = pair[1];
+        let miles = geo_miles(stop_by_id(stops, from), stop_by_id(stops, to));
+        add_sla_edge(graph, from, to, route, tier, miles);
+        add_sla_edge(graph, to, from, route, tier, miles);
+    }
+}
+
+fn add_sla_edge(
+    graph: &mut HashMap<&'static str, Vec<SlaEdge>>,
+    from: &'static str,
+    to: &'static str,
+    route: &'static str,
+    tier: RouteTier,
+    miles: f64,
+) {
+    graph.entry(from).or_default().push(SlaEdge {
+        to,
+        route,
+        tier,
+        miles,
+    });
+}
+
+fn shortest_sla_path(
+    graph: &HashMap<&'static str, Vec<SlaEdge>>,
+    origin: &'static str,
+    dest: &'static str,
+) -> Option<Vec<SlaStep>> {
+    let mut open = BTreeSet::from([(0_u64, origin)]);
+    let mut dist: HashMap<&'static str, f64> = HashMap::from([(origin, 0.0)]);
+    let mut prev: HashMap<&'static str, (&'static str, SlaEdge)> = HashMap::new();
+
+    while let Some((scaled_cost, node)) = open.pop_first() {
+        let cost = scaled_cost as f64 / 1000.0;
+        if cost > *dist.get(node).unwrap_or(&f64::INFINITY) + 0.0001 {
+            continue;
+        }
+        if node == dest {
+            break;
+        }
+        for edge in graph.get(node).into_iter().flatten() {
+            let next_cost = cost + sla_routing_weight(edge);
+            if next_cost + 0.001 < *dist.get(edge.to).unwrap_or(&f64::INFINITY) {
+                dist.insert(edge.to, next_cost);
+                prev.insert(edge.to, (node, edge.clone()));
+                open.insert(((next_cost * 1000.0).round() as u64, edge.to));
+            }
+        }
+    }
+
+    if !dist.contains_key(dest) {
+        return None;
+    }
+
+    let mut reversed = Vec::new();
+    let mut cursor = dest;
+    while cursor != origin {
+        let (from, edge) = prev.get(cursor)?;
+        reversed.push(SlaStep {
+            from: *from,
+            to: edge.to,
+            route: edge.route,
+            tier: edge.tier,
+            miles: edge.miles,
+        });
+        cursor = *from;
+    }
+    reversed.reverse();
+    Some(reversed)
+}
+
+fn sla_routing_weight(edge: &SlaEdge) -> f64 {
+    let coarse_gap_penalty = if edge.miles > 450.0 { 2_000.0 } else { 0.0 };
+    let tier_penalty = if edge.tier == RouteTier::T2 {
+        12.0
+    } else {
+        0.0
+    };
+    edge.miles + coarse_gap_penalty + tier_penalty
+}
+
+fn geo_miles(a: &BeckStop, b: &BeckStop) -> f64 {
+    let (lat1, lon1) = geo_proxy(a);
+    let (lat2, lon2) = geo_proxy(b);
+    let earth_radius_miles = 3958.8_f64;
+    let dlat = (lat2 - lat1).to_radians();
+    let dlon = (lon2 - lon1).to_radians();
+    let h = (dlat / 2.0).sin().powi(2)
+        + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+    let crow = 2.0 * earth_radius_miles * h.sqrt().asin();
+    crow * 1.18
+}
+
+fn line_changes(steps: &[SlaStep]) -> usize {
+    steps
+        .windows(2)
+        .filter(|pair| pair[0].route != pair[1].route)
+        .count()
+}
+
+fn stop_path(origin: &'static str, steps: &[SlaStep]) -> Vec<&'static str> {
+    let mut ids = vec![origin];
+    ids.extend(steps.iter().map(|step| step.to));
+    ids
+}
+
+fn route_path(steps: &[SlaStep]) -> Vec<&'static str> {
+    let mut routes = Vec::new();
+    for step in steps {
+        if routes.last().copied() != Some(step.route) {
+            routes.push(step.route);
+        }
+    }
+    routes
+}
+
+fn dominant_tier(steps: &[SlaStep]) -> RouteTier {
+    if steps.iter().any(|step| step.tier == RouteTier::T1) {
+        RouteTier::T1
+    } else {
+        RouteTier::T2
+    }
+}
+
+fn stop_tier(stop: &BeckStop, steps: &[SlaStep]) -> &'static str {
+    if steps
+        .iter()
+        .any(|step| step.tier == RouteTier::T1 && (step.from == stop.id || step.to == stop.id))
+    {
+        RouteTier::T1.as_str()
+    } else if !stop.lines.is_empty() {
+        RouteTier::T2.as_str()
+    } else {
+        RouteTier::T3.as_str()
+    }
+}
+
+fn stop_class(stop: &BeckStop) -> &'static str {
+    match (stop.is_hub, stop.is_interchange) {
+        (true, true) => "national_transfer_hub",
+        (true, false) => "national_terminal",
+        (false, true) => "transfer_hub",
+        (false, false) => "service_stop",
+    }
+}
+
+fn freight_relay_p95_hours(miles: f64, line_changes: usize, stop_count: usize) -> f64 {
+    miles / 47.0 + line_changes as f64 * 0.35 + stop_count.saturating_sub(2) as f64 * 0.08
+}
+
+fn freight_full_i20_p95_hours(miles: f64, line_changes: usize, stop_count: usize) -> f64 {
+    miles / 55.0 + line_changes as f64 * 0.25 + stop_count.saturating_sub(2) as f64 * 0.06
+}
+
+fn passenger_bus_p95_hours(miles: f64, line_changes: usize) -> f64 {
+    miles / 55.0 + 1.5 + line_changes as f64 * 0.35
+}
+
+fn passenger_av_p95_hours(miles: f64, line_changes: usize) -> f64 {
+    miles / 75.0 + 0.5 + line_changes as f64 * 0.20
+}
+
+fn air_door_to_door_hours(miles: f64) -> f64 {
+    2.5 + miles / 500.0
+}
+
+fn sla_window(hours: f64) -> &'static str {
+    if hours <= 6.0 {
+        "6h local"
+    } else if hours <= 12.0 {
+        "12h half-day"
+    } else if hours <= 24.0 {
+        "24h overnight"
+    } else if hours <= 36.0 {
+        "36h next-day"
+    } else if hours <= 48.0 {
+        "48h two-day"
+    } else if hours <= 72.0 {
+        "72h three-day"
+    } else {
+        ">72h source-gated"
+    }
+}
+
+fn stop_gap_status(max_gap: f64) -> &'static str {
+    if max_gap <= 250.0 {
+        "sla-stop-rhythm-ok"
+    } else if max_gap <= 400.0 {
+        "long-gap-review"
+    } else {
+        "needs-intermediate-stops"
+    }
+}
+
+fn passenger_air_competitiveness(av_hours: f64, air_hours: f64, miles: f64) -> &'static str {
+    if av_hours <= air_hours {
+        "time-competitive"
+    } else if miles <= 350.0 && av_hours <= air_hours + 1.5 {
+        "near-competitive-short-haul"
+    } else {
+        "not-time-competitive"
+    }
+}
+
+fn rail_competition_note(
+    origin: &BeckStop,
+    dest: &BeckStop,
+    miles: f64,
+    dominant_tier: RouteTier,
+) -> &'static str {
+    let corridor = [origin.id, dest.id];
+    if corridor.contains(&"NYC")
+        && (corridor.contains(&"PHILADELPHIA")
+            || corridor.contains(&"DC")
+            || corridor.contains(&"BOS")
+            || corridor.contains(&"NEW_HAVEN"))
+    {
+        "passenger-rail-wins-where-high-frequency"
+    } else if miles >= 700.0 {
+        "freight-rail-wins-bulk-road-wins-express"
+    } else if dominant_tier == RouteTier::T2 {
+        "rail-often-absent-road-flexibility-case"
+    } else {
+        "corridor-specific-rail-check-needed"
+    }
+}
+
+fn push_csv_row(csv: &mut String, fields: &[&str]) {
+    let row = fields
+        .iter()
+        .map(|field| csv_escape(field))
+        .collect::<Vec<_>>()
+        .join(",");
+    csv.push_str(&row);
+    csv.push('\n');
+}
+
+fn csv_escape(field: &str) -> String {
+    if field.contains(',') || field.contains('"') || field.contains('\n') {
+        format!("\"{}\"", field.replace('"', "\"\""))
+    } else {
+        field.to_string()
+    }
 }
 
 fn build_beck_svg_variant(variant: BeckVariant) -> String {
@@ -2045,8 +2501,9 @@ fn draw_generated_bends(
 #[cfg(test)]
 mod tests {
     use super::{
-        beck_stops, build_beck_svg, build_beck_t2_svg, is_primary_terminal, stop_by_id, t1_badges,
-        t1_line_segments, t1_route_stop_ids, t2_line_segments, LineSegment,
+        beck_stops, build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg,
+        is_primary_terminal, stop_by_id, t1_badges, t1_line_segments, t1_route_stop_ids,
+        t2_line_segments, LineSegment,
     };
 
     fn path_contains_point(line: &LineSegment, point: (f64, f64)) -> bool {
@@ -2305,6 +2762,9 @@ mod tests {
             "LOUISVILLE",
             "RAPID_CITY",
             "PENNSYLVANIA",
+            "LITTLE_ROCK",
+            "GULFPORT",
+            "CORPUS",
         ];
         for id in expected_hubs {
             let stop = stop_by_id(&stops, id);
@@ -2371,6 +2831,22 @@ mod tests {
             "LAS_VEGAS",
             "CHEYENNE",
             "TAMPA",
+            "GREENVILLE",
+            "GREENSBORO",
+            "JOPLIN",
+            "ROANOKE",
+            "HAGERSTOWN",
+            "PITTSBURGH",
+            "BEAUMONT",
+            "ASHEVILLE",
+            "LEWISTON",
+            "NEW_HAVEN",
+            "COLORADO_SPRINGS",
+            "LAFAYETTE",
+            "ABILENE",
+            "MONTGOMERY",
+            "FARGO",
+            "CAPITAL_BELTWAY_E",
         ];
         for id in expected_visible {
             let stop = stop_by_id(&stops, id);
@@ -2384,7 +2860,30 @@ mod tests {
             .unwrap();
         assert_eq!(
             i65.stop_ids,
-            vec!["MOBILE", "BHM_APPROACH", "NASHVILLE", "LOUISVILLE", "CINCINNATI"]
+            vec![
+                "MOBILE",
+                "BHM_APPROACH",
+                "NASHVILLE",
+                "LOUISVILLE",
+                "CINCINNATI"
+            ]
+        );
+    }
+
+    #[test]
+    fn beck_t2_appalachian_and_pennsylvania_services_use_named_corridors() {
+        let stops = beck_stops();
+        let routes = t2_line_segments(&stops);
+        let i81 = routes.iter().find(|line| line.corridor == "I-81").unwrap();
+        let i76 = routes.iter().find(|line| line.corridor == "I-76").unwrap();
+
+        assert_eq!(
+            i81.stop_ids,
+            vec!["KNX", "ROANOKE", "HAGERSTOWN", "PENNSYLVANIA", "NYC"]
+        );
+        assert_eq!(
+            i76.stop_ids,
+            vec!["CLEVELAND", "PITTSBURGH", "PENNSYLVANIA", "PHILADELPHIA"]
         );
     }
 
@@ -2425,11 +2924,61 @@ mod tests {
 
         assert!(path_contains_point(i80, chicago));
         assert!(path_contains_point(i90, chicago));
-        assert!(t2_lines.iter().all(|line| line.waypoints.len() >= 3));
+        assert!(t2_lines.iter().all(|line| line.waypoints.len() >= 2));
         assert!(t2_lines.iter().all(|line| !line.service_label.is_empty()));
         assert!(t2_lines.iter().all(|line| !line.label_anchor.is_empty()));
         assert_eq!(t2_lines.len(), 25);
         assert_eq!(t1_badges(&stops).len(), lines.len());
+    }
+
+    #[test]
+    fn beck_stop_catalog_has_no_hidden_routing_nodes() {
+        let stops = beck_stops();
+        let hidden = stops
+            .iter()
+            .filter(|stop| !stop.draw || stop.label.is_empty())
+            .map(|stop| stop.id)
+            .collect::<Vec<_>>();
+        assert!(
+            hidden.is_empty(),
+            "hidden or unlabeled Beck nodes: {hidden:?}"
+        );
+
+        for line in t2_line_segments(&stops) {
+            for stop_id in &line.stop_ids {
+                let stop = stop_by_id(&stops, stop_id);
+                assert!(stop.draw, "{} uses hidden stop {stop_id}", line.corridor);
+                assert!(
+                    !stop.label.is_empty(),
+                    "{} uses unlabeled stop {stop_id}",
+                    line.corridor
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn t2_services_keep_at_least_two_system_contact_stops() {
+        let stops = beck_stops();
+        let t1_ids = t1_route_stop_ids()
+            .into_iter()
+            .flat_map(|(_corridor, ids)| ids)
+            .collect::<std::collections::HashSet<_>>();
+        for line in t2_line_segments(&stops) {
+            let contacts = line
+                .stop_ids
+                .iter()
+                .filter(|stop_id| {
+                    let stop = stop_by_id(&stops, stop_id);
+                    t1_ids.contains(**stop_id) || stop.is_hub || stop.is_interchange
+                })
+                .count();
+            assert!(
+                contacts >= 2,
+                "{} has only {contacts} system contact stop(s)",
+                line.corridor
+            );
+        }
     }
 
     #[test]
@@ -2525,5 +3074,33 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn beck_stop_sla_surface_exports_stop_pair_contracts() {
+        let csv = build_beck_stop_sla_csv();
+
+        assert!(csv.starts_with("origin_id,origin_label,origin_tier"));
+        assert!(csv.contains("MIA,Miami"));
+        assert!(csv.contains("NYC,New York"));
+        assert!(csv.contains("LA,Los Angeles"));
+        assert!(csv.contains("DEN,Denver"));
+        assert!(csv.contains("SLC,Salt Lake"));
+        assert!(csv.contains("heuristic-planning"));
+        assert!(csv.contains("freight_full_i20_p95_h"));
+        assert!(csv.contains("passenger_competitive_with_air"));
+    }
+
+    #[test]
+    fn beck_stop_sla_surface_keeps_long_haul_paths_auditable() {
+        let csv = build_beck_stop_sla_csv();
+        let ny_la = csv
+            .lines()
+            .find(|line| line.starts_with("LA,Los Angeles") && line.contains(",NYC,New York"))
+            .expect("LA to New York SLA row");
+
+        assert!(ny_la.contains("needs-intermediate-stops"));
+        assert!(ny_la.contains("not-time-competitive"));
+        assert!(ny_la.contains("freight-rail-wins-bulk-road-wins-express"));
     }
 }

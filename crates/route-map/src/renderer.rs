@@ -1,6 +1,6 @@
 use crate::projection::{AlbersUS, ViewTransform};
 use anyhow::{Context, Result};
-use route_network::{Corridor, HighwayGraph};
+use route_network::{Corridor, HighwayGraph, T1_BACKBONE_ROUTES};
 use route_score::DimensionScores;
 use std::path::Path;
 
@@ -35,8 +35,7 @@ fn corridor_color(route_id: &str) -> &'static str {
 }
 
 fn bg_color(route_id: &str) -> &'static str {
-    const T1: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
-    if T1.contains(&route_id) {
+    if T1_BACKBONE_ROUTES.contains(&route_id) {
         corridor_color(route_id)
     } else {
         "#475569"
@@ -80,9 +79,7 @@ pub fn build_svg(
             continue;
         }
         let c = bg_color(&edge.route_id);
-        let w = if ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
-            .contains(&edge.route_id.as_str())
-        {
+        let w = if T1_BACKBONE_ROUTES.contains(&edge.route_id.as_str()) {
             1.2
         } else {
             0.5
@@ -123,7 +120,7 @@ pub fn build_svg(
         .map(|sc| format!("{:.1}/160", sc.total()))
         .unwrap_or("—".into());
     let tier_label = match highlight_id.as_str() {
-        "I5" | "I10" | "I35" | "I40" | "I75" | "I80" | "I90" | "I95" => "T1 Primary Artery",
+        id if T1_BACKBONE_ROUTES.contains(&id) => "T1 Primary Artery",
         id if ["I110", "I880", "I84", "I225", "I2", "I290", "I285", "I4"].contains(&id) => {
             "T1 Urban (aggregate score)"
         }

@@ -1,15 +1,12 @@
 use crate::projection::{AlbersUS, ViewTransform};
 /// Mega-map: all interstate tiers with metro-style color registry, hub markers, and labels.
 use anyhow::Result;
-use route_network::HighwayGraph;
+use route_network::{HighwayGraph, RouteTier, T1_BACKBONE_ROUTES};
 use serde::Deserialize;
 use std::collections::HashMap;
 
 const W: f64 = 2400.0;
 const H: f64 = 1350.0;
-const T1_THRESHOLD: f64 = 70.0;
-const T2_THRESHOLD: f64 = 50.0;
-const T3_THRESHOLD: f64 = 30.0;
 
 // ── Tier stroke weights (Beck hierarchy) ──────────────────────────────────────
 const STROKE_T1: f64 = 6.0;
@@ -32,7 +29,7 @@ fn t1_color(route_id: &str) -> &'static str {
     }
 }
 
-const T1_ROUTES: &[(&str, &str)] = &[
+const T1_ROUTE_LABELS: &[(&str, &str)] = &[
     ("I5", "I-5"),
     ("I10", "I-10"),
     ("I35", "I-35"),
@@ -44,7 +41,7 @@ const T1_ROUTES: &[(&str, &str)] = &[
 ];
 
 fn is_t1_route(route_id: &str) -> bool {
-    T1_ROUTES.iter().any(|(id, _)| *id == route_id)
+    T1_BACKBONE_ROUTES.contains(&route_id)
 }
 
 /// Upgrade-candidate US routes rendered as dashed gold lines.
@@ -63,9 +60,9 @@ fn route_style(route_id: &str, score: f64) -> (String, f64, f64, bool) {
     } else if is_upgrade_candidate(route_id) {
         // Dashed gold regardless of score — these are upgrade candidates
         ("#DAA520".to_string(), 2.5, 0.80, true)
-    } else if score >= T2_THRESHOLD {
+    } else if RouteTier::from_score(score) == RouteTier::T2 {
         ("#64748b".to_string(), STROKE_T2, 0.70, false)
-    } else if score >= T3_THRESHOLD {
+    } else if RouteTier::from_score(score) == RouteTier::T3 {
         ("#475569".to_string(), STROKE_T3_T4, 0.55, false)
     } else {
         ("#1e293b".to_string(), STROKE_T3_T4, 0.45, false)
@@ -413,7 +410,7 @@ pub fn build_megamap_svg_with_hubs(
             continue;
         }
         let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
-        if score >= T3_THRESHOLD {
+        if RouteTier::from_score(score) != RouteTier::T4 {
             continue;
         } // T3+, skip
         emit_path(&mut s, segs, "#1a2540", STROKE_T3_T4, 0.40, "");
@@ -426,7 +423,7 @@ pub fn build_megamap_svg_with_hubs(
             continue;
         }
         let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
-        if score < T3_THRESHOLD || score >= T2_THRESHOLD {
+        if RouteTier::from_score(score) != RouteTier::T3 {
             continue;
         }
         emit_path(&mut s, segs, "#2e4060", STROKE_T3_T4, 0.52, "");
@@ -439,7 +436,7 @@ pub fn build_megamap_svg_with_hubs(
             continue;
         }
         let score = scores.get(rid.as_str()).cloned().unwrap_or(0.0);
-        if score < T2_THRESHOLD || score >= T1_THRESHOLD {
+        if RouteTier::from_score(score) != RouteTier::T2 {
             continue;
         }
         emit_path(&mut s, segs, "#64748b", STROKE_T2, 0.68, "");
@@ -464,7 +461,7 @@ pub fn build_megamap_svg_with_hubs(
     // ── 8. T1 routes — glow halos then strokes ────────────────────────────────
     // Pass A: glow halos (14px at 20% opacity in corridor color)
     s += "<!-- T1 glow halos -->\n";
-    for (route_id, _label) in T1_ROUTES {
+    for (route_id, _label) in T1_ROUTE_LABELS {
         let color = t1_color(route_id);
         if let Some(segs) = route_paths.get(*route_id) {
             emit_path(&mut s, segs, color, 14.0, 0.18, "");
@@ -472,7 +469,7 @@ pub fn build_megamap_svg_with_hubs(
     }
     // Pass B: T1 bold strokes (6px, full opacity)
     s += "<!-- T1 corridor strokes -->\n";
-    for (route_id, _label) in T1_ROUTES {
+    for (route_id, _label) in T1_ROUTE_LABELS {
         let color = t1_color(route_id);
         if let Some(segs) = route_paths.get(*route_id) {
             emit_path(&mut s, segs, color, STROKE_T1, 1.0, "");
@@ -547,7 +544,7 @@ pub fn build_megamap_svg_with_hubs(
 
     // ── 11. T1 highway shield markers (circular, Beck-style) ─────────────────
     s += "<!-- T1 highway shield markers -->\n";
-    for (route_id, label) in T1_ROUTES {
+    for (route_id, label) in T1_ROUTE_LABELS {
         let segs = match route_paths.get(*route_id) {
             Some(s) => s,
             None => continue,
@@ -811,12 +808,11 @@ fn regional_tier(route_id: &str, scores: &HashMap<String, f32>) -> u8 {
         return 1;
     }
     let score = scores.get(route_id).cloned().unwrap_or(0.0) as f64;
-    if score >= T2_THRESHOLD {
-        2
-    } else if score >= T3_THRESHOLD {
-        3
-    } else {
-        4
+    match RouteTier::from_score(score) {
+        RouteTier::T1 => 1,
+        RouteTier::T2 => 2,
+        RouteTier::T3 => 3,
+        RouteTier::T4 => 4,
     }
 }
 
@@ -910,7 +906,7 @@ pub fn build_t1_corridor_svg(
     };
 
     let t1_color_str = t1_color(corridor_id);
-    let t1_label = T1_ROUTES
+    let t1_label = T1_ROUTE_LABELS
         .iter()
         .find(|(id, _)| *id == corridor_id)
         .map(|(_, label)| *label)

@@ -1,6 +1,9 @@
 {
   "private": true,
   "scripts": {
+    "check:l0": "cargo test -q --workspace --lib --bins",
+    "check:l1": "cargo test -q",
+    "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
     "check:game-browser": "playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium"
   },
   "devDependencies": {

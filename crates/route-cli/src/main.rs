@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 
 mod game;
 
-const T1_THRESHOLD: f64 = 70.0;
-const T2_THRESHOLD: f64 = 50.0;
-const T3_THRESHOLD: f64 = 30.0;
+const T1_THRESHOLD: f64 = route_network::T1_SCORE_THRESHOLD;
+const T2_THRESHOLD: f64 = route_network::T2_SCORE_THRESHOLD;
+const T3_THRESHOLD: f64 = route_network::T3_SCORE_THRESHOLD;
 const DIMENSION_CODES: [&str; 16] = [
     "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1", "D2", "D3",
 ];
@@ -997,6 +997,18 @@ enum Commands {
         seed: u64,
     },
 
+    /// Generate stop-to-stop SLA surface from the Beck T1/T2 topology
+    StopSlaSurface {
+        /// Output CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/beck-stop-sla.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+    },
+
     /// Benchmark all I2.0 interventions — rank each by contribution to 48h SLA
     Interventions {
         /// Which corridor to test
@@ -1789,6 +1801,11 @@ fn run_cli() -> Result<()> {
                     std::fs::create_dir_all(parent)?;
                 }
                 route_map::svg_to_png(&svg, &out, 1800, 1000)?;
+                let board_csv = route_map::build_t3_zone_board_csv(&norm)?;
+                let board_out = out.with_extension("board.csv");
+                std::fs::write(&board_out, board_csv).with_context(|| {
+                    format!("writing T3 board manifest {}", board_out.display())
+                })?;
                 println!(
                     "  rendered T3 Beck zone schematic: {} (1800x1000)",
                     out.display()
@@ -1796,6 +1813,7 @@ fn run_cli() -> Result<()> {
                 println!(
                     "  regional Beck schematic · stops define endpoints, bends, and transfers"
                 );
+                println!("  wrote T3 game board manifest: {}", board_out.display());
                 return Ok(());
             }
 
@@ -1825,8 +1843,7 @@ fn run_cli() -> Result<()> {
             let graph = load_graph(&manifest)?;
 
             // T1 primary corridors get a regional map showing T2/T3/T4 feeders.
-            const T1_PRIMARY: &[&str] = &["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
-            if T1_PRIMARY.contains(&norm.as_str()) {
+            if route_network::T1_BACKBONE_ROUTES.contains(&norm.as_str()) {
                 let tier_scores =
                     route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
                 // Convert f64 scores to f32 for the T1 corridor map API.
@@ -2339,8 +2356,11 @@ fn run_cli() -> Result<()> {
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
-            let t1_ids = ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"];
-            let filter: Option<&[&str]> = if t1_only { Some(&t1_ids) } else { None };
+            let filter: Option<&[&str]> = if t1_only {
+                Some(route_network::T1_BACKBONE_ROUTES)
+            } else {
+                None
+            };
             let interchange_count = graph
                 .graph
                 .node_indices()
@@ -3741,8 +3761,7 @@ fn run_cli() -> Result<()> {
                 graph
                     .interstate_ids()
                     .iter()
-                    .filter(|id| ["I5", "I10", "I35", "I40", "I75", "I80", "I90", "I95"]
-                        .contains(&id.as_str()))
+                    .filter(|id| route_network::T1_BACKBONE_ROUTES.contains(&id.as_str()))
                     .count(),
                 graph.route_ids().len()
             );
@@ -4711,6 +4730,18 @@ fn run_cli() -> Result<()> {
             println!("route sla-matrix — national SLA commitment windows ({trips} trips)\n");
             let data_dir = std::path::PathBuf::from("data");
             print_sla_matrix(trips, seed, &data_dir);
+        }
+
+        Commands::StopSlaSurface { output } => {
+            let csv = route_map::build_beck_stop_sla_csv();
+            if let Some(parent) = output.parent() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(&output, csv)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("route stop-sla-surface — wrote {}", output.display());
+            println!("  source: Beck T1/T2 stops and lines; evidence_status=heuristic-planning");
         }
 
         Commands::Interventions {
@@ -5766,15 +5797,7 @@ fn num_cpus() -> usize {
 }
 
 fn tier_for_score(score: f64) -> &'static str {
-    if score >= T1_THRESHOLD {
-        "T1"
-    } else if score >= T2_THRESHOLD {
-        "T2"
-    } else if score >= T3_THRESHOLD {
-        "T3"
-    } else {
-        "T4"
-    }
+    route_network::RouteTier::from_score(score).as_str()
 }
 
 fn rounded_score(score: f64) -> f64 {
