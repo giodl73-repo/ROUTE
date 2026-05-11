@@ -76,3 +76,6 @@ should mean something in the SLA graph.
 - `route stop-sla-candidates` joins recurring SLA gaps to the stop-candidate
   ledger and draft city seeds, scoring spacing gain plus route/intersection
   contact value before new stops are promoted onto the Beck map.
+- Empty candidate gaps now receive `draft-algorithmic-midpoint` rows and can be
+  exported as a CSV docket, so every oversized segment has a review target even
+  before source-backed stop promotion.

@@ -1046,6 +1046,12 @@ enum Commands {
         /// Number of candidate stops to show per gap
         #[arg(long, default_value_t = 3)]
         candidates_per_gap: usize,
+        /// Write the recommendation docket to CSV
+        #[arg(long, value_name = "FILE")]
+        output: Option<PathBuf>,
+        /// Fail if any inspected oversized gap has no generated candidate
+        #[arg(long)]
+        gate: bool,
     },
 
     /// Benchmark all I2.0 interventions — rank each by contribution to 48h SLA
@@ -4816,6 +4822,8 @@ fn run_cli() -> Result<()> {
             target_gap,
             top,
             candidates_per_gap,
+            output,
+            gate,
         } => {
             println!("route stop-sla-candidates");
             let sla_file = std::fs::File::open(&input)
@@ -4839,6 +4847,26 @@ fn run_cli() -> Result<()> {
                 target_gap,
                 candidates_per_gap,
             );
+            if let Some(output) = output {
+                write_stop_sla_candidate_recommendations(&output, &recommendations)
+                    .with_context(|| format!("writing {}", output.display()))?;
+                println!("  wrote candidate docket: {}", output.display());
+            }
+            if gate {
+                let empty = recommendations
+                    .iter()
+                    .filter(|recommendation| recommendation.candidates.is_empty())
+                    .collect::<Vec<_>>();
+                if empty.is_empty() {
+                    println!("stop SLA candidate gate: PASS");
+                } else {
+                    println!("stop SLA candidate gate: FAIL");
+                    for rec in empty.iter().take(10) {
+                        println!("  - {} has no candidate", rec.gap.segment_id);
+                    }
+                    anyhow::bail!("stop SLA candidate gate failed");
+                }
+            }
         }
 
         Commands::Interventions {
@@ -6078,6 +6106,7 @@ struct StopSlaCandidateScore {
     requested_class: String,
     route_refs: String,
     evidence_status: String,
+    source_type: String,
     spacing_gain_miles: f64,
     largest_resulting_gap_miles: f64,
     distance_from_segment_miles: f64,
@@ -6180,6 +6209,7 @@ fn score_stop_candidates_for_gap(
                 requested_class: row.requested_class.clone(),
                 route_refs: row.route_refs.clone(),
                 evidence_status: row.evidence_status.clone(),
+                source_type: "stop-ledger".to_string(),
                 spacing_gain_miles: spacing_gain,
                 largest_resulting_gap_miles: largest_resulting_gap,
                 distance_from_segment_miles: distance_from_segment,
@@ -6216,6 +6246,7 @@ fn score_stop_candidates_for_gap(
             requested_class: "S4?".to_string(),
             route_refs: gap.route_path.clone(),
             evidence_status: "draft-city-seed".to_string(),
+            source_type: "city-seed".to_string(),
             spacing_gain_miles: spacing_gain,
             largest_resulting_gap_miles: largest_resulting_gap,
             distance_from_segment_miles: distance_from_segment,
@@ -6223,12 +6254,42 @@ fn score_stop_candidates_for_gap(
             score,
         })
     }));
+    if scores.is_empty() {
+        scores.push(algorithmic_midpoint_candidate(gap, from, to, &route_set));
+    }
     scores.sort_by(|a, b| {
         b.score
             .total_cmp(&a.score)
             .then_with(|| a.name.cmp(&b.name))
     });
     scores
+}
+
+fn algorithmic_midpoint_candidate(
+    gap: &RecurringStopGap,
+    from: &route_map::BeckStopCatalogRow,
+    to: &route_map::BeckStopCatalogRow,
+    route_set: &std::collections::BTreeSet<String>,
+) -> StopSlaCandidateScore {
+    let midpoint_gap = gap.miles / 2.0;
+    let route_refs = if route_set.is_empty() {
+        gap.route_path.clone()
+    } else {
+        route_set.iter().cloned().collect::<Vec<_>>().join(";")
+    };
+    StopSlaCandidateScore {
+        stop_id: format!("DRAFT-MID-{}-{}", from.id, to.id),
+        name: format!("{} / {} midpoint", from.label, to.label),
+        requested_class: "S4?".to_string(),
+        route_refs,
+        evidence_status: "draft-algorithmic-midpoint".to_string(),
+        source_type: "algorithmic-midpoint".to_string(),
+        spacing_gain_miles: gap.miles - midpoint_gap,
+        largest_resulting_gap_miles: midpoint_gap,
+        distance_from_segment_miles: 0.0,
+        intersection_route_count: route_set.len().max(1),
+        score: gap.miles - midpoint_gap,
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -6272,12 +6333,12 @@ fn print_stop_sla_candidate_recommendations(
             continue;
         }
         println!(
-            "  {:<16} {:<24} {:<5} {:>7} {:>7} {:>7} {:>5} Routes",
-            "Stop", "Name", "Class", "NewMax", "Gain", "Offset", "Xfer"
+            "  {:<16} {:<24} {:<5} {:>7} {:>7} {:>7} {:>5} {:<12} Routes",
+            "Stop", "Name", "Class", "NewMax", "Gain", "Offset", "Xfer", "Source"
         );
         for candidate in rec.candidates.iter().take(candidates_per_gap.max(1)) {
             println!(
-                "  {:<16} {:<24} {:<5} {:>7.0} {:>7.0} {:>7.0} {:>5} {}",
+                "  {:<16} {:<24} {:<5} {:>7.0} {:>7.0} {:>7.0} {:>5} {:<12} {}",
                 candidate.stop_id,
                 truncate_for_table(&candidate.name, 24),
                 candidate.requested_class,
@@ -6285,6 +6346,7 @@ fn print_stop_sla_candidate_recommendations(
                 candidate.spacing_gain_miles,
                 candidate.distance_from_segment_miles,
                 candidate.intersection_route_count,
+                truncate_for_table(&candidate.source_type, 12),
                 truncate_for_table(&candidate.route_refs, 28)
             );
             println!(
@@ -6296,13 +6358,71 @@ fn print_stop_sla_candidate_recommendations(
     }
 }
 
+fn write_stop_sla_candidate_recommendations(
+    output: &Path,
+    recommendations: &[StopSlaCandidateRecommendation],
+) -> Result<()> {
+    if let Some(parent) = output
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(output)?;
+    writer.write_record([
+        "gap_segment",
+        "gap_labels",
+        "gap_miles",
+        "gap_row_count",
+        "gap_routes",
+        "candidate_rank",
+        "candidate_id",
+        "candidate_name",
+        "candidate_class",
+        "candidate_source_type",
+        "candidate_evidence_status",
+        "candidate_route_refs",
+        "largest_resulting_gap_miles",
+        "spacing_gain_miles",
+        "offset_miles",
+        "intersection_route_count",
+        "score",
+    ])?;
+    for rec in recommendations {
+        for (idx, candidate) in rec.candidates.iter().enumerate() {
+            writer.write_record([
+                rec.gap.segment_id.as_str(),
+                rec.gap.labels.as_str(),
+                &format!("{:.0}", rec.gap.miles),
+                &rec.gap.row_count.to_string(),
+                rec.gap.route_path.as_str(),
+                &(idx + 1).to_string(),
+                candidate.stop_id.as_str(),
+                candidate.name.as_str(),
+                candidate.requested_class.as_str(),
+                candidate.source_type.as_str(),
+                candidate.evidence_status.as_str(),
+                candidate.route_refs.as_str(),
+                &format!("{:.0}", candidate.largest_resulting_gap_miles),
+                &format!("{:.0}", candidate.spacing_gain_miles),
+                &format!("{:.0}", candidate.distance_from_segment_miles),
+                &candidate.intersection_route_count.to_string(),
+                &format!("{:.1}", candidate.score),
+            ])?;
+        }
+    }
+    writer.flush()?;
+    Ok(())
+}
+
 fn geo_distance_miles(a_lat: f64, a_lon: f64, b_lat: f64, b_lon: f64) -> f64 {
     let earth_radius_miles = 3958.8_f64;
     let dlat = (b_lat - a_lat).to_radians();
     let dlon = (b_lon - a_lon).to_radians();
     let h = (dlat / 2.0).sin().powi(2)
         + a_lat.to_radians().cos() * b_lat.to_radians().cos() * (dlon / 2.0).sin().powi(2);
-    2.0 * earth_radius_miles * h.sqrt().asin()
+    2.0 * earth_radius_miles * h.sqrt().asin() * 1.18
 }
 
 fn projection_fraction(

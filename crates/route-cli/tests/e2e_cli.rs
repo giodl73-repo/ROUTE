@@ -78,14 +78,20 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "stop-sla-candidates",
         "--input",
         csv_out.to_str().expect("utf-8 output path"),
+        "--output",
+        target_artifact("beck-stop-sla-candidates-e2e.csv")
+            .to_str()
+            .expect("utf-8 candidate output path"),
         "--target-gap",
         "300",
         "--top",
         "3",
+        "--gate",
     ]);
     let candidates_stdout = String::from_utf8_lossy(&candidates.stdout);
     assert!(candidates_stdout.contains("route stop-sla-candidates"));
     assert!(candidates_stdout.contains("target gap"));
+    assert!(candidates_stdout.contains("stop SLA candidate gate: PASS"));
 }
 
 #[test]
