@@ -73,3 +73,6 @@ should mean something in the SLA graph.
 - Added Wheeling, Iowa City, Hattiesburg, Fort Smith, Pueblo, Texarkana, Macon,
   and Wichita as route-rhythm stops; the national SLA surface max stop gap is
   now 352 miles.
+- `route stop-sla-candidates` joins recurring SLA gaps to the stop-candidate
+  ledger and draft city seeds, scoring spacing gain plus route/intersection
+  contact value before new stops are promoted onto the Beck map.

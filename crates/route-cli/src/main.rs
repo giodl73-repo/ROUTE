@@ -1022,6 +1022,32 @@ enum Commands {
         gate_max_gap: Option<f64>,
     },
 
+    /// Recommend stop/intersection candidates for recurring oversized SLA gaps
+    StopSlaCandidates {
+        /// SLA surface CSV file
+        #[arg(long, default_value = "data/beck-stop-sla.csv", value_name = "FILE")]
+        input: PathBuf,
+        /// Path to stop investment candidate ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// City seed list used for draft midpoint candidates when the stop ledger is silent
+        #[arg(long, default_value = "data/cities.json", value_name = "FILE")]
+        cities: PathBuf,
+        /// Only recommend for recurring gaps above this mileage
+        #[arg(long, default_value_t = 300.0, value_name = "MILES")]
+        target_gap: f64,
+        /// Number of recurring gap segments to inspect
+        #[arg(long, default_value_t = 12)]
+        top: usize,
+        /// Number of candidate stops to show per gap
+        #[arg(long, default_value_t = 3)]
+        candidates_per_gap: usize,
+    },
+
     /// Benchmark all I2.0 interventions — rank each by contribution to 48h SLA
     Interventions {
         /// Which corridor to test
@@ -4783,6 +4809,38 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::StopSlaCandidates {
+            input,
+            ledger,
+            cities,
+            target_gap,
+            top,
+            candidates_per_gap,
+        } => {
+            println!("route stop-sla-candidates");
+            let sla_file = std::fs::File::open(&input)
+                .with_context(|| format!("reading stop SLA surface {}", input.display()))?;
+            let rows = parse_stop_sla_rows(sla_file)?;
+            let ledger_file = std::fs::File::open(&ledger)
+                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
+            let stop_rows = parse_stop_candidates(ledger_file)
+                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
+            let city_rows = load_city_rows(&cities).unwrap_or_else(|err| {
+                eprintln!(
+                    "warning: could not load city seed list {}: {err}",
+                    cities.display()
+                );
+                Vec::new()
+            });
+            let recommendations =
+                stop_sla_candidate_recommendations(&rows, &stop_rows, &city_rows, target_gap, top);
+            print_stop_sla_candidate_recommendations(
+                &recommendations,
+                target_gap,
+                candidates_per_gap,
+            );
+        }
+
         Commands::Interventions {
             corridor,
             trips,
@@ -5951,6 +6009,7 @@ struct RecurringStopGap {
     labels: String,
     miles: f64,
     row_count: usize,
+    route_path: String,
 }
 
 fn recurring_stop_gaps(rows: &[StopSlaRow]) -> Vec<RecurringStopGap> {
@@ -5985,6 +6044,7 @@ fn recurring_stop_gaps(rows: &[StopSlaRow]) -> Vec<RecurringStopGap> {
                 labels: format!("{} to {}", direct.origin_label, direct.dest_label),
                 miles: *miles,
                 row_count,
+                route_path: direct.route_path.clone(),
             })
         })
         .collect::<Vec<_>>();
@@ -6003,6 +6063,285 @@ fn normalized_stop_pair(a: &str, b: &str) -> String {
     } else {
         format!("{b}->{a}")
     }
+}
+
+#[derive(Debug)]
+struct StopSlaCandidateRecommendation {
+    gap: RecurringStopGap,
+    candidates: Vec<StopSlaCandidateScore>,
+}
+
+#[derive(Debug)]
+struct StopSlaCandidateScore {
+    stop_id: String,
+    name: String,
+    requested_class: String,
+    route_refs: String,
+    evidence_status: String,
+    spacing_gain_miles: f64,
+    largest_resulting_gap_miles: f64,
+    distance_from_segment_miles: f64,
+    intersection_route_count: usize,
+    score: f64,
+}
+
+fn stop_sla_candidate_recommendations(
+    rows: &[StopSlaRow],
+    stop_rows: &[StopCandidateRow],
+    city_rows: &[CitySeedRow],
+    target_gap: f64,
+    top: usize,
+) -> Vec<StopSlaCandidateRecommendation> {
+    let catalog = route_map::beck_stop_catalog()
+        .into_iter()
+        .map(|stop| (stop.id.to_string(), stop))
+        .collect::<std::collections::HashMap<_, _>>();
+    recurring_stop_gaps(rows)
+        .into_iter()
+        .filter(|gap| gap.miles > target_gap)
+        .take(top)
+        .map(|gap| {
+            let candidates = score_stop_candidates_for_gap(&gap, stop_rows, city_rows, &catalog);
+            StopSlaCandidateRecommendation { gap, candidates }
+        })
+        .collect()
+}
+
+fn score_stop_candidates_for_gap(
+    gap: &RecurringStopGap,
+    stop_rows: &[StopCandidateRow],
+    city_rows: &[CitySeedRow],
+    catalog: &std::collections::HashMap<String, route_map::BeckStopCatalogRow>,
+) -> Vec<StopSlaCandidateScore> {
+    let Some((from_id, to_id)) = gap.segment_id.split_once("->") else {
+        return Vec::new();
+    };
+    let (Some(from), Some(to)) = (catalog.get(from_id), catalog.get(to_id)) else {
+        return Vec::new();
+    };
+    let route_set = gap
+        .route_path
+        .split(';')
+        .map(normalise_designation)
+        .filter(|route| !route.is_empty())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let mut scores = stop_rows
+        .iter()
+        .filter_map(|row| {
+            let lat = parse_coord(&row.lat)?;
+            let lon = parse_coord(&row.lon)?;
+            let candidate_routes = stop_candidate_routes(row);
+            if !route_set.is_empty()
+                && !candidate_routes
+                    .iter()
+                    .any(|route| route_set.contains(route))
+            {
+                return None;
+            }
+            let along = projection_fraction(from.lat, from.lon, to.lat, to.lon, lat, lon);
+            if !(-0.12..=1.12).contains(&along) {
+                return None;
+            }
+            let distance_from_segment =
+                distance_to_geo_segment_miles(from.lat, from.lon, to.lat, to.lon, lat, lon);
+            if distance_from_segment > 90.0 {
+                return None;
+            }
+            let first_gap = geo_distance_miles(from.lat, from.lon, lat, lon);
+            let second_gap = geo_distance_miles(lat, lon, to.lat, to.lon);
+            if first_gap < 45.0 || second_gap < 45.0 {
+                return None;
+            }
+            let largest_resulting_gap = first_gap.max(second_gap);
+            if largest_resulting_gap + 1.0 >= gap.miles {
+                return None;
+            }
+            let spacing_gain = gap.miles - largest_resulting_gap;
+            let intersection_route_count = candidate_routes.len();
+            let intersection_bonus = intersection_route_count.saturating_sub(1) as f64 * 12.0;
+            let class_bonus = match row.requested_class.trim().to_ascii_uppercase().as_str() {
+                "S1" => 30.0,
+                "S2" => 24.0,
+                "S3" => 18.0,
+                "S4" => 10.0,
+                _ => 4.0,
+            };
+            let route_match_bonus = candidate_routes
+                .iter()
+                .filter(|route| route_set.contains(*route))
+                .count() as f64
+                * 10.0;
+            let score = spacing_gain + class_bonus + intersection_bonus + route_match_bonus
+                - distance_from_segment * 0.6;
+            Some(StopSlaCandidateScore {
+                stop_id: row.stop_id.clone(),
+                name: row.name.clone(),
+                requested_class: row.requested_class.clone(),
+                route_refs: row.route_refs.clone(),
+                evidence_status: row.evidence_status.clone(),
+                spacing_gain_miles: spacing_gain,
+                largest_resulting_gap_miles: largest_resulting_gap,
+                distance_from_segment_miles: distance_from_segment,
+                intersection_route_count,
+                score,
+            })
+        })
+        .collect::<Vec<_>>();
+    scores.extend(city_rows.iter().filter_map(|city| {
+        let along = projection_fraction(from.lat, from.lon, to.lat, to.lon, city.lat, city.lon);
+        if !(-0.08..=1.08).contains(&along) {
+            return None;
+        }
+        let distance_from_segment =
+            distance_to_geo_segment_miles(from.lat, from.lon, to.lat, to.lon, city.lat, city.lon);
+        if distance_from_segment > 75.0 {
+            return None;
+        }
+        let first_gap = geo_distance_miles(from.lat, from.lon, city.lat, city.lon);
+        let second_gap = geo_distance_miles(city.lat, city.lon, to.lat, to.lon);
+        if first_gap < 45.0 || second_gap < 45.0 {
+            return None;
+        }
+        let largest_resulting_gap = first_gap.max(second_gap);
+        if largest_resulting_gap + 1.0 >= gap.miles {
+            return None;
+        }
+        let spacing_gain = gap.miles - largest_resulting_gap;
+        let midpoint_balance_bonus = (1.0 - (along - 0.5).abs() * 2.0).max(0.0) * 18.0;
+        let score = spacing_gain + midpoint_balance_bonus - distance_from_segment * 0.8;
+        Some(StopSlaCandidateScore {
+            stop_id: format!("DRAFT-{}", city.abbr),
+            name: city.name.clone(),
+            requested_class: "S4?".to_string(),
+            route_refs: gap.route_path.clone(),
+            evidence_status: "draft-city-seed".to_string(),
+            spacing_gain_miles: spacing_gain,
+            largest_resulting_gap_miles: largest_resulting_gap,
+            distance_from_segment_miles: distance_from_segment,
+            intersection_route_count: route_set.len().max(1),
+            score,
+        })
+    }));
+    scores.sort_by(|a, b| {
+        b.score
+            .total_cmp(&a.score)
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    scores
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CitySeedFile {
+    cities: Vec<CitySeedRow>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct CitySeedRow {
+    name: String,
+    abbr: String,
+    lat: f64,
+    lon: f64,
+}
+
+fn load_city_rows(path: &Path) -> Result<Vec<CitySeedRow>> {
+    let text =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let file: CitySeedFile =
+        serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+    Ok(file.cities)
+}
+
+fn print_stop_sla_candidate_recommendations(
+    recommendations: &[StopSlaCandidateRecommendation],
+    target_gap: f64,
+    candidates_per_gap: usize,
+) {
+    println!("  target gap: >{target_gap:.0} mi");
+    println!("  inspected gaps: {}", recommendations.len());
+    println!();
+    for rec in recommendations {
+        println!(
+            "{}  {:.0} mi  rows={}  routes={}",
+            rec.gap.segment_id, rec.gap.miles, rec.gap.row_count, rec.gap.route_path
+        );
+        println!("  {}", rec.gap.labels);
+        if rec.candidates.is_empty() {
+            println!("  no ledger candidates near this segment");
+            println!();
+            continue;
+        }
+        println!(
+            "  {:<16} {:<24} {:<5} {:>7} {:>7} {:>7} {:>5} Routes",
+            "Stop", "Name", "Class", "NewMax", "Gain", "Offset", "Xfer"
+        );
+        for candidate in rec.candidates.iter().take(candidates_per_gap.max(1)) {
+            println!(
+                "  {:<16} {:<24} {:<5} {:>7.0} {:>7.0} {:>7.0} {:>5} {}",
+                candidate.stop_id,
+                truncate_for_table(&candidate.name, 24),
+                candidate.requested_class,
+                candidate.largest_resulting_gap_miles,
+                candidate.spacing_gain_miles,
+                candidate.distance_from_segment_miles,
+                candidate.intersection_route_count,
+                truncate_for_table(&candidate.route_refs, 28)
+            );
+            println!(
+                "    score={:.1} evidence={}",
+                candidate.score, candidate.evidence_status
+            );
+        }
+        println!();
+    }
+}
+
+fn geo_distance_miles(a_lat: f64, a_lon: f64, b_lat: f64, b_lon: f64) -> f64 {
+    let earth_radius_miles = 3958.8_f64;
+    let dlat = (b_lat - a_lat).to_radians();
+    let dlon = (b_lon - a_lon).to_radians();
+    let h = (dlat / 2.0).sin().powi(2)
+        + a_lat.to_radians().cos() * b_lat.to_radians().cos() * (dlon / 2.0).sin().powi(2);
+    2.0 * earth_radius_miles * h.sqrt().asin()
+}
+
+fn projection_fraction(
+    a_lat: f64,
+    a_lon: f64,
+    b_lat: f64,
+    b_lon: f64,
+    p_lat: f64,
+    p_lon: f64,
+) -> f64 {
+    let lat0 = ((a_lat + b_lat + p_lat) / 3.0).to_radians();
+    let ax = a_lon * lat0.cos();
+    let ay = a_lat;
+    let bx = b_lon * lat0.cos();
+    let by = b_lat;
+    let px = p_lon * lat0.cos();
+    let py = p_lat;
+    let dx = bx - ax;
+    let dy = by - ay;
+    let len2 = dx * dx + dy * dy;
+    if len2 <= f64::EPSILON {
+        0.0
+    } else {
+        ((px - ax) * dx + (py - ay) * dy) / len2
+    }
+}
+
+fn distance_to_geo_segment_miles(
+    a_lat: f64,
+    a_lon: f64,
+    b_lat: f64,
+    b_lon: f64,
+    p_lat: f64,
+    p_lon: f64,
+) -> f64 {
+    let t = projection_fraction(a_lat, a_lon, b_lat, b_lon, p_lat, p_lon).clamp(0.0, 1.0);
+    let lat = a_lat + (b_lat - a_lat) * t;
+    let lon = a_lon + (b_lon - a_lon) * t;
+    geo_distance_miles(lat, lon, p_lat, p_lon)
 }
 
 fn rounded_score(score: f64) -> f64 {

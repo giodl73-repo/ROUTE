@@ -73,6 +73,19 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(summary_stdout.contains("route stop-sla-summary"));
     assert!(summary_stdout.contains("Recurring Segment"));
     assert!(summary_stdout.contains("stop SLA max-gap gate: PASS"));
+
+    let candidates = assert_success(&[
+        "stop-sla-candidates",
+        "--input",
+        csv_out.to_str().expect("utf-8 output path"),
+        "--target-gap",
+        "300",
+        "--top",
+        "3",
+    ]);
+    let candidates_stdout = String::from_utf8_lossy(&candidates.stdout);
+    assert!(candidates_stdout.contains("route stop-sla-candidates"));
+    assert!(candidates_stdout.contains("target gap"));
 }
 
 #[test]

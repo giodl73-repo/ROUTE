@@ -62,6 +62,16 @@ impl BeckStop {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct BeckStopCatalogRow {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub lat: f64,
+    pub lon: f64,
+    pub lines: Vec<&'static str>,
+    pub stop_class: &'static str,
+}
+
 /// A line segment on the Beck diagram.
 /// Beck lines are sequences of waypoints connected at 0°/45°/90°.
 struct LineSegment {
@@ -1996,6 +2006,24 @@ pub fn build_beck_svg() -> String {
 /// Generate the expanded Beck schematic with T2 connectors as thin trunk-tinted lines.
 pub fn build_beck_t2_svg() -> String {
     build_beck_svg_variant(BeckVariant::T1WithT2)
+}
+
+pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
+    beck_stops()
+        .into_iter()
+        .filter(|stop| stop.draw)
+        .map(|stop| {
+            let (lat, lon) = geo_proxy(&stop);
+            BeckStopCatalogRow {
+                id: stop.id,
+                label: stop.label,
+                lat,
+                lon,
+                lines: stop.lines.to_vec(),
+                stop_class: stop_class(&stop),
+            }
+        })
+        .collect()
 }
 
 /// Generate the stop-to-stop SLA surface implied by the Beck T1/T2 topology.

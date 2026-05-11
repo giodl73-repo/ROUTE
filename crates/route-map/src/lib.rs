@@ -11,7 +11,10 @@ pub use megamap::{
 };
 
 pub mod beck;
-pub use beck::{build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg};
+pub use beck::{
+    beck_stop_catalog, build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg,
+    BeckStopCatalogRow,
+};
 
 pub mod t3_zone;
 pub use t3_zone::{build_t3_zone_board_csv, build_t3_zone_svg};
