@@ -71,6 +71,7 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     ]);
     let summary_stdout = String::from_utf8_lossy(&summary.stdout);
     assert!(summary_stdout.contains("route stop-sla-summary"));
+    assert!(summary_stdout.contains("Recurring Segment"));
     assert!(summary_stdout.contains("stop SLA max-gap gate: PASS"));
 }
 

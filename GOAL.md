@@ -66,3 +66,7 @@ should mean something in the SLA graph.
   gated by Beck map tests.
 - Washington and Spokane are classified as transfer/contact stops where the
   schematic topology already used them as route contacts.
+- `route stop-sla-summary` now reports recurring stop-to-stop gap segments so
+  oversized OD rows point back to concrete stop investments.
+- Added Wichita Falls, Show Low, and Daytona Beach as stop-first anchors; the
+  national SLA surface max stop gap is now 382 miles.

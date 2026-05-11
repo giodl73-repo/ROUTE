@@ -5842,7 +5842,9 @@ fn tier_for_score(score: f64) -> &'static str {
 #[derive(Debug, serde::Deserialize)]
 struct StopSlaRow {
     origin_id: String,
+    origin_label: String,
     dest_id: String,
+    dest_label: String,
     network_miles: f64,
     max_stop_gap_miles: f64,
     stop_gap_status: String,
@@ -5923,6 +5925,83 @@ fn print_stop_sla_summary(rows: &[StopSlaRow], top: usize) {
             truncate_for_table(&row.route_path, 28),
             truncate_for_table(&row.stop_path, 42)
         );
+    }
+
+    let recurring_gaps = recurring_stop_gaps(rows);
+    println!();
+    println!(
+        "  {:<25} {:>7} {:>7}  {}",
+        "Recurring Segment", "Miles", "Rows", "Labels"
+    );
+    println!("  {}", "-".repeat(74));
+    for gap in recurring_gaps.into_iter().take(top) {
+        println!(
+            "  {:<25} {:>7.0} {:>7}  {}",
+            gap.segment_id,
+            gap.miles,
+            gap.row_count,
+            truncate_for_table(&gap.labels, 34)
+        );
+    }
+}
+
+#[derive(Debug)]
+struct RecurringStopGap {
+    segment_id: String,
+    labels: String,
+    miles: f64,
+    row_count: usize,
+}
+
+fn recurring_stop_gaps(rows: &[StopSlaRow]) -> Vec<RecurringStopGap> {
+    let mut direct_pairs = std::collections::HashMap::<String, (&StopSlaRow, f64)>::new();
+    for row in rows {
+        let stops = row.stop_path.split(';').collect::<Vec<_>>();
+        if stops.len() != 2 {
+            continue;
+        }
+        direct_pairs.insert(
+            normalized_stop_pair(&row.origin_id, &row.dest_id),
+            (row, row.network_miles),
+        );
+    }
+
+    let mut counts = std::collections::HashMap::<String, usize>::new();
+    for row in rows {
+        let stops = row.stop_path.split(';').collect::<Vec<_>>();
+        for pair in stops.windows(2) {
+            *counts
+                .entry(normalized_stop_pair(pair[0], pair[1]))
+                .or_default() += 1;
+        }
+    }
+
+    let mut gaps = counts
+        .into_iter()
+        .filter_map(|(segment_id, row_count)| {
+            let (direct, miles) = direct_pairs.get(&segment_id)?;
+            Some(RecurringStopGap {
+                segment_id,
+                labels: format!("{} to {}", direct.origin_label, direct.dest_label),
+                miles: *miles,
+                row_count,
+            })
+        })
+        .collect::<Vec<_>>();
+    gaps.sort_by(|a, b| {
+        b.miles
+            .total_cmp(&a.miles)
+            .then_with(|| b.row_count.cmp(&a.row_count))
+            .then_with(|| a.segment_id.cmp(&b.segment_id))
+    });
+    gaps
+}
+
+fn normalized_stop_pair(a: &str, b: &str) -> String {
+    if a <= b {
+        format!("{a}->{b}")
+    } else {
+        format!("{b}->{a}")
     }
 }
 
