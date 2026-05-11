@@ -78,6 +78,12 @@ pub struct BeckT2DiagnosticRow {
     pub start_trunk: &'static str,
     pub end_trunk: &'static str,
     pub color_mode: &'static str,
+    pub split_anchor: &'static str,
+    pub split_anchor_offset_pct: f64,
+    pub unstopped_t1_contact_count: usize,
+    pub unstopped_t1_contacts: String,
+    pub close_parallel_count: usize,
+    pub close_parallel_corridors: String,
     pub service_label: &'static str,
     pub stop_count: usize,
     pub drawn_stop_count: usize,
@@ -130,6 +136,11 @@ struct SlaStep {
     miles: f64,
 }
 
+struct T2SplitAnchor {
+    stop_id: &'static str,
+    fraction: f64,
+}
+
 impl LineSegment {
     fn to_svg_path(&self) -> String {
         svg_path(&self.routed_waypoints())
@@ -162,10 +173,17 @@ fn svg_path(points: &[(f64, f64)]) -> String {
 }
 
 fn split_polyline_at_half(points: &[(f64, f64)]) -> (Vec<(f64, f64)>, Vec<(f64, f64)>) {
+    split_polyline_at_distance(points, polyline_length(points) / 2.0)
+}
+
+fn split_polyline_at_distance(
+    points: &[(f64, f64)],
+    distance: f64,
+) -> (Vec<(f64, f64)>, Vec<(f64, f64)>) {
     if points.len() <= 1 {
         return (points.to_vec(), Vec::new());
     }
-    let target = polyline_length(points) / 2.0;
+    let target = distance.clamp(0.0, polyline_length(points));
     let mut walked = 0.0;
     let mut left = vec![points[0]];
     for index in 0..points.len() - 1 {
@@ -2454,7 +2472,7 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
 
 pub fn build_beck_t2_diagnostics_csv() -> String {
     let mut csv = String::from(
-        "corridor,trunk,start_trunk,end_trunk,color_mode,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+        "corridor,trunk,start_trunk,end_trunk,color_mode,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
     );
     for row in beck_t2_diagnostics() {
         push_csv_row(
@@ -2465,6 +2483,12 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
                 row.start_trunk,
                 row.end_trunk,
                 row.color_mode,
+                row.split_anchor,
+                &format!("{:.0}", row.split_anchor_offset_pct),
+                &row.unstopped_t1_contact_count.to_string(),
+                &row.unstopped_t1_contacts,
+                &row.close_parallel_count.to_string(),
+                &row.close_parallel_corridors,
                 row.service_label,
                 &row.stop_count.to_string(),
                 &row.drawn_stop_count.to_string(),
@@ -2484,12 +2508,18 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
 
 pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
     let stops = beck_stops();
-    let mut rows = t2_line_segments(&stops)
-        .into_iter()
+    let t2_lines = t2_line_segments(&stops);
+    let mut rows = t2_lines
+        .iter()
         .map(|line| {
             let points = line.routed_waypoints();
             let (min_x, min_y, max_x, max_y) = bounds(&points);
             let schematic_length_px = polyline_length(&points);
+            let split_anchor = t2_split_anchor_distance(line, &stops);
+            let unstopped_t1_contacts = unstopped_t1_contacts(line, &stops);
+            let close_parallel_corridors = close_parallel_corridors(line, &t2_lines);
+            let unstopped_t1_contact_count = unstopped_t1_contacts.len();
+            let close_parallel_count = close_parallel_corridors.len();
             let drawn_stop_count = line
                 .stop_ids
                 .iter()
@@ -2508,7 +2538,13 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             } else {
                 0.0
             };
-            let review_flag = if label_density_per_100px >= 0.95 {
+            let review_flag = if unstopped_t1_contact_count > 0 {
+                "unstopped-t1-contact-review"
+            } else if close_parallel_count >= 2 {
+                "parallel-spacing-review"
+            } else if line.is_split_color() && split_anchor.is_none() {
+                "split-anchor-review"
+            } else if label_density_per_100px >= 0.95 {
                 "dense-label-review"
             } else if transfer_stop_count >= 5 {
                 "transfer-complexity-review"
@@ -2527,6 +2563,18 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 } else {
                     "single-parent"
                 },
+                split_anchor: split_anchor
+                    .as_ref()
+                    .map(|anchor| anchor.stop_id)
+                    .unwrap_or(""),
+                split_anchor_offset_pct: split_anchor
+                    .as_ref()
+                    .map(|anchor| (anchor.fraction - 0.5).abs() * 100.0)
+                    .unwrap_or(0.0),
+                unstopped_t1_contact_count,
+                unstopped_t1_contacts: unstopped_t1_contacts.join(";"),
+                close_parallel_count,
+                close_parallel_corridors: close_parallel_corridors.join(";"),
                 service_label: line.service_label,
                 stop_count: line.stop_ids.len(),
                 drawn_stop_count,
@@ -2700,6 +2748,132 @@ fn polyline_length(points: &[(f64, f64)]) -> f64 {
             (dx * dx + dy * dy).sqrt()
         })
         .sum()
+}
+
+fn distance_to_segment(point: (f64, f64), a: (f64, f64), b: (f64, f64)) -> f64 {
+    let (px, py) = point;
+    let (ax, ay) = a;
+    let (bx, by) = b;
+    let dx = bx - ax;
+    let dy = by - ay;
+    if dx.abs() < 0.001 && dy.abs() < 0.001 {
+        return ((px - ax).powi(2) + (py - ay).powi(2)).sqrt();
+    }
+    let t = (((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0);
+    let cx = ax + t * dx;
+    let cy = ay + t * dy;
+    ((px - cx).powi(2) + (py - cy).powi(2)).sqrt()
+}
+
+fn distance_to_polyline(point: (f64, f64), points: &[(f64, f64)]) -> f64 {
+    points
+        .windows(2)
+        .map(|segment| distance_to_segment(point, segment[0], segment[1]))
+        .fold(f64::INFINITY, f64::min)
+}
+
+fn point_on_polyline(point: (f64, f64), points: &[(f64, f64)], tolerance: f64) -> bool {
+    distance_to_polyline(point, points) <= tolerance
+}
+
+fn t2_split_anchor_distance(line: &T2LineSegment, stops: &[BeckStop]) -> Option<T2SplitAnchor> {
+    if !line.is_split_color() || line.stop_ids.len() < 3 {
+        return None;
+    }
+    let raw_length = polyline_length(&line.waypoints);
+    if raw_length <= 0.0 {
+        return None;
+    }
+
+    let mut walked = 0.0;
+    let mut best: Option<T2SplitAnchor> = None;
+    for index in 1..line.stop_ids.len() - 1 {
+        walked += ((line.waypoints[index].0 - line.waypoints[index - 1].0).powi(2)
+            + (line.waypoints[index].1 - line.waypoints[index - 1].1).powi(2))
+        .sqrt();
+        let stop = stop_by_id(stops, line.stop_ids[index]);
+        if !(stop.is_hub || stop.is_interchange) {
+            continue;
+        }
+        let fraction = walked / raw_length;
+        let offset = (fraction - 0.5).abs();
+        if offset > 0.22 {
+            continue;
+        }
+        let replace = best
+            .as_ref()
+            .map(|anchor| offset < (anchor.fraction - 0.5).abs())
+            .unwrap_or(true);
+        if replace {
+            best = Some(T2SplitAnchor {
+                stop_id: stop.id,
+                fraction,
+            });
+        }
+    }
+    best
+}
+
+fn unstopped_t1_contacts(line: &T2LineSegment, stops: &[BeckStop]) -> Vec<&'static str> {
+    let points = line.routed_waypoints();
+    let line_stop_ids = line.stop_ids.iter().copied().collect::<HashSet<_>>();
+    let t1_stop_ids = t1_route_stop_ids()
+        .into_iter()
+        .flat_map(|(_corridor, ids)| ids)
+        .collect::<HashSet<_>>();
+    stops
+        .iter()
+        .filter(|stop| {
+            stop.draw
+                && !line_stop_ids.contains(stop.id)
+                && t1_stop_ids.contains(stop.id)
+                && point_on_polyline(stop.point(), &points, 10.0)
+        })
+        .map(|stop| stop.id)
+        .collect()
+}
+
+fn close_parallel_corridors(
+    line: &T2LineSegment,
+    all_lines: &[T2LineSegment],
+) -> Vec<&'static str> {
+    let points = line.routed_waypoints();
+    all_lines
+        .iter()
+        .filter(|other| other.corridor != line.corridor)
+        .filter(|other| {
+            let other_points = other.routed_waypoints();
+            points.windows(2).any(|a| {
+                other_points
+                    .windows(2)
+                    .any(|b| close_parallel_segments(a[0], a[1], b[0], b[1]))
+            })
+        })
+        .map(|other| other.corridor)
+        .collect()
+}
+
+fn close_parallel_segments(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
+    let av = (a2.0 - a1.0, a2.1 - a1.1);
+    let bv = (b2.0 - b1.0, b2.1 - b1.1);
+    let a_len = (av.0 * av.0 + av.1 * av.1).sqrt();
+    let b_len = (bv.0 * bv.0 + bv.1 * bv.1).sqrt();
+    if a_len < 80.0 || b_len < 80.0 {
+        return false;
+    }
+    let cross = (av.0 * bv.1 - av.1 * bv.0).abs() / (a_len * b_len);
+    if cross > 0.08 {
+        return false;
+    }
+    let distance = [
+        distance_to_segment(a1, b1, b2),
+        distance_to_segment(a2, b1, b2),
+        distance_to_segment(b1, a1, a2),
+        distance_to_segment(b2, a1, a2),
+    ]
+    .into_iter()
+    .fold(f64::INFINITY, f64::min);
+    distance > 0.001 && distance <= 18.0
 }
 
 fn shortest_sla_path(
@@ -3032,7 +3206,11 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
                  opacity=\"0.78\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n"
             );
             if line.is_split_color() {
-                let (left, right) = split_polyline_at_half(&points);
+                let (left, right) = if let Some(split) = t2_split_anchor_distance(line, &stops) {
+                    split_polyline_at_distance(&points, polyline_length(&points) * split.fraction)
+                } else {
+                    split_polyline_at_half(&points)
+                };
                 let left_d = svg_path(&left);
                 let right_d = svg_path(&right);
                 s += &format!(
@@ -3819,14 +3997,18 @@ mod tests {
     #[test]
     fn beck_t2_diagnostics_exports_review_flags() {
         let csv = build_beck_t2_diagnostics_csv();
-        assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode"));
-        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,Capital Beltway"));
+        assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode,split_anchor"));
+        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,"));
         assert!(csv.contains("split-parent"));
+        assert!(csv.contains("parallel-spacing-review") || csv.contains("split-anchor-review"));
         assert!(csv.contains("dense-label-review"));
 
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
         assert!(rows.iter().any(|row| row.corridor == "US70"));
+        assert!(rows
+            .iter()
+            .any(|row| row.color_mode == "split-parent" && !row.split_anchor.is_empty()));
     }
 
     #[test]

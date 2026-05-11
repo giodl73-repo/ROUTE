@@ -102,3 +102,6 @@ should mean something in the SLA graph.
   connectors on the T2-only service map.
 - T2 service lines now carry explicit start/end parent trunks; bridge connectors
   render as split-parent colors while one-ended feeders remain single-parent.
+- T2 geometry diagnostics now prefer real interchange split anchors, flag T2
+  lines that pass near T1 stops without stopping, and identify close parallel
+  T2 corridors that need bend/spacing cleanup.
