@@ -67,7 +67,7 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "--top",
         "4",
         "--gate-max-gap",
-        "360",
+        "300",
     ]);
     let summary_stdout = String::from_utf8_lossy(&summary.stdout);
     assert!(summary_stdout.contains("route stop-sla-summary"));
@@ -83,7 +83,7 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
             .to_str()
             .expect("utf-8 candidate output path"),
         "--target-gap",
-        "300",
+        "250",
         "--top",
         "3",
         "--gate",
