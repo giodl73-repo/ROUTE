@@ -60,6 +60,10 @@ impl BeckStop {
     fn point(&self) -> (f64, f64) {
         (self.x, self.y)
     }
+
+    fn is_transfer_point(&self) -> bool {
+        self.is_hub || self.is_interchange || self.lines.len() >= 2
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -509,6 +513,14 @@ fn beck_stops() -> Vec<BeckStop> {
             960.0,
             &["I-59"],
             LabelDir::Left,
+        ),
+        minor_stop(
+            "MERIDIAN",
+            "Meridian",
+            1320.0,
+            960.0,
+            &["I-59"],
+            LabelDir::Up,
         ),
         minor_stop(
             "TALLAHASSEE",
@@ -1624,6 +1636,7 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "LAFAYETTE" => (30.22, -92.02),
         "NOLA" => (29.95, -90.07),
         "HATTIESBURG" => (31.33, -89.29),
+        "MERIDIAN" => (32.36, -88.70),
         "TALLAHASSEE" => (30.44, -84.28),
         "PANAMA_CITY" => (30.16, -85.66),
         "JAX" => (30.33, -81.66),
@@ -2193,7 +2206,13 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             "I-59",
             "I-10",
             "I-75",
-            &["NOLA", "HATTIESBURG", "BHM_APPROACH", "CHATTANOOGA"],
+            &[
+                "NOLA",
+                "HATTIESBURG",
+                "MERIDIAN",
+                "BHM_APPROACH",
+                "CHATTANOOGA",
+            ],
             "Birmingham Spur",
             "BHM_APPROACH",
             (0.0, 0.0),
@@ -2275,8 +2294,10 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             &[
                 "SLC",
                 "ROCK_SPRINGS",
+                "RAWLINS",
                 "CHEYENNE",
                 "OMAHA",
+                "IOWA_CITY",
                 "CHI_APPROACH",
                 "PA_APPROACH",
             ],
@@ -2362,7 +2383,16 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             "US80",
             "I-35",
             "I-20",
-            &["DAL", "ABILENE", "LITTLE_ROCK", "MONTGOMERY", "ATL"],
+            &[
+                "DAL",
+                "ABILENE",
+                "LITTLE_ROCK",
+                "MEM",
+                "TUPELO",
+                "BHM_APPROACH",
+                "MONTGOMERY",
+                "ATL",
+            ],
             "Old South",
             "MONTGOMERY",
             (0.0, 0.0),
@@ -2530,7 +2560,7 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 .iter()
                 .filter(|id| {
                     let stop = stop_by_id(&stops, id);
-                    stop.is_hub || stop.is_interchange
+                    stop.is_transfer_point()
                 })
                 .count();
             let label_density_per_100px = if schematic_length_px > 0.0 {
@@ -2787,17 +2817,26 @@ fn t2_split_anchor_distance(line: &T2LineSegment, stops: &[BeckStop]) -> Option<
 
     let mut walked = 0.0;
     let mut best: Option<T2SplitAnchor> = None;
+    let mut fallback: Option<T2SplitAnchor> = None;
     for index in 1..line.stop_ids.len() - 1 {
         walked += ((line.waypoints[index].0 - line.waypoints[index - 1].0).powi(2)
             + (line.waypoints[index].1 - line.waypoints[index - 1].1).powi(2))
         .sqrt();
         let stop = stop_by_id(stops, line.stop_ids[index]);
-        if !(stop.is_hub || stop.is_interchange) {
-            continue;
-        }
         let fraction = walked / raw_length;
         let offset = (fraction - 0.5).abs();
-        if offset > 0.22 {
+        if offset <= 0.32
+            && fallback
+                .as_ref()
+                .map(|anchor| offset < (anchor.fraction - 0.5).abs())
+                .unwrap_or(true)
+        {
+            fallback = Some(T2SplitAnchor {
+                stop_id: stop.id,
+                fraction,
+            });
+        }
+        if !stop.is_transfer_point() || offset > 0.22 {
             continue;
         }
         let replace = best
@@ -2811,7 +2850,7 @@ fn t2_split_anchor_distance(line: &T2LineSegment, stops: &[BeckStop]) -> Option<
             });
         }
     }
-    best
+    best.or(fallback)
 }
 
 fn unstopped_t1_contacts(line: &T2LineSegment, stops: &[BeckStop]) -> Vec<&'static str> {
@@ -2827,6 +2866,7 @@ fn unstopped_t1_contacts(line: &T2LineSegment, stops: &[BeckStop]) -> Vec<&'stat
             stop.draw
                 && !line_stop_ids.contains(stop.id)
                 && t1_stop_ids.contains(stop.id)
+                && (stop.lines.contains(&line.start_trunk) || stop.lines.contains(&line.end_trunk))
                 && point_on_polyline(stop.point(), &points, 10.0)
         })
         .map(|stop| stop.id)
@@ -4000,7 +4040,7 @@ mod tests {
         assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode,split_anchor"));
         assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,"));
         assert!(csv.contains("split-parent"));
-        assert!(csv.contains("parallel-spacing-review") || csv.contains("split-anchor-review"));
+        assert!(csv.contains("long-connector-review"));
         assert!(csv.contains("dense-label-review"));
 
         let rows = beck_t2_diagnostics();

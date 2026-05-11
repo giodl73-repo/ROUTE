@@ -105,3 +105,6 @@ should mean something in the SLA graph.
 - T2 geometry diagnostics now prefer real interchange split anchors, flag T2
   lines that pass near T1 stops without stopping, and identify close parallel
   T2 corridors that need bend/spacing cleanup.
+- T2 cleanup promoted multi-line drawn stops as transfer candidates, falls back
+  split-color breaks to real service stops, and added Meridian/Memphis/Tupelo
+  rhythm on southern T2 services so the stop SLA surface stays below 250 miles.
