@@ -1052,6 +1052,9 @@ enum Commands {
         /// Fail if any inspected oversized gap has no generated candidate
         #[arg(long)]
         gate: bool,
+        /// Fail if any inspected oversized gap still falls back to an algorithmic midpoint
+        #[arg(long)]
+        gate_no_algorithmic: bool,
     },
 
     /// Convert SLA candidate docket rows into tier-stop candidate review scaffolds
@@ -4851,6 +4854,7 @@ fn run_cli() -> Result<()> {
             candidates_per_gap,
             output,
             gate,
+            gate_no_algorithmic,
         } => {
             println!("route stop-sla-candidates");
             let sla_file = std::fs::File::open(&input)
@@ -4892,6 +4896,27 @@ fn run_cli() -> Result<()> {
                         println!("  - {} has no candidate", rec.gap.segment_id);
                     }
                     anyhow::bail!("stop SLA candidate gate failed");
+                }
+            }
+            if gate_no_algorithmic {
+                let algorithmic = recommendations
+                    .iter()
+                    .filter_map(|recommendation| {
+                        recommendation
+                            .candidates
+                            .first()
+                            .filter(|candidate| candidate.source_type == "algorithmic-midpoint")
+                            .map(|candidate| (&recommendation.gap.segment_id, candidate))
+                    })
+                    .collect::<Vec<_>>();
+                if algorithmic.is_empty() {
+                    println!("stop SLA named-candidate gate: PASS");
+                } else {
+                    println!("stop SLA named-candidate gate: FAIL");
+                    for (segment_id, candidate) in algorithmic.iter().take(10) {
+                        println!("  - {segment_id} falls back to {}", candidate.name);
+                    }
+                    anyhow::bail!("stop SLA named-candidate gate failed");
                 }
             }
         }

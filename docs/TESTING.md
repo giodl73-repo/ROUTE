@@ -18,7 +18,8 @@ It verifies:
 - Stop-to-stop SLA surface generation writes a CSV with heuristic evidence labels.
 - Stop SLA summary gate keeps max stop gaps at or under 300 miles.
 - Stop SLA candidate scoring produces a reviewable candidate docket for oversized
-  recurring gaps and gates that inspected gaps have candidates.
+  recurring gaps and gates that inspected gaps have named candidates instead of
+  algorithmic midpoint placeholders.
 - Stop SLA promotion scaffolding converts the candidate docket into
   stop-candidate-shaped source-needed rows and gates the result.
 - Stop SLA promotion defaults to the best non-ledger candidate per gap, keeping

@@ -91,3 +91,5 @@ should mean something in the SLA graph.
 - The current top >250-mile candidate and promotion dockets now resolve to named
   service-city or stop-ledger candidates instead of algorithmic midpoint
   placeholders.
+- `route stop-sla-candidates --gate-no-algorithmic` now gates that inspected
+  recurring gaps promote to named candidate rows rather than midpoint fallbacks.

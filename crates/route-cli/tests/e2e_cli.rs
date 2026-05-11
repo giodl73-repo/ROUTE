@@ -87,11 +87,13 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "--top",
         "3",
         "--gate",
+        "--gate-no-algorithmic",
     ]);
     let candidates_stdout = String::from_utf8_lossy(&candidates.stdout);
     assert!(candidates_stdout.contains("route stop-sla-candidates"));
     assert!(candidates_stdout.contains("target gap"));
     assert!(candidates_stdout.contains("stop SLA candidate gate: PASS"));
+    assert!(candidates_stdout.contains("stop SLA named-candidate gate: PASS"));
 
     let promotions = assert_success(&[
         "stop-sla-promotions",
