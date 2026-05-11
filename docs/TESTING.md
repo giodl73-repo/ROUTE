@@ -19,6 +19,8 @@ It verifies:
 - Stop SLA summary gate keeps max stop gaps under 360 miles.
 - Stop SLA candidate scoring produces a reviewable candidate docket for oversized
   recurring gaps and gates that inspected gaps have candidates.
+- Stop SLA promotion scaffolding converts the candidate docket into
+  stop-candidate-shaped source-needed rows and gates the result.
 - Map atlas gate passes.
 - L2 pressure-scenario coverage gates pass.
 - T1 stop coverage remains visible and reports the known `I395` blocker.

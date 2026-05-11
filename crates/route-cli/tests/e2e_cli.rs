@@ -92,6 +92,22 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(candidates_stdout.contains("route stop-sla-candidates"));
     assert!(candidates_stdout.contains("target gap"));
     assert!(candidates_stdout.contains("stop SLA candidate gate: PASS"));
+
+    let promotions = assert_success(&[
+        "stop-sla-promotions",
+        "--input",
+        target_artifact("beck-stop-sla-candidates-e2e.csv")
+            .to_str()
+            .expect("utf-8 candidate input path"),
+        "--output",
+        target_artifact("beck-stop-sla-promotions-e2e.csv")
+            .to_str()
+            .expect("utf-8 promotion output path"),
+        "--gate",
+    ]);
+    let promotions_stdout = String::from_utf8_lossy(&promotions.stdout);
+    assert!(promotions_stdout.contains("route stop-sla-promotions"));
+    assert!(promotions_stdout.contains("stop SLA promotion gate: PASS"));
 }
 
 #[test]

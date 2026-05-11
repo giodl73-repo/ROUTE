@@ -1054,6 +1054,30 @@ enum Commands {
         gate: bool,
     },
 
+    /// Convert SLA candidate docket rows into tier-stop candidate review scaffolds
+    StopSlaPromotions {
+        /// SLA candidate docket CSV
+        #[arg(
+            long,
+            default_value = "data/beck-stop-sla-candidates.csv",
+            value_name = "FILE"
+        )]
+        input: PathBuf,
+        /// Output tier-stop-candidates-shaped CSV
+        #[arg(
+            long,
+            default_value = "data/beck-stop-sla-promotion-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Include rows that already exist in the stop ledger
+        #[arg(long)]
+        include_ledger: bool,
+        /// Fail if generated promotion rows do not pass the stop candidate contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Benchmark all I2.0 interventions — rank each by contribution to 48h SLA
     Interventions {
         /// Which corridor to test
@@ -4869,6 +4893,39 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::StopSlaPromotions {
+            input,
+            output,
+            include_ledger,
+            gate,
+        } => {
+            println!("route stop-sla-promotions");
+            let file = std::fs::File::open(&input)
+                .with_context(|| format!("opening SLA candidate docket {}", input.display()))?;
+            let docket = parse_stop_sla_candidate_docket(file)
+                .with_context(|| format!("parsing SLA candidate docket {}", input.display()))?;
+            let promotions = stop_sla_promotion_rows(&docket, include_ledger);
+            write_stop_sla_promotions(&output, &promotions)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("  source docket: {}", input.display());
+            println!("  promotion rows: {}", promotions.len());
+            println!("  wrote promotion docket: {}", output.display());
+
+            if gate {
+                let refs = promotions.iter().collect::<Vec<_>>();
+                let failures = stop_candidate_gate_failures(&refs);
+                if failures.is_empty() {
+                    println!("stop SLA promotion gate: PASS");
+                } else {
+                    println!("stop SLA promotion gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("stop SLA promotion gate failed");
+                }
+            }
+        }
+
         Commands::Interventions {
             corridor,
             trips,
@@ -6439,6 +6496,172 @@ fn write_stop_sla_candidate_recommendations(
                 &format!("{:.1}", candidate.score),
             ])?;
         }
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct StopSlaCandidateDocketRow {
+    gap_segment: String,
+    gap_labels: String,
+    gap_miles: f64,
+    gap_row_count: usize,
+    gap_routes: String,
+    candidate_rank: usize,
+    candidate_id: String,
+    candidate_name: String,
+    candidate_class: String,
+    candidate_lat: String,
+    candidate_lon: String,
+    candidate_source_type: String,
+    candidate_evidence_status: String,
+    candidate_route_refs: String,
+    candidate_basis: String,
+    largest_resulting_gap_miles: f64,
+    spacing_gain_miles: f64,
+    offset_miles: f64,
+    intersection_route_count: usize,
+    score: f64,
+}
+
+fn parse_stop_sla_candidate_docket<R: std::io::Read>(
+    reader: R,
+) -> Result<Vec<StopSlaCandidateDocketRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    rdr.deserialize()
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .context("parsing stop SLA candidate docket")
+}
+
+fn stop_sla_promotion_rows(
+    docket: &[StopSlaCandidateDocketRow],
+    include_ledger: bool,
+) -> Vec<StopCandidateRow> {
+    docket
+        .iter()
+        .filter(|row| include_ledger || row.candidate_source_type != "stop-ledger")
+        .map(stop_sla_promotion_row)
+        .collect()
+}
+
+fn stop_sla_promotion_row(row: &StopSlaCandidateDocketRow) -> StopCandidateRow {
+    let class = row
+        .candidate_class
+        .trim()
+        .trim_end_matches('?')
+        .to_ascii_uppercase();
+    let evidence_status = if row.candidate_source_type == "stop-ledger" {
+        row.candidate_evidence_status.clone()
+    } else {
+        "source_needed".to_string()
+    };
+    let source_type = row.candidate_source_type.replace('_', "-");
+    let stop_role = if row.intersection_route_count >= 2 {
+        format!("sla_spacing_candidate; route_contact; {source_type}")
+    } else {
+        format!("sla_spacing_candidate; {source_type}")
+    };
+    let next_step = format!(
+        "Validate real interchange/service-city candidate for {} ({:.0} mi gap, {:.0} mi modeled gain); basis: {}",
+        row.gap_segment, row.gap_miles, row.spacing_gain_miles, row.candidate_basis
+    );
+    StopCandidateRow {
+        stop_id: row.candidate_id.clone(),
+        name: row.candidate_name.clone(),
+        state: "TBD".to_string(),
+        lat: row.candidate_lat.clone(),
+        lon: row.candidate_lon.clone(),
+        requested_class: class,
+        route_refs: denormalized_route_refs(&row.candidate_route_refs),
+        stop_role,
+        transfer_value: if row.intersection_route_count >= 2 {
+            "medium".to_string()
+        } else {
+            "low".to_string()
+        },
+        freight_volume: "source_needed".to_string(),
+        spacing_need: "high".to_string(),
+        resilience_value: "source_needed".to_string(),
+        energy_service: "planned".to_string(),
+        land_ops_feasibility: "review_needed".to_string(),
+        equity_community: "review_needed".to_string(),
+        evidence_status,
+        source_artifact: "data/beck-stop-sla-candidates.csv".to_string(),
+        next_step,
+    }
+}
+
+fn denormalized_route_refs(routes: &str) -> String {
+    routes
+        .split([';', ','])
+        .map(str::trim)
+        .filter(|route| !route.is_empty())
+        .map(|route| {
+            let norm = normalise_designation(route);
+            if let Some(rest) = norm.strip_prefix('I') {
+                format!("I-{rest}")
+            } else if let Some(rest) = norm.strip_prefix("US") {
+                format!("US{rest}")
+            } else {
+                norm
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+fn write_stop_sla_promotions(output: &Path, rows: &[StopCandidateRow]) -> Result<()> {
+    if let Some(parent) = output
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(output)?;
+    writer.write_record([
+        "stop_id",
+        "name",
+        "state",
+        "lat",
+        "lon",
+        "requested_class",
+        "route_refs",
+        "stop_role",
+        "transfer_value",
+        "freight_volume",
+        "spacing_need",
+        "resilience_value",
+        "energy_service",
+        "land_ops_feasibility",
+        "equity_community",
+        "evidence_status",
+        "source_artifact",
+        "next_step",
+    ])?;
+    for row in rows {
+        writer.write_record([
+            row.stop_id.as_str(),
+            row.name.as_str(),
+            row.state.as_str(),
+            row.lat.as_str(),
+            row.lon.as_str(),
+            row.requested_class.as_str(),
+            row.route_refs.as_str(),
+            row.stop_role.as_str(),
+            row.transfer_value.as_str(),
+            row.freight_volume.as_str(),
+            row.spacing_need.as_str(),
+            row.resilience_value.as_str(),
+            row.energy_service.as_str(),
+            row.land_ops_feasibility.as_str(),
+            row.equity_community.as_str(),
+            row.evidence_status.as_str(),
+            row.source_artifact.as_str(),
+            row.next_step.as_str(),
+        ])?;
     }
     writer.flush()?;
     Ok(())

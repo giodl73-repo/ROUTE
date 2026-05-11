@@ -79,3 +79,6 @@ should mean something in the SLA graph.
 - Empty candidate gaps now receive `draft-algorithmic-midpoint` rows and can be
   exported as a CSV docket, so every oversized segment has a review target even
   before source-backed stop promotion.
+- `route stop-sla-promotions` converts the SLA candidate docket into
+  `tier-stop-candidates`-shaped source-needed rows and gates that the promotion
+  scaffold is structurally append-ready.
