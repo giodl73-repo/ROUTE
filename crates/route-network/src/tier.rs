@@ -100,6 +100,42 @@ impl StopNodeClass {
     pub fn is_system_contact(self) -> bool {
         !matches!(self, Self::ServiceStop)
     }
+
+    pub fn qualifies_for_route_endpoint(self, tier: RouteTier) -> bool {
+        match tier {
+            RouteTier::T1 => self.is_system_contact(),
+            RouteTier::T2 => self.is_system_contact(),
+            RouteTier::T3 => true,
+            RouteTier::T4 => true,
+        }
+    }
+
+    pub fn qualifies_for_route_contact(self, tier: RouteTier) -> bool {
+        match tier {
+            RouteTier::T1 => true,
+            RouteTier::T2 => self.is_system_contact(),
+            RouteTier::T3 => true,
+            RouteTier::T4 => true,
+        }
+    }
+}
+
+pub fn minimum_system_contacts_for_tier(tier: RouteTier) -> usize {
+    match tier {
+        RouteTier::T1 => 2,
+        RouteTier::T2 => 2,
+        RouteTier::T3 => 1,
+        RouteTier::T4 => 0,
+    }
+}
+
+pub fn endpoint_rule_label(tier: RouteTier) -> &'static str {
+    match tier {
+        RouteTier::T1 => "T1 endpoints must be terminals or transfer hubs",
+        RouteTier::T2 => "T2 routes must touch at least two system-contact stops",
+        RouteTier::T3 => "T3 routes must connect into local T1/T2 context",
+        RouteTier::T4 => "T4 routes are local access/spur candidates",
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -271,8 +307,9 @@ fn incident_t1_routes(
 #[cfg(test)]
 mod tests {
     use super::{
-        analyze_tier_connectivity, tier_connectivity_gate_failures, RouteTier, StopNodeClass,
-        StopServiceClass, TierNodeClass, T1_BACKBONE_ROUTES,
+        analyze_tier_connectivity, endpoint_rule_label, minimum_system_contacts_for_tier,
+        tier_connectivity_gate_failures, RouteTier, StopNodeClass, StopServiceClass, TierNodeClass,
+        T1_BACKBONE_ROUTES,
     };
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{coord, LineString};
@@ -378,5 +415,19 @@ mod tests {
         );
         assert!(StopNodeClass::NationalTerminal.is_system_contact());
         assert!(!StopNodeClass::ServiceStop.is_system_contact());
+    }
+
+    #[test]
+    fn stop_node_classes_encode_route_endpoint_policy() {
+        assert_eq!(minimum_system_contacts_for_tier(RouteTier::T1), 2);
+        assert_eq!(minimum_system_contacts_for_tier(RouteTier::T2), 2);
+        assert_eq!(minimum_system_contacts_for_tier(RouteTier::T3), 1);
+        assert!(StopNodeClass::NationalTransferHub.qualifies_for_route_endpoint(RouteTier::T1));
+        assert!(StopNodeClass::TransferHub.qualifies_for_route_endpoint(RouteTier::T2));
+        assert!(!StopNodeClass::ServiceStop.qualifies_for_route_endpoint(RouteTier::T2));
+        assert!(StopNodeClass::ServiceStop.qualifies_for_route_contact(RouteTier::T1));
+        assert!(!StopNodeClass::ServiceStop.qualifies_for_route_contact(RouteTier::T2));
+        assert!(StopNodeClass::ServiceStop.qualifies_for_route_endpoint(RouteTier::T3));
+        assert!(endpoint_rule_label(RouteTier::T2).contains("system-contact"));
     }
 }

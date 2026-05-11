@@ -62,3 +62,7 @@ should mean something in the SLA graph.
   stop gap is under 400 miles.
 - Added visible intermediate stops for the largest western, mountain, and
   Appalachian gaps.
+- T1/T2 route endpoint/contact policy is now shared through `route-network` and
+  gated by Beck map tests.
+- Washington and Spokane are classified as transfer/contact stops where the
+  schematic topology already used them as route contacts.

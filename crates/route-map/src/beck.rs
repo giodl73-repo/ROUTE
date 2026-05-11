@@ -809,8 +809,8 @@ fn beck_stops() -> Vec<BeckStop> {
             360.0,
             220.0,
             false,
-            false,
-            &["I-90"],
+            true,
+            &["I-90", "US95"],
             LabelDir::Down,
         ),
         stop(
@@ -893,8 +893,8 @@ fn beck_stops() -> Vec<BeckStop> {
             1920.0,
             840.0,
             false,
-            false,
-            &["I-95"],
+            true,
+            &["I-95", "I-70"],
             LabelDir::Left,
         ),
         stop(
@@ -2129,11 +2129,15 @@ fn stop_tier(stop: &BeckStop, steps: &[SlaStep]) -> &'static str {
 }
 
 fn stop_class(stop: &BeckStop) -> &'static str {
+    beck_stop_class(stop).as_str()
+}
+
+fn beck_stop_class(stop: &BeckStop) -> StopNodeClass {
     match (stop.is_hub, stop.is_interchange) {
-        (true, true) => StopNodeClass::NationalTransferHub.as_str(),
-        (true, false) => StopNodeClass::NationalTerminal.as_str(),
-        (false, true) => StopNodeClass::TransferHub.as_str(),
-        (false, false) => StopNodeClass::ServiceStop.as_str(),
+        (true, true) => StopNodeClass::NationalTransferHub,
+        (true, false) => StopNodeClass::NationalTerminal,
+        (false, true) => StopNodeClass::TransferHub,
+        (false, false) => StopNodeClass::ServiceStop,
     }
 }
 
@@ -2610,10 +2614,11 @@ fn draw_generated_bends(
 #[cfg(test)]
 mod tests {
     use super::{
-        beck_stops, build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg,
-        is_primary_terminal, stop_by_id, t1_badges, t1_line_segments, t1_route_stop_ids,
-        t2_line_segments, LineSegment,
+        beck_stop_class, beck_stops, build_beck_stop_sla_csv, build_beck_svg, build_beck_t2_svg,
+        is_primary_terminal, stop_by_id, stop_class, t1_badges, t1_line_segments,
+        t1_route_stop_ids, t2_line_segments, LineSegment,
     };
+    use route_network::{minimum_system_contacts_for_tier, RouteTier};
 
     fn path_contains_point(line: &LineSegment, point: (f64, f64)) -> bool {
         line.waypoints.windows(2).any(|segment| {
@@ -3079,14 +3084,36 @@ mod tests {
                 .iter()
                 .filter(|stop_id| {
                     let stop = stop_by_id(&stops, stop_id);
-                    t1_ids.contains(**stop_id) || stop.is_hub || stop.is_interchange
+                    let contact_tier = if t1_ids.contains(**stop_id) {
+                        RouteTier::T1
+                    } else {
+                        RouteTier::T2
+                    };
+                    beck_stop_class(stop).qualifies_for_route_contact(contact_tier)
                 })
                 .count();
+            let minimum_contacts = minimum_system_contacts_for_tier(RouteTier::T2);
             assert!(
-                contacts >= 2,
+                contacts >= minimum_contacts,
                 "{} has only {contacts} system contact stop(s)",
                 line.corridor
             );
+        }
+    }
+
+    #[test]
+    fn t1_routes_start_and_end_at_qualified_endpoint_stops() {
+        let stops = beck_stops();
+        for (corridor, ids) in t1_route_stop_ids() {
+            let endpoint_ids = [ids[0], ids[ids.len() - 1]];
+            for endpoint_id in endpoint_ids {
+                let endpoint = stop_by_id(&stops, endpoint_id);
+                assert!(
+                    beck_stop_class(endpoint).qualifies_for_route_endpoint(RouteTier::T1),
+                    "{corridor} endpoint {endpoint_id} is classified as {}",
+                    stop_class(endpoint)
+                );
+            }
         }
     }
 
