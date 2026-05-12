@@ -4,7 +4,7 @@ Four tiers of review roles. Read this before opening any role file.
 
 ---
 
-## Parliament roles (7 voices)
+## Parliament roles (9 voices)
 
 Expert voices for corridor review. Adversarial by design — they plant incompatible stakes. The argument record is the output; consensus is not the goal.
 
@@ -17,6 +17,8 @@ Expert voices for corridor review. Adversarial by design — they plant incompat
 | `parliament/traffic-engineer.md` | Traffic Engineer | Capacity + safety vs. cost and right-of-way |
 | `parliament/climate-engineer.md` | Climate Resilience Engineer | Long-horizon risk vs. near-term cost |
 | `parliament/rural-advocate.md` | Rural Advocate | Agricultural + rural access vs. metro-centric framing |
+| `parliament/optimization-methodologist.md` | Optimization Methodologist | Reproducible objective/constraint formulation vs. hand-shaped choices |
+| `parliament/schematic-cartographer.md` | Schematic Cartographer | Truthful schematic abstraction vs. visually convenient map cheats |
 
 ---
 
