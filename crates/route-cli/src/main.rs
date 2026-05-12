@@ -1767,6 +1767,20 @@ enum Commands {
         gate: bool,
     },
 
+    /// Verify an existing optimizer run manifest without regenerating it
+    OptimizerManifest {
+        /// Optimizer run manifest CSV
+        #[arg(
+            long,
+            default_value = "data/tier-optimizer-runs.csv",
+            value_name = "FILE"
+        )]
+        manifest: PathBuf,
+        /// Fail if manifest rows violate bundle contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -6268,6 +6282,27 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("tier optimizer bundle gate: PASS");
+            }
+        }
+
+        Commands::OptimizerManifest { manifest, gate } => {
+            println!("route optimizer-manifest");
+            let rows = load_tier_optimizer_runs(&manifest)
+                .with_context(|| format!("loading {}", manifest.display()))?;
+            print_optimizer_manifest_summary(&manifest, &rows);
+
+            if gate {
+                let failures = optimizer_manifest_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer manifest gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer manifest gate failed");
+                }
+                println!();
+                println!("optimizer manifest gate: PASS");
             }
         }
 
@@ -11225,7 +11260,7 @@ struct T1FeedbackDocketRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierOptimizerRunRow {
     step: usize,
     optimizer_stage: String,
@@ -14817,20 +14852,66 @@ fn print_tier_optimizer_run_summary(output: &Path, rows: &[TierOptimizerRunRow])
     }
 }
 
+fn load_tier_optimizer_runs(path: &Path) -> Result<Vec<TierOptimizerRunRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn print_optimizer_manifest_summary(path: &Path, rows: &[TierOptimizerRunRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.gate_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  read {} optimizer manifest rows from {}",
+        rows.len(),
+        path.display()
+    );
+    for (gate_status, count) in counts {
+        println!("  {gate_status}: {count}");
+    }
+}
+
 fn tier_optimizer_run_gate_failures(all_tiers: bool, rows: &[TierOptimizerRunRow]) -> Vec<String> {
     let mut failures = Vec::new();
     if !all_tiers {
         failures.push("tier-optimize bundle gate requires --all-tiers".to_string());
     }
+    failures.extend(optimizer_manifest_gate_failures(rows));
+    failures
+}
+
+fn optimizer_manifest_gate_failures(rows: &[TierOptimizerRunRow]) -> Vec<String> {
+    let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no tier optimizer run rows emitted".to_string());
         return failures;
     }
+    let mut previous_step = 0usize;
     for row in rows {
+        if row.step == 0 || row.step <= previous_step {
+            failures.push(format!(
+                "{} has non-increasing manifest step {}",
+                row.optimizer_stage, row.step
+            ));
+        }
+        previous_step = row.step;
+        if row.optimizer_stage.trim().is_empty()
+            || row.command.trim().is_empty()
+            || row.artifact.trim().is_empty()
+            || row.gate_status.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("step {} has empty manifest fields", row.step));
+        }
         if row.row_count == 0 {
             failures.push(format!("{} has missing or empty artifact", row.artifact));
         }
-        if !matches!(row.gate_status.as_str(), "pass" | "held-known") {
+        if !matches!(row.gate_status.as_str(), "pass" | "held-known" | "review") {
             failures.push(format!(
                 "{} has unexpected gate status {}",
                 row.optimizer_stage, row.gate_status
@@ -14839,10 +14920,30 @@ fn tier_optimizer_run_gate_failures(all_tiers: bool, rows: &[TierOptimizerRunRow
         if row.gate_status == "pass" && row.validation_status != "pass" {
             failures.push(format!("{} did not validate as pass", row.optimizer_stage));
         }
-        if row.gate_status == "held-known" && row.blocker_summary.trim().is_empty() {
+        if row.gate_status == "held-known" && row.validation_status != "held" {
+            failures.push(format!(
+                "{} held row did not validate as held",
+                row.optimizer_stage
+            ));
+        }
+        if row.gate_status == "held-known" && row.blocker_count == 0 {
+            failures.push(format!(
+                "{} held without blocker count",
+                row.optimizer_stage
+            ));
+        }
+        if matches!(row.gate_status.as_str(), "held-known" | "review")
+            && row.blocker_summary.trim().is_empty()
+        {
             failures.push(format!(
                 "{} held without blocker summary",
                 row.optimizer_stage
+            ));
+        }
+        if row.gate_status == "fail" || row.validation_status == "missing-or-empty" {
+            failures.push(format!(
+                "{} has non-committable manifest status {}/{}",
+                row.optimizer_stage, row.gate_status, row.validation_status
             ));
         }
     }
@@ -19932,7 +20033,8 @@ mod tests {
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
+        map_atlas_gate_failures, optimizer_manifest_gate_failures,
+        optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
         parse_mdot_midrive_events, parse_pressure_scenarios, parse_significant_moments,
@@ -21456,6 +21558,26 @@ mod tests {
             tier_optimizer_run_gate_failures(false, &rows),
             vec!["tier-optimize bundle gate requires --all-tiers".to_string()]
         );
+    }
+
+    #[test]
+    fn optimizer_manifest_gate_requires_held_blocker_contract() {
+        let rows = vec![TierOptimizerRunRow {
+            step: 1,
+            optimizer_stage: "t2-contact-witnesses".to_string(),
+            command: "route tier-contact-witnesses --gate".to_string(),
+            artifact: "data/tier-contact-witnesses.csv".to_string(),
+            row_count: 40,
+            gate_status: "held-known".to_string(),
+            blocker_count: 0,
+            blocker_summary: String::new(),
+            validation_status: "held".to_string(),
+        }];
+
+        let failures = optimizer_manifest_gate_failures(&rows);
+
+        assert!(failures.contains(&"t2-contact-witnesses held without blocker count".to_string()));
+        assert!(failures.contains(&"t2-contact-witnesses held without blocker summary".to_string()));
     }
 
     #[test]

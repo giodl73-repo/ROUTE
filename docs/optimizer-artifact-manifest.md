@@ -14,6 +14,12 @@ The current manifest artifact is `data/tier-optimizer-runs.csv`, emitted by:
 route tier-optimize --all-tiers --gate
 ```
 
+An existing manifest can be verified without regenerating it with:
+
+```text
+route optimizer-manifest --gate
+```
+
 ## Manifest Row Contract
 
 Each manifest row must include:
@@ -109,7 +115,6 @@ duplicating all of its fields.
 
 Near-term improvements:
 
-- add a dedicated `route optimizer-manifest --gate` command;
 - add manifest rows for spec/review artifacts when they become gates;
 - include command hash or config id once optimizer configs are externalized;
 - include source artifacts for generated rows;
