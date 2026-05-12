@@ -57,7 +57,8 @@ The game succeeds when a non-specialist can say:
 | Browser plan | Drafted | `docs/game/des-moines-diamond-g2-plan.md`; map-first G2-A slice and Playwright gates defined |
 | First browser prototype | Drafted | `docs/game/browser/des-moines-diamond.html`; static map-first fixture playback with static and Playwright browser checks |
 | Browser prototype | G2-A simulated pass | Map-first UI with browser-local season mutation, CLI-compatible session export, and campaign atlas links |
-| Map atlas contract | Ready | `data/map-atlas.csv`; `route map-atlas --gate` verifies national, schematic, and T1 regional PNGs for campaign/game reuse |
+| Map atlas contract | Ready | `data/map-atlas.csv`; `route map-atlas --gate` verifies national, schematic, T2 service, and T1 regional PNGs for campaign/game reuse |
+| T2 service-class contract | Ready | `data/beck-t2-service-standards.csv`; `route beck-t2-service-standards --gate` defines connector, compact-service, transfer-spine, and long-connector overlay semantics |
 
 ## Learning Inputs Folded In
 
@@ -251,7 +252,7 @@ Scenario order:
 | 7 | Hardening Stop: EV/Rest Hardening | energy/rest standards under outages |
 | 8 | Hearing Room: Blueprint Hearing | evidence labels and public proof |
 
-Canonical campaign rows live in `data/game/campaign-spine.csv`. The prose table is a readable mirror; the gate owns map-id and publication-gate completeness.
+Canonical campaign rows live in `data/game/campaign-spine.csv`. The prose table is a readable mirror; the gate owns map-id and publication-gate completeness. T2 service overlays use `data/beck-t2-service-standards.csv` so incidents, upgrades, and restitching can target service classes instead of hand-picked line names.
 
 Done criteria:
 
