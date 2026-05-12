@@ -181,6 +181,8 @@ Current implementation status:
 - `data/lower-tier-pressure-witnesses.csv` records T2 demotions and near-threshold
   lower-tier pressure.
 - `data/t3-t4-pressure-intake.csv` classifies 108 pressure rows.
+- `data/t3-zone-access-obligations.csv` groups pressure rows into five T3 zone
+  map obligations: 6h regional feeder access and 24h upgrade review.
 - `data/t2-bubble-up-review.csv` sends 18 near-threshold T3 rows to T2 contact
   review instead of promoting them directly.
 - `data/map-atlas.csv` tracks five T3 zone maps.
@@ -190,6 +192,6 @@ Current gaps:
 - no full T3 zone optimizer yet;
 - no T4 terminal/local access column artifact yet;
 - no T3/T4 access-promise ledger;
-- no county/zone access obligation table;
+- county/source enrichment is not yet attached to the zone obligation table;
 - T3 maps still need to consume selected zone route/stop columns;
 - T4 exists mostly as pressure/demotion semantics, not a rendered access layer.

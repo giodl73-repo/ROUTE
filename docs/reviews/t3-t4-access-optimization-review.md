@@ -72,11 +72,16 @@ columns, and full zone-map diagnostics.
 
 ## Required Next Artifacts
 
-1. `data/t3-zone-access-obligations.csv`
-2. `data/t3-zone-route-columns.csv`
-3. `data/t4-terminal-access-columns.csv`
-4. `data/t3-t4-access-gaps.csv`
-5. `data/t3-zone-map-diagnostics.csv`
+Implemented:
+
+- `data/t3-zone-access-obligations.csv`
+
+Still required:
+
+1. `data/t3-zone-route-columns.csv`
+2. `data/t4-terminal-access-columns.csv`
+3. `data/t3-t4-access-gaps.csv`
+4. `data/t3-zone-map-diagnostics.csv`
 
 ## Decision
 

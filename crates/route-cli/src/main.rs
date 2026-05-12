@@ -1688,6 +1688,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T3 zone access obligations from lower-tier pressure intake rows
+    T3ZoneAccessObligations {
+        /// T3/T4 pressure intake CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// Map atlas CSV containing T3 zone map ids
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        map_atlas: PathBuf,
+        /// Output T3 zone access obligation CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-zone-access-obligations.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if zone obligations are incomplete or detached from maps
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6190,6 +6215,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3/T4 pressure intake gate: PASS");
+            }
+        }
+
+        Commands::T3ZoneAccessObligations {
+            intake,
+            map_atlas,
+            output,
+            gate,
+        } => {
+            println!("route t3-zone-access-obligations");
+            let intake_rows = load_t3_t4_pressure_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let atlas_rows = load_map_atlas(&map_atlas)
+                .with_context(|| format!("loading {}", map_atlas.display()))?;
+            let rows = t3_zone_access_obligation_rows(&intake_rows, &atlas_rows);
+            write_t3_zone_access_obligations(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_zone_access_obligation_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_zone_access_obligation_gate_failures(&rows, &atlas_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3 zone access obligation gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3 zone access obligation gate failed");
+                }
+                println!();
+                println!("T3 zone access obligation gate: PASS");
             }
         }
 
@@ -11233,6 +11289,22 @@ struct T3T4PressureIntakeRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3ZoneAccessObligationRow {
+    zone_id: String,
+    zone_name: String,
+    obligation_class: String,
+    access_target: String,
+    promise_horizon_hours: u8,
+    source_route_count: usize,
+    candidate_routes: String,
+    source_intake_classes: String,
+    map_id: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -14182,6 +14254,243 @@ fn load_t3_t4_pressure_intake(path: &Path) -> Result<Vec<T3T4PressureIntakeRow>>
     Ok(rows)
 }
 
+fn t3_zone_access_obligation_rows(
+    intake_rows: &[T3T4PressureIntakeRow],
+    atlas_rows: &[MapAtlasRow],
+) -> Vec<T3ZoneAccessObligationRow> {
+    #[derive(Default)]
+    struct ObligationAggregate {
+        routes: std::collections::BTreeSet<String>,
+        intake_classes: std::collections::BTreeSet<String>,
+    }
+
+    let t3_maps = t3_zone_map_ids(atlas_rows);
+    let mut aggregates = std::collections::BTreeMap::<(String, String), ObligationAggregate>::new();
+
+    for row in intake_rows {
+        let Some((zone_id, _zone_name)) = t3_zone_for_route(&row.route) else {
+            continue;
+        };
+        if !t3_maps.contains(zone_id) {
+            continue;
+        }
+        let obligation_class = t3_obligation_class_for_intake(&row.intake_class);
+        let aggregate = aggregates
+            .entry((zone_id.to_string(), obligation_class.to_string()))
+            .or_default();
+        aggregate.routes.insert(row.route.clone());
+        aggregate.intake_classes.insert(row.intake_class.clone());
+    }
+
+    let mut rows = aggregates
+        .into_iter()
+        .filter_map(|((zone_id, obligation_class), aggregate)| {
+            let (_zone_id, zone_name) = t3_zone_catalog_entry(&zone_id)?;
+            let (access_target, horizon, next_artifact, optimizer_effect) =
+                t3_zone_obligation_contract(&obligation_class);
+            Some(T3ZoneAccessObligationRow {
+                zone_id: zone_id.clone(),
+                zone_name: zone_name.to_string(),
+                obligation_class: obligation_class.clone(),
+                access_target: access_target.to_string(),
+                promise_horizon_hours: horizon,
+                source_route_count: aggregate.routes.len(),
+                candidate_routes: aggregate
+                    .routes
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                source_intake_classes: aggregate
+                    .intake_classes
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                map_id: zone_id,
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            })
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.zone_id
+            .cmp(&b.zone_id)
+            .then_with(|| a.promise_horizon_hours.cmp(&b.promise_horizon_hours))
+            .then_with(|| a.obligation_class.cmp(&b.obligation_class))
+    });
+    rows
+}
+
+fn t3_zone_map_ids(atlas_rows: &[MapAtlasRow]) -> std::collections::BTreeSet<String> {
+    atlas_rows
+        .iter()
+        .filter(|row| row.map_type == "t3-zone")
+        .map(|row| row.map_id.clone())
+        .collect()
+}
+
+fn t3_zone_for_route(route: &str) -> Option<(&'static str, &'static str)> {
+    let key = canonical_route_key(route);
+    let zone_id = match key.as_str() {
+        "I71" | "I74" | "I75" | "I96" | "I180" | "I220" | "I264" | "I270" | "I275" | "I280"
+        | "I480" | "I675" | "US22" | "US40" | "US74" | "US75" => "t3-great-lakes",
+        "I16" | "I22" | "I24" | "I37" | "I57" | "I59" | "I65" | "I85" | "I464" | "US17"
+        | "US74E" | "US80" | "US90Z" => "t3-southeast",
+        "I2" | "I10" | "I19" | "I37W" | "I45" | "I110" | "I410" | "I610" | "US69" | "US77"
+        | "US83" | "US90" | "US281" => "t3-texas-border",
+        "I8" | "I15" | "I25" | "I70" | "I80" | "I135" | "I205" | "I215" | "I225" | "I680"
+        | "US2" | "US6" | "US287" => "t3-mountain-west",
+        "I30" | "I40" | "I44" | "I49" | "I55" | "I240" | "I295" | "I630" | "I635" | "I664"
+        | "US69S" | "US70" | "US71" => "t3-mid-south",
+        _ => return None,
+    };
+    t3_zone_catalog_entry(zone_id)
+}
+
+fn t3_zone_catalog_entry(zone_id: &str) -> Option<(&'static str, &'static str)> {
+    match zone_id {
+        "t3-great-lakes" => Some(("t3-great-lakes", "Great Lakes / Ohio Valley")),
+        "t3-southeast" => Some(("t3-southeast", "Southeast / Appalachia")),
+        "t3-texas-border" => Some(("t3-texas-border", "Texas Border / Gulf Access")),
+        "t3-mountain-west" => Some(("t3-mountain-west", "Mountain West / Interior Coverage")),
+        "t3-mid-south" => Some(("t3-mid-south", "Mid-South / Delta / Ozarks")),
+        _ => None,
+    }
+}
+
+fn t3_obligation_class_for_intake(intake_class: &str) -> &'static str {
+    match intake_class {
+        "bubble-up-t2-review" => "regional-upgrade-review",
+        "t4-local-intake" => "terminal-local-access",
+        _ => "regional-feeder-access",
+    }
+}
+
+fn t3_zone_obligation_contract(
+    obligation_class: &str,
+) -> (&'static str, u8, &'static str, &'static str) {
+    match obligation_class {
+        "regional-upgrade-review" => (
+            "prove T2 contact and regional service value before upgrade",
+            24,
+            "data/t2-bubble-up-review.csv",
+            "keeps lower-tier upgrade pressure attached to zone maps before any T2 reopening",
+        ),
+        "terminal-local-access" => (
+            "select T4 terminal/local access chain inside the zone",
+            1,
+            "data/t4-terminal-access-columns.csv",
+            "turns local pressure into terminal access columns instead of national promotion",
+        ),
+        _ => (
+            "select T3 feeder/contact chain inside the zone",
+            6,
+            "data/t3-zone-route-columns.csv",
+            "turns lower-tier pressure into regional feeder obligations for zone maps",
+        ),
+    }
+}
+
+fn write_t3_zone_access_obligations(path: &Path, rows: &[T3ZoneAccessObligationRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_zone_access_obligation_summary(output: &Path, rows: &[T3ZoneAccessObligationRow]) {
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_class = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+        *by_class.entry(row.obligation_class.as_str()).or_default() += 1;
+    }
+
+    println!(
+        "  wrote {} T3 zone access obligation rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+    for (class, count) in by_class {
+        println!("  {class}: {count}");
+    }
+}
+
+fn t3_zone_access_obligation_gate_failures(
+    rows: &[T3ZoneAccessObligationRow],
+    atlas_rows: &[MapAtlasRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T3 zone access obligations emitted".to_string());
+        return failures;
+    }
+
+    let t3_maps = t3_zone_map_ids(atlas_rows);
+    let covered_zones = rows
+        .iter()
+        .map(|row| row.zone_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    for map_id in &t3_maps {
+        if !covered_zones.contains(map_id) {
+            failures.push(format!("{map_id} has no access obligation row"));
+        }
+    }
+
+    for row in rows {
+        if row.zone_id.trim().is_empty()
+            || row.zone_name.trim().is_empty()
+            || row.obligation_class.trim().is_empty()
+            || row.access_target.trim().is_empty()
+            || row.source_route_count == 0
+            || row.candidate_routes.trim().is_empty()
+            || row.source_intake_classes.trim().is_empty()
+            || row.map_id.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete access obligation fields",
+                row.zone_id, row.obligation_class
+            ));
+        }
+        if row.zone_id != row.map_id {
+            failures.push(format!(
+                "{} {} is detached from map id {}",
+                row.zone_id, row.obligation_class, row.map_id
+            ));
+        }
+        if !t3_maps.contains(&row.map_id) {
+            failures.push(format!(
+                "{} {} references unknown T3 map {}",
+                row.zone_id, row.obligation_class, row.map_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} {} has invalid validation status {}",
+                row.zone_id, row.obligation_class, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -14748,8 +15057,16 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
             ),
             (
                 "t3-t4-pressure-intake",
-                "route t3t4-pressure-intake --gate",
+                "route t3-t4-pressure-intake --gate",
                 "data/t3-t4-pressure-intake.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-zone-access-obligations",
+                "route t3-zone-access-obligations --gate",
+                "data/t3-zone-access-obligations.csv",
                 "pass",
                 0,
                 "",
@@ -20072,20 +20389,21 @@ mod tests {
         t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
+        t3_zone_access_obligation_gate_failures, t3_zone_access_obligation_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, NbiBridgeRecord,
-        OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4PressureIntakeRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, MapAtlasRow,
+        NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow,
+        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4PressureIntakeRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -21100,6 +21418,127 @@ mod tests {
 
         assert!(classes.contains("t3-regional-intake"));
         assert!(classes.contains("bubble-up-t2-review"));
+        assert!(failures.is_empty());
+    }
+
+    fn test_t3_map_atlas_row(map_id: &str) -> MapAtlasRow {
+        MapAtlasRow {
+            map_id: map_id.to_string(),
+            path: format!("maps/{map_id}.png"),
+            map_type: "t3-zone".to_string(),
+            render_command: format!("route map {map_id} --output maps/{map_id}.png"),
+            expected_width: 1800,
+            expected_height: 1000,
+            min_bytes: 80_000,
+            tier_role: "T3 zone schematic".to_string(),
+            game_use: "Regional feeder planning".to_string(),
+        }
+    }
+
+    #[test]
+    fn t3_zone_access_obligations_group_pressure_by_zone_maps() {
+        let intake = vec![
+            T3T4PressureIntakeRow {
+                route: "I-57".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 49.6,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I25".to_string(),
+                source_pressure_type: "closure-demotion-pressure".to_string(),
+                current_tier: "T2".to_string(),
+                current_score: 66.3,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "accept-as-t3-regional-review".to_string(),
+                selection_basis: "source-backed T1/T2 contact".to_string(),
+                source_artifact: "data/t2-contact-closure.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "consume T2 demotion as regional feeder review".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I-2".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 45.7,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I-74".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 47.2,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I-630".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 46.7,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let atlas = vec![
+            test_t3_map_atlas_row("t3-great-lakes"),
+            test_t3_map_atlas_row("t3-southeast"),
+            test_t3_map_atlas_row("t3-texas-border"),
+            test_t3_map_atlas_row("t3-mountain-west"),
+            test_t3_map_atlas_row("t3-mid-south"),
+        ];
+
+        let rows = t3_zone_access_obligation_rows(&intake, &atlas);
+        let failures = t3_zone_access_obligation_gate_failures(&rows, &atlas);
+        let zones = rows
+            .iter()
+            .map(|row| row.zone_id.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert!(zones.contains("t3-great-lakes"));
+        assert!(zones.contains("t3-southeast"));
+        assert!(zones.contains("t3-texas-border"));
+        assert!(zones.contains("t3-mountain-west"));
+        assert!(zones.contains("t3-mid-south"));
+        assert!(rows
+            .iter()
+            .any(|row| row.obligation_class == "regional-feeder-access"));
+        assert!(rows
+            .iter()
+            .any(|row| row.obligation_class == "regional-upgrade-review"));
         assert!(failures.is_empty());
     }
 
