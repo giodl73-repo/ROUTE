@@ -1459,6 +1459,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Resolve T2 endpoint-exception upgrade blockers into upgrade or demotion actions
+    T2EndpointClosure {
+        /// T2 blocker closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        closure: PathBuf,
+        /// Endpoint exception ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
+        /// Output endpoint closure CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-endpoint-closure.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if endpoint closure rows lack a deterministic disposition
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5729,6 +5758,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 contact closure gate: PASS");
+            }
+        }
+
+        Commands::T2EndpointClosure {
+            closure,
+            exceptions,
+            output,
+            gate,
+        } => {
+            println!("route t2-endpoint-closure");
+            let closure_rows = load_t2_blocker_closure(&closure)
+                .with_context(|| format!("loading {}", closure.display()))?;
+            let exception_rows = load_endpoint_exceptions(&exceptions)
+                .with_context(|| format!("loading {}", exceptions.display()))?;
+            let rows = t2_endpoint_closure_rows(&closure_rows, &exception_rows);
+            write_t2_endpoint_closure(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_endpoint_closure_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_endpoint_closure_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 endpoint closure gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 endpoint closure gate failed");
+                }
+                println!();
+                println!("T2 endpoint closure gate: PASS");
             }
         }
 
@@ -10672,6 +10732,22 @@ struct T2ContactClosureRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2EndpointClosureRow {
+    route: String,
+    endpoint_name: String,
+    endpoint_role: String,
+    exception_type: String,
+    evidence_level: String,
+    terminal_worthy: bool,
+    endpoint_action: String,
+    disposition: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -12637,6 +12713,116 @@ fn t2_contact_closure_gate_failures(rows: &[T2ContactClosureRow]) -> Vec<String>
     failures
 }
 
+fn t2_endpoint_closure_rows(
+    closure_rows: &[T2BlockerClosureRow],
+    exception_rows: &[EndpointExceptionRow],
+) -> Vec<T2EndpointClosureRow> {
+    closure_rows
+        .iter()
+        .filter(|row| row.blocker_class == "endpoint-exception-upgrade")
+        .map(|row| {
+            let exception = endpoint_exceptions_for_route(exception_rows, &row.route, "T2")
+                .into_iter()
+                .next();
+            let terminal_worthy = exception
+                .map(endpoint_exception_is_terminal_worthy)
+                .unwrap_or_default();
+            let (endpoint_action, disposition, required_evidence, next_artifact, optimizer_effect) =
+                if terminal_worthy {
+                    (
+                        "accept-terminal-worthy-exception",
+                        "candidate-review",
+                        "terminal-worthy endpoint exception",
+                        "data/tier-candidate-columns.csv",
+                        "eligible for T2 candidate-column review",
+                    )
+                } else {
+                    (
+                        "upgrade-endpoint-exception-or-demote",
+                        "lower-tier-pressure",
+                        "terminal-worthy endpoint role and exception type",
+                        "data/lower-tier-pressure-witnesses.csv",
+                        "kept out of T2 until endpoint exception is upgraded",
+                    )
+                };
+
+            T2EndpointClosureRow {
+                route: row.route.clone(),
+                endpoint_name: exception
+                    .map(|exception| exception.endpoint_name.clone())
+                    .unwrap_or_default(),
+                endpoint_role: exception
+                    .map(|exception| exception.endpoint_role.clone())
+                    .unwrap_or_default(),
+                exception_type: exception
+                    .map(|exception| exception.exception_type.clone())
+                    .unwrap_or_default(),
+                evidence_level: exception
+                    .map(|exception| exception.evidence_level.clone())
+                    .unwrap_or_default(),
+                terminal_worthy,
+                endpoint_action: endpoint_action.to_string(),
+                disposition: disposition.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_endpoint_closure(path: &Path, rows: &[T2EndpointClosureRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_endpoint_closure_summary(output: &Path, rows: &[T2EndpointClosureRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.endpoint_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 endpoint closure rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_endpoint_closure_gate_failures(rows: &[T2EndpointClosureRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 endpoint closure rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.endpoint_action.trim().is_empty()
+            || row.disposition.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete endpoint closure", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -13343,6 +13529,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-contact-closure",
                 "route t2-contact-closure --gate",
                 "data/t2-contact-closure.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-endpoint-closure",
+                "route t2-endpoint-closure --gate",
+                "data/t2-endpoint-closure.csv",
                 "pass",
                 0,
                 "",
@@ -18354,6 +18548,7 @@ mod tests {
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
+        t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
@@ -19180,6 +19375,43 @@ mod tests {
         assert_eq!(rows[0].disposition, "candidate-review");
         assert_eq!(rows[1].contact_action, "demote-unless-contact-added");
         assert_eq!(rows[1].disposition, "lower-tier-pressure");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_endpoint_closure_demotes_non_terminal_worthy_exceptions() {
+        let closure_rows = vec![T2BlockerClosureRow {
+            route: "I270".to_string(),
+            source_surface: "t2-terminal-contact-validation".to_string(),
+            blocker_class: "endpoint-exception-upgrade".to_string(),
+            blocker_action: "prove-terminal-exception-or-demote".to_string(),
+            required_evidence: "terminal-worthy endpoint exception".to_string(),
+            next_artifact: "data/tier-node-exceptions.csv".to_string(),
+            optimizer_effect: "blocked from T2 unless endpoint exception is upgraded".to_string(),
+            closure_status: "open".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let exceptions = vec![EndpointExceptionRow {
+            route: "I270".to_string(),
+            requested_tier: "T2".to_string(),
+            endpoint_name: "St. Louis / Columbus beltway".to_string(),
+            endpoint_role: "one_ended_feeder".to_string(),
+            exception_type: "metro_beltway_relief".to_string(),
+            evidence_level: "heuristic".to_string(),
+            artifact: "data/atri-bottlenecks.csv".to_string(),
+            next_step: "validate endpoint contacts".to_string(),
+        }];
+
+        let rows = t2_endpoint_closure_rows(&closure_rows, &exceptions);
+        let failures = t2_endpoint_closure_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert!(!rows[0].terminal_worthy);
+        assert_eq!(
+            rows[0].endpoint_action,
+            "upgrade-endpoint-exception-or-demote"
+        );
+        assert_eq!(rows[0].disposition, "lower-tier-pressure");
         assert!(failures.is_empty());
     }
 

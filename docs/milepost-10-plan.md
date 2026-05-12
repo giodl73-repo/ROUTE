@@ -114,6 +114,11 @@ blockers into one disposition surface. I285 and I405 return to candidate review
 on observed contact; I24, I495, I25, and I65 move toward lower-tier pressure
 unless contact evidence is added.
 
+`route t2-endpoint-closure --gate` now emits
+`data/t2-endpoint-closure.csv`, resolving the remaining endpoint-exception
+bucket. I270 is not terminal-worthy under the endpoint standard, so it moves to
+lower-tier pressure unless its endpoint exception is upgraded with evidence.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

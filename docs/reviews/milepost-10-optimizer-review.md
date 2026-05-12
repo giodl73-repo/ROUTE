@@ -40,6 +40,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-route-family-splits.csv`
 - `data/t2-graph-contact-validation.csv`
 - `data/t2-contact-closure.csv`
+- `data/t2-endpoint-closure.csv`
 
 ## Held Findings
 
@@ -74,6 +75,9 @@ blockers rather than treating the current graph as complete.
    relief, and terminal blockers: I285 and I405 return to candidate review;
    I24, I495, I25, and I65 move to lower-tier pressure unless contact evidence
    is added.
+   `data/t2-endpoint-closure.csv` resolves the remaining I270 endpoint bucket
+   as lower-tier pressure unless the endpoint exception is upgraded with
+   terminal-worthy evidence.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
