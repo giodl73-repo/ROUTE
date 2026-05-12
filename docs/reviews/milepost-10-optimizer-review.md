@@ -36,6 +36,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-parent-contact-validation.csv`
 - `data/t2-relief-evidence-docket.csv`
 - `data/t2-terminal-contact-validation.csv`
+- `data/t2-blocker-closure.csv`
 
 ## Held Findings
 
@@ -57,6 +58,9 @@ blockers rather than treating the current graph as complete.
    `data/t2-terminal-contact-validation.csv` separates I25/I65 terminal-worthy
    endpoint exceptions with missing graph contact from I270, which has contact
    observations but lacks a terminal-worthy endpoint exception.
+   `data/t2-blocker-closure.csv` rolls all 15 held rows into one route-level
+   closure docket with graph-contact, route-family, parent-contact, relief,
+   terminal-contact, and endpoint-exception classes.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

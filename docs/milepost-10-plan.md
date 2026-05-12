@@ -90,6 +90,12 @@ graph contact. I25 and I65 have terminal-worthy exceptions but no observed graph
 contact yet; I270 has observed contacts but lacks a terminal-worthy endpoint
 exception, so it must upgrade the exception record or demote.
 
+`route t2-blocker-closure --gate` now emits
+`data/t2-blocker-closure.csv`, joining all 15 held T2 rows into one closure
+docket: 5 graph-contact repairs, 3 route-family splits, 2 parent-contact
+repairs, 2 relief-contact repairs with observed evidence, 2 terminal-contact
+repairs, and 1 endpoint-exception upgrade/demotion decision.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

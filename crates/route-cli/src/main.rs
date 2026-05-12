@@ -1329,6 +1329,49 @@ enum Commands {
         gate: bool,
     },
 
+    /// Join T2 held repair surfaces into one route-level blocker closure docket
+    T2BlockerClosure {
+        /// Graph-contact repair CSV
+        #[arg(
+            long,
+            default_value = "data/t2-graph-contact-repairs.csv",
+            value_name = "FILE"
+        )]
+        graph_repairs: PathBuf,
+        /// Parent-contact validation CSV
+        #[arg(
+            long,
+            default_value = "data/t2-parent-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        parent_validation: PathBuf,
+        /// Relief evidence docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-relief-evidence-docket.csv",
+            value_name = "FILE"
+        )]
+        relief_evidence: PathBuf,
+        /// Terminal contact validation CSV
+        #[arg(
+            long,
+            default_value = "data/t2-terminal-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        terminal_validation: PathBuf,
+        /// Output blocker closure CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if blocker closure rows lack closure class, action, or next artifact
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5468,6 +5511,44 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 terminal contact validation gate: PASS");
+            }
+        }
+
+        Commands::T2BlockerClosure {
+            graph_repairs,
+            parent_validation,
+            relief_evidence,
+            terminal_validation,
+            output,
+            gate,
+        } => {
+            println!("route t2-blocker-closure");
+            let graph_rows = load_t2_graph_contact_repairs(&graph_repairs)
+                .with_context(|| format!("loading {}", graph_repairs.display()))?;
+            let parent_rows = load_t2_parent_contact_validation(&parent_validation)
+                .with_context(|| format!("loading {}", parent_validation.display()))?;
+            let relief_rows = load_t2_relief_evidence_docket(&relief_evidence)
+                .with_context(|| format!("loading {}", relief_evidence.display()))?;
+            let terminal_rows = load_t2_terminal_contact_validation(&terminal_validation)
+                .with_context(|| format!("loading {}", terminal_validation.display()))?;
+            let rows =
+                t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows);
+            write_t2_blocker_closure(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_blocker_closure_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_blocker_closure_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 blocker closure gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 blocker closure gate failed");
+                }
+                println!();
+                println!("T2 blocker closure gate: PASS");
             }
         }
 
@@ -10280,7 +10361,7 @@ struct T2HeldContactActionRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2GraphContactRepairRow {
     route: String,
     repair_class: String,
@@ -10292,7 +10373,7 @@ struct T2GraphContactRepairRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2ParentContactValidationRow {
     route: String,
     parent_trunks: String,
@@ -10322,7 +10403,7 @@ struct AtriBottleneckRow {
     lon: f64,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2ReliefEvidenceRow {
     route: String,
     source_exception_type: String,
@@ -10337,7 +10418,7 @@ struct T2ReliefEvidenceRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2TerminalContactValidationRow {
     route: String,
     held_action_type: String,
@@ -10351,6 +10432,19 @@ struct T2TerminalContactValidationRow {
     required_evidence: String,
     next_artifact: String,
     optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2BlockerClosureRow {
+    route: String,
+    source_surface: String,
+    blocker_class: String,
+    blocker_action: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    closure_status: String,
     validation_status: String,
 }
 
@@ -11731,6 +11825,200 @@ fn t2_terminal_contact_validation_gate_failures(
     failures
 }
 
+fn load_t2_graph_contact_repairs(path: &Path) -> Result<Vec<T2GraphContactRepairRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_parent_contact_validation(path: &Path) -> Result<Vec<T2ParentContactValidationRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_relief_evidence_docket(path: &Path) -> Result<Vec<T2ReliefEvidenceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_terminal_contact_validation(path: &Path) -> Result<Vec<T2TerminalContactValidationRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_blocker_closure_rows(
+    graph_rows: &[T2GraphContactRepairRow],
+    parent_rows: &[T2ParentContactValidationRow],
+    relief_rows: &[T2ReliefEvidenceRow],
+    terminal_rows: &[T2TerminalContactValidationRow],
+) -> Vec<T2BlockerClosureRow> {
+    let mut rows = Vec::new();
+
+    for row in graph_rows {
+        let blocker_class = if row.repair_class == "route-family-split" {
+            "route-family-split"
+        } else {
+            "graph-contact-repair"
+        };
+        rows.push(T2BlockerClosureRow {
+            route: row.route.clone(),
+            source_surface: "t2-graph-contact-repairs".to_string(),
+            blocker_class: blocker_class.to_string(),
+            blocker_action: row.repair_action.clone(),
+            required_evidence: row.required_evidence.clone(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_effect.clone(),
+            closure_status: "open".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in parent_rows {
+        rows.push(T2BlockerClosureRow {
+            route: row.route.clone(),
+            source_surface: "t2-parent-contact-validation".to_string(),
+            blocker_class: "parent-contact-repair".to_string(),
+            blocker_action: row.validation_action.clone(),
+            required_evidence: row.required_evidence.clone(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_effect.clone(),
+            closure_status: "open".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in relief_rows {
+        let (blocker_class, closure_status) =
+            if row.relief_action == "source-observed-relief-review" {
+                ("relief-contact-repair", "evidence-observed")
+            } else {
+                ("relief-evidence-gap", "open")
+            };
+        rows.push(T2BlockerClosureRow {
+            route: row.route.clone(),
+            source_surface: "t2-relief-evidence-docket".to_string(),
+            blocker_class: blocker_class.to_string(),
+            blocker_action: row.relief_action.clone(),
+            required_evidence: row.evidence_basis.clone(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_effect.clone(),
+            closure_status: closure_status.to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in terminal_rows {
+        let blocker_class = match row.terminal_action.as_str() {
+            "prove-terminal-contact-or-demote" => "terminal-contact-repair",
+            "prove-terminal-exception-or-demote" => "endpoint-exception-upgrade",
+            "accept-terminal-contact" => "terminal-contact-accepted",
+            _ => "terminal-review",
+        };
+        rows.push(T2BlockerClosureRow {
+            route: row.route.clone(),
+            source_surface: "t2-terminal-contact-validation".to_string(),
+            blocker_class: blocker_class.to_string(),
+            blocker_action: row.terminal_action.clone(),
+            required_evidence: row.required_evidence.clone(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_effect.clone(),
+            closure_status: if row.terminal_action == "accept-terminal-contact" {
+                "ready".to_string()
+            } else {
+                "open".to_string()
+            },
+            validation_status: "review".to_string(),
+        });
+    }
+
+    rows.sort_by(|a, b| {
+        a.blocker_class
+            .cmp(&b.blocker_class)
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn write_t2_blocker_closure(path: &Path, rows: &[T2BlockerClosureRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_blocker_closure_summary(output: &Path, rows: &[T2BlockerClosureRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.blocker_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 blocker closure rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (blocker_class, count) in counts {
+        println!("  {blocker_class}: {count}");
+    }
+}
+
+fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 blocker closure rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.source_surface.trim().is_empty()
+            || row.blocker_class.trim().is_empty()
+            || row.blocker_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+            || row.closure_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete blocker closure", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -12405,6 +12693,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-terminal-contact-validation",
                 "route t2-terminal-contact-validation --gate",
                 "data/t2-terminal-contact-validation.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-blocker-closure",
+                "route t2-blocker-closure --gate",
+                "data/t2-blocker-closure.csv",
                 "pass",
                 0,
                 "",
@@ -17413,6 +17709,7 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
@@ -17427,9 +17724,11 @@ mod tests {
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1StopSelectorInputRow, T2ContactResolutionRow, T2HeldContactActionRow, T2RegionalizerRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T1StopSelectorInputRow, T2ContactResolutionRow, T2GraphContactRepairRow,
+        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2TerminalContactValidationRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -17957,6 +18256,75 @@ mod tests {
             "prove-terminal-exception-or-demote"
         );
         assert!(!rows[1].terminal_worthy);
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_blocker_closure_normalizes_all_held_surfaces() {
+        let graph_rows = vec![T2GraphContactRepairRow {
+            route: "I195".to_string(),
+            repair_class: "route-family-split".to_string(),
+            source_exception_type: "missing_graph_geometry".to_string(),
+            repair_action: "split-numbered-route-family-before-tier-decision".to_string(),
+            required_evidence: "identify represented segment".to_string(),
+            next_artifact: "data/tier-node-exceptions.csv".to_string(),
+            optimizer_effect: "blocked until route family is disambiguated".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let parent_rows = vec![T2ParentContactValidationRow {
+            route: "I24".to_string(),
+            parent_trunks: "I69".to_string(),
+            observed_dual_contacts: 0,
+            validation_action: "prove-parent-contact-or-demote".to_string(),
+            required_evidence: "dual-route contact to named parent trunk".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "blocked from T2 regionalizer until parent contact exists"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let relief_rows = vec![T2ReliefEvidenceRow {
+            route: "I285".to_string(),
+            source_exception_type: "metro_beltway_relief".to_string(),
+            bottleneck_match_count: 2,
+            top_bottleneck_rank: 1,
+            top_bottleneck_location: "Atlanta".to_string(),
+            annual_cost_m: 1705.0,
+            relief_action: "source-observed-relief-review".to_string(),
+            evidence_basis: "atri-bottleneck-route-match".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "retain relief review only after contact repair validates"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let terminal_rows = vec![T2TerminalContactValidationRow {
+            route: "I270".to_string(),
+            held_action_type: "terminal-exception-review".to_string(),
+            endpoint_name: "St. Louis beltway".to_string(),
+            endpoint_role: "one_ended_feeder".to_string(),
+            exception_type: "metro_beltway_relief".to_string(),
+            terminal_worthy: false,
+            observed_t1_node_count: 1,
+            observed_dual_contacts: 3,
+            terminal_action: "prove-terminal-exception-or-demote".to_string(),
+            required_evidence: "terminal-worthy endpoint exception under T2 endpoint standard"
+                .to_string(),
+            next_artifact: "data/tier-node-exceptions.csv".to_string(),
+            optimizer_effect:
+                "blocked from T2 unless endpoint exception is upgraded or route demotes".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows);
+        let failures = t2_blocker_closure_gate_failures(&rows);
+        let classes = rows
+            .iter()
+            .map(|row| row.blocker_class.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert!(classes.contains("route-family-split"));
+        assert!(classes.contains("parent-contact-repair"));
+        assert!(classes.contains("relief-contact-repair"));
+        assert!(classes.contains("endpoint-exception-upgrade"));
         assert!(failures.is_empty());
     }
 
