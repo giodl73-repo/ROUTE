@@ -21,6 +21,10 @@ Canonical rows live in `data/significant-moments.csv`.
 
 | Flair | Meaning |
 |---|---|
+| The System Became Playable | Interstate Tycoon made ROUTE claims playable as evidence-labeled decisions. |
+| Maps Became Contracts | Map artifacts became gated release/game assets, not screenshots. |
+| Stops Bend the Map | Beck geometry is driven by selected stops, transfers, and spacing rhythm. |
+| T3 Lives in Zones | T3 belongs in regional schematics with local T1/T2 context. |
 | Promise Horizon | Tier equals SLA promise horizon, not generic road importance. |
 | SLA Picks the Spine | National SLA promises select T1 lines under route/stop budget. |
 | No Twin Thin Lines | Duplicate T2 service is a policy problem, not a drawing problem. |
