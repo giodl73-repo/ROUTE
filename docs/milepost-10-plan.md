@@ -64,6 +64,12 @@ resolution docket, so exception-backed T2 demotions flow into
 - 15 rows remain held for graph contact, parent contact, relief evidence, or
   terminal exception/contact repair.
 
+`route t2-held-contact-actions --gate` now emits
+`data/t2-held-contact-actions.csv`, splitting those 15 held rows into the next
+validation surfaces: 8 graph-contact repairs, 2 parent-contact validations, 2
+relief-evidence reviews, 2 terminal-contact validations, and 1 terminal
+exception review.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

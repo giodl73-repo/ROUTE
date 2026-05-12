@@ -1195,6 +1195,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit terminal and relief validation rows from held T2 contact resolutions
+    T2HeldContactActions {
+        /// T2 contact resolution CSV
+        #[arg(
+            long,
+            default_value = "data/t2-contact-resolutions.csv",
+            value_name = "FILE"
+        )]
+        resolutions: PathBuf,
+        /// Output held contact action CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-held-contact-actions.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if held terminal/relief/contact actions lack next-step contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5181,6 +5203,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 contact resolution gate: PASS");
+            }
+        }
+
+        Commands::T2HeldContactActions {
+            resolutions,
+            output,
+            gate,
+        } => {
+            println!("route t2-held-contact-actions");
+            let resolution_rows = load_t2_contact_resolutions(&resolutions)
+                .with_context(|| format!("loading {}", resolutions.display()))?;
+            let rows = t2_held_contact_action_rows(&resolution_rows);
+            write_t2_held_contact_actions(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_held_contact_action_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_held_contact_action_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 held contact action gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 held contact action gate failed");
+                }
+                println!();
+                println!("T2 held contact action gate: PASS");
             }
         }
 
@@ -9981,6 +10031,18 @@ struct T2ContactResolutionRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2HeldContactActionRow {
+    route: String,
+    held_action_type: String,
+    source_resolution_action: String,
+    exception_type: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -10751,6 +10813,113 @@ fn t2_contact_resolution_gate_failures(rows: &[T2ContactResolutionRow]) -> Vec<S
     failures
 }
 
+fn t2_held_contact_action_rows(rows: &[T2ContactResolutionRow]) -> Vec<T2HeldContactActionRow> {
+    rows.iter()
+        .filter(|row| row.validation_status == "review")
+        .map(|row| {
+            let (held_action_type, required_evidence, next_artifact, optimizer_effect) =
+                t2_held_contact_action_contract(row);
+            T2HeldContactActionRow {
+                route: row.route.clone(),
+                held_action_type: held_action_type.to_string(),
+                source_resolution_action: row.resolution_action.clone(),
+                exception_type: row.exception_type.clone(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn t2_held_contact_action_contract(
+    row: &T2ContactResolutionRow,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    match row.resolution_action.as_str() {
+        "hold-for-terminal-contact-validation" => (
+            "terminal-contact-validation",
+            "prove terminal endpoint plus at least one T1/T2 contact chain",
+            "data/t2-terminal-contact-validation.csv",
+            "retain as T2 only if terminal contact validates; otherwise demote",
+        ),
+        "hold-for-terminal-exception" => (
+            "terminal-exception-review",
+            "split route family or validate terminal-worthy endpoint exception",
+            "data/t2-terminal-contact-validation.csv",
+            "retain only validated terminal segment; demote unsplit local loop behavior",
+        ),
+        "hold-for-relief-evidence-or-demotion" => (
+            "relief-evidence-review",
+            "source-backed bottleneck or resilience relief evidence plus T1/T2 contact",
+            "data/t2-relief-evidence-docket.csv",
+            "retain as relief service only with evidence; otherwise demote",
+        ),
+        "hold-for-parent-contact-or-demotion" => (
+            "parent-contact-validation",
+            "prove relief loop dual-route contact to parent trunk",
+            "data/t2-parent-contact-validation.csv",
+            "retain with parent contact; otherwise demote",
+        ),
+        _ => (
+            "graph-contact-repair",
+            "repair route geometry or split route family before tier decision",
+            "data/tier-contact-witnesses.csv",
+            "blocked from T2 regionalizer until contact evidence exists",
+        ),
+    }
+}
+
+fn write_t2_held_contact_actions(path: &Path, rows: &[T2HeldContactActionRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_held_contact_action_summary(output: &Path, rows: &[T2HeldContactActionRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.held_action_type.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} held contact action rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_held_contact_action_gate_failures(rows: &[T2HeldContactActionRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no held T2 contact action rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.held_action_type.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete held contact action", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -11385,6 +11554,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-contact-resolutions",
                 "route t2-contact-resolutions --gate",
                 "data/t2-contact-resolutions.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-held-contact-actions",
+                "route t2-held-contact-actions --gate",
+                "data/t2-held-contact-actions.csv",
                 "pass",
                 0,
                 "",
@@ -16394,6 +16571,7 @@ mod tests {
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
+        t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_service_selection_gate_failures,
         t2_service_selection_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
@@ -16678,6 +16856,45 @@ mod tests {
             resolutions[1].resolution_action,
             "hold-for-terminal-contact-validation"
         );
+    }
+
+    #[test]
+    fn t2_held_contact_actions_emit_next_artifacts() {
+        let rows = vec![
+            T2ContactResolutionRow {
+                route: "I65".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                exception_type: "port_terminal".to_string(),
+                exception_evidence_level: "heuristic".to_string(),
+                resolution_action: "hold-for-terminal-contact-validation".to_string(),
+                resolution_basis: "terminal-worthy-exception-needs-graph-contact".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2ContactResolutionRow {
+                route: "I285".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                exception_type: "metro_beltway_relief".to_string(),
+                exception_evidence_level: "heuristic".to_string(),
+                resolution_action: "hold-for-relief-evidence-or-demotion".to_string(),
+                resolution_basis: "metro-beltway-relief-needs-source-backed-contact".to_string(),
+                next_artifact: "data/atri-bottlenecks.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let actions = t2_held_contact_action_rows(&rows);
+        let failures = t2_held_contact_action_gate_failures(&actions);
+
+        assert_eq!(actions[0].held_action_type, "terminal-contact-validation");
+        assert_eq!(actions[1].held_action_type, "relief-evidence-review");
+        assert!(failures.is_empty());
     }
 
     #[test]

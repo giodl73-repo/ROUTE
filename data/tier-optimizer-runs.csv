@@ -5,7 +5,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 4,t2-region-workloads,route tier-regions --tier T2 --gate,data/tier-region-workloads.csv,40,held-known,1,component-bridged T2 graph pending contact repair,held
 5,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,held-known,22,"graph contact, parent contact, and terminal exception rows remain unresolved",held
 6,t2-contact-resolutions,route t2-contact-resolutions --gate,data/t2-contact-resolutions.csv,40,pass,0,,pass
-7,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass
-8,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,14,pass,0,,pass
-9,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,14,pass,0,,pass
-10,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,98,pass,0,,pass
+7,t2-held-contact-actions,route t2-held-contact-actions --gate,data/t2-held-contact-actions.csv,15,pass,0,,pass
+8,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass
+9,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,14,pass,0,,pass
+10,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,14,pass,0,,pass
+11,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,98,pass,0,,pass
