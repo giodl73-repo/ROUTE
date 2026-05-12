@@ -78,10 +78,11 @@ Implemented:
 - `data/t3-zone-route-columns.csv`
 - `data/t4-terminal-access-columns.csv`
 - `data/t3-t4-access-gaps.csv`
+- `data/t3-zone-map-diagnostics.csv`
 
 Still required:
 
-1. `data/t3-zone-map-diagnostics.csv`
+- no remaining required artifact from this review list
 
 ## Decision
 

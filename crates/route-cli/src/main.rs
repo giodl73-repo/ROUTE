@@ -1794,6 +1794,38 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit zone-level diagnostics that connect selected T3 columns and gaps to T3 maps
+    T3ZoneMapDiagnostics {
+        /// T3 zone route columns CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-route-columns.csv",
+            value_name = "FILE"
+        )]
+        route_columns: PathBuf,
+        /// T3/T4 access gaps CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-access-gaps.csv",
+            value_name = "FILE"
+        )]
+        access_gaps: PathBuf,
+        /// Map atlas CSV containing T3 zone map ids
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        map_atlas: PathBuf,
+        /// Output T3 zone map diagnostics CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-zone-map-diagnostics.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if a T3 zone map lacks selected-route or gap diagnostics
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6417,6 +6449,40 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3/T4 access gap gate: PASS");
+            }
+        }
+
+        Commands::T3ZoneMapDiagnostics {
+            route_columns,
+            access_gaps,
+            map_atlas,
+            output,
+            gate,
+        } => {
+            println!("route t3-zone-map-diagnostics");
+            let route_rows = load_t3_zone_route_columns(&route_columns)
+                .with_context(|| format!("loading {}", route_columns.display()))?;
+            let gap_rows = load_t3_t4_access_gaps(&access_gaps)
+                .with_context(|| format!("loading {}", access_gaps.display()))?;
+            let atlas_rows = load_map_atlas(&map_atlas)
+                .with_context(|| format!("loading {}", map_atlas.display()))?;
+            let rows = t3_zone_map_diagnostic_rows(&route_rows, &gap_rows, &atlas_rows);
+            write_t3_zone_map_diagnostics(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_zone_map_diagnostic_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_zone_map_diagnostic_gate_failures(&rows, &atlas_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3 zone map diagnostic gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3 zone map diagnostic gate failed");
+                }
+                println!();
+                println!("T3 zone map diagnostic gate: PASS");
             }
         }
 
@@ -11531,6 +11597,26 @@ struct T3T4AccessGapRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3ZoneMapDiagnosticRow {
+    zone_id: String,
+    zone_name: String,
+    map_id: String,
+    map_path: String,
+    selected_route_count: usize,
+    selected_routes: String,
+    review_connector_count: usize,
+    review_connectors: String,
+    access_gap_count: usize,
+    below_threshold_feeder_count: usize,
+    terminal_evidence_gap_count: usize,
+    zone_assignment_gap_count: usize,
+    map_readiness: String,
+    diagnostic_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -15363,6 +15449,221 @@ fn t3_t4_access_gap_gate_failures(rows: &[T3T4AccessGapRow]) -> Vec<String> {
     failures
 }
 
+fn load_t3_t4_access_gaps(path: &Path) -> Result<Vec<T3T4AccessGapRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_zone_map_diagnostic_rows(
+    route_rows: &[T3ZoneRouteColumnRow],
+    gap_rows: &[T3T4AccessGapRow],
+    atlas_rows: &[MapAtlasRow],
+) -> Vec<T3ZoneMapDiagnosticRow> {
+    let mut rows = Vec::new();
+
+    for atlas in atlas_rows.iter().filter(|row| row.map_type == "t3-zone") {
+        let zone_id = atlas.map_id.clone();
+        let zone_name = t3_zone_catalog_entry(&zone_id)
+            .map(|(_, name)| name.to_string())
+            .unwrap_or_else(|| atlas.tier_role.clone());
+
+        let selected_routes = route_rows
+            .iter()
+            .filter(|row| row.zone_id == zone_id && row.column_decision == "selected")
+            .map(|row| row.route.clone())
+            .collect::<std::collections::BTreeSet<_>>();
+        let review_connectors = route_rows
+            .iter()
+            .filter(|row| row.zone_id == zone_id && row.column_decision != "selected")
+            .map(|row| row.route.clone())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        let zone_gaps = gap_rows
+            .iter()
+            .filter(|row| row.zone_id == zone_id)
+            .collect::<Vec<_>>();
+        let below_threshold_feeder_count = zone_gaps
+            .iter()
+            .filter(|row| row.gap_class == "below-threshold-feeder")
+            .count();
+        let terminal_evidence_gap_count = zone_gaps
+            .iter()
+            .filter(|row| row.gap_class == "terminal-evidence-needed")
+            .count();
+        let zone_assignment_gap_count = zone_gaps
+            .iter()
+            .filter(|row| row.gap_class == "zone-assignment-needed")
+            .count();
+
+        let (map_readiness, diagnostic_action, validation_status) = t3_zone_map_diagnostic_decision(
+            selected_routes.len(),
+            zone_gaps.len(),
+            zone_assignment_gap_count,
+        );
+
+        rows.push(T3ZoneMapDiagnosticRow {
+            zone_id: zone_id.clone(),
+            zone_name,
+            map_id: atlas.map_id.clone(),
+            map_path: atlas.path.clone(),
+            selected_route_count: selected_routes.len(),
+            selected_routes: selected_routes.into_iter().collect::<Vec<_>>().join(";"),
+            review_connector_count: review_connectors.len(),
+            review_connectors: review_connectors.into_iter().collect::<Vec<_>>().join(";"),
+            access_gap_count: zone_gaps.len(),
+            below_threshold_feeder_count,
+            terminal_evidence_gap_count,
+            zone_assignment_gap_count,
+            map_readiness: map_readiness.to_string(),
+            diagnostic_action: diagnostic_action.to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: validation_status.to_string(),
+        });
+    }
+
+    rows.sort_by(|a, b| a.zone_id.cmp(&b.zone_id));
+    rows
+}
+
+fn t3_zone_map_diagnostic_decision(
+    selected_route_count: usize,
+    access_gap_count: usize,
+    zone_assignment_gap_count: usize,
+) -> (&'static str, &'static str, &'static str) {
+    if selected_route_count == 0 {
+        return (
+            "blocked-no-selected-feeders",
+            "select at least one T3 feeder before rendering zone map",
+            "review",
+        );
+    }
+    if zone_assignment_gap_count > 0 {
+        return (
+            "review-zone-assignment-gaps",
+            "render selected feeders but keep unassigned local access hidden",
+            "review",
+        );
+    }
+    if access_gap_count > 0 {
+        return (
+            "review-terminal-and-feeder-gaps",
+            "render selected feeders with held access-gap callouts",
+            "review",
+        );
+    }
+    (
+        "ready-for-zone-render",
+        "render selected T3 feeder columns on zone map",
+        "pass",
+    )
+}
+
+fn write_t3_zone_map_diagnostics(path: &Path, rows: &[T3ZoneMapDiagnosticRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_zone_map_diagnostic_summary(output: &Path, rows: &[T3ZoneMapDiagnosticRow]) {
+    let mut by_readiness = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_readiness.entry(row.map_readiness.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T3 zone map diagnostic rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (readiness, count) in by_readiness {
+        println!("  {readiness}: {count}");
+    }
+}
+
+fn t3_zone_map_diagnostic_gate_failures(
+    rows: &[T3ZoneMapDiagnosticRow],
+    atlas_rows: &[MapAtlasRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T3 zone map diagnostics emitted".to_string());
+        return failures;
+    }
+
+    let t3_maps = t3_zone_map_ids(atlas_rows);
+    let row_maps = rows
+        .iter()
+        .map(|row| row.map_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    for map_id in &t3_maps {
+        if !row_maps.contains(map_id) {
+            failures.push(format!("{map_id} has no map diagnostic row"));
+        }
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.zone_id.trim().is_empty()
+            || row.zone_name.trim().is_empty()
+            || row.map_id.trim().is_empty()
+            || row.map_path.trim().is_empty()
+            || row.map_readiness.trim().is_empty()
+            || row.diagnostic_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete map diagnostic fields",
+                row.zone_id
+            ));
+        }
+        if !seen.insert(row.zone_id.clone()) {
+            failures.push(format!("{} has duplicate map diagnostic row", row.zone_id));
+        }
+        if row.zone_id != row.map_id {
+            failures.push(format!(
+                "{} is detached from map id {}",
+                row.zone_id, row.map_id
+            ));
+        }
+        if !t3_maps.contains(&row.map_id) {
+            failures.push(format!("{} references unknown T3 map", row.zone_id));
+        }
+        if row.selected_route_count == 0 {
+            failures.push(format!("{} has no selected T3 feeder routes", row.zone_id));
+        }
+        if row.selected_route_count > 0 && row.selected_routes.trim().is_empty() {
+            failures.push(format!(
+                "{} has selected count but no route list",
+                row.zone_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.zone_id, row.validation_status
+            ));
+        }
+    }
+
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -15963,6 +16264,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-t4-access-gaps",
                 "route t3-t4-access-gaps --gate",
                 "data/t3-t4-access-gaps.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-zone-map-diagnostics",
+                "route t3-zone-map-diagnostics --gate",
+                "data/t3-zone-map-diagnostics.csv",
                 "pass",
                 0,
                 "",
@@ -21286,24 +21595,24 @@ mod tests {
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         t3_t4_access_gap_gate_failures, t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures,
         t3_t4_pressure_intake_rows, t3_zone_access_obligation_gate_failures,
-        t3_zone_access_obligation_rows, t3_zone_route_column_gate_failures,
-        t3_zone_route_column_rows, t4_terminal_access_column_gate_failures,
-        t4_terminal_access_column_rows, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
-        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
-        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
-        tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
-        AtriBottleneckRow, EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow,
-        MapAtlasRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow,
-        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
-        T2TerminalContactValidationRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow,
-        T3ZoneRouteColumnRow, T4TerminalAccessColumnRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierTableScoreRow,
+        t3_zone_access_obligation_rows, t3_zone_map_diagnostic_gate_failures,
+        t3_zone_map_diagnostic_rows, t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
+        t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
+        tier_candidate_column_gate_failures, tier_candidate_column_rows,
+        tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
+        tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
+        tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
+        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, MapAtlasRow,
+        NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow,
+        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneRouteColumnRow,
+        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -22663,6 +22972,78 @@ mod tests {
         assert!(classes.contains("terminal-evidence-needed"));
         assert!(classes.contains("zone-assignment-needed"));
         assert!(rows.iter().all(|row| !row.upward_pressure_allowed));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t3_zone_map_diagnostics_summarize_selected_routes_and_gaps() {
+        let route_rows = vec![
+            T3ZoneRouteColumnRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                obligation_class: "regional-feeder-access".to_string(),
+                route: "I65".to_string(),
+                current_tier: "T2".to_string(),
+                current_score: 64.9,
+                promise_horizon_hours: 6,
+                column_decision: "selected".to_string(),
+                zone_role: "regional-feeder".to_string(),
+                contact_requirement: "higher-tier-or-regional-contact-required".to_string(),
+                map_treatment: "render-as-zone-column".to_string(),
+                selection_basis: "score meets T3 threshold and satisfies a 6h feeder obligation"
+                    .to_string(),
+                source_obligation: "select T3 feeder/contact chain inside the zone".to_string(),
+                next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+                optimizer_effect: "feeds the T3 zone map and stop-column selector".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T3ZoneRouteColumnRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                obligation_class: "regional-feeder-access".to_string(),
+                route: "US90Z".to_string(),
+                current_tier: "T4".to_string(),
+                current_score: 29.9,
+                promise_horizon_hours: 6,
+                column_decision: "review".to_string(),
+                zone_role: "below-threshold-feeder-candidate".to_string(),
+                contact_requirement: "score-or-terminal-evidence-required".to_string(),
+                map_treatment: "show-as-held-zone-candidate".to_string(),
+                selection_basis: "candidate is below T3 threshold for a 6h feeder obligation"
+                    .to_string(),
+                source_obligation: "select T3 feeder/contact chain inside the zone".to_string(),
+                next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+                optimizer_effect:
+                    "holds weak feeder pressure for access-gap review instead of selecting it"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let gap_rows = vec![T3T4AccessGapRow {
+            gap_id: "T3GAP-T3SOUTHEAST-US90Z".to_string(),
+            source_surface: "t3-zone-route-columns".to_string(),
+            route: "US90Z".to_string(),
+            zone_id: "t3-southeast".to_string(),
+            current_score: 29.9,
+            promise_horizon_hours: 6,
+            gap_class: "below-threshold-feeder".to_string(),
+            gap_reason: "candidate is below T3 threshold for a 6h feeder obligation".to_string(),
+            required_evidence: "score-or-terminal-evidence-required".to_string(),
+            repair_action: "prove-terminal-evidence-or-keep-t4".to_string(),
+            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        }];
+        let atlas = vec![test_t3_map_atlas_row("t3-southeast")];
+
+        let rows = t3_zone_map_diagnostic_rows(&route_rows, &gap_rows, &atlas);
+        let failures = t3_zone_map_diagnostic_gate_failures(&rows, &atlas);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].selected_route_count, 1);
+        assert_eq!(rows[0].review_connector_count, 1);
+        assert_eq!(rows[0].below_threshold_feeder_count, 1);
+        assert_eq!(rows[0].map_readiness, "review-terminal-and-feeder-gaps");
         assert!(failures.is_empty());
     }
 

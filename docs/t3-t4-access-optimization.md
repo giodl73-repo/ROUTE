@@ -189,6 +189,8 @@ Current implementation status:
   terminal-review and zone-assignment-needed rows with 1h access obligations.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder, terminal-evidence, and zone-assignment gap classes.
+- `data/t3-zone-map-diagnostics.csv` joins selected T3 route columns, access
+  gaps, and map atlas ids into zone-map readiness decisions.
 - `data/t2-bubble-up-review.csv` sends 18 near-threshold T3 rows to T2 contact
   review instead of promoting them directly.
 - `data/map-atlas.csv` tracks five T3 zone maps.
@@ -198,5 +200,5 @@ Current gaps:
 - no full T3 zone optimizer yet;
 - no T3/T4 access-promise ledger;
 - county/source enrichment is not yet attached to the zone obligation table;
-- T3 maps still need to consume selected zone stop columns and diagnostics;
+- T3 renderers still need to consume selected zone stop columns directly;
 - T4 still needs terminal/source enrichment and rendered local inset treatment.
