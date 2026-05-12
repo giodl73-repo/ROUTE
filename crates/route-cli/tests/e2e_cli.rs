@@ -40,6 +40,7 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     let t2_only_map_out = target_artifact("beck-schematic-t2-only-e2e.png");
     let t2_diagnostics_out = target_artifact("beck-t2-diagnostics-e2e.csv");
     let t2_standards_out = target_artifact("beck-t2-service-standards-e2e.csv");
+    let t2_actions_out = target_artifact("beck-t2-qualification-actions-e2e.csv");
     let csv_out = target_artifact("beck-stop-sla-e2e.csv");
 
     assert_success(&[
@@ -91,6 +92,17 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(t2_standards.starts_with("service_class,definition,min_schematic_px"));
     assert!(t2_standards.contains("transfer-spine"));
     assert!(t2_standards.contains("long-connector"));
+
+    assert_success(&[
+        "beck-t2-qualification-actions",
+        "--output",
+        t2_actions_out.to_str().expect("utf-8 output path"),
+        "--gate",
+    ]);
+    let t2_actions = std::fs::read_to_string(&t2_actions_out).expect("read T2 actions CSV");
+    assert!(t2_actions.starts_with("service_action,definition,required_evidence"));
+    assert!(t2_actions.contains("keep-primary-review"));
+    assert!(t2_actions.contains("demote-review"));
 
     assert_success(&[
         "stop-sla-surface",

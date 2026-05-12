@@ -28,6 +28,7 @@ docs/blueprint/feature-packages.md,blueprint_docs,M6,release_candidate,public,ma
 docs/blueprint/phase-sequence.md,blueprint_docs,M6,release_candidate,public,manual review,Human-readable phase sequence
 data/game/campaign-spine.csv,game_ledger,M4,release_candidate,public,cargo run -q -p route -- game campaign --gate,Interstate Tycoon campaign spine
 data/beck-t2-service-standards.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t2-service-standards --gate,T2 Beck service-class contract for diagnostics maps and game overlays
+data/beck-t2-qualification-actions.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t2-qualification-actions --gate,T2 Beck qualification-action contract for duplicate-service review and map treatment
 data/game/t2-service-overlays.csv,game_ledger,M9,release_candidate,public,cargo run -q -p route -- game t2-overlays --gate,T2 service-class game overlay contract for incidents upgrades and restitching
 data/game/t2-scenario-hooks.csv,game_ledger,M9,release_candidate,public,cargo run -q -p route -- game t2-hooks --gate,T2 campaign scenario hooks for service-class incidents upgrades and evidence holds
 docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype

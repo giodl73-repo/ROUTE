@@ -122,3 +122,6 @@ should mean something in the SLA graph.
 - T2 service classes now export to `data/beck-t2-service-standards.csv` via
   `route beck-t2-service-standards`, giving diagnostics, maps, and game overlays
   one machine-readable service-class contract.
+- T2 qualification actions now export to `data/beck-t2-qualification-actions.csv`
+  via `route beck-t2-qualification-actions`, separating duplicate-service
+  keep, merge, and demotion review rules from visual service classes.

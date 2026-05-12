@@ -120,6 +120,15 @@ pub struct BeckT2ServiceStandardRow {
     pub game_use: &'static str,
 }
 
+pub struct BeckT2QualificationActionRow {
+    pub service_action: &'static str,
+    pub definition: &'static str,
+    pub required_evidence: &'static str,
+    pub map_treatment: &'static str,
+    pub gate_policy: &'static str,
+    pub game_use: &'static str,
+}
+
 /// A line segment on the Beck diagram.
 /// Beck lines are sequences of waypoints connected at 0°/45°/90°.
 struct LineSegment {
@@ -2607,6 +2616,26 @@ pub fn build_beck_t2_service_standards_csv() -> String {
     csv
 }
 
+pub fn build_beck_t2_qualification_actions_csv() -> String {
+    let mut csv = String::from(
+        "service_action,definition,required_evidence,map_treatment,gate_policy,game_use\n",
+    );
+    for row in beck_t2_qualification_actions() {
+        push_csv_row(
+            &mut csv,
+            &[
+                row.service_action,
+                row.definition,
+                row.required_evidence,
+                row.map_treatment,
+                row.gate_policy,
+                row.game_use,
+            ],
+        );
+    }
+    csv
+}
+
 pub fn beck_t2_service_standards() -> Vec<BeckT2ServiceStandardRow> {
     vec![
         BeckT2ServiceStandardRow {
@@ -2656,6 +2685,43 @@ pub fn beck_t2_service_standards() -> Vec<BeckT2ServiceStandardRow> {
             review_policy: "review corridor length and regional inset need",
             gate_policy: "review category does not block release",
             game_use: "long-haul thin-line service, staged upgrade, regional split candidate",
+        },
+    ]
+}
+
+pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
+    vec![
+        BeckT2QualificationActionRow {
+            service_action: "keep",
+            definition: "T2 service has no duplicate parent-trunk peer in the current stop model",
+            required_evidence: "distinct parent-trunk pair or no shared split-anchor peer",
+            map_treatment: "draw as normal T2 service for its class",
+            gate_policy: "accepted when structural diagnostics pass",
+            game_use: "default playable service for incidents, upgrades, and restitches",
+        },
+        BeckT2QualificationActionRow {
+            service_action: "keep-primary-review",
+            definition: "duplicate T2 service with enough unique stops to justify primary retention",
+            required_evidence: "at least two stops not served by duplicate peers and score no worse than peer",
+            map_treatment: "keep visible; review whether duplicate peer should be thinner, merged, or demoted",
+            gate_policy: "review category does not block release",
+            game_use: "primary playable service with duplicate-relief scenario potential",
+        },
+        BeckT2QualificationActionRow {
+            service_action: "merge-review",
+            definition: "duplicate T2 service whose unique value is ambiguous in the current stop model",
+            required_evidence: "some unique service or peer-score conflict, but not enough to choose primary",
+            map_treatment: "review for shared trunking, branch split, or one-line schematic treatment",
+            gate_policy: "review category does not block release",
+            game_use: "candidate for player-facing consolidation or service-design choice",
+        },
+        BeckT2QualificationActionRow {
+            service_action: "demote-review",
+            definition: "duplicate T2 service that is currently a subset of a stronger duplicate peer",
+            required_evidence: "zero unique duplicate stops and no better drawn-stop or transfer-stop score than peer",
+            map_treatment: "review for T3/T4 demotion, hidden relief service, or local inset treatment",
+            gate_policy: "review category does not block release",
+            game_use: "candidate for local service, relief route, or upgrade investment scenario",
         },
     ]
 }
@@ -3903,7 +3969,8 @@ fn draw_generated_bends(
 mod tests {
     use super::{
         beck_stop_class, beck_stops, beck_t2_diagnostics, build_beck_stop_sla_csv, build_beck_svg,
-        build_beck_t2_diagnostics_csv, build_beck_t2_only_svg, build_beck_t2_service_standards_csv,
+        build_beck_t2_diagnostics_csv, build_beck_t2_only_svg,
+        build_beck_t2_qualification_actions_csv, build_beck_t2_service_standards_csv,
         build_beck_t2_svg, is_primary_terminal, stop_by_id, stop_class, t1_badges,
         t1_line_segments, t1_route_stop_ids, t2_line_segments, LineSegment,
     };
@@ -4452,6 +4519,28 @@ mod tests {
                 "{} uses uncovered service class {}",
                 row.corridor,
                 row.service_class
+            );
+        }
+    }
+
+    #[test]
+    fn beck_t2_qualification_actions_cover_diagnostic_recommendations() {
+        let csv = build_beck_t2_qualification_actions_csv();
+        assert!(csv.starts_with("service_action,definition,required_evidence"));
+        assert!(csv.contains("keep-primary-review"));
+        assert!(csv.contains("demote-review"));
+        assert!(csv.contains("zero unique duplicate stops"));
+
+        let action_rows = super::beck_t2_qualification_actions()
+            .iter()
+            .map(|row| row.service_action)
+            .collect::<std::collections::HashSet<_>>();
+        for row in beck_t2_diagnostics() {
+            assert!(
+                action_rows.contains(row.service_action),
+                "{} uses uncovered service action {}",
+                row.corridor,
+                row.service_action
             );
         }
     }
