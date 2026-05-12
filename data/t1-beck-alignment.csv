@@ -1,0 +1,12 @@
+route,selector_stop_count,selector_boundary_count,selector_regions,beck_stop_count,beck_drawn_stop_count,beck_transfer_stop_count,beck_action,beck_review_flag,alignment_status,validation_status
+I10,10,3,4,17,17,8,keep,ok,aligned,pass
+I20,7,3,4,10,10,6,keep,ok,aligned,pass
+I35,9,3,4,10,10,7,keep,ok,aligned,pass
+I40,10,3,4,16,16,12,overlap-review,overlap-review,aligned-with-policy-review,pass
+I5,6,3,4,10,10,6,keep,ok,aligned,pass
+I70,8,3,4,13,13,8,keep,ok,aligned,pass
+I75,9,3,4,12,12,8,keep,ok,aligned,pass
+I80,9,3,4,15,15,9,overlap-review,overlap-review,aligned-with-policy-review,pass
+I84,3,2,3,5,5,3,keep,ok,aligned,pass
+I90,8,3,4,21,21,9,overlap-review,overlap-review,aligned-with-policy-review,pass
+I95,11,3,4,13,13,10,overlap-review,overlap-review,aligned-with-policy-review,pass

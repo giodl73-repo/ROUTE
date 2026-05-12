@@ -42,7 +42,7 @@ Milepost 10 is done when:
 | 6 | Emit `data/tier-candidate-columns.csv` | ✅ done | `route tier-candidate-columns --gate` emits selected/review/blocked/demote route-service columns with graph kind, objective, evidence status, and parent region |
 | 7 | Build T1 stop selector | ✅ done | `route t1-stop-selector --gate` emits `data/t1-stop-selector.csv` with ordered stop chains, hybrid-service weights, METIS regions, and split boundaries |
 | 8 | Build T1 topology repair witness docket | ✅ done | `route t1-topology-repairs --gate` emits `data/t1-topology-repairs.csv`; selected overlap/policy rows and held candidates have explicit next artifacts/actions |
-| 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | ⬜ pending | Beck T1 diagnostics agree with selector without hand exceptions |
+| 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | 🔄 partial | `route t1-beck-alignment --gate` proves Beck T1 diagnostics cover optimizer-selected route/stop chains; next slice makes Beck consume selector rows directly |
 | 10 | Build dual-route T2 regionalizer | ⬜ pending | T2 selected per T1-bounded region, not one global thin-line list |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ⬜ pending | T2 duplicate/parallel services emit keep, split, demote, or source-needed actions |
 | 12 | Build T3/T4 lower-tier pressure witnesses | ⬜ pending | Failed local/regional access emits T3/T2/T1 repair or upgrade candidates |

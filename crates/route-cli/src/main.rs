@@ -304,6 +304,24 @@ enum Commands {
         gate: bool,
     },
 
+    /// Gate that Beck T1 diagnostics cover optimizer-selected T1 route/stop chains
+    T1BeckAlignment {
+        /// Path to T1 stop selector CSV
+        #[arg(long, default_value = "data/t1-stop-selector.csv", value_name = "FILE")]
+        stop_selector: PathBuf,
+        /// Output Beck alignment CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-beck-alignment.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if selected optimizer routes are missing or under-covered by Beck diagnostics
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show T1 design policy actions and gate review-action coverage
     T1DesignPolicy {
         /// Path to T1 design review CSV
@@ -2753,6 +2771,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T1 topology repair gate: PASS");
+            }
+        }
+
+        Commands::T1BeckAlignment {
+            stop_selector,
+            output,
+            gate,
+        } => {
+            println!("route t1-beck-alignment");
+            let stop_rows = load_t1_stop_selector(&stop_selector)
+                .with_context(|| format!("loading {}", stop_selector.display()))?;
+            let rows = t1_beck_alignment_rows(&stop_rows);
+            write_t1_beck_alignment(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_beck_alignment_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_beck_alignment_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 Beck alignment gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 Beck alignment gate failed");
+                }
+                println!();
+                println!("T1 Beck alignment gate: PASS");
             }
         }
 
@@ -10606,6 +10652,38 @@ struct T1StopSelectorRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct T1StopSelectorInputRow {
+    route: String,
+    stop_sequence: usize,
+    stop_id: String,
+    stop_name: String,
+    requested_class: String,
+    selector_weight: i32,
+    split_objective: String,
+    target_regions: usize,
+    metis_region: usize,
+    boundary_after: bool,
+    evidence_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T1BeckAlignmentRow {
+    route: String,
+    selector_stop_count: usize,
+    selector_boundary_count: usize,
+    selector_regions: usize,
+    beck_stop_count: usize,
+    beck_drawn_stop_count: usize,
+    beck_transfer_stop_count: usize,
+    beck_action: String,
+    beck_review_flag: String,
+    alignment_status: String,
+    validation_status: String,
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct TierTableInputRow {
     tier: String,
@@ -11031,6 +11109,136 @@ fn t1_stop_selector_gate_failures(rows: &[T1StopSelectorRow]) -> Vec<String> {
                 "{route}: expected {} METIS regions, found {}",
                 route_rows[0].target_regions,
                 regions.len()
+            ));
+        }
+    }
+    failures
+}
+
+fn load_t1_stop_selector(path: &Path) -> Result<Vec<T1StopSelectorInputRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_beck_alignment_rows(stop_rows: &[T1StopSelectorInputRow]) -> Vec<T1BeckAlignmentRow> {
+    let diagnostics = route_map::beck_t1_diagnostics()
+        .into_iter()
+        .map(|row| (normalise_designation(row.corridor), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut by_route = std::collections::BTreeMap::<String, Vec<&T1StopSelectorInputRow>>::new();
+    for row in stop_rows {
+        by_route
+            .entry(normalise_designation(&row.route))
+            .or_default()
+            .push(row);
+    }
+
+    by_route
+        .into_iter()
+        .map(|(route, rows)| {
+            let diagnostic = diagnostics.get(&route);
+            let selector_stop_count = rows.len();
+            let selector_boundary_count = rows.iter().filter(|row| row.boundary_after).count();
+            let selector_regions = rows
+                .iter()
+                .map(|row| row.metis_region)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len();
+            let (beck_stop_count, beck_drawn_stop_count, beck_transfer_stop_count) = diagnostic
+                .map_or((0, 0, 0), |row| {
+                    (
+                        row.stop_count,
+                        row.drawn_stop_count,
+                        row.transfer_stop_count,
+                    )
+                });
+            let alignment_status = if diagnostic.is_none() {
+                "missing-beck-route"
+            } else if beck_stop_count < selector_stop_count {
+                "beck-under-covers-selector"
+            } else if diagnostic
+                .map(|row| row.review_flag != "ok")
+                .unwrap_or(false)
+            {
+                "aligned-with-policy-review"
+            } else {
+                "aligned"
+            };
+            T1BeckAlignmentRow {
+                route,
+                selector_stop_count,
+                selector_boundary_count,
+                selector_regions,
+                beck_stop_count,
+                beck_drawn_stop_count,
+                beck_transfer_stop_count,
+                beck_action: diagnostic
+                    .map(|row| row.service_action.to_string())
+                    .unwrap_or_else(|| "missing-diagnostic".to_string()),
+                beck_review_flag: diagnostic
+                    .map(|row| row.review_flag.to_string())
+                    .unwrap_or_else(|| "missing-diagnostic".to_string()),
+                alignment_status: alignment_status.to_string(),
+                validation_status: if matches!(
+                    alignment_status,
+                    "aligned" | "aligned-with-policy-review"
+                ) {
+                    "pass"
+                } else {
+                    "review"
+                }
+                .to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t1_beck_alignment(path: &Path, rows: &[T1BeckAlignmentRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_beck_alignment_summary(output: &Path, rows: &[T1BeckAlignmentRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.alignment_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} alignment rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t1_beck_alignment_gate_failures(rows: &[T1BeckAlignmentRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T1 Beck alignment rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if !row.validation_status.eq_ignore_ascii_case("pass") {
+            failures.push(format!(
+                "{} alignment_status={} selector_stops={} beck_stops={}",
+                row.route, row.alignment_status, row.selector_stop_count, row.beck_stop_count
             ));
         }
     }
@@ -14730,6 +14938,7 @@ mod tests {
         standards_inventory_row_has_contract, standards_pressure_gate_failures,
         stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
         stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
+        t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
@@ -14739,8 +14948,8 @@ mod tests {
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_region_gate_failures,
         write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
-        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, TierContactWitnessInputRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow,
+        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow,
+        TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -15003,6 +15212,47 @@ mod tests {
 
         assert_eq!(repairs.len(), 1);
         assert_eq!(repairs[0].repair_type, "shared-backbone-policy");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_beck_alignment_accepts_selector_routes_with_sufficient_beck_stops() {
+        let rows = vec![
+            T1StopSelectorInputRow {
+                route: "I5".to_string(),
+                stop_sequence: 1,
+                stop_id: "STOP-SD-TJ".to_string(),
+                stop_name: "San Diego/Tijuana".to_string(),
+                requested_class: "S1".to_string(),
+                selector_weight: 599,
+                split_objective: "hybrid-service".to_string(),
+                target_regions: 2,
+                metis_region: 0,
+                boundary_after: true,
+                evidence_status: "heuristic".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T1StopSelectorInputRow {
+                route: "I5".to_string(),
+                stop_sequence: 2,
+                stop_id: "STOP-BLAINE".to_string(),
+                stop_name: "Blaine/Vancouver".to_string(),
+                requested_class: "S1".to_string(),
+                selector_weight: 607,
+                split_objective: "hybrid-service".to_string(),
+                target_regions: 2,
+                metis_region: 1,
+                boundary_after: false,
+                evidence_status: "heuristic".to_string(),
+                validation_status: "pass".to_string(),
+            },
+        ];
+
+        let alignment = t1_beck_alignment_rows(&rows);
+        let failures = t1_beck_alignment_gate_failures(&alignment);
+
+        assert_eq!(alignment.len(), 1);
+        assert_eq!(alignment[0].alignment_status, "aligned");
         assert!(failures.is_empty());
     }
 

@@ -1,6 +1,6 @@
 corridor,endpoint_start,endpoint_end,endpoint_status,stop_count,drawn_stop_count,transfer_stop_count,shared_stop_count,shared_stop_corridors,shared_segment_count,shared_segment_corridors,service_action,qualification_basis,review_flag
 I-10,LA,JAX,qualified,17,17,8,3,I-5;I-35;I-95,0,,keep,distinct-backbone-service,ok
-I-20,DAL,FLO,qualified,6,6,6,4,I-35;I-40;I-75;I-95,0,,keep,distinct-backbone-service,ok
+I-20,DAL,FLO,qualified,10,10,6,4,I-35;I-40;I-75;I-95,0,,keep,distinct-backbone-service,ok
 I-35,MIN,LRD,qualified,10,10,7,6,I-10;I-20;I-40;I-70;I-80;I-90,0,,keep,distinct-backbone-service,ok
 I-5,BLAINE,SDTJ,qualified,10,10,6,4,I-10;I-84;I-80;I-90,0,,keep,distinct-backbone-service,ok
 I-70,SLC,DC,qualified,13,13,8,5,I-35;I-84;I-75;I-80;I-95,0,,keep,distinct-backbone-service,ok
