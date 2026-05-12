@@ -1372,6 +1372,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit route-family split decisions for ambiguous numbered T2 families
+    T2RouteFamilySplits {
+        /// T2 blocker closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        closure: PathBuf,
+        /// Endpoint exception ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
+        /// Output route-family split CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-route-family-splits.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if route-family split decisions lack a deterministic disposition
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5549,6 +5578,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 blocker closure gate: PASS");
+            }
+        }
+
+        Commands::T2RouteFamilySplits {
+            closure,
+            exceptions,
+            output,
+            gate,
+        } => {
+            println!("route t2-route-family-splits");
+            let closure_rows = load_t2_blocker_closure(&closure)
+                .with_context(|| format!("loading {}", closure.display()))?;
+            let exception_rows = load_endpoint_exceptions(&exceptions)
+                .with_context(|| format!("loading {}", exceptions.display()))?;
+            let rows = t2_route_family_split_rows(&closure_rows, &exception_rows);
+            write_t2_route_family_splits(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_route_family_split_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_route_family_split_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 route family split gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 route family split gate failed");
+                }
+                println!();
+                println!("T2 route family split gate: PASS");
             }
         }
 
@@ -10435,7 +10495,7 @@ struct T2TerminalContactValidationRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BlockerClosureRow {
     route: String,
     source_surface: String,
@@ -10445,6 +10505,21 @@ struct T2BlockerClosureRow {
     next_artifact: String,
     optimizer_effect: String,
     closure_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2RouteFamilySplitRow {
+    route: String,
+    endpoint_name: String,
+    endpoint_role: String,
+    exception_type: String,
+    source_artifact: String,
+    family_action: String,
+    disposition: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
     validation_status: String,
 }
 
@@ -12019,6 +12094,160 @@ fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> Vec<String>
     failures
 }
 
+fn load_t2_blocker_closure(path: &Path) -> Result<Vec<T2BlockerClosureRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_route_family_split_rows(
+    closure_rows: &[T2BlockerClosureRow],
+    exception_rows: &[EndpointExceptionRow],
+) -> Vec<T2RouteFamilySplitRow> {
+    closure_rows
+        .iter()
+        .filter(|row| row.blocker_class == "route-family-split")
+        .map(|row| {
+            let exception = endpoint_exceptions_for_route(exception_rows, &row.route, "T2")
+                .into_iter()
+                .next();
+            let endpoint_role = exception
+                .map(|exception| exception.endpoint_role.clone())
+                .unwrap_or_default();
+            let exception_type = exception
+                .map(|exception| exception.exception_type.clone())
+                .unwrap_or_default();
+            let source_artifact = exception
+                .map(|exception| exception.artifact.clone())
+                .unwrap_or_else(|| row.next_artifact.clone());
+            let (family_action, disposition, required_evidence, next_artifact, optimizer_effect) =
+                t2_route_family_split_decision(exception);
+
+            T2RouteFamilySplitRow {
+                route: row.route.clone(),
+                endpoint_name: exception
+                    .map(|exception| exception.endpoint_name.clone())
+                    .unwrap_or_default(),
+                endpoint_role,
+                exception_type,
+                source_artifact,
+                family_action: family_action.to_string(),
+                disposition: disposition.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn t2_route_family_split_decision(
+    exception: Option<&EndpointExceptionRow>,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    let Some(exception) = exception else {
+        return (
+            "add-endpoint-exception-record",
+            "blocked",
+            "route-family endpoint exception record",
+            "data/tier-node-exceptions.csv",
+            "blocked from T2 until route family source row exists",
+        );
+    };
+
+    let endpoint_role = exception.endpoint_role.trim().to_ascii_lowercase();
+    let exception_type = exception.exception_type.trim().to_ascii_lowercase();
+    if endpoint_role == "graph_endpoint_gap" || exception_type == "missing_graph_geometry" {
+        if endpoint_role == "local_access_end" {
+            return (
+                "split-local-family-or-demote",
+                "lower-tier-pressure",
+                "metro-specific segment split plus T1/T2 contact proof",
+                "data/lower-tier-pressure-witnesses.csv",
+                "kept out of T2 until a split segment proves regional service",
+            );
+        }
+        return (
+            "split-numbered-family",
+            "blocked",
+            "represented segment id plus T1/T2 contact proof",
+            "data/tier-node-exceptions.csv",
+            "blocked from T2 until route family is disambiguated",
+        );
+    }
+
+    (
+        "review-route-family",
+        "blocked",
+        "route-family split basis",
+        "data/tier-node-exceptions.csv",
+        "blocked from T2 until route family disposition is explicit",
+    )
+}
+
+fn write_t2_route_family_splits(path: &Path, rows: &[T2RouteFamilySplitRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_route_family_split_summary(output: &Path, rows: &[T2RouteFamilySplitRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.family_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 route-family split rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_route_family_split_gate_failures(rows: &[T2RouteFamilySplitRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 route-family split rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.family_action.trim().is_empty()
+            || row.disposition.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete route-family split", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -12701,6 +12930,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-blocker-closure",
                 "route t2-blocker-closure --gate",
                 "data/t2-blocker-closure.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-route-family-splits",
+                "route t2-route-family-splits --gate",
+                "data/t2-route-family-splits.csv",
                 "pass",
                 0,
                 "",
@@ -17715,7 +17952,8 @@ mod tests {
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
-        t2_relief_evidence_rows, t2_service_selection_gate_failures, t2_service_selection_rows,
+        t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
+        t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
@@ -17724,11 +17962,11 @@ mod tests {
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1StopSelectorInputRow, T2ContactResolutionRow, T2GraphContactRepairRow,
-        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2TerminalContactValidationRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierTableScoreRow,
+        T1StopSelectorInputRow, T2BlockerClosureRow, T2ContactResolutionRow,
+        T2GraphContactRepairRow, T2HeldContactActionRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2TerminalContactValidationRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -18325,6 +18563,65 @@ mod tests {
         assert!(classes.contains("parent-contact-repair"));
         assert!(classes.contains("relief-contact-repair"));
         assert!(classes.contains("endpoint-exception-upgrade"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_route_family_splits_use_exception_disposition() {
+        let closure_rows = vec![
+            T2BlockerClosureRow {
+                route: "I195".to_string(),
+                source_surface: "t2-graph-contact-repairs".to_string(),
+                blocker_class: "route-family-split".to_string(),
+                blocker_action: "split-numbered-route-family-before-tier-decision".to_string(),
+                required_evidence: "identify represented segment".to_string(),
+                next_artifact: "data/tier-node-exceptions.csv".to_string(),
+                optimizer_effect: "blocked until route family is disambiguated".to_string(),
+                closure_status: "open".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2BlockerClosureRow {
+                route: "I205".to_string(),
+                source_surface: "t2-graph-contact-repairs".to_string(),
+                blocker_class: "route-family-split".to_string(),
+                blocker_action: "split-numbered-route-family-before-tier-decision".to_string(),
+                required_evidence: "identify represented segment".to_string(),
+                next_artifact: "data/tier-node-exceptions.csv".to_string(),
+                optimizer_effect: "blocked until route family is disambiguated".to_string(),
+                closure_status: "open".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let exceptions = vec![
+            EndpointExceptionRow {
+                route: "I195".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Numbered I-195 route family".to_string(),
+                endpoint_role: "graph_endpoint_gap".to_string(),
+                exception_type: "missing_graph_geometry".to_string(),
+                evidence_level: "missing_graph_data".to_string(),
+                artifact: "data/tier-table.csv".to_string(),
+                next_step: "disambiguate segment".to_string(),
+            },
+            EndpointExceptionRow {
+                route: "I205".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Portland local loop".to_string(),
+                endpoint_role: "local_access_end".to_string(),
+                exception_type: "missing_graph_geometry".to_string(),
+                evidence_level: "missing_graph_data".to_string(),
+                artifact: "data/tier-table.csv".to_string(),
+                next_step: "confirm graph contact".to_string(),
+            },
+        ];
+
+        let rows = t2_route_family_split_rows(&closure_rows, &exceptions);
+        let failures = t2_route_family_split_gate_failures(&rows);
+
+        assert_eq!(rows[0].family_action, "split-numbered-family");
+        assert_eq!(rows[0].disposition, "blocked");
+        assert_eq!(rows[1].family_action, "split-local-family-or-demote");
+        assert_eq!(rows[1].disposition, "lower-tier-pressure");
         assert!(failures.is_empty());
     }
 

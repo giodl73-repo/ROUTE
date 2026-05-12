@@ -96,6 +96,12 @@ docket: 5 graph-contact repairs, 3 route-family splits, 2 parent-contact
 repairs, 2 relief-contact repairs with observed evidence, 2 terminal-contact
 repairs, and 1 endpoint-exception upgrade/demotion decision.
 
+`route t2-route-family-splits --gate` now emits
+`data/t2-route-family-splits.csv`, resolving the route-family split bucket into
+deterministic dispositions. I195 remains blocked until the represented segment
+is disambiguated; I205 and I295 move toward lower-tier pressure unless a
+metro-specific split segment can prove T1/T2 contact.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.
