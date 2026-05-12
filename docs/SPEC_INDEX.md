@@ -18,6 +18,8 @@ Start here when deciding which document owns a claim.
 | `docs/milepost-8-closeout.md` | Milepost 8 closeout for the T1/T1 failure evidence campaign, improved hold, source attempt result, and next evidence step | You need to know why the selected hold remains held after source work |
 | `docs/milepost-9-plan.md` | Milepost 9 Evidence Operations checklist, repeat-window target, snapshot-history guard, and done criteria | You need the next operating plan for turning the T1/T1 improved hold into repeatable evidence work |
 | `docs/milepost-9-closeout.md` | Milepost 9 Evidence Operations closeout, gate result, source-window guard, and continued T1/T1 hold | You need to know why evidence operations closed without promoting T1/T1 diamond recovery |
+| `data/significant-moments.csv` | Flair ledger for major conceptual breakthroughs, their artifacts, commits, and next threads | You need to remember why the system changed direction or preserve a major design insight |
+| `docs/significant-moments.md` | Human-readable guide for adding significant-moment flairs | You need to decide whether a breakthrough belongs in the moments ledger |
 | `docs/evidence-campaigns/milepost-8-target.md` | Milepost 8 target decision for T1/T1 failure evidence, scope, expected outcome, and non-goals | You need to know which held claim the campaign is working |
 | `docs/evidence-campaigns/milepost-8-source-attempt.md` | Milepost 8 A-band source attempt record for Iowa 511 and INDOT TrafficWise T1/T1 failure evidence | You need to know what source access produced and why the hold remains |
 | `data/evidence-campaign-source-plan.csv` | Milepost 8 campaign source checklist for A/B-band T1/T1 failure evidence feeds | You need the campaign-specific source acquisition plan |
