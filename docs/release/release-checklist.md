@@ -30,7 +30,7 @@ The full gate is the one that counts for closeout.
 ## Publishable Now
 
 - Current specs and milepost closeouts.
-- Scoring, map-atlas, gap, pressure, Forum, and Blueprint ledgers with their evidence labels.
+- Scoring, map-atlas, Beck T2 service standards, gap, pressure, Forum, and Blueprint ledgers with their evidence labels.
 - Game campaign spine and checked-in simulated/CLI playtest records.
 - Static browser prototype as a demonstration artifact, not as proof of claims.
 

@@ -77,6 +77,7 @@ Start here when deciding which document owns a claim.
 | `data/game/des-moines-diamond-state-fixture.json` | Canonical G2 seed state showing completed connector with publication hold | You need browser/campaign state fixture data |
 | `data/game/donner-weather-closure-session-fixture.csv` | Canonical Donner CLI seed fixture showing an operational winter win with SLA and publication still held | You need to verify the Mountain Pass game score path |
 | `data/map-atlas.csv` | Map artifact manifest for national, schematic, and T1 regional maps | You need to regenerate or gate maps used by tier presentation and the game |
+| `data/beck-t2-service-standards.csv` | Machine-readable T2 Beck service-class standards for diagnostics, schematic rendering, release gates, and game overlay semantics | You need to interpret `service_class` in `data/beck-t2-diagnostics.csv` or verify `route beck-t2-service-standards --gate` |
 | `data/standards-l1-inventory.csv` | L1 inventory/source ledger for standards blocked on asset or operations data | You need to know what source table must exist before a Planned standard can become testable |
 | `data/pressure-test-scenarios.csv` | L2 scenario catalog and readiness/blocker labels | You need to know which adversity scenarios are real pressure tests versus named shells |
 | `data/t1-intersection-failures.csv` | T1/T1 failure-rate, duration, throughput-retention, and reroute evidence ledger | You need to know whether T1/T1 resilience claims have empirical incident anchors |
