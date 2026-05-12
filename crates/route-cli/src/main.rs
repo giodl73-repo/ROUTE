@@ -1217,6 +1217,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit graph-contact repair actions for held T2 graph rows
+    T2GraphContactRepairs {
+        /// T2 held contact action CSV
+        #[arg(
+            long,
+            default_value = "data/t2-held-contact-actions.csv",
+            value_name = "FILE"
+        )]
+        held_actions: PathBuf,
+        /// Output graph-contact repair CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-graph-contact-repairs.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if graph-contact repair rows lack deterministic actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5231,6 +5253,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 held contact action gate: PASS");
+            }
+        }
+
+        Commands::T2GraphContactRepairs {
+            held_actions,
+            output,
+            gate,
+        } => {
+            println!("route t2-graph-contact-repairs");
+            let held_rows = load_t2_held_contact_actions(&held_actions)
+                .with_context(|| format!("loading {}", held_actions.display()))?;
+            let rows = t2_graph_contact_repair_rows(&held_rows);
+            write_t2_graph_contact_repairs(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_graph_contact_repair_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_graph_contact_repair_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 graph contact repair gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 graph contact repair gate failed");
+                }
+                println!();
+                println!("T2 graph contact repair gate: PASS");
             }
         }
 
@@ -10031,12 +10081,24 @@ struct T2ContactResolutionRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2HeldContactActionRow {
     route: String,
     held_action_type: String,
     source_resolution_action: String,
     exception_type: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2GraphContactRepairRow {
+    route: String,
+    repair_class: String,
+    source_exception_type: String,
+    repair_action: String,
     required_evidence: String,
     next_artifact: String,
     optimizer_effect: String,
@@ -10886,6 +10948,15 @@ fn write_t2_held_contact_actions(path: &Path, rows: &[T2HeldContactActionRow]) -
     Ok(())
 }
 
+fn load_t2_held_contact_actions(path: &Path) -> Result<Vec<T2HeldContactActionRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn print_t2_held_contact_action_summary(output: &Path, rows: &[T2HeldContactActionRow]) {
     let mut counts = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
@@ -10915,6 +10986,109 @@ fn t2_held_contact_action_gate_failures(rows: &[T2HeldContactActionRow]) -> Vec<
             || row.optimizer_effect.trim().is_empty()
         {
             failures.push(format!("{} has incomplete held contact action", row.route));
+        }
+    }
+    failures
+}
+
+fn t2_graph_contact_repair_rows(rows: &[T2HeldContactActionRow]) -> Vec<T2GraphContactRepairRow> {
+    rows.iter()
+        .filter(|row| row.held_action_type == "graph-contact-repair")
+        .map(|row| {
+            let (repair_class, repair_action, required_evidence, next_artifact, optimizer_effect) =
+                t2_graph_contact_repair_contract(row);
+            T2GraphContactRepairRow {
+                route: row.route.clone(),
+                repair_class: repair_class.to_string(),
+                source_exception_type: row.exception_type.clone(),
+                repair_action: repair_action.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn t2_graph_contact_repair_contract(
+    row: &T2HeldContactActionRow,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if row
+        .exception_type
+        .trim()
+        .eq_ignore_ascii_case("missing_graph_geometry")
+    {
+        (
+            "route-family-split",
+            "split-numbered-route-family-before-tier-decision",
+            "identify represented segment and its T1/T2 contacts",
+            "data/tier-node-exceptions.csv",
+            "blocked until route family is disambiguated",
+        )
+    } else {
+        (
+            "graph-contact-repair",
+            "repair-route-geometry-or-demote",
+            "prove at least one T1/T2 graph contact or demotion basis",
+            "data/tier-contact-witnesses.csv",
+            "blocked until graph contact evidence exists",
+        )
+    }
+}
+
+fn write_t2_graph_contact_repairs(path: &Path, rows: &[T2GraphContactRepairRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_graph_contact_repair_summary(output: &Path, rows: &[T2GraphContactRepairRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.repair_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} graph contact repair rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (repair_class, count) in counts {
+        println!("  {repair_class}: {count}");
+    }
+}
+
+fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepairRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 graph contact repair rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.repair_class.trim().is_empty()
+            || row.repair_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete graph contact repair", row.route));
         }
     }
     failures
@@ -11562,6 +11736,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-held-contact-actions",
                 "route t2-held-contact-actions --gate",
                 "data/t2-held-contact-actions.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-graph-contact-repairs",
+                "route t2-graph-contact-repairs --gate",
+                "data/t2-graph-contact-repairs.csv",
                 "pass",
                 0,
                 "",
@@ -16571,6 +16753,7 @@ mod tests {
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
+        t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_service_selection_gate_failures,
         t2_service_selection_rows, throughput_proof_gate_failures,
@@ -16580,9 +16763,9 @@ mod tests {
         tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
         EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1StopSelectorInputRow, T2ContactResolutionRow, T2RegionalizerRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierTableScoreRow,
+        T1StopSelectorInputRow, T2ContactResolutionRow, T2HeldContactActionRow, T2RegionalizerRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -16894,6 +17077,39 @@ mod tests {
 
         assert_eq!(actions[0].held_action_type, "terminal-contact-validation");
         assert_eq!(actions[1].held_action_type, "relief-evidence-review");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_graph_contact_repairs_split_family_and_contact_repairs() {
+        let rows = vec![
+            T2HeldContactActionRow {
+                route: "I195".to_string(),
+                held_action_type: "graph-contact-repair".to_string(),
+                source_resolution_action: "hold-for-graph-contact-repair".to_string(),
+                exception_type: "missing_graph_geometry".to_string(),
+                required_evidence: "repair route geometry".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect: "blocked".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2HeldContactActionRow {
+                route: "I44".to_string(),
+                held_action_type: "graph-contact-repair".to_string(),
+                source_resolution_action: "hold-for-graph-contact-repair".to_string(),
+                exception_type: String::new(),
+                required_evidence: "repair route geometry".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect: "blocked".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let repairs = t2_graph_contact_repair_rows(&rows);
+        let failures = t2_graph_contact_repair_gate_failures(&repairs);
+
+        assert_eq!(repairs[0].repair_class, "route-family-split");
+        assert_eq!(repairs[1].repair_class, "graph-contact-repair");
         assert!(failures.is_empty());
     }
 

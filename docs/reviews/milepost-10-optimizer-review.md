@@ -32,6 +32,7 @@ blockers rather than treating the current graph as complete.
 - `data/optimizer-map-hooks.csv`
 - `data/t2-contact-resolutions.csv`
 - `data/t2-held-contact-actions.csv`
+- `data/t2-graph-contact-repairs.csv`
 
 ## Held Findings
 
@@ -44,7 +45,8 @@ blockers rather than treating the current graph as complete.
    `data/t2-contact-resolutions.csv`; lower-tier pressure consumes the
    demotion rows. `data/t2-held-contact-actions.csv` splits the remaining held
    rows into graph repair, parent-contact, relief-evidence, and terminal
-   validation surfaces.
+   validation surfaces. `data/t2-graph-contact-repairs.csv` further splits
+   graph repair into route-family split versus graph-contact-or-demotion work.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

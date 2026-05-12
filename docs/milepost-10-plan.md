@@ -70,6 +70,10 @@ validation surfaces: 8 graph-contact repairs, 2 parent-contact validations, 2
 relief-evidence reviews, 2 terminal-contact validations, and 1 terminal
 exception review.
 
+`route t2-graph-contact-repairs --gate` now emits
+`data/t2-graph-contact-repairs.csv`, splitting the 8 graph-contact rows into 3
+numbered route-family split repairs and 5 graph-contact-or-demotion repairs.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.
