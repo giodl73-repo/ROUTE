@@ -1175,6 +1175,13 @@ enum Commands {
             value_name = "FILE"
         )]
         witnesses: PathBuf,
+        /// Tier node exception CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
         /// Output T2 contact resolution CSV
         #[arg(
             long,
@@ -1262,6 +1269,13 @@ enum Commands {
             value_name = "FILE"
         )]
         candidates: PathBuf,
+        /// T2 contact resolution CSV
+        #[arg(
+            long,
+            default_value = "data/t2-contact-resolutions.csv",
+            value_name = "FILE"
+        )]
+        resolutions: PathBuf,
         /// Output lower-tier pressure witness CSV
         #[arg(
             long,
@@ -5141,13 +5155,16 @@ fn run_cli() -> Result<()> {
 
         Commands::T2ContactResolutions {
             witnesses,
+            exceptions,
             output,
             gate,
         } => {
             println!("route t2-contact-resolutions");
             let witness_rows = load_tier_contact_witnesses(&witnesses)
                 .with_context(|| format!("loading {}", witnesses.display()))?;
-            let rows = t2_contact_resolution_rows(&witness_rows);
+            let exception_rows = load_endpoint_exceptions(&exceptions)
+                .with_context(|| format!("loading {}", exceptions.display()))?;
+            let rows = t2_contact_resolution_rows(&witness_rows, &exception_rows);
             write_t2_contact_resolutions(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_t2_contact_resolution_summary(&output, &rows);
@@ -5255,6 +5272,7 @@ fn run_cli() -> Result<()> {
         Commands::LowerTierPressureWitnesses {
             tier_table,
             candidates,
+            resolutions,
             output,
             gate,
         } => {
@@ -5263,7 +5281,10 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", tier_table.display()))?;
             let candidate_rows = load_tier_candidate_columns(&candidates)
                 .with_context(|| format!("loading {}", candidates.display()))?;
-            let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows);
+            let resolution_rows = load_t2_contact_resolutions(&resolutions)
+                .with_context(|| format!("loading {}", resolutions.display()))?;
+            let rows =
+                lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows, &resolution_rows);
             write_lower_tier_pressure_witnesses(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_lower_tier_pressure_witness_summary(&output, &rows);
@@ -9945,13 +9966,15 @@ struct TierContactWitnessInputRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2ContactResolutionRow {
     route: String,
     witness_type: String,
     node_class: String,
     repair_action: String,
     required_artifact: String,
+    exception_type: String,
+    exception_evidence_level: String,
     resolution_action: String,
     resolution_basis: String,
     next_artifact: String,
@@ -10537,18 +10560,29 @@ fn load_tier_contact_witnesses(path: &Path) -> Result<Vec<TierContactWitnessInpu
     Ok(rows)
 }
 
-fn t2_contact_resolution_rows(rows: &[TierContactWitnessInputRow]) -> Vec<T2ContactResolutionRow> {
+fn t2_contact_resolution_rows(
+    rows: &[TierContactWitnessInputRow],
+    exceptions: &[EndpointExceptionRow],
+) -> Vec<T2ContactResolutionRow> {
     rows.iter()
         .filter(|row| row.tier.eq_ignore_ascii_case("T2"))
         .map(|row| {
+            let route_exceptions = endpoint_exceptions_for_route(exceptions, &row.route, "T2");
+            let exception = route_exceptions.first().copied();
             let (resolution_action, resolution_basis, next_artifact, validation_status) =
-                t2_contact_resolution_decision(row);
+                t2_contact_resolution_decision(row, &route_exceptions);
             T2ContactResolutionRow {
                 route: row.route.clone(),
                 witness_type: row.witness_type.clone(),
                 node_class: row.node_class.clone(),
                 repair_action: row.repair_action.clone(),
                 required_artifact: row.required_artifact.clone(),
+                exception_type: exception
+                    .map(|exception| exception.exception_type.clone())
+                    .unwrap_or_default(),
+                exception_evidence_level: exception
+                    .map(|exception| exception.evidence_level.clone())
+                    .unwrap_or_default(),
                 resolution_action: resolution_action.to_string(),
                 resolution_basis: resolution_basis.to_string(),
                 next_artifact: next_artifact.to_string(),
@@ -10560,7 +10594,52 @@ fn t2_contact_resolution_rows(rows: &[TierContactWitnessInputRow]) -> Vec<T2Cont
 
 fn t2_contact_resolution_decision(
     row: &TierContactWitnessInputRow,
+    exceptions: &[&EndpointExceptionRow],
 ) -> (&'static str, &'static str, &'static str, &'static str) {
+    if row.witness_type == "graph-contact-needed" {
+        if exceptions.iter().any(|exception| {
+            exception
+                .exception_type
+                .trim()
+                .eq_ignore_ascii_case("demote")
+                || exception
+                    .evidence_level
+                    .trim()
+                    .eq_ignore_ascii_case("demote")
+        }) {
+            return (
+                "move-to-lower-tier-pressure",
+                "endpoint-exception-demotion",
+                "data/lower-tier-pressure-witnesses.csv",
+                "pass",
+            );
+        }
+        if exceptions
+            .iter()
+            .any(|exception| endpoint_exception_is_terminal_worthy(exception))
+        {
+            return (
+                "hold-for-terminal-contact-validation",
+                "terminal-worthy-exception-needs-graph-contact",
+                "data/tier-contact-witnesses.csv",
+                "review",
+            );
+        }
+        if exceptions.iter().any(|exception| {
+            exception
+                .exception_type
+                .trim()
+                .eq_ignore_ascii_case("metro_beltway_relief")
+        }) {
+            return (
+                "hold-for-relief-evidence-or-demotion",
+                "metro-beltway-relief-needs-source-backed-contact",
+                "data/atri-bottlenecks.csv",
+                "review",
+            );
+        }
+    }
+
     match row.witness_type.as_str() {
         "regionalizer-ready" => (
             "accept-contact-witness",
@@ -10621,6 +10700,18 @@ fn write_t2_contact_resolutions(path: &Path, rows: &[T2ContactResolutionRow]) ->
     }
     writer.flush()?;
     Ok(())
+}
+
+fn load_t2_contact_resolutions(path: &Path) -> Result<Vec<T2ContactResolutionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
 }
 
 fn print_t2_contact_resolution_summary(output: &Path, rows: &[T2ContactResolutionRow]) {
@@ -11067,6 +11158,7 @@ fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
 fn lower_tier_pressure_witness_rows(
     tier_rows: &[TierTableScoreRow],
     candidate_rows: &[TierCandidateColumnRow],
+    resolution_rows: &[T2ContactResolutionRow],
 ) -> Vec<LowerTierPressureWitnessRow> {
     let mut rows = Vec::new();
     let tier_row_by_route = tier_rows
@@ -11096,6 +11188,38 @@ fn lower_tier_pressure_witness_rows(
             target_tier: "T3/T4".to_string(),
             selection_basis: row.repair_basis.clone(),
             source_artifact: "data/tier-candidate-columns.csv".to_string(),
+            next_artifact: "data/tier-table.csv".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    let existing_routes = rows
+        .iter()
+        .map(|row| canonical_route_key(&row.route))
+        .collect::<std::collections::BTreeSet<_>>();
+    for row in resolution_rows
+        .iter()
+        .filter(|row| row.resolution_action == "move-to-lower-tier-pressure")
+        .filter(|row| !existing_routes.contains(&canonical_route_key(&row.route)))
+    {
+        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
+        rows.push(LowerTierPressureWitnessRow {
+            route: row.route.clone(),
+            current_tier: "T2".to_string(),
+            current_score: score_row
+                .map(|score_row| score_row.score)
+                .unwrap_or_default(),
+            confidence: score_row
+                .map(|score_row| score_row.confidence)
+                .unwrap_or_default(),
+            confidence_label: score_row
+                .map(|score_row| score_row.confidence_label.clone())
+                .unwrap_or_else(|| "n/a".to_string()),
+            pressure_type: "demotion-pressure".to_string(),
+            witness_action: "demote-to-lower-tier-treatment".to_string(),
+            target_tier: "T3/T4".to_string(),
+            selection_basis: row.resolution_basis.clone(),
+            source_artifact: "data/t2-contact-resolutions.csv".to_string(),
             next_artifact: "data/tier-table.csv".to_string(),
             validation_status: "review".to_string(),
         });
@@ -16276,10 +16400,11 @@ mod tests {
         tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
         tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
-        FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow,
-        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow,
-        T2RegionalizerRow, TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
+        ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
+        T1StopSelectorInputRow, T2ContactResolutionRow, T2RegionalizerRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -16469,7 +16594,7 @@ mod tests {
             },
         ];
 
-        let resolutions = t2_contact_resolution_rows(&rows);
+        let resolutions = t2_contact_resolution_rows(&rows, &[]);
         let failures = t2_contact_resolution_gate_failures(&resolutions);
 
         assert_eq!(
@@ -16478,6 +16603,81 @@ mod tests {
         );
         assert!(failures.is_empty());
         assert_eq!(resolutions[1].validation_status, "review");
+    }
+
+    #[test]
+    fn t2_contact_resolutions_use_endpoint_exceptions() {
+        let rows = vec![
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I110".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 79.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 0,
+                component_id: 0,
+                component_route_count: 1,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I65".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 1777.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 0,
+                component_id: 17,
+                component_route_count: 1,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let exceptions = vec![
+            EndpointExceptionRow {
+                route: "I110".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Port approach".to_string(),
+                endpoint_role: "local_access_end".to_string(),
+                exception_type: "demote".to_string(),
+                evidence_level: "heuristic".to_string(),
+                artifact: "data/tier-table.csv".to_string(),
+                next_step: "demote".to_string(),
+            },
+            EndpointExceptionRow {
+                route: "I65".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Mobile".to_string(),
+                endpoint_role: "t2_terminal_exception".to_string(),
+                exception_type: "port_terminal".to_string(),
+                evidence_level: "heuristic".to_string(),
+                artifact: "data/corridor-designations.csv".to_string(),
+                next_step: "validate contact".to_string(),
+            },
+        ];
+
+        let resolutions = t2_contact_resolution_rows(&rows, &exceptions);
+
+        assert_eq!(
+            resolutions[0].resolution_action,
+            "move-to-lower-tier-pressure"
+        );
+        assert_eq!(
+            resolutions[1].resolution_action,
+            "hold-for-terminal-contact-validation"
+        );
     }
 
     #[test]
@@ -16669,7 +16869,7 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows);
+        let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows, &[]);
         let failures = lower_tier_pressure_witness_gate_failures(&rows);
         let actions = rows
             .iter()
@@ -16680,6 +16880,37 @@ mod tests {
         assert!(actions.contains("evaluate-for-t2-upgrade-candidate"));
         assert!(actions.contains("evaluate-for-t3-access-candidate"));
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn lower_tier_pressure_witnesses_include_contact_resolution_demotions() {
+        let tier_rows = vec![TierTableScoreRow {
+            tier: "T2".to_string(),
+            route: "I-110".to_string(),
+            score: 65.6,
+            confidence: 0.75,
+            confidence_label: "Medium".to_string(),
+        }];
+        let resolution_rows = vec![T2ContactResolutionRow {
+            route: "I110".to_string(),
+            witness_type: "graph-contact-needed".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            exception_type: "demote".to_string(),
+            exception_evidence_level: "heuristic".to_string(),
+            resolution_action: "move-to-lower-tier-pressure".to_string(),
+            resolution_basis: "endpoint-exception-demotion".to_string(),
+            next_artifact: "data/lower-tier-pressure-witnesses.csv".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = lower_tier_pressure_witness_rows(&tier_rows, &[], &resolution_rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I110");
+        assert_eq!(rows[0].source_artifact, "data/t2-contact-resolutions.csv");
+        assert_eq!(rows[0].selection_basis, "endpoint-exception-demotion");
     }
 
     #[test]

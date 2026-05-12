@@ -38,8 +38,10 @@ blockers rather than treating the current graph as complete.
    The manifest records this as `held-known`, not pass.
 
 2. `tier-contact-witnesses --gate` remains held by unresolved graph-contact,
-   parent-contact, and terminal exception rows. Demotion and candidate-review
-   rows now move downstream through `data/t2-contact-resolutions.csv`.
+   parent-contact, relief-evidence, and terminal exception/contact rows.
+   Demotion and candidate-review rows now move downstream through
+   `data/t2-contact-resolutions.csv`; lower-tier pressure consumes the
+   demotion rows.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

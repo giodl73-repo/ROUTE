@@ -8,4 +8,4 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 7,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass
 8,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,14,pass,0,,pass
 9,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,14,pass,0,,pass
-10,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,91,pass,0,,pass
+10,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,98,pass,0,,pass

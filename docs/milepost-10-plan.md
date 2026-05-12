@@ -54,13 +54,15 @@ Milepost 10 is done when:
 
 `route t2-contact-resolutions --gate` now emits
 `data/t2-contact-resolutions.csv`, separating resolved downstream actions from
-true contact blockers:
+true contact blockers. The lower-tier pressure witness command consumes this
+resolution docket, so exception-backed T2 demotions flow into
+`data/lower-tier-pressure-witnesses.csv`.
 
 - 8 accepted contact witnesses flow to candidate columns.
 - 6 parent-region reviews flow to candidate-column review.
-- 4 local-spur demotions flow to lower-tier pressure witnesses.
-- 22 rows remain held for graph contact, parent contact, or terminal exception
-  repair.
+- 11 demotions flow to lower-tier pressure witnesses.
+- 15 rows remain held for graph contact, parent contact, relief evidence, or
+  terminal exception/contact repair.
 
 ## First Implementation Slices
 
