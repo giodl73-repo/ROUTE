@@ -2134,7 +2134,7 @@ fn run_cli() -> Result<()> {
             println!("  T2 lines: {}", rows.len());
             println!("  wrote diagnostics: {}", output.display());
             println!(
-                "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:>7} Flag",
+                "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:<18} {:>7} Flag",
                 "Line",
                 "Service",
                 "Color",
@@ -2145,11 +2145,12 @@ fn run_cli() -> Result<()> {
                 "Dup",
                 "Xfer",
                 "Stops",
+                "Action",
                 "Label"
             );
             for row in rows.iter().take(12) {
                 println!(
-                    "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:>7.2} {}",
+                    "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:<18} {:>7.2} {}",
                     row.corridor,
                     truncate_for_table(row.service_label, 18),
                     row.color_mode,
@@ -2160,6 +2161,7 @@ fn run_cli() -> Result<()> {
                     row.duplicate_service_count,
                     row.transfer_stop_count,
                     row.stop_count,
+                    truncate_for_table(row.service_action, 18),
                     row.label_density_per_100px,
                     row.review_flag
                 );

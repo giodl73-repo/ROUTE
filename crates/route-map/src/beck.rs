@@ -91,6 +91,9 @@ pub struct BeckT2DiagnosticRow {
     pub close_parallel_corridors: String,
     pub duplicate_service_count: usize,
     pub duplicate_service_corridors: String,
+    pub unique_duplicate_stop_count: usize,
+    pub service_action: &'static str,
+    pub qualification_basis: &'static str,
     pub service_label: &'static str,
     pub stop_count: usize,
     pub drawn_stop_count: usize,
@@ -2540,7 +2543,7 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
 
 pub fn build_beck_t2_diagnostics_csv() -> String {
     let mut csv = String::from(
-        "corridor,trunk,start_trunk,end_trunk,color_mode,service_class,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,duplicate_service_count,duplicate_service_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+        "corridor,trunk,start_trunk,end_trunk,color_mode,service_class,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,duplicate_service_count,duplicate_service_corridors,unique_duplicate_stop_count,service_action,qualification_basis,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
     );
     for row in beck_t2_diagnostics() {
         push_csv_row(
@@ -2560,6 +2563,9 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
                 &row.close_parallel_corridors,
                 &row.duplicate_service_count.to_string(),
                 &row.duplicate_service_corridors,
+                &row.unique_duplicate_stop_count.to_string(),
+                row.service_action,
+                row.qualification_basis,
                 row.service_label,
                 &row.stop_count.to_string(),
                 &row.drawn_stop_count.to_string(),
@@ -2670,6 +2676,8 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             let unstopped_t1_contact_count = unstopped_t1_contacts.len();
             let close_parallel_count = close_parallel_corridors.len();
             let duplicate_service_count = duplicate_service_corridors.len();
+            let unique_duplicate_stop_count =
+                unique_duplicate_stop_count(line, &t2_lines, &duplicate_service_corridors);
             let drawn_stop_count = line
                 .stop_ids
                 .iter()
@@ -2690,6 +2698,14 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             };
             let service_class =
                 t2_service_class(schematic_length_px, drawn_stop_count, transfer_stop_count);
+            let (service_action, qualification_basis) = t2_qualification_recommendation(
+                &t2_lines,
+                &stops,
+                &duplicate_service_corridors,
+                unique_duplicate_stop_count,
+                drawn_stop_count,
+                transfer_stop_count,
+            );
             let review_flag = if unstopped_t1_contact_count > 0 {
                 "unstopped-t1-contact-review"
             } else if close_parallel_count >= 2 {
@@ -2736,6 +2752,9 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 close_parallel_corridors: close_parallel_corridors.join(";"),
                 duplicate_service_count,
                 duplicate_service_corridors: duplicate_service_corridors.join(";"),
+                unique_duplicate_stop_count,
+                service_action,
+                qualification_basis,
                 service_label: line.service_label,
                 stop_count: line.stop_ids.len(),
                 drawn_stop_count,
@@ -3089,6 +3108,69 @@ fn same_parent_trunk_pair(a: &T2LineSegment, b: &T2LineSegment) -> bool {
     a_pair.sort_unstable();
     b_pair.sort_unstable();
     a_pair == b_pair
+}
+
+fn unique_duplicate_stop_count(
+    line: &T2LineSegment,
+    all_lines: &[T2LineSegment],
+    duplicate_corridors: &[&'static str],
+) -> usize {
+    if duplicate_corridors.is_empty() {
+        return line.stop_ids.len();
+    }
+    line.stop_ids
+        .iter()
+        .filter(|stop_id| {
+            !all_lines
+                .iter()
+                .filter(|other| duplicate_corridors.contains(&other.corridor))
+                .any(|other| other.stop_ids.contains(stop_id))
+        })
+        .count()
+}
+
+fn t2_qualification_recommendation(
+    all_lines: &[T2LineSegment],
+    stops: &[BeckStop],
+    duplicate_corridors: &[&'static str],
+    unique_duplicate_stop_count: usize,
+    drawn_stop_count: usize,
+    transfer_stop_count: usize,
+) -> (&'static str, &'static str) {
+    if duplicate_corridors.is_empty() {
+        return ("keep", "distinct-parent-service");
+    }
+
+    let best_peer_score = all_lines
+        .iter()
+        .filter(|other| duplicate_corridors.contains(&other.corridor))
+        .map(|other| {
+            let peer_drawn_stops = other
+                .stop_ids
+                .iter()
+                .filter(|id| stop_by_id(stops, id).draw)
+                .count();
+            let peer_transfer_stops = other
+                .stop_ids
+                .iter()
+                .filter(|id| stop_by_id(stops, id).is_transfer_point())
+                .count();
+            (peer_drawn_stops, peer_transfer_stops)
+        })
+        .max()
+        .unwrap_or((0, 0));
+    let line_score = (drawn_stop_count, transfer_stop_count);
+
+    if unique_duplicate_stop_count == 0 && line_score <= best_peer_score {
+        ("demote-review", "duplicate-subset-service")
+    } else if unique_duplicate_stop_count >= 2 && line_score >= best_peer_score {
+        (
+            "keep-primary-review",
+            "duplicate-service-with-unique-markets",
+        )
+    } else {
+        ("merge-review", "duplicate-service-needs-policy")
+    }
 }
 
 fn close_parallel_segments(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
@@ -4311,6 +4393,15 @@ mod tests {
         let us6 = rows.iter().find(|row| row.corridor == "US6").unwrap();
         assert_eq!(us30.duplicate_service_corridors, "US6");
         assert_eq!(us6.duplicate_service_corridors, "US30");
+        assert_eq!(us30.unique_duplicate_stop_count, 3);
+        assert_eq!(us30.service_action, "keep-primary-review");
+        assert_eq!(
+            us30.qualification_basis,
+            "duplicate-service-with-unique-markets"
+        );
+        assert_eq!(us6.unique_duplicate_stop_count, 0);
+        assert_eq!(us6.service_action, "demote-review");
+        assert_eq!(us6.qualification_basis, "duplicate-subset-service");
     }
 
     #[test]
