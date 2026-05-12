@@ -1293,6 +1293,42 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit terminal endpoint/contact validation rows for held T2 terminal candidates
+    T2TerminalContactValidation {
+        /// T2 held contact action CSV
+        #[arg(
+            long,
+            default_value = "data/t2-held-contact-actions.csv",
+            value_name = "FILE"
+        )]
+        held_actions: PathBuf,
+        /// Endpoint exception ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-node-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
+        /// Tier contact witness CSV
+        #[arg(
+            long,
+            default_value = "data/tier-contact-witnesses.csv",
+            value_name = "FILE"
+        )]
+        witnesses: PathBuf,
+        /// Output terminal validation CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-terminal-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if terminal validation rows lack next-step contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5397,6 +5433,41 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 relief evidence gate: PASS");
+            }
+        }
+
+        Commands::T2TerminalContactValidation {
+            held_actions,
+            exceptions,
+            witnesses,
+            output,
+            gate,
+        } => {
+            println!("route t2-terminal-contact-validation");
+            let held_rows = load_t2_held_contact_actions(&held_actions)
+                .with_context(|| format!("loading {}", held_actions.display()))?;
+            let exception_rows = load_endpoint_exceptions(&exceptions)
+                .with_context(|| format!("loading {}", exceptions.display()))?;
+            let witness_rows = load_tier_contact_witnesses(&witnesses)
+                .with_context(|| format!("loading {}", witnesses.display()))?;
+            let rows =
+                t2_terminal_contact_validation_rows(&held_rows, &exception_rows, &witness_rows);
+            write_t2_terminal_contact_validation(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_terminal_contact_validation_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_terminal_contact_validation_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 terminal contact validation gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 terminal contact validation gate failed");
+                }
+                println!();
+                println!("T2 terminal contact validation gate: PASS");
             }
         }
 
@@ -10266,6 +10337,23 @@ struct T2ReliefEvidenceRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2TerminalContactValidationRow {
+    route: String,
+    held_action_type: String,
+    endpoint_name: String,
+    endpoint_role: String,
+    exception_type: String,
+    terminal_worthy: bool,
+    observed_t1_node_count: usize,
+    observed_dual_contacts: usize,
+    terminal_action: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -11499,6 +11587,150 @@ fn t2_relief_evidence_gate_failures(rows: &[T2ReliefEvidenceRow]) -> Vec<String>
     failures
 }
 
+fn t2_terminal_contact_validation_rows(
+    held_rows: &[T2HeldContactActionRow],
+    exception_rows: &[EndpointExceptionRow],
+    witness_rows: &[TierContactWitnessInputRow],
+) -> Vec<T2TerminalContactValidationRow> {
+    let witness_by_route = witness_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    held_rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.held_action_type.as_str(),
+                "terminal-contact-validation" | "terminal-exception-review"
+            )
+        })
+        .map(|row| {
+            let route_exceptions = endpoint_exceptions_for_route(exception_rows, &row.route, "T2");
+            let exception = route_exceptions.first().copied();
+            let terminal_worthy = route_exceptions
+                .iter()
+                .any(|exception| endpoint_exception_is_terminal_worthy(exception));
+            let witness = witness_by_route.get(&canonical_route_key(&row.route));
+            let observed_t1_node_count = witness
+                .map(|witness| witness.observed_t1_node_count)
+                .unwrap_or_default();
+            let observed_dual_contacts = witness
+                .map(|witness| witness.observed_dual_contacts)
+                .unwrap_or_default();
+            let has_graph_contact = observed_t1_node_count > 0 || observed_dual_contacts > 0;
+            let (terminal_action, required_evidence, next_artifact, optimizer_effect) =
+                if !terminal_worthy {
+                    (
+                        "prove-terminal-exception-or-demote",
+                        "terminal-worthy endpoint exception under T2 endpoint standard",
+                        "data/tier-node-exceptions.csv",
+                        "blocked from T2 unless endpoint exception is upgraded or route demotes",
+                    )
+                } else if !has_graph_contact {
+                    (
+                        "prove-terminal-contact-or-demote",
+                        "terminal endpoint plus at least one T1/T2 contact chain",
+                        "data/tier-contact-witnesses.csv",
+                        "blocked from T2 until graph contact validates",
+                    )
+                } else {
+                    (
+                        "accept-terminal-contact",
+                        "terminal-worthy endpoint and graph contact observed",
+                        "data/tier-candidate-columns.csv",
+                        "eligible for terminal service-column review",
+                    )
+                };
+
+            T2TerminalContactValidationRow {
+                route: row.route.clone(),
+                held_action_type: row.held_action_type.clone(),
+                endpoint_name: exception
+                    .map(|exception| exception.endpoint_name.clone())
+                    .unwrap_or_default(),
+                endpoint_role: exception
+                    .map(|exception| exception.endpoint_role.clone())
+                    .unwrap_or_default(),
+                exception_type: exception
+                    .map(|exception| exception.exception_type.clone())
+                    .unwrap_or_else(|| row.exception_type.clone()),
+                terminal_worthy,
+                observed_t1_node_count,
+                observed_dual_contacts,
+                terminal_action: terminal_action.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_terminal_contact_validation(
+    path: &Path,
+    rows: &[T2TerminalContactValidationRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_terminal_contact_validation_summary(
+    output: &Path,
+    rows: &[T2TerminalContactValidationRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.terminal_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} terminal contact validation rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_terminal_contact_validation_gate_failures(
+    rows: &[T2TerminalContactValidationRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 terminal contact validation rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.held_action_type.trim().is_empty()
+            || row.terminal_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+            || !matches!(row.validation_status.as_str(), "pass" | "review")
+        {
+            failures.push(format!(
+                "{} has incomplete terminal contact validation",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -12165,6 +12397,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-relief-evidence-docket",
                 "route t2-relief-evidence-docket --gate",
                 "data/t2-relief-evidence-docket.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-terminal-contact-validation",
+                "route t2-terminal-contact-validation --gate",
+                "data/t2-terminal-contact-validation.csv",
                 "pass",
                 0,
                 "",
@@ -17179,6 +17419,7 @@ mod tests {
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
         t2_relief_evidence_rows, t2_service_selection_gate_failures, t2_service_selection_rows,
+        t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
@@ -17617,6 +17858,105 @@ mod tests {
         assert_eq!(rows[0].relief_action, "source-observed-relief-review");
         assert_eq!(rows[0].bottleneck_match_count, 1);
         assert_eq!(rows[1].relief_action, "source-gap-demote-or-find-evidence");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_terminal_contact_validation_separates_endpoint_and_contact_proof() {
+        let held = vec![
+            T2HeldContactActionRow {
+                route: "I65".to_string(),
+                held_action_type: "terminal-contact-validation".to_string(),
+                source_resolution_action: "hold-for-terminal-contact-validation".to_string(),
+                exception_type: "port_terminal".to_string(),
+                required_evidence: "terminal endpoint plus graph contact".to_string(),
+                next_artifact: "data/t2-terminal-contact-validation.csv".to_string(),
+                optimizer_effect: "retain with terminal contact".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2HeldContactActionRow {
+                route: "I270".to_string(),
+                held_action_type: "terminal-exception-review".to_string(),
+                source_resolution_action: "hold-for-terminal-exception".to_string(),
+                exception_type: "metro_beltway_relief".to_string(),
+                required_evidence: "terminal-worthy endpoint exception".to_string(),
+                next_artifact: "data/t2-terminal-contact-validation.csv".to_string(),
+                optimizer_effect: "retain only validated terminal segment".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let exceptions = vec![
+            EndpointExceptionRow {
+                route: "I65".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Mobile".to_string(),
+                endpoint_role: "t2_terminal_exception".to_string(),
+                exception_type: "port_terminal".to_string(),
+                evidence_level: "heuristic".to_string(),
+                artifact: "data/ports.csv".to_string(),
+                next_step: "validate terminal".to_string(),
+            },
+            EndpointExceptionRow {
+                route: "I270".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "St. Louis beltway".to_string(),
+                endpoint_role: "one_ended_feeder".to_string(),
+                exception_type: "metro_beltway_relief".to_string(),
+                evidence_level: "heuristic".to_string(),
+                artifact: "data/atri-bottlenecks.csv".to_string(),
+                next_step: "validate endpoint".to_string(),
+            },
+        ];
+        let witnesses = vec![
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I65".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 1776.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 0,
+                component_id: 17,
+                component_route_count: 1,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I270".to_string(),
+                witness_type: "terminal-exception-needed".to_string(),
+                node_class: "one_ended_feeder".to_string(),
+                route_miles: 342.0,
+                observed_t1_node_count: 1,
+                observed_parent_trunks: "I70".to_string(),
+                observed_dual_contacts: 3,
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "terminal-exception-or-demote".to_string(),
+                repair_basis: "one-ended-feeder-needs-terminal-worthy-endpoint".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-node-exceptions.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_terminal_contact_validation_rows(&held, &exceptions, &witnesses);
+        let failures = t2_terminal_contact_validation_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].terminal_action, "prove-terminal-contact-or-demote");
+        assert!(rows[0].terminal_worthy);
+        assert_eq!(
+            rows[1].terminal_action,
+            "prove-terminal-exception-or-demote"
+        );
+        assert!(!rows[1].terminal_worthy);
         assert!(failures.is_empty());
     }
 

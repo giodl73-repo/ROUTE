@@ -84,6 +84,12 @@ source bottleneck evidence. I285 has 2 direct ATRI route matches and I405 has 1
 direct ATRI route match, so both remain relief-review candidates, but both still
 route back to contact validation before they can be claimed by the T2 graph.
 
+`route t2-terminal-contact-validation --gate` now emits
+`data/t2-terminal-contact-validation.csv`, separating terminal-worthiness from
+graph contact. I25 and I65 have terminal-worthy exceptions but no observed graph
+contact yet; I270 has observed contacts but lacks a terminal-worthy endpoint
+exception, so it must upgrade the exception record or demote.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.
