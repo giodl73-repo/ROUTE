@@ -1764,6 +1764,36 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T3/T4 access gaps from held route and terminal access columns
+    #[command(name = "t3-t4-access-gaps")]
+    T3T4AccessGaps {
+        /// T3 zone route columns CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-route-columns.csv",
+            value_name = "FILE"
+        )]
+        route_columns: PathBuf,
+        /// T4 terminal/local access columns CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-access-columns.csv",
+            value_name = "FILE"
+        )]
+        terminal_columns: PathBuf,
+        /// Output T3/T4 access gap CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-t4-access-gaps.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if gaps lack class, evidence, or next artifact
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6356,6 +6386,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal access column gate: PASS");
+            }
+        }
+
+        Commands::T3T4AccessGaps {
+            route_columns,
+            terminal_columns,
+            output,
+            gate,
+        } => {
+            println!("route t3-t4-access-gaps");
+            let route_rows = load_t3_zone_route_columns(&route_columns)
+                .with_context(|| format!("loading {}", route_columns.display()))?;
+            let terminal_rows = load_t4_terminal_access_columns(&terminal_columns)
+                .with_context(|| format!("loading {}", terminal_columns.display()))?;
+            let rows = t3_t4_access_gap_rows(&route_rows, &terminal_rows);
+            write_t3_t4_access_gaps(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_t4_access_gap_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_t4_access_gap_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3/T4 access gap gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3/T4 access gap gate failed");
+                }
+                println!();
+                println!("T3/T4 access gap gate: PASS");
             }
         }
 
@@ -11453,6 +11514,23 @@ struct T4TerminalAccessColumnRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3T4AccessGapRow {
+    gap_id: String,
+    source_surface: String,
+    route: String,
+    zone_id: String,
+    current_score: f64,
+    promise_horizon_hours: u8,
+    gap_class: String,
+    gap_reason: String,
+    required_evidence: String,
+    repair_action: String,
+    next_artifact: String,
+    upward_pressure_allowed: bool,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -15085,6 +15163,206 @@ fn t4_terminal_access_column_gate_failures(rows: &[T4TerminalAccessColumnRow]) -
     failures
 }
 
+fn load_t3_zone_route_columns(path: &Path) -> Result<Vec<T3ZoneRouteColumnRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t4_terminal_access_columns(path: &Path) -> Result<Vec<T4TerminalAccessColumnRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_t4_access_gap_rows(
+    route_rows: &[T3ZoneRouteColumnRow],
+    terminal_rows: &[T4TerminalAccessColumnRow],
+) -> Vec<T3T4AccessGapRow> {
+    let mut rows = Vec::new();
+
+    for row in route_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/t3-t4-access-gaps.csv")
+    {
+        let (gap_class, repair_action) = match row.column_decision.as_str() {
+            "review" => (
+                "below-threshold-feeder",
+                "prove-terminal-evidence-or-keep-t4",
+            ),
+            _ => ("route-column-review", "review-route-column-disposition"),
+        };
+        rows.push(T3T4AccessGapRow {
+            gap_id: format!(
+                "T3GAP-{}-{}",
+                canonical_route_key(&row.zone_id),
+                canonical_route_key(&row.route)
+            ),
+            source_surface: "t3-zone-route-columns".to_string(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            current_score: row.current_score,
+            promise_horizon_hours: row.promise_horizon_hours,
+            gap_class: gap_class.to_string(),
+            gap_reason: row.selection_basis.clone(),
+            required_evidence: row.contact_requirement.clone(),
+            repair_action: repair_action.to_string(),
+            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in terminal_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/t3-t4-access-gaps.csv")
+    {
+        let (gap_class, repair_action) = match row.column_decision.as_str() {
+            "zone-assignment-needed" => {
+                ("zone-assignment-needed", "assign-zone-or-terminal-district")
+            }
+            "terminal-review" => (
+                "terminal-evidence-needed",
+                "prove-terminal-access-or-keep-local",
+            ),
+            _ => (
+                "terminal-column-review",
+                "review-terminal-column-disposition",
+            ),
+        };
+        rows.push(T3T4AccessGapRow {
+            gap_id: format!(
+                "T4GAP-{}-{}",
+                canonical_route_key(&row.zone_id),
+                canonical_route_key(&row.route)
+            ),
+            source_surface: "t4-terminal-access-columns".to_string(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            current_score: row.current_score,
+            promise_horizon_hours: row.promise_horizon_hours,
+            gap_class: gap_class.to_string(),
+            gap_reason: row.selection_basis.clone(),
+            required_evidence: row.evidence_required.clone(),
+            repair_action: repair_action.to_string(),
+            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        });
+    }
+
+    rows.sort_by(|a, b| {
+        a.gap_class
+            .cmp(&b.gap_class)
+            .then_with(|| a.zone_id.cmp(&b.zone_id))
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+            .then_with(|| a.source_surface.cmp(&b.source_surface))
+    });
+    rows
+}
+
+fn write_t3_t4_access_gaps(path: &Path, rows: &[T3T4AccessGapRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_t4_access_gap_summary(output: &Path, rows: &[T3T4AccessGapRow]) {
+    let mut by_class = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_surface = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_class.entry(row.gap_class.as_str()).or_default() += 1;
+        *by_surface.entry(row.source_surface.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T3/T4 access gap rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (class, count) in by_class {
+        println!("  {class}: {count}");
+    }
+    for (surface, count) in by_surface {
+        println!("  {surface}: {count}");
+    }
+}
+
+fn t3_t4_access_gap_gate_failures(rows: &[T3T4AccessGapRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T3/T4 access gaps emitted".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.gap_id.trim().is_empty()
+            || row.source_surface.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.promise_horizon_hours == 0
+            || row.gap_class.trim().is_empty()
+            || row.gap_reason.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.repair_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete access gap fields", row.gap_id));
+        }
+        if !seen.insert(row.gap_id.clone()) {
+            failures.push(format!("{} is duplicated", row.gap_id));
+        }
+        if row.next_artifact == "data/t3-t4-access-gaps.csv" {
+            failures.push(format!(
+                "{} loops back to the access gap artifact",
+                row.gap_id
+            ));
+        }
+        if row.upward_pressure_allowed {
+            failures.push(format!(
+                "{} allows upward pressure without higher-tier proof",
+                row.gap_id
+            ));
+        }
+        if row.gap_class == "zone-assignment-needed" && row.zone_id != "zone-assignment-needed" {
+            failures.push(format!(
+                "{} has zone-assignment-needed class but zone {}",
+                row.gap_id, row.zone_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.gap_id, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -15677,6 +15955,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t4-terminal-access-columns",
                 "route t4-terminal-access-columns --gate",
                 "data/t4-terminal-access-columns.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-t4-access-gaps",
+                "route t3-t4-access-gaps --gate",
+                "data/t3-t4-access-gaps.csv",
                 "pass",
                 0,
                 "",
@@ -20998,23 +21284,24 @@ mod tests {
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
         t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
-        t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
-        t3_zone_access_obligation_gate_failures, t3_zone_access_obligation_rows,
-        t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
-        t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
-        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
-        tier_candidate_column_gate_failures, tier_candidate_column_rows,
-        tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
-        tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
-        tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, MapAtlasRow,
-        NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
-        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow,
-        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, TierCandidateColumnRow,
+        t3_t4_access_gap_gate_failures, t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures,
+        t3_t4_pressure_intake_rows, t3_zone_access_obligation_gate_failures,
+        t3_zone_access_obligation_rows, t3_zone_route_column_gate_failures,
+        t3_zone_route_column_rows, t4_terminal_access_column_gate_failures,
+        t4_terminal_access_column_rows, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
+        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
+        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
+        tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
+        AtriBottleneckRow, EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow,
+        MapAtlasRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow,
+        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow,
+        T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
+        T2TerminalContactValidationRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow,
+        T3ZoneRouteColumnRow, T4TerminalAccessColumnRow, TierCandidateColumnRow,
         TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
         TierRegionWorkloadRow, TierTableScoreRow,
     };
@@ -22294,6 +22581,88 @@ mod tests {
         assert_eq!(us90z.column_decision, "terminal-review");
         assert_eq!(us90z.zone_id, "t3-southeast");
         assert_eq!(us7.column_decision, "zone-assignment-needed");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t3_t4_access_gaps_collect_held_route_and_terminal_rows() {
+        let route_rows = vec![T3ZoneRouteColumnRow {
+            zone_id: "t3-southeast".to_string(),
+            zone_name: "Southeast / Appalachia".to_string(),
+            obligation_class: "regional-feeder-access".to_string(),
+            route: "US90Z".to_string(),
+            current_tier: "T4".to_string(),
+            current_score: 29.9,
+            promise_horizon_hours: 6,
+            column_decision: "review".to_string(),
+            zone_role: "below-threshold-feeder-candidate".to_string(),
+            contact_requirement: "score-or-terminal-evidence-required".to_string(),
+            map_treatment: "show-as-held-zone-candidate".to_string(),
+            selection_basis: "candidate is below T3 threshold for a 6h feeder obligation"
+                .to_string(),
+            source_obligation: "select T3 feeder/contact chain inside the zone".to_string(),
+            next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            optimizer_effect:
+                "holds weak feeder pressure for access-gap review instead of selecting it"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let terminal_rows = vec![
+            T4TerminalAccessColumnRow {
+                route: "US90Z".to_string(),
+                zone_id: "t3-southeast".to_string(),
+                current_score: 29.9,
+                access_class: "terminal-upgrade-candidate".to_string(),
+                terminal_obligation:
+                    "prove one-hour terminal, port, yard, warehouse, or local freight access"
+                        .to_string(),
+                promise_horizon_hours: 1,
+                column_decision: "terminal-review".to_string(),
+                evidence_required:
+                    "named terminal/local district plus contact to selected T3/T2/T1 column"
+                        .to_string(),
+                map_treatment: "show-as-local-inset-candidate".to_string(),
+                selection_basis:
+                    "within five points of T3 threshold but still a T4/local access problem"
+                        .to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+                optimizer_effect:
+                    "holds local pressure as a terminal access candidate instead of selecting T3"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalAccessColumnRow {
+                route: "US7".to_string(),
+                zone_id: "zone-assignment-needed".to_string(),
+                current_score: 25.7,
+                access_class: "unassigned-local-access".to_string(),
+                terminal_obligation: "assign local route to a T3 zone or terminal district"
+                    .to_string(),
+                promise_horizon_hours: 1,
+                column_decision: "zone-assignment-needed".to_string(),
+                evidence_required: "zone boundary plus terminal/local freight role".to_string(),
+                map_treatment: "hide-until-assigned".to_string(),
+                selection_basis: "T4 pressure lacks a deterministic zone assignment".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+                optimizer_effect: "blocks promotion and sends the route to access-gap triage"
+                    .to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t3_t4_access_gap_rows(&route_rows, &terminal_rows);
+        let failures = t3_t4_access_gap_gate_failures(&rows);
+        let classes = rows
+            .iter()
+            .map(|row| row.gap_class.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert!(classes.contains("below-threshold-feeder"));
+        assert!(classes.contains("terminal-evidence-needed"));
+        assert!(classes.contains("zone-assignment-needed"));
+        assert!(rows.iter().all(|row| !row.upward_pressure_allowed));
         assert!(failures.is_empty());
     }
 

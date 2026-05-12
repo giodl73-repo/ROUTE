@@ -187,6 +187,8 @@ Current implementation status:
   the obligation table and holds upward/below-threshold rows for review.
 - `data/t4-terminal-access-columns.csv` classifies T4 local pressure into
   terminal-review and zone-assignment-needed rows with 1h access obligations.
+- `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
+  below-threshold feeder, terminal-evidence, and zone-assignment gap classes.
 - `data/t2-bubble-up-review.csv` sends 18 near-threshold T3 rows to T2 contact
   review instead of promoting them directly.
 - `data/map-atlas.csv` tracks five T3 zone maps.
