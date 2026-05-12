@@ -1660,6 +1660,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 review rows created by lower-tier bubble-up pressure
+    T2BubbleUpReview {
+        /// T3/T4 pressure intake CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// Output T2 bubble-up review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bubble-up-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if bubble-up review rows lack deterministic next gates
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit the recursive tier optimizer run manifest and gate bundle
     TierOptimize {
         /// Include the full T1/T2/T3/T4 optimizer surface
@@ -6055,6 +6077,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3/T4 pressure intake gate: PASS");
+            }
+        }
+
+        Commands::T2BubbleUpReview {
+            intake,
+            output,
+            gate,
+        } => {
+            println!("route t2-bubble-up-review");
+            let intake_rows = load_t3_t4_pressure_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let rows = t2_bubble_up_review_rows(&intake_rows);
+            write_t2_bubble_up_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bubble_up_review_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bubble_up_review_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bubble-up review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bubble-up review gate failed");
+                }
+                println!();
+                println!("T2 bubble-up review gate: PASS");
             }
         }
 
@@ -10994,7 +11044,7 @@ struct LowerTierPressureWitnessRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T3T4PressureIntakeRow {
     route: String,
     source_pressure_type: String,
@@ -11005,6 +11055,18 @@ struct T3T4PressureIntakeRow {
     intake_action: String,
     selection_basis: String,
     source_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2BubbleUpReviewRow {
+    route: String,
+    source_intake_class: String,
+    current_score: f64,
+    review_action: String,
+    required_evidence: String,
     next_artifact: String,
     optimizer_effect: String,
     validation_status: String,
@@ -13908,6 +13970,87 @@ fn t3_t4_pressure_intake_gate_failures(rows: &[T3T4PressureIntakeRow]) -> Vec<St
     failures
 }
 
+fn load_t3_t4_pressure_intake(path: &Path) -> Result<Vec<T3T4PressureIntakeRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
+    intake_rows
+        .iter()
+        .filter(|row| row.intake_class == "bubble-up-t2-review")
+        .map(|row| T2BubbleUpReviewRow {
+            route: row.route.clone(),
+            source_intake_class: row.intake_class.clone(),
+            current_score: row.current_score,
+            review_action: "require-t2-contact-witness-before-upgrade".to_string(),
+            required_evidence: "T2 contact witness plus source-backed regional service value"
+                .to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "may reopen T2 candidate review only after contact validation"
+                .to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect()
+}
+
+fn write_t2_bubble_up_review(path: &Path, rows: &[T2BubbleUpReviewRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bubble_up_review_summary(output: &Path, rows: &[T2BubbleUpReviewRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.review_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bubble-up review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_bubble_up_review_gate_failures(rows: &[T2BubbleUpReviewRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 bubble-up review rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.review_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete T2 bubble-up review", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
     let stages = if all_tiers {
         vec![
@@ -14075,6 +14218,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-t4-pressure-intake",
                 "route t3t4-pressure-intake --gate",
                 "data/t3-t4-pressure-intake.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-bubble-up-review",
+                "route t2-bubble-up-review --gate",
+                "data/t2-bubble-up-review.csv",
                 "pass",
                 0,
                 "",
@@ -19051,7 +19202,8 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
-        t2_blocker_closure_gate_failures, t2_blocker_closure_rows, t2_closure_dispositions,
+        t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
+        t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
@@ -19075,8 +19227,8 @@ mod tests {
         T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
         T2RegionalizerRow, T2ReliefEvidenceRow, T2TerminalContactValidationRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T3T4PressureIntakeRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -20091,6 +20243,52 @@ mod tests {
 
         assert!(classes.contains("t3-regional-intake"));
         assert!(classes.contains("bubble-up-t2-review"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_bubble_up_review_requires_contact_gate() {
+        let intake = vec![
+            T3T4PressureIntakeRow {
+                route: "I-57".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 49.6,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I25".to_string(),
+                source_pressure_type: "closure-demotion-pressure".to_string(),
+                current_tier: "T2".to_string(),
+                current_score: 66.3,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "accept-as-t3-regional-review".to_string(),
+                selection_basis: "source-backed T1/T2 contact".to_string(),
+                source_artifact: "data/t2-contact-closure.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "consume T2 demotion as regional feeder review".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_bubble_up_review_rows(&intake);
+        let failures = t2_bubble_up_review_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I-57");
+        assert_eq!(
+            rows[0].review_action,
+            "require-t2-contact-witness-before-upgrade"
+        );
         assert!(failures.is_empty());
     }
 

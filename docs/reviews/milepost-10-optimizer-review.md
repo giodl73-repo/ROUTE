@@ -42,6 +42,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-contact-closure.csv`
 - `data/t2-endpoint-closure.csv`
 - `data/t3-t4-pressure-intake.csv`
+- `data/t2-bubble-up-review.csv`
 
 ## Held Findings
 
@@ -91,10 +92,14 @@ blockers rather than treating the current graph as complete.
    rows as bubble-up T2 contact review, without attempting T3/T4 map
    optimization.
 
-7. Beck T1 is alignment-gated against optimizer-selected stops, but the map
+7. `data/t2-bubble-up-review.csv` closes the loop back upward. The 18 bubble-up
+   rows can reopen T2 only through a T2 contact witness and source-backed
+   regional service value.
+
+8. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
 
-8. Lower-tier pressure witnesses are a first score/demotion pressure surface.
+9. Lower-tier pressure witnesses are a first score/demotion pressure surface.
    They are not yet county-access failure optimization.
 
 ## Conclusion

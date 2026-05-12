@@ -131,6 +131,11 @@ need Beck diagnostics before map/service landing.
 rows. It keeps 90 rows in T3 regional intake and sends 18 near-threshold T3 rows
 back up as T2 contact-review pressure, without attempting T3/T4 map optimization.
 
+`route t2-bubble-up-review --gate` now emits
+`data/t2-bubble-up-review.csv`, closing the recursive loop. The 18 bubble-up
+rows can only reopen T2 candidate review after a T2 contact witness plus
+source-backed regional service value is supplied.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.
