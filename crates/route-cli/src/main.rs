@@ -1271,6 +1271,21 @@ enum Commands {
         gate: bool,
     },
 
+    /// Link optimizer outputs to map atlas and game overlay consumers
+    OptimizerMapHooks {
+        /// Output optimizer map hook CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/optimizer-map-hooks.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any optimizer map/game consumer artifact is missing
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -5241,6 +5256,28 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("tier optimizer bundle gate: PASS");
+            }
+        }
+
+        Commands::OptimizerMapHooks { output, gate } => {
+            println!("route optimizer-map-hooks");
+            let rows = optimizer_map_hook_rows();
+            write_optimizer_map_hooks(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_optimizer_map_hook_summary(&output, &rows);
+
+            if gate {
+                let failures = optimizer_map_hook_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer map hook gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer map hook gate failed");
+                }
+                println!();
+                println!("optimizer map hook gate: PASS");
             }
         }
 
@@ -9961,6 +9998,17 @@ struct TierOptimizerRunRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct OptimizerMapHookRow {
+    hook_id: String,
+    optimizer_artifact: String,
+    consumer_artifact: String,
+    consumer_type: String,
+    gate_command: String,
+    link_basis: String,
+    validation_status: String,
+}
+
 fn tier_region_workload_rows(
     graph: &route_network::HighwayGraph,
     tier: &str,
@@ -11138,6 +11186,142 @@ fn tier_optimizer_run_gate_failures(all_tiers: bool, rows: &[TierOptimizerRunRow
             failures.push(format!(
                 "{} held without blocker summary",
                 row.optimizer_stage
+            ));
+        }
+    }
+    failures
+}
+
+fn optimizer_map_hook_rows() -> Vec<OptimizerMapHookRow> {
+    [
+        (
+            "t1-selector-beck-schematic",
+            "data/t1-stop-selector.csv",
+            "maps/beck-schematic.png",
+            "map",
+            "route t1-beck-alignment --gate",
+            "Beck T1 alignment proves optimizer-selected T1 stop chains are covered",
+        ),
+        (
+            "t2-selection-t2-schematic",
+            "data/t2-service-selection.csv",
+            "maps/beck-schematic-t2-only.png",
+            "map",
+            "route t2-service-selection --gate",
+            "T2 schematic classes are backed by service-selection rows",
+        ),
+        (
+            "lower-tier-pressure-t3-zones",
+            "data/lower-tier-pressure-witnesses.csv",
+            "data/t3-regional-zone-plan.csv",
+            "map-plan",
+            "route lower-tier-pressure-witnesses --gate",
+            "T3/T4 pressure rows feed regional zone planning and map backlogs",
+        ),
+        (
+            "map-atlas-game-campaign",
+            "data/map-atlas.csv",
+            "data/game/campaign-spine.csv",
+            "game-ledger",
+            "route game campaign --gate",
+            "Campaign stops reference gated atlas ids",
+        ),
+        (
+            "t2-selection-game-overlays",
+            "data/t2-service-selection.csv",
+            "data/game/t2-service-overlays.csv",
+            "game-ledger",
+            "route game t2-overlays --gate",
+            "Game overlays target T2 service classes selected and reviewed by optimizer",
+        ),
+        (
+            "t2-overlays-scenario-hooks",
+            "data/game/t2-service-overlays.csv",
+            "data/game/t2-scenario-hooks.csv",
+            "game-ledger",
+            "route game t2-hooks --gate",
+            "Scenario hooks consume service-class overlay contracts",
+        ),
+    ]
+    .into_iter()
+    .map(
+        |(
+            hook_id,
+            optimizer_artifact,
+            consumer_artifact,
+            consumer_type,
+            gate_command,
+            link_basis,
+        )| {
+            let validation_status = if artifact_has_content(optimizer_artifact)
+                && artifact_has_content(consumer_artifact)
+            {
+                "pass"
+            } else {
+                "missing-artifact"
+            };
+            OptimizerMapHookRow {
+                hook_id: hook_id.to_string(),
+                optimizer_artifact: optimizer_artifact.to_string(),
+                consumer_artifact: consumer_artifact.to_string(),
+                consumer_type: consumer_type.to_string(),
+                gate_command: gate_command.to_string(),
+                link_basis: link_basis.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        },
+    )
+    .collect()
+}
+
+fn artifact_has_content(path: &str) -> bool {
+    std::fs::metadata(path)
+        .map(|metadata| metadata.is_file() && metadata.len() > 0)
+        .unwrap_or(false)
+}
+
+fn write_optimizer_map_hooks(path: &Path, rows: &[OptimizerMapHookRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_optimizer_map_hook_summary(output: &Path, rows: &[OptimizerMapHookRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.consumer_type.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} optimizer map hook rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (consumer_type, count) in counts {
+        println!("  {consumer_type}: {count}");
+    }
+}
+
+fn optimizer_map_hook_gate_failures(rows: &[OptimizerMapHookRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no optimizer map hook rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.validation_status != "pass" {
+            failures.push(format!(
+                "{} missing optimizer or consumer artifact",
+                row.hook_id
             ));
         }
     }
@@ -15843,9 +16027,9 @@ mod tests {
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, parse_blueprint_cost_ranges, parse_blueprint_evidence_map,
-        parse_blueprint_packages, parse_endpoint_exceptions, parse_forum_docket,
-        parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
+        map_atlas_gate_failures, optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
+        parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
+        parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
         parse_mdot_midrive_events, parse_pressure_scenarios, parse_significant_moments,
         parse_standards_inventory, parse_standards_proof_ledger, parse_stop_candidates,
         parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
@@ -15872,9 +16056,9 @@ mod tests {
         tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
         tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
-        FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
-        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow, T2RegionalizerRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow,
+        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow,
+        T2RegionalizerRow, TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
         TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
@@ -16241,6 +16425,35 @@ mod tests {
         assert_eq!(
             tier_optimizer_run_gate_failures(false, &rows),
             vec!["tier-optimize bundle gate requires --all-tiers".to_string()]
+        );
+    }
+
+    #[test]
+    fn optimizer_map_hook_gate_requires_pass_status() {
+        let rows = vec![
+            OptimizerMapHookRow {
+                hook_id: "ok-hook".to_string(),
+                optimizer_artifact: "data/a.csv".to_string(),
+                consumer_artifact: "maps/a.png".to_string(),
+                consumer_type: "map".to_string(),
+                gate_command: "route example --gate".to_string(),
+                link_basis: "test".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            OptimizerMapHookRow {
+                hook_id: "missing-hook".to_string(),
+                optimizer_artifact: "data/b.csv".to_string(),
+                consumer_artifact: "maps/b.png".to_string(),
+                consumer_type: "map".to_string(),
+                gate_command: "route example --gate".to_string(),
+                link_basis: "test".to_string(),
+                validation_status: "missing-artifact".to_string(),
+            },
+        ];
+
+        assert_eq!(
+            optimizer_map_hook_gate_failures(&rows),
+            vec!["missing-hook missing optimizer or consumer artifact".to_string()]
         );
     }
 
