@@ -46,9 +46,10 @@ Milepost 10 is done when:
 | 10 | Build dual-route T2 regionalizer | 🔄 partial | `route t2-regionalizer --gate` emits `data/t2-regionalizer.csv` from selected/review candidate columns; next slice splits by real T1-bounded regions after contact repairs |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ✅ done | `route t2-service-selection --gate` emits `data/t2-service-selection.csv` with keep, parent-review, duplicate, parallel, and source-needed actions from regionalizer plus Beck diagnostics |
 | 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
-| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 7 passing optimizer stages and 2 explicit held-known T2 blockers |
+| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 21 passing optimizer stages and 2 explicit held-known T2 blockers |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
 | 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
+| 16 | Add conservative T1 feedback docket | ✅ done | `route t1-feedback-docket --gate` emits `data/t1-feedback-docket.csv`; lower-tier pressure reaches T1 only with a named SLA/stop/topology dependency |
 
 ## Post-Review Repair Slice
 
@@ -135,6 +136,13 @@ back up as T2 contact-review pressure, without attempting T3/T4 map optimization
 `data/t2-bubble-up-review.csv`, closing the recursive loop. The 18 bubble-up
 rows can only reopen T2 candidate review after a T2 contact witness plus
 source-backed regional service value is supplied.
+
+`route t1-feedback-docket --gate` now emits
+`data/t1-feedback-docket.csv`, applying the same recursive loop back to T1. The
+current pass writes 39 rows: 18 T2-contact-first bubble-up rows, 16 no-T1-action
+service rows, 3 score-only rejection rows, and 2 Beck-diagnostic-needed rows.
+No current lower-tier route has a named T1 SLA pair dependency, so the docket
+does not promote any route to T1 candidate review.
 
 ## First Implementation Slices
 

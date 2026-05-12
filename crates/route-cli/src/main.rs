@@ -1682,6 +1682,45 @@ enum Commands {
         gate: bool,
     },
 
+    /// Roll T2/T3/T4 pressure up to T1 only when it names a T1 SLA dependency
+    T1FeedbackDocket {
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        service_selection: PathBuf,
+        /// T2 bubble-up review CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bubble-up-review.csv",
+            value_name = "FILE"
+        )]
+        bubble_up: PathBuf,
+        /// T3/T4 pressure intake CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// T1 SLA pair portfolio CSV
+        #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
+        sla_pairs: PathBuf,
+        /// Output T1 feedback docket CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-feedback-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if T1 feedback rows violate conservative promotion rules
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit the recursive tier optimizer run manifest and gate bundle
     TierOptimize {
         /// Include the full T1/T2/T3/T4 optimizer surface
@@ -6105,6 +6144,44 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 bubble-up review gate: PASS");
+            }
+        }
+
+        Commands::T1FeedbackDocket {
+            service_selection,
+            bubble_up,
+            intake,
+            sla_pairs,
+            output,
+            gate,
+        } => {
+            println!("route t1-feedback-docket");
+            let service_rows = load_t2_service_selection(&service_selection)
+                .with_context(|| format!("loading {}", service_selection.display()))?;
+            let bubble_rows = load_t2_bubble_up_review(&bubble_up)
+                .with_context(|| format!("loading {}", bubble_up.display()))?;
+            let intake_rows = load_t3_t4_pressure_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let sla_rows = load_t1_sla_pairs(&sla_pairs)
+                .with_context(|| format!("loading {}", sla_pairs.display()))?;
+            let rows =
+                t1_feedback_docket_rows(&service_rows, &bubble_rows, &intake_rows, &sla_rows);
+            write_t1_feedback_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_feedback_docket_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_feedback_docket_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 feedback docket gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 feedback docket gate failed");
+                }
+                println!();
+                println!("T1 feedback docket gate: PASS");
             }
         }
 
@@ -10993,7 +11070,7 @@ struct T2RegionalizerRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2ServiceSelectionRow {
     tier: String,
     region_id: String,
@@ -11060,12 +11137,28 @@ struct T3T4PressureIntakeRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
     current_score: f64,
     review_action: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T1FeedbackDocketRow {
+    route: String,
+    source_surface: String,
+    source_action: String,
+    current_score: f64,
+    t1_feedback_class: String,
+    t1_feedback_action: String,
+    t1_sla_pair_count: usize,
+    t1_sla_pairs: String,
     required_evidence: String,
     next_artifact: String,
     optimizer_effect: String,
@@ -13594,6 +13687,18 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
     failures
 }
 
+fn load_t2_service_selection(path: &Path) -> Result<Vec<T2ServiceSelectionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -14051,6 +14156,330 @@ fn t2_bubble_up_review_gate_failures(rows: &[T2BubbleUpReviewRow]) -> Vec<String
     failures
 }
 
+fn load_t2_bubble_up_review(path: &Path) -> Result<Vec<T2BubbleUpReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t1_sla_pairs(path: &Path) -> Result<Vec<T1SlaPairRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_feedback_docket_rows(
+    service_rows: &[T2ServiceSelectionRow],
+    bubble_rows: &[T2BubbleUpReviewRow],
+    intake_rows: &[T3T4PressureIntakeRow],
+    sla_rows: &[T1SlaPairRow],
+) -> Vec<T1FeedbackDocketRow> {
+    let sla_pairs_by_route = t1_sla_pairs_by_route(sla_rows);
+    let mut rows = Vec::new();
+    let mut seen_sources = std::collections::BTreeSet::<(String, String)>::new();
+
+    for row in service_rows {
+        let route_key = canonical_route_key(&row.route);
+        let pairs = sla_pairs_by_route
+            .get(&route_key)
+            .cloned()
+            .unwrap_or_default();
+        let (class, action, required_evidence, next_artifact, optimizer_effect, status) =
+            t1_feedback_service_decision(row, !pairs.is_empty());
+        seen_sources.insert((route_key, "t2-service-selection".to_string()));
+        rows.push(T1FeedbackDocketRow {
+            route: row.route.clone(),
+            source_surface: "t2-service-selection".to_string(),
+            source_action: row.selection_action.clone(),
+            current_score: 0.0,
+            t1_feedback_class: class.to_string(),
+            t1_feedback_action: action.to_string(),
+            t1_sla_pair_count: pairs.len(),
+            t1_sla_pairs: pairs.join(";"),
+            required_evidence: required_evidence.to_string(),
+            next_artifact: next_artifact.to_string(),
+            optimizer_effect: optimizer_effect.to_string(),
+            validation_status: status.to_string(),
+        });
+    }
+
+    for row in bubble_rows {
+        let route_key = canonical_route_key(&row.route);
+        let pairs = sla_pairs_by_route
+            .get(&route_key)
+            .cloned()
+            .unwrap_or_default();
+        let (class, action, required_evidence, next_artifact, optimizer_effect, status) =
+            t1_feedback_bubble_decision(!pairs.is_empty());
+        seen_sources.insert((route_key, "t2-bubble-up-review".to_string()));
+        rows.push(T1FeedbackDocketRow {
+            route: row.route.clone(),
+            source_surface: "t2-bubble-up-review".to_string(),
+            source_action: row.review_action.clone(),
+            current_score: row.current_score,
+            t1_feedback_class: class.to_string(),
+            t1_feedback_action: action.to_string(),
+            t1_sla_pair_count: pairs.len(),
+            t1_sla_pairs: pairs.join(";"),
+            required_evidence: required_evidence.to_string(),
+            next_artifact: next_artifact.to_string(),
+            optimizer_effect: optimizer_effect.to_string(),
+            validation_status: status.to_string(),
+        });
+    }
+
+    for row in intake_rows.iter().filter(|row| {
+        row.current_score >= T1_THRESHOLD - 5.0 || row.intake_class == "bubble-up-t2-review"
+    }) {
+        let route_key = canonical_route_key(&row.route);
+        if seen_sources.contains(&(route_key.clone(), "t2-bubble-up-review".to_string())) {
+            continue;
+        }
+        let pairs = sla_pairs_by_route
+            .get(&route_key)
+            .cloned()
+            .unwrap_or_default();
+        let (class, action, required_evidence, next_artifact, optimizer_effect, status) =
+            t1_feedback_intake_decision(row, !pairs.is_empty());
+        rows.push(T1FeedbackDocketRow {
+            route: row.route.clone(),
+            source_surface: "t3-t4-pressure-intake".to_string(),
+            source_action: row.intake_action.clone(),
+            current_score: row.current_score,
+            t1_feedback_class: class.to_string(),
+            t1_feedback_action: action.to_string(),
+            t1_sla_pair_count: pairs.len(),
+            t1_sla_pairs: pairs.join(";"),
+            required_evidence: required_evidence.to_string(),
+            next_artifact: next_artifact.to_string(),
+            optimizer_effect: optimizer_effect.to_string(),
+            validation_status: status.to_string(),
+        });
+    }
+
+    rows.sort_by(|a, b| {
+        a.t1_feedback_class
+            .cmp(&b.t1_feedback_class)
+            .then_with(|| b.t1_sla_pair_count.cmp(&a.t1_sla_pair_count))
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+            .then_with(|| a.source_surface.cmp(&b.source_surface))
+    });
+    rows
+}
+
+fn t1_sla_pairs_by_route(
+    sla_rows: &[T1SlaPairRow],
+) -> std::collections::BTreeMap<String, Vec<String>> {
+    let mut pairs_by_route = std::collections::BTreeMap::<String, Vec<String>>::new();
+    for pair in sla_rows {
+        for route in pair.required_routes.split(';') {
+            let route_key = canonical_route_key(route);
+            if !route_key.is_empty() {
+                pairs_by_route
+                    .entry(route_key)
+                    .or_default()
+                    .push(pair.pair_id.clone());
+            }
+        }
+    }
+    for pairs in pairs_by_route.values_mut() {
+        pairs.sort();
+        pairs.dedup();
+    }
+    pairs_by_route
+}
+
+fn t1_feedback_service_decision(
+    row: &T2ServiceSelectionRow,
+    has_t1_sla_pair: bool,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if has_t1_sla_pair {
+        return (
+            "t1-sla-candidate",
+            "evaluate-t1-sla-route-substitution",
+            "named T1 SLA pair plus proof the lower-tier service improves that promise",
+            "data/t1-line-selector.csv",
+            "may reopen T1 line selection only as an SLA/stop/topology repair",
+            "review",
+        );
+    }
+    if row.selection_action == "closure-review-needs-beck-diagnostic" {
+        return (
+            "beck-diagnostic-needed",
+            "add-beck-diagnostic-before-t1-feedback",
+            "Beck T2 diagnostic plus named T1 SLA dependency before any T1 review",
+            "data/beck-t2-diagnostics.csv",
+            "holds below T1 until service geometry and promise dependency are proven",
+            "review",
+        );
+    }
+    (
+        "no-t1-action",
+        "keep-below-t1",
+        "named T1 SLA pair, T1 stop obligation, or T1 topology repair witness",
+        "data/t2-service-selection.csv",
+        "score or regional service value alone cannot promote a route to T1",
+        "pass",
+    )
+}
+
+fn t1_feedback_bubble_decision(
+    has_t1_sla_pair: bool,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if has_t1_sla_pair {
+        return (
+            "t1-sla-candidate",
+            "evaluate-t1-sla-route-substitution-after-contact",
+            "T2 contact witness plus named T1 SLA improvement",
+            "data/t1-line-selector.csv",
+            "may reopen T1 only after lower-tier contact and SLA dependency are both proven",
+            "review",
+        );
+    }
+    (
+        "t2-contact-first",
+        "require-t2-contact-before-any-t1-review",
+        "T2 contact witness plus source-backed regional service value; T1 also requires named SLA dependency",
+        "data/tier-contact-witnesses.csv",
+        "holds pressure at T2 because no T1 promise depends on this route",
+        "review",
+    )
+}
+
+fn t1_feedback_intake_decision(
+    row: &T3T4PressureIntakeRow,
+    has_t1_sla_pair: bool,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if has_t1_sla_pair {
+        return (
+            "t1-sla-candidate",
+            "evaluate-t1-sla-route-substitution-after-contact",
+            "lower-tier contact witness plus named T1 SLA improvement",
+            "data/t1-line-selector.csv",
+            "may reopen T1 only as a promise-preserving repair",
+            "review",
+        );
+    }
+    if row.current_score >= T1_THRESHOLD - 5.0 {
+        return (
+            "reject-t1-score-only-promotion",
+            "reject-score-only-t1-promotion",
+            "named T1 SLA pair, T1 stop obligation, or T1 topology repair witness",
+            "data/t1-sla-pairs.csv",
+            "near-threshold score is visible but cannot override the T1 promise portfolio",
+            "pass",
+        );
+    }
+    (
+        "t2-contact-first",
+        "require-t2-contact-before-any-t1-review",
+        "T2 contact witness plus source-backed regional service value; T1 also requires named SLA dependency",
+        "data/tier-contact-witnesses.csv",
+        "holds pressure below T1 because no T1 promise depends on this route",
+        "review",
+    )
+}
+
+fn write_t1_feedback_docket(path: &Path, rows: &[T1FeedbackDocketRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_feedback_docket_summary(output: &Path, rows: &[T1FeedbackDocketRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.t1_feedback_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T1 feedback rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (class, count) in counts {
+        println!("  {class}: {count}");
+    }
+}
+
+fn t1_feedback_docket_gate_failures(rows: &[T1FeedbackDocketRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T1 feedback docket rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.source_surface.trim().is_empty()
+            || row.source_action.trim().is_empty()
+            || row.t1_feedback_class.trim().is_empty()
+            || row.t1_feedback_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete T1 feedback row", row.route));
+        }
+        if row.t1_feedback_class == "t1-sla-candidate"
+            && (row.t1_sla_pair_count == 0 || row.t1_sla_pairs.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} promoted to T1 candidate without named SLA pair",
+                row.route
+            ));
+        }
+        if row.t1_feedback_class != "t1-sla-candidate"
+            && row.t1_feedback_action.contains("t1-sla-route-substitution")
+        {
+            failures.push(format!(
+                "{} has T1 substitution action outside t1-sla-candidate class",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
 fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
     let stages = if all_tiers {
         vec![
@@ -14226,6 +14655,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-bubble-up-review",
                 "route t2-bubble-up-review --gate",
                 "data/t2-bubble-up-review.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t1-feedback-docket",
+                "route t1-feedback-docket --gate",
+                "data/t1-feedback-docket.csv",
                 "pass",
                 0,
                 "",
@@ -19200,8 +19637,9 @@ mod tests {
         t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
-        t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
-        t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
+        t1_line_selector_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
+        t1_topology_repair_gate_failures, t1_topology_repair_rows,
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
@@ -19223,12 +19661,13 @@ mod tests {
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, NbiBridgeRecord,
         OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1StopSelectorInputRow, T2BlockerClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T1LineSelectorInputRow, T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2TerminalContactValidationRow,
-        T3T4PressureIntakeRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
+        T2TerminalContactValidationRow, T3T4PressureIntakeRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -20289,6 +20728,108 @@ mod tests {
             rows[0].review_action,
             "require-t2-contact-witness-before-upgrade"
         );
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_feedback_docket_rejects_score_only_promotion() {
+        let service = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "R1".to_string(),
+            route: "I285".to_string(),
+            parent_trunks: "I75;I85".to_string(),
+            column_decision: "review".to_string(),
+            treatment_status: "review-treatment".to_string(),
+            beck_corridor: String::new(),
+            beck_service_class: String::new(),
+            beck_color_mode: String::new(),
+            beck_start_trunk: String::new(),
+            beck_end_trunk: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: String::new(),
+            qualification_basis: String::new(),
+            selection_action: "closure-review-needs-beck-diagnostic".to_string(),
+            selection_basis: "closure-accepted-missing-beck-t2-diagnostic".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bubble = vec![T2BubbleUpReviewRow {
+            route: "I-57".to_string(),
+            source_intake_class: "bubble-up-t2-review".to_string(),
+            current_score: 49.6,
+            review_action: "require-t2-contact-witness-before-upgrade".to_string(),
+            required_evidence: "T2 contact witness plus source-backed regional service value"
+                .to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "may reopen T2 candidate review only after contact validation"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let sla = vec![T1SlaPairRow {
+            pair_id: "NY-LA-48".to_string(),
+            origin_id: "NYC".to_string(),
+            dest_id: "LAX".to_string(),
+            target_hours: 48.0,
+            priority: 10,
+            market_class: "national".to_string(),
+            required_routes: "I95;I80;I15".to_string(),
+            required_stops: "NYC;CHI;SLC;LAX".to_string(),
+            evidence_basis: "promise portfolio".to_string(),
+        }];
+
+        let rows = t1_feedback_docket_rows(&service, &bubble, &[], &sla);
+        let failures = t1_feedback_docket_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert!(rows
+            .iter()
+            .any(|row| row.route == "I285" && row.t1_feedback_class == "beck-diagnostic-needed"));
+        assert!(rows
+            .iter()
+            .any(|row| row.route == "I-57" && row.t1_feedback_class == "t2-contact-first"));
+        assert!(rows
+            .iter()
+            .all(|row| row.t1_feedback_class != "t1-sla-candidate"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_feedback_docket_allows_named_sla_candidate() {
+        let bubble = vec![T2BubbleUpReviewRow {
+            route: "I-57".to_string(),
+            source_intake_class: "bubble-up-t2-review".to_string(),
+            current_score: 49.6,
+            review_action: "require-t2-contact-witness-before-upgrade".to_string(),
+            required_evidence: "T2 contact witness plus source-backed regional service value"
+                .to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "may reopen T2 candidate review only after contact validation"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let sla = vec![T1SlaPairRow {
+            pair_id: "CHI-MEM-36".to_string(),
+            origin_id: "CHI".to_string(),
+            dest_id: "MEM".to_string(),
+            target_hours: 36.0,
+            priority: 8,
+            market_class: "national".to_string(),
+            required_routes: "I-57;I55".to_string(),
+            required_stops: "CHI;MEM".to_string(),
+            evidence_basis: "promise portfolio".to_string(),
+        }];
+
+        let rows = t1_feedback_docket_rows(&[], &bubble, &[], &sla);
+        let failures = t1_feedback_docket_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].t1_feedback_class, "t1-sla-candidate");
+        assert_eq!(rows[0].t1_sla_pair_count, 1);
+        assert_eq!(rows[0].t1_sla_pairs, "CHI-MEM-36");
         assert!(failures.is_empty());
     }
 

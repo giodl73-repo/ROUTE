@@ -43,6 +43,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-endpoint-closure.csv`
 - `data/t3-t4-pressure-intake.csv`
 - `data/t2-bubble-up-review.csv`
+- `data/t1-feedback-docket.csv`
 
 ## Held Findings
 
@@ -96,10 +97,16 @@ blockers rather than treating the current graph as complete.
    rows can reopen T2 only through a T2 contact witness and source-backed
    regional service value.
 
-8. Beck T1 is alignment-gated against optimizer-selected stops, but the map
+8. `data/t1-feedback-docket.csv` applies the conservative upward rule to T1.
+   The current pass has 39 rows: 18 T2-contact-first rows, 16 no-T1-action rows,
+   3 score-only T1 rejection rows, and 2 Beck-diagnostic-needed rows. It has no
+   `t1-sla-candidate` rows because no lower-tier pressure row names a current
+   T1 SLA pair dependency.
+
+9. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
 
-9. Lower-tier pressure witnesses are a first score/demotion pressure surface.
+10. Lower-tier pressure witnesses are a first score/demotion pressure surface.
    They are not yet county-access failure optimization.
 
 ## Conclusion

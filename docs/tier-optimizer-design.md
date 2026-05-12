@@ -285,6 +285,24 @@ This means T4 is not "afterthought local roads." T4 pressure can reveal that a
 T3 feeder is missing; repeated T3 failures can reveal a T2 gap; repeated T2
 attachment failures can reveal a T1 stop or line-design problem.
 
+## Upward Feedback Rule
+
+Lower-tier pressure is allowed to reopen higher-tier decisions, but only through
+the same constraint order that selected the higher tier in the first place.
+
+For T1, that means a T2/T3/T4 route cannot become a national candidate because
+it is high-scoring, locally useful, or visually convenient on the Beck map. It
+must supply at least one named T1 dependency:
+
+1. a designated 48h/36h SLA pair whose path improves or becomes feasible;
+2. a T1 stop, transfer, or topology repair witness that the accepted graph needs;
+3. an evidence-backed exception row that explains why the promise portfolio must
+   change.
+
+The feedback docket therefore separates score-only pressure from promise-backed
+pressure. Score-only rows can be visible review evidence, but they cannot
+override the T1 promise portfolio.
+
 ## Objective Function
 
 Within the hard constraint order, score candidates by:
