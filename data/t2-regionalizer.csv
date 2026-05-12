@@ -1,0 +1,15 @@
+tier,region_id,component_id,route,parent_trunks,route_miles,column_decision,treatment_status,evidence_status,regionalizer_action,validation_status
+T2,component-1,1,I15,I84;I90,2882.0498515577588,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,I29,I35,1499.3473610974459,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,I59,I20,887.1983600653118,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,I76,I70;I80,1244.4171797436604,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-19,19,I77,I64,1225.3540650062364,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-19,19,I81,I64,1704.6010415783205,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,I85,I40,1376.1656231404718,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,US287,I45;I70,541.9201889358089,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US30,I80;I84,1898.762978041829,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US6,I70;I80;I84;I94,1021.5560935857612,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US70,I10;I40;I55,503.6304093279522,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US80,I10;I20,252.90870571956427,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US83,I35;I90,298.2769331058611,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,US90,I10,505.79383424874084,review,review-treatment,review,hold-for-parent-region-review,review

@@ -1188,6 +1188,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Build first-pass T2 regionalizer rows from candidate columns
+    T2Regionalizer {
+        /// Tier candidate column CSV
+        #[arg(
+            long,
+            default_value = "data/tier-candidate-columns.csv",
+            value_name = "FILE"
+        )]
+        candidates: PathBuf,
+        /// Output T2 regionalizer CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-regionalizer.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if no selected regional treatments are available
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -5044,6 +5066,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("tier candidate column gate: PASS");
+            }
+        }
+
+        Commands::T2Regionalizer {
+            candidates,
+            output,
+            gate,
+        } => {
+            println!("route t2-regionalizer");
+            let candidate_rows = load_tier_candidate_columns(&candidates)
+                .with_context(|| format!("loading {}", candidates.display()))?;
+            let rows = t2_regionalizer_rows(&candidate_rows);
+            write_t2_regionalizer(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_regionalizer_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_regionalizer_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 regionalizer gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 regionalizer gate failed");
+                }
+                println!();
+                println!("T2 regionalizer gate: PASS");
             }
         }
 
@@ -9661,7 +9711,7 @@ struct TierContactWitnessInputRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
     route: String,
@@ -9682,6 +9732,21 @@ struct TierCandidateColumnRow {
     column_decision: String,
     evidence_status: String,
     required_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2RegionalizerRow {
+    tier: String,
+    region_id: String,
+    component_id: usize,
+    route: String,
+    parent_trunks: String,
+    route_miles: f64,
+    column_decision: String,
+    treatment_status: String,
+    evidence_status: String,
+    regionalizer_action: String,
     validation_status: String,
 }
 
@@ -10218,6 +10283,99 @@ fn tier_candidate_column_gate_failures(rows: &[TierCandidateColumnRow]) -> Vec<S
         {
             failures.push(format!("{} selected without passing validation", row.route));
         }
+    }
+    failures
+}
+
+fn load_tier_candidate_columns(path: &Path) -> Result<Vec<TierCandidateColumnRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRow> {
+    rows.iter()
+        .filter(|row| row.tier.eq_ignore_ascii_case("T2"))
+        .filter(|row| matches!(row.column_decision.as_str(), "selected" | "review"))
+        .map(|row| {
+            let treatment_status = if row.column_decision == "selected" {
+                "selected-treatment"
+            } else {
+                "review-treatment"
+            };
+            T2RegionalizerRow {
+                tier: row.tier.clone(),
+                region_id: format!("component-{}", row.component_id),
+                component_id: row.component_id,
+                route: row.route.clone(),
+                parent_trunks: row.parent_trunks.clone(),
+                route_miles: row.route_miles,
+                column_decision: row.column_decision.clone(),
+                treatment_status: treatment_status.to_string(),
+                evidence_status: row.evidence_status.clone(),
+                regionalizer_action: if row.column_decision == "selected" {
+                    "include-in-regional-treatment"
+                } else {
+                    "hold-for-parent-region-review"
+                }
+                .to_string(),
+                validation_status: if row.column_decision == "selected" {
+                    "pass"
+                } else {
+                    "review"
+                }
+                .to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_regionalizer(path: &Path, rows: &[T2RegionalizerRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_regionalizer_summary(output: &Path, rows: &[T2RegionalizerRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.treatment_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} regionalizer rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_regionalizer_gate_failures(rows: &[T2RegionalizerRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 regionalizer rows emitted".to_string());
+        return failures;
+    }
+    let selected = rows
+        .iter()
+        .filter(|row| row.treatment_status == "selected-treatment")
+        .count();
+    if selected == 0 {
+        failures.push("no selected T2 regional treatments".to_string());
     }
     failures
 }
@@ -14943,12 +15101,13 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
-        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
-        tier_candidate_column_gate_failures, tier_candidate_column_rows,
-        tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
-        tier_contact_witness_rows, tier_for_score, tier_region_gate_failures,
-        write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
-        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow,
+        t2_regionalizer_gate_failures, t2_regionalizer_rows, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
+        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
+        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
+        tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
+        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
+        T1LineSelectorInputRow, T1StopSelectorInputRow, TierCandidateColumnRow,
         TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
@@ -15128,6 +15287,64 @@ mod tests {
 
         assert_eq!(columns[0].column_decision, "selected");
         assert_eq!(columns[1].column_decision, "blocked");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_regionalizer_includes_selected_and_review_columns() {
+        let rows = vec![
+            TierCandidateColumnRow {
+                tier: "T2".to_string(),
+                route: "US30".to_string(),
+                candidate_type: "route-service-column".to_string(),
+                graph_kind: "dual-route-graph".to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                node_class: "trunk_connector".to_string(),
+                route_miles: 1800.0,
+                observed_t1_node_count: 3,
+                observed_dual_contacts: 5,
+                parent_trunks: "I80;I84".to_string(),
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:21".to_string(),
+                witness_type: "regionalizer-ready".to_string(),
+                repair_action: "keep-for-regionalizer".to_string(),
+                repair_basis: "touches-multiple-t1-trunks".to_string(),
+                column_decision: "selected".to_string(),
+                evidence_status: "accepted".to_string(),
+                required_artifact: "data/tier-candidate-columns.csv".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            TierCandidateColumnRow {
+                tier: "T2".to_string(),
+                route: "I29".to_string(),
+                candidate_type: "route-service-column".to_string(),
+                graph_kind: "dual-route-graph".to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                node_class: "relief_loop".to_string(),
+                route_miles: 1499.0,
+                observed_t1_node_count: 2,
+                observed_dual_contacts: 1,
+                parent_trunks: "I35".to_string(),
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:21".to_string(),
+                witness_type: "parent-region-review".to_string(),
+                repair_action: "keep-with-parent-region-review".to_string(),
+                repair_basis: "relief-loop-shares-parent-service-context".to_string(),
+                column_decision: "review".to_string(),
+                evidence_status: "review".to_string(),
+                required_artifact: "data/tier-candidate-columns.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let regionalizer = t2_regionalizer_rows(&rows);
+        let failures = t2_regionalizer_gate_failures(&regionalizer);
+
+        assert_eq!(regionalizer.len(), 2);
+        assert_eq!(regionalizer[0].treatment_status, "selected-treatment");
+        assert_eq!(regionalizer[1].treatment_status, "review-treatment");
         assert!(failures.is_empty());
     }
 
