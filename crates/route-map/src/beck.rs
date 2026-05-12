@@ -1373,27 +1373,13 @@ fn beck_stops() -> Vec<BeckStop> {
             &["I-25"],
             LabelDir::Right,
         ),
-        minor_stop(
-            "CAPITAL_BELTWAY_N",
-            "Capital North",
-            1920.0,
-            780.0,
-            &["I-95", "I-495"],
-            LabelDir::Right,
-        ),
-        minor_stop(
+        stop(
             "CAPITAL_BELTWAY_E",
-            "Capital East",
+            "Capital Beltway",
             1980.0,
             840.0,
-            &["I-95", "I-495"],
-            LabelDir::Right,
-        ),
-        minor_stop(
-            "CAPITAL_BELTWAY_S",
-            "Capital South",
-            1890.0,
-            900.0,
+            false,
+            true,
             &["I-95", "I-495"],
             LabelDir::Right,
         ),
@@ -1542,19 +1528,16 @@ fn beck_stops() -> Vec<BeckStop> {
 }
 
 fn apply_schematic_adjustments(stops: &mut [BeckStop]) {
+    let dc = stops
+        .iter()
+        .find(|stop| stop.id == "DC")
+        .map(BeckStop::point)
+        .unwrap_or((1920.0, 840.0));
     for stop in stops {
         match stop.id {
-            "CAPITAL_BELTWAY_N" => {
-                stop.x = 1920.0;
-                stop.y = 720.0;
-            }
             "CAPITAL_BELTWAY_E" => {
-                stop.x = 2040.0;
-                stop.y = 840.0;
-            }
-            "CAPITAL_BELTWAY_S" => {
-                stop.x = 1920.0;
-                stop.y = 960.0;
+                stop.x = dc.0 + 150.0;
+                stop.y = dc.1;
             }
             "CORPUS" => {
                 stop.x += 130.0;
@@ -1868,7 +1851,7 @@ fn t2_lane_shift(corridor: &str) -> (f64, f64) {
         "I-77" => (36.0, 0.0),
         "I-81" => (-32.0, 0.0),
         "I-85" => (-36.0, 0.0),
-        "I-495" => (30.0, 0.0),
+        "I-495" => (0.0, 0.0),
         "US30" => (0.0, -40.0),
         "US6" => (0.0, 36.0),
         "US70" => (0.0, 38.0),
@@ -2218,17 +2201,11 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             "I-495",
             "I-95",
             "I-95",
-            &[
-                "DC",
-                "CAPITAL_BELTWAY_N",
-                "CAPITAL_BELTWAY_E",
-                "CAPITAL_BELTWAY_S",
-                "DC",
-            ],
+            &["DC", "CAPITAL_BELTWAY_E"],
             "Capital Beltway",
             "CAPITAL_BELTWAY_E",
-            (0.0, 0.0),
-            "start",
+            (0.0, 58.0),
+            "middle",
         ),
         t2_line_segment(
             stops,
@@ -4170,6 +4147,19 @@ mod tests {
     }
 
     #[test]
+    fn beck_t2_capital_beltway_draws_compact_dc_stub() {
+        let stops = beck_stops();
+        let routes = t2_line_segments(&stops);
+        let i495 = routes.iter().find(|line| line.corridor == "I-495").unwrap();
+
+        assert_eq!(i495.stop_ids, vec!["DC", "CAPITAL_BELTWAY_E"]);
+        assert_eq!(i495.lane_shift, (0.0, 0.0));
+        let dc = stop_by_id(&stops, "DC").point();
+        assert_eq!(i495.routed_waypoints(), vec![dc, (dc.0 + 150.0, dc.1)]);
+        assert_eq!(i495.badge, (dc.0 + 150.0, dc.1 + 58.0));
+    }
+
+    #[test]
     fn beck_t2_svg_draws_thin_connector_overlay_tinted_to_trunks() {
         let svg = build_beck_t2_svg();
         assert!(svg.contains("LOCAL SERVICES"));
@@ -4213,7 +4203,7 @@ mod tests {
     fn beck_t2_diagnostics_exports_review_flags() {
         let csv = build_beck_t2_diagnostics_csv();
         assert!(csv.starts_with("corridor,trunk,start_trunk,end_trunk,color_mode,service_class"));
-        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,transfer-spine,"));
+        assert!(csv.contains("I-495,I-95,I-95,I-95,single-parent,compact-service,"));
         assert!(csv.contains("split-parent"));
         assert!(csv.contains("compact-service"));
         assert!(csv.contains("long-connector-review"));
@@ -4247,7 +4237,7 @@ mod tests {
 
         assert_eq!(
             corridors_for("compact-service"),
-            vec!["I-22", "I-37", "US95"]
+            vec!["I-22", "I-37", "I-495", "US95"]
         );
         assert_eq!(
             corridors_for("long-connector"),
@@ -4255,7 +4245,7 @@ mod tests {
         );
         assert_eq!(
             corridors_for("transfer-spine"),
-            vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US70", "US80"]
+            vec!["I-25", "I-49", "I-65", "I-81", "US70", "US80"]
         );
         assert_eq!(corridors_for("connector").len(), 11);
     }
