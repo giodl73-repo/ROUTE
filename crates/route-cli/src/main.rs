@@ -2134,7 +2134,7 @@ fn run_cli() -> Result<()> {
             println!("  T2 lines: {}", rows.len());
             println!("  wrote diagnostics: {}", output.display());
             println!(
-                "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>7} Flag",
+                "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:>7} Flag",
                 "Line",
                 "Service",
                 "Color",
@@ -2142,13 +2142,14 @@ fn run_cli() -> Result<()> {
                 "Split",
                 "Touch",
                 "Near",
+                "Dup",
                 "Xfer",
                 "Stops",
                 "Label"
             );
             for row in rows.iter().take(12) {
                 println!(
-                    "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>7.2} {}",
+                    "  {:<8} {:<18} {:<13} {:<16} {:<10} {:>5} {:>5} {:>5} {:>5} {:>5} {:>7.2} {}",
                     row.corridor,
                     truncate_for_table(row.service_label, 18),
                     row.color_mode,
@@ -2156,6 +2157,7 @@ fn run_cli() -> Result<()> {
                     truncate_for_table(row.split_anchor, 10),
                     row.unstopped_t1_contact_count,
                     row.close_parallel_count,
+                    row.duplicate_service_count,
                     row.transfer_stop_count,
                     row.stop_count,
                     row.label_density_per_100px,

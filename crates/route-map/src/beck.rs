@@ -89,6 +89,8 @@ pub struct BeckT2DiagnosticRow {
     pub unstopped_t1_contacts: String,
     pub close_parallel_count: usize,
     pub close_parallel_corridors: String,
+    pub duplicate_service_count: usize,
+    pub duplicate_service_corridors: String,
     pub service_label: &'static str,
     pub stop_count: usize,
     pub drawn_stop_count: usize,
@@ -2538,7 +2540,7 @@ pub fn beck_stop_catalog() -> Vec<BeckStopCatalogRow> {
 
 pub fn build_beck_t2_diagnostics_csv() -> String {
     let mut csv = String::from(
-        "corridor,trunk,start_trunk,end_trunk,color_mode,service_class,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
+        "corridor,trunk,start_trunk,end_trunk,color_mode,service_class,split_anchor,split_anchor_offset_pct,unstopped_t1_contact_count,unstopped_t1_contacts,close_parallel_count,close_parallel_corridors,duplicate_service_count,duplicate_service_corridors,service_label,stop_count,drawn_stop_count,transfer_stop_count,schematic_length_px,min_x,min_y,max_x,max_y,label_density_per_100px,review_flag\n",
     );
     for row in beck_t2_diagnostics() {
         push_csv_row(
@@ -2556,6 +2558,8 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
                 &row.unstopped_t1_contacts,
                 &row.close_parallel_count.to_string(),
                 &row.close_parallel_corridors,
+                &row.duplicate_service_count.to_string(),
+                &row.duplicate_service_corridors,
                 row.service_label,
                 &row.stop_count.to_string(),
                 &row.drawn_stop_count.to_string(),
@@ -2662,8 +2666,10 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
             let split_anchor = t2_split_anchor_distance(line, &stops);
             let unstopped_t1_contacts = unstopped_t1_contacts(line, &stops);
             let close_parallel_corridors = close_parallel_corridors(line, &t2_lines);
+            let duplicate_service_corridors = duplicate_service_corridors(line, &t2_lines, &stops);
             let unstopped_t1_contact_count = unstopped_t1_contacts.len();
             let close_parallel_count = close_parallel_corridors.len();
+            let duplicate_service_count = duplicate_service_corridors.len();
             let drawn_stop_count = line
                 .stop_ids
                 .iter()
@@ -2690,6 +2696,8 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 "parallel-spacing-review"
             } else if line.is_split_color() && split_anchor.is_none() {
                 "split-anchor-review"
+            } else if duplicate_service_count > 0 {
+                "duplicate-service-review"
             } else if service_class == "compact-service" {
                 "ok"
             } else if label_density_per_100px >= 1.35 {
@@ -2726,6 +2734,8 @@ pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
                 unstopped_t1_contacts: unstopped_t1_contacts.join(";"),
                 close_parallel_count,
                 close_parallel_corridors: close_parallel_corridors.join(";"),
+                duplicate_service_count,
+                duplicate_service_corridors: duplicate_service_corridors.join(";"),
                 service_label: line.service_label,
                 stop_count: line.stop_ids.len(),
                 drawn_stop_count,
@@ -3050,6 +3060,35 @@ fn close_parallel_corridors(
         })
         .map(|other| other.corridor)
         .collect()
+}
+
+fn duplicate_service_corridors(
+    line: &T2LineSegment,
+    all_lines: &[T2LineSegment],
+    stops: &[BeckStop],
+) -> Vec<&'static str> {
+    let Some(split_anchor) = t2_split_anchor_distance(line, stops) else {
+        return Vec::new();
+    };
+    all_lines
+        .iter()
+        .filter(|other| other.corridor != line.corridor)
+        .filter(|other| same_parent_trunk_pair(line, other))
+        .filter(|other| {
+            t2_split_anchor_distance(other, stops)
+                .map(|other_anchor| other_anchor.stop_id == split_anchor.stop_id)
+                .unwrap_or(false)
+        })
+        .map(|other| other.corridor)
+        .collect()
+}
+
+fn same_parent_trunk_pair(a: &T2LineSegment, b: &T2LineSegment) -> bool {
+    let mut a_pair = [a.start_trunk, a.end_trunk];
+    let mut b_pair = [b.start_trunk, b.end_trunk];
+    a_pair.sort_unstable();
+    b_pair.sort_unstable();
+    a_pair == b_pair
 }
 
 fn close_parallel_segments(a1: (f64, f64), a2: (f64, f64), b1: (f64, f64), b2: (f64, f64)) -> bool {
@@ -4256,6 +4295,7 @@ mod tests {
         assert!(csv.contains("compact-service"));
         assert!(csv.contains("long-connector-review"));
         assert!(csv.contains("dense-transfer-review"));
+        assert!(csv.contains("duplicate-service-review"));
 
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
@@ -4267,6 +4307,10 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.color_mode == "split-parent" && !row.split_anchor.is_empty()));
+        let us30 = rows.iter().find(|row| row.corridor == "US30").unwrap();
+        let us6 = rows.iter().find(|row| row.corridor == "US6").unwrap();
+        assert_eq!(us30.duplicate_service_corridors, "US6");
+        assert_eq!(us6.duplicate_service_corridors, "US30");
     }
 
     #[test]
