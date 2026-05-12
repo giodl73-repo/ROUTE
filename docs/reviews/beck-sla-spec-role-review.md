@@ -37,11 +37,12 @@ This review adds those two local parliament voices.
 
 ## Findings
 
-1. Optimization Methodologist: Pass with one requested artifact.
+1. Optimization Methodologist: Pass; requested artifact now exists.
    The SLA spec correctly says score alone is insufficient and that route
-   promotion needs a promise, topology, or exception witness. The missing next
-   artifact is a ranked candidate table for pairs 26+ with drop reasons, so the
-   T1 promise cut line can be audited rather than narrated.
+   promotion needs a promise, topology, or exception witness.
+   `data/t1-sla-candidate-pairs.csv` now provides the ranked candidate table
+   for pairs 26+ with drop reasons, so the T1 promise cut line can be audited
+   rather than narrated.
 
 2. Schematic Cartographer: Pass with implementation hold.
    The Beck renderer contract has the right topology rules: bends at stops,
@@ -86,8 +87,8 @@ This review adds those two local parliament voices.
   roster.
 - Keep Beck rendering in implementation hold until maps consume optimizer
   artifacts directly.
-- Keep SLA promises design-grade until candidate-pair cut lines and evidence
-  joins exist.
+- Keep SLA promises design-grade until evidence joins exist. The candidate-pair
+  cut line is now represented by `data/t1-sla-candidate-pairs.csv`.
 
 ## Next Spec Gaps
 

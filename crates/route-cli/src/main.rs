@@ -170,6 +170,34 @@ enum Commands {
         gate: bool,
     },
 
+    /// Rank T1 SLA promise-pair candidates and explain the selected cut line
+    T1SlaCandidatePairs {
+        /// Candidate SLA pair universe CSV
+        #[arg(
+            long,
+            default_value = "data/t1-sla-candidate-universe.csv",
+            value_name = "FILE"
+        )]
+        candidates: PathBuf,
+        /// Selected T1 SLA pair portfolio CSV
+        #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
+        selected_pairs: PathBuf,
+        /// Output ranked SLA candidate pair CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-sla-candidate-pairs.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Selected T1 promise-pair budget
+        #[arg(long, default_value_t = 25)]
+        selected_budget: usize,
+        /// Fail if selected/dropped pair decisions lack cut-line lineage
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Select T1 lines/stops from scored routes and stop candidates under national budgets
     T1LineSelector {
         /// Path to generated tier table CSV
@@ -3130,6 +3158,38 @@ fn run_cli() -> Result<()> {
                         println!("  - {} {}", row.corridor, row.review_flag);
                     }
                     anyhow::bail!("Beck T1 diagnostics gate failed");
+                }
+            }
+        }
+
+        Commands::T1SlaCandidatePairs {
+            candidates,
+            selected_pairs,
+            output,
+            selected_budget,
+            gate,
+        } => {
+            println!("route t1-sla-candidate-pairs");
+            let candidate_rows = load_t1_sla_candidate_universe(&candidates)
+                .with_context(|| format!("loading {}", candidates.display()))?;
+            let selected_rows = load_t1_sla_pairs(&selected_pairs)
+                .with_context(|| format!("loading {}", selected_pairs.display()))?;
+            let rows = t1_sla_candidate_pair_rows(&candidate_rows, &selected_rows, selected_budget);
+            write_t1_sla_candidate_pairs(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_sla_candidate_pair_summary(&output, &rows, selected_budget);
+
+            if gate {
+                let failures =
+                    t1_sla_candidate_pair_gate_failures(&rows, &selected_rows, selected_budget);
+                if failures.is_empty() {
+                    println!("T1 SLA candidate pair gate: PASS");
+                } else {
+                    println!("T1 SLA candidate pair gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 SLA candidate pair gate failed");
                 }
             }
         }
@@ -14484,11 +14544,19 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
     let stages = if all_tiers {
         vec![
             (
+                "t1-sla-candidate-pairs",
+                "route t1-sla-candidate-pairs --gate",
+                "data/t1-sla-candidate-pairs.csv",
+                "pass",
+                0usize,
+                "",
+            ),
+            (
                 "t1-stop-selector",
                 "route t1-stop-selector --gate",
                 "data/t1-stop-selector.csv",
                 "pass",
-                0usize,
+                0,
                 "",
             ),
             (
@@ -15324,6 +15392,54 @@ struct T1LineSelectorRow {
     sla_pairs: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1SlaCandidateUniverseRow {
+    pair_id: String,
+    origin_id: String,
+    dest_id: String,
+    target_hours: f64,
+    market_class: String,
+    required_routes: String,
+    required_stops: String,
+    evidence_basis: String,
+    market_score: f64,
+    conversion_score: f64,
+    coverage_score: f64,
+    reuse_score: f64,
+    resilience_score: f64,
+    evidence_score: f64,
+    budget_penalty: f64,
+    drop_reason_hint: String,
+    covered_by_selected_pair: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T1SlaCandidatePairRow {
+    rank: usize,
+    pair_id: String,
+    origin_id: String,
+    dest_id: String,
+    target_hours: f64,
+    market_class: String,
+    total_score: f64,
+    market_score: f64,
+    conversion_score: f64,
+    coverage_score: f64,
+    reuse_score: f64,
+    resilience_score: f64,
+    evidence_score: f64,
+    budget_penalty: f64,
+    portfolio_selected: bool,
+    selected_budget: usize,
+    cutline_status: String,
+    cutline_reason: String,
+    covered_by_selected_pair: String,
+    required_routes: String,
+    required_stops: String,
+    evidence_basis: String,
+    validation_status: String,
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct T1LineSelectorInputRow {
     route: String,
@@ -15397,6 +15513,206 @@ struct T1SlaPairRow {
     required_routes: String,
     required_stops: String,
     evidence_basis: String,
+}
+
+fn load_t1_sla_candidate_universe(path: &Path) -> Result<Vec<T1SlaCandidateUniverseRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_sla_candidate_pair_rows(
+    candidate_rows: &[T1SlaCandidateUniverseRow],
+    selected_rows: &[T1SlaPairRow],
+    selected_budget: usize,
+) -> Vec<T1SlaCandidatePairRow> {
+    let selected_pair_ids = selected_rows
+        .iter()
+        .map(|row| row.pair_id.trim().to_string())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut rows = candidate_rows
+        .iter()
+        .map(|row| {
+            let total_score = t1_sla_candidate_pair_score(row);
+            let portfolio_selected = selected_pair_ids.contains(row.pair_id.trim());
+            T1SlaCandidatePairRow {
+                rank: 0,
+                pair_id: row.pair_id.clone(),
+                origin_id: row.origin_id.clone(),
+                dest_id: row.dest_id.clone(),
+                target_hours: row.target_hours,
+                market_class: row.market_class.clone(),
+                total_score,
+                market_score: row.market_score,
+                conversion_score: row.conversion_score,
+                coverage_score: row.coverage_score,
+                reuse_score: row.reuse_score,
+                resilience_score: row.resilience_score,
+                evidence_score: row.evidence_score,
+                budget_penalty: row.budget_penalty,
+                portfolio_selected,
+                selected_budget,
+                cutline_status: String::new(),
+                cutline_reason: String::new(),
+                covered_by_selected_pair: row.covered_by_selected_pair.clone(),
+                required_routes: row.required_routes.clone(),
+                required_stops: row.required_stops.clone(),
+                evidence_basis: row.evidence_basis.clone(),
+                validation_status: String::new(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        b.total_score
+            .total_cmp(&a.total_score)
+            .then_with(|| b.portfolio_selected.cmp(&a.portfolio_selected))
+            .then_with(|| a.pair_id.cmp(&b.pair_id))
+    });
+
+    for (idx, row) in rows.iter_mut().enumerate() {
+        row.rank = idx + 1;
+        if row.portfolio_selected {
+            row.cutline_status = "selected-portfolio".to_string();
+            row.cutline_reason = "inside-selected-t1-promise-budget".to_string();
+            row.validation_status = "pass".to_string();
+        } else if row.rank <= selected_budget {
+            row.cutline_status = "ranked-above-cutline-but-unselected".to_string();
+            row.cutline_reason = "candidate-score-conflicts-with-selected-portfolio".to_string();
+            row.validation_status = "review".to_string();
+        } else {
+            row.cutline_status = "dropped-at-cutline".to_string();
+            row.cutline_reason = candidate_rows
+                .iter()
+                .find(|candidate| candidate.pair_id == row.pair_id)
+                .map(|candidate| candidate.drop_reason_hint.trim())
+                .filter(|hint| !hint.is_empty())
+                .unwrap_or("below-selected-budget-cutline")
+                .to_string();
+            row.validation_status = "pass".to_string();
+        }
+    }
+    rows
+}
+
+fn t1_sla_candidate_pair_score(row: &T1SlaCandidateUniverseRow) -> f64 {
+    row.market_score
+        + row.conversion_score
+        + row.coverage_score
+        + row.reuse_score
+        + row.resilience_score
+        + row.evidence_score
+        - row.budget_penalty
+}
+
+fn write_t1_sla_candidate_pairs(path: &Path, rows: &[T1SlaCandidatePairRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_sla_candidate_pair_summary(
+    output: &Path,
+    rows: &[T1SlaCandidatePairRow],
+    selected_budget: usize,
+) {
+    let selected = rows.iter().filter(|row| row.portfolio_selected).count();
+    let dropped = rows.iter().filter(|row| !row.portfolio_selected).count();
+    let cutline = rows
+        .iter()
+        .find(|row| row.rank == selected_budget + 1)
+        .map(|row| row.pair_id.as_str())
+        .unwrap_or("n/a");
+    println!(
+        "  wrote {} ranked SLA candidate pairs to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  selected portfolio rows: {selected}/{selected_budget}");
+    println!("  dropped candidate rows: {dropped}");
+    println!("  first dropped by rank: {cutline}");
+}
+
+fn t1_sla_candidate_pair_gate_failures(
+    rows: &[T1SlaCandidatePairRow],
+    selected_rows: &[T1SlaPairRow],
+    selected_budget: usize,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T1 SLA candidate pairs emitted".to_string());
+        return failures;
+    }
+    let selected_count = rows.iter().filter(|row| row.portfolio_selected).count();
+    if selected_count != selected_budget {
+        failures.push(format!(
+            "selected portfolio has {selected_count} rows, expected {selected_budget}"
+        ));
+    }
+    let row_pair_ids = rows
+        .iter()
+        .map(|row| row.pair_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    for selected in selected_rows {
+        if !row_pair_ids.contains(selected.pair_id.as_str()) {
+            failures.push(format!(
+                "{} selected pair missing from candidate universe",
+                selected.pair_id
+            ));
+        }
+    }
+    if rows
+        .iter()
+        .any(|row| row.cutline_status == "ranked-above-cutline-but-unselected")
+    {
+        failures.push("unselected candidate ranked above selected budget cutline".to_string());
+    }
+    for row in rows {
+        if row.pair_id.trim().is_empty()
+            || row.origin_id.trim().is_empty()
+            || row.dest_id.trim().is_empty()
+            || row.market_class.trim().is_empty()
+            || row.required_routes.trim().is_empty()
+            || row.required_stops.trim().is_empty()
+            || row.evidence_basis.trim().is_empty()
+            || row.cutline_status.trim().is_empty()
+            || row.cutline_reason.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete candidate-pair row", row.pair_id));
+        }
+        if !matches!(row.target_hours.round() as u16, 36 | 48) {
+            failures.push(format!(
+                "{} has unsupported T1 target_hours {}",
+                row.pair_id, row.target_hours
+            ));
+        }
+        if !row.portfolio_selected
+            && row.cutline_status == "dropped-at-cutline"
+            && row.covered_by_selected_pair.trim().is_empty()
+            && !row.cutline_reason.contains("source")
+            && !row.cutline_reason.contains("budget")
+            && !row.cutline_reason.contains("lower-tier")
+        {
+            failures.push(format!(
+                "{} dropped without coverage, source, budget, or lower-tier reason",
+                row.pair_id
+            ));
+        }
+    }
+    failures
 }
 
 fn t1_line_selector_rows(
@@ -19638,9 +19954,9 @@ mod tests {
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
-        t1_line_selector_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
-        t1_topology_repair_gate_failures, t1_topology_repair_rows,
-        t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
+        t1_line_selector_rows, t1_sla_candidate_pair_gate_failures, t1_sla_candidate_pair_rows,
+        t1_stop_selector_gate_failures, t1_stop_selector_rows, t1_topology_repair_gate_failures,
+        t1_topology_repair_rows, t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
@@ -19661,13 +19977,13 @@ mod tests {
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, NbiBridgeRecord,
         OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow,
-        T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
-        T2TerminalContactValidationRow, T3T4PressureIntakeRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierTableScoreRow,
+        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4PressureIntakeRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -20830,6 +21146,70 @@ mod tests {
         assert_eq!(rows[0].t1_feedback_class, "t1-sla-candidate");
         assert_eq!(rows[0].t1_sla_pair_count, 1);
         assert_eq!(rows[0].t1_sla_pairs, "CHI-MEM-36");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_sla_candidate_pairs_explain_cutline() {
+        let candidates = vec![
+            T1SlaCandidateUniverseRow {
+                pair_id: "A-B-48".to_string(),
+                origin_id: "A".to_string(),
+                dest_id: "B".to_string(),
+                target_hours: 48.0,
+                market_class: "national".to_string(),
+                required_routes: "I80".to_string(),
+                required_stops: "A;B".to_string(),
+                evidence_basis: "test".to_string(),
+                market_score: 20.0,
+                conversion_score: 20.0,
+                coverage_score: 20.0,
+                reuse_score: 10.0,
+                resilience_score: 5.0,
+                evidence_score: 5.0,
+                budget_penalty: 0.0,
+                drop_reason_hint: String::new(),
+                covered_by_selected_pair: String::new(),
+            },
+            T1SlaCandidateUniverseRow {
+                pair_id: "C-D-36".to_string(),
+                origin_id: "C".to_string(),
+                dest_id: "D".to_string(),
+                target_hours: 36.0,
+                market_class: "national".to_string(),
+                required_routes: "I95".to_string(),
+                required_stops: "C;D".to_string(),
+                evidence_basis: "test".to_string(),
+                market_score: 10.0,
+                conversion_score: 10.0,
+                coverage_score: 10.0,
+                reuse_score: 10.0,
+                resilience_score: 5.0,
+                evidence_score: 5.0,
+                budget_penalty: 0.0,
+                drop_reason_hint: "already-covered-by-selected-promise".to_string(),
+                covered_by_selected_pair: "A-B-48".to_string(),
+            },
+        ];
+        let selected = vec![T1SlaPairRow {
+            pair_id: "A-B-48".to_string(),
+            origin_id: "A".to_string(),
+            dest_id: "B".to_string(),
+            target_hours: 48.0,
+            priority: 10,
+            market_class: "national".to_string(),
+            required_routes: "I80".to_string(),
+            required_stops: "A;B".to_string(),
+            evidence_basis: "test".to_string(),
+        }];
+
+        let rows = t1_sla_candidate_pair_rows(&candidates, &selected, 1);
+        let failures = t1_sla_candidate_pair_gate_failures(&rows, &selected, 1);
+
+        assert_eq!(rows[0].pair_id, "A-B-48");
+        assert!(rows[0].portfolio_selected);
+        assert_eq!(rows[1].cutline_status, "dropped-at-cutline");
+        assert_eq!(rows[1].covered_by_selected_pair, "A-B-48");
         assert!(failures.is_empty());
     }
 

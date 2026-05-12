@@ -1,0 +1,37 @@
+pair_id,origin_id,dest_id,target_hours,market_class,required_routes,required_stops,evidence_basis,market_score,conversion_score,coverage_score,reuse_score,resilience_score,evidence_score,budget_penalty,drop_reason_hint,covered_by_selected_pair
+NYC-LA-48,NYC,LA,48,coast-to-coast-air-substitution,I-95;I-80;I-5,NYC;CLEVELAND;CHI;OMAHA;SLC;RENO;SAC;LA,C.3 48-hour economy and C.1 NY-LA relay corridor,25,24,18,16,9,6,0,,
+NYC-SFO-48,NYC,SAC,48,coast-to-coast-air-substitution,I-95;I-80,NYC;CLEVELAND;CHI;OMAHA;SLC;RENO;SAC,C.3 parallel NY-San Francisco corridor,24,22,17,16,8,6,1,,
+NYC-SEA-48,NYC,SEA,48,coast-to-coast-air-substitution,I-95;I-80;I-90,NYC;CLEVELAND;CHI;OMAHA;SLC;SPK;SEA,C.3 parallel NY-Seattle corridor,23,22,18,15,8,6,1,,
+BOS-LA-48,BOS,LA,48,pharma-biotech-and-air-substitution,I-90;I-80;I-5,BOS;ALBANY;BUFFALO;CHI;OMAHA;SLC;RENO;SAC;LA,C.3 parallel Boston-Los Angeles corridor,23,22,17,15,8,6,1,,
+LA-CHI-36,LA,CHI,36,air-substitution-and-ecommerce,I-5;I-80,LA;SAC;RENO;SLC;OMAHA;CHI,C.3 largest domestic air cargo parallels,23,21,16,16,7,6,1,,
+LA-MIA-48,LA,MIA,48,perishables-pharma-and-latin-gateway,I-10;I-75,LA;PHX;ELP;SAT;HOU;NOLA;JAX;MIA,C.3 coast-to-coast parallel plus port gateway logic,22,21,18,13,8,6,1,,
+LA-DC-48,LA,DC,48,southern-transcontinental-national-service,I-10;I-40;I-95,LA;PHX;ABQ;OKC;MEM;NASHVILLE;KNOXVILLE;RALEIGH;DC,C.1 alternate route analysis plus T1 national promise coverage,21,20,18,14,8,6,1,,
+PHX-NYC-48,PHX,NYC,48,southwest-to-northeast-air-substitution,I-10;I-40;I-70;I-95,PHX;ABQ;OKC;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 Southwest high-growth market and C.1 reliability corridor logic,21,20,17,14,8,6,1,,
+SEA-CHI-36,SEA,CHI,36,air-substitution-and-agriculture,I-90,SEA;SPK;BIL;MIN;MADISON;CHI,C.3 Seattle-Chicago parallel and northern freight lane,20,19,16,15,7,6,1,,
+HOU-CHI-36,HOU,CHI,36,energy-industrial-and-ecommerce,I-10;I-35;I-80,HOU;SAT;DAL;OKC;KC;DSM;CHI,C.1 HOU-CHI reliability corridor,20,19,16,14,7,6,1,,
+ATL-LA-48,ATL,LA,48,southeast-west-air-substitution,I-20;I-10;I-5,ATL;DAL;ELP;PHX;LA,C.3 Southeast-West Coast market note,20,18,16,14,7,6,1,,
+NYC-MIA-36,NYC,MIA,36,atlantic-pharma-and-produce,I-95,NYC;PHILADELPHIA;DC;RIC;JAX;MIA,C.3 pharma perishables and Atlantic corridor,20,18,15,15,7,6,1,,
+SFO-CHI-36,SAC,CHI,36,bay-area-to-midwest-air-substitution,I-80,SAC;RENO;SLC;OMAHA;CHI,C.3 Bay Area to Midwest parallel corridor,19,18,15,15,7,6,1,,
+ATL-SEA-48,ATL,SEA,48,southeast-to-pacific-northwest-national-mesh,I-20;I-35;I-80;I-90,ATL;DAL;OKC;KC;OMAHA;BIL;SPK;SEA,C.3 parallel corridor multiplier and national mesh coverage,19,18,17,13,7,6,1,,
+BOS-SEA-48,BOS,SEA,48,northern-biotech-tech-coast-to-coast,I-90,BOS;BUFFALO;CHI;MIN;BIL;SPK;SEA,C.3 northern coast-to-coast parallel corridor,18,18,16,14,7,6,1,,
+JAX-LA-48,JAX,LA,48,southeast-florida-gateway-to-west-coast,I-10;I-5,JAX;NOLA;HOU;SAT;ELP;PHX;LA,C.3 Southeast-West Coast market and port gateway coverage,18,17,16,14,7,6,1,,
+MIA-CHI-36,MIA,CHI,36,florida-perishables-pharma-to-midwest,I-75;I-80,MIA;TAMPA;ATL;CINCINNATI;TOLEDO;CHI,C.3 perishables pharma plus Midwest distribution,18,17,15,14,7,6,1,,
+DFW-NYC-36,DAL,NYC,36,texas-triangle-to-northeast,I-35;I-70;I-95,DAL;OKC;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 electronics ecommerce plus T1 relay spine,18,17,15,14,6,6,1,,
+HOU-NYC-36,HOU,NYC,36,gulf-port-energy-to-northeast,I-10;I-35;I-70;I-95,HOU;SAT;DAL;OKC;KC;STL;COLUMBUS;NYC,C.1 HOU-CHI reliability plus Northeast extension,17,17,15,14,6,6,1,,
+DEN-NYC-36,DEN,NYC,36,mountain-interior-to-northeast,I-70;I-95,DEN;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 relay midpoint accountability and national market reach,17,16,15,14,6,6,1,,
+SLC-NYC-48,SLC,NYC,48,intermountain-relay-backbone-to-northeast,I-80;I-95,SLC;OMAHA;CHI;CLEVELAND;NYC,C.3 relay station design and I-80 backbone accountability,16,16,15,14,6,6,1,,
+KC-LA-36,KC,LA,36,central-relay-hub-to-west-coast,I-70;I-80;I-5,KC;OMAHA;SLC;RENO;SAC;LA,C.3 relay hub network and central market access,16,16,14,14,6,6,1,,
+MEM-LA-36,MEM,LA,36,logistics-superhub-to-west-coast,I-40;I-10;I-5,MEM;OKC;ABQ;PHX;LA,C.3 logistics hub and southern transcontinental service,16,15,14,14,6,6,1,,
+HOU-LA-36,HOU,LA,36,gulf-to-west-coast-industrial,I-10,HOU;SAT;ELP;PHX;LA,C.3 Gulf-West Coast industrial and port lane,16,15,14,13,6,6,1,,
+NYC-ATL-36,NYC,ATL,36,northeast-to-southeast-express,I-95;I-20,NYC;DC;RIC;RALEIGH;ATL,C.3 pharma ecommerce and Southeast transfer lane,16,15,14,13,5,6,1,,
+CHI-MIA-36,CHI,MIA,36,midwest-to-florida-produce-and-pharma,I-80;I-75,CHI;TOLEDO;CINCINNATI;ATL;TAMPA;MIA,Covered by selected MIA-CHI opposite-direction promise,15,14,13,13,5,5,1,already-covered-by-selected-promise,MIA-CHI-36
+NYC-DEN-36,NYC,DEN,36,northeast-to-mountain-interior,I-95;I-70,NYC;PENNSYLVANIA;COLUMBUS;STL;KC;DEN,Covered by selected DEN-NYC reverse-direction promise,15,14,13,12,5,5,1,already-covered-by-selected-promise,DEN-NYC-36
+DAL-LA-36,DAL,LA,36,texas-to-southern-california-ecommerce,I-20;I-10;I-5,DAL;ELP;PHX;LA,Covered by ATL-LA and HOU-LA southern-west promises,15,14,12,12,5,5,1,already-covered-by-selected-promise,ATL-LA-48
+ATL-NYC-36,ATL,NYC,36,southeast-to-northeast-express,I-20;I-95,ATL;RALEIGH;RIC;DC;NYC,Covered by selected NYC-ATL reverse-direction promise,14,14,12,12,5,5,1,already-covered-by-selected-promise,NYC-ATL-36
+SEA-LA-36,SEA,LA,36,pacific-coast-air-substitution,I-5,SEA;POR;SAC;LA,Strong market but route is already forced by broader coast-to-coast promises,14,13,11,12,5,5,1,already-covered-by-selected-promise,NYC-LA-48
+DEN-LA-36,DEN,LA,36,mountain-to-west-coast-relay,I-70;I-80;I-5,DEN;KC;OMAHA;SLC;RENO;SAC;LA,Useful relay but covered by KC-LA and DEN-NYC spine obligations,14,13,11,12,5,5,1,already-covered-by-selected-promise,KC-LA-36
+PHX-CHI-36,PHX,CHI,36,southwest-to-midwest-ecommerce,I-10;I-40;I-70,PHX;ABQ;OKC;KC;STL;CHI,Covered by PHX-NYC and LA-CHI with similar spine obligations,14,13,11,11,5,5,1,already-covered-by-selected-promise,PHX-NYC-48
+SEA-DFW-48,SEA,DAL,48,pacific-northwest-to-texas-triangle,I-90;I-80;I-35,SEA;SPK;BIL;OMAHA;KC;DAL,Network value but weaker conversion evidence than selected ATL-SEA and DFW-NYC,13,13,11,11,5,5,1,lacks-stronger-air-substitution-evidence,ATL-SEA-48
+MIA-SEA-48,MIA,SEA,48,florida-to-pacific-northwest-national-mesh,I-75;I-80;I-90,MIA;ATL;CINCINNATI;CHI;BIL;SPK;SEA,Long mesh promise with high stop budget and lower near-term conversion evidence,13,12,12,11,5,5,2,stop-budget-impact-too-high,BOS-SEA-48
+BOS-MIA-36,BOS,MIA,36,atlantic-pharma-and-tourism,I-95,BOS;NYC;DC;RIC;JAX;MIA,Atlantic corridor already covered by NYC-MIA and BOS-LA Northeast obligations,13,12,11,11,5,5,1,already-covered-by-selected-promise,NYC-MIA-36
+SLC-SEA-36,SLC,SEA,36,intermountain-to-pacific-northwest,I-80;I-90,SLC;BIL;SPK;SEA,Useful northern connector but better suited to T2 or regional resilience review,12,12,10,10,5,5,1,lower-tier-horizon-more-appropriate,NYC-SEA-48

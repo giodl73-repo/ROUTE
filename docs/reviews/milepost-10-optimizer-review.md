@@ -22,6 +22,7 @@ blockers rather than treating the current graph as complete.
 ## Passing Artifacts
 
 - `data/t1-stop-selector.csv`
+- `data/t1-sla-candidate-pairs.csv`
 - `data/t1-topology-repairs.csv`
 - `data/t1-beck-alignment.csv`
 - `data/tier-candidate-columns.csv`
@@ -50,7 +51,12 @@ blockers rather than treating the current graph as complete.
 1. `tier-regions --tier T2 --gate` remains held by the bridged T2 component.
    The manifest records this as `held-known`, not pass.
 
-2. `tier-contact-witnesses --gate` remains held by unresolved graph-contact,
+2. `data/t1-sla-candidate-pairs.csv` now makes the upstream T1 promise
+   portfolio auditable. It ranks 36 candidate pairs, keeps the selected 25-row
+   portfolio, and records `CHI-MIA-36` as the first dropped pair because
+   `MIA-CHI-36` already covers the same promise lane in the selected set.
+
+3. `tier-contact-witnesses --gate` remains held by unresolved graph-contact,
    parent-contact, relief-evidence, and terminal exception/contact rows.
    Demotion and candidate-review rows now move downstream through
    `data/t2-contact-resolutions.csv`; lower-tier pressure consumes the
@@ -82,31 +88,31 @@ blockers rather than treating the current graph as complete.
    as lower-tier pressure unless the endpoint exception is upgraded with
    terminal-worthy evidence.
 
-5. T2 closure artifacts now feed downstream outputs. `data/tier-candidate-columns.csv`
+4. T2 closure artifacts now feed downstream outputs. `data/tier-candidate-columns.csv`
    returns I30, I44, I285, and I405 to candidate review from closure evidence.
    `data/lower-tier-pressure-witnesses.csv` adds 10 closure-demotion pressure
    rows. `data/t2-service-selection.csv` keeps I285 and I405 in review as
    closure-accepted rows that still need Beck diagnostics before rendering.
 
-6. `data/t3-t4-pressure-intake.csv` is the first thin lower-tier recursive
+5. `data/t3-t4-pressure-intake.csv` is the first thin lower-tier recursive
    pass. It classifies 90 rows as T3 regional intake and 18 near-threshold T3
    rows as bubble-up T2 contact review, without attempting T3/T4 map
    optimization.
 
-7. `data/t2-bubble-up-review.csv` closes the loop back upward. The 18 bubble-up
+6. `data/t2-bubble-up-review.csv` closes the loop back upward. The 18 bubble-up
    rows can reopen T2 only through a T2 contact witness and source-backed
    regional service value.
 
-8. `data/t1-feedback-docket.csv` applies the conservative upward rule to T1.
+7. `data/t1-feedback-docket.csv` applies the conservative upward rule to T1.
    The current pass has 39 rows: 18 T2-contact-first rows, 16 no-T1-action rows,
    3 score-only T1 rejection rows, and 2 Beck-diagnostic-needed rows. It has no
    `t1-sla-candidate` rows because no lower-tier pressure row names a current
    T1 SLA pair dependency.
 
-9. Beck T1 is alignment-gated against optimizer-selected stops, but the map
+8. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
 
-10. Lower-tier pressure witnesses are a first score/demotion pressure surface.
+9. Lower-tier pressure witnesses are a first score/demotion pressure surface.
    They are not yet county-access failure optimization.
 
 ## Conclusion

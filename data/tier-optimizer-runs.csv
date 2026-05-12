@@ -1,24 +1,25 @@
 step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocker_summary,validation_status
-1,t1-stop-selector,route t1-stop-selector --gate,data/t1-stop-selector.csv,90,pass,0,,pass
-2,t1-topology-repairs,route t1-topology-repairs --gate,data/t1-topology-repairs.csv,11,pass,0,,pass
-3,t1-beck-alignment,route t1-beck-alignment --gate,data/t1-beck-alignment.csv,11,pass,0,,pass
-4,t2-region-workloads,route tier-regions --tier T2 --gate,data/tier-region-workloads.csv,40,held-known,1,component-bridged T2 graph pending contact repair,held
-5,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,held-known,15,"held rows split by data/t2-held-contact-actions.csv into graph, parent, relief, and terminal validation",held
-6,t2-contact-resolutions,route t2-contact-resolutions --gate,data/t2-contact-resolutions.csv,40,pass,0,,pass
-7,t2-held-contact-actions,route t2-held-contact-actions --gate,data/t2-held-contact-actions.csv,15,pass,0,,pass
-8,t2-graph-contact-repairs,route t2-graph-contact-repairs --gate,data/t2-graph-contact-repairs.csv,8,pass,0,,pass
-9,t2-parent-contact-validation,route t2-parent-contact-validation --gate,data/t2-parent-contact-validation.csv,2,pass,0,,pass
-10,t2-relief-evidence-docket,route t2-relief-evidence-docket --gate,data/t2-relief-evidence-docket.csv,2,pass,0,,pass
-11,t2-terminal-contact-validation,route t2-terminal-contact-validation --gate,data/t2-terminal-contact-validation.csv,3,pass,0,,pass
-12,t2-blocker-closure,route t2-blocker-closure --gate,data/t2-blocker-closure.csv,15,pass,0,,pass
-13,t2-route-family-splits,route t2-route-family-splits --gate,data/t2-route-family-splits.csv,3,pass,0,,pass
-14,t2-graph-contact-validation,route t2-graph-contact-validation --gate,data/t2-graph-contact-validation.csv,5,pass,0,,pass
-15,t2-contact-closure,route t2-contact-closure --gate,data/t2-contact-closure.csv,6,pass,0,,pass
-16,t2-endpoint-closure,route t2-endpoint-closure --gate,data/t2-endpoint-closure.csv,1,pass,0,,pass
-17,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass
-18,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,18,pass,0,,pass
-19,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,18,pass,0,,pass
-20,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,108,pass,0,,pass
-21,t3-t4-pressure-intake,route t3t4-pressure-intake --gate,data/t3-t4-pressure-intake.csv,108,pass,0,,pass
-22,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
-23,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,39,pass,0,,pass
+1,t1-sla-candidate-pairs,route t1-sla-candidate-pairs --gate,data/t1-sla-candidate-pairs.csv,36,pass,0,,pass
+2,t1-stop-selector,route t1-stop-selector --gate,data/t1-stop-selector.csv,90,pass,0,,pass
+3,t1-topology-repairs,route t1-topology-repairs --gate,data/t1-topology-repairs.csv,11,pass,0,,pass
+4,t1-beck-alignment,route t1-beck-alignment --gate,data/t1-beck-alignment.csv,11,pass,0,,pass
+5,t2-region-workloads,route tier-regions --tier T2 --gate,data/tier-region-workloads.csv,40,held-known,1,component-bridged T2 graph pending contact repair,held
+6,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,held-known,15,"held rows split by data/t2-held-contact-actions.csv into graph, parent, relief, and terminal validation",held
+7,t2-contact-resolutions,route t2-contact-resolutions --gate,data/t2-contact-resolutions.csv,40,pass,0,,pass
+8,t2-held-contact-actions,route t2-held-contact-actions --gate,data/t2-held-contact-actions.csv,15,pass,0,,pass
+9,t2-graph-contact-repairs,route t2-graph-contact-repairs --gate,data/t2-graph-contact-repairs.csv,8,pass,0,,pass
+10,t2-parent-contact-validation,route t2-parent-contact-validation --gate,data/t2-parent-contact-validation.csv,2,pass,0,,pass
+11,t2-relief-evidence-docket,route t2-relief-evidence-docket --gate,data/t2-relief-evidence-docket.csv,2,pass,0,,pass
+12,t2-terminal-contact-validation,route t2-terminal-contact-validation --gate,data/t2-terminal-contact-validation.csv,3,pass,0,,pass
+13,t2-blocker-closure,route t2-blocker-closure --gate,data/t2-blocker-closure.csv,15,pass,0,,pass
+14,t2-route-family-splits,route t2-route-family-splits --gate,data/t2-route-family-splits.csv,3,pass,0,,pass
+15,t2-graph-contact-validation,route t2-graph-contact-validation --gate,data/t2-graph-contact-validation.csv,5,pass,0,,pass
+16,t2-contact-closure,route t2-contact-closure --gate,data/t2-contact-closure.csv,6,pass,0,,pass
+17,t2-endpoint-closure,route t2-endpoint-closure --gate,data/t2-endpoint-closure.csv,1,pass,0,,pass
+18,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass
+19,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,18,pass,0,,pass
+20,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,18,pass,0,,pass
+21,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,108,pass,0,,pass
+22,t3-t4-pressure-intake,route t3t4-pressure-intake --gate,data/t3-t4-pressure-intake.csv,108,pass,0,,pass
+23,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
+24,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,39,pass,0,,pass

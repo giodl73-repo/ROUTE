@@ -46,12 +46,20 @@ Milepost 10 is done when:
 | 10 | Build dual-route T2 regionalizer | 🔄 partial | `route t2-regionalizer --gate` emits `data/t2-regionalizer.csv` from selected/review candidate columns; next slice splits by real T1-bounded regions after contact repairs |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ✅ done | `route t2-service-selection --gate` emits `data/t2-service-selection.csv` with keep, parent-review, duplicate, parallel, and source-needed actions from regionalizer plus Beck diagnostics |
 | 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
-| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 21 passing optimizer stages and 2 explicit held-known T2 blockers |
+| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 22 passing optimizer stages and 2 explicit held-known T2 blockers |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
 | 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
 | 16 | Add conservative T1 feedback docket | ✅ done | `route t1-feedback-docket --gate` emits `data/t1-feedback-docket.csv`; lower-tier pressure reaches T1 only with a named SLA/stop/topology dependency |
+| 17 | Add T1 SLA candidate-pair cut-line artifact | ✅ done | `route t1-sla-candidate-pairs --gate` emits `data/t1-sla-candidate-pairs.csv`; 25 selected pairs and 11 dropped candidates have ranked scores and cut-line reasons |
 
 ## Post-Review Repair Slice
+
+`route t1-sla-candidate-pairs --gate` now emits
+`data/t1-sla-candidate-pairs.csv` from
+`data/t1-sla-candidate-universe.csv`, making the T1 promise portfolio cut line
+auditable. The current pass ranks 36 candidate pairs, selects the 25 current
+portfolio rows, and records `CHI-MIA-36` as the first dropped pair because it is
+covered by the selected reverse-direction `MIA-CHI-36` promise.
 
 `route t2-contact-resolutions --gate` now emits
 `data/t2-contact-resolutions.csv`, separating resolved downstream actions from
