@@ -102,6 +102,12 @@ deterministic dispositions. I195 remains blocked until the represented segment
 is disambiguated; I205 and I295 move toward lower-tier pressure unless a
 metro-specific split segment can prove T1/T2 contact.
 
+`route t2-graph-contact-validation --gate` now emits
+`data/t2-graph-contact-validation.csv`, resolving the graph-contact repair
+bucket by observed contact counts. I30 and I44 have observed T1/T2 contact and
+return to candidate review; I22, I37, and I49 move toward lower-tier pressure
+unless source-backed graph contact is added.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

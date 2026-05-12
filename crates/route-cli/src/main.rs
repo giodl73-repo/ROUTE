@@ -1401,6 +1401,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Validate graph-contact repair blockers against observed T1/T2 contact witnesses
+    T2GraphContactValidation {
+        /// T2 blocker closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        closure: PathBuf,
+        /// Tier contact witness CSV
+        #[arg(
+            long,
+            default_value = "data/tier-contact-witnesses.csv",
+            value_name = "FILE"
+        )]
+        witnesses: PathBuf,
+        /// Output graph-contact validation CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-graph-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if graph-contact validation rows lack a deterministic disposition
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5609,6 +5638,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 route family split gate: PASS");
+            }
+        }
+
+        Commands::T2GraphContactValidation {
+            closure,
+            witnesses,
+            output,
+            gate,
+        } => {
+            println!("route t2-graph-contact-validation");
+            let closure_rows = load_t2_blocker_closure(&closure)
+                .with_context(|| format!("loading {}", closure.display()))?;
+            let witness_rows = load_tier_contact_witnesses(&witnesses)
+                .with_context(|| format!("loading {}", witnesses.display()))?;
+            let rows = t2_graph_contact_validation_rows(&closure_rows, &witness_rows);
+            write_t2_graph_contact_validation(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_graph_contact_validation_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_graph_contact_validation_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 graph contact validation gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 graph contact validation gate failed");
+                }
+                println!();
+                println!("T2 graph contact validation gate: PASS");
             }
         }
 
@@ -10523,6 +10583,20 @@ struct T2RouteFamilySplitRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2GraphContactValidationRow {
+    route: String,
+    observed_t1_node_count: usize,
+    observed_dual_contacts: usize,
+    observed_parent_trunks: String,
+    contact_action: String,
+    disposition: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -12248,6 +12322,122 @@ fn t2_route_family_split_gate_failures(rows: &[T2RouteFamilySplitRow]) -> Vec<St
     failures
 }
 
+fn t2_graph_contact_validation_rows(
+    closure_rows: &[T2BlockerClosureRow],
+    witness_rows: &[TierContactWitnessInputRow],
+) -> Vec<T2GraphContactValidationRow> {
+    let witness_by_route = witness_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    closure_rows
+        .iter()
+        .filter(|row| row.blocker_class == "graph-contact-repair")
+        .map(|row| {
+            let witness = witness_by_route.get(&canonical_route_key(&row.route));
+            let observed_t1_node_count = witness
+                .map(|witness| witness.observed_t1_node_count)
+                .unwrap_or_default();
+            let observed_dual_contacts = witness
+                .map(|witness| witness.observed_dual_contacts)
+                .unwrap_or_default();
+            let observed_parent_trunks = witness
+                .map(|witness| witness.observed_parent_trunks.clone())
+                .unwrap_or_default();
+            let has_contact = observed_t1_node_count > 0 || observed_dual_contacts > 0;
+            let (contact_action, disposition, required_evidence, next_artifact, optimizer_effect) =
+                if has_contact {
+                    (
+                        "accept-observed-graph-contact",
+                        "candidate-review",
+                        "observed T1/T2 graph contact",
+                        "data/tier-candidate-columns.csv",
+                        "eligible for T2 candidate-column review",
+                    )
+                } else {
+                    (
+                        "demote-unless-graph-contact-added",
+                        "lower-tier-pressure",
+                        "source-backed T1/T2 graph contact",
+                        "data/lower-tier-pressure-witnesses.csv",
+                        "kept out of T2 until graph contact evidence exists",
+                    )
+                };
+
+            T2GraphContactValidationRow {
+                route: row.route.clone(),
+                observed_t1_node_count,
+                observed_dual_contacts,
+                observed_parent_trunks,
+                contact_action: contact_action.to_string(),
+                disposition: disposition.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_graph_contact_validation(
+    path: &Path,
+    rows: &[T2GraphContactValidationRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_graph_contact_validation_summary(output: &Path, rows: &[T2GraphContactValidationRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.contact_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 graph contact validation rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_graph_contact_validation_gate_failures(rows: &[T2GraphContactValidationRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 graph contact validation rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.contact_action.trim().is_empty()
+            || row.disposition.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete graph contact validation",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -12938,6 +13128,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-route-family-splits",
                 "route t2-route-family-splits --gate",
                 "data/t2-route-family-splits.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-graph-contact-validation",
+                "route t2-graph-contact-validation --gate",
+                "data/t2-graph-contact-validation.csv",
                 "pass",
                 0,
                 "",
@@ -17949,6 +18147,7 @@ mod tests {
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
+        t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
@@ -18621,6 +18820,81 @@ mod tests {
         assert_eq!(rows[0].family_action, "split-numbered-family");
         assert_eq!(rows[0].disposition, "blocked");
         assert_eq!(rows[1].family_action, "split-local-family-or-demote");
+        assert_eq!(rows[1].disposition, "lower-tier-pressure");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_graph_contact_validation_splits_observed_contact_from_demotions() {
+        let closure_rows = vec![
+            T2BlockerClosureRow {
+                route: "I30".to_string(),
+                source_surface: "t2-graph-contact-repairs".to_string(),
+                blocker_class: "graph-contact-repair".to_string(),
+                blocker_action: "repair-route-geometry-or-demote".to_string(),
+                required_evidence: "prove contact".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect: "blocked until contact exists".to_string(),
+                closure_status: "open".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2BlockerClosureRow {
+                route: "I49".to_string(),
+                source_surface: "t2-graph-contact-repairs".to_string(),
+                blocker_class: "graph-contact-repair".to_string(),
+                blocker_action: "repair-route-geometry-or-demote".to_string(),
+                required_evidence: "prove contact".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect: "blocked until contact exists".to_string(),
+                closure_status: "open".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let witnesses = vec![
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I30".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 755.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 1,
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I49".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 1118.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 0,
+                component_id: 13,
+                component_route_count: 1,
+                component_status: "component-bridged:21".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_graph_contact_validation_rows(&closure_rows, &witnesses);
+        let failures = t2_graph_contact_validation_gate_failures(&rows);
+
+        assert_eq!(rows[0].contact_action, "accept-observed-graph-contact");
+        assert_eq!(rows[0].disposition, "candidate-review");
+        assert_eq!(rows[1].contact_action, "demote-unless-graph-contact-added");
         assert_eq!(rows[1].disposition, "lower-tier-pressure");
         assert!(failures.is_empty());
     }

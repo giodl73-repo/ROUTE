@@ -38,6 +38,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-terminal-contact-validation.csv`
 - `data/t2-blocker-closure.csv`
 - `data/t2-route-family-splits.csv`
+- `data/t2-graph-contact-validation.csv`
 
 ## Held Findings
 
@@ -65,6 +66,9 @@ blockers rather than treating the current graph as complete.
    `data/t2-route-family-splits.csv` turns the route-family class into explicit
    dispositions: I195 requires segment disambiguation, while I205 and I295
    move to lower-tier pressure unless a split segment proves T1/T2 contact.
+   `data/t2-graph-contact-validation.csv` splits the graph-contact class:
+   I30 and I44 return to candidate review on observed contacts, while I22,
+   I37, and I49 move to lower-tier pressure unless contact evidence is added.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

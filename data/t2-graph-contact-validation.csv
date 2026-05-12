@@ -1,0 +1,6 @@
+route,observed_t1_node_count,observed_dual_contacts,observed_parent_trunks,contact_action,disposition,required_evidence,next_artifact,optimizer_effect,validation_status
+I22,0,0,,demote-unless-graph-contact-added,lower-tier-pressure,source-backed T1/T2 graph contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until graph contact evidence exists,review
+I30,0,1,,accept-observed-graph-contact,candidate-review,observed T1/T2 graph contact,data/tier-candidate-columns.csv,eligible for T2 candidate-column review,review
+I37,0,0,,demote-unless-graph-contact-added,lower-tier-pressure,source-backed T1/T2 graph contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until graph contact evidence exists,review
+I44,0,2,,accept-observed-graph-contact,candidate-review,observed T1/T2 graph contact,data/tier-candidate-columns.csv,eligible for T2 candidate-column review,review
+I49,0,0,,demote-unless-graph-contact-added,lower-tier-pressure,source-backed T1/T2 graph contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until graph contact evidence exists,review
