@@ -19,3 +19,4 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 18,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,18,pass,0,,pass
 19,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,18,pass,0,,pass
 20,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,108,pass,0,,pass
+21,t3-t4-pressure-intake,route t3t4-pressure-intake --gate,data/t3-t4-pressure-intake.csv,108,pass,0,,pass

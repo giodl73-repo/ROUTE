@@ -41,6 +41,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-graph-contact-validation.csv`
 - `data/t2-contact-closure.csv`
 - `data/t2-endpoint-closure.csv`
+- `data/t3-t4-pressure-intake.csv`
 
 ## Held Findings
 
@@ -85,10 +86,15 @@ blockers rather than treating the current graph as complete.
    rows. `data/t2-service-selection.csv` keeps I285 and I405 in review as
    closure-accepted rows that still need Beck diagnostics before rendering.
 
-6. Beck T1 is alignment-gated against optimizer-selected stops, but the map
+6. `data/t3-t4-pressure-intake.csv` is the first thin lower-tier recursive
+   pass. It classifies 90 rows as T3 regional intake and 18 near-threshold T3
+   rows as bubble-up T2 contact review, without attempting T3/T4 map
+   optimization.
+
+7. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
 
-7. Lower-tier pressure witnesses are a first score/demotion pressure surface.
+8. Lower-tier pressure witnesses are a first score/demotion pressure surface.
    They are not yet county-access failure optimization.
 
 ## Conclusion

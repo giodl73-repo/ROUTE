@@ -126,6 +126,11 @@ candidate review; closure demotions add 10 lower-tier pressure rows. The T2
 service selector now records I285 and I405 as closure-accepted rows that still
 need Beck diagnostics before map/service landing.
 
+`route t3t4-pressure-intake --gate` now emits
+`data/t3-t4-pressure-intake.csv`, a thin lower-tier intake pass over 108 pressure
+rows. It keeps 90 rows in T3 regional intake and sends 18 near-threshold T3 rows
+back up as T2 contact-review pressure, without attempting T3/T4 map optimization.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

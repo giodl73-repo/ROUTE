@@ -1638,6 +1638,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Classify lower-tier pressure into a thin T3/T4 intake and upward feedback docket
+    T3T4PressureIntake {
+        /// Lower-tier pressure witness CSV
+        #[arg(
+            long,
+            default_value = "data/lower-tier-pressure-witnesses.csv",
+            value_name = "FILE"
+        )]
+        pressure: PathBuf,
+        /// Output T3/T4 pressure intake CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if pressure intake rows lack deterministic actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit the recursive tier optimizer run manifest and gate bundle
     TierOptimize {
         /// Include the full T1/T2/T3/T4 optimizer surface
@@ -6005,6 +6027,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("lower-tier pressure witness gate: PASS");
+            }
+        }
+
+        Commands::T3T4PressureIntake {
+            pressure,
+            output,
+            gate,
+        } => {
+            println!("route t3-t4-pressure-intake");
+            let pressure_rows = load_lower_tier_pressure_witnesses(&pressure)
+                .with_context(|| format!("loading {}", pressure.display()))?;
+            let rows = t3_t4_pressure_intake_rows(&pressure_rows);
+            write_t3_t4_pressure_intake(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_t4_pressure_intake_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_t4_pressure_intake_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3/T4 pressure intake gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3/T4 pressure intake gate failed");
+                }
+                println!();
+                println!("T3/T4 pressure intake gate: PASS");
             }
         }
 
@@ -10928,7 +10978,7 @@ struct TierTableScoreRow {
     confidence_label: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct LowerTierPressureWitnessRow {
     route: String,
     current_tier: String,
@@ -10941,6 +10991,22 @@ struct LowerTierPressureWitnessRow {
     selection_basis: String,
     source_artifact: String,
     next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T3T4PressureIntakeRow {
+    route: String,
+    source_pressure_type: String,
+    current_tier: String,
+    current_score: f64,
+    target_tier: String,
+    intake_class: String,
+    intake_action: String,
+    selection_basis: String,
+    source_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
     validation_status: String,
 }
 
@@ -13693,6 +13759,155 @@ fn lower_tier_pressure_witness_gate_failures(rows: &[LowerTierPressureWitnessRow
     failures
 }
 
+fn load_lower_tier_pressure_witnesses(path: &Path) -> Result<Vec<LowerTierPressureWitnessRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_t4_pressure_intake_rows(
+    pressure_rows: &[LowerTierPressureWitnessRow],
+) -> Vec<T3T4PressureIntakeRow> {
+    let mut rows = pressure_rows
+        .iter()
+        .map(|row| {
+            let (intake_class, intake_action, target_tier, next_artifact, optimizer_effect) =
+                t3_t4_pressure_intake_decision(row);
+            T3T4PressureIntakeRow {
+                route: row.route.clone(),
+                source_pressure_type: row.pressure_type.clone(),
+                current_tier: row.current_tier.clone(),
+                current_score: row.current_score,
+                target_tier: target_tier.to_string(),
+                intake_class: intake_class.to_string(),
+                intake_action: intake_action.to_string(),
+                selection_basis: row.selection_basis.clone(),
+                source_artifact: row.source_artifact.clone(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        a.intake_class
+            .cmp(&b.intake_class)
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn t3_t4_pressure_intake_decision(
+    row: &LowerTierPressureWitnessRow,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    match row.pressure_type.as_str() {
+        "regional-upgrade-pressure" => (
+            "bubble-up-t2-review",
+            "send-to-t2-contact-review",
+            "T2",
+            "data/tier-contact-witnesses.csv",
+            "lower-tier score pressure can reopen T2 only through contact gates",
+        ),
+        "local-upgrade-pressure" => (
+            "t3-regional-intake",
+            "evaluate-for-t3-zone-treatment",
+            "T3",
+            "data/t3-t4-pressure-intake.csv",
+            "hold for T3 zone treatment; no national map promotion",
+        ),
+        "closure-demotion-pressure" | "demotion-pressure" => {
+            if row.current_score >= T3_THRESHOLD {
+                (
+                    "t3-regional-intake",
+                    "accept-as-t3-regional-review",
+                    "T3",
+                    "data/t3-t4-pressure-intake.csv",
+                    "consume T2 demotion as regional feeder review",
+                )
+            } else {
+                (
+                    "t4-local-intake",
+                    "accept-as-t4-local-access-review",
+                    "T4",
+                    "data/t3-t4-pressure-intake.csv",
+                    "consume demotion as local access review",
+                )
+            }
+        }
+        _ => (
+            "evidence-needed",
+            "review-pressure-source",
+            "T3/T4",
+            "data/lower-tier-pressure-witnesses.csv",
+            "pressure row needs explicit intake rule",
+        ),
+    }
+}
+
+fn write_t3_t4_pressure_intake(path: &Path, rows: &[T3T4PressureIntakeRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_t4_pressure_intake_summary(output: &Path, rows: &[T3T4PressureIntakeRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.intake_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T3/T4 pressure intake rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (intake_class, count) in counts {
+        println!("  {intake_class}: {count}");
+    }
+}
+
+fn t3_t4_pressure_intake_gate_failures(rows: &[T3T4PressureIntakeRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T3/T4 pressure intake rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.intake_class.trim().is_empty()
+            || row.intake_action.trim().is_empty()
+            || row.target_tier.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete pressure intake", row.route));
+        }
+    }
+    failures
+}
+
 fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
     let stages = if all_tiers {
         vec![
@@ -13852,6 +14067,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-t4-pressure-intake",
+                "route t3t4-pressure-intake --gate",
+                "data/t3-t4-pressure-intake.csv",
                 "pass",
                 0,
                 "",
@@ -18840,18 +19063,20 @@ mod tests {
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
         t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
+        t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
-        ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1StopSelectorInputRow, T2BlockerClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2TerminalContactValidationRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, NbiBridgeRecord,
+        OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
+        T1LineSelectorInputRow, T1StopSelectorInputRow, T2BlockerClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2TerminalContactValidationRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -19822,6 +20047,51 @@ mod tests {
         assert_eq!(rows[0].route, "I270");
         assert_eq!(rows[0].pressure_type, "closure-demotion-pressure");
         assert_eq!(rows[0].source_artifact, "data/t2-endpoint-closure.csv");
+    }
+
+    #[test]
+    fn t3_t4_pressure_intake_keeps_lower_tier_pass_thin() {
+        let pressure = vec![
+            LowerTierPressureWitnessRow {
+                route: "I25".to_string(),
+                current_tier: "T2".to_string(),
+                current_score: 66.3,
+                confidence: 0.76,
+                confidence_label: "Medium".to_string(),
+                pressure_type: "closure-demotion-pressure".to_string(),
+                witness_action: "demote-unless-contact-added".to_string(),
+                target_tier: "T3/T4".to_string(),
+                selection_basis: "source-backed T1/T2 contact".to_string(),
+                source_artifact: "data/t2-contact-closure.csv".to_string(),
+                next_artifact: "data/lower-tier-pressure-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            LowerTierPressureWitnessRow {
+                route: "I-57".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 49.6,
+                confidence: 0.6,
+                confidence_label: "Low".to_string(),
+                pressure_type: "regional-upgrade-pressure".to_string(),
+                witness_action: "evaluate-for-t2-upgrade-candidate".to_string(),
+                target_tier: "T2".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t3_t4_pressure_intake_rows(&pressure);
+        let failures = t3_t4_pressure_intake_gate_failures(&rows);
+        let classes = rows
+            .iter()
+            .map(|row| row.intake_class.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert!(classes.contains("t3-regional-intake"));
+        assert!(classes.contains("bubble-up-t2-review"));
+        assert!(failures.is_empty());
     }
 
     #[test]
