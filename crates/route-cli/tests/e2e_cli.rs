@@ -206,6 +206,11 @@ fn e2e_gates_map_atlas_and_l2_pressure_coverage() {
     assert!(t1_policy_stdout.contains("route t1-design-policy"));
     assert!(t1_policy_stdout.contains("T1 design policy gate: PASS"));
 
+    let t1_exceptions = assert_success(&["t1-score-exceptions", "--gate"]);
+    let t1_exceptions_stdout = String::from_utf8_lossy(&t1_exceptions.stdout);
+    assert!(t1_exceptions_stdout.contains("route t1-score-exceptions"));
+    assert!(t1_exceptions_stdout.contains("T1 score exception gate: PASS"));
+
     let t2_overlays = assert_success(&["game", "t2-overlays", "--gate"]);
     let t2_overlays_stdout = String::from_utf8_lossy(&t2_overlays.stdout);
     assert!(t2_overlays_stdout.contains("route game t2-overlays"));

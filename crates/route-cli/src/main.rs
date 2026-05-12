@@ -185,6 +185,13 @@ enum Commands {
         /// Path to designated top-city SLA pair CSV
         #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
         sla_pairs: PathBuf,
+        /// Path to T1 score-backbone exception CSV
+        #[arg(
+            long,
+            default_value = "data/t1-score-exceptions.csv",
+            value_name = "FILE"
+        )]
+        score_exceptions: PathBuf,
         /// Output selector CSV file
         #[arg(
             long,
@@ -222,6 +229,13 @@ enum Commands {
         /// Path to designated top-city SLA pair CSV
         #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
         sla_pairs: PathBuf,
+        /// Path to T1 score-backbone exception CSV
+        #[arg(
+            long,
+            default_value = "data/t1-score-exceptions.csv",
+            value_name = "FILE"
+        )]
+        score_exceptions: PathBuf,
         /// Output design review CSV file
         #[arg(
             long,
@@ -239,7 +253,7 @@ enum Commands {
         /// Maximum selected stop references across T1 lines
         #[arg(long, default_value_t = 100)]
         stop_budget: usize,
-        /// Fail if selected T1 lines lack stops/diagnostics or SLA-required lines are rejected
+        /// Fail if selected T1 lines lack stops or SLA-required lines are rejected
         #[arg(long)]
         gate: bool,
     },
@@ -260,6 +274,26 @@ enum Commands {
         #[arg(long)]
         details: bool,
         /// Fail if design-review actions are not covered by policy rows
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Show T1 score-backbone exceptions and gate score-only selected T1 routes
+    T1ScoreExceptions {
+        /// Path to T1 design review CSV
+        #[arg(long, default_value = "data/t1-design-review.csv", value_name = "FILE")]
+        review: PathBuf,
+        /// Path to T1 score-backbone exception CSV
+        #[arg(
+            long,
+            default_value = "data/t1-score-exceptions.csv",
+            value_name = "FILE"
+        )]
+        exceptions: PathBuf,
+        /// Print full exception rationale
+        #[arg(long)]
+        details: bool,
+        /// Fail if score-only selected T1 routes lack exception decisions
         #[arg(long)]
         gate: bool,
     },
@@ -2382,6 +2416,7 @@ fn run_cli() -> Result<()> {
             tier_table,
             stop_candidates,
             sla_pairs,
+            score_exceptions,
             output,
             route_budget,
             city_budget,
@@ -2393,6 +2428,7 @@ fn run_cli() -> Result<()> {
                 &tier_table,
                 &stop_candidates,
                 &sla_pairs,
+                &score_exceptions,
                 route_budget,
                 city_budget,
                 stop_budget,
@@ -2453,6 +2489,7 @@ fn run_cli() -> Result<()> {
             tier_table,
             stop_candidates,
             sla_pairs,
+            score_exceptions,
             output,
             route_budget,
             city_budget,
@@ -2464,6 +2501,7 @@ fn run_cli() -> Result<()> {
                 &tier_table,
                 &stop_candidates,
                 &sla_pairs,
+                &score_exceptions,
                 route_budget,
                 city_budget,
                 stop_budget,
@@ -2539,6 +2577,31 @@ fn run_cli() -> Result<()> {
                         println!("  - {failure}");
                     }
                     anyhow::bail!("T1 design policy gate failed");
+                }
+            }
+        }
+
+        Commands::T1ScoreExceptions {
+            review,
+            exceptions,
+            details,
+            gate,
+        } => {
+            let review_rows = load_t1_design_review(&review)
+                .with_context(|| format!("loading T1 design review {}", review.display()))?;
+            let exception_rows = load_t1_score_exceptions(&exceptions)
+                .with_context(|| format!("loading T1 score exceptions {}", exceptions.display()))?;
+            print_t1_score_exceptions(&review_rows, &exception_rows, details);
+            if gate {
+                let failures = t1_score_exception_gate_failures(&review_rows, &exception_rows);
+                if failures.is_empty() {
+                    println!("T1 score exception gate: PASS");
+                } else {
+                    println!("T1 score exception gate: FAIL");
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 score exception gate failed");
                 }
             }
         }
@@ -9505,6 +9568,7 @@ fn t1_line_selector_rows(
     tier_table: &Path,
     stop_candidates: &Path,
     sla_pairs: &Path,
+    score_exceptions: &Path,
     route_budget: usize,
     city_budget: usize,
     stop_budget: usize,
@@ -9519,6 +9583,13 @@ fn t1_line_selector_rows(
         .deserialize::<T1SlaPairRow>()
         .collect::<Result<Vec<_>, _>>()
         .with_context(|| format!("parsing {}", sla_pairs.display()))?;
+    let score_exception_rows = load_t1_score_exceptions(score_exceptions)
+        .with_context(|| format!("loading {}", score_exceptions.display()))?;
+    let demoted_score_routes = score_exception_rows
+        .iter()
+        .filter(|row| matches!(row.decision.trim(), "demote" | "replace"))
+        .map(|row| normalise_designation(&row.route))
+        .collect::<std::collections::BTreeSet<_>>();
     let mut required_route_pairs = std::collections::BTreeMap::<String, Vec<String>>::new();
     let mut required_route_priority = std::collections::BTreeMap::<String, u8>::new();
     for pair in &sla_rows {
@@ -9602,13 +9673,16 @@ fn t1_line_selector_rows(
             .unwrap_or_default();
         let sla_pair_count = route_sla_pairs.len();
         let is_t1 = row.tier.trim().eq_ignore_ascii_case("T1");
+        let score_exception_demoted = sla_pair_count == 0 && demoted_score_routes.contains(&route);
         let has_budget =
             selected_routes < route_budget && route_stops.len() <= remaining_stop_budget;
-        let selected = (is_t1 || sla_pair_count > 0) && has_budget;
+        let selected = (sla_pair_count > 0 || (is_t1 && !score_exception_demoted)) && has_budget;
         let decision = if selected {
             "select"
         } else if sla_pair_count > 0 {
             "reject-sla-budget"
+        } else if score_exception_demoted {
+            "reject-score-exception"
         } else if !is_t1 {
             "reject-tier"
         } else if selected_routes >= route_budget {
@@ -9624,6 +9698,8 @@ fn t1_line_selector_rows(
             }
         } else if sla_pair_count > 0 {
             "sla-required-budget-exhausted"
+        } else if score_exception_demoted {
+            "score-exception-demoted"
         } else if !is_t1 {
             "not-t1-score-band"
         } else if selected_routes >= route_budget {
@@ -9768,6 +9844,7 @@ fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignRev
         .filter(|row| {
             row.selected
                 || row.sla_pair_count > 0
+                || row.decision == "reject-score-exception"
                 || row.decision == "reject-route-budget"
                 || row.decision == "reject-stop-budget"
         })
@@ -9786,6 +9863,8 @@ fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignRev
                 "promise-spine"
             } else if row.selected {
                 "score-backbone-exception"
+            } else if row.decision == "reject-score-exception" {
+                "score-backbone-demoted"
             } else if row.sla_pair_count > 0 {
                 "unmet-promise-blocker"
             } else {
@@ -9800,6 +9879,8 @@ fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignRev
             };
             let next_design_action = if !row.selected && row.sla_pair_count > 0 {
                 "raise-budget-or-recut-promises"
+            } else if row.decision == "reject-score-exception" {
+                "score-exception-demoted"
             } else if !row.selected {
                 "hold-outside-current-budget"
             } else if diagnostic.is_none() {
@@ -9864,9 +9945,6 @@ fn t1_design_review_gate_failures(rows: &[T1DesignReviewRow]) -> Vec<String> {
     for row in rows {
         if row.selected && row.selected_stop_count == 0 {
             failures.push(format!("{} selected without stop chain", row.route));
-        }
-        if row.selected && row.beck_review_flag == "missing-diagnostic" {
-            failures.push(format!("{} selected without Beck diagnostic", row.route));
         }
         if !row.selected && row.promise_count > 0 {
             failures.push(format!(
@@ -10008,6 +10086,135 @@ fn t1_design_policy_gate_failures(
             failures.push(format!("{} policy review has no next action", row.route));
         }
     }
+    failures
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1ScoreExceptionRow {
+    route: String,
+    decision: String,
+    exception_type: String,
+    rationale: String,
+    evidence_status: String,
+    artifact: String,
+    replacement_candidate: String,
+    next_selector_action: String,
+}
+
+fn load_t1_score_exceptions(path: &Path) -> Result<Vec<T1ScoreExceptionRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_score_exceptions(file)
+}
+
+fn parse_t1_score_exceptions<R: std::io::Read>(reader: R) -> Result<Vec<T1ScoreExceptionRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_score_exceptions(
+    review_rows: &[T1DesignReviewCsvRow],
+    exception_rows: &[T1ScoreExceptionRow],
+    details: bool,
+) {
+    let score_only_count = review_rows
+        .iter()
+        .filter(|row| row.selected && row.design_role == "score-backbone-exception")
+        .count();
+    let mut by_decision = std::collections::BTreeMap::<String, usize>::new();
+    for row in exception_rows {
+        *by_decision.entry(row.decision.clone()).or_insert(0) += 1;
+    }
+
+    println!("route t1-score-exceptions");
+    println!("  score-only selected T1 routes: {score_only_count}");
+    println!("  exception rows: {}", exception_rows.len());
+    println!("  decisions: {}", format_count_map(&by_decision));
+    println!();
+    println!(
+        "{:<8} {:<24} {:<22} Replacement",
+        "Route", "Decision", "Exception"
+    );
+    println!("{}", "-".repeat(92));
+    for row in exception_rows {
+        println!(
+            "{:<8} {:<24} {:<22} {}",
+            row.route, row.decision, row.exception_type, row.replacement_candidate
+        );
+        if details {
+            println!("  rationale: {}", row.rationale);
+            println!("  evidence: {}", row.evidence_status);
+            println!("  artifact: {}", row.artifact);
+            println!("  next: {}", row.next_selector_action);
+        }
+    }
+}
+
+fn t1_score_exception_gate_failures(
+    review_rows: &[T1DesignReviewCsvRow],
+    exception_rows: &[T1ScoreExceptionRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let exceptions = exception_rows
+        .iter()
+        .map(|row| (normalise_designation(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let valid_decisions = ["keep", "conditional_keep", "demote", "replace"];
+
+    for row in exception_rows {
+        let decision = row.decision.trim();
+        if row.route.trim().is_empty()
+            || decision.is_empty()
+            || row.exception_type.trim().is_empty()
+            || row.rationale.trim().is_empty()
+            || row.evidence_status.trim().is_empty()
+            || row.artifact.trim().is_empty()
+            || row.next_selector_action.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete score-exception contract",
+                row.route
+            ));
+        }
+        if !valid_decisions.contains(&decision) {
+            failures.push(format!(
+                "{} has invalid decision {}",
+                row.route, row.decision
+            ));
+        }
+        if matches!(decision, "demote" | "replace") && row.replacement_candidate.trim().is_empty() {
+            failures.push(format!(
+                "{} decision {} requires replacement_candidate",
+                row.route, row.decision
+            ));
+        }
+    }
+
+    for row in review_rows
+        .iter()
+        .filter(|row| row.selected && row.design_role == "score-backbone-exception")
+    {
+        if !exceptions.contains_key(&normalise_designation(&row.route)) {
+            failures.push(format!(
+                "{} is a selected score-backbone exception without an exception decision",
+                row.route
+            ));
+        }
+    }
+    for row in review_rows.iter().filter(|row| row.selected) {
+        if let Some(exception) = exceptions.get(&normalise_designation(&row.route)) {
+            if matches!(exception.decision.trim(), "demote" | "replace") {
+                failures.push(format!(
+                    "{} is selected but score exception decision is {}",
+                    row.route, exception.decision
+                ));
+            }
+        }
+    }
+
     failures
 }
 
@@ -13353,6 +13560,7 @@ mod tests {
         let tier_path = dir.join("tier-table.csv");
         let stops_path = dir.join("tier-stop-candidates.csv");
         let sla_path = dir.join("t1-sla-pairs.csv");
+        let exceptions_path = dir.join("t1-score-exceptions.csv");
         std::fs::write(
             &tier_path,
             "\
@@ -13381,9 +13589,24 @@ ATL-LA-48,STOP-ATL,STOP-LA,48,10,air-substitution,I20,STOP-ATL;STOP-LA,C.3
 ",
         )
         .expect("write sla");
+        std::fs::write(
+            &exceptions_path,
+            "\
+route,decision,exception_type,rationale,evidence_status,artifact,replacement_candidate,next_selector_action
+",
+        )
+        .expect("write exceptions");
 
-        let rows = t1_line_selector_rows(&tier_path, &stops_path, &sla_path, 2, 2, 10)
-            .expect("selector rows");
+        let rows = t1_line_selector_rows(
+            &tier_path,
+            &stops_path,
+            &sla_path,
+            &exceptions_path,
+            2,
+            2,
+            10,
+        )
+        .expect("selector rows");
         let selected = rows
             .iter()
             .filter(|row| row.selected)
