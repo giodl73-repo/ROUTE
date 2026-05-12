@@ -244,6 +244,26 @@ enum Commands {
         gate: bool,
     },
 
+    /// Show T1 design policy actions and gate review-action coverage
+    T1DesignPolicy {
+        /// Path to T1 design review CSV
+        #[arg(long, default_value = "data/t1-design-review.csv", value_name = "FILE")]
+        review: PathBuf,
+        /// Path to T1 design policy action CSV
+        #[arg(
+            long,
+            default_value = "data/t1-design-policy-actions.csv",
+            value_name = "FILE"
+        )]
+        policy: PathBuf,
+        /// Print full policy details
+        #[arg(long)]
+        details: bool,
+        /// Fail if design-review actions are not covered by policy rows
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Export T2 Beck service-class standards used by diagnostics and maps
     BeckT2ServiceStandards {
         /// Output CSV file
@@ -2494,6 +2514,31 @@ fn run_cli() -> Result<()> {
                         println!("  - {failure}");
                     }
                     anyhow::bail!("T1 design review gate failed");
+                }
+            }
+        }
+
+        Commands::T1DesignPolicy {
+            review,
+            policy,
+            details,
+            gate,
+        } => {
+            let review_rows = load_t1_design_review(&review)
+                .with_context(|| format!("loading T1 design review {}", review.display()))?;
+            let policy_rows = load_t1_design_policy_actions(&policy)
+                .with_context(|| format!("loading T1 design policy {}", policy.display()))?;
+            print_t1_design_policy(&review_rows, &policy_rows, details);
+            if gate {
+                let failures = t1_design_policy_gate_failures(&review_rows, &policy_rows);
+                if failures.is_empty() {
+                    println!("T1 design policy gate: PASS");
+                } else {
+                    println!("T1 design policy gate: FAIL");
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 design policy gate failed");
                 }
             }
         }
@@ -9828,6 +9873,139 @@ fn t1_design_review_gate_failures(rows: &[T1DesignReviewRow]) -> Vec<String> {
                 "{} carries {} promise pairs but is not selected",
                 row.route, row.promise_count
             ));
+        }
+    }
+    failures
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct T1DesignReviewCsvRow {
+    route: String,
+    selected: bool,
+    design_role: String,
+    promise_count: usize,
+    selected_stop_count: usize,
+    top_city_stop_count: usize,
+    selector_reason: String,
+    beck_action: String,
+    beck_review_flag: String,
+    overlap_corridors: String,
+    design_status: String,
+    next_design_action: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T1DesignPolicyActionRow {
+    action: String,
+    applies_to_status: String,
+    definition: String,
+    required_policy: String,
+    design_treatment: String,
+    gate_policy: String,
+    next_selector_use: String,
+}
+
+fn load_t1_design_review(path: &Path) -> Result<Vec<T1DesignReviewCsvRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_design_review(file)
+}
+
+fn parse_t1_design_review<R: std::io::Read>(reader: R) -> Result<Vec<T1DesignReviewCsvRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn load_t1_design_policy_actions(path: &Path) -> Result<Vec<T1DesignPolicyActionRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t1_design_policy_actions(file)
+}
+
+fn parse_t1_design_policy_actions<R: std::io::Read>(
+    reader: R,
+) -> Result<Vec<T1DesignPolicyActionRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_t1_design_policy(
+    review_rows: &[T1DesignReviewCsvRow],
+    policy_rows: &[T1DesignPolicyActionRow],
+    details: bool,
+) {
+    let mut action_counts = std::collections::BTreeMap::<String, usize>::new();
+    for row in review_rows {
+        *action_counts
+            .entry(row.next_design_action.clone())
+            .or_insert(0) += 1;
+    }
+
+    println!("route t1-design-policy");
+    println!("  review rows: {}", review_rows.len());
+    println!("  policy actions: {}", policy_rows.len());
+    println!("  action use: {}", format_count_map(&action_counts));
+    println!();
+    println!("{:<34} {:<18} {:>5} Treatment", "Action", "Status", "Uses");
+    println!("{}", "-".repeat(110));
+    for row in policy_rows {
+        let uses = action_counts.get(&row.action).copied().unwrap_or(0);
+        println!(
+            "{:<34} {:<18} {:>5} {}",
+            row.action, row.applies_to_status, uses, row.design_treatment
+        );
+        if details {
+            println!("  definition: {}", row.definition);
+            println!("  required_policy: {}", row.required_policy);
+            println!("  gate_policy: {}", row.gate_policy);
+            println!("  next_selector_use: {}", row.next_selector_use);
+        }
+    }
+}
+
+fn t1_design_policy_gate_failures(
+    review_rows: &[T1DesignReviewCsvRow],
+    policy_rows: &[T1DesignPolicyActionRow],
+) -> Vec<String> {
+    let actions = policy_rows
+        .iter()
+        .map(|row| row.action.trim().to_string())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if policy_rows.is_empty() {
+        failures.push("no T1 design policy action rows".to_string());
+    }
+    for row in policy_rows {
+        if row.action.trim().is_empty()
+            || row.applies_to_status.trim().is_empty()
+            || row.definition.trim().is_empty()
+            || row.required_policy.trim().is_empty()
+            || row.design_treatment.trim().is_empty()
+            || row.gate_policy.trim().is_empty()
+            || row.next_selector_use.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete policy contract", row.action));
+        }
+    }
+    for row in review_rows {
+        if !actions.contains(row.next_design_action.trim()) {
+            failures.push(format!(
+                "{} uses uncovered next_design_action {}",
+                row.route, row.next_design_action
+            ));
+        }
+        if row.selected
+            && row.design_status == "policy-review"
+            && row.next_design_action.trim().is_empty()
+        {
+            failures.push(format!("{} policy review has no next action", row.route));
         }
     }
     failures

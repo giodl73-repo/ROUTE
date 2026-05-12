@@ -8,11 +8,13 @@ Which selected T1 routes are accepted design lines, and which still need policy?
 ```
 
 Canonical rows live in `data/t1-design-review.csv`.
+Policy action definitions live in `data/t1-design-policy-actions.csv`.
 
 Regenerate and gate with:
 
 ```powershell
 cargo run -q -p route -- t1-design-review --gate
+cargo run -q -p route -- t1-design-policy --gate
 ```
 
 ## Current Interpretation

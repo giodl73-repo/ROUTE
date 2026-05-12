@@ -33,6 +33,7 @@ data/tier-promise-standards.csv,map_standard,M9,release_candidate,public,manual 
 data/t1-sla-pairs.csv,map_standard,M9,release_candidate,public,manual review,Designated top-city T1 freight SLA promises used by T1 line selection
 data/t1-line-selector.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- t1-line-selector --gate,T1 line selector output balancing SLA promises route scores city stops and budget
 data/t1-design-review.csv,map_standard,M10,release_candidate,public,cargo run -q -p route -- t1-design-review --gate,T1 design review joining promise selection to Beck overlap and score-exception policy
+data/t1-design-policy-actions.csv,map_standard,M10,release_candidate,public,cargo run -q -p route -- t1-design-policy --gate,T1 design policy actions for overlap score-exception and cutline review outcomes
 docs/t1-design-review.md,map_docs,M10,release_candidate,public,manual review,Human-readable guide to T1 design review roles policy reviews and cutline candidates
 data/beck-t1-diagnostics.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t1-diagnostics,T1 Beck backbone diagnostics for endpoint and overlap review
 data/beck-t2-service-standards.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t2-service-standards --gate,T2 Beck service-class contract for diagnostics maps and game overlays
