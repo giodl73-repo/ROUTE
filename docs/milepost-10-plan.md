@@ -78,6 +78,12 @@ numbered route-family split repairs and 5 graph-contact-or-demotion repairs.
 `data/t2-parent-contact-validation.csv`, requiring I24 to prove dual contact to
 I69 and I495 to prove dual contact to I95 or demote out of T2 regionalization.
 
+`route t2-relief-evidence-docket --gate` now emits
+`data/t2-relief-evidence-docket.csv`, checking held relief loops against
+source bottleneck evidence. I285 has 2 direct ATRI route matches and I405 has 1
+direct ATRI route match, so both remain relief-review candidates, but both still
+route back to contact validation before they can be claimed by the T2 graph.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

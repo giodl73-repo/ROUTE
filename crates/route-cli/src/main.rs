@@ -1268,6 +1268,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit relief evidence review rows for held T2 relief candidates
+    T2ReliefEvidenceDocket {
+        /// T2 held contact action CSV
+        #[arg(
+            long,
+            default_value = "data/t2-held-contact-actions.csv",
+            value_name = "FILE"
+        )]
+        held_actions: PathBuf,
+        /// ATRI bottleneck CSV
+        #[arg(long, default_value = "data/atri-bottlenecks.csv", value_name = "FILE")]
+        bottlenecks: PathBuf,
+        /// Output relief evidence docket CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-relief-evidence-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if relief evidence rows lack source/demotion actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5341,6 +5366,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 parent contact validation gate: PASS");
+            }
+        }
+
+        Commands::T2ReliefEvidenceDocket {
+            held_actions,
+            bottlenecks,
+            output,
+            gate,
+        } => {
+            println!("route t2-relief-evidence-docket");
+            let held_rows = load_t2_held_contact_actions(&held_actions)
+                .with_context(|| format!("loading {}", held_actions.display()))?;
+            let bottleneck_rows = load_atri_bottlenecks(&bottlenecks)
+                .with_context(|| format!("loading {}", bottlenecks.display()))?;
+            let rows = t2_relief_evidence_rows(&held_rows, &bottleneck_rows);
+            write_t2_relief_evidence_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_relief_evidence_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_relief_evidence_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 relief evidence gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 relief evidence gate failed");
+                }
+                println!();
+                println!("T2 relief evidence gate: PASS");
             }
         }
 
@@ -10177,6 +10233,39 @@ struct T2ParentContactValidationRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct AtriBottleneckRow {
+    #[serde(rename = "RANK")]
+    rank: usize,
+    #[serde(rename = "LOCATION")]
+    location: String,
+    #[serde(rename = "ROUTE")]
+    route: String,
+    #[serde(rename = "STATE")]
+    state: String,
+    #[serde(rename = "ANNUAL_COST_M")]
+    annual_cost_m: f64,
+    #[serde(rename = "LAT")]
+    lat: f64,
+    #[serde(rename = "LON")]
+    lon: f64,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2ReliefEvidenceRow {
+    route: String,
+    source_exception_type: String,
+    bottleneck_match_count: usize,
+    top_bottleneck_rank: usize,
+    top_bottleneck_location: String,
+    annual_cost_m: f64,
+    relief_action: String,
+    evidence_basis: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -11277,6 +11366,139 @@ fn t2_parent_contact_validation_gate_failures(
     failures
 }
 
+fn load_atri_bottlenecks(path: &Path) -> Result<Vec<AtriBottleneckRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_relief_evidence_rows(
+    held_rows: &[T2HeldContactActionRow],
+    bottleneck_rows: &[AtriBottleneckRow],
+) -> Vec<T2ReliefEvidenceRow> {
+    let mut bottlenecks_by_route =
+        std::collections::BTreeMap::<String, Vec<&AtriBottleneckRow>>::new();
+    for row in bottleneck_rows {
+        bottlenecks_by_route
+            .entry(canonical_route_key(&row.route))
+            .or_default()
+            .push(row);
+    }
+    for rows in bottlenecks_by_route.values_mut() {
+        rows.sort_by_key(|row| row.rank);
+    }
+
+    held_rows
+        .iter()
+        .filter(|row| row.held_action_type == "relief-evidence-review")
+        .map(|row| {
+            let matches = bottlenecks_by_route
+                .get(&canonical_route_key(&row.route))
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            let annual_cost_m = matches.iter().map(|row| row.annual_cost_m).sum::<f64>();
+            let top = matches.first();
+            let (relief_action, evidence_basis, next_artifact, optimizer_effect) =
+                if matches.is_empty() {
+                    (
+                        "source-gap-demote-or-find-evidence",
+                        "no-atri-route-match",
+                        "data/lower-tier-pressure-witnesses.csv",
+                        "demote unless source-backed relief evidence is added",
+                    )
+                } else {
+                    (
+                        "source-observed-relief-review",
+                        "atri-bottleneck-route-match",
+                        "data/tier-contact-witnesses.csv",
+                        "retain relief review only after contact repair validates",
+                    )
+                };
+
+            T2ReliefEvidenceRow {
+                route: row.route.clone(),
+                source_exception_type: row.exception_type.clone(),
+                bottleneck_match_count: matches.len(),
+                top_bottleneck_rank: top.map(|row| row.rank).unwrap_or_default(),
+                top_bottleneck_location: top
+                    .map(|row| {
+                        format!(
+                            "{} ({}, {:.3}, {:.3})",
+                            row.location, row.state, row.lat, row.lon
+                        )
+                    })
+                    .unwrap_or_default(),
+                annual_cost_m,
+                relief_action: relief_action.to_string(),
+                evidence_basis: evidence_basis.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_relief_evidence_docket(path: &Path, rows: &[T2ReliefEvidenceRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_relief_evidence_summary(output: &Path, rows: &[T2ReliefEvidenceRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.relief_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} relief evidence rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_relief_evidence_gate_failures(rows: &[T2ReliefEvidenceRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 relief evidence rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.relief_action.trim().is_empty()
+            || row.evidence_basis.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+            || !matches!(row.validation_status.as_str(), "pass" | "review")
+        {
+            failures.push(format!(
+                "{} has incomplete relief evidence docket",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -11935,6 +12157,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-parent-contact-validation",
                 "route t2-parent-contact-validation --gate",
                 "data/t2-parent-contact-validation.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-relief-evidence-docket",
+                "route t2-relief-evidence-docket --gate",
+                "data/t2-relief-evidence-docket.csv",
                 "pass",
                 0,
                 "",
@@ -16947,12 +17177,13 @@ mod tests {
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
-        t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_service_selection_gate_failures,
-        t2_service_selection_rows, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
-        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
-        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
-        tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
+        t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
+        t2_relief_evidence_rows, t2_service_selection_gate_failures, t2_service_selection_rows,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
+        tier_candidate_column_gate_failures, tier_candidate_column_rows,
+        tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
+        tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
+        tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1StopSelectorInputRow, T2ContactResolutionRow, T2HeldContactActionRow, T2RegionalizerRow,
@@ -17342,6 +17573,50 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].validation_action, "prove-parent-contact-or-demote");
         assert_eq!(rows[0].parent_trunks, "I69");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_relief_evidence_docket_uses_atri_route_matches() {
+        let held = vec![
+            T2HeldContactActionRow {
+                route: "I285".to_string(),
+                held_action_type: "relief-evidence-review".to_string(),
+                source_resolution_action: "hold-for-relief-evidence-or-demotion".to_string(),
+                exception_type: "relief_loop".to_string(),
+                required_evidence: "source-backed relief evidence".to_string(),
+                next_artifact: "data/t2-relief-evidence-docket.csv".to_string(),
+                optimizer_effect: "retain with evidence".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2HeldContactActionRow {
+                route: "I405".to_string(),
+                held_action_type: "relief-evidence-review".to_string(),
+                source_resolution_action: "hold-for-relief-evidence-or-demotion".to_string(),
+                exception_type: "relief_loop".to_string(),
+                required_evidence: "source-backed relief evidence".to_string(),
+                next_artifact: "data/t2-relief-evidence-docket.csv".to_string(),
+                optimizer_effect: "retain with evidence".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let bottlenecks = vec![AtriBottleneckRow {
+            rank: 1,
+            location: "I-285/I-20 interchange Atlanta".to_string(),
+            route: "I285".to_string(),
+            state: "GA".to_string(),
+            annual_cost_m: 916.0,
+            lat: 33.748,
+            lon: -84.462,
+        }];
+
+        let rows = t2_relief_evidence_rows(&held, &bottlenecks);
+        let failures = t2_relief_evidence_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].relief_action, "source-observed-relief-review");
+        assert_eq!(rows[0].bottleneck_match_count, 1);
+        assert_eq!(rows[1].relief_action, "source-gap-demote-or-find-evidence");
         assert!(failures.is_empty());
     }
 

@@ -1,0 +1,3 @@
+route,source_exception_type,bottleneck_match_count,top_bottleneck_rank,top_bottleneck_location,annual_cost_m,relief_action,evidence_basis,next_artifact,optimizer_effect,validation_status
+I285,metro_beltway_relief,2,1,"I-285/I-20 interchange Atlanta (GA, 33.748, -84.462)",1705.0,source-observed-relief-review,atri-bottleneck-route-match,data/tier-contact-witnesses.csv,retain relief review only after contact repair validates,review
+I405,metro_beltway_relief,1,20,"I-405/SR-55 Los Angeles (CA, 33.683, -117.906)",448.0,source-observed-relief-review,atri-bottleneck-route-match,data/tier-contact-witnesses.csv,retain relief review only after contact repair validates,review

@@ -34,6 +34,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-held-contact-actions.csv`
 - `data/t2-graph-contact-repairs.csv`
 - `data/t2-parent-contact-validation.csv`
+- `data/t2-relief-evidence-docket.csv`
 
 ## Held Findings
 
@@ -49,7 +50,9 @@ blockers rather than treating the current graph as complete.
    validation surfaces. `data/t2-graph-contact-repairs.csv` further splits
    graph repair into route-family split versus graph-contact-or-demotion work.
    `data/t2-parent-contact-validation.csv` isolates parent-contact proof for
-   I24 and I495.
+   I24 and I495. `data/t2-relief-evidence-docket.csv` confirms I285 and I405
+   have direct ATRI bottleneck evidence, but keeps them in review until graph
+   contact validation proves the relief service can attach to the T2 system.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
