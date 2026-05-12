@@ -1253,6 +1253,29 @@ enum GameCommand {
         #[arg(long)]
         gate: bool,
     },
+    /// Show game levers for T2 service classes and verify their map/standards links
+    T2Overlays {
+        /// Path to T2 service overlay CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-service-overlays.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to T2 service standards CSV
+        #[arg(
+            long,
+            default_value = "data/beck-t2-service-standards.csv",
+            value_name = "FILE"
+        )]
+        standards: PathBuf,
+        /// Path to map atlas manifest CSV
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        map_atlas: PathBuf,
+        /// Fail if an overlay is incomplete or disconnected from standards/atlas ids
+        #[arg(long)]
+        gate: bool,
+    },
     /// Print setup, cards, gates, and engine hooks for a scenario
     Inspect {
         /// Scenario id, e.g. des-moines-diamond
@@ -3693,6 +3716,12 @@ fn run_cli() -> Result<()> {
                 map_atlas,
                 gate,
             } => game::campaign_cli(&ledger, &map_atlas, gate)?,
+            GameCommand::T2Overlays {
+                ledger,
+                standards,
+                map_atlas,
+                gate,
+            } => game::t2_service_overlays_cli(&ledger, &standards, &map_atlas, gate)?,
             GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
             GameCommand::RunSeason {
                 scenario,

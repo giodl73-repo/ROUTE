@@ -140,6 +140,17 @@ struct CampaignRow {
     next_artifact: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct T2ServiceOverlayRow {
+    service_class: String,
+    map_id: String,
+    scenario_hook: String,
+    incident_lever: String,
+    upgrade_lever: String,
+    restitch_lever: String,
+    release_gate: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct ScoreResult {
     pub scenario_id: String,
@@ -800,6 +811,27 @@ pub fn campaign_cli(ledger_path: &Path, map_atlas_path: &Path, gate: bool) -> Re
     Ok(())
 }
 
+pub fn t2_service_overlays_cli(
+    overlay_path: &Path,
+    standards_path: &Path,
+    map_atlas_path: &Path,
+    gate: bool,
+) -> Result<()> {
+    let rows = load_t2_service_overlays(overlay_path)?;
+    let standard_classes = load_t2_service_standard_classes(standards_path)?;
+    let atlas_ids = load_map_atlas_ids(map_atlas_path)?;
+    let blockers = t2_service_overlay_gate_blockers(&rows, &standard_classes, &atlas_ids);
+
+    print!("{}", render_t2_service_overlays(&rows, blockers.len()));
+    if gate && !blockers.is_empty() {
+        anyhow::bail!("T2 service overlay gate failed: {}", blockers.join("; "));
+    }
+    if gate {
+        println!("T2 service overlay gate: PASS");
+    }
+    Ok(())
+}
+
 pub fn default_state(scenario_id: &str) -> Result<GameState> {
     scenario_by_id(scenario_id)?;
     if scenario_id == DONNER_SCENARIO_ID {
@@ -862,6 +894,43 @@ fn parse_campaign_spine<R: std::io::Read>(reader: R) -> Result<Vec<CampaignRow>>
     Ok(rows)
 }
 
+fn load_t2_service_overlays(path: &Path) -> Result<Vec<T2ServiceOverlayRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t2_service_overlays(file)
+}
+
+fn parse_t2_service_overlays<R: std::io::Read>(reader: R) -> Result<Vec<T2ServiceOverlayRow>> {
+    let mut reader = csv::Reader::from_reader(reader);
+    let rows = reader
+        .deserialize()
+        .collect::<std::result::Result<Vec<T2ServiceOverlayRow>, csv::Error>>()?;
+    Ok(rows)
+}
+
+fn load_t2_service_standard_classes(path: &Path) -> Result<HashSet<String>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    t2_service_standard_classes_from_reader(&mut reader)
+}
+
+fn t2_service_standard_classes_from_reader<R: std::io::Read>(
+    reader: &mut csv::Reader<R>,
+) -> Result<HashSet<String>> {
+    let headers = reader.headers()?.clone();
+    let service_class_idx = headers
+        .iter()
+        .position(|header| header == "service_class")
+        .ok_or_else(|| anyhow::anyhow!("T2 service standards missing service_class column"))?;
+    let mut classes = HashSet::new();
+    for record in reader.records() {
+        let record = record?;
+        let service_class = record.get(service_class_idx).unwrap_or_default().trim();
+        if !service_class.is_empty() {
+            classes.insert(service_class.to_string());
+        }
+    }
+    Ok(classes)
+}
+
 fn load_map_atlas_ids(path: &Path) -> Result<HashSet<String>> {
     let mut reader = csv::Reader::from_path(path)?;
     map_atlas_ids_from_reader(&mut reader)
@@ -884,6 +953,53 @@ fn map_atlas_ids_from_reader<R: std::io::Read>(
         }
     }
     Ok(ids)
+}
+
+fn t2_service_overlay_gate_blockers(
+    rows: &[T2ServiceOverlayRow],
+    standard_classes: &HashSet<String>,
+    atlas_ids: &HashSet<String>,
+) -> Vec<String> {
+    let mut blockers = Vec::new();
+    let mut seen_classes = HashSet::new();
+    for row in rows {
+        let service_class = row.service_class.trim();
+        if service_class.is_empty()
+            || row.map_id.trim().is_empty()
+            || row.scenario_hook.trim().is_empty()
+            || row.incident_lever.trim().is_empty()
+            || row.upgrade_lever.trim().is_empty()
+            || row.restitch_lever.trim().is_empty()
+            || row.release_gate.trim().is_empty()
+        {
+            blockers.push(format!("{service_class} has a blank required field"));
+        }
+        if !seen_classes.insert(service_class.to_string()) {
+            blockers.push(format!("duplicate T2 service overlay for {service_class}"));
+        }
+        if !standard_classes.contains(service_class) {
+            blockers.push(format!(
+                "{service_class} is not defined in T2 service standards"
+            ));
+        }
+        if !atlas_ids.contains(row.map_id.trim()) {
+            blockers.push(format!(
+                "{service_class} references unknown map_id {}",
+                row.map_id
+            ));
+        }
+        if !row.release_gate.contains("beck-t2-service-standards") {
+            blockers.push(format!(
+                "{service_class} release gate must reference beck-t2-service-standards"
+            ));
+        }
+    }
+    for service_class in standard_classes {
+        if !seen_classes.contains(service_class) {
+            blockers.push(format!("missing T2 service overlay for {service_class}"));
+        }
+    }
+    blockers
 }
 
 fn campaign_gate_blockers(rows: &[CampaignRow], atlas_ids: &HashSet<String>) -> Vec<String> {
@@ -928,6 +1044,21 @@ fn campaign_gate_blockers(rows: &[CampaignRow], atlas_ids: &HashSet<String>) -> 
         blockers.push("campaign must start with des-moines-diamond".to_string());
     }
     blockers
+}
+
+fn render_t2_service_overlays(rows: &[T2ServiceOverlayRow], blocker_count: usize) -> String {
+    let mut out = String::from("route game t2-overlays\n");
+    out.push_str(&format!("  overlays: {}\n", rows.len()));
+    out.push_str(&format!("  gate blockers: {blocker_count}\n\n"));
+    out.push_str("Service Class     Map                    Scenario Hook\n");
+    out.push_str("--------------------------------------------------------------------------\n");
+    for row in rows {
+        out.push_str(&format!(
+            "{:<17} {:<22} {}\n",
+            row.service_class, row.map_id, row.scenario_hook
+        ));
+    }
+    out
 }
 
 fn render_campaign_spine(rows: &[CampaignRow], blocker_count: usize) -> String {
@@ -1681,6 +1812,46 @@ order,phase_name,scenario_id,scenario_name,map_id,tier_focus,standard_lesson,evi
         assert!(blockers
             .iter()
             .any(|blocker| blocker.contains("references unknown map_id missing-map")));
+    }
+
+    #[test]
+    fn t2_service_overlays_cover_standards_and_map_atlas() {
+        let overlays = include_str!("../../../data/game/t2-service-overlays.csv");
+        let standards = include_str!("../../../data/beck-t2-service-standards.csv");
+        let atlas = include_str!("../../../data/map-atlas.csv");
+        let rows = parse_t2_service_overlays(overlays.as_bytes()).expect("T2 overlays");
+        let mut standards_reader = csv::Reader::from_reader(standards.as_bytes());
+        let standard_classes =
+            t2_service_standard_classes_from_reader(&mut standards_reader).expect("standards");
+        let mut atlas_reader = csv::Reader::from_reader(atlas.as_bytes());
+        let atlas_ids = map_atlas_ids_from_reader(&mut atlas_reader).expect("map atlas ids");
+        let blockers = t2_service_overlay_gate_blockers(&rows, &standard_classes, &atlas_ids);
+        let rendered = render_t2_service_overlays(&rows, blockers.len());
+
+        assert!(blockers.is_empty(), "{blockers:?}");
+        assert_eq!(rows.len(), 4);
+        assert!(rendered.contains("route game t2-overlays"));
+        assert!(rendered.contains("transfer-spine"));
+        assert!(rendered.contains("beck-schematic-t2-only"));
+    }
+
+    #[test]
+    fn t2_service_overlay_gate_rejects_unknown_service_classes() {
+        let overlays = "\
+service_class,map_id,scenario_hook,incident_lever,upgrade_lever,restitch_lever,release_gate
+mystery,beck-schematic-t2-only,hook,incident,upgrade,restitch,beck-t2-service-standards gate
+";
+        let rows = parse_t2_service_overlays(overlays.as_bytes()).expect("T2 overlays");
+        let standard_classes = HashSet::from(["connector".to_string()]);
+        let atlas_ids = HashSet::from(["beck-schematic-t2-only".to_string()]);
+        let blockers = t2_service_overlay_gate_blockers(&rows, &standard_classes, &atlas_ids);
+
+        assert!(blockers
+            .iter()
+            .any(|blocker| blocker.contains("mystery is not defined")));
+        assert!(blockers
+            .iter()
+            .any(|blocker| blocker.contains("missing T2 service overlay for connector")));
     }
 
     #[test]
