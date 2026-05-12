@@ -1865,6 +1865,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit stop-placement readiness rows for selected T3 zone render-board routes
+    T3ZoneStopPlacement {
+        /// T3 zone render board CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-render-board.csv",
+            value_name = "FILE"
+        )]
+        render_board: PathBuf,
+        /// Path to stop investment candidate ledger CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        stop_candidates: PathBuf,
+        /// Output T3 zone stop placement CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-zone-stop-placement.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if selected T3 routes lack either a viable stop chain or an authoring action
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6560,6 +6589,39 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3 zone render board gate: PASS");
+            }
+        }
+
+        Commands::T3ZoneStopPlacement {
+            render_board,
+            stop_candidates,
+            output,
+            gate,
+        } => {
+            println!("route t3-zone-stop-placement");
+            let board_rows = load_t3_zone_render_board(&render_board)
+                .with_context(|| format!("loading {}", render_board.display()))?;
+            let stop_file = std::fs::File::open(&stop_candidates)
+                .with_context(|| format!("opening {}", stop_candidates.display()))?;
+            let stop_rows = parse_stop_candidates(stop_file)
+                .with_context(|| format!("parsing {}", stop_candidates.display()))?;
+            let rows = t3_zone_stop_placement_rows(&board_rows, &stop_rows);
+            write_t3_zone_stop_placement(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_zone_stop_placement_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_zone_stop_placement_gate_failures(&rows, &board_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3 zone stop placement gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3 zone stop placement gate failed");
+                }
+                println!();
+                println!("T3 zone stop placement gate: PASS");
             }
         }
 
@@ -11701,12 +11763,37 @@ struct T3ZoneRenderBoardRow {
     map_path: String,
     board_layer: String,
     route: String,
+    national_segment_id: String,
+    stitch_group_id: String,
+    segment_bundle_id: String,
+    segment_aliases: String,
     route_status: String,
     map_treatment: String,
     selected_route_count: usize,
     access_gap_count: usize,
     source_artifact: String,
     render_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3ZoneStopPlacementRow {
+    zone_id: String,
+    zone_name: String,
+    route: String,
+    national_segment_id: String,
+    stitch_group_id: String,
+    segment_bundle_id: String,
+    segment_aliases: String,
+    state_scope: String,
+    stop_count: usize,
+    transfer_grade_stop_count: usize,
+    stop_chain: String,
+    stop_classes: String,
+    placement_status: String,
+    placement_action: String,
+    source_artifact: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -15796,6 +15883,10 @@ fn t3_zone_render_board_rows(
             map_path: map_path.to_string(),
             board_layer: "zone-summary".to_string(),
             route: String::new(),
+            national_segment_id: t3_national_segment_id(&diagnostic.zone_id, ""),
+            stitch_group_id: t3_stitch_group_id(&diagnostic.zone_id, ""),
+            segment_bundle_id: t3_segment_bundle_id(&diagnostic.zone_id, ""),
+            segment_aliases: t3_segment_aliases(&diagnostic.zone_id, "", "zone-summary"),
             route_status: diagnostic.map_readiness.clone(),
             map_treatment: "render-zone-summary".to_string(),
             selected_route_count: diagnostic.selected_route_count,
@@ -15829,6 +15920,10 @@ fn t3_zone_render_board_rows(
                 map_path: map_path.to_string(),
                 board_layer: board_layer.to_string(),
                 route: route.route.clone(),
+                national_segment_id: t3_national_segment_id(&diagnostic.zone_id, &route.route),
+                stitch_group_id: t3_stitch_group_id(&diagnostic.zone_id, &route.route),
+                segment_bundle_id: t3_segment_bundle_id(&diagnostic.zone_id, &route.route),
+                segment_aliases: t3_segment_aliases(&diagnostic.zone_id, &route.route, board_layer),
                 route_status: route.column_decision.clone(),
                 map_treatment: route.map_treatment.clone(),
                 selected_route_count: diagnostic.selected_route_count,
@@ -15858,6 +15953,10 @@ fn t3_zone_render_board_rows(
                 map_path: map_path.to_string(),
                 board_layer: "held-gap".to_string(),
                 route: gap.route.clone(),
+                national_segment_id: t3_national_segment_id(&diagnostic.zone_id, &gap.route),
+                stitch_group_id: t3_stitch_group_id(&diagnostic.zone_id, &gap.route),
+                segment_bundle_id: t3_segment_bundle_id(&diagnostic.zone_id, &gap.route),
+                segment_aliases: t3_segment_aliases(&diagnostic.zone_id, &gap.route, "held-gap"),
                 route_status: gap.gap_class.clone(),
                 map_treatment: "render-gap-callout".to_string(),
                 selected_route_count: diagnostic.selected_route_count,
@@ -15882,6 +15981,14 @@ fn t3_zone_render_board_rows(
             map_path: "data/t3-t4-access-gaps.csv".to_string(),
             board_layer: "unassigned-gap-backlog".to_string(),
             route: String::new(),
+            national_segment_id: t3_national_segment_id("zone-assignment-needed", ""),
+            stitch_group_id: t3_stitch_group_id("zone-assignment-needed", ""),
+            segment_bundle_id: t3_segment_bundle_id("zone-assignment-needed", ""),
+            segment_aliases: t3_segment_aliases(
+                "zone-assignment-needed",
+                "",
+                "unassigned-gap-backlog",
+            ),
             route_status: "zone-assignment-needed".to_string(),
             map_treatment: "hide-until-assigned".to_string(),
             selected_route_count: 0,
@@ -15921,6 +16028,50 @@ fn board_layer_rank(board_layer: &str) -> u8 {
         "unassigned-gap-backlog" => 4,
         _ => 5,
     }
+}
+
+fn t3_national_segment_id(zone_id: &str, route: &str) -> String {
+    let zone = hierarchical_id_part(zone_id);
+    let route = normalise_designation(route);
+    if route.is_empty() {
+        format!("US.HWYSEG.{zone}.ZONE")
+    } else {
+        format!("US.HWYSEG.{zone}.{route}")
+    }
+}
+
+fn t3_stitch_group_id(zone_id: &str, route: &str) -> String {
+    format!("{}.STITCH", t3_national_segment_id(zone_id, route))
+}
+
+fn t3_segment_bundle_id(zone_id: &str, route: &str) -> String {
+    let zone = hierarchical_id_part(zone_id);
+    let route = normalise_designation(route);
+    if route.is_empty() {
+        format!("US.HWYBUNDLE.{zone}.ZONE")
+    } else {
+        format!("US.HWYBUNDLE.{zone}.{route}")
+    }
+}
+
+fn t3_segment_aliases(zone_id: &str, route: &str, layer: &str) -> String {
+    let mut aliases = vec![
+        format!("zone:{}", zone_id.trim()),
+        format!("layer:{}", layer.trim()),
+    ];
+    let route = normalise_designation(route);
+    if !route.is_empty() {
+        aliases.push(format!("route:{route}"));
+        aliases.push(format!("zone-route:{}:{route}", zone_id.trim()));
+    }
+    aliases.join(";")
+}
+
+fn hierarchical_id_part(value: &str) -> String {
+    canonical_route_key(value)
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect::<String>()
 }
 
 fn route_render_action(row: &T3ZoneRouteColumnRow) -> String {
@@ -15991,6 +16142,10 @@ fn t3_zone_render_board_gate_failures(
             || row.map_id.trim().is_empty()
             || row.map_path.trim().is_empty()
             || row.board_layer.trim().is_empty()
+            || row.national_segment_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.segment_aliases.trim().is_empty()
             || row.route_status.trim().is_empty()
             || row.map_treatment.trim().is_empty()
             || row.source_artifact.trim().is_empty()
@@ -16035,6 +16190,24 @@ fn t3_zone_render_board_gate_failures(
                 row.zone_id, row.board_layer
             ));
         }
+        if !row.national_segment_id.starts_with("US.HWYSEG.") {
+            failures.push(format!(
+                "{} {} has non-hierarchical segment id {}",
+                row.zone_id, row.route, row.national_segment_id
+            ));
+        }
+        if !row.stitch_group_id.starts_with(&row.national_segment_id) {
+            failures.push(format!(
+                "{} {} stitch group {} is detached from segment id {}",
+                row.zone_id, row.route, row.stitch_group_id, row.national_segment_id
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!(
+                "{} {} has non-hierarchical bundle id {}",
+                row.zone_id, row.route, row.segment_bundle_id
+            ));
+        }
         if row.board_layer == "selected-route"
             && (row.route_status != "selected" || row.map_treatment != "render-as-zone-column")
         {
@@ -16046,6 +16219,319 @@ fn t3_zone_render_board_gate_failures(
         if row.board_layer == "unassigned-gap-backlog" && row.map_treatment != "hide-until-assigned"
         {
             failures.push("unassigned backlog must stay hidden until assigned".to_string());
+        }
+    }
+
+    failures
+}
+
+fn load_t3_zone_render_board(path: &Path) -> Result<Vec<T3ZoneRenderBoardRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_zone_stop_placement_rows(
+    board_rows: &[T3ZoneRenderBoardRow],
+    stop_rows: &[StopCandidateRow],
+) -> Vec<T3ZoneStopPlacementRow> {
+    let mut rows = board_rows
+        .iter()
+        .filter(|row| row.board_layer == "selected-route")
+        .map(|board| {
+            let stop_plan = t3_zone_stop_plan_for_route(stop_rows, &board.route, &board.zone_id);
+            let transfer_grade_stop_count = stop_plan
+                .iter()
+                .filter(|stop| t3_transfer_grade_stop(stop))
+                .count();
+            let stop_chain = stop_plan
+                .iter()
+                .map(|stop| stop.stop_id.as_str())
+                .collect::<Vec<_>>()
+                .join(";");
+            let stop_classes = stop_plan
+                .iter()
+                .map(|stop| stop.requested_class.trim())
+                .filter(|class| !class.is_empty())
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(";");
+            let state_scope = t3_stop_state_scope(&stop_plan);
+            let (placement_status, placement_action, next_artifact, validation_status) =
+                t3_zone_stop_placement_decision(stop_plan.len(), transfer_grade_stop_count);
+
+            T3ZoneStopPlacementRow {
+                zone_id: board.zone_id.clone(),
+                zone_name: board.zone_name.clone(),
+                route: board.route.clone(),
+                national_segment_id: board.national_segment_id.clone(),
+                stitch_group_id: board.stitch_group_id.clone(),
+                segment_bundle_id: board.segment_bundle_id.clone(),
+                segment_aliases: board.segment_aliases.clone(),
+                state_scope,
+                stop_count: stop_plan.len(),
+                transfer_grade_stop_count,
+                stop_chain,
+                stop_classes,
+                placement_status: placement_status.to_string(),
+                placement_action: placement_action.to_string(),
+                source_artifact: "data/t3-zone-render-board.csv; data/tier-stop-candidates.csv"
+                    .to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.zone_id
+            .cmp(&b.zone_id)
+            .then_with(|| a.placement_status.cmp(&b.placement_status))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn t3_transfer_grade_stop(stop: &StopCandidateRow) -> bool {
+    matches!(
+        stop.requested_class.trim().to_ascii_uppercase().as_str(),
+        "S1" | "S2" | "S3"
+    )
+}
+
+fn t3_stop_state_scope(stops: &[&StopCandidateRow]) -> String {
+    stops
+        .iter()
+        .flat_map(|stop| stop.state.split(['/', ';', ',']))
+        .map(|state| state.trim().to_ascii_uppercase())
+        .filter(|state| !state.is_empty())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
+fn t3_zone_stop_plan_for_route<'a>(
+    rows: &'a [StopCandidateRow],
+    route: &str,
+    zone_id: &str,
+) -> Vec<&'a StopCandidateRow> {
+    let mut stops = stop_plan_for_route(rows, route)
+        .into_iter()
+        .filter(|stop| t3_stop_in_zone(stop, zone_id))
+        .collect::<Vec<_>>();
+    sort_stops_for_route(&mut stops);
+    stops
+}
+
+fn t3_stop_in_zone(stop: &StopCandidateRow, zone_id: &str) -> bool {
+    let Some((min_lat, max_lat, min_lon, max_lon)) = t3_zone_bounds(zone_id) else {
+        return true;
+    };
+    let Some(lat) = parse_coord(&stop.lat) else {
+        return false;
+    };
+    let Some(lon) = parse_coord(&stop.lon) else {
+        return false;
+    };
+    (min_lat..=max_lat).contains(&lat) && (min_lon..=max_lon).contains(&lon)
+}
+
+fn t3_zone_bounds(zone_id: &str) -> Option<(f64, f64, f64, f64)> {
+    match zone_id {
+        "t3-great-lakes" => Some((37.0, 46.5, -92.0, -74.0)),
+        "t3-southeast" => Some((25.0, 39.5, -91.5, -75.0)),
+        "t3-texas-border" => Some((25.0, 34.5, -107.5, -93.0)),
+        "t3-mountain-west" => Some((31.0, 49.5, -125.0, -102.0)),
+        "t3-mid-south" => Some((29.0, 40.5, -96.5, -75.0)),
+        _ => None,
+    }
+}
+
+fn t3_zone_stop_placement_decision(
+    stop_count: usize,
+    transfer_grade_stop_count: usize,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    if stop_count >= 2 && transfer_grade_stop_count >= 1 {
+        (
+            "ready-for-stop-layout",
+            "place route on zone schematic using ordered stop chain",
+            "maps/t3-zone",
+            "pass",
+        )
+    } else if stop_count == 1 {
+        (
+            "needs-terminal-stop",
+            "author one additional transfer or regional terminal stop before geometry",
+            "data/tier-stop-candidates.csv",
+            "review",
+        )
+    } else {
+        (
+            "needs-stop-chain",
+            "author at least two visible T3 zone stops before geometry",
+            "data/tier-stop-candidates.csv",
+            "review",
+        )
+    }
+}
+
+fn write_t3_zone_stop_placement(path: &Path, rows: &[T3ZoneStopPlacementRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_zone_stop_placement_summary(output: &Path, rows: &[T3ZoneStopPlacementRow]) {
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_status.entry(row.placement_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T3 zone stop placement rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t3_zone_stop_placement_gate_failures(
+    rows: &[T3ZoneStopPlacementRow],
+    board_rows: &[T3ZoneRenderBoardRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let selected_routes = board_rows
+        .iter()
+        .filter(|row| row.board_layer == "selected-route")
+        .map(|row| {
+            (
+                row.zone_id.clone(),
+                normalise_designation(row.route.as_str()),
+            )
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    if selected_routes.is_empty() {
+        failures
+            .push("no selected T3 render-board routes available for stop placement".to_string());
+        return failures;
+    }
+    let placement_routes = rows
+        .iter()
+        .map(|row| {
+            (
+                row.zone_id.clone(),
+                normalise_designation(row.route.as_str()),
+            )
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    for route in &selected_routes {
+        if !placement_routes.contains(route) {
+            failures.push(format!(
+                "{} {} missing stop placement row",
+                route.0, route.1
+            ));
+        }
+    }
+
+    let mut seen = std::collections::BTreeSet::<(String, String)>::new();
+    for row in rows {
+        if row.zone_id.trim().is_empty()
+            || row.zone_name.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.national_segment_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.segment_aliases.trim().is_empty()
+            || row.placement_status.trim().is_empty()
+            || row.placement_action.trim().is_empty()
+            || row.source_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete stop placement fields",
+                row.zone_id, row.route
+            ));
+        }
+        let key = (
+            row.zone_id.clone(),
+            normalise_designation(row.route.as_str()),
+        );
+        if !seen.insert(key) {
+            failures.push(format!(
+                "{} {} has duplicate stop placement row",
+                row.zone_id, row.route
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} {} has invalid validation status {}",
+                row.zone_id, row.route, row.validation_status
+            ));
+        }
+        if !row.national_segment_id.starts_with("US.HWYSEG.") {
+            failures.push(format!(
+                "{} {} has non-hierarchical segment id {}",
+                row.zone_id, row.route, row.national_segment_id
+            ));
+        }
+        if !row.stitch_group_id.starts_with(&row.national_segment_id) {
+            failures.push(format!(
+                "{} {} stitch group {} is detached from segment id {}",
+                row.zone_id, row.route, row.stitch_group_id, row.national_segment_id
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!(
+                "{} {} has non-hierarchical bundle id {}",
+                row.zone_id, row.route, row.segment_bundle_id
+            ));
+        }
+        if row.placement_status == "ready-for-stop-layout" {
+            if row.stop_count < 2
+                || row.transfer_grade_stop_count == 0
+                || row.stop_chain.trim().is_empty()
+                || row.state_scope.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} {} is marked ready without a viable T3 stop chain",
+                    row.zone_id, row.route
+                ));
+            }
+            if row.validation_status != "pass" {
+                failures.push(format!("{} {} ready row must pass", row.zone_id, row.route));
+            }
+        } else {
+            if row.validation_status != "review" {
+                failures.push(format!(
+                    "{} {} gap row must be review",
+                    row.zone_id, row.route
+                ));
+            }
+            if row.next_artifact != "data/tier-stop-candidates.csv" {
+                failures.push(format!(
+                    "{} {} stop gap must return to tier stop candidates",
+                    row.zone_id, row.route
+                ));
+            }
         }
     }
 
@@ -16668,6 +17154,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-zone-render-board",
                 "route t3-zone-render-board --gate",
                 "data/t3-zone-render-board.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-zone-stop-placement",
+                "route t3-zone-stop-placement --gate",
+                "data/t3-zone-stop-placement.csv",
                 "pass",
                 0,
                 "",
@@ -21994,6 +22488,7 @@ mod tests {
         t3_zone_access_obligation_rows, t3_zone_map_diagnostic_gate_failures,
         t3_zone_map_diagnostic_rows, t3_zone_render_board_gate_failures, t3_zone_render_board_rows,
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
+        t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
@@ -22008,9 +22503,9 @@ mod tests {
         T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
         T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRouteColumnRow, T4TerminalAccessColumnRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierTableScoreRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T4TerminalAccessColumnRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -23539,6 +24034,115 @@ mod tests {
         assert!(rows.iter().any(|row| row.board_layer == "selected-route"
             && row.route == "I65"
             && row.map_treatment == "render-as-zone-column"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t3_zone_stop_placement_marks_ready_and_authoring_gaps() {
+        let board_rows = vec![
+            T3ZoneRenderBoardRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                map_id: "t3-southeast".to_string(),
+                map_path: "maps/t3-southeast.png".to_string(),
+                board_layer: "selected-route".to_string(),
+                route: "I65".to_string(),
+                national_segment_id: "US.HWYSEG.T3SOUTHEAST.I65".to_string(),
+                stitch_group_id: "US.HWYSEG.T3SOUTHEAST.I65.STITCH".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.T3SOUTHEAST.I65".to_string(),
+                segment_aliases:
+                    "zone:t3-southeast;layer:selected-route;route:I65;zone-route:t3-southeast:I65"
+                        .to_string(),
+                route_status: "selected".to_string(),
+                map_treatment: "render-as-zone-column".to_string(),
+                selected_route_count: 2,
+                access_gap_count: 0,
+                source_artifact: "data/t3-zone-route-columns.csv".to_string(),
+                render_action: "render selected T3 route column with stop placement constraints"
+                    .to_string(),
+                next_artifact: "maps/t3-zone".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T3ZoneRenderBoardRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                map_id: "t3-southeast".to_string(),
+                map_path: "maps/t3-southeast.png".to_string(),
+                board_layer: "selected-route".to_string(),
+                route: "I22".to_string(),
+                national_segment_id: "US.HWYSEG.T3SOUTHEAST.I22".to_string(),
+                stitch_group_id: "US.HWYSEG.T3SOUTHEAST.I22.STITCH".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.T3SOUTHEAST.I22".to_string(),
+                segment_aliases:
+                    "zone:t3-southeast;layer:selected-route;route:I22;zone-route:t3-southeast:I22"
+                        .to_string(),
+                route_status: "selected".to_string(),
+                map_treatment: "render-as-zone-column".to_string(),
+                selected_route_count: 2,
+                access_gap_count: 0,
+                source_artifact: "data/t3-zone-route-columns.csv".to_string(),
+                render_action: "render selected T3 route column with stop placement constraints"
+                    .to_string(),
+                next_artifact: "maps/t3-zone".to_string(),
+                validation_status: "pass".to_string(),
+            },
+        ];
+        let stop_rows = vec![
+            StopCandidateRow {
+                stop_id: "STOP-BHM".to_string(),
+                name: "Birmingham".to_string(),
+                state: "AL".to_string(),
+                lat: "33.52".to_string(),
+                lon: "-86.80".to_string(),
+                requested_class: "S2".to_string(),
+                route_refs: "I-65".to_string(),
+                stop_role: "major_interchange_hub".to_string(),
+                transfer_value: "high".to_string(),
+                freight_volume: "high".to_string(),
+                spacing_need: "met".to_string(),
+                resilience_value: "medium".to_string(),
+                energy_service: "planned".to_string(),
+                land_ops_feasibility: "medium".to_string(),
+                equity_community: "review_needed".to_string(),
+                evidence_status: "heuristic".to_string(),
+                source_artifact: "data/tier-stop-candidates.csv".to_string(),
+                next_step: "Validate stop geometry".to_string(),
+            },
+            StopCandidateRow {
+                stop_id: "STOP-NASH".to_string(),
+                name: "Nashville".to_string(),
+                state: "TN".to_string(),
+                lat: "36.16".to_string(),
+                lon: "-86.78".to_string(),
+                requested_class: "S3".to_string(),
+                route_refs: "I-65".to_string(),
+                stop_role: "transfer_stop".to_string(),
+                transfer_value: "medium".to_string(),
+                freight_volume: "medium".to_string(),
+                spacing_need: "met".to_string(),
+                resilience_value: "medium".to_string(),
+                energy_service: "planned".to_string(),
+                land_ops_feasibility: "medium".to_string(),
+                equity_community: "review_needed".to_string(),
+                evidence_status: "heuristic".to_string(),
+                source_artifact: "data/tier-stop-candidates.csv".to_string(),
+                next_step: "Validate stop geometry".to_string(),
+            },
+        ];
+
+        let rows = t3_zone_stop_placement_rows(&board_rows, &stop_rows);
+        let failures = t3_zone_stop_placement_gate_failures(&rows, &board_rows);
+
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().any(|row| row.route == "I65"
+            && row.national_segment_id == "US.HWYSEG.T3SOUTHEAST.I65"
+            && row.segment_bundle_id == "US.HWYBUNDLE.T3SOUTHEAST.I65"
+            && row.state_scope == "AL;TN"
+            && row.placement_status == "ready-for-stop-layout"
+            && row.validation_status == "pass"));
+        assert!(rows.iter().any(|row| row.route == "I22"
+            && row.placement_status == "needs-stop-chain"
+            && row.validation_status == "review"));
         assert!(failures.is_empty());
     }
 

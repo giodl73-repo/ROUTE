@@ -194,6 +194,12 @@ Current implementation status:
 - `data/t3-zone-render-board.csv` turns map diagnostics into renderer/game board
   rows: zone summaries, selected T3 route columns, review connectors, held-gap
   callouts, and unassigned local-access backlog.
+- `data/t3-zone-stop-placement.csv` checks selected render-board routes against
+  zone-bounded stop candidates, separating render-ready stop chains from
+  stop-authoring gaps.
+- `docs/national-segment-identity-spec.md` defines the stable segment id,
+  route-bundle, stitch-group, alias, and state-scope grammar used by the T3
+  render-board and stop-placement outputs.
 - `data/t2-bubble-up-review.csv` sends 18 near-threshold T3 rows to T2 contact
   review instead of promoting them directly.
 - `data/map-atlas.csv` tracks five T3 zone maps.
@@ -203,5 +209,5 @@ Current gaps:
 - no full T3 zone optimizer yet;
 - no T3/T4 access-promise ledger;
 - county/source enrichment is not yet attached to the zone obligation table;
-- T3 geometry still needs optimizer-driven stop placement and bend constraints;
+- T3 geometry still needs bend constraints after zone-bounded stop placement;
 - T4 still needs terminal/source enrichment and rendered local inset treatment.

@@ -46,7 +46,7 @@ Milepost 10 is done when:
 | 10 | Build dual-route T2 regionalizer | 🔄 partial | `route t2-regionalizer --gate` emits `data/t2-regionalizer.csv` from selected/review candidate columns; next slice splits by real T1-bounded regions after contact repairs |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ✅ done | `route t2-service-selection --gate` emits `data/t2-service-selection.csv` with keep, parent-review, duplicate, parallel, and source-needed actions from regionalizer plus Beck diagnostics |
 | 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
-| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 28 passing optimizer stages and 2 explicit held-known T2 blockers |
+| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 29 passing optimizer stages and 2 explicit held-known T2 blockers |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
 | 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
 | 16 | Add conservative T1 feedback docket | ✅ done | `route t1-feedback-docket --gate` emits `data/t1-feedback-docket.csv`; lower-tier pressure reaches T1 only with a named SLA/stop/topology dependency |
@@ -57,6 +57,7 @@ Milepost 10 is done when:
 | 21 | Add T3/T4 access gap ledger | ✅ done | `route t3-t4-access-gaps --gate` emits `data/t3-t4-access-gaps.csv`, classifying 75 unresolved access rows while blocking upward pressure |
 | 22 | Add T3 zone map diagnostics | ✅ done | `route t3-zone-map-diagnostics --gate` emits `data/t3-zone-map-diagnostics.csv`, proving each T3 zone map has selected feeder routes and gap-callout status |
 | 23 | Add T3 zone render board | ✅ done | `route t3-zone-render-board --gate` emits `data/t3-zone-render-board.csv`, exposing optimizer-selected routes, review connectors, held gaps, and unassigned backlog to renderers and game overlays |
+| 24 | Add T3 zone stop placement | ✅ done | `route t3-zone-stop-placement --gate` emits `data/t3-zone-stop-placement.csv`, checking selected T3 routes against zone-bounded stop chains before geometry generation |
 
 ## Post-Review Repair Slice
 
