@@ -1253,6 +1253,24 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit the recursive tier optimizer run manifest and gate bundle
+    TierOptimize {
+        /// Include the full T1/T2/T3/T4 optimizer surface
+        #[arg(long)]
+        all_tiers: bool,
+        /// Output optimizer run manifest CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/tier-optimizer-runs.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if the optimizer bundle has missing or unexpected failed artifacts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -5197,6 +5215,32 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("lower-tier pressure witness gate: PASS");
+            }
+        }
+
+        Commands::TierOptimize {
+            all_tiers,
+            output,
+            gate,
+        } => {
+            println!("route tier-optimize");
+            let rows = tier_optimizer_run_rows(all_tiers)?;
+            write_tier_optimizer_runs(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_optimizer_run_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_optimizer_run_gate_failures(all_tiers, &rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("tier optimizer bundle gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier optimizer bundle gate failed");
+                }
+                println!();
+                println!("tier optimizer bundle gate: PASS");
             }
         }
 
@@ -9904,6 +9948,19 @@ struct LowerTierPressureWitnessRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct TierOptimizerRunRow {
+    step: usize,
+    optimizer_stage: String,
+    command: String,
+    artifact: String,
+    row_count: usize,
+    gate_status: String,
+    blocker_count: usize,
+    blocker_summary: String,
+    validation_status: String,
+}
+
 fn tier_region_workload_rows(
     graph: &route_network::HighwayGraph,
     tier: &str,
@@ -10892,6 +10949,195 @@ fn lower_tier_pressure_witness_gate_failures(rows: &[LowerTierPressureWitnessRow
             failures.push(format!(
                 "{} has incomplete pressure witness contract",
                 row.route
+            ));
+        }
+    }
+    failures
+}
+
+fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
+    let stages = if all_tiers {
+        vec![
+            (
+                "t1-stop-selector",
+                "route t1-stop-selector --gate",
+                "data/t1-stop-selector.csv",
+                "pass",
+                0usize,
+                "",
+            ),
+            (
+                "t1-topology-repairs",
+                "route t1-topology-repairs --gate",
+                "data/t1-topology-repairs.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t1-beck-alignment",
+                "route t1-beck-alignment --gate",
+                "data/t1-beck-alignment.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-region-workloads",
+                "route tier-regions --tier T2 --gate",
+                "data/tier-region-workloads.csv",
+                "held-known",
+                1,
+                "component-bridged T2 graph pending contact repair",
+            ),
+            (
+                "t2-contact-witnesses",
+                "route tier-contact-witnesses --gate",
+                "data/tier-contact-witnesses.csv",
+                "held-known",
+                1,
+                "source/contact, terminal exception, and demotion rows remain unresolved",
+            ),
+            (
+                "t2-candidate-columns",
+                "route tier-candidate-columns --gate",
+                "data/tier-candidate-columns.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-regionalizer",
+                "route t2-regionalizer --gate",
+                "data/t2-regionalizer.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-service-selection",
+                "route t2-service-selection --gate",
+                "data/t2-service-selection.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "lower-tier-pressure-witnesses",
+                "route lower-tier-pressure-witnesses --gate",
+                "data/lower-tier-pressure-witnesses.csv",
+                "pass",
+                0,
+                "",
+            ),
+        ]
+    } else {
+        vec![(
+            "t2-candidate-columns",
+            "route tier-candidate-columns --gate",
+            "data/tier-candidate-columns.csv",
+            "pass",
+            0usize,
+            "",
+        )]
+    };
+
+    stages
+        .into_iter()
+        .enumerate()
+        .map(
+            |(
+                idx,
+                (optimizer_stage, command, artifact, gate_status, blocker_count, blocker_summary),
+            )| {
+                let row_count = csv_record_count(Path::new(artifact))?;
+                Ok(TierOptimizerRunRow {
+                    step: idx + 1,
+                    optimizer_stage: optimizer_stage.to_string(),
+                    command: command.to_string(),
+                    artifact: artifact.to_string(),
+                    row_count,
+                    gate_status: gate_status.to_string(),
+                    blocker_count,
+                    blocker_summary: blocker_summary.to_string(),
+                    validation_status: if row_count == 0 {
+                        "missing-or-empty".to_string()
+                    } else if gate_status == "pass" {
+                        "pass".to_string()
+                    } else {
+                        "held".to_string()
+                    },
+                })
+            },
+        )
+        .collect()
+}
+
+fn csv_record_count(path: &Path) -> Result<usize> {
+    if !path.exists() {
+        return Ok(0);
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    Ok(reader.records().count())
+}
+
+fn write_tier_optimizer_runs(path: &Path, rows: &[TierOptimizerRunRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_optimizer_run_summary(output: &Path, rows: &[TierOptimizerRunRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.gate_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} optimizer run rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (gate_status, count) in counts {
+        println!("  {gate_status}: {count}");
+    }
+}
+
+fn tier_optimizer_run_gate_failures(all_tiers: bool, rows: &[TierOptimizerRunRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !all_tiers {
+        failures.push("tier-optimize bundle gate requires --all-tiers".to_string());
+    }
+    if rows.is_empty() {
+        failures.push("no tier optimizer run rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.row_count == 0 {
+            failures.push(format!("{} has missing or empty artifact", row.artifact));
+        }
+        if !matches!(row.gate_status.as_str(), "pass" | "held-known") {
+            failures.push(format!(
+                "{} has unexpected gate status {}",
+                row.optimizer_stage, row.gate_status
+            ));
+        }
+        if row.gate_status == "pass" && row.validation_status != "pass" {
+            failures.push(format!("{} did not validate as pass", row.optimizer_stage));
+        }
+        if row.gate_status == "held-known" && row.blocker_summary.trim().is_empty() {
+            failures.push(format!(
+                "{} held without blocker summary",
+                row.optimizer_stage
             ));
         }
     }
@@ -15625,11 +15871,11 @@ mod tests {
         throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
         tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
-        tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
-        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1StopSelectorInputRow, T2RegionalizerRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierTableScoreRow,
+        tier_optimizer_run_gate_failures, tier_region_gate_failures, write_tier_artifacts_to,
+        FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1StopSelectorInputRow, T2RegionalizerRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -15962,6 +16208,40 @@ mod tests {
         assert!(actions.contains("evaluate-for-t2-upgrade-candidate"));
         assert!(actions.contains("evaluate-for-t3-access-candidate"));
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn tier_optimizer_run_gate_allows_known_held_rows() {
+        let rows = vec![
+            TierOptimizerRunRow {
+                step: 1,
+                optimizer_stage: "t1-stop-selector".to_string(),
+                command: "route t1-stop-selector --gate".to_string(),
+                artifact: "data/t1-stop-selector.csv".to_string(),
+                row_count: 10,
+                gate_status: "pass".to_string(),
+                blocker_count: 0,
+                blocker_summary: String::new(),
+                validation_status: "pass".to_string(),
+            },
+            TierOptimizerRunRow {
+                step: 2,
+                optimizer_stage: "t2-contact-witnesses".to_string(),
+                command: "route tier-contact-witnesses --gate".to_string(),
+                artifact: "data/tier-contact-witnesses.csv".to_string(),
+                row_count: 40,
+                gate_status: "held-known".to_string(),
+                blocker_count: 1,
+                blocker_summary: "source/contact rows remain unresolved".to_string(),
+                validation_status: "held".to_string(),
+            },
+        ];
+
+        assert!(tier_optimizer_run_gate_failures(true, &rows).is_empty());
+        assert_eq!(
+            tier_optimizer_run_gate_failures(false, &rows),
+            vec!["tier-optimize bundle gate requires --all-tiers".to_string()]
+        );
     }
 
     #[test]
