@@ -48,7 +48,7 @@ Milepost 10 is done when:
 | 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
 | 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 7 passing optimizer stages and 2 explicit held-known T2 blockers |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
-| 15 | Review Milepost 10 outputs | ⬜ pending | source/design review confirms no AI/hand heuristic line or stop selection remains |
+| 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
 
 ## First Implementation Slices
 
