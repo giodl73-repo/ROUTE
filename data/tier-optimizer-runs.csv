@@ -3,7 +3,7 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 2,t1-topology-repairs,route t1-topology-repairs --gate,data/t1-topology-repairs.csv,11,pass,0,,pass
 3,t1-beck-alignment,route t1-beck-alignment --gate,data/t1-beck-alignment.csv,11,pass,0,,pass
 4,t2-region-workloads,route tier-regions --tier T2 --gate,data/tier-region-workloads.csv,40,held-known,1,component-bridged T2 graph pending contact repair,held
-5,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,held-known,22,"graph contact, parent contact, and terminal exception rows remain unresolved",held
+5,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,held-known,15,"held rows split by data/t2-held-contact-actions.csv into graph, parent, relief, and terminal validation",held
 6,t2-contact-resolutions,route t2-contact-resolutions --gate,data/t2-contact-resolutions.csv,40,pass,0,,pass
 7,t2-held-contact-actions,route t2-held-contact-actions --gate,data/t2-held-contact-actions.csv,15,pass,0,,pass
 8,t2-candidate-columns,route tier-candidate-columns --gate,data/tier-candidate-columns.csv,40,pass,0,,pass

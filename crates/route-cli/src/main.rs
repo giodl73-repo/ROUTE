@@ -11547,8 +11547,8 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "route tier-contact-witnesses --gate",
                 "data/tier-contact-witnesses.csv",
                 "held-known",
-                22,
-                "graph contact, parent contact, and terminal exception rows remain unresolved",
+                15,
+                "held rows split by data/t2-held-contact-actions.csv into graph, parent, relief, and terminal validation",
             ),
             (
                 "t2-contact-resolutions",
