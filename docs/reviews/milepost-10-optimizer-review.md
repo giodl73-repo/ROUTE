@@ -79,10 +79,16 @@ blockers rather than treating the current graph as complete.
    as lower-tier pressure unless the endpoint exception is upgraded with
    terminal-worthy evidence.
 
-3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
+5. T2 closure artifacts now feed downstream outputs. `data/tier-candidate-columns.csv`
+   returns I30, I44, I285, and I405 to candidate review from closure evidence.
+   `data/lower-tier-pressure-witnesses.csv` adds 10 closure-demotion pressure
+   rows. `data/t2-service-selection.csv` keeps I285 and I405 in review as
+   closure-accepted rows that still need Beck diagnostics before rendering.
+
+6. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.
 
-4. Lower-tier pressure witnesses are a first score/demotion pressure surface.
+7. Lower-tier pressure witnesses are a first score/demotion pressure surface.
    They are not yet county-access failure optimization.
 
 ## Conclusion

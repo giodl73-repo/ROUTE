@@ -1,15 +1,25 @@
 route,current_tier,current_score,confidence,confidence_label,pressure_type,witness_action,target_tier,selection_basis,source_artifact,next_artifact,validation_status
 I610,T2,69.4,0.73,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
+I25,T2,66.3,0.76,Medium,closure-demotion-pressure,demote-unless-contact-added,T3/T4,source-backed T1/T2 contact,data/t2-contact-closure.csv,data/lower-tier-pressure-witnesses.csv,review
 I110,T2,65.6,0.75,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
+I65,T2,64.9,0.72,Medium,closure-demotion-pressure,demote-unless-contact-added,T3/T4,source-backed T1/T2 contact,data/t2-contact-closure.csv,data/lower-tier-pressure-witnesses.csv,review
+I270,T2,64.3,0.72,Medium,closure-demotion-pressure,upgrade-endpoint-exception-or-demote,T3/T4,terminal-worthy endpoint role and exception type,data/t2-endpoint-closure.csv,data/lower-tier-pressure-witnesses.csv,review
+I495,T2,64.3,0.72,Medium,closure-demotion-pressure,demote-unless-contact-added,T3/T4,source-backed T1/T2 contact,data/t2-contact-closure.csv,data/lower-tier-pressure-witnesses.csv,review
 I240,T2,62.3,0.72,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
+I24,T2,61.5,0.72,Medium,closure-demotion-pressure,demote-unless-contact-added,T3/T4,source-backed T1/T2 contact,data/t2-contact-closure.csv,data/lower-tier-pressure-witnesses.csv,review
 I680,T2,60.2,0.7,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
+I49,T2,59.9,0.72,Medium,closure-demotion-pressure,demote-unless-graph-contact-added,T3/T4,source-backed T1/T2 graph contact,data/t2-graph-contact-validation.csv,data/lower-tier-pressure-witnesses.csv,review
+I205,T2,56.9,0.7,Medium,closure-demotion-pressure,split-local-family-or-demote,T3/T4,metro-specific segment split plus T1/T2 contact proof,data/t2-route-family-splits.csv,data/lower-tier-pressure-witnesses.csv,review
 I225,T2,55.8,0.7,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,local-spur,data/tier-candidate-columns.csv,data/tier-table.csv,review
+I295,T2,55.0,0.72,Medium,closure-demotion-pressure,split-local-family-or-demote,T3/T4,metro-specific segment split plus T1/T2 contact proof,data/t2-route-family-splits.csv,data/lower-tier-pressure-witnesses.csv,review
 I635,T2,54.9,0.7,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
 I664,T2,54.8,0.68,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,local-spur,data/tier-candidate-columns.csv,data/tier-table.csv,review
+I22,T2,53.5,0.72,Medium,closure-demotion-pressure,demote-unless-graph-contact-added,T3/T4,source-backed T1/T2 graph contact,data/t2-graph-contact-validation.csv,data/lower-tier-pressure-witnesses.csv,review
 I264,T2,53.4,0.75,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
 I220,T2,53.2,0.73,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,local-spur,data/tier-candidate-columns.csv,data/tier-table.csv,review
 I275,T2,52.8,0.72,Medium,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,endpoint-exception-demotion,data/t2-contact-resolutions.csv,data/tier-table.csv,review
 US2,T2,51.7,0.52,Low,demotion-pressure,demote-to-lower-tier-treatment,T3/T4,local-spur,data/tier-candidate-columns.csv,data/tier-table.csv,review
+I37,T2,50.6,0.72,Medium,closure-demotion-pressure,demote-unless-graph-contact-added,T3/T4,source-backed T1/T2 graph contact,data/t2-graph-contact-validation.csv,data/lower-tier-pressure-witnesses.csv,review
 I-57,T3,49.6,0.6,Low,regional-upgrade-pressure,evaluate-for-t2-upgrade-candidate,T2,score-within-five-points-of-t2-threshold,data/tier-table.csv,data/tier-contact-witnesses.csv,review
 I-19,T3,49.3,0.71,Medium,regional-upgrade-pressure,evaluate-for-t2-upgrade-candidate,T2,score-within-five-points-of-t2-threshold,data/tier-table.csv,data/tier-contact-witnesses.csv,review
 I-16,T3,48.7,0.72,Medium,regional-upgrade-pressure,evaluate-for-t2-upgrade-candidate,T2,score-within-five-points-of-t2-threshold,data/tier-table.csv,data/tier-contact-witnesses.csv,review

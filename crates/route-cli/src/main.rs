@@ -1497,6 +1497,34 @@ enum Commands {
             value_name = "FILE"
         )]
         witnesses: PathBuf,
+        /// T2 route-family split closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-route-family-splits.csv",
+            value_name = "FILE"
+        )]
+        route_family_splits: PathBuf,
+        /// T2 graph-contact validation CSV
+        #[arg(
+            long,
+            default_value = "data/t2-graph-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        graph_contact_validation: PathBuf,
+        /// T2 parent/relief/terminal contact closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-contact-closure.csv",
+            value_name = "FILE"
+        )]
+        contact_closure: PathBuf,
+        /// T2 endpoint closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-endpoint-closure.csv",
+            value_name = "FILE"
+        )]
+        endpoint_closure: PathBuf,
         /// Output candidate column CSV
         #[arg(
             long,
@@ -1569,6 +1597,34 @@ enum Commands {
             value_name = "FILE"
         )]
         resolutions: PathBuf,
+        /// T2 route-family split closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-route-family-splits.csv",
+            value_name = "FILE"
+        )]
+        route_family_splits: PathBuf,
+        /// T2 graph-contact validation CSV
+        #[arg(
+            long,
+            default_value = "data/t2-graph-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        graph_contact_validation: PathBuf,
+        /// T2 parent/relief/terminal contact closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-contact-closure.csv",
+            value_name = "FILE"
+        )]
+        contact_closure: PathBuf,
+        /// T2 endpoint closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-endpoint-closure.csv",
+            value_name = "FILE"
+        )]
+        endpoint_closure: PathBuf,
         /// Output lower-tier pressure witness CSV
         #[arg(
             long,
@@ -5794,13 +5850,31 @@ fn run_cli() -> Result<()> {
 
         Commands::TierCandidateColumns {
             witnesses,
+            route_family_splits,
+            graph_contact_validation,
+            contact_closure,
+            endpoint_closure,
             output,
             gate,
         } => {
             println!("route tier-candidate-columns");
             let witness_rows = load_tier_contact_witnesses(&witnesses)
                 .with_context(|| format!("loading {}", witnesses.display()))?;
-            let column_rows = tier_candidate_column_rows(&witness_rows);
+            let route_family_rows = load_t2_route_family_splits(&route_family_splits)
+                .with_context(|| format!("loading {}", route_family_splits.display()))?;
+            let graph_rows = load_t2_graph_contact_validation(&graph_contact_validation)
+                .with_context(|| format!("loading {}", graph_contact_validation.display()))?;
+            let contact_rows = load_t2_contact_closure(&contact_closure)
+                .with_context(|| format!("loading {}", contact_closure.display()))?;
+            let endpoint_rows = load_t2_endpoint_closure(&endpoint_closure)
+                .with_context(|| format!("loading {}", endpoint_closure.display()))?;
+            let dispositions = t2_closure_dispositions(
+                &route_family_rows,
+                &graph_rows,
+                &contact_rows,
+                &endpoint_rows,
+            );
+            let column_rows = tier_candidate_column_rows(&witness_rows, &dispositions);
             write_tier_candidate_columns(&output, &column_rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_candidate_column_summary(&output, &column_rows);
@@ -5881,6 +5955,10 @@ fn run_cli() -> Result<()> {
             tier_table,
             candidates,
             resolutions,
+            route_family_splits,
+            graph_contact_validation,
+            contact_closure,
+            endpoint_closure,
             output,
             gate,
         } => {
@@ -5891,8 +5969,26 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", candidates.display()))?;
             let resolution_rows = load_t2_contact_resolutions(&resolutions)
                 .with_context(|| format!("loading {}", resolutions.display()))?;
-            let rows =
-                lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows, &resolution_rows);
+            let route_family_rows = load_t2_route_family_splits(&route_family_splits)
+                .with_context(|| format!("loading {}", route_family_splits.display()))?;
+            let graph_rows = load_t2_graph_contact_validation(&graph_contact_validation)
+                .with_context(|| format!("loading {}", graph_contact_validation.display()))?;
+            let contact_rows = load_t2_contact_closure(&contact_closure)
+                .with_context(|| format!("loading {}", contact_closure.display()))?;
+            let endpoint_rows = load_t2_endpoint_closure(&endpoint_closure)
+                .with_context(|| format!("loading {}", endpoint_closure.display()))?;
+            let dispositions = t2_closure_dispositions(
+                &route_family_rows,
+                &graph_rows,
+                &contact_rows,
+                &endpoint_rows,
+            );
+            let rows = lower_tier_pressure_witness_rows(
+                &tier_rows,
+                &candidate_rows,
+                &resolution_rows,
+                &dispositions,
+            );
             write_lower_tier_pressure_witnesses(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_lower_tier_pressure_witness_summary(&output, &rows);
@@ -10688,7 +10784,7 @@ struct T2BlockerClosureRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2RouteFamilySplitRow {
     route: String,
     endpoint_name: String,
@@ -10703,7 +10799,7 @@ struct T2RouteFamilySplitRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2GraphContactValidationRow {
     route: String,
     observed_t1_node_count: usize,
@@ -10717,7 +10813,7 @@ struct T2GraphContactValidationRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2ContactClosureRow {
     route: String,
     blocker_class: String,
@@ -10732,7 +10828,7 @@ struct T2ContactClosureRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2EndpointClosureRow {
     route: String,
     endpoint_name: String,
@@ -10746,6 +10842,16 @@ struct T2EndpointClosureRow {
     next_artifact: String,
     optimizer_effect: String,
     validation_status: String,
+}
+
+#[derive(Debug, Clone)]
+struct T2ClosureDisposition {
+    route: String,
+    disposition: String,
+    action: String,
+    basis: String,
+    source_artifact: String,
+    next_artifact: String,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -12823,10 +12929,126 @@ fn t2_endpoint_closure_gate_failures(rows: &[T2EndpointClosureRow]) -> Vec<Strin
     failures
 }
 
-fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
+fn load_t2_route_family_splits(path: &Path) -> Result<Vec<T2RouteFamilySplitRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_graph_contact_validation(path: &Path) -> Result<Vec<T2GraphContactValidationRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_contact_closure(path: &Path) -> Result<Vec<T2ContactClosureRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_endpoint_closure(path: &Path) -> Result<Vec<T2EndpointClosureRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_closure_dispositions(
+    route_family_rows: &[T2RouteFamilySplitRow],
+    graph_rows: &[T2GraphContactValidationRow],
+    contact_rows: &[T2ContactClosureRow],
+    endpoint_rows: &[T2EndpointClosureRow],
+) -> std::collections::HashMap<String, T2ClosureDisposition> {
+    let mut dispositions = std::collections::HashMap::new();
+
+    for row in route_family_rows {
+        dispositions.insert(
+            canonical_route_key(&row.route),
+            T2ClosureDisposition {
+                route: row.route.clone(),
+                disposition: row.disposition.clone(),
+                action: row.family_action.clone(),
+                basis: row.required_evidence.clone(),
+                source_artifact: "data/t2-route-family-splits.csv".to_string(),
+                next_artifact: row.next_artifact.clone(),
+            },
+        );
+    }
+    for row in graph_rows {
+        dispositions.insert(
+            canonical_route_key(&row.route),
+            T2ClosureDisposition {
+                route: row.route.clone(),
+                disposition: row.disposition.clone(),
+                action: row.contact_action.clone(),
+                basis: row.required_evidence.clone(),
+                source_artifact: "data/t2-graph-contact-validation.csv".to_string(),
+                next_artifact: row.next_artifact.clone(),
+            },
+        );
+    }
+    for row in contact_rows {
+        dispositions.insert(
+            canonical_route_key(&row.route),
+            T2ClosureDisposition {
+                route: row.route.clone(),
+                disposition: row.disposition.clone(),
+                action: row.contact_action.clone(),
+                basis: row.required_evidence.clone(),
+                source_artifact: "data/t2-contact-closure.csv".to_string(),
+                next_artifact: row.next_artifact.clone(),
+            },
+        );
+    }
+    for row in endpoint_rows {
+        dispositions.insert(
+            canonical_route_key(&row.route),
+            T2ClosureDisposition {
+                route: row.route.clone(),
+                disposition: row.disposition.clone(),
+                action: row.endpoint_action.clone(),
+                basis: row.required_evidence.clone(),
+                source_artifact: "data/t2-endpoint-closure.csv".to_string(),
+                next_artifact: row.next_artifact.clone(),
+            },
+        );
+    }
+
+    dispositions
+}
+
+fn tier_candidate_column_rows(
+    rows: &[TierContactWitnessInputRow],
+    dispositions: &std::collections::HashMap<String, T2ClosureDisposition>,
+) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
-            let column_decision = tier_candidate_column_decision(row);
+            let closure = dispositions.get(&canonical_route_key(&row.route));
+            let column_decision = tier_candidate_column_decision(row, closure);
             TierCandidateColumnRow {
                 tier: row.tier.clone(),
                 route: row.route.clone(),
@@ -12843,10 +13065,19 @@ fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCa
                 component_status: row.component_status.clone(),
                 witness_type: row.witness_type.clone(),
                 repair_action: row.repair_action.clone(),
-                repair_basis: row.repair_basis.clone(),
+                repair_basis: closure
+                    .filter(|closure| closure.disposition == "candidate-review")
+                    .map(|closure| closure.basis.clone())
+                    .unwrap_or_else(|| row.repair_basis.clone()),
                 column_decision: column_decision.to_string(),
-                evidence_status: row.evidence_status.clone(),
-                required_artifact: row.required_artifact.clone(),
+                evidence_status: closure
+                    .filter(|closure| closure.disposition == "candidate-review")
+                    .map(|_| "closure-accepted".to_string())
+                    .unwrap_or_else(|| row.evidence_status.clone()),
+                required_artifact: closure
+                    .filter(|closure| closure.disposition == "candidate-review")
+                    .map(|closure| closure.source_artifact.clone())
+                    .unwrap_or_else(|| row.required_artifact.clone()),
                 validation_status: if column_decision == "selected" {
                     "pass"
                 } else {
@@ -12858,7 +13089,17 @@ fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCa
         .collect()
 }
 
-fn tier_candidate_column_decision(row: &TierContactWitnessInputRow) -> &'static str {
+fn tier_candidate_column_decision(
+    row: &TierContactWitnessInputRow,
+    closure: Option<&T2ClosureDisposition>,
+) -> &'static str {
+    if row.tier.eq_ignore_ascii_case("T2")
+        && closure
+            .map(|closure| closure.disposition == "candidate-review")
+            .unwrap_or_default()
+    {
+        return "review";
+    }
     match row.witness_type.as_str() {
         "regionalizer-ready" if row.validation_status.eq_ignore_ascii_case("pass") => "selected",
         "parent-region-review" => "review",
@@ -13097,6 +13338,13 @@ fn t2_service_selection_decision(
     diagnostic: Option<&route_map::BeckT2DiagnosticRow>,
 ) -> (String, String, String) {
     let Some(diagnostic) = diagnostic else {
+        if row.evidence_status == "closure-accepted" && row.treatment_status == "review-treatment" {
+            return (
+                "closure-review-needs-beck-diagnostic".to_string(),
+                "closure-accepted-missing-beck-t2-diagnostic".to_string(),
+                "review".to_string(),
+            );
+        }
         return (
             "source-needed".to_string(),
             "missing-beck-t2-diagnostic".to_string(),
@@ -13193,7 +13441,7 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
         return failures;
     }
     for row in rows {
-        if row.beck_corridor.is_empty() {
+        if row.treatment_status == "selected-treatment" && row.beck_corridor.is_empty() {
             failures.push(format!("{} missing Beck T2 diagnostic", row.route));
         }
         if row.treatment_status == "selected-treatment"
@@ -13231,6 +13479,7 @@ fn lower_tier_pressure_witness_rows(
     tier_rows: &[TierTableScoreRow],
     candidate_rows: &[TierCandidateColumnRow],
     resolution_rows: &[T2ContactResolutionRow],
+    dispositions: &std::collections::HashMap<String, T2ClosureDisposition>,
 ) -> Vec<LowerTierPressureWitnessRow> {
     let mut rows = Vec::new();
     let tier_row_by_route = tier_rows
@@ -13293,6 +13542,40 @@ fn lower_tier_pressure_witness_rows(
             selection_basis: row.resolution_basis.clone(),
             source_artifact: "data/t2-contact-resolutions.csv".to_string(),
             next_artifact: "data/tier-table.csv".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    let existing_routes = rows
+        .iter()
+        .map(|row| canonical_route_key(&row.route))
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut closure_pressure_rows = dispositions
+        .values()
+        .filter(|row| row.disposition == "lower-tier-pressure")
+        .filter(|row| !existing_routes.contains(&canonical_route_key(&row.route)))
+        .collect::<Vec<_>>();
+    closure_pressure_rows.sort_by(|a, b| a.route.cmp(&b.route));
+    for row in closure_pressure_rows {
+        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
+        rows.push(LowerTierPressureWitnessRow {
+            route: row.route.clone(),
+            current_tier: "T2".to_string(),
+            current_score: score_row
+                .map(|score_row| score_row.score)
+                .unwrap_or_default(),
+            confidence: score_row
+                .map(|score_row| score_row.confidence)
+                .unwrap_or_default(),
+            confidence_label: score_row
+                .map(|score_row| score_row.confidence_label.clone())
+                .unwrap_or_else(|| "n/a".to_string()),
+            pressure_type: "closure-demotion-pressure".to_string(),
+            witness_action: row.action.clone(),
+            target_tier: "T3/T4".to_string(),
+            selection_basis: row.basis.clone(),
+            source_artifact: row.source_artifact.clone(),
+            next_artifact: row.next_artifact.clone(),
             validation_status: "review".to_string(),
         });
     }
@@ -18545,7 +18828,7 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
-        t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
+        t2_blocker_closure_gate_failures, t2_blocker_closure_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
@@ -18564,11 +18847,11 @@ mod tests {
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1StopSelectorInputRow, T2BlockerClosureRow, T2ContactResolutionRow,
-        T2GraphContactRepairRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2TerminalContactValidationRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T1StopSelectorInputRow, T2BlockerClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2TerminalContactValidationRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -19456,12 +19739,89 @@ mod tests {
             },
         ];
 
-        let columns = tier_candidate_column_rows(&rows);
+        let columns = tier_candidate_column_rows(&rows, &std::collections::HashMap::new());
         let failures = tier_candidate_column_gate_failures(&columns);
 
         assert_eq!(columns[0].column_decision, "selected");
         assert_eq!(columns[1].column_decision, "blocked");
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn tier_candidate_columns_consume_candidate_review_closures() {
+        let rows = vec![TierContactWitnessInputRow {
+            tier: "T2".to_string(),
+            route: "I30".to_string(),
+            witness_type: "graph-contact-needed".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            route_miles: 755.0,
+            observed_t1_node_count: 0,
+            observed_parent_trunks: String::new(),
+            observed_dual_contacts: 1,
+            component_id: 1,
+            component_route_count: 18,
+            component_status: "component-bridged:21".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            repair_basis: "missing-t1-contact-evidence".to_string(),
+            evidence_status: "source-needed".to_string(),
+            required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let graph_rows = vec![T2GraphContactValidationRow {
+            route: "I30".to_string(),
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 1,
+            observed_parent_trunks: String::new(),
+            contact_action: "accept-observed-graph-contact".to_string(),
+            disposition: "candidate-review".to_string(),
+            required_evidence: "observed T1/T2 graph contact".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "eligible for T2 candidate-column review".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let dispositions = t2_closure_dispositions(&[], &graph_rows, &[], &[]);
+
+        let columns = tier_candidate_column_rows(&rows, &dispositions);
+
+        assert_eq!(columns[0].column_decision, "review");
+        assert_eq!(columns[0].evidence_status, "closure-accepted");
+        assert_eq!(
+            columns[0].required_artifact,
+            "data/t2-graph-contact-validation.csv"
+        );
+    }
+
+    #[test]
+    fn lower_tier_pressure_consumes_closure_demotions() {
+        let tier_rows = vec![TierTableScoreRow {
+            tier: "T2".to_string(),
+            route: "I270".to_string(),
+            score: 52.0,
+            confidence: 0.75,
+            confidence_label: "Medium".to_string(),
+        }];
+        let endpoint_rows = vec![T2EndpointClosureRow {
+            route: "I270".to_string(),
+            endpoint_name: "St. Louis / Columbus beltway".to_string(),
+            endpoint_role: "one_ended_feeder".to_string(),
+            exception_type: "metro_beltway_relief".to_string(),
+            evidence_level: "heuristic".to_string(),
+            terminal_worthy: false,
+            endpoint_action: "upgrade-endpoint-exception-or-demote".to_string(),
+            disposition: "lower-tier-pressure".to_string(),
+            required_evidence: "terminal-worthy endpoint role and exception type".to_string(),
+            next_artifact: "data/lower-tier-pressure-witnesses.csv".to_string(),
+            optimizer_effect: "kept out of T2 until endpoint exception is upgraded".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let dispositions = t2_closure_dispositions(&[], &[], &[], &endpoint_rows);
+
+        let rows = lower_tier_pressure_witness_rows(&tier_rows, &[], &[], &dispositions);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I270");
+        assert_eq!(rows[0].pressure_type, "closure-demotion-pressure");
+        assert_eq!(rows[0].source_artifact, "data/t2-endpoint-closure.csv");
     }
 
     #[test]
@@ -19551,15 +19911,32 @@ mod tests {
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
             },
+            T2RegionalizerRow {
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                component_id: 1,
+                route: "I285".to_string(),
+                parent_trunks: String::new(),
+                route_miles: 172.0,
+                column_decision: "review".to_string(),
+                treatment_status: "review-treatment".to_string(),
+                evidence_status: "closure-accepted".to_string(),
+                regionalizer_action: "hold-for-parent-region-review".to_string(),
+                validation_status: "review".to_string(),
+            },
         ];
 
         let rows = t2_service_selection_rows(&regionalizer, &route_map::beck_t2_diagnostics());
         let failures = t2_service_selection_gate_failures(&rows);
 
-        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 3);
         assert_eq!(rows[0].beck_corridor, "I-15");
         assert_eq!(rows[0].selection_action, "keep-service-column");
         assert_eq!(rows[1].selection_action, "parent-region-review");
+        assert_eq!(
+            rows[2].selection_action,
+            "closure-review-needs-beck-diagnostic"
+        );
         assert!(failures.is_empty());
     }
 
@@ -19604,7 +19981,12 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows, &[]);
+        let rows = lower_tier_pressure_witness_rows(
+            &tier_rows,
+            &candidate_rows,
+            &[],
+            &std::collections::HashMap::new(),
+        );
         let failures = lower_tier_pressure_witness_gate_failures(&rows);
         let actions = rows
             .iter()
@@ -19640,7 +20022,12 @@ mod tests {
             validation_status: "pass".to_string(),
         }];
 
-        let rows = lower_tier_pressure_witness_rows(&tier_rows, &[], &resolution_rows);
+        let rows = lower_tier_pressure_witness_rows(
+            &tier_rows,
+            &[],
+            &resolution_rows,
+            &std::collections::HashMap::new(),
+        );
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].route, "I110");

@@ -119,6 +119,13 @@ unless contact evidence is added.
 bucket. I270 is not terminal-worthy under the endpoint standard, so it moves to
 lower-tier pressure unless its endpoint exception is upgraded with evidence.
 
+`route tier-candidate-columns --gate` and
+`route lower-tier-pressure-witnesses --gate` now consume the T2 closure
+artifacts. Closure-backed T2 reviews add I30, I44, I285, and I405 back to
+candidate review; closure demotions add 10 lower-tier pressure rows. The T2
+service selector now records I285 and I405 as closure-accepted rows that still
+need Beck diagnostics before map/service landing.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

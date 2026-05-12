@@ -1,6 +1,10 @@
 tier,region_id,component_id,route,parent_trunks,route_miles,column_decision,treatment_status,evidence_status,regionalizer_action,validation_status
 T2,component-1,1,I15,I84;I90,2882.0498515577588,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-1,1,I285,,172.22132483226093,review,review-treatment,closure-accepted,hold-for-parent-region-review,review
 T2,component-1,1,I29,I35,1499.3473610974459,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,I30,,755.3684247632106,review,review-treatment,closure-accepted,hold-for-parent-region-review,review
+T2,component-1,1,I405,,213.2352757018074,review,review-treatment,closure-accepted,hold-for-parent-region-review,review
+T2,component-1,1,I44,,1272.916100947567,review,review-treatment,closure-accepted,hold-for-parent-region-review,review
 T2,component-1,1,I59,I20,887.1983600653118,review,review-treatment,review,hold-for-parent-region-review,review
 T2,component-1,1,I76,I70;I80,1244.4171797436604,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-19,19,I77,I64,1225.3540650062364,review,review-treatment,review,hold-for-parent-region-review,review
