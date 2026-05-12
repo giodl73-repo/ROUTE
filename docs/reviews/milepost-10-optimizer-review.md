@@ -39,6 +39,7 @@ blockers rather than treating the current graph as complete.
 - `data/t2-blocker-closure.csv`
 - `data/t2-route-family-splits.csv`
 - `data/t2-graph-contact-validation.csv`
+- `data/t2-contact-closure.csv`
 
 ## Held Findings
 
@@ -69,6 +70,10 @@ blockers rather than treating the current graph as complete.
    `data/t2-graph-contact-validation.csv` splits the graph-contact class:
    I30 and I44 return to candidate review on observed contacts, while I22,
    I37, and I49 move to lower-tier pressure unless contact evidence is added.
+   `data/t2-contact-closure.csv` applies the same closure rule to parent,
+   relief, and terminal blockers: I285 and I405 return to candidate review;
+   I24, I495, I25, and I65 move to lower-tier pressure unless contact evidence
+   is added.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

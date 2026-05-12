@@ -1,0 +1,7 @@
+route,blocker_class,observed_t1_node_count,observed_dual_contacts,observed_parent_trunks,contact_action,disposition,required_evidence,next_artifact,optimizer_effect,validation_status
+I24,parent-contact-repair,3,0,I69,demote-unless-contact-added,lower-tier-pressure,source-backed T1/T2 contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until contact evidence exists,review
+I495,parent-contact-repair,13,0,I95,demote-unless-contact-added,lower-tier-pressure,source-backed T1/T2 contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until contact evidence exists,review
+I285,relief-contact-repair,0,1,,accept-observed-contact,candidate-review,observed T1/T2 contact,data/tier-candidate-columns.csv,eligible for T2 candidate-column review,review
+I405,relief-contact-repair,0,1,,accept-observed-contact,candidate-review,observed T1/T2 contact,data/tier-candidate-columns.csv,eligible for T2 candidate-column review,review
+I25,terminal-contact-repair,0,0,,demote-unless-contact-added,lower-tier-pressure,source-backed T1/T2 contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until contact evidence exists,review
+I65,terminal-contact-repair,0,0,,demote-unless-contact-added,lower-tier-pressure,source-backed T1/T2 contact,data/lower-tier-pressure-witnesses.csv,kept out of T2 until contact evidence exists,review
