@@ -151,6 +151,15 @@ struct T2ServiceOverlayRow {
     release_gate: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct T2ScenarioHookRow {
+    scenario_id: String,
+    service_class: String,
+    t2_map_id: String,
+    player_decision: String,
+    evidence_hold: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct ScoreResult {
     pub scenario_id: String,
@@ -832,6 +841,27 @@ pub fn t2_service_overlays_cli(
     Ok(())
 }
 
+pub fn t2_scenario_hooks_cli(
+    hook_path: &Path,
+    campaign_path: &Path,
+    overlay_path: &Path,
+    gate: bool,
+) -> Result<()> {
+    let hooks = load_t2_scenario_hooks(hook_path)?;
+    let campaign_rows = load_campaign_spine(campaign_path)?;
+    let overlays = load_t2_service_overlays(overlay_path)?;
+    let blockers = t2_scenario_hook_gate_blockers(&hooks, &campaign_rows, &overlays);
+
+    print!("{}", render_t2_scenario_hooks(&hooks, blockers.len()));
+    if gate && !blockers.is_empty() {
+        anyhow::bail!("T2 scenario hook gate failed: {}", blockers.join("; "));
+    }
+    if gate {
+        println!("T2 scenario hook gate: PASS");
+    }
+    Ok(())
+}
+
 pub fn default_state(scenario_id: &str) -> Result<GameState> {
     scenario_by_id(scenario_id)?;
     if scenario_id == DONNER_SCENARIO_ID {
@@ -904,6 +934,19 @@ fn parse_t2_service_overlays<R: std::io::Read>(reader: R) -> Result<Vec<T2Servic
     let rows = reader
         .deserialize()
         .collect::<std::result::Result<Vec<T2ServiceOverlayRow>, csv::Error>>()?;
+    Ok(rows)
+}
+
+fn load_t2_scenario_hooks(path: &Path) -> Result<Vec<T2ScenarioHookRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_t2_scenario_hooks(file)
+}
+
+fn parse_t2_scenario_hooks<R: std::io::Read>(reader: R) -> Result<Vec<T2ScenarioHookRow>> {
+    let mut reader = csv::Reader::from_reader(reader);
+    let rows = reader
+        .deserialize()
+        .collect::<std::result::Result<Vec<T2ScenarioHookRow>, csv::Error>>()?;
     Ok(rows)
 }
 
@@ -1002,6 +1045,68 @@ fn t2_service_overlay_gate_blockers(
     blockers
 }
 
+fn t2_scenario_hook_gate_blockers(
+    hooks: &[T2ScenarioHookRow],
+    campaign_rows: &[CampaignRow],
+    overlays: &[T2ServiceOverlayRow],
+) -> Vec<String> {
+    let mut blockers = Vec::new();
+    let campaign_ids = campaign_rows
+        .iter()
+        .map(|row| row.scenario_id.as_str())
+        .collect::<HashSet<_>>();
+    let t2_campaign_ids = campaign_rows
+        .iter()
+        .filter(|row| row.tier_focus.contains("T2"))
+        .map(|row| row.scenario_id.as_str())
+        .collect::<HashSet<_>>();
+    let overlay_pairs = overlays
+        .iter()
+        .map(|row| (row.service_class.as_str(), row.map_id.as_str()))
+        .collect::<HashSet<_>>();
+    let mut seen_scenarios = HashSet::new();
+
+    for hook in hooks {
+        let scenario_id = hook.scenario_id.trim();
+        let service_class = hook.service_class.trim();
+        let t2_map_id = hook.t2_map_id.trim();
+        if scenario_id.is_empty()
+            || service_class.is_empty()
+            || t2_map_id.is_empty()
+            || hook.player_decision.trim().is_empty()
+            || hook.evidence_hold.trim().is_empty()
+        {
+            blockers.push(format!("{scenario_id} has a blank required field"));
+        }
+        if !campaign_ids.contains(scenario_id) {
+            blockers.push(format!(
+                "{scenario_id} is not present in the campaign spine"
+            ));
+        }
+        if !t2_campaign_ids.contains(scenario_id) {
+            blockers.push(format!(
+                "{scenario_id} does not have T2 in campaign tier_focus"
+            ));
+        }
+        if !overlay_pairs.contains(&(service_class, t2_map_id)) {
+            blockers.push(format!(
+                "{scenario_id} references unknown T2 overlay {service_class}/{t2_map_id}"
+            ));
+        }
+        seen_scenarios.insert(scenario_id.to_string());
+    }
+
+    for scenario_id in t2_campaign_ids {
+        if !seen_scenarios.contains(scenario_id) {
+            blockers.push(format!(
+                "missing T2 scenario hook for campaign scenario {scenario_id}"
+            ));
+        }
+    }
+
+    blockers
+}
+
 fn campaign_gate_blockers(rows: &[CampaignRow], atlas_ids: &HashSet<String>) -> Vec<String> {
     let mut blockers = Vec::new();
     if rows.len() != 8 {
@@ -1044,6 +1149,21 @@ fn campaign_gate_blockers(rows: &[CampaignRow], atlas_ids: &HashSet<String>) -> 
         blockers.push("campaign must start with des-moines-diamond".to_string());
     }
     blockers
+}
+
+fn render_t2_scenario_hooks(rows: &[T2ScenarioHookRow], blocker_count: usize) -> String {
+    let mut out = String::from("route game t2-hooks\n");
+    out.push_str(&format!("  hooks: {}\n", rows.len()));
+    out.push_str(&format!("  gate blockers: {blocker_count}\n\n"));
+    out.push_str("Scenario                       Service Class     Map\n");
+    out.push_str("--------------------------------------------------------------------------\n");
+    for row in rows {
+        out.push_str(&format!(
+            "{:<30} {:<17} {}\n",
+            row.scenario_id, row.service_class, row.t2_map_id
+        ));
+    }
+    out
 }
 
 fn render_t2_service_overlays(rows: &[T2ServiceOverlayRow], blocker_count: usize) -> String {
@@ -1852,6 +1972,48 @@ mystery,beck-schematic-t2-only,hook,incident,upgrade,restitch,beck-t2-service-st
         assert!(blockers
             .iter()
             .any(|blocker| blocker.contains("missing T2 service overlay for connector")));
+    }
+
+    #[test]
+    fn t2_scenario_hooks_cover_campaign_t2_scenarios() {
+        let hooks = include_str!("../../../data/game/t2-scenario-hooks.csv");
+        let campaign = include_str!("../../../data/game/campaign-spine.csv");
+        let overlays = include_str!("../../../data/game/t2-service-overlays.csv");
+        let hook_rows = parse_t2_scenario_hooks(hooks.as_bytes()).expect("T2 hooks");
+        let campaign_rows = parse_campaign_spine(campaign.as_bytes()).expect("campaign spine");
+        let overlay_rows = parse_t2_service_overlays(overlays.as_bytes()).expect("T2 overlays");
+        let blockers = t2_scenario_hook_gate_blockers(&hook_rows, &campaign_rows, &overlay_rows);
+        let rendered = render_t2_scenario_hooks(&hook_rows, blockers.len());
+
+        assert!(blockers.is_empty(), "{blockers:?}");
+        assert_eq!(hook_rows.len(), 3);
+        assert!(rendered.contains("route game t2-hooks"));
+        assert!(rendered.contains("houston-port-surge"));
+        assert!(rendered.contains("long-connector"));
+    }
+
+    #[test]
+    fn t2_scenario_hook_gate_rejects_missing_campaign_hooks() {
+        let hooks = "\
+scenario_id,service_class,t2_map_id,player_decision,evidence_hold
+atlanta-managed-lane-stress,transfer-spine,beck-schematic-t2-only,decision,hold
+";
+        let campaign = "\
+order,phase_name,scenario_id,scenario_name,map_id,tier_focus,standard_lesson,evidence_gate,playable_status,publication_gate,next_artifact
+1,Merge Test,atlanta-managed-lane-stress,Atlanta Managed-Lane Stress,i75-region,T1/T2,lesson,evidence,G0-A seed,locked: missing,next
+2,Port Surge,houston-port-surge,Houston Port Surge,i10-region,T1/T2,lesson,evidence,G0-A seed,locked: missing,next
+";
+        let overlays = "\
+service_class,map_id,scenario_hook,incident_lever,upgrade_lever,restitch_lever,release_gate
+transfer-spine,beck-schematic-t2-only,hook,incident,upgrade,restitch,beck-t2-service-standards gate
+";
+        let hook_rows = parse_t2_scenario_hooks(hooks.as_bytes()).expect("T2 hooks");
+        let campaign_rows = parse_campaign_spine(campaign.as_bytes()).expect("campaign spine");
+        let overlay_rows = parse_t2_service_overlays(overlays.as_bytes()).expect("T2 overlays");
+        let blockers = t2_scenario_hook_gate_blockers(&hook_rows, &campaign_rows, &overlay_rows);
+
+        assert!(blockers.iter().any(|blocker| blocker
+            .contains("missing T2 scenario hook for campaign scenario houston-port-surge")));
     }
 
     #[test]

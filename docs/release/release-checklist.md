@@ -31,7 +31,7 @@ The full gate is the one that counts for closeout.
 
 - Current specs and milepost closeouts.
 - Scoring, map-atlas, Beck T2 service standards, T2 game overlays, gap, pressure, Forum, and Blueprint ledgers with their evidence labels.
-- Game campaign spine, T2 service overlay contract, and checked-in simulated/CLI playtest records.
+- Game campaign spine, T2 service overlay and scenario-hook contracts, and checked-in simulated/CLI playtest records.
 - Static browser prototype as a demonstration artifact, not as proof of claims.
 
 ## Must Stay Held

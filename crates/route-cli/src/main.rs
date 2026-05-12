@@ -1276,6 +1276,33 @@ enum GameCommand {
         #[arg(long)]
         gate: bool,
     },
+    /// Show campaign scenario hooks that consume T2 service overlays
+    T2Hooks {
+        /// Path to T2 scenario hook CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-scenario-hooks.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Path to campaign spine CSV
+        #[arg(
+            long,
+            default_value = "data/game/campaign-spine.csv",
+            value_name = "FILE"
+        )]
+        campaign: PathBuf,
+        /// Path to T2 service overlay CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-service-overlays.csv",
+            value_name = "FILE"
+        )]
+        overlays: PathBuf,
+        /// Fail if T2 campaign scenarios lack a hook or reference unknown overlay classes
+        #[arg(long)]
+        gate: bool,
+    },
     /// Print setup, cards, gates, and engine hooks for a scenario
     Inspect {
         /// Scenario id, e.g. des-moines-diamond
@@ -3722,6 +3749,12 @@ fn run_cli() -> Result<()> {
                 map_atlas,
                 gate,
             } => game::t2_service_overlays_cli(&ledger, &standards, &map_atlas, gate)?,
+            GameCommand::T2Hooks {
+                ledger,
+                campaign,
+                overlays,
+                gate,
+            } => game::t2_scenario_hooks_cli(&ledger, &campaign, &overlays, gate)?,
             GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
             GameCommand::RunSeason {
                 scenario,

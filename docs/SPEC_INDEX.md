@@ -74,6 +74,7 @@ Start here when deciding which document owns a claim.
 | `docs/game/route-game-cli-design.md` | G1 `route game` command, state, scoring, gate, and test design | You need to implement or review the CLI game layer |
 | `data/game/campaign-spine.csv` | Map-backed Interstate Tycoon campaign sequence with lessons, evidence gates, publication gates, and next artifacts | You need to know what game scenario comes after Des Moines or verify `route game campaign --gate` |
 | `data/game/t2-service-overlays.csv` | Game-facing T2 service-class overlay contract linking service standards to incident, upgrade, and restitch levers | You need to target T2 service classes in a scenario or verify `route game t2-overlays --gate` |
+| `data/game/t2-scenario-hooks.csv` | Campaign-facing T2 hook ledger assigning T1/T2 scenarios to service classes, map ids, player decisions, and evidence holds | You need to see which campaign stops consume T2 overlays or verify `route game t2-hooks --gate` |
 | `data/game/des-moines-diamond-session-fixture.csv` | Canonical G1-A score fixture for operational win with publication hold | You need stable score-output regression coverage |
 | `data/game/des-moines-diamond-state-fixture.json` | Canonical G2 seed state showing completed connector with publication hold | You need browser/campaign state fixture data |
 | `data/game/donner-weather-closure-session-fixture.csv` | Canonical Donner CLI seed fixture showing an operational winter win with SLA and publication still held | You need to verify the Mountain Pass game score path |

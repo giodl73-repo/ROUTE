@@ -60,6 +60,7 @@ The game succeeds when a non-specialist can say:
 | Map atlas contract | Ready | `data/map-atlas.csv`; `route map-atlas --gate` verifies national, schematic, T2 service, and T1 regional PNGs for campaign/game reuse |
 | T2 service-class contract | Ready | `data/beck-t2-service-standards.csv`; `route beck-t2-service-standards --gate` defines connector, compact-service, transfer-spine, and long-connector overlay semantics |
 | T2 game overlay contract | Ready | `data/game/t2-service-overlays.csv`; `route game t2-overlays --gate` links T2 service classes to map ids and incident/upgrade/restitch levers |
+| T2 scenario hook contract | Ready | `data/game/t2-scenario-hooks.csv`; `route game t2-hooks --gate` links T1/T2 campaign stops to T2 service classes and evidence holds |
 
 ## Learning Inputs Folded In
 
@@ -253,7 +254,7 @@ Scenario order:
 | 7 | Hardening Stop: EV/Rest Hardening | energy/rest standards under outages |
 | 8 | Hearing Room: Blueprint Hearing | evidence labels and public proof |
 
-Canonical campaign rows live in `data/game/campaign-spine.csv`. The prose table is a readable mirror; the gate owns map-id and publication-gate completeness. T2 service overlays use `data/beck-t2-service-standards.csv` and `data/game/t2-service-overlays.csv` so incidents, upgrades, and restitching can target service classes instead of hand-picked line names.
+Canonical campaign rows live in `data/game/campaign-spine.csv`. The prose table is a readable mirror; the gate owns map-id and publication-gate completeness. T2 service overlays use `data/beck-t2-service-standards.csv`, `data/game/t2-service-overlays.csv`, and `data/game/t2-scenario-hooks.csv` so incidents, upgrades, and restitching can target service classes instead of hand-picked line names.
 
 Done criteria:
 

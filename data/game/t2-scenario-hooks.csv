@@ -1,0 +1,4 @@
+scenario_id,service_class,t2_map_id,player_decision,evidence_hold
+atlanta-managed-lane-stress,transfer-spine,beck-schematic-t2-only,choose whether to harden a throughput-sensitive T2 merge spine or defer to generic widening,managed-lane merge and spillback validation missing
+houston-port-surge,long-connector,beck-schematic-t2-only,choose whether to restitch a long connector around flood and port-surge pressure,port surge demand and flood closure evidence missing
+blueprint-hearing,connector,beck-schematic-t2-only,defend why a T2 connector is an upgrade candidate instead of a local spur,standards proof ledger plus scenario promotion record incomplete
