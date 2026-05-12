@@ -30,14 +30,16 @@ blockers rather than treating the current graph as complete.
 - `data/lower-tier-pressure-witnesses.csv`
 - `data/tier-optimizer-runs.csv`
 - `data/optimizer-map-hooks.csv`
+- `data/t2-contact-resolutions.csv`
 
 ## Held Findings
 
 1. `tier-regions --tier T2 --gate` remains held by the bridged T2 component.
    The manifest records this as `held-known`, not pass.
 
-2. `tier-contact-witnesses --gate` remains held by unresolved source/contact,
-   terminal exception, and demotion rows.
+2. `tier-contact-witnesses --gate` remains held by unresolved graph-contact,
+   parent-contact, and terminal exception rows. Demotion and candidate-review
+   rows now move downstream through `data/t2-contact-resolutions.csv`.
 
 3. Beck T1 is alignment-gated against optimizer-selected stops, but the map
    renderer still does not directly consume `data/t1-stop-selector.csv`.

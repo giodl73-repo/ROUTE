@@ -50,6 +50,18 @@ Milepost 10 is done when:
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
 | 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
 
+## Post-Review Repair Slice
+
+`route t2-contact-resolutions --gate` now emits
+`data/t2-contact-resolutions.csv`, separating resolved downstream actions from
+true contact blockers:
+
+- 8 accepted contact witnesses flow to candidate columns.
+- 6 parent-region reviews flow to candidate-column review.
+- 4 local-spur demotions flow to lower-tier pressure witnesses.
+- 22 rows remain held for graph contact, parent contact, or terminal exception
+  repair.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.
