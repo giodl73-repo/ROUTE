@@ -45,7 +45,7 @@ Milepost 10 is done when:
 | 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | 🔄 partial | `route t1-beck-alignment --gate` proves Beck T1 diagnostics cover optimizer-selected route/stop chains; next slice makes Beck consume selector rows directly |
 | 10 | Build dual-route T2 regionalizer | 🔄 partial | `route t2-regionalizer --gate` emits `data/t2-regionalizer.csv` from selected/review candidate columns; next slice splits by real T1-bounded regions after contact repairs |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ✅ done | `route t2-service-selection --gate` emits `data/t2-service-selection.csv` with keep, parent-review, duplicate, parallel, and source-needed actions from regionalizer plus Beck diagnostics |
-| 12 | Build T3/T4 lower-tier pressure witnesses | ⬜ pending | Failed local/regional access emits T3/T2/T1 repair or upgrade candidates |
+| 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
 | 13 | Add optimizer run manifest and gate bundle | ⬜ pending | `data/tier-optimizer-runs.csv`; `route tier-optimize --all-tiers --gate` |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ⬜ pending | map atlas and game hooks consume selected tier assets |
 | 15 | Review Milepost 10 outputs | ⬜ pending | source/design review confirms no AI/hand heuristic line or stop selection remains |

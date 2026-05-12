@@ -1228,6 +1228,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T3/T4 pressure witnesses that can roll lower-tier gaps back upward
+    LowerTierPressureWitnesses {
+        /// Tier score table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Tier candidate column CSV
+        #[arg(
+            long,
+            default_value = "data/tier-candidate-columns.csv",
+            value_name = "FILE"
+        )]
+        candidates: PathBuf,
+        /// Output lower-tier pressure witness CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/lower-tier-pressure-witnesses.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if no lower-tier pressure witnesses are emitted
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -5141,6 +5166,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 service selection gate: PASS");
+            }
+        }
+
+        Commands::LowerTierPressureWitnesses {
+            tier_table,
+            candidates,
+            output,
+            gate,
+        } => {
+            println!("route lower-tier-pressure-witnesses");
+            let tier_rows = load_tier_table_rows(&tier_table)
+                .with_context(|| format!("loading {}", tier_table.display()))?;
+            let candidate_rows = load_tier_candidate_columns(&candidates)
+                .with_context(|| format!("loading {}", candidates.display()))?;
+            let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows);
+            write_lower_tier_pressure_witnesses(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_lower_tier_pressure_witness_summary(&output, &rows);
+
+            if gate {
+                let failures = lower_tier_pressure_witness_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("lower-tier pressure witness gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("lower-tier pressure witness gate failed");
+                }
+                println!();
+                println!("lower-tier pressure witness gate: PASS");
             }
         }
 
@@ -9823,6 +9879,31 @@ struct T2ServiceSelectionRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct TierTableScoreRow {
+    tier: String,
+    route: String,
+    score: f64,
+    confidence: f64,
+    confidence_label: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct LowerTierPressureWitnessRow {
+    route: String,
+    current_tier: String,
+    current_score: f64,
+    confidence: f64,
+    confidence_label: String,
+    pressure_type: String,
+    witness_action: String,
+    target_tier: String,
+    selection_basis: String,
+    source_artifact: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
 fn tier_region_workload_rows(
     graph: &route_network::HighwayGraph,
     tier: &str,
@@ -10651,6 +10732,165 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
         {
             failures.push(format!(
                 "{} kept despite unresolved T2 diagnostic",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
+fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn lower_tier_pressure_witness_rows(
+    tier_rows: &[TierTableScoreRow],
+    candidate_rows: &[TierCandidateColumnRow],
+) -> Vec<LowerTierPressureWitnessRow> {
+    let mut rows = Vec::new();
+    let tier_row_by_route = tier_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    for row in candidate_rows
+        .iter()
+        .filter(|row| row.tier == "T2" && row.column_decision == "demote")
+    {
+        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
+        rows.push(LowerTierPressureWitnessRow {
+            route: row.route.clone(),
+            current_tier: row.tier.clone(),
+            current_score: score_row
+                .map(|score_row| score_row.score)
+                .unwrap_or_default(),
+            confidence: score_row
+                .map(|score_row| score_row.confidence)
+                .unwrap_or_default(),
+            confidence_label: score_row
+                .map(|score_row| score_row.confidence_label.clone())
+                .unwrap_or_else(|| "n/a".to_string()),
+            pressure_type: "demotion-pressure".to_string(),
+            witness_action: "demote-to-lower-tier-treatment".to_string(),
+            target_tier: "T3/T4".to_string(),
+            selection_basis: row.repair_basis.clone(),
+            source_artifact: "data/tier-candidate-columns.csv".to_string(),
+            next_artifact: "data/tier-table.csv".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in tier_rows {
+        if row.tier == "T3" && row.score >= T2_THRESHOLD - 5.0 {
+            rows.push(lower_tier_score_pressure_row(
+                row,
+                "regional-upgrade-pressure",
+                "evaluate-for-t2-upgrade-candidate",
+                "T2",
+                "score-within-five-points-of-t2-threshold",
+            ));
+        } else if row.tier == "T4" && row.score >= T3_THRESHOLD - 5.0 {
+            rows.push(lower_tier_score_pressure_row(
+                row,
+                "local-upgrade-pressure",
+                "evaluate-for-t3-access-candidate",
+                "T3",
+                "score-within-five-points-of-t3-threshold",
+            ));
+        }
+    }
+
+    rows.sort_by(|a, b| {
+        a.current_tier
+            .cmp(&b.current_tier)
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn lower_tier_score_pressure_row(
+    row: &TierTableScoreRow,
+    pressure_type: &str,
+    witness_action: &str,
+    target_tier: &str,
+    selection_basis: &str,
+) -> LowerTierPressureWitnessRow {
+    LowerTierPressureWitnessRow {
+        route: row.route.clone(),
+        current_tier: row.tier.clone(),
+        current_score: row.score,
+        confidence: row.confidence,
+        confidence_label: row.confidence_label.clone(),
+        pressure_type: pressure_type.to_string(),
+        witness_action: witness_action.to_string(),
+        target_tier: target_tier.to_string(),
+        selection_basis: selection_basis.to_string(),
+        source_artifact: "data/tier-table.csv".to_string(),
+        next_artifact: if target_tier == "T2" {
+            "data/tier-contact-witnesses.csv".to_string()
+        } else {
+            "data/tier-region-workloads.csv".to_string()
+        },
+        validation_status: "review".to_string(),
+    }
+}
+
+fn write_lower_tier_pressure_witnesses(
+    path: &Path,
+    rows: &[LowerTierPressureWitnessRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_lower_tier_pressure_witness_summary(output: &Path, rows: &[LowerTierPressureWitnessRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.pressure_type.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} pressure witness rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (pressure_type, count) in counts {
+        println!("  {pressure_type}: {count}");
+    }
+}
+
+fn lower_tier_pressure_witness_gate_failures(rows: &[LowerTierPressureWitnessRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no lower-tier pressure witnesses emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.current_tier.trim().is_empty()
+            || row.pressure_type.trim().is_empty()
+            || row.witness_action.trim().is_empty()
+            || row.target_tier.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete pressure witness contract",
                 row.route
             ));
         }
@@ -15356,6 +15596,7 @@ mod tests {
         endpoint_exception_gate_failures, endpoint_exception_is_terminal_worthy,
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
+        lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
         map_atlas_gate_failures, parse_blueprint_cost_ranges, parse_blueprint_evidence_map,
         parse_blueprint_packages, parse_endpoint_exceptions, parse_forum_docket,
         parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
@@ -15388,6 +15629,7 @@ mod tests {
         ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
         T1LineSelectorInputRow, T1StopSelectorInputRow, T2RegionalizerRow, TierCandidateColumnRow,
         TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -15665,6 +15907,60 @@ mod tests {
         assert_eq!(rows[0].beck_corridor, "I-15");
         assert_eq!(rows[0].selection_action, "keep-service-column");
         assert_eq!(rows[1].selection_action, "parent-region-review");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn lower_tier_pressure_witnesses_emit_upgrade_and_demotion_rows() {
+        let tier_rows = vec![
+            TierTableScoreRow {
+                tier: "T3".to_string(),
+                route: "I-57".to_string(),
+                score: 49.6,
+                confidence: 0.6,
+                confidence_label: "Low".to_string(),
+            },
+            TierTableScoreRow {
+                tier: "T4".to_string(),
+                route: "US-11".to_string(),
+                score: 29.8,
+                confidence: 0.5,
+                confidence_label: "Low".to_string(),
+            },
+        ];
+        let candidate_rows = vec![TierCandidateColumnRow {
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            candidate_type: "route-service-column".to_string(),
+            graph_kind: "dual-route-graph".to_string(),
+            split_objective: "route-mile-workload".to_string(),
+            node_class: "local_spur".to_string(),
+            route_miles: 58.0,
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 0,
+            parent_trunks: String::new(),
+            component_id: 5,
+            component_route_count: 1,
+            component_status: "component-bridged:21".to_string(),
+            witness_type: "tier-demotion-needed".to_string(),
+            repair_action: "demote-to-t3-t4".to_string(),
+            repair_basis: "local-spur".to_string(),
+            column_decision: "demote".to_string(),
+            evidence_status: "policy-action".to_string(),
+            required_artifact: "data/tier-table.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = lower_tier_pressure_witness_rows(&tier_rows, &candidate_rows);
+        let failures = lower_tier_pressure_witness_gate_failures(&rows);
+        let actions = rows
+            .iter()
+            .map(|row| row.witness_action.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert!(actions.contains("demote-to-lower-tier-treatment"));
+        assert!(actions.contains("evaluate-for-t2-upgrade-candidate"));
+        assert!(actions.contains("evaluate-for-t3-access-candidate"));
         assert!(failures.is_empty());
     }
 
