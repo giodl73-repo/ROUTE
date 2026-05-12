@@ -93,6 +93,5 @@ This review adds those two local parliament voices.
 
 ## Next Spec Gaps
 
-1. `docs/t2-regional-treatment.md`
-2. `docs/t3-t4-access-optimization.md`
-3. `docs/optimizer-artifact-manifest.md`
+1. `docs/t3-t4-access-optimization.md`
+2. `docs/optimizer-artifact-manifest.md`
