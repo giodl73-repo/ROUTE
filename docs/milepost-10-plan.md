@@ -37,17 +37,18 @@ Milepost 10 is done when:
 | 1 | Port BISECT compositor skeleton into ROUTE | ✅ done | `route-network::region` has `RegionStrategy`, `ServiceWeightSpec`, `SearchCompositor`, `TierOptimizerConfig` |
 | 2 | Add METIS-backed graph partition primitive | ✅ done | `partition_service_graph_*_metis` supports primal and dual graph kinds |
 | 3 | Add METIS-backed linear route split primitive | ✅ done | `linear_route_split_stops*` returns `k - 1` boundary pairs with split objective |
-| 4 | Emit `data/tier-region-workloads.csv` | 🔄 partial | `route tier-regions --tier T2` writes split metadata; `--gate` currently fails on `component-bridged:21` until T2 contacts are repaired |
-| 5 | Emit `data/tier-candidate-columns.csv` | ⬜ pending | Route/stop/service columns include graph kind, objective, cost, evidence status, and parent region |
-| 6 | Build T1 stop selector | ⬜ pending | `data/t1-stop-selector.csv`; `route t1-stop-selector --gate` |
-| 7 | Build T1 topology repair witness docket | ⬜ pending | `data/t1-topology-repairs.csv`; no near-miss contacts pass silently |
-| 8 | Replace Beck T1 route source with optimizer-selected route/stop columns | ⬜ pending | Beck T1 diagnostics agree with selector without hand exceptions |
-| 9 | Build dual-route T2 regionalizer | ⬜ pending | T2 selected per T1-bounded region, not one global thin-line list |
-| 10 | Add T2 duplicate-service and parent-trunk column selection | ⬜ pending | T2 duplicate/parallel services emit keep, split, demote, or source-needed actions |
-| 11 | Build T3/T4 lower-tier pressure witnesses | ⬜ pending | Failed local/regional access emits T3/T2/T1 repair or upgrade candidates |
-| 12 | Add optimizer run manifest and gate bundle | ⬜ pending | `data/tier-optimizer-runs.csv`; `route tier-optimize --all-tiers --gate` |
-| 13 | Regenerate maps and game overlays from optimizer outputs | ⬜ pending | map atlas and game hooks consume selected tier assets |
-| 14 | Review Milepost 10 outputs | ⬜ pending | source/design review confirms no AI/hand heuristic line or stop selection remains |
+| 4 | Emit `data/tier-region-workloads.csv` | 🔄 partial | `route tier-regions --tier T2` writes split metadata and `data/tier-region-repairs.csv`; `--gate` currently fails on `component-bridged:21` until T2 contacts are repaired |
+| 5 | Emit `data/tier-contact-witnesses.csv` | 🔄 partial | `route tier-contact-witnesses` classifies repair rows; `--gate` fails until source/contact, terminal exception, and demotion rows are resolved |
+| 6 | Emit `data/tier-candidate-columns.csv` | ⬜ pending | Route/stop/service columns include graph kind, objective, cost, evidence status, and parent region |
+| 7 | Build T1 stop selector | ⬜ pending | `data/t1-stop-selector.csv`; `route t1-stop-selector --gate` |
+| 8 | Build T1 topology repair witness docket | ⬜ pending | `data/t1-topology-repairs.csv`; no near-miss contacts pass silently |
+| 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | ⬜ pending | Beck T1 diagnostics agree with selector without hand exceptions |
+| 10 | Build dual-route T2 regionalizer | ⬜ pending | T2 selected per T1-bounded region, not one global thin-line list |
+| 11 | Add T2 duplicate-service and parent-trunk column selection | ⬜ pending | T2 duplicate/parallel services emit keep, split, demote, or source-needed actions |
+| 12 | Build T3/T4 lower-tier pressure witnesses | ⬜ pending | Failed local/regional access emits T3/T2/T1 repair or upgrade candidates |
+| 13 | Add optimizer run manifest and gate bundle | ⬜ pending | `data/tier-optimizer-runs.csv`; `route tier-optimize --all-tiers --gate` |
+| 14 | Regenerate maps and game overlays from optimizer outputs | ⬜ pending | map atlas and game hooks consume selected tier assets |
+| 15 | Review Milepost 10 outputs | ⬜ pending | source/design review confirms no AI/hand heuristic line or stop selection remains |
 
 ## First Implementation Slices
 
@@ -56,6 +57,23 @@ Milepost 10 is done when:
 3. Add `route t1-stop-selector --gate` for linear-route stop boundaries on one T1 corridor.
 4. Expand T1 stop selector across all selected T1 routes.
 5. Use the dual route graph to produce first-pass T2 regions.
+
+## Current T2 Regionalization Finding
+
+The first T2 dual-route split produces one large 18-route component plus 20
+smaller components. This is now explicit in `data/tier-region-repairs.csv`:
+
+- 8 routes are ready to keep for the regionalizer.
+- 6 relief-loop routes can stay with parent-region review.
+- 19 routes need graph-contact fixes or demotion.
+- 4 local spurs should demote to T3/T4 unless later evidence changes them.
+- 2 relief loops need parent-contact witnesses or demotion.
+- 1 one-ended feeder needs a terminal exception or demotion.
+
+`data/tier-contact-witnesses.csv` carries those decisions forward as the next
+gate: 8 routes are already `regionalizer-ready`; the rest need source-backed
+contact repair, candidate-column review, terminal exception review, or tier
+demotion before the T2 regionalizer can claim a complete graph.
 
 ## Non-Goals
 

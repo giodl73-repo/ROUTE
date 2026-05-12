@@ -1068,7 +1068,36 @@ enum Commands {
             value_name = "FILE"
         )]
         output: PathBuf,
+        /// Output repair docket for disconnected or under-qualified tier routes
+        #[arg(
+            long,
+            default_value = "data/tier-region-repairs.csv",
+            value_name = "FILE"
+        )]
+        repairs: PathBuf,
         /// Fail if METIS cannot produce complete non-empty regions
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Turn tier-region repair rows into explicit contact/exception/demotion witnesses
+    TierContactWitnesses {
+        /// Tier region repair docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-region-repairs.csv",
+            value_name = "FILE"
+        )]
+        repairs: PathBuf,
+        /// Output contact witness CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/tier-contact-witnesses.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any witness is still source/review gated
         #[arg(long)]
         gate: bool,
     },
@@ -4745,6 +4774,7 @@ fn run_cli() -> Result<()> {
             regions,
             graph,
             output,
+            repairs,
             gate,
         } => {
             println!("route tier-regions --tier {tier} --regions {regions}");
@@ -4765,7 +4795,10 @@ fn run_cli() -> Result<()> {
             )?;
             write_tier_region_workloads(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_region_workload_summary(&tier, regions, &output, &rows);
+            let repair_rows = tier_region_repair_rows(&rows);
+            write_tier_region_repairs(&repairs, &repair_rows)
+                .with_context(|| format!("writing {}", repairs.display()))?;
+            print_tier_region_workload_summary(&tier, regions, &output, &repairs, &rows);
 
             if gate {
                 let failures = tier_region_gate_failures(&rows, regions);
@@ -4779,6 +4812,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("tier region gate: PASS");
+            }
+        }
+
+        Commands::TierContactWitnesses {
+            repairs,
+            output,
+            gate,
+        } => {
+            println!("route tier-contact-witnesses");
+            let repair_rows = load_tier_region_repairs(&repairs)
+                .with_context(|| format!("loading {}", repairs.display()))?;
+            let witness_rows = tier_contact_witness_rows(&repair_rows);
+            write_tier_contact_witnesses(&output, &witness_rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_contact_witness_summary(&output, &witness_rows);
+
+            if gate {
+                let failures = tier_contact_witness_gate_failures(&witness_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("tier contact witness gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier contact witness gate failed");
+                }
+                println!();
+                println!("tier contact witness gate: PASS");
             }
         }
 
@@ -9307,10 +9368,72 @@ struct TierRegionWorkloadRow {
     requested_regions: usize,
     region_id: usize,
     route: String,
+    node_class: String,
     route_weight: i32,
     route_miles: f64,
+    t1_node_count: usize,
+    parent_trunk_count: usize,
+    parent_trunks: String,
     contact_route_count: usize,
+    component_id: usize,
+    component_route_count: usize,
     component_status: String,
+    repair_action: String,
+    repair_basis: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct TierRegionRepairRow {
+    tier: String,
+    route: String,
+    node_class: String,
+    route_miles: f64,
+    t1_node_count: usize,
+    parent_trunks: String,
+    contact_route_count: usize,
+    component_id: usize,
+    component_route_count: usize,
+    component_status: String,
+    repair_action: String,
+    repair_basis: String,
+    next_artifact: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct TierRegionRepairInputRow {
+    tier: String,
+    route: String,
+    node_class: String,
+    route_miles: f64,
+    t1_node_count: usize,
+    parent_trunks: String,
+    contact_route_count: usize,
+    component_id: usize,
+    component_route_count: usize,
+    component_status: String,
+    repair_action: String,
+    repair_basis: String,
+    next_artifact: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct TierContactWitnessRow {
+    tier: String,
+    route: String,
+    witness_type: String,
+    node_class: String,
+    route_miles: f64,
+    observed_t1_node_count: usize,
+    observed_parent_trunks: String,
+    observed_dual_contacts: usize,
+    component_id: usize,
+    component_route_count: usize,
+    component_status: String,
+    repair_action: String,
+    repair_basis: String,
+    evidence_status: String,
+    required_artifact: String,
     validation_status: String,
 }
 
@@ -9337,6 +9460,7 @@ fn tier_region_workload_rows(
 
     let (mut adjacency, contact_counts) = dual_route_adjacency(graph, routes, parent_routes);
     let (component_ids, component_count) = connected_components(&adjacency);
+    let component_sizes = component_sizes(&component_ids, component_count);
     let component_status = if component_count <= 1 {
         "connected".to_string()
     } else {
@@ -9354,27 +9478,49 @@ fn tier_region_workload_rows(
         route_network::partition_service_graph_input_metis(&input, requested_regions, Some(10))
             .map_err(|err| anyhow::anyhow!(err))?;
     validate_region_assignment(&assignment.assignment, requested_regions)?;
+    let connectivity = route_network::analyze_tier_connectivity(graph, routes, parent_routes)
+        .into_iter()
+        .map(|row| (row.route.clone(), row))
+        .collect::<std::collections::HashMap<_, _>>();
 
     Ok(routes
         .iter()
         .enumerate()
-        .map(|(idx, route)| TierRegionWorkloadRow {
-            tier: tier.to_string(),
-            graph_kind: assignment.graph_kind.mode_name().to_string(),
-            split_objective: "route-mile-workload".to_string(),
-            requested_regions,
-            region_id: assignment.assignment[idx],
-            route: route.clone(),
-            route_weight: weights[idx],
-            route_miles: graph.route_miles(route),
-            contact_route_count: contact_counts[idx],
-            component_status: component_status.clone(),
-            validation_status: if component_status == "connected" {
-                "pass"
-            } else {
-                "review"
+        .map(|(idx, route)| {
+            let connectivity_row = connectivity
+                .get(route)
+                .unwrap_or_else(|| panic!("missing connectivity row for {route}"));
+            let repair = tier_region_repair_action(
+                &connectivity_row.classification,
+                contact_counts[idx],
+                component_sizes[component_ids[idx]],
+            );
+            TierRegionWorkloadRow {
+                tier: tier.to_string(),
+                graph_kind: assignment.graph_kind.mode_name().to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                requested_regions,
+                region_id: assignment.assignment[idx],
+                route: route.clone(),
+                node_class: connectivity_row.classification.as_str().to_string(),
+                route_weight: weights[idx],
+                route_miles: graph.route_miles(route),
+                t1_node_count: connectivity_row.t1_node_count,
+                parent_trunk_count: connectivity_row.t1_routes.len(),
+                parent_trunks: connectivity_row.t1_routes.join(";"),
+                contact_route_count: contact_counts[idx],
+                component_id: component_ids[idx],
+                component_route_count: component_sizes[component_ids[idx]],
+                component_status: component_status.clone(),
+                repair_action: repair.0.to_string(),
+                repair_basis: repair.1.to_string(),
+                validation_status: if component_status == "connected" {
+                    "pass"
+                } else {
+                    "review"
+                }
+                .to_string(),
             }
-            .to_string(),
         })
         .collect())
 }
@@ -9480,6 +9626,14 @@ fn connected_components(adjacency: &[Vec<usize>]) -> (Vec<usize>, usize) {
     (component_ids, component_count)
 }
 
+fn component_sizes(component_ids: &[usize], component_count: usize) -> Vec<usize> {
+    let mut sizes = vec![0usize; component_count];
+    for &component in component_ids {
+        sizes[component] += 1;
+    }
+    sizes
+}
+
 fn bridge_components(
     adjacency: &mut [Vec<usize>],
     component_ids: &[usize],
@@ -9520,6 +9674,38 @@ fn validate_region_assignment(assignment: &[usize], requested_regions: usize) ->
     Ok(())
 }
 
+fn tier_region_repair_action(
+    node_class: &route_network::TierNodeClass,
+    contact_route_count: usize,
+    component_route_count: usize,
+) -> (&'static str, &'static str) {
+    match node_class {
+        route_network::TierNodeClass::TrunkConnector if component_route_count >= 2 => {
+            ("keep-for-regionalizer", "touches-multiple-t1-trunks")
+        }
+        route_network::TierNodeClass::TrunkConnector => (
+            "add-dual-contact-witness",
+            "qualified-route-is-alone-in-dual-component",
+        ),
+        route_network::TierNodeClass::ReliefLoop if contact_route_count > 0 => (
+            "keep-with-parent-region-review",
+            "relief-loop-shares-parent-service-context",
+        ),
+        route_network::TierNodeClass::ReliefLoop => (
+            "add-parent-contact-or-demote",
+            "relief-loop-has-no-dual-route-contact",
+        ),
+        route_network::TierNodeClass::OneEndedFeeder => (
+            "terminal-exception-or-demote",
+            "one-ended-feeder-needs-terminal-worthy-endpoint",
+        ),
+        route_network::TierNodeClass::LocalSpur => ("demote-to-t3-t4", "local-spur"),
+        route_network::TierNodeClass::MissingGraphData => {
+            ("fix-graph-contact-or-demote", "missing-t1-contact-evidence")
+        }
+    }
+}
+
 fn write_tier_region_workloads(path: &Path, rows: &[TierRegionWorkloadRow]) -> Result<()> {
     if let Some(parent) = path
         .parent()
@@ -9536,10 +9722,157 @@ fn write_tier_region_workloads(path: &Path, rows: &[TierRegionWorkloadRow]) -> R
     Ok(())
 }
 
+fn tier_region_repair_rows(rows: &[TierRegionWorkloadRow]) -> Vec<TierRegionRepairRow> {
+    rows.iter()
+        .map(|row| TierRegionRepairRow {
+            tier: row.tier.clone(),
+            route: row.route.clone(),
+            node_class: row.node_class.clone(),
+            route_miles: row.route_miles,
+            t1_node_count: row.t1_node_count,
+            parent_trunks: row.parent_trunks.clone(),
+            contact_route_count: row.contact_route_count,
+            component_id: row.component_id,
+            component_route_count: row.component_route_count,
+            component_status: row.component_status.clone(),
+            repair_action: row.repair_action.clone(),
+            repair_basis: row.repair_basis.clone(),
+            next_artifact: tier_region_next_artifact(&row.repair_action).to_string(),
+        })
+        .collect()
+}
+
+fn tier_region_next_artifact(repair_action: &str) -> &'static str {
+    match repair_action {
+        "keep-for-regionalizer" => "data/tier-candidate-columns.csv",
+        "keep-with-parent-region-review" => "data/tier-candidate-columns.csv",
+        "add-dual-contact-witness" => "data/tier-contact-witnesses.csv",
+        "add-parent-contact-or-demote" => "data/tier-contact-witnesses.csv",
+        "terminal-exception-or-demote" => "data/tier-node-exceptions.csv",
+        "demote-to-t3-t4" => "data/tier-table.csv",
+        "fix-graph-contact-or-demote" => "data/tier-contact-witnesses.csv",
+        _ => "data/tier-region-repairs.csv",
+    }
+}
+
+fn write_tier_region_repairs(path: &Path, rows: &[TierRegionRepairRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn load_tier_region_repairs(path: &Path) -> Result<Vec<TierRegionRepairInputRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_contact_witness_rows(rows: &[TierRegionRepairInputRow]) -> Vec<TierContactWitnessRow> {
+    rows.iter()
+        .map(|row| {
+            let (witness_type, evidence_status, validation_status) =
+                tier_contact_witness_status(&row.repair_action);
+            TierContactWitnessRow {
+                tier: row.tier.clone(),
+                route: row.route.clone(),
+                witness_type: witness_type.to_string(),
+                node_class: row.node_class.clone(),
+                route_miles: row.route_miles,
+                observed_t1_node_count: row.t1_node_count,
+                observed_parent_trunks: row.parent_trunks.clone(),
+                observed_dual_contacts: row.contact_route_count,
+                component_id: row.component_id,
+                component_route_count: row.component_route_count,
+                component_status: row.component_status.clone(),
+                repair_action: row.repair_action.clone(),
+                repair_basis: row.repair_basis.clone(),
+                evidence_status: evidence_status.to_string(),
+                required_artifact: row.next_artifact.clone(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn tier_contact_witness_status(repair_action: &str) -> (&'static str, &'static str, &'static str) {
+    match repair_action {
+        "keep-for-regionalizer" => ("regionalizer-ready", "accepted", "pass"),
+        "keep-with-parent-region-review" => ("parent-region-review", "review", "review"),
+        "add-dual-contact-witness" => ("dual-contact-needed", "source-needed", "review"),
+        "add-parent-contact-or-demote" => ("parent-contact-needed", "source-needed", "review"),
+        "terminal-exception-or-demote" => ("terminal-exception-needed", "source-needed", "review"),
+        "demote-to-t3-t4" => ("tier-demotion-needed", "policy-action", "review"),
+        "fix-graph-contact-or-demote" => ("graph-contact-needed", "source-needed", "review"),
+        _ => ("unknown-repair-action", "source-needed", "review"),
+    }
+}
+
+fn write_tier_contact_witnesses(path: &Path, rows: &[TierContactWitnessRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_contact_witness_summary(output: &Path, rows: &[TierContactWitnessRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.witness_type.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} witness rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (witness_type, count) in counts {
+        println!("  {witness_type}: {count}");
+    }
+}
+
+fn tier_contact_witness_gate_failures(rows: &[TierContactWitnessRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no contact witness rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if !row.validation_status.eq_ignore_ascii_case("pass") {
+            failures.push(format!(
+                "{} requires {} via {}",
+                row.route, row.witness_type, row.required_artifact
+            ));
+        }
+    }
+    failures
+}
+
 fn print_tier_region_workload_summary(
     tier: &str,
     requested_regions: usize,
     output: &Path,
+    repairs: &Path,
     rows: &[TierRegionWorkloadRow],
 ) {
     let mut route_counts = vec![0usize; requested_regions];
@@ -9562,6 +9895,7 @@ fn print_tier_region_workload_summary(
     if let Some(status) = rows.first().map(|row| row.component_status.as_str()) {
         println!("  graph status: {status}");
     }
+    println!("  wrote repair docket: {}", repairs.display());
 }
 
 fn tier_region_gate_failures(
@@ -13791,8 +14125,9 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_connectivity_gate_failures_with_exceptions,
-        tier_for_score, tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType,
-        NbiBridgeRecord, ScoreAllRow, ScoreSignalRow, TierRegionWorkloadRow,
+        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
+        tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
+        ScoreAllRow, ScoreSignalRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -13833,10 +14168,18 @@ mod tests {
                 requested_regions: 2,
                 region_id: 0,
                 route: "I10".to_string(),
+                node_class: "trunk_connector".to_string(),
                 route_weight: 100,
                 route_miles: 100.0,
+                t1_node_count: 2,
+                parent_trunk_count: 2,
+                parent_trunks: "I5;I95".to_string(),
                 contact_route_count: 1,
+                component_id: 0,
+                component_route_count: 1,
                 component_status: "component-bridged:2".to_string(),
+                repair_action: "keep-for-regionalizer".to_string(),
+                repair_basis: "touches-multiple-t1-trunks".to_string(),
                 validation_status: "review".to_string(),
             },
             TierRegionWorkloadRow {
@@ -13846,10 +14189,18 @@ mod tests {
                 requested_regions: 2,
                 region_id: 1,
                 route: "I20".to_string(),
+                node_class: "trunk_connector".to_string(),
                 route_weight: 100,
                 route_miles: 100.0,
+                t1_node_count: 2,
+                parent_trunk_count: 2,
+                parent_trunks: "I10;I95".to_string(),
                 contact_route_count: 1,
+                component_id: 1,
+                component_route_count: 1,
                 component_status: "component-bridged:2".to_string(),
+                repair_action: "keep-for-regionalizer".to_string(),
+                repair_basis: "touches-multiple-t1-trunks".to_string(),
                 validation_status: "review".to_string(),
             },
         ];
@@ -13858,6 +14209,55 @@ mod tests {
 
         assert_eq!(failures.len(), 1);
         assert!(failures[0].contains("component-bridged:2"));
+    }
+
+    #[test]
+    fn tier_contact_witness_gate_tracks_unresolved_repairs() {
+        let rows = vec![
+            TierRegionRepairInputRow {
+                tier: "T2".to_string(),
+                route: "I15".to_string(),
+                node_class: "trunk_connector".to_string(),
+                route_miles: 2882.0,
+                t1_node_count: 6,
+                parent_trunks: "I84;I90".to_string(),
+                contact_route_count: 3,
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:2".to_string(),
+                repair_action: "keep-for-regionalizer".to_string(),
+                repair_basis: "touches-multiple-t1-trunks".to_string(),
+                next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            },
+            TierRegionRepairInputRow {
+                tier: "T2".to_string(),
+                route: "I110".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 79.0,
+                t1_node_count: 0,
+                parent_trunks: String::new(),
+                contact_route_count: 0,
+                component_id: 0,
+                component_route_count: 1,
+                component_status: "component-bridged:2".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            },
+        ];
+
+        let witnesses = tier_contact_witness_rows(&rows);
+        let failures = tier_contact_witness_gate_failures(&witnesses);
+
+        assert_eq!(witnesses[0].validation_status, "pass");
+        assert_eq!(witnesses[1].witness_type, "graph-contact-needed");
+        assert_eq!(
+            failures,
+            vec![
+                "I110 requires graph-contact-needed via data/tier-contact-witnesses.csv"
+                    .to_string()
+            ]
+        );
     }
 
     #[test]
