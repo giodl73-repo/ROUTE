@@ -1,0 +1,3 @@
+route,parent_trunks,observed_dual_contacts,validation_action,required_evidence,next_artifact,optimizer_effect,validation_status
+I24,I69,0,prove-parent-contact-or-demote,dual-route contact to named parent trunk,data/tier-contact-witnesses.csv,blocked from T2 regionalizer until parent contact exists,review
+I495,I95,0,prove-parent-contact-or-demote,dual-route contact to named parent trunk,data/tier-contact-witnesses.csv,blocked from T2 regionalizer until parent contact exists,review

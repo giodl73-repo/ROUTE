@@ -74,6 +74,10 @@ exception review.
 `data/t2-graph-contact-repairs.csv`, splitting the 8 graph-contact rows into 3
 numbered route-family split repairs and 5 graph-contact-or-demotion repairs.
 
+`route t2-parent-contact-validation --gate` now emits
+`data/t2-parent-contact-validation.csv`, requiring I24 to prove dual contact to
+I69 and I495 to prove dual contact to I95 or demote out of T2 regionalization.
+
 ## First Implementation Slices
 
 1. Finish and commit the current METIS primitives and optimizer design spec.

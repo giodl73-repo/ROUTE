@@ -1239,6 +1239,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit parent-contact validation actions for held T2 relief loops
+    T2ParentContactValidation {
+        /// T2 held contact action CSV
+        #[arg(
+            long,
+            default_value = "data/t2-held-contact-actions.csv",
+            value_name = "FILE"
+        )]
+        held_actions: PathBuf,
+        /// Tier contact witness CSV
+        #[arg(
+            long,
+            default_value = "data/tier-contact-witnesses.csv",
+            value_name = "FILE"
+        )]
+        witnesses: PathBuf,
+        /// Output parent-contact validation CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-parent-contact-validation.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if parent-contact validation rows lack deterministic actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
     TierCandidateColumns {
         /// Tier contact witness CSV
@@ -5281,6 +5310,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 graph contact repair gate: PASS");
+            }
+        }
+
+        Commands::T2ParentContactValidation {
+            held_actions,
+            witnesses,
+            output,
+            gate,
+        } => {
+            println!("route t2-parent-contact-validation");
+            let held_rows = load_t2_held_contact_actions(&held_actions)
+                .with_context(|| format!("loading {}", held_actions.display()))?;
+            let witness_rows = load_tier_contact_witnesses(&witnesses)
+                .with_context(|| format!("loading {}", witnesses.display()))?;
+            let rows = t2_parent_contact_validation_rows(&held_rows, &witness_rows);
+            write_t2_parent_contact_validation(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_parent_contact_validation_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_parent_contact_validation_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 parent contact validation gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 parent contact validation gate failed");
+                }
+                println!();
+                println!("T2 parent contact validation gate: PASS");
             }
         }
 
@@ -10105,6 +10165,18 @@ struct T2GraphContactRepairRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2ParentContactValidationRow {
+    route: String,
+    parent_trunks: String,
+    observed_dual_contacts: usize,
+    validation_action: String,
+    required_evidence: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierCandidateColumnRow {
     tier: String,
@@ -11094,6 +11166,117 @@ fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepairRow]) -> Ve
     failures
 }
 
+fn t2_parent_contact_validation_rows(
+    held_rows: &[T2HeldContactActionRow],
+    witness_rows: &[TierContactWitnessInputRow],
+) -> Vec<T2ParentContactValidationRow> {
+    let witness_by_route = witness_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    held_rows
+        .iter()
+        .filter(|row| row.held_action_type == "parent-contact-validation")
+        .map(|row| {
+            let witness = witness_by_route.get(&canonical_route_key(&row.route));
+            let observed_dual_contacts = witness
+                .map(|witness| witness.observed_dual_contacts)
+                .unwrap_or_default();
+            let parent_trunks = witness
+                .map(|witness| witness.observed_parent_trunks.clone())
+                .unwrap_or_default();
+            let (validation_action, required_evidence, next_artifact, optimizer_effect) =
+                if observed_dual_contacts > 0 {
+                    (
+                        "accept-parent-contact",
+                        "dual-route parent contact observed",
+                        "data/tier-candidate-columns.csv",
+                        "eligible for parent-region review",
+                    )
+                } else {
+                    (
+                        "prove-parent-contact-or-demote",
+                        "dual-route contact to named parent trunk",
+                        "data/tier-contact-witnesses.csv",
+                        "blocked from T2 regionalizer until parent contact exists",
+                    )
+                };
+            T2ParentContactValidationRow {
+                route: row.route.clone(),
+                parent_trunks,
+                observed_dual_contacts,
+                validation_action: validation_action.to_string(),
+                required_evidence: required_evidence.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn write_t2_parent_contact_validation(
+    path: &Path,
+    rows: &[T2ParentContactValidationRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_parent_contact_validation_summary(
+    output: &Path,
+    rows: &[T2ParentContactValidationRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.validation_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} parent contact validation rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_parent_contact_validation_gate_failures(
+    rows: &[T2ParentContactValidationRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 parent contact validation rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.validation_action.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete parent contact validation",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
 fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -11744,6 +11927,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-graph-contact-repairs",
                 "route t2-graph-contact-repairs --gate",
                 "data/t2-graph-contact-repairs.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-parent-contact-validation",
+                "route t2-parent-contact-validation --gate",
+                "data/t2-parent-contact-validation.csv",
                 "pass",
                 0,
                 "",
@@ -16755,6 +16946,7 @@ mod tests {
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
+        t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_service_selection_gate_failures,
         t2_service_selection_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
@@ -17110,6 +17302,46 @@ mod tests {
 
         assert_eq!(repairs[0].repair_class, "route-family-split");
         assert_eq!(repairs[1].repair_class, "graph-contact-repair");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_parent_contact_validation_requires_dual_contact_or_demote() {
+        let held = vec![T2HeldContactActionRow {
+            route: "I24".to_string(),
+            held_action_type: "parent-contact-validation".to_string(),
+            source_resolution_action: "hold-for-parent-contact-or-demotion".to_string(),
+            exception_type: String::new(),
+            required_evidence: "prove relief loop dual-route contact".to_string(),
+            next_artifact: "data/t2-parent-contact-validation.csv".to_string(),
+            optimizer_effect: "retain with parent contact".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let witnesses = vec![TierContactWitnessInputRow {
+            tier: "T2".to_string(),
+            route: "I24".to_string(),
+            witness_type: "parent-contact-needed".to_string(),
+            node_class: "relief_loop".to_string(),
+            route_miles: 635.0,
+            observed_t1_node_count: 3,
+            observed_parent_trunks: "I69".to_string(),
+            observed_dual_contacts: 0,
+            component_id: 7,
+            component_route_count: 1,
+            component_status: "component-bridged:21".to_string(),
+            repair_action: "add-parent-contact-or-demote".to_string(),
+            repair_basis: "relief-loop-has-no-dual-route-contact".to_string(),
+            evidence_status: "source-needed".to_string(),
+            required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_parent_contact_validation_rows(&held, &witnesses);
+        let failures = t2_parent_contact_validation_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].validation_action, "prove-parent-contact-or-demote");
+        assert_eq!(rows[0].parent_trunks, "I69");
         assert!(failures.is_empty());
     }
 
