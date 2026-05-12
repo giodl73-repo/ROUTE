@@ -286,6 +286,24 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T1 topology repair witnesses from design-review policy rows
+    T1TopologyRepairs {
+        /// Path to T1 design review CSV
+        #[arg(long, default_value = "data/t1-design-review.csv", value_name = "FILE")]
+        design_review: PathBuf,
+        /// Output topology repair CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-topology-repairs.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any topology repair row lacks a concrete next action
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show T1 design policy actions and gate review-action coverage
     T1DesignPolicy {
         /// Path to T1 design review CSV
@@ -2707,6 +2725,34 @@ fn run_cli() -> Result<()> {
                     }
                     anyhow::bail!("T1 design review gate failed");
                 }
+            }
+        }
+
+        Commands::T1TopologyRepairs {
+            design_review,
+            output,
+            gate,
+        } => {
+            println!("route t1-topology-repairs");
+            let review_rows = load_t1_design_review(&design_review)
+                .with_context(|| format!("loading {}", design_review.display()))?;
+            let rows = t1_topology_repair_rows(&review_rows);
+            write_t1_topology_repairs(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_topology_repair_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_topology_repair_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 topology repair gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 topology repair gate failed");
+                }
+                println!();
+                println!("T1 topology repair gate: PASS");
             }
         }
 
@@ -11147,6 +11193,21 @@ struct T1DesignReviewCsvRow {
     next_design_action: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct T1TopologyRepairRow {
+    route: String,
+    selected: bool,
+    design_role: String,
+    design_status: String,
+    beck_review_flag: String,
+    overlap_corridors: String,
+    repair_type: String,
+    repair_basis: String,
+    next_artifact: String,
+    next_action: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct T1DesignPolicyActionRow {
     action: String,
@@ -11170,6 +11231,111 @@ fn parse_t1_design_review<R: std::io::Read>(reader: R) -> Result<Vec<T1DesignRev
         rows.push(result?);
     }
     Ok(rows)
+}
+
+fn t1_topology_repair_rows(rows: &[T1DesignReviewCsvRow]) -> Vec<T1TopologyRepairRow> {
+    rows.iter()
+        .filter(|row| !row.design_status.eq_ignore_ascii_case("accepted"))
+        .map(|row| {
+            let (repair_type, repair_basis, next_artifact, validation_status) =
+                t1_topology_repair_contract(row);
+            T1TopologyRepairRow {
+                route: row.route.clone(),
+                selected: row.selected,
+                design_role: row.design_role.clone(),
+                design_status: row.design_status.clone(),
+                beck_review_flag: row.beck_review_flag.clone(),
+                overlap_corridors: row.overlap_corridors.clone(),
+                repair_type: repair_type.to_string(),
+                repair_basis: repair_basis.to_string(),
+                next_artifact: next_artifact.to_string(),
+                next_action: row.next_design_action.clone(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn t1_topology_repair_contract(
+    row: &T1DesignReviewCsvRow,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    if row.selected
+        && row
+            .beck_review_flag
+            .trim()
+            .eq_ignore_ascii_case("overlap-review")
+    {
+        (
+            "shared-backbone-policy",
+            "selected-t1-route-shares-beck-segment",
+            "data/t1-design-policy-actions.csv",
+            "review",
+        )
+    } else if row.selected && row.design_status.eq_ignore_ascii_case("policy-review") {
+        (
+            "national-relay-justification",
+            "selected-score-exception-needs-national-role-proof",
+            "data/t1-score-exceptions.csv",
+            "review",
+        )
+    } else if !row.selected && row.design_status.eq_ignore_ascii_case("held") {
+        (
+            "held-candidate",
+            "outside-current-t1-budget-or-demoted",
+            "data/t1-line-selector.csv",
+            "pass",
+        )
+    } else {
+        (
+            "unclassified-topology-review",
+            "non-accepted-design-status",
+            "data/t1-topology-repairs.csv",
+            "review",
+        )
+    }
+}
+
+fn write_t1_topology_repairs(path: &Path, rows: &[T1TopologyRepairRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_topology_repair_summary(output: &Path, rows: &[T1TopologyRepairRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.repair_type.as_str()).or_default() += 1;
+    }
+    println!("  wrote {} repair rows to {}", rows.len(), output.display());
+    for (repair_type, count) in counts {
+        println!("  {repair_type}: {count}");
+    }
+}
+
+fn t1_topology_repair_gate_failures(rows: &[T1TopologyRepairRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    for row in rows {
+        if row.next_action.trim().is_empty() {
+            failures.push(format!("{} has no next topology repair action", row.route));
+        }
+        if row.next_artifact.trim().is_empty() {
+            failures.push(format!(
+                "{} has no next topology repair artifact",
+                row.route
+            ));
+        }
+    }
+    failures
 }
 
 fn load_t1_design_policy_actions(path: &Path) -> Result<Vec<T1DesignPolicyActionRow>> {
@@ -14567,13 +14733,14 @@ mod tests {
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
-        t1_stop_selector_rows, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
-        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
-        tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
-        tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
-        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1LineSelectorInputRow,
-        TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
+        tier_candidate_column_gate_failures, tier_candidate_column_rows,
+        tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
+        tier_contact_witness_rows, tier_for_score, tier_region_gate_failures,
+        write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
+        StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow, TierContactWitnessInputRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -14795,6 +14962,47 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.split_objective == "hybrid-service"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_topology_repairs_emit_overlap_policy_rows() {
+        let review_rows = vec![
+            T1DesignReviewCsvRow {
+                route: "I95".to_string(),
+                selected: true,
+                design_role: "promise-spine".to_string(),
+                promise_count: 11,
+                selected_stop_count: 11,
+                top_city_stop_count: 5,
+                selector_reason: "sla-required-budget-fit".to_string(),
+                beck_action: "overlap-review".to_string(),
+                beck_review_flag: "overlap-review".to_string(),
+                overlap_corridors: "I-40".to_string(),
+                design_status: "policy-review".to_string(),
+                next_design_action: "resolve-shared-segment-map-policy".to_string(),
+            },
+            T1DesignReviewCsvRow {
+                route: "I5".to_string(),
+                selected: true,
+                design_role: "promise-spine".to_string(),
+                promise_count: 7,
+                selected_stop_count: 6,
+                top_city_stop_count: 3,
+                selector_reason: "sla-required-budget-fit".to_string(),
+                beck_action: "keep".to_string(),
+                beck_review_flag: "ok".to_string(),
+                overlap_corridors: String::new(),
+                design_status: "accepted".to_string(),
+                next_design_action: "keep-in-t1-design".to_string(),
+            },
+        ];
+
+        let repairs = t1_topology_repair_rows(&review_rows);
+        let failures = t1_topology_repair_gate_failures(&repairs);
+
+        assert_eq!(repairs.len(), 1);
+        assert_eq!(repairs[0].repair_type, "shared-backbone-policy");
         assert!(failures.is_empty());
     }
 
