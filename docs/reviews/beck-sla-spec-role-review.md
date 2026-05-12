@@ -93,4 +93,5 @@ This review adds those two local parliament voices.
 
 ## Next Spec Gaps
 
-1. `docs/optimizer-artifact-manifest.md`
+All review-identified spec gaps are now represented. Remaining work is
+implementation migration and new artifact gates.
