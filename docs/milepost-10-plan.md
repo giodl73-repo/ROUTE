@@ -39,7 +39,7 @@ Milepost 10 is done when:
 | 3 | Add METIS-backed linear route split primitive | ✅ done | `linear_route_split_stops*` returns `k - 1` boundary pairs with split objective |
 | 4 | Emit `data/tier-region-workloads.csv` | 🔄 partial | `route tier-regions --tier T2` writes split metadata and `data/tier-region-repairs.csv`; `--gate` currently fails on `component-bridged:21` until T2 contacts are repaired |
 | 5 | Emit `data/tier-contact-witnesses.csv` | 🔄 partial | `route tier-contact-witnesses` classifies repair rows; `--gate` fails until source/contact, terminal exception, and demotion rows are resolved |
-| 6 | Emit `data/tier-candidate-columns.csv` | ⬜ pending | Route/stop/service columns include graph kind, objective, cost, evidence status, and parent region |
+| 6 | Emit `data/tier-candidate-columns.csv` | ✅ done | `route tier-candidate-columns --gate` emits selected/review/blocked/demote route-service columns with graph kind, objective, evidence status, and parent region |
 | 7 | Build T1 stop selector | ⬜ pending | `data/t1-stop-selector.csv`; `route t1-stop-selector --gate` |
 | 8 | Build T1 topology repair witness docket | ⬜ pending | `data/t1-topology-repairs.csv`; no near-miss contacts pass silently |
 | 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | ⬜ pending | Beck T1 diagnostics agree with selector without hand exceptions |
@@ -74,6 +74,11 @@ smaller components. This is now explicit in `data/tier-region-repairs.csv`:
 gate: 8 routes are already `regionalizer-ready`; the rest need source-backed
 contact repair, candidate-column review, terminal exception review, or tier
 demotion before the T2 regionalizer can claim a complete graph.
+
+`data/tier-candidate-columns.csv` now selects the 8 validated T2 service
+columns, marks 6 parent-region columns for review, blocks 22 source/contact or
+terminal-exception rows, and marks 4 local-spur demotions. This gives the next
+regionalizer a clean selected set while preserving unresolved work.
 
 ## Non-Goals
 

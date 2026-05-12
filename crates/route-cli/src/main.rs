@@ -1102,6 +1102,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit optimizer candidate columns from accepted/reviewed tier contact witnesses
+    TierCandidateColumns {
+        /// Tier contact witness CSV
+        #[arg(
+            long,
+            default_value = "data/tier-contact-witnesses.csv",
+            value_name = "FILE"
+        )]
+        witnesses: PathBuf,
+        /// Output candidate column CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/tier-candidate-columns.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if no selected candidate columns are available
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -4840,6 +4862,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("tier contact witness gate: PASS");
+            }
+        }
+
+        Commands::TierCandidateColumns {
+            witnesses,
+            output,
+            gate,
+        } => {
+            println!("route tier-candidate-columns");
+            let witness_rows = load_tier_contact_witnesses(&witnesses)
+                .with_context(|| format!("loading {}", witnesses.display()))?;
+            let column_rows = tier_candidate_column_rows(&witness_rows);
+            write_tier_candidate_columns(&output, &column_rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_candidate_column_summary(&output, &column_rows);
+
+            if gate {
+                let failures = tier_candidate_column_gate_failures(&column_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("tier candidate column gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier candidate column gate failed");
+                }
+                println!();
+                println!("tier candidate column gate: PASS");
             }
         }
 
@@ -9437,6 +9487,50 @@ struct TierContactWitnessRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct TierContactWitnessInputRow {
+    tier: String,
+    route: String,
+    witness_type: String,
+    node_class: String,
+    route_miles: f64,
+    observed_t1_node_count: usize,
+    observed_parent_trunks: String,
+    observed_dual_contacts: usize,
+    component_id: usize,
+    component_route_count: usize,
+    component_status: String,
+    repair_action: String,
+    repair_basis: String,
+    evidence_status: String,
+    required_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct TierCandidateColumnRow {
+    tier: String,
+    route: String,
+    candidate_type: String,
+    graph_kind: String,
+    split_objective: String,
+    node_class: String,
+    route_miles: f64,
+    observed_t1_node_count: usize,
+    observed_dual_contacts: usize,
+    parent_trunks: String,
+    component_id: usize,
+    component_route_count: usize,
+    component_status: String,
+    witness_type: String,
+    repair_action: String,
+    repair_basis: String,
+    column_decision: String,
+    evidence_status: String,
+    required_artifact: String,
+    validation_status: String,
+}
+
 fn tier_region_workload_rows(
     graph: &route_network::HighwayGraph,
     tier: &str,
@@ -9863,6 +9957,112 @@ fn tier_contact_witness_gate_failures(rows: &[TierContactWitnessRow]) -> Vec<Str
                 "{} requires {} via {}",
                 row.route, row.witness_type, row.required_artifact
             ));
+        }
+    }
+    failures
+}
+
+fn load_tier_contact_witnesses(path: &Path) -> Result<Vec<TierContactWitnessInputRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_candidate_column_rows(rows: &[TierContactWitnessInputRow]) -> Vec<TierCandidateColumnRow> {
+    rows.iter()
+        .map(|row| {
+            let column_decision = tier_candidate_column_decision(row);
+            TierCandidateColumnRow {
+                tier: row.tier.clone(),
+                route: row.route.clone(),
+                candidate_type: "route-service-column".to_string(),
+                graph_kind: "dual-route-graph".to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                node_class: row.node_class.clone(),
+                route_miles: row.route_miles,
+                observed_t1_node_count: row.observed_t1_node_count,
+                observed_dual_contacts: row.observed_dual_contacts,
+                parent_trunks: row.observed_parent_trunks.clone(),
+                component_id: row.component_id,
+                component_route_count: row.component_route_count,
+                component_status: row.component_status.clone(),
+                witness_type: row.witness_type.clone(),
+                repair_action: row.repair_action.clone(),
+                repair_basis: row.repair_basis.clone(),
+                column_decision: column_decision.to_string(),
+                evidence_status: row.evidence_status.clone(),
+                required_artifact: row.required_artifact.clone(),
+                validation_status: if column_decision == "selected" {
+                    "pass"
+                } else {
+                    "review"
+                }
+                .to_string(),
+            }
+        })
+        .collect()
+}
+
+fn tier_candidate_column_decision(row: &TierContactWitnessInputRow) -> &'static str {
+    match row.witness_type.as_str() {
+        "regionalizer-ready" if row.validation_status.eq_ignore_ascii_case("pass") => "selected",
+        "parent-region-review" => "review",
+        "tier-demotion-needed" => "demote",
+        _ => "blocked",
+    }
+}
+
+fn write_tier_candidate_columns(path: &Path, rows: &[TierCandidateColumnRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_candidate_column_summary(output: &Path, rows: &[TierCandidateColumnRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.column_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} candidate column rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn tier_candidate_column_gate_failures(rows: &[TierCandidateColumnRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no candidate column rows emitted".to_string());
+        return failures;
+    }
+    let selected = rows
+        .iter()
+        .filter(|row| row.column_decision == "selected")
+        .count();
+    if selected == 0 {
+        failures.push("no selected candidate columns available".to_string());
+    }
+    for row in rows {
+        if row.column_decision == "selected" && !row.validation_status.eq_ignore_ascii_case("pass")
+        {
+            failures.push(format!("{} selected without passing validation", row.route));
         }
     }
     failures
@@ -14124,10 +14324,12 @@ mod tests {
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, throughput_proof_gate_failures,
-        throughput_proof_has_bounded_contract, tier_connectivity_gate_failures_with_exceptions,
+        throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
+        tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
         tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
-        ScoreAllRow, ScoreSignalRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        ScoreAllRow, ScoreSignalRow, TierContactWitnessInputRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -14258,6 +14460,55 @@ mod tests {
                     .to_string()
             ]
         );
+    }
+
+    #[test]
+    fn tier_candidate_columns_select_only_accepted_witnesses() {
+        let rows = vec![
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I15".to_string(),
+                witness_type: "regionalizer-ready".to_string(),
+                node_class: "trunk_connector".to_string(),
+                route_miles: 2882.0,
+                observed_t1_node_count: 6,
+                observed_parent_trunks: "I84;I90".to_string(),
+                observed_dual_contacts: 3,
+                component_id: 1,
+                component_route_count: 18,
+                component_status: "component-bridged:2".to_string(),
+                repair_action: "keep-for-regionalizer".to_string(),
+                repair_basis: "touches-multiple-t1-trunks".to_string(),
+                evidence_status: "accepted".to_string(),
+                required_artifact: "data/tier-candidate-columns.csv".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I110".to_string(),
+                witness_type: "graph-contact-needed".to_string(),
+                node_class: "missing_graph_data".to_string(),
+                route_miles: 79.0,
+                observed_t1_node_count: 0,
+                observed_parent_trunks: String::new(),
+                observed_dual_contacts: 0,
+                component_id: 0,
+                component_route_count: 1,
+                component_status: "component-bridged:2".to_string(),
+                repair_action: "fix-graph-contact-or-demote".to_string(),
+                repair_basis: "missing-t1-contact-evidence".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let columns = tier_candidate_column_rows(&rows);
+        let failures = tier_candidate_column_gate_failures(&columns);
+
+        assert_eq!(columns[0].column_decision, "selected");
+        assert_eq!(columns[1].column_decision, "blocked");
+        assert!(failures.is_empty());
     }
 
     #[test]
