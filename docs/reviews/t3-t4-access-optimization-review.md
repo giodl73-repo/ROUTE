@@ -75,13 +75,13 @@ columns, and full zone-map diagnostics.
 Implemented:
 
 - `data/t3-zone-access-obligations.csv`
+- `data/t3-zone-route-columns.csv`
 
 Still required:
 
-1. `data/t3-zone-route-columns.csv`
-2. `data/t4-terminal-access-columns.csv`
-3. `data/t3-t4-access-gaps.csv`
-4. `data/t3-zone-map-diagnostics.csv`
+1. `data/t4-terminal-access-columns.csv`
+2. `data/t3-t4-access-gaps.csv`
+3. `data/t3-zone-map-diagnostics.csv`
 
 ## Decision
 

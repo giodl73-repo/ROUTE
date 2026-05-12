@@ -1713,6 +1713,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Select route columns that satisfy T3 zone access obligations
+    T3ZoneRouteColumns {
+        /// T3 zone access obligation CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-access-obligations.csv",
+            value_name = "FILE"
+        )]
+        obligations: PathBuf,
+        /// T3/T4 pressure intake CSV, used for route scores and source tiers
+        #[arg(
+            long,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// Output T3 zone route columns CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-zone-route-columns.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if selected route columns do not satisfy zone obligations
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6246,6 +6275,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3 zone access obligation gate: PASS");
+            }
+        }
+
+        Commands::T3ZoneRouteColumns {
+            obligations,
+            intake,
+            output,
+            gate,
+        } => {
+            println!("route t3-zone-route-columns");
+            let obligation_rows = load_t3_zone_access_obligations(&obligations)
+                .with_context(|| format!("loading {}", obligations.display()))?;
+            let intake_rows = load_t3_t4_pressure_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let rows = t3_zone_route_column_rows(&obligation_rows, &intake_rows);
+            write_t3_zone_route_columns(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_zone_route_column_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_zone_route_column_gate_failures(&rows, &obligation_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3 zone route column gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3 zone route column gate failed");
+                }
+                println!();
+                println!("T3 zone route column gate: PASS");
             }
         }
 
@@ -11305,6 +11365,26 @@ struct T3ZoneAccessObligationRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3ZoneRouteColumnRow {
+    zone_id: String,
+    zone_name: String,
+    obligation_class: String,
+    route: String,
+    current_tier: String,
+    current_score: f64,
+    promise_horizon_hours: u8,
+    column_decision: String,
+    zone_role: String,
+    contact_requirement: String,
+    map_treatment: String,
+    selection_basis: String,
+    source_obligation: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -14491,6 +14571,269 @@ fn t3_zone_access_obligation_gate_failures(
     failures
 }
 
+fn load_t3_zone_access_obligations(path: &Path) -> Result<Vec<T3ZoneAccessObligationRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_zone_route_column_rows(
+    obligations: &[T3ZoneAccessObligationRow],
+    intake_rows: &[T3T4PressureIntakeRow],
+) -> Vec<T3ZoneRouteColumnRow> {
+    let intake_by_route = intake_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    let mut rows = Vec::new();
+    for obligation in obligations {
+        for route in semicolon_values(&obligation.candidate_routes) {
+            let intake = intake_by_route.get(&canonical_route_key(&route));
+            let current_tier = intake
+                .map(|row| row.current_tier.clone())
+                .unwrap_or_else(|| "unknown".to_string());
+            let current_score = intake.map(|row| row.current_score).unwrap_or(0.0);
+            let (
+                column_decision,
+                zone_role,
+                contact_requirement,
+                map_treatment,
+                basis,
+                next_artifact,
+                effect,
+                status,
+            ) = t3_zone_route_column_decision(obligation, &route, current_score, intake.is_some());
+            rows.push(T3ZoneRouteColumnRow {
+                zone_id: obligation.zone_id.clone(),
+                zone_name: obligation.zone_name.clone(),
+                obligation_class: obligation.obligation_class.clone(),
+                route,
+                current_tier,
+                current_score,
+                promise_horizon_hours: obligation.promise_horizon_hours,
+                column_decision: column_decision.to_string(),
+                zone_role: zone_role.to_string(),
+                contact_requirement: contact_requirement.to_string(),
+                map_treatment: map_treatment.to_string(),
+                selection_basis: basis.to_string(),
+                source_obligation: obligation.access_target.clone(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: effect.to_string(),
+                validation_status: status.to_string(),
+            });
+        }
+    }
+
+    rows.sort_by(|a, b| {
+        a.zone_id
+            .cmp(&b.zone_id)
+            .then_with(|| a.obligation_class.cmp(&b.obligation_class))
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn semicolon_values(value: &str) -> Vec<String> {
+    value
+        .split(';')
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn t3_zone_route_column_decision(
+    obligation: &T3ZoneAccessObligationRow,
+    _route: &str,
+    current_score: f64,
+    has_intake: bool,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if !has_intake {
+        return (
+            "source-needed",
+            "unscored-candidate",
+            "intake-score-required",
+            "hide-from-map",
+            "candidate route is missing from T3/T4 pressure intake",
+            "data/t3-t4-pressure-intake.csv",
+            "cannot select a T3 zone route without a scored intake row",
+            "review",
+        );
+    }
+
+    match obligation.obligation_class.as_str() {
+        "regional-upgrade-review" => (
+            "upward-review",
+            "possible-t2-upgrade",
+            "t2-contact-witness-required",
+            "show-as-review-connector",
+            "24h obligation is a T2 reopening review, not a T3 feeder selection",
+            "data/t2-bubble-up-review.csv",
+            "keeps near-threshold routes visible while blocking direct promotion",
+            "review",
+        ),
+        "terminal-local-access" => (
+            "t4-access-review",
+            "terminal-local-access",
+            "terminal-obligation-required",
+            "show-as-local-access-candidate",
+            "1h obligation belongs to terminal/local access columns",
+            "data/t4-terminal-access-columns.csv",
+            "passes local access pressure to the T4 selector",
+            "review",
+        ),
+        _ if current_score >= T3_THRESHOLD => (
+            "selected",
+            "regional-feeder",
+            "higher-tier-or-regional-contact-required",
+            "render-as-zone-column",
+            "score meets T3 threshold and satisfies a 6h feeder obligation",
+            "data/t3-zone-map-diagnostics.csv",
+            "feeds the T3 zone map and stop-column selector",
+            "pass",
+        ),
+        _ => (
+            "review",
+            "below-threshold-feeder-candidate",
+            "score-or-terminal-evidence-required",
+            "show-as-held-zone-candidate",
+            "candidate is below T3 threshold for a 6h feeder obligation",
+            "data/t3-t4-access-gaps.csv",
+            "holds weak feeder pressure for access-gap review instead of selecting it",
+            "review",
+        ),
+    }
+}
+
+fn write_t3_zone_route_columns(path: &Path, rows: &[T3ZoneRouteColumnRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_zone_route_column_summary(output: &Path, rows: &[T3ZoneRouteColumnRow]) {
+    let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_decision.entry(row.column_decision.as_str()).or_default() += 1;
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T3 zone route column rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+    for (decision, count) in by_decision {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t3_zone_route_column_gate_failures(
+    rows: &[T3ZoneRouteColumnRow],
+    obligations: &[T3ZoneAccessObligationRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T3 zone route columns emitted".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<(String, String, String)>::new();
+    for row in rows {
+        if row.zone_id.trim().is_empty()
+            || row.zone_name.trim().is_empty()
+            || row.obligation_class.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.column_decision.trim().is_empty()
+            || row.zone_role.trim().is_empty()
+            || row.contact_requirement.trim().is_empty()
+            || row.map_treatment.trim().is_empty()
+            || row.selection_basis.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} {} has incomplete route-column fields",
+                row.zone_id, row.obligation_class, row.route
+            ));
+        }
+        if !seen.insert((
+            row.zone_id.clone(),
+            row.obligation_class.clone(),
+            canonical_route_key(&row.route),
+        )) {
+            failures.push(format!(
+                "{} {} {} has duplicate route-column row",
+                row.zone_id, row.obligation_class, row.route
+            ));
+        }
+        if row.column_decision == "selected" && row.current_score < T3_THRESHOLD {
+            failures.push(format!(
+                "{} {} selected below T3 threshold",
+                row.zone_id, row.route
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} {} has invalid validation status {}",
+                row.zone_id, row.route, row.validation_status
+            ));
+        }
+    }
+
+    for obligation in obligations
+        .iter()
+        .filter(|row| row.obligation_class == "regional-feeder-access")
+    {
+        let selected_count = rows
+            .iter()
+            .filter(|row| {
+                row.zone_id == obligation.zone_id
+                    && row.obligation_class == obligation.obligation_class
+                    && row.column_decision == "selected"
+            })
+            .count();
+        if selected_count == 0 {
+            failures.push(format!(
+                "{} regional-feeder-access has no selected route column",
+                obligation.zone_id
+            ));
+        }
+    }
+
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -15067,6 +15410,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-zone-access-obligations",
                 "route t3-zone-access-obligations --gate",
                 "data/t3-zone-access-obligations.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t3-zone-route-columns",
+                "route t3-zone-route-columns --gate",
+                "data/t3-zone-route-columns.csv",
                 "pass",
                 0,
                 "",
@@ -20390,6 +20741,7 @@ mod tests {
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
         t3_zone_access_obligation_gate_failures, t3_zone_access_obligation_rows,
+        t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
@@ -20402,8 +20754,9 @@ mod tests {
         T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
         T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
         T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4PressureIntakeRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -21539,6 +21892,102 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.obligation_class == "regional-upgrade-review"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t3_zone_route_columns_select_threshold_feeders_and_hold_upgrades() {
+        let obligations = vec![
+            T3ZoneAccessObligationRow {
+                zone_id: "t3-mountain-west".to_string(),
+                zone_name: "Mountain West / Interior Coverage".to_string(),
+                obligation_class: "regional-feeder-access".to_string(),
+                access_target: "select T3 feeder/contact chain inside the zone".to_string(),
+                promise_horizon_hours: 6,
+                source_route_count: 2,
+                candidate_routes: "I25;I-135".to_string(),
+                source_intake_classes: "t3-regional-intake".to_string(),
+                map_id: "t3-mountain-west".to_string(),
+                next_artifact: "data/t3-zone-route-columns.csv".to_string(),
+                optimizer_effect:
+                    "turns lower-tier pressure into regional feeder obligations for zone maps"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3ZoneAccessObligationRow {
+                zone_id: "t3-mountain-west".to_string(),
+                zone_name: "Mountain West / Interior Coverage".to_string(),
+                obligation_class: "regional-upgrade-review".to_string(),
+                access_target: "prove T2 contact and regional service value before upgrade"
+                    .to_string(),
+                promise_horizon_hours: 24,
+                source_route_count: 1,
+                candidate_routes: "I-8".to_string(),
+                source_intake_classes: "bubble-up-t2-review".to_string(),
+                map_id: "t3-mountain-west".to_string(),
+                next_artifact: "data/t2-bubble-up-review.csv".to_string(),
+                optimizer_effect:
+                    "keeps lower-tier upgrade pressure attached to zone maps before any T2 reopening"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let intake = vec![
+            T3T4PressureIntakeRow {
+                route: "I25".to_string(),
+                source_pressure_type: "closure-demotion-pressure".to_string(),
+                current_tier: "T2".to_string(),
+                current_score: 66.3,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "accept-as-t3-regional-review".to_string(),
+                selection_basis: "source-backed T1/T2 contact".to_string(),
+                source_artifact: "data/t2-contact-closure.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "consume T2 demotion as regional feeder review".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I-135".to_string(),
+                source_pressure_type: "local-upgrade-pressure".to_string(),
+                current_tier: "T4".to_string(),
+                current_score: 29.8,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "evaluate-for-t3-zone-treatment".to_string(),
+                selection_basis: "score-within-five-points-of-t3-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "hold for T3 zone treatment; no national map promotion"
+                    .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "I-8".to_string(),
+                source_pressure_type: "regional-upgrade-pressure".to_string(),
+                current_tier: "T3".to_string(),
+                current_score: 45.3,
+                target_tier: "T2".to_string(),
+                intake_class: "bubble-up-t2-review".to_string(),
+                intake_action: "send-to-t2-contact-review".to_string(),
+                selection_basis: "score-within-five-points-of-t2-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+                optimizer_effect:
+                    "lower-tier score pressure can reopen T2 only through contact gates".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t3_zone_route_column_rows(&obligations, &intake);
+        let failures = t3_zone_route_column_gate_failures(&rows, &obligations);
+        let i25 = rows.iter().find(|row| row.route == "I25").unwrap();
+        let i135 = rows.iter().find(|row| row.route == "I-135").unwrap();
+        let i8 = rows.iter().find(|row| row.route == "I-8").unwrap();
+
+        assert_eq!(i25.column_decision, "selected");
+        assert_eq!(i135.column_decision, "review");
+        assert_eq!(i8.column_decision, "upward-review");
         assert!(failures.is_empty());
     }
 
