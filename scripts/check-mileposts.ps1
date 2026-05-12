@@ -66,6 +66,7 @@ Invoke-Checked "Release manifest path check" { Test-ReleaseManifestPaths }
 Invoke-Checked "Forum docket path check" { Test-ForumDocketPaths }
 Invoke-Checked "Map atlas gate" { cargo run -q -p route -- map-atlas --gate }
 Invoke-Checked "T1 line selector gate" { cargo run -q -p route -- t1-line-selector --gate }
+Invoke-Checked "T1 design review gate" { cargo run -q -p route -- t1-design-review --gate }
 Invoke-Checked "Beck T2 service standards gate" { cargo run -q -p route -- beck-t2-service-standards --gate }
 Invoke-Checked "Beck T2 qualification actions gate" { cargo run -q -p route -- beck-t2-qualification-actions --gate }
 Invoke-Checked "Game T2 service overlay gate" { cargo run -q -p route -- game t2-overlays --gate }

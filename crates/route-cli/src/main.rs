@@ -207,6 +207,43 @@ enum Commands {
         gate: bool,
     },
 
+    /// Export a T1 design review joining SLA selection to Beck-map diagnostics
+    T1DesignReview {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Path to tier stop candidate CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        stop_candidates: PathBuf,
+        /// Path to designated top-city SLA pair CSV
+        #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
+        sla_pairs: PathBuf,
+        /// Output design review CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-design-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Maximum T1 lines to select
+        #[arg(long, default_value_t = 11)]
+        route_budget: usize,
+        /// Maximum nationally prominent stop/city candidates to promote
+        #[arg(long, default_value_t = 25)]
+        city_budget: usize,
+        /// Maximum selected stop references across T1 lines
+        #[arg(long, default_value_t = 100)]
+        stop_budget: usize,
+        /// Fail if selected T1 lines lack stops/diagnostics or SLA-required lines are rejected
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Export T2 Beck service-class standards used by diagnostics and maps
     BeckT2ServiceStandards {
         /// Output CSV file
@@ -2388,6 +2425,75 @@ fn run_cli() -> Result<()> {
                         println!("  - {failure}");
                     }
                     anyhow::bail!("T1 line selector gate failed");
+                }
+            }
+        }
+
+        Commands::T1DesignReview {
+            tier_table,
+            stop_candidates,
+            sla_pairs,
+            output,
+            route_budget,
+            city_budget,
+            stop_budget,
+            gate,
+        } => {
+            println!("route t1-design-review");
+            let selector_rows = t1_line_selector_rows(
+                &tier_table,
+                &stop_candidates,
+                &sla_pairs,
+                route_budget,
+                city_budget,
+                stop_budget,
+            )?;
+            let rows = t1_design_review_rows(&selector_rows);
+            let csv = build_t1_design_review_csv(&rows);
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(&output, csv)
+                .with_context(|| format!("writing {}", output.display()))?;
+            let selected = rows.iter().filter(|row| row.selected).count();
+            let policy_reviews = rows
+                .iter()
+                .filter(|row| row.design_status == "policy-review")
+                .count();
+            println!("  reviewed T1 candidates: {}", rows.len());
+            println!("  selected T1 lines: {selected}/{route_budget}");
+            println!("  policy reviews: {policy_reviews}");
+            println!("  wrote review: {}", output.display());
+            println!(
+                "  {:<8} {:<24} {:>4} {:>5} {:<18} {:<16} Action",
+                "Route", "Role", "SLA", "Stops", "Beck", "Status"
+            );
+            for row in &rows {
+                println!(
+                    "  {:<8} {:<24} {:>4} {:>5} {:<18} {:<16} {}",
+                    row.route,
+                    row.design_role,
+                    row.promise_count,
+                    row.selected_stop_count,
+                    truncate_for_table(&row.beck_action, 18),
+                    row.design_status,
+                    row.next_design_action
+                );
+            }
+            if gate {
+                let failures = t1_design_review_gate_failures(&rows);
+                if failures.is_empty() {
+                    println!("T1 design review gate: PASS");
+                } else {
+                    println!("T1 design review gate: FAIL");
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 design review gate failed");
                 }
             }
         }
@@ -9586,6 +9692,143 @@ fn t1_line_selector_gate_failures(
             "{} is required by SLA pair(s) {} but was not selected",
             row.route, row.sla_pairs
         ));
+    }
+    failures
+}
+
+#[derive(Debug, Clone)]
+struct T1DesignReviewRow {
+    route: String,
+    selected: bool,
+    design_role: &'static str,
+    promise_count: usize,
+    selected_stop_count: usize,
+    top_city_stop_count: usize,
+    selector_reason: String,
+    beck_action: String,
+    beck_review_flag: String,
+    overlap_corridors: String,
+    design_status: &'static str,
+    next_design_action: &'static str,
+}
+
+fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignReviewRow> {
+    let diagnostics = route_map::beck_t1_diagnostics()
+        .into_iter()
+        .map(|row| (normalise_designation(row.corridor), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    selector_rows
+        .iter()
+        .filter(|row| {
+            row.selected
+                || row.sla_pair_count > 0
+                || row.decision == "reject-route-budget"
+                || row.decision == "reject-stop-budget"
+        })
+        .map(|row| {
+            let diagnostic = diagnostics.get(&row.route);
+            let beck_action = diagnostic
+                .map(|diag| diag.service_action.to_string())
+                .unwrap_or_else(|| "missing-diagnostic".to_string());
+            let beck_review_flag = diagnostic
+                .map(|diag| diag.review_flag.to_string())
+                .unwrap_or_else(|| "missing-diagnostic".to_string());
+            let overlap_corridors = diagnostic
+                .map(|diag| diag.shared_segment_corridors.clone())
+                .unwrap_or_default();
+            let design_role = if row.selected && row.sla_pair_count > 0 {
+                "promise-spine"
+            } else if row.selected {
+                "score-backbone-exception"
+            } else if row.sla_pair_count > 0 {
+                "unmet-promise-blocker"
+            } else {
+                "cutline-candidate"
+            };
+            let design_status = if !row.selected {
+                "held"
+            } else if diagnostic.is_none() || row.sla_pair_count == 0 || beck_review_flag != "ok" {
+                "policy-review"
+            } else {
+                "accepted"
+            };
+            let next_design_action = if !row.selected && row.sla_pair_count > 0 {
+                "raise-budget-or-recut-promises"
+            } else if !row.selected {
+                "hold-outside-current-budget"
+            } else if diagnostic.is_none() {
+                "add-beck-diagnostic-row"
+            } else if row.sla_pair_count == 0 {
+                "justify-as-national-relay-or-demote-to-t2"
+            } else if beck_review_flag != "ok" {
+                "resolve-shared-segment-map-policy"
+            } else {
+                "keep-in-t1-design"
+            };
+
+            T1DesignReviewRow {
+                route: row.route.clone(),
+                selected: row.selected,
+                design_role,
+                promise_count: row.sla_pair_count,
+                selected_stop_count: row.selected_stop_count,
+                top_city_stop_count: row.top_city_stop_count,
+                selector_reason: row.reason.to_string(),
+                beck_action,
+                beck_review_flag,
+                overlap_corridors,
+                design_status,
+                next_design_action,
+            }
+        })
+        .collect()
+}
+
+fn build_t1_design_review_csv(rows: &[T1DesignReviewRow]) -> String {
+    let mut csv = String::from(
+        "route,selected,design_role,promise_count,selected_stop_count,top_city_stop_count,selector_reason,beck_action,beck_review_flag,overlap_corridors,design_status,next_design_action\n",
+    );
+    for row in rows {
+        push_csv_line(
+            &mut csv,
+            &[
+                &row.route,
+                if row.selected { "true" } else { "false" },
+                row.design_role,
+                &row.promise_count.to_string(),
+                &row.selected_stop_count.to_string(),
+                &row.top_city_stop_count.to_string(),
+                &row.selector_reason,
+                &row.beck_action,
+                &row.beck_review_flag,
+                &row.overlap_corridors,
+                row.design_status,
+                row.next_design_action,
+            ],
+        );
+    }
+    csv
+}
+
+fn t1_design_review_gate_failures(rows: &[T1DesignReviewRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.iter().all(|row| !row.selected) {
+        failures.push("no selected T1 design rows".to_string());
+    }
+    for row in rows {
+        if row.selected && row.selected_stop_count == 0 {
+            failures.push(format!("{} selected without stop chain", row.route));
+        }
+        if row.selected && row.beck_review_flag == "missing-diagnostic" {
+            failures.push(format!("{} selected without Beck diagnostic", row.route));
+        }
+        if !row.selected && row.promise_count > 0 {
+            failures.push(format!(
+                "{} carries {} promise pairs but is not selected",
+                row.route, row.promise_count
+            ));
+        }
     }
     failures
 }
