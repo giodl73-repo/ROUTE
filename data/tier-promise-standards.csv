@@ -1,0 +1,5 @@
+tier,promise_windows_h,network_role,selector_scope,example_promises,gate_policy
+T1,48;36,national timed-freight spine,coast-to-coast and half-continent industry-conversion corridors,NYC-LA-48;LA-CHI-36,T1 selector may only consume 48h and 36h promise pairs
+T2,24;12,regional timed-freight connectors,overnight and same-day mega-region links that feed T1,NYC-CHI-24;DFW-HOU-12,T2 selector may only consume 24h and 12h promise pairs
+T3,6,regional feeder and access mesh,one-shift access from production zones ports and smaller metros into T1/T2,PORTLAND-BOISE-6,T3 selector may only consume 6h promise pairs
+T4,1,terminal and local access,first/last-mile links between terminals ports yards warehouses and metro freight districts,PORT-LA-RAIL-YARD-1,T4 selector may only consume 1h promise pairs

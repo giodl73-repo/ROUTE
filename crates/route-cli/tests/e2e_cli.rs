@@ -39,6 +39,8 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     let map_out = target_artifact("beck-schematic-t2-e2e.png");
     let t2_only_map_out = target_artifact("beck-schematic-t2-only-e2e.png");
     let t2_diagnostics_out = target_artifact("beck-t2-diagnostics-e2e.csv");
+    let t1_diagnostics_out = target_artifact("beck-t1-diagnostics-e2e.csv");
+    let t1_selector_out = target_artifact("t1-line-selector-e2e.csv");
     let t2_standards_out = target_artifact("beck-t2-service-standards-e2e.csv");
     let t2_actions_out = target_artifact("beck-t2-qualification-actions-e2e.csv");
     let csv_out = target_artifact("beck-stop-sla-e2e.csv");
@@ -81,6 +83,27 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
     assert!(t2_diagnostics.contains("split-parent"));
     assert!(t2_diagnostics.contains("compact-service"));
     assert!(t2_diagnostics.contains("dense-transfer-review"));
+
+    assert_success(&[
+        "beck-t1-diagnostics",
+        "--output",
+        t1_diagnostics_out.to_str().expect("utf-8 output path"),
+    ]);
+    let t1_diagnostics =
+        std::fs::read_to_string(&t1_diagnostics_out).expect("read T1 diagnostics CSV");
+    assert!(t1_diagnostics.starts_with("corridor,endpoint_start,endpoint_end"));
+    assert!(t1_diagnostics.contains("overlap-review"));
+
+    assert_success(&[
+        "t1-line-selector",
+        "--output",
+        t1_selector_out.to_str().expect("utf-8 output path"),
+        "--gate",
+    ]);
+    let t1_selector = std::fs::read_to_string(&t1_selector_out).expect("read T1 selector CSV");
+    assert!(t1_selector.starts_with("route,tier,score,rank,selected"));
+    assert!(t1_selector.contains("sla-required-budget-fit"));
+    assert!(t1_selector.contains("NYC-LA-48"));
 
     assert_success(&[
         "beck-t2-service-standards",

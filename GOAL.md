@@ -5,6 +5,10 @@
 Turn the Beck/T1/T2/T3 map system into a validated connection network where stops,
 routes, SLA promises, and schematic geometry all agree.
 
+The selector doctrine is: tier equals promise horizon. T1 is the national 48h/36h
+timed-freight spine, T2 is the regional 24h/12h timed-freight connector layer, T3
+is the 6h feeder/access mesh, and T4 is the 1h local/terminal layer.
+
 ## Why This Matters
 
 The maps now look and behave more like a metro system, and the stop-to-stop SLA

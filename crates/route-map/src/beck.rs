@@ -76,6 +76,23 @@ pub struct BeckStopCatalogRow {
     pub stop_class: &'static str,
 }
 
+pub struct BeckT1DiagnosticRow {
+    pub corridor: &'static str,
+    pub endpoint_start: &'static str,
+    pub endpoint_end: &'static str,
+    pub endpoint_status: &'static str,
+    pub stop_count: usize,
+    pub drawn_stop_count: usize,
+    pub transfer_stop_count: usize,
+    pub shared_stop_count: usize,
+    pub shared_stop_corridors: String,
+    pub shared_segment_count: usize,
+    pub shared_segment_corridors: String,
+    pub service_action: &'static str,
+    pub qualification_basis: &'static str,
+    pub review_flag: &'static str,
+}
+
 pub struct BeckT2DiagnosticRow {
     pub corridor: &'static str,
     pub trunk: &'static str,
@@ -2592,6 +2609,34 @@ pub fn build_beck_t2_diagnostics_csv() -> String {
     csv
 }
 
+pub fn build_beck_t1_diagnostics_csv() -> String {
+    let mut csv = String::from(
+        "corridor,endpoint_start,endpoint_end,endpoint_status,stop_count,drawn_stop_count,transfer_stop_count,shared_stop_count,shared_stop_corridors,shared_segment_count,shared_segment_corridors,service_action,qualification_basis,review_flag\n",
+    );
+    for row in beck_t1_diagnostics() {
+        push_csv_row(
+            &mut csv,
+            &[
+                row.corridor,
+                row.endpoint_start,
+                row.endpoint_end,
+                row.endpoint_status,
+                &row.stop_count.to_string(),
+                &row.drawn_stop_count.to_string(),
+                &row.transfer_stop_count.to_string(),
+                &row.shared_stop_count.to_string(),
+                &row.shared_stop_corridors,
+                &row.shared_segment_count.to_string(),
+                &row.shared_segment_corridors,
+                row.service_action,
+                row.qualification_basis,
+                row.review_flag,
+            ],
+        );
+    }
+    csv
+}
+
 pub fn build_beck_t2_service_standards_csv() -> String {
     let mut csv = String::from(
         "service_class,definition,min_schematic_px,max_schematic_px,max_drawn_stops,min_transfer_stops,visual_convention,review_policy,gate_policy,game_use\n",
@@ -2724,6 +2769,72 @@ pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
             game_use: "candidate for local service, relief route, or upgrade investment scenario",
         },
     ]
+}
+
+pub fn beck_t1_diagnostics() -> Vec<BeckT1DiagnosticRow> {
+    let stops = beck_stops();
+    let routes = t1_route_stop_ids();
+    let mut rows = routes
+        .iter()
+        .map(|(corridor, ids)| {
+            let endpoint_start = ids.first().copied().unwrap_or("");
+            let endpoint_end = ids.last().copied().unwrap_or("");
+            let endpoints_qualified = [endpoint_start, endpoint_end].iter().all(|id| {
+                beck_stop_class(stop_by_id(&stops, id)).qualifies_for_route_endpoint(RouteTier::T1)
+            });
+            let drawn_stop_count = ids.iter().filter(|id| stop_by_id(&stops, id).draw).count();
+            let transfer_stop_count = ids
+                .iter()
+                .filter(|id| stop_by_id(&stops, id).is_transfer_point())
+                .count();
+            let shared_stop_corridors = t1_shared_stop_corridors(*corridor, ids, &routes);
+            let shared_segment_corridors = t1_shared_segment_corridors(*corridor, ids, &routes);
+            let shared_stop_count = shared_stop_corridors.len();
+            let shared_segment_count = shared_segment_corridors.len();
+            let (service_action, qualification_basis, review_flag) = if !endpoints_qualified {
+                (
+                    "endpoint-review",
+                    "t1-endpoint-not-terminal-worthy",
+                    "endpoint-review",
+                )
+            } else if shared_segment_count > 0 {
+                (
+                    "overlap-review",
+                    "shared-backbone-segment-needs-policy",
+                    "overlap-review",
+                )
+            } else {
+                ("keep", "distinct-backbone-service", "ok")
+            };
+            BeckT1DiagnosticRow {
+                corridor,
+                endpoint_start,
+                endpoint_end,
+                endpoint_status: if endpoints_qualified {
+                    "qualified"
+                } else {
+                    "endpoint-review"
+                },
+                stop_count: ids.len(),
+                drawn_stop_count,
+                transfer_stop_count,
+                shared_stop_count,
+                shared_stop_corridors: shared_stop_corridors.join(";"),
+                shared_segment_count,
+                shared_segment_corridors: shared_segment_corridors.join(";"),
+                service_action,
+                qualification_basis,
+                review_flag,
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        a.review_flag
+            .cmp(b.review_flag)
+            .then_with(|| b.shared_segment_count.cmp(&a.shared_segment_count))
+            .then_with(|| a.corridor.cmp(b.corridor))
+    });
+    rows
 }
 
 pub fn beck_t2_diagnostics() -> Vec<BeckT2DiagnosticRow> {
@@ -3174,6 +3285,50 @@ fn same_parent_trunk_pair(a: &T2LineSegment, b: &T2LineSegment) -> bool {
     a_pair.sort_unstable();
     b_pair.sort_unstable();
     a_pair == b_pair
+}
+
+fn t1_shared_stop_corridors(
+    corridor: &str,
+    ids: &[&'static str],
+    routes: &[(&'static str, Vec<&'static str>)],
+) -> Vec<&'static str> {
+    routes
+        .iter()
+        .filter(|(other_corridor, _)| *other_corridor != corridor)
+        .filter(|(_, other_ids)| ids.iter().any(|id| other_ids.contains(id)))
+        .map(|(other_corridor, _)| *other_corridor)
+        .collect()
+}
+
+fn t1_shared_segment_corridors(
+    corridor: &str,
+    ids: &[&'static str],
+    routes: &[(&'static str, Vec<&'static str>)],
+) -> Vec<&'static str> {
+    let segments = t1_stop_segments(ids);
+    routes
+        .iter()
+        .filter(|(other_corridor, _)| *other_corridor != corridor)
+        .filter(|(_, other_ids)| {
+            let other_segments = t1_stop_segments(other_ids);
+            segments
+                .iter()
+                .any(|segment| other_segments.contains(segment))
+        })
+        .map(|(other_corridor, _)| *other_corridor)
+        .collect()
+}
+
+fn t1_stop_segments(ids: &[&'static str]) -> Vec<(&'static str, &'static str)> {
+    ids.windows(2)
+        .map(|pair| {
+            if pair[0] <= pair[1] {
+                (pair[0], pair[1])
+            } else {
+                (pair[1], pair[0])
+            }
+        })
+        .collect()
 }
 
 fn unique_duplicate_stop_count(
@@ -3968,7 +4123,8 @@ fn draw_generated_bends(
 #[cfg(test)]
 mod tests {
     use super::{
-        beck_stop_class, beck_stops, beck_t2_diagnostics, build_beck_stop_sla_csv, build_beck_svg,
+        beck_stop_class, beck_stops, beck_t1_diagnostics, beck_t2_diagnostics,
+        build_beck_stop_sla_csv, build_beck_svg, build_beck_t1_diagnostics_csv,
         build_beck_t2_diagnostics_csv, build_beck_t2_only_svg,
         build_beck_t2_qualification_actions_csv, build_beck_t2_service_standards_csv,
         build_beck_t2_svg, is_primary_terminal, stop_by_id, stop_class, t1_badges,
@@ -4469,6 +4625,20 @@ mod tests {
         assert_eq!(us6.unique_duplicate_stop_count, 0);
         assert_eq!(us6.service_action, "demote-review");
         assert_eq!(us6.qualification_basis, "duplicate-subset-service");
+    }
+
+    #[test]
+    fn beck_t1_diagnostics_exports_backbone_overlap_review() {
+        let csv = build_beck_t1_diagnostics_csv();
+        assert!(csv.starts_with("corridor,endpoint_start,endpoint_end,endpoint_status"));
+        assert!(csv.contains("shared-backbone-segment-needs-policy"));
+
+        let rows = beck_t1_diagnostics();
+        assert_eq!(rows.len(), t1_route_stop_ids().len());
+        assert!(rows.iter().all(|row| row.endpoint_status == "qualified"));
+        assert!(rows.iter().any(|row| row.review_flag == "overlap-review"));
+        let i80 = rows.iter().find(|row| row.corridor == "I-80").unwrap();
+        assert!(i80.shared_stop_corridors.contains("I-90"));
     }
 
     #[test]

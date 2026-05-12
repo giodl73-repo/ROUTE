@@ -1,0 +1,26 @@
+pair_id,origin_id,dest_id,target_hours,priority,market_class,required_routes,required_stops,evidence_basis
+NYC-LA-48,NYC,LA,48,10,coast-to-coast-air-substitution,I-95;I-80;I-5,NYC;CLEVELAND;CHI;OMAHA;SLC;RENO;SAC;LA,C.3 48-hour economy and C.1 NY-LA relay corridor
+NYC-SFO-48,NYC,SAC,48,9,coast-to-coast-air-substitution,I-95;I-80,NYC;CLEVELAND;CHI;OMAHA;SLC;RENO;SAC,C.3 parallel NY-San Francisco corridor
+NYC-SEA-48,NYC,SEA,48,9,coast-to-coast-air-substitution,I-95;I-80;I-90,NYC;CLEVELAND;CHI;OMAHA;SLC;SPK;SEA,C.3 parallel NY-Seattle corridor
+BOS-LA-48,BOS,LA,48,9,pharma-biotech-and-air-substitution,I-90;I-80;I-5,BOS;ALBANY;BUFFALO;CHI;OMAHA;SLC;RENO;SAC;LA,C.3 parallel Boston-Los Angeles corridor
+LA-CHI-36,LA,CHI,36,8,air-substitution-and-ecommerce,I-5;I-80,LA;SAC;RENO;SLC;OMAHA;CHI,C.3 largest domestic air cargo parallels
+LA-MIA-48,LA,MIA,48,8,perishables-pharma-and-latin-gateway,I-10;I-75,LA;PHX;ELP;SAT;HOU;NOLA;JAX;MIA,C.3 coast-to-coast parallel plus port gateway logic
+LA-DC-48,LA,DC,48,8,southern-transcontinental-national-service,I-10;I-40;I-95,LA;PHX;ABQ;OKC;MEM;NASHVILLE;KNOXVILLE;RALEIGH;DC,C.1 alternate route analysis plus T1 national promise coverage
+PHX-NYC-48,PHX,NYC,48,8,southwest-to-northeast-air-substitution,I-10;I-40;I-70;I-95,PHX;ABQ;OKC;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 Southwest high-growth market and C.1 reliability corridor logic
+SEA-CHI-36,SEA,CHI,36,7,air-substitution-and-agriculture,I-90,SEA;SPK;BIL;MIN;MADISON;CHI,C.3 Seattle-Chicago parallel and northern freight lane
+HOU-CHI-36,HOU,CHI,36,7,energy-industrial-and-ecommerce,I-10;I-35;I-80,HOU;SAT;DAL;OKC;KC;DSM;CHI,C.1 HOU-CHI reliability corridor
+ATL-LA-48,ATL,LA,48,7,southeast-west-air-substitution,I-20;I-10;I-5,ATL;DAL;ELP;PHX;LA,C.3 Southeast-West Coast market note
+NYC-MIA-36,NYC,MIA,36,7,atlantic-pharma-and-produce,I-95,NYC;PHILADELPHIA;DC;RIC;JAX;MIA,C.3 pharma/perishables and Atlantic corridor
+SFO-CHI-36,SAC,CHI,36,7,bay-area-to-midwest-air-substitution,I-80,SAC;RENO;SLC;OMAHA;CHI,C.3 Bay Area to Midwest parallel corridor
+ATL-SEA-48,ATL,SEA,48,6,southeast-to-pacific-northwest-national-mesh,I-20;I-35;I-80;I-90,ATL;DAL;OKC;KC;OMAHA;BIL;SPK;SEA,C.3 parallel corridor multiplier and national mesh coverage
+BOS-SEA-48,BOS,SEA,48,6,northern-biotech-tech-coast-to-coast,I-90,BOS;BUFFALO;CHI;MIN;BIL;SPK;SEA,C.3 northern coast-to-coast parallel corridor
+JAX-LA-48,JAX,LA,48,6,southeast-florida-gateway-to-west-coast,I-10;I-5,JAX;NOLA;HOU;SAT;ELP;PHX;LA,C.3 Southeast-West Coast market and port gateway coverage
+MIA-CHI-36,MIA,CHI,36,6,florida-perishables-pharma-to-midwest,I-75;I-80,MIA;TAMPA;ATL;CINCINNATI;TOLEDO;CHI,C.3 perishables/pharma plus Midwest distribution
+DFW-NYC-36,DAL,NYC,36,6,texas-triangle-to-northeast,I-35;I-70;I-95,DAL;OKC;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 electronics/ecommerce plus T1 relay spine
+HOU-NYC-36,HOU,NYC,36,6,gulf-port-energy-to-northeast,I-10;I-35;I-70;I-95,HOU;SAT;DAL;OKC;KC;STL;COLUMBUS;NYC,C.1 HOU-CHI reliability plus Northeast extension
+DEN-NYC-36,DEN,NYC,36,5,mountain-interior-to-northeast,I-70;I-95,DEN;KC;STL;COLUMBUS;PENNSYLVANIA;NYC,C.3 relay midpoint accountability and national market reach
+SLC-NYC-48,SLC,NYC,48,5,intermountain-relay-backbone-to-northeast,I-80;I-95,SLC;OMAHA;CHI;CLEVELAND;NYC,C.3 relay station design and I-80 backbone accountability
+KC-LA-36,KC,LA,36,5,central-relay-hub-to-west-coast,I-70;I-80;I-5,KC;OMAHA;SLC;RENO;SAC;LA,C.3 relay hub network and central market access
+MEM-LA-36,MEM,LA,36,5,logistics-superhub-to-west-coast,I-40;I-10;I-5,MEM;OKC;ABQ;PHX;LA,C.3 logistics hub and southern transcontinental service
+HOU-LA-36,HOU,LA,36,5,gulf-to-west-coast-industrial,I-10,HOU;SAT;ELP;PHX;LA,C.3 Gulf-West Coast industrial and port lane
+NYC-ATL-36,NYC,ATL,36,5,northeast-to-southeast-express,I-95;I-20,NYC;DC;RIC;RALEIGH;ATL,C.3 pharma/ecommerce and Southeast transfer lane

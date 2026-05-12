@@ -155,6 +155,58 @@ enum Commands {
         gate: bool,
     },
 
+    /// Export T1 Beck map diagnostics for backbone qualification and overlap review
+    BeckT1Diagnostics {
+        /// Output CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/beck-t1-diagnostics.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any T1 line has endpoint or overlap review flags
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Select T1 lines/stops from scored routes and stop candidates under national budgets
+    T1LineSelector {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Path to tier stop candidate CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        stop_candidates: PathBuf,
+        /// Path to designated top-city SLA pair CSV
+        #[arg(long, default_value = "data/t1-sla-pairs.csv", value_name = "FILE")]
+        sla_pairs: PathBuf,
+        /// Output selector CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-line-selector.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Maximum T1 lines to select
+        #[arg(long, default_value_t = 11)]
+        route_budget: usize,
+        /// Maximum nationally prominent stop/city candidates to promote
+        #[arg(long, default_value_t = 25)]
+        city_budget: usize,
+        /// Maximum selected stop references across T1 lines
+        #[arg(long, default_value_t = 100)]
+        stop_budget: usize,
+        /// Fail if the selected line/stop budget is exceeded or any SLA-required T1 route is unselected
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Export T2 Beck service-class standards used by diagnostics and maps
     BeckT2ServiceStandards {
         /// Output CSV file
@@ -2194,6 +2246,128 @@ fn run_cli() -> Result<()> {
                         println!("  - {} {}", row.corridor, row.review_flag);
                     }
                     anyhow::bail!("Beck T2 diagnostics gate failed");
+                }
+            }
+        }
+
+        Commands::BeckT1Diagnostics { output, gate } => {
+            println!("route beck-t1-diagnostics");
+            let rows = route_map::beck_t1_diagnostics();
+            let csv = route_map::build_beck_t1_diagnostics_csv();
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(&output, csv)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("  T1 lines: {}", rows.len());
+            println!("  wrote diagnostics: {}", output.display());
+            println!(
+                "  {:<8} {:<12} {:<12} {:>5} {:>5} {:>5} {:>5} {:>5} {:<16} Flag",
+                "Line", "Start", "End", "Stops", "Drawn", "Xfer", "Share", "Segs", "Action"
+            );
+            for row in &rows {
+                println!(
+                    "  {:<8} {:<12} {:<12} {:>5} {:>5} {:>5} {:>5} {:>5} {:<16} {}",
+                    row.corridor,
+                    truncate_for_table(row.endpoint_start, 12),
+                    truncate_for_table(row.endpoint_end, 12),
+                    row.stop_count,
+                    row.drawn_stop_count,
+                    row.transfer_stop_count,
+                    row.shared_stop_count,
+                    row.shared_segment_count,
+                    truncate_for_table(row.service_action, 16),
+                    row.review_flag
+                );
+            }
+            if gate {
+                let flagged = rows
+                    .iter()
+                    .filter(|row| row.review_flag != "ok")
+                    .collect::<Vec<_>>();
+                if flagged.is_empty() {
+                    println!("Beck T1 diagnostics gate: PASS");
+                } else {
+                    println!("Beck T1 diagnostics gate: FAIL");
+                    for row in flagged.iter().take(10) {
+                        println!("  - {} {}", row.corridor, row.review_flag);
+                    }
+                    anyhow::bail!("Beck T1 diagnostics gate failed");
+                }
+            }
+        }
+
+        Commands::T1LineSelector {
+            tier_table,
+            stop_candidates,
+            sla_pairs,
+            output,
+            route_budget,
+            city_budget,
+            stop_budget,
+            gate,
+        } => {
+            println!("route t1-line-selector");
+            let rows = t1_line_selector_rows(
+                &tier_table,
+                &stop_candidates,
+                &sla_pairs,
+                route_budget,
+                city_budget,
+                stop_budget,
+            )?;
+            let csv = build_t1_line_selector_csv(&rows);
+            if let Some(parent) = output
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+            {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(&output, csv)
+                .with_context(|| format!("writing {}", output.display()))?;
+            let selected = rows.iter().filter(|row| row.selected).count();
+            let stop_refs = rows
+                .iter()
+                .filter(|row| row.selected)
+                .map(|row| row.selected_stop_count)
+                .sum::<usize>();
+            println!("  selected T1 lines: {selected}/{route_budget}");
+            println!("  selected stop refs: {stop_refs}/{stop_budget}");
+            println!("  top city budget: {city_budget}");
+            println!("  wrote selector: {}", output.display());
+            println!(
+                "  {:<8} {:>6} {:<9} {:>5} {:>5} {:>4} {:>5} {:<18} Reason",
+                "Route", "Score", "Tier", "Stops", "Top25", "SLA", "Budget", "Decision"
+            );
+            for row in rows.iter().take(route_budget + 6) {
+                println!(
+                    "  {:<8} {:>6.1} {:<9} {:>5} {:>5} {:>4} {:>5} {:<18} {}",
+                    row.route,
+                    row.score,
+                    row.tier,
+                    row.selected_stop_count,
+                    row.top_city_stop_count,
+                    row.sla_pair_count,
+                    row.budget_cost,
+                    row.decision,
+                    row.reason
+                );
+            }
+            if gate {
+                let failures = t1_line_selector_gate_failures(&rows, route_budget, stop_budget);
+                if failures.is_empty() {
+                    println!("T1 line selector gate: PASS");
+                } else {
+                    println!("T1 line selector gate: FAIL");
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 line selector gate failed");
                 }
             }
         }
@@ -8906,6 +9080,313 @@ struct StopCandidateRow {
     next_step: String,
 }
 
+#[derive(Debug)]
+struct T1LineSelectorRow {
+    route: String,
+    tier: String,
+    score: f64,
+    rank: usize,
+    selected: bool,
+    selected_stop_count: usize,
+    top_city_stop_count: usize,
+    sla_pair_count: usize,
+    budget_cost: usize,
+    decision: &'static str,
+    reason: &'static str,
+    selected_stops: String,
+    top_city_stops: String,
+    sla_pairs: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct TierTableInputRow {
+    tier: String,
+    route: String,
+    score: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct T1SlaPairRow {
+    pair_id: String,
+    origin_id: String,
+    dest_id: String,
+    target_hours: f64,
+    priority: u8,
+    market_class: String,
+    required_routes: String,
+    required_stops: String,
+    evidence_basis: String,
+}
+
+fn t1_line_selector_rows(
+    tier_table: &Path,
+    stop_candidates: &Path,
+    sla_pairs: &Path,
+    route_budget: usize,
+    city_budget: usize,
+    stop_budget: usize,
+) -> Result<Vec<T1LineSelectorRow>> {
+    let mut tier_rows = csv::Reader::from_path(tier_table)
+        .with_context(|| format!("reading {}", tier_table.display()))?
+        .deserialize::<TierTableInputRow>()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("parsing {}", tier_table.display()))?;
+    let sla_rows = csv::Reader::from_path(sla_pairs)
+        .with_context(|| format!("reading {}", sla_pairs.display()))?
+        .deserialize::<T1SlaPairRow>()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("parsing {}", sla_pairs.display()))?;
+    let mut required_route_pairs = std::collections::BTreeMap::<String, Vec<String>>::new();
+    let mut required_route_priority = std::collections::BTreeMap::<String, u8>::new();
+    for pair in &sla_rows {
+        if pair.origin_id.trim().is_empty()
+            || pair.dest_id.trim().is_empty()
+            || pair.market_class.trim().is_empty()
+            || pair.required_stops.trim().is_empty()
+            || pair.evidence_basis.trim().is_empty()
+        {
+            anyhow::bail!("{} has incomplete SLA pair contract", pair.pair_id);
+        }
+        if !matches!(pair.target_hours.round() as u16, 36 | 48) {
+            anyhow::bail!(
+                "{} has unsupported T1 target_hours {}; T1 promises must be 36h or 48h",
+                pair.pair_id,
+                pair.target_hours
+            );
+        }
+        for route in pair.required_routes.split(';') {
+            let route = normalise_designation(route.trim());
+            if !route.is_empty() {
+                required_route_pairs
+                    .entry(route.clone())
+                    .or_default()
+                    .push(pair.pair_id.clone());
+                required_route_priority
+                    .entry(route)
+                    .and_modify(|priority| *priority = (*priority).max(pair.priority))
+                    .or_insert(pair.priority);
+            }
+        }
+    }
+    tier_rows.sort_by(|a, b| {
+        let a_route = normalise_designation(&a.route);
+        let b_route = normalise_designation(&b.route);
+        required_route_priority
+            .get(&b_route)
+            .unwrap_or(&0)
+            .cmp(required_route_priority.get(&a_route).unwrap_or(&0))
+            .then_with(|| b.score.total_cmp(&a.score))
+            .then_with(|| a_route.cmp(&b_route))
+    });
+
+    let mut stop_rows = csv::Reader::from_path(stop_candidates)
+        .with_context(|| format!("reading {}", stop_candidates.display()))?
+        .deserialize::<StopCandidateRow>()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("parsing {}", stop_candidates.display()))?;
+    stop_rows.sort_by(|a, b| {
+        stop_candidate_selector_score(b)
+            .cmp(&stop_candidate_selector_score(a))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    let top_city_ids = stop_rows
+        .iter()
+        .take(city_budget)
+        .map(|row| row.stop_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let mut remaining_stop_budget = stop_budget;
+    let mut selected_routes = 0usize;
+    let mut rows = Vec::new();
+    for (idx, row) in tier_rows.iter().enumerate() {
+        let route = normalise_designation(&row.route);
+        let route_stops = stop_rows
+            .iter()
+            .filter(|stop| {
+                stop_candidate_routes(stop)
+                    .iter()
+                    .any(|item| item == &route)
+            })
+            .collect::<Vec<_>>();
+        let top_city_stops = route_stops
+            .iter()
+            .filter(|stop| top_city_ids.contains(&stop.stop_id))
+            .map(|stop| stop.stop_id.as_str())
+            .collect::<Vec<_>>();
+        let route_sla_pairs = required_route_pairs
+            .get(&route)
+            .cloned()
+            .unwrap_or_default();
+        let sla_pair_count = route_sla_pairs.len();
+        let is_t1 = row.tier.trim().eq_ignore_ascii_case("T1");
+        let has_budget =
+            selected_routes < route_budget && route_stops.len() <= remaining_stop_budget;
+        let selected = (is_t1 || sla_pair_count > 0) && has_budget;
+        let decision = if selected {
+            "select"
+        } else if sla_pair_count > 0 {
+            "reject-sla-budget"
+        } else if !is_t1 {
+            "reject-tier"
+        } else if selected_routes >= route_budget {
+            "reject-route-budget"
+        } else {
+            "reject-stop-budget"
+        };
+        let reason = if selected {
+            if sla_pair_count > 0 {
+                "sla-required-budget-fit"
+            } else {
+                "score-ranked-budget-fit"
+            }
+        } else if sla_pair_count > 0 {
+            "sla-required-budget-exhausted"
+        } else if !is_t1 {
+            "not-t1-score-band"
+        } else if selected_routes >= route_budget {
+            "route-budget-exhausted"
+        } else {
+            "stop-budget-exhausted"
+        };
+        if selected {
+            selected_routes += 1;
+            remaining_stop_budget = remaining_stop_budget.saturating_sub(route_stops.len());
+        }
+        rows.push(T1LineSelectorRow {
+            route,
+            tier: row.tier.clone(),
+            score: row.score,
+            rank: idx + 1,
+            selected,
+            selected_stop_count: route_stops.len(),
+            top_city_stop_count: top_city_stops.len(),
+            sla_pair_count,
+            budget_cost: route_stops.len(),
+            decision,
+            reason,
+            selected_stops: route_stops
+                .iter()
+                .map(|stop| stop.stop_id.as_str())
+                .collect::<Vec<_>>()
+                .join(";"),
+            top_city_stops: top_city_stops.join(";"),
+            sla_pairs: route_sla_pairs.join(";"),
+        });
+    }
+    Ok(rows)
+}
+
+fn build_t1_line_selector_csv(rows: &[T1LineSelectorRow]) -> String {
+    let mut csv = String::from(
+        "route,tier,score,rank,selected,selected_stop_count,top_city_stop_count,sla_pair_count,budget_cost,decision,reason,selected_stops,top_city_stops,sla_pairs\n",
+    );
+    for row in rows {
+        push_csv_line(
+            &mut csv,
+            &[
+                &row.route,
+                &row.tier,
+                &format!("{:.1}", row.score),
+                &row.rank.to_string(),
+                if row.selected { "true" } else { "false" },
+                &row.selected_stop_count.to_string(),
+                &row.top_city_stop_count.to_string(),
+                &row.sla_pair_count.to_string(),
+                &row.budget_cost.to_string(),
+                row.decision,
+                row.reason,
+                &row.selected_stops,
+                &row.top_city_stops,
+                &row.sla_pairs,
+            ],
+        );
+    }
+    csv
+}
+
+fn push_csv_line(csv: &mut String, cells: &[&str]) {
+    for (idx, cell) in cells.iter().enumerate() {
+        if idx > 0 {
+            csv.push(',');
+        }
+        let needs_quotes = cell.contains(',') || cell.contains('"') || cell.contains('\n');
+        if needs_quotes {
+            csv.push('"');
+            csv.push_str(&cell.replace('"', "\"\""));
+            csv.push('"');
+        } else {
+            csv.push_str(cell);
+        }
+    }
+    csv.push('\n');
+}
+
+fn t1_line_selector_gate_failures(
+    rows: &[T1LineSelectorRow],
+    route_budget: usize,
+    stop_budget: usize,
+) -> Vec<String> {
+    let selected = rows.iter().filter(|row| row.selected).collect::<Vec<_>>();
+    let mut failures = Vec::new();
+    if selected.is_empty() {
+        failures.push("no T1 routes selected".to_string());
+    }
+    if selected.len() > route_budget {
+        failures.push(format!(
+            "selected {} routes over budget {route_budget}",
+            selected.len()
+        ));
+    }
+    let stop_refs = selected
+        .iter()
+        .map(|row| row.selected_stop_count)
+        .sum::<usize>();
+    if stop_refs > stop_budget {
+        failures.push(format!(
+            "selected {stop_refs} stop refs over budget {stop_budget}"
+        ));
+    }
+    for row in rows
+        .iter()
+        .filter(|row| row.sla_pair_count > 0 && !row.selected)
+    {
+        failures.push(format!(
+            "{} is required by SLA pair(s) {} but was not selected",
+            row.route, row.sla_pairs
+        ));
+    }
+    failures
+}
+
+fn stop_candidate_selector_score(row: &StopCandidateRow) -> u16 {
+    stop_class_selector_score(&row.requested_class) * 100
+        + selector_signal_score(&row.transfer_value) * 12
+        + selector_signal_score(&row.freight_volume) * 12
+        + selector_signal_score(&row.resilience_value) * 8
+        + selector_signal_score(&row.land_ops_feasibility) * 4
+        + selector_signal_score(&row.equity_community)
+}
+
+fn stop_class_selector_score(value: &str) -> u16 {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "S1" => 5,
+        "S2" => 4,
+        "S3" => 3,
+        "S4" => 2,
+        "S5" => 1,
+        _ => 0,
+    }
+}
+
+fn selector_signal_score(value: &str) -> u16 {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "high" | "met" | "required" => 3,
+        "medium" | "planned" | "review_needed" => 2,
+        "low" => 1,
+        _ => 0,
+    }
+}
+
 fn parse_stop_candidates<R: std::io::Read>(reader: R) -> Result<Vec<StopCandidateRow>> {
     let mut rdr = csv::Reader::from_reader(reader);
     let mut rows = Vec::new();
@@ -12050,9 +12531,10 @@ mod tests {
         stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
-        throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
-        tier_connectivity_gate_failures_with_exceptions, tier_for_score, write_tier_artifacts_to,
-        FemaTile, GapType, NbiBridgeRecord, ScoreAllRow, ScoreSignalRow,
+        t1_line_selector_gate_failures, t1_line_selector_rows, throughput_proof_gate_failures,
+        throughput_proof_has_bounded_contract, tier_connectivity_gate_failures_with_exceptions,
+        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow,
+        ScoreSignalRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -12204,6 +12686,63 @@ mod tests {
             .take(3)
             .collect();
         assert_eq!(route_order, ["I3", "I1", "I2"]);
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn t1_line_selector_prioritizes_sla_required_routes() {
+        let dir =
+            std::env::temp_dir().join(format!("route-t1-selector-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create selector test dir");
+        let tier_path = dir.join("tier-table.csv");
+        let stops_path = dir.join("tier-stop-candidates.csv");
+        let sla_path = dir.join("t1-sla-pairs.csv");
+        std::fs::write(
+            &tier_path,
+            "\
+tier,route,score,rubric_version,estimated,confidence,score_confidence,confidence_label,score_confidence_label
+T1,I95,98.0,v,true,0.8,0.8,Medium,Medium
+T1,I10,96.0,v,true,0.8,0.8,Medium,Medium
+T1,I20,75.0,v,true,0.8,0.8,Medium,Medium
+",
+        )
+        .expect("write tier");
+        std::fs::write(
+            &stops_path,
+            "\
+stop_id,name,state,lat,lon,requested_class,route_refs,stop_role,transfer_value,freight_volume,spacing_need,resilience_value,energy_service,land_ops_feasibility,equity_community,evidence_status,source_artifact,next_step
+STOP-NY,New York,NY,1,1,S1,I95,terminal,high,high,met,high,planned,medium,required,heuristic,artifact,next
+STOP-LA,Los Angeles,CA,2,2,S1,I10; I20,terminal,high,high,met,high,planned,medium,required,heuristic,artifact,next
+STOP-ATL,Atlanta,GA,3,3,S2,I20,hub,high,high,met,high,planned,medium,required,heuristic,artifact,next
+",
+        )
+        .expect("write stops");
+        std::fs::write(
+            &sla_path,
+            "\
+pair_id,origin_id,dest_id,target_hours,priority,market_class,required_routes,required_stops,evidence_basis
+ATL-LA-48,STOP-ATL,STOP-LA,48,10,air-substitution,I20,STOP-ATL;STOP-LA,C.3
+",
+        )
+        .expect("write sla");
+
+        let rows = t1_line_selector_rows(&tier_path, &stops_path, &sla_path, 2, 2, 10)
+            .expect("selector rows");
+        let selected = rows
+            .iter()
+            .filter(|row| row.selected)
+            .map(|row| row.route.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(selected, vec!["I20", "I95"]);
+        assert!(rows
+            .iter()
+            .find(|row| row.route == "I20")
+            .unwrap()
+            .reason
+            .contains("sla-required"));
+        assert!(t1_line_selector_gate_failures(&rows, 2, 10).is_empty());
 
         let _ = std::fs::remove_dir_all(dir);
     }
