@@ -1742,6 +1742,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Select T4 terminal/local access columns from lower-tier pressure intake
+    T4TerminalAccessColumns {
+        /// T3/T4 pressure intake CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-pressure-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// Output T4 terminal/local access column CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-access-columns.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if T4 local pressure lacks a terminal/local access disposition
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6306,6 +6328,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3 zone route column gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalAccessColumns {
+            intake,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-access-columns");
+            let intake_rows = load_t3_t4_pressure_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let rows = t4_terminal_access_column_rows(&intake_rows);
+            write_t4_terminal_access_columns(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_access_column_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_access_column_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal access column gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal access column gate failed");
+                }
+                println!();
+                println!("T4 terminal access column gate: PASS");
             }
         }
 
@@ -11385,6 +11435,24 @@ struct T3ZoneRouteColumnRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalAccessColumnRow {
+    route: String,
+    zone_id: String,
+    current_score: f64,
+    access_class: String,
+    terminal_obligation: String,
+    promise_horizon_hours: u8,
+    column_decision: String,
+    evidence_required: String,
+    map_treatment: String,
+    selection_basis: String,
+    source_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -14834,6 +14902,189 @@ fn t3_zone_route_column_gate_failures(
     failures
 }
 
+fn t4_terminal_access_column_rows(
+    intake_rows: &[T3T4PressureIntakeRow],
+) -> Vec<T4TerminalAccessColumnRow> {
+    let mut rows = intake_rows
+        .iter()
+        .filter(|row| row.current_tier == "T4" || row.intake_class == "t4-local-intake")
+        .map(|row| {
+            let zone_id = t3_zone_for_route(&row.route)
+                .map(|(zone_id, _)| zone_id.to_string())
+                .unwrap_or_else(|| "zone-assignment-needed".to_string());
+            let (
+                access_class,
+                obligation,
+                decision,
+                evidence,
+                map_treatment,
+                basis,
+                next,
+                effect,
+                status,
+            ) = t4_terminal_access_decision(row, &zone_id);
+            T4TerminalAccessColumnRow {
+                route: row.route.clone(),
+                zone_id,
+                current_score: row.current_score,
+                access_class: access_class.to_string(),
+                terminal_obligation: obligation.to_string(),
+                promise_horizon_hours: 1,
+                column_decision: decision.to_string(),
+                evidence_required: evidence.to_string(),
+                map_treatment: map_treatment.to_string(),
+                selection_basis: basis.to_string(),
+                source_artifact: row.source_artifact.clone(),
+                next_artifact: next.to_string(),
+                optimizer_effect: effect.to_string(),
+                validation_status: status.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.zone_id
+            .cmp(&b.zone_id)
+            .then_with(|| b.current_score.total_cmp(&a.current_score))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn t4_terminal_access_decision(
+    row: &T3T4PressureIntakeRow,
+    zone_id: &str,
+) -> (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+) {
+    if zone_id == "zone-assignment-needed" {
+        return (
+            "unassigned-local-access",
+            "assign local route to a T3 zone or terminal district",
+            "zone-assignment-needed",
+            "zone boundary plus terminal/local freight role",
+            "hide-until-assigned",
+            "T4 pressure lacks a deterministic zone assignment",
+            "data/t3-t4-access-gaps.csv",
+            "blocks promotion and sends the route to access-gap triage",
+            "review",
+        );
+    }
+
+    if row.current_score >= T3_THRESHOLD - 5.0 {
+        (
+            "terminal-upgrade-candidate",
+            "prove one-hour terminal, port, yard, warehouse, or local freight access",
+            "terminal-review",
+            "named terminal/local district plus contact to selected T3/T2/T1 column",
+            "show-as-local-inset-candidate",
+            "within five points of T3 threshold but still a T4/local access problem",
+            "data/t3-t4-access-gaps.csv",
+            "holds local pressure as a terminal access candidate instead of selecting T3",
+            "review",
+        )
+    } else {
+        (
+            "local-access-column",
+            "maintain one-hour local access to a freight terminal or district",
+            "selected-local-access",
+            "terminal/local obligation can be documented inside zone inset",
+            "render-in-local-inset",
+            "below T3 promotion pressure and suitable for T4 local access treatment",
+            "data/t3-zone-map-diagnostics.csv",
+            "keeps local service in T4 while exposing it to map diagnostics",
+            "pass",
+        )
+    }
+}
+
+fn write_t4_terminal_access_columns(path: &Path, rows: &[T4TerminalAccessColumnRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_access_column_summary(output: &Path, rows: &[T4TerminalAccessColumnRow]) {
+    let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_decision.entry(row.column_decision.as_str()).or_default() += 1;
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal access column rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+    for (decision, count) in by_decision {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t4_terminal_access_column_gate_failures(rows: &[T4TerminalAccessColumnRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T4 terminal access columns emitted".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.access_class.trim().is_empty()
+            || row.terminal_obligation.trim().is_empty()
+            || row.promise_horizon_hours != 1
+            || row.column_decision.trim().is_empty()
+            || row.evidence_required.trim().is_empty()
+            || row.map_treatment.trim().is_empty()
+            || row.selection_basis.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete T4 access column", row.route));
+        }
+        if !seen.insert(canonical_route_key(&row.route)) {
+            failures.push(format!("{} has duplicate T4 access column", row.route));
+        }
+        if row.column_decision == "selected-local-access" && row.zone_id == "zone-assignment-needed"
+        {
+            failures.push(format!(
+                "{} selected local access without a zone assignment",
+                row.route
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.route, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -15418,6 +15669,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-zone-route-columns",
                 "route t3-zone-route-columns --gate",
                 "data/t3-zone-route-columns.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t4-terminal-access-columns",
+                "route t4-terminal-access-columns --gate",
+                "data/t4-terminal-access-columns.csv",
                 "pass",
                 0,
                 "",
@@ -20742,6 +21001,7 @@ mod tests {
         t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
         t3_zone_access_obligation_gate_failures, t3_zone_access_obligation_rows,
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
+        t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
@@ -21988,6 +22248,52 @@ mod tests {
         assert_eq!(i25.column_decision, "selected");
         assert_eq!(i135.column_decision, "review");
         assert_eq!(i8.column_decision, "upward-review");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t4_terminal_access_columns_hold_local_pressure_below_t3() {
+        let intake = vec![
+            T3T4PressureIntakeRow {
+                route: "US90Z".to_string(),
+                source_pressure_type: "local-upgrade-pressure".to_string(),
+                current_tier: "T4".to_string(),
+                current_score: 29.9,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "evaluate-for-t3-zone-treatment".to_string(),
+                selection_basis: "score-within-five-points-of-t3-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "hold for T3 zone treatment; no national map promotion"
+                    .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3T4PressureIntakeRow {
+                route: "US7".to_string(),
+                source_pressure_type: "local-upgrade-pressure".to_string(),
+                current_tier: "T4".to_string(),
+                current_score: 25.7,
+                target_tier: "T3".to_string(),
+                intake_class: "t3-regional-intake".to_string(),
+                intake_action: "evaluate-for-t3-zone-treatment".to_string(),
+                selection_basis: "score-within-five-points-of-t3-threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+                optimizer_effect: "hold for T3 zone treatment; no national map promotion"
+                    .to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t4_terminal_access_column_rows(&intake);
+        let failures = t4_terminal_access_column_gate_failures(&rows);
+        let us90z = rows.iter().find(|row| row.route == "US90Z").unwrap();
+        let us7 = rows.iter().find(|row| row.route == "US7").unwrap();
+
+        assert_eq!(us90z.column_decision, "terminal-review");
+        assert_eq!(us90z.zone_id, "t3-southeast");
+        assert_eq!(us7.column_decision, "zone-assignment-needed");
         assert!(failures.is_empty());
     }
 
