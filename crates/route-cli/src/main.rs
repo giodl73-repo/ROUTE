@@ -1210,6 +1210,24 @@ enum Commands {
         gate: bool,
     },
 
+    /// Select T2 service-column actions using regionalizer rows and Beck diagnostics
+    T2ServiceSelection {
+        /// T2 regionalizer CSV
+        #[arg(long, default_value = "data/t2-regionalizer.csv", value_name = "FILE")]
+        regionalizer: PathBuf,
+        /// Output T2 service selection CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if selected services lack diagnostic-backed actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -5094,6 +5112,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 regionalizer gate: PASS");
+            }
+        }
+
+        Commands::T2ServiceSelection {
+            regionalizer,
+            output,
+            gate,
+        } => {
+            println!("route t2-service-selection");
+            let regionalizer_rows = load_t2_regionalizer(&regionalizer)
+                .with_context(|| format!("loading {}", regionalizer.display()))?;
+            let rows =
+                t2_service_selection_rows(&regionalizer_rows, &route_map::beck_t2_diagnostics());
+            write_t2_service_selection(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_service_selection_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_service_selection_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 service selection gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 service selection gate failed");
+                }
+                println!();
+                println!("T2 service selection gate: PASS");
             }
         }
 
@@ -9735,7 +9782,7 @@ struct TierCandidateColumnRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2RegionalizerRow {
     tier: String,
     region_id: String,
@@ -9747,6 +9794,32 @@ struct T2RegionalizerRow {
     treatment_status: String,
     evidence_status: String,
     regionalizer_action: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2ServiceSelectionRow {
+    tier: String,
+    region_id: String,
+    route: String,
+    parent_trunks: String,
+    column_decision: String,
+    treatment_status: String,
+    beck_corridor: String,
+    beck_service_class: String,
+    beck_color_mode: String,
+    beck_start_trunk: String,
+    beck_end_trunk: String,
+    duplicate_service_count: usize,
+    duplicate_service_corridors: String,
+    close_parallel_count: usize,
+    close_parallel_corridors: String,
+    unstopped_t1_contact_count: usize,
+    unstopped_t1_contacts: String,
+    beck_service_action: String,
+    qualification_basis: String,
+    selection_action: String,
+    selection_basis: String,
     validation_status: String,
 }
 
@@ -10376,6 +10449,211 @@ fn t2_regionalizer_gate_failures(rows: &[T2RegionalizerRow]) -> Vec<String> {
         .count();
     if selected == 0 {
         failures.push("no selected T2 regional treatments".to_string());
+    }
+    failures
+}
+
+fn load_t2_regionalizer(path: &Path) -> Result<Vec<T2RegionalizerRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_service_selection_rows(
+    regionalizer_rows: &[T2RegionalizerRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<T2ServiceSelectionRow> {
+    let diagnostic_by_route = diagnostics
+        .iter()
+        .map(|row| (canonical_route_key(row.corridor), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    regionalizer_rows
+        .iter()
+        .map(|row| {
+            let diagnostic = diagnostic_by_route.get(&canonical_route_key(&row.route));
+            let (selection_action, selection_basis, validation_status) =
+                t2_service_selection_decision(row, diagnostic.copied());
+
+            T2ServiceSelectionRow {
+                tier: row.tier.clone(),
+                region_id: row.region_id.clone(),
+                route: row.route.clone(),
+                parent_trunks: row.parent_trunks.clone(),
+                column_decision: row.column_decision.clone(),
+                treatment_status: row.treatment_status.clone(),
+                beck_corridor: diagnostic
+                    .map(|diag| diag.corridor.to_string())
+                    .unwrap_or_default(),
+                beck_service_class: diagnostic
+                    .map(|diag| diag.service_class.to_string())
+                    .unwrap_or_default(),
+                beck_color_mode: diagnostic
+                    .map(|diag| diag.color_mode.to_string())
+                    .unwrap_or_default(),
+                beck_start_trunk: diagnostic
+                    .map(|diag| diag.start_trunk.to_string())
+                    .unwrap_or_default(),
+                beck_end_trunk: diagnostic
+                    .map(|diag| diag.end_trunk.to_string())
+                    .unwrap_or_default(),
+                duplicate_service_count: diagnostic
+                    .map(|diag| diag.duplicate_service_count)
+                    .unwrap_or_default(),
+                duplicate_service_corridors: diagnostic
+                    .map(|diag| diag.duplicate_service_corridors.clone())
+                    .unwrap_or_default(),
+                close_parallel_count: diagnostic
+                    .map(|diag| diag.close_parallel_count)
+                    .unwrap_or_default(),
+                close_parallel_corridors: diagnostic
+                    .map(|diag| diag.close_parallel_corridors.clone())
+                    .unwrap_or_default(),
+                unstopped_t1_contact_count: diagnostic
+                    .map(|diag| diag.unstopped_t1_contact_count)
+                    .unwrap_or_default(),
+                unstopped_t1_contacts: diagnostic
+                    .map(|diag| diag.unstopped_t1_contacts.clone())
+                    .unwrap_or_default(),
+                beck_service_action: diagnostic
+                    .map(|diag| diag.service_action.to_string())
+                    .unwrap_or_default(),
+                qualification_basis: diagnostic
+                    .map(|diag| diag.qualification_basis.to_string())
+                    .unwrap_or_default(),
+                selection_action,
+                selection_basis,
+                validation_status,
+            }
+        })
+        .collect()
+}
+
+fn t2_service_selection_decision(
+    row: &T2RegionalizerRow,
+    diagnostic: Option<&route_map::BeckT2DiagnosticRow>,
+) -> (String, String, String) {
+    let Some(diagnostic) = diagnostic else {
+        return (
+            "source-needed".to_string(),
+            "missing-beck-t2-diagnostic".to_string(),
+            "review".to_string(),
+        );
+    };
+
+    if diagnostic.unstopped_t1_contact_count > 0 {
+        return (
+            "repair-stop-contact-before-selection".to_string(),
+            "unstopped-t1-contact".to_string(),
+            "review".to_string(),
+        );
+    }
+    if diagnostic.duplicate_service_count > 0 {
+        return (
+            "split-or-demote-duplicate-service".to_string(),
+            "duplicate-beck-service".to_string(),
+            "review".to_string(),
+        );
+    }
+    if diagnostic.close_parallel_count > 0 {
+        return (
+            "split-parallel-service".to_string(),
+            "close-parallel-beck-service".to_string(),
+            "review".to_string(),
+        );
+    }
+    if row.treatment_status == "selected-treatment" && diagnostic.service_action == "keep" {
+        return (
+            "keep-service-column".to_string(),
+            "diagnostic-backed-distinct-service".to_string(),
+            "pass".to_string(),
+        );
+    }
+    if row.treatment_status == "review-treatment" {
+        return (
+            "parent-region-review".to_string(),
+            "regionalizer-review-treatment".to_string(),
+            "review".to_string(),
+        );
+    }
+
+    (
+        "review-service-column".to_string(),
+        "service-diagnostic-action-mismatch".to_string(),
+        "review".to_string(),
+    )
+}
+
+fn canonical_route_key(route: &str) -> String {
+    route
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_uppercase())
+        .collect()
+}
+
+fn write_t2_service_selection(path: &Path, rows: &[T2ServiceSelectionRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_service_selection_summary(output: &Path, rows: &[T2ServiceSelectionRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.selection_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} service selection rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 service selection rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.beck_corridor.is_empty() {
+            failures.push(format!("{} missing Beck T2 diagnostic", row.route));
+        }
+        if row.treatment_status == "selected-treatment"
+            && row.selection_action != "keep-service-column"
+        {
+            failures.push(format!(
+                "{} selected treatment requires {} before keep",
+                row.route, row.selection_action
+            ));
+        }
+        if row.selection_action == "keep-service-column"
+            && (row.duplicate_service_count > 0
+                || row.close_parallel_count > 0
+                || row.unstopped_t1_contact_count > 0)
+        {
+            failures.push(format!(
+                "{} kept despite unresolved T2 diagnostic",
+                row.route
+            ));
+        }
     }
     failures
 }
@@ -15101,13 +15379,14 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
         t1_stop_selector_rows, t1_topology_repair_gate_failures, t1_topology_repair_rows,
-        t2_regionalizer_gate_failures, t2_regionalizer_rows, throughput_proof_gate_failures,
+        t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_service_selection_gate_failures,
+        t2_service_selection_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
         tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
         tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
         ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1StopSelectorInputRow, TierCandidateColumnRow,
+        T1LineSelectorInputRow, T1StopSelectorInputRow, T2RegionalizerRow, TierCandidateColumnRow,
         TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
@@ -15345,6 +15624,47 @@ mod tests {
         assert_eq!(regionalizer.len(), 2);
         assert_eq!(regionalizer[0].treatment_status, "selected-treatment");
         assert_eq!(regionalizer[1].treatment_status, "review-treatment");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_service_selection_joins_regionalizer_to_beck_diagnostics() {
+        let regionalizer = vec![
+            T2RegionalizerRow {
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                component_id: 1,
+                route: "I15".to_string(),
+                parent_trunks: "I5;I70".to_string(),
+                route_miles: 500.0,
+                column_decision: "selected".to_string(),
+                treatment_status: "selected-treatment".to_string(),
+                evidence_status: "accepted".to_string(),
+                regionalizer_action: "include-in-regional-treatment".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T2RegionalizerRow {
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                component_id: 1,
+                route: "US30".to_string(),
+                parent_trunks: "I80;I84".to_string(),
+                route_miles: 600.0,
+                column_decision: "review".to_string(),
+                treatment_status: "review-treatment".to_string(),
+                evidence_status: "review".to_string(),
+                regionalizer_action: "hold-for-parent-region-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_service_selection_rows(&regionalizer, &route_map::beck_t2_diagnostics());
+        let failures = t2_service_selection_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].beck_corridor, "I-15");
+        assert_eq!(rows[0].selection_action, "keep-service-column");
+        assert_eq!(rows[1].selection_action, "parent-region-review");
         assert!(failures.is_empty());
     }
 
