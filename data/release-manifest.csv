@@ -28,6 +28,7 @@ docs/blueprint/feature-packages.md,blueprint_docs,M6,release_candidate,public,ma
 docs/blueprint/phase-sequence.md,blueprint_docs,M6,release_candidate,public,manual review,Human-readable phase sequence
 data/game/campaign-spine.csv,game_ledger,M4,release_candidate,public,cargo run -q -p route -- game campaign --gate,Interstate Tycoon campaign spine
 data/beck-t2-service-standards.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t2-service-standards --gate,T2 Beck service-class contract for diagnostics maps and game overlays
+data/game/t2-service-overlays.csv,game_ledger,M9,release_candidate,public,cargo run -q -p route -- game t2-overlays --gate,T2 service-class game overlay contract for incidents upgrades and restitching
 docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype
 specs/2026-05-06-interstate-2-design.md,spec,M6,release_candidate,public,manual review,Interstate 2.0 spec with Blueprint status caveat
 scripts/check-mileposts.ps1,release_gate,M7,release_candidate,public,powershell -ExecutionPolicy Bypass -File scripts/check-mileposts.ps1,Local release gate bundle
