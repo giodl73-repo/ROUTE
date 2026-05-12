@@ -7,6 +7,12 @@ should be judged.
 
 Canonical rows live in `data/significant-moments.csv`.
 
+Gate the ledger with:
+
+```powershell
+cargo run -q -p route -- significant-moments --gate
+```
+
 ## Flair Rules
 
 - A flair should be short enough to remember.

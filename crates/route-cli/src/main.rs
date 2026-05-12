@@ -358,6 +358,26 @@ enum Commands {
         gate: bool,
     },
 
+    /// Show major project moments and gate the flair ledger contract
+    SignificantMoments {
+        /// Path to significant-moments CSV
+        #[arg(
+            long,
+            default_value = "data/significant-moments.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows with missing contracts or unresolved next threads
+        #[arg(long)]
+        blockers: bool,
+        /// Print artifact and next-thread details
+        #[arg(long)]
+        details: bool,
+        /// Fail if the moments ledger has incomplete rows or missing artifacts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show Milepost 6 Blueprint feature packages and gate Forum intake rules
     Blueprint {
         /// Path to Blueprint feature-package ledger CSV
@@ -3248,6 +3268,32 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Forum docket gate: PASS");
+            }
+        }
+
+        Commands::SignificantMoments {
+            ledger,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_significant_moments(&ledger)
+                .with_context(|| format!("loading moments ledger {}", ledger.display()))?;
+            print_significant_moments(&rows, blockers, details);
+
+            if gate {
+                let failures = significant_moment_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Significant moments gate: FAIL");
+                    println!("  {} moment rows lack complete contracts.", failures.len());
+                    for failure in failures.iter().take(12) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("significant moments gate failed");
+                }
+                println!();
+                println!("Significant moments gate: PASS");
             }
         }
 
@@ -8088,6 +8134,192 @@ fn forum_docket_row_failure(row: &ForumDocketRow) -> Option<String> {
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
+struct SignificantMomentRow {
+    moment_id: String,
+    date: String,
+    flair: String,
+    kind: String,
+    summary: String,
+    why_it_mattered: String,
+    primary_artifacts: String,
+    commit: String,
+    next_thread: String,
+}
+
+fn load_significant_moments(path: &Path) -> Result<Vec<SignificantMomentRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_significant_moments(file)
+}
+
+fn parse_significant_moments<R: std::io::Read>(reader: R) -> Result<Vec<SignificantMomentRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
+}
+
+fn print_significant_moments(rows: &[SignificantMomentRow], blockers: bool, details: bool) {
+    let failures = significant_moment_gate_failures(rows);
+    let failure_ids = failures
+        .iter()
+        .filter_map(|failure| failure.split_whitespace().next())
+        .collect::<std::collections::HashSet<_>>();
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| {
+                failure_ids.contains(row.moment_id.as_str()) || row.next_thread.trim().is_empty()
+            })
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_kind: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_kind.entry(row.kind.clone()).or_insert(0) += 1;
+    }
+
+    println!("route significant-moments");
+    println!("  moments: {} shown / {} total", filtered.len(), rows.len());
+    println!("  kind: {}", format_count_map(&by_kind));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<34} {:<10} {:<26} {:<24} {}",
+        "Moment", "Date", "Flair", "Kind", "Summary"
+    );
+    println!("{}", "-".repeat(128));
+    for row in filtered {
+        println!(
+            "{:<34} {:<10} {:<26} {:<24} {}",
+            row.moment_id,
+            row.date,
+            truncate_for_table(&row.flair, 26),
+            truncate_for_table(&row.kind, 24),
+            row.summary
+        );
+        if details {
+            println!("  why: {}", row.why_it_mattered);
+            println!("  artifacts: {}", row.primary_artifacts);
+            println!("  commit: {}", row.commit);
+            println!("  next: {}", row.next_thread);
+        }
+    }
+}
+
+fn significant_moment_gate_failures(rows: &[SignificantMomentRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["significant moment ledger has no rows".to_string()];
+    }
+
+    let mut seen_ids = std::collections::HashSet::new();
+    let mut seen_flairs = std::collections::HashSet::new();
+    let mut failures = Vec::new();
+
+    for row in rows {
+        if let Some(failure) = significant_moment_row_failure(row) {
+            failures.push(failure);
+        }
+
+        let id = row.moment_id.trim();
+        if !id.is_empty() && !seen_ids.insert(id.to_string()) {
+            failures.push(format!("{id} duplicate moment_id"));
+        }
+
+        let flair = row.flair.trim().to_ascii_lowercase();
+        if !flair.is_empty() && !seen_flairs.insert(flair) {
+            failures.push(format!("{} duplicate flair '{}'", row.moment_id, row.flair));
+        }
+    }
+
+    failures
+}
+
+fn significant_moment_row_failure(row: &SignificantMomentRow) -> Option<String> {
+    let id = row.moment_id.trim();
+    let required_filled = !id.is_empty()
+        && !row.date.trim().is_empty()
+        && !row.flair.trim().is_empty()
+        && !row.kind.trim().is_empty()
+        && !row.summary.trim().is_empty()
+        && !row.why_it_mattered.trim().is_empty()
+        && !row.primary_artifacts.trim().is_empty()
+        && !row.commit.trim().is_empty()
+        && !row.next_thread.trim().is_empty();
+    let id_ok = id.starts_with("MOM-");
+    let date_ok = looks_like_iso_date(row.date.trim());
+    let kind_ok = row.kind.trim().ends_with("_breakthrough");
+    let commit_ok = looks_like_commit_ref(row.commit.trim());
+    let missing_artifacts = missing_moment_artifacts(&row.primary_artifacts);
+
+    if !required_filled
+        || !id_ok
+        || !date_ok
+        || !kind_ok
+        || !commit_ok
+        || !missing_artifacts.is_empty()
+    {
+        let artifact_note = if missing_artifacts.is_empty() {
+            "none".to_string()
+        } else {
+            missing_artifacts.join("; ")
+        };
+        Some(format!(
+            "{} invalid moment contract: date={} kind={} commit={} missing_artifacts={}",
+            if id.is_empty() {
+                "<missing-moment-id>"
+            } else {
+                id
+            },
+            row.date,
+            row.kind,
+            row.commit,
+            artifact_note
+        ))
+    } else {
+        None
+    }
+}
+
+fn looks_like_iso_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 10
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && bytes
+            .iter()
+            .enumerate()
+            .all(|(idx, byte)| idx == 4 || idx == 7 || byte.is_ascii_digit())
+}
+
+fn looks_like_commit_ref(value: &str) -> bool {
+    (7..=40).contains(&value.len()) && value.chars().all(|ch| ch.is_ascii_hexdigit())
+}
+
+fn missing_moment_artifacts(primary_artifacts: &str) -> Vec<String> {
+    primary_artifacts
+        .split(';')
+        .map(str::trim)
+        .filter(|artifact| !artifact.is_empty())
+        .filter(|artifact| !moment_artifact_exists(artifact))
+        .map(str::to_string)
+        .collect()
+}
+
+fn moment_artifact_exists(artifact: &str) -> bool {
+    let path = Path::new(artifact);
+    if path.exists() {
+        return true;
+    }
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(path)
+        .exists()
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 struct BlueprintPackageRow {
     package_id: String,
     phase: String,
@@ -12515,16 +12747,17 @@ mod tests {
         map_atlas_gate_failures, parse_blueprint_cost_ranges, parse_blueprint_evidence_map,
         parse_blueprint_packages, parse_endpoint_exceptions, parse_forum_docket,
         parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
-        parse_mdot_midrive_events, parse_pressure_scenarios, parse_standards_inventory,
-        parse_standards_proof_ledger, parse_stop_candidates, parse_t1_diamond_validation,
-        parse_t1_evidence_windows, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
-        parse_tdot_smartway_events, parse_throughput_proof_matrix,
+        parse_mdot_midrive_events, parse_pressure_scenarios, parse_significant_moments,
+        parse_standards_inventory, parse_standards_proof_ledger, parse_stop_candidates,
+        parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
+        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
+        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
         planned_standard_inventory_missing, pressure_scenario_gate_failures,
         pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
         pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
         pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
-        rounded_score, scenario_edge_candidates, standards_blueprint_gate_failures,
+        rounded_score, scenario_edge_candidates, significant_moment_gate_failures,
+        significant_moment_row_failure, standards_blueprint_gate_failures,
         standards_evidence_level_is_allowed, standards_inventory_gate_failures,
         standards_inventory_row_has_contract, standards_pressure_gate_failures,
         stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
@@ -12843,6 +13076,35 @@ BAD,,unknown,maybe,,claim,,next,
         assert!(!rows.is_empty());
         assert!(rows.iter().any(|row| row.review_id == "F5-01"));
         assert!(forum_docket_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn significant_moments_gate_requires_complete_contracts() {
+        let csv = "\
+moment_id,date,flair,kind,summary,why_it_mattered,primary_artifacts,commit,next_thread
+MOM-2026-05-12-GOOD,2026-05-12,Good Moment,conceptual_breakthrough,summary,why,docs/SPEC_INDEX.md,44f92db,next
+BAD,2026/05/12,,note,summary,,missing.md,notsha,
+";
+
+        let rows = parse_significant_moments(csv.as_bytes()).expect("parse moments");
+
+        assert!(significant_moment_row_failure(&rows[0]).is_none());
+        assert!(significant_moment_row_failure(&rows[1]).is_some());
+        let failures = significant_moment_gate_failures(&rows);
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("BAD"));
+    }
+
+    #[test]
+    fn significant_moments_canonical_file_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/significant-moments.csv");
+        let file = std::fs::File::open(path).expect("open canonical moments ledger");
+        let rows = parse_significant_moments(file).expect("parse canonical moments");
+
+        assert!(!rows.is_empty());
+        assert!(rows.iter().any(|row| row.flair == "Promise Horizon"));
+        assert!(significant_moment_gate_failures(&rows).is_empty());
     }
 
     #[test]

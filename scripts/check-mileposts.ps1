@@ -82,6 +82,7 @@ Invoke-Checked "T1/T1 snapshot plan gate" { cargo run -q -p route -- t1-snapshot
 Invoke-Checked "Game campaign gate" { cargo run -q -p route -- game campaign --gate }
 Invoke-Checked "Des Moines browser fixture gate" { powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1 }
 Invoke-Checked "Forum docket gate" { cargo run -q -p route -- forum --gate }
+Invoke-Checked "Significant moments gate" { cargo run -q -p route -- significant-moments --gate }
 Invoke-Checked "Blueprint package gate" { cargo run -q -p route -- blueprint --gate }
 Invoke-Checked "Blueprint evidence gate" { cargo run -q -p route -- blueprint-evidence --gate }
 Invoke-Checked "Blueprint cost gate" { cargo run -q -p route -- blueprint-costs --gate }

@@ -206,6 +206,11 @@ fn e2e_gates_map_atlas_and_l2_pressure_coverage() {
     assert!(t2_hooks_stdout.contains("route game t2-hooks"));
     assert!(t2_hooks_stdout.contains("T2 scenario hook gate: PASS"));
 
+    let moments = assert_success(&["significant-moments", "--gate"]);
+    let moments_stdout = String::from_utf8_lossy(&moments.stdout);
+    assert!(moments_stdout.contains("route significant-moments"));
+    assert!(moments_stdout.contains("Significant moments gate: PASS"));
+
     let pressure = assert_success(&[
         "pressure-scenarios",
         "--coverage",

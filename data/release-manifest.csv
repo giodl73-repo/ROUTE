@@ -1,7 +1,7 @@
 artifact_path,artifact_class,owner_milepost,release_status,public_status,verification_command,notes
 TRACKER.md,status_board,M7,release_candidate,public,manual review,Live milestone status and handoff board
 docs/SPEC_INDEX.md,index,M7,release_candidate,public,manual review,Claim ownership index
-data/significant-moments.csv,history_ledger,M10,release_candidate,public,manual review,Flair ledger for major conceptual breakthroughs and next threads
+data/significant-moments.csv,history_ledger,M10,release_candidate,public,cargo run -q -p route -- significant-moments --gate,Flair ledger for major conceptual breakthroughs and next threads
 docs/significant-moments.md,history_docs,M10,release_candidate,public,manual review,Guide for adding significant-moment flairs
 docs/SYSTEM_PLAN.md,roadmap,M0,release_candidate,public,manual review,Milepost operating model
 docs/DIMENSIONS.md,scoring_docs,M1,release_candidate,public,cargo test --workspace,Dimension registry checked by tests
