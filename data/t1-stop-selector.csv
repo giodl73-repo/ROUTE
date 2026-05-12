@@ -1,0 +1,91 @@
+route,stop_sequence,stop_id,stop_name,requested_class,selector_weight,split_objective,target_regions,metis_region,boundary_after,evidence_status,validation_status
+I95,1,STOP-MIA,Miami,S1,599,hybrid-service,4,0,false,heuristic,pass
+I95,2,STOP-JAX,Jacksonville,S2,494,hybrid-service,4,0,true,heuristic,pass
+I95,3,STOP-SAV,Savannah,S3,386,hybrid-service,4,1,false,heuristic,pass
+I95,4,STOP-RALEIGH,Research Triangle/Raleigh,S2,486,hybrid-service,4,1,true,heuristic,pass
+I95,5,STOP-HAMPTON-ROADS,Norfolk/Hampton Roads,S1,607,hybrid-service,4,2,false,heuristic,pass
+I95,6,STOP-RIC,Richmond,S2,486,hybrid-service,4,2,false,heuristic,pass
+I95,7,STOP-CAPITAL-BELTWAY,Washington Capital Beltway,S2,483,hybrid-service,4,2,true,heuristic,pass
+I95,8,STOP-BALTIMORE,Baltimore/Washington Gateway,S2,495,hybrid-service,4,3,false,heuristic,pass
+I95,9,STOP-BAL-PHL,Baltimore/Philadelphia,S2,495,hybrid-service,4,3,false,heuristic,pass
+I95,10,STOP-NY-NJ,New York/New Jersey,S1,603,hybrid-service,4,3,false,heuristic,pass
+I95,11,STOP-BOS,Boston,S2,482,hybrid-service,4,3,false,heuristic,pass
+I5,1,STOP-SD-TJ,San Diego/Tijuana,S1,599,hybrid-service,4,0,true,heuristic,pass
+I5,2,STOP-LA-LB,Los Angeles/Long Beach,S1,603,hybrid-service,4,1,true,heuristic,pass
+I5,3,STOP-SAC,Sacramento,S2,494,hybrid-service,4,2,false,heuristic,pass
+I5,4,STOP-PORTLAND,Portland,S2,494,hybrid-service,4,2,true,heuristic,pass
+I5,5,STOP-SEA,Seattle,S2,494,hybrid-service,4,3,false,heuristic,pass
+I5,6,STOP-BLAINE,Blaine/Vancouver Gateway,S1,607,hybrid-service,4,3,false,heuristic,pass
+I80,1,STOP-SAC,Sacramento,S2,494,hybrid-service,4,0,false,heuristic,pass
+I80,2,STOP-SLC,Salt Lake City,S2,494,hybrid-service,4,0,false,heuristic,pass
+I80,3,STOP-CHEYENNE,Cheyenne/Laramie,S3,382,hybrid-service,4,0,true,heuristic,pass
+I80,4,STOP-OMAHA,Omaha/Council Bluffs,S2,486,hybrid-service,4,1,false,heuristic,pass
+I80,5,STOP-DESMOINES,Des Moines,S3,382,hybrid-service,4,1,true,heuristic,pass
+I80,6,STOP-CHI-GARY,Chicago/Gary,S2,506,hybrid-service,4,2,false,heuristic,pass
+I80,7,STOP-SOUTH-BEND,South Bend/Elkhart,S2,486,hybrid-service,4,2,true,heuristic,pass
+I80,8,STOP-TOLEDO,Toledo,S2,498,hybrid-service,4,3,false,heuristic,pass
+I80,9,STOP-NY-NJ,New York/New Jersey,S1,603,hybrid-service,4,3,false,heuristic,pass
+I90,1,STOP-SEA,Seattle,S2,494,hybrid-service,4,0,true,heuristic,pass
+I90,2,STOP-BILLINGS,Billings,S2,494,hybrid-service,4,1,false,heuristic,pass
+I90,3,STOP-RAPID-CITY,Rapid City,S2,494,hybrid-service,4,1,true,heuristic,pass
+I90,4,STOP-MILWAUKEE,Madison/Milwaukee,S3,374,hybrid-service,4,2,false,heuristic,pass
+I90,5,STOP-CHI-GARY,Chicago/Gary,S2,506,hybrid-service,4,2,false,heuristic,pass
+I90,6,STOP-SOUTH-BEND,South Bend/Elkhart,S2,486,hybrid-service,4,2,true,heuristic,pass
+I90,7,STOP-TOLEDO,Toledo,S2,498,hybrid-service,4,3,false,heuristic,pass
+I90,8,STOP-BOS,Boston,S2,482,hybrid-service,4,3,false,heuristic,pass
+I10,1,STOP-LA-LB,Los Angeles/Long Beach,S1,603,hybrid-service,4,0,false,heuristic,pass
+I10,2,STOP-PHX,Phoenix,S3,382,hybrid-service,4,0,true,heuristic,pass
+I10,3,STOP-ELP-JRZ,El Paso/Juarez Gateway,S2,507,hybrid-service,4,1,false,heuristic,pass
+I10,4,STOP-SAT,San Antonio,S2,498,hybrid-service,4,1,true,heuristic,pass
+I10,5,STOP-HOU,Houston,S1,607,hybrid-service,4,2,false,heuristic,pass
+I10,6,STOP-LAFAYETTE,Lafayette,S3,374,hybrid-service,4,2,false,heuristic,pass
+I10,7,STOP-NOLA-BR,New Orleans/Baton Rouge,S3,395,hybrid-service,4,2,true,heuristic,pass
+I10,8,STOP-GULFPORT,Gulfport/Biloxi,S2,494,hybrid-service,4,3,false,heuristic,pass
+I10,9,STOP-MOBILE,Mobile,S3,374,hybrid-service,4,3,false,heuristic,pass
+I10,10,STOP-JAX,Jacksonville,S2,494,hybrid-service,4,3,false,heuristic,pass
+I75,1,STOP-MIA,Miami,S1,599,hybrid-service,4,0,false,heuristic,pass
+I75,2,STOP-TAMPA,Tampa Bay,S3,374,hybrid-service,4,0,false,heuristic,pass
+I75,3,STOP-ATL,Atlanta,S2,503,hybrid-service,4,0,true,heuristic,pass
+I75,4,STOP-CHATTANOOGA,Chattanooga,S3,382,hybrid-service,4,1,false,heuristic,pass
+I75,5,STOP-KNOXVILLE,Knoxville,S3,382,hybrid-service,4,1,true,heuristic,pass
+I75,6,STOP-LEXINGTON,Louisville/Lexington Bluegrass,S3,374,hybrid-service,4,2,false,heuristic,pass
+I75,7,STOP-CINCINNATI,Cincinnati,S2,486,hybrid-service,4,2,true,heuristic,pass
+I75,8,STOP-TOLEDO,Toledo,S2,498,hybrid-service,4,3,false,heuristic,pass
+I75,9,STOP-DETROIT,Detroit/Ambassador Gateway,S1,607,hybrid-service,4,3,false,heuristic,pass
+I70,1,STOP-DEN,Denver,S2,494,hybrid-service,4,0,true,heuristic,pass
+I70,2,STOP-KC,Kansas City,S2,498,hybrid-service,4,1,false,heuristic,pass
+I70,3,STOP-STL,St. Louis,S2,498,hybrid-service,4,1,true,heuristic,pass
+I70,4,STOP-INDY,Indianapolis,S2,486,hybrid-service,4,2,false,heuristic,pass
+I70,5,STOP-COLUMBUS,Columbus,S2,486,hybrid-service,4,2,false,heuristic,pass
+I70,6,STOP-PITTSBURGH,Pittsburgh,S3,382,hybrid-service,4,2,true,heuristic,pass
+I70,7,STOP-HAGERSTOWN,Hagerstown,S3,374,hybrid-service,4,3,false,heuristic,pass
+I70,8,STOP-BALTIMORE,Baltimore/Washington Gateway,S2,495,hybrid-service,4,3,false,heuristic,pass
+I40,1,STOP-BARSTOW,Barstow/Inland Empire Gateway,S2,494,hybrid-service,4,0,false,heuristic,pass
+I40,2,STOP-ABQ,Albuquerque,S3,382,hybrid-service,4,0,true,heuristic,pass
+I40,3,STOP-AMARILLO,Amarillo,S3,374,hybrid-service,4,1,false,heuristic,pass
+I40,4,STOP-OKC,Oklahoma City,S2,486,hybrid-service,4,1,true,heuristic,pass
+I40,5,STOP-LITTLE-ROCK,Little Rock,S2,486,hybrid-service,4,2,false,heuristic,pass
+I40,6,STOP-MEM,Memphis,S2,498,hybrid-service,4,2,false,heuristic,pass
+I40,7,STOP-NASHVILLE,Nashville,S2,486,hybrid-service,4,2,true,heuristic,pass
+I40,8,STOP-KNOXVILLE,Knoxville,S3,382,hybrid-service,4,3,false,heuristic,pass
+I40,9,STOP-CLT,Charlotte,S2,486,hybrid-service,4,3,false,heuristic,pass
+I40,10,STOP-RALEIGH,Research Triangle/Raleigh,S2,486,hybrid-service,4,3,false,heuristic,pass
+I35,1,STOP-LAREDO,Laredo/Nuevo Laredo Gateway,S1,599,hybrid-service,4,0,false,heuristic,pass
+I35,2,STOP-SAT,San Antonio,S2,498,hybrid-service,4,0,false,heuristic,pass
+I35,3,STOP-AUS,Austin,S3,371,hybrid-service,4,0,true,heuristic,pass
+I35,4,STOP-WACO,Waco/Temple,S3,374,hybrid-service,4,1,false,heuristic,pass
+I35,5,STOP-DFW,Dallas/Fort Worth,S2,498,hybrid-service,4,1,true,heuristic,pass
+I35,6,STOP-OKC,Oklahoma City,S2,486,hybrid-service,4,2,false,heuristic,pass
+I35,7,STOP-KC,Kansas City,S2,498,hybrid-service,4,2,true,heuristic,pass
+I35,8,STOP-DESMOINES,Des Moines,S3,382,hybrid-service,4,3,false,heuristic,pass
+I35,9,STOP-MSP,Minneapolis/St. Paul,S2,494,hybrid-service,4,3,false,heuristic,pass
+I20,1,STOP-ABILENE,Abilene,S3,374,hybrid-service,4,0,true,heuristic,pass
+I20,2,STOP-DFW,Dallas/Fort Worth,S2,498,hybrid-service,4,1,false,heuristic,pass
+I20,3,STOP-SHREVEPORT,Shreveport,S3,374,hybrid-service,4,1,false,heuristic,pass
+I20,4,STOP-JACKSON-MS,Jackson,S3,374,hybrid-service,4,1,true,heuristic,pass
+I20,5,STOP-BIRMINGHAM,Birmingham,S2,486,hybrid-service,4,2,true,heuristic,pass
+I20,6,STOP-ATL,Atlanta,S2,503,hybrid-service,4,3,false,heuristic,pass
+I20,7,STOP-COLUMBIA-SC,Columbia/Charleston Gateway,S3,374,hybrid-service,4,3,false,heuristic,pass
+I84,1,STOP-PORTLAND,Portland,S2,494,hybrid-service,3,0,true,heuristic,pass
+I84,2,STOP-BOISE,Boise/Treasure Valley,S3,374,hybrid-service,3,1,true,heuristic,pass
+I84,3,STOP-SLC,Salt Lake City,S2,494,hybrid-service,3,2,false,heuristic,pass

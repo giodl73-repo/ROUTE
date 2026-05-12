@@ -214,6 +214,34 @@ enum Commands {
         gate: bool,
     },
 
+    /// Select ordered T1 stop chains and METIS stop workload regions
+    T1StopSelector {
+        /// Path to T1 line selector CSV
+        #[arg(long, default_value = "data/t1-line-selector.csv", value_name = "FILE")]
+        selector: PathBuf,
+        /// Path to tier stop candidate CSV
+        #[arg(
+            long,
+            default_value = "data/tier-stop-candidates.csv",
+            value_name = "FILE"
+        )]
+        stop_candidates: PathBuf,
+        /// Output T1 stop selector CSV file
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-stop-selector.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Target METIS stop regions per route
+        #[arg(long, default_value_t = 4)]
+        target_regions: usize,
+        /// Fail if selected T1 routes do not produce valid stop-region chains
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Export a T1 design review joining SLA selection to Beck-map diagnostics
     T1DesignReview {
         /// Path to generated tier table CSV
@@ -2574,6 +2602,40 @@ fn run_cli() -> Result<()> {
                     }
                     anyhow::bail!("T1 line selector gate failed");
                 }
+            }
+        }
+
+        Commands::T1StopSelector {
+            selector,
+            stop_candidates,
+            output,
+            target_regions,
+            gate,
+        } => {
+            println!("route t1-stop-selector");
+            let selector_rows = load_t1_line_selector(&selector)
+                .with_context(|| format!("loading {}", selector.display()))?;
+            let stop_file = std::fs::File::open(&stop_candidates)
+                .with_context(|| format!("opening {}", stop_candidates.display()))?;
+            let stop_rows = parse_stop_candidates(stop_file)
+                .with_context(|| format!("parsing {}", stop_candidates.display()))?;
+            let rows = t1_stop_selector_rows(&selector_rows, &stop_rows, target_regions)?;
+            write_t1_stop_selector(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_stop_selector_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_stop_selector_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 stop selector gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 stop selector gate failed");
+                }
+                println!();
+                println!("T1 stop selector gate: PASS");
             }
         }
 
@@ -10476,6 +10538,29 @@ struct T1LineSelectorRow {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct T1LineSelectorInputRow {
+    route: String,
+    selected: bool,
+    selected_stops: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T1StopSelectorRow {
+    route: String,
+    stop_sequence: usize,
+    stop_id: String,
+    stop_name: String,
+    requested_class: String,
+    selector_weight: i32,
+    split_objective: String,
+    target_regions: usize,
+    metis_region: usize,
+    boundary_after: bool,
+    evidence_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct TierTableInputRow {
     tier: String,
     route: String,
@@ -10744,6 +10829,164 @@ fn t1_line_selector_gate_failures(
             "{} is required by SLA pair(s) {} but was not selected",
             row.route, row.sla_pairs
         ));
+    }
+    failures
+}
+
+fn load_t1_line_selector(path: &Path) -> Result<Vec<T1LineSelectorInputRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_stop_selector_rows(
+    selector_rows: &[T1LineSelectorInputRow],
+    stop_rows: &[StopCandidateRow],
+    target_regions: usize,
+) -> Result<Vec<T1StopSelectorRow>> {
+    if target_regions == 0 {
+        anyhow::bail!("target_regions must be >= 1");
+    }
+    let mut rows = Vec::new();
+    for selector in selector_rows.iter().filter(|row| row.selected) {
+        let route = normalise_designation(&selector.route);
+        let selected_ids = selector
+            .selected_stops
+            .split(';')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut route_stops = stop_rows
+            .iter()
+            .filter(|stop| selected_ids.contains(stop.stop_id.as_str()))
+            .filter(|stop| {
+                stop_candidate_routes(stop)
+                    .iter()
+                    .any(|candidate| candidate == &route)
+            })
+            .collect::<Vec<_>>();
+        sort_stops_for_route(&mut route_stops);
+        if route_stops.is_empty() {
+            anyhow::bail!("{route}: selected route has no stop candidates");
+        }
+        let region_count = target_regions.min(route_stops.len());
+        let weights = route_stops
+            .iter()
+            .map(|stop| i32::from(stop_candidate_selector_score(stop).max(1)))
+            .collect::<Vec<_>>();
+        let input = route_network::LinearRouteSplitInput::with_weights(
+            route_network::LinearRouteSplitObjective::HybridService,
+            weights.clone(),
+        )
+        .map_err(|err| anyhow::anyhow!(err))?;
+        let regions = route_network::linear_route_stop_regions_with_input(&input, region_count)
+            .map_err(|err| anyhow::anyhow!("{route}: {err}"))?;
+        let split_stops = route_network::linear_route_split_stops_with_input(&input, region_count)
+            .map_err(|err| anyhow::anyhow!("{route}: {err}"))?;
+        let mut region_by_stop = vec![0usize; route_stops.len()];
+        for region in regions {
+            for idx in region.start_stop_index..=region.end_stop_index {
+                region_by_stop[idx] = region.region_index;
+            }
+        }
+        let boundary_after = split_stops
+            .iter()
+            .map(|split| split.before_stop_index)
+            .collect::<std::collections::BTreeSet<_>>();
+        for (idx, stop) in route_stops.iter().enumerate() {
+            rows.push(T1StopSelectorRow {
+                route: route.clone(),
+                stop_sequence: idx + 1,
+                stop_id: stop.stop_id.clone(),
+                stop_name: stop.name.clone(),
+                requested_class: stop.requested_class.clone(),
+                selector_weight: weights[idx],
+                split_objective: route_network::LinearRouteSplitObjective::HybridService
+                    .mode_name()
+                    .to_string(),
+                target_regions: region_count,
+                metis_region: region_by_stop[idx],
+                boundary_after: boundary_after.contains(&idx),
+                evidence_status: stop.evidence_status.clone(),
+                validation_status: "pass".to_string(),
+            });
+        }
+    }
+    Ok(rows)
+}
+
+fn write_t1_stop_selector(path: &Path, rows: &[T1StopSelectorRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_stop_selector_summary(output: &Path, rows: &[T1StopSelectorRow]) {
+    let route_count = rows
+        .iter()
+        .map(|row| row.route.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    let boundary_count = rows.iter().filter(|row| row.boundary_after).count();
+    println!(
+        "  wrote {} stop rows across {} T1 routes to {}",
+        rows.len(),
+        route_count,
+        output.display()
+    );
+    println!("  METIS split boundaries: {boundary_count}");
+}
+
+fn t1_stop_selector_gate_failures(rows: &[T1StopSelectorRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T1 stop selector rows emitted".to_string());
+        return failures;
+    }
+    let mut by_route = std::collections::BTreeMap::<&str, Vec<&T1StopSelectorRow>>::new();
+    for row in rows {
+        by_route.entry(row.route.as_str()).or_default().push(row);
+        if row.selector_weight <= 0 {
+            failures.push(format!(
+                "{}:{} has non-positive selector weight",
+                row.route, row.stop_id
+            ));
+        }
+        if !row.validation_status.eq_ignore_ascii_case("pass") {
+            failures.push(format!(
+                "{}:{} has validation_status={}",
+                row.route, row.stop_id, row.validation_status
+            ));
+        }
+    }
+    for (route, route_rows) in by_route {
+        if route_rows.len() < 3 {
+            failures.push(format!("{route}: fewer than 3 selected stops"));
+        }
+        let regions = route_rows
+            .iter()
+            .map(|row| row.metis_region)
+            .collect::<std::collections::BTreeSet<_>>();
+        if regions.len() != route_rows[0].target_regions {
+            failures.push(format!(
+                "{route}: expected {} METIS regions, found {}",
+                route_rows[0].target_regions,
+                regions.len()
+            ));
+        }
     }
     failures
 }
@@ -14323,13 +14566,14 @@ mod tests {
         stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
-        t1_line_selector_gate_failures, t1_line_selector_rows, throughput_proof_gate_failures,
+        t1_line_selector_gate_failures, t1_line_selector_rows, t1_stop_selector_gate_failures,
+        t1_stop_selector_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_candidate_column_gate_failures,
         tier_candidate_column_rows, tier_connectivity_gate_failures_with_exceptions,
         tier_contact_witness_gate_failures, tier_contact_witness_rows, tier_for_score,
         tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord,
-        ScoreAllRow, ScoreSignalRow, TierContactWitnessInputRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow,
+        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1LineSelectorInputRow,
+        TierContactWitnessInputRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -14508,6 +14752,49 @@ mod tests {
 
         assert_eq!(columns[0].column_decision, "selected");
         assert_eq!(columns[1].column_decision, "blocked");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t1_stop_selector_assigns_metis_regions_to_selected_route_stops() {
+        let selector_rows = vec![T1LineSelectorInputRow {
+            route: "I5".to_string(),
+            selected: true,
+            selected_stops: "STOP-A;STOP-B;STOP-C;STOP-D".to_string(),
+        }];
+        let stop_rows = ["STOP-A", "STOP-B", "STOP-C", "STOP-D"]
+            .iter()
+            .enumerate()
+            .map(|(idx, stop_id)| StopCandidateRow {
+                stop_id: (*stop_id).to_string(),
+                name: format!("Stop {idx}"),
+                state: "CA".to_string(),
+                lat: (30.0 + idx as f64).to_string(),
+                lon: "-120.0".to_string(),
+                requested_class: if idx == 0 || idx == 3 { "S1" } else { "S3" }.to_string(),
+                route_refs: "I-5".to_string(),
+                stop_role: "service_stop".to_string(),
+                transfer_value: "medium".to_string(),
+                freight_volume: "medium".to_string(),
+                spacing_need: "met".to_string(),
+                resilience_value: "medium".to_string(),
+                energy_service: "planned".to_string(),
+                land_ops_feasibility: "medium".to_string(),
+                equity_community: "review_needed".to_string(),
+                evidence_status: "heuristic".to_string(),
+                source_artifact: "fixture".to_string(),
+                next_step: "validate".to_string(),
+            })
+            .collect::<Vec<_>>();
+
+        let rows = t1_stop_selector_rows(&selector_rows, &stop_rows, 2).unwrap();
+        let failures = t1_stop_selector_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows.iter().filter(|row| row.boundary_after).count(), 1);
+        assert!(rows
+            .iter()
+            .all(|row| row.split_objective == "hybrid-service"));
         assert!(failures.is_empty());
     }
 

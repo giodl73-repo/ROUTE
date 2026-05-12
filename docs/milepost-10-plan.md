@@ -40,7 +40,7 @@ Milepost 10 is done when:
 | 4 | Emit `data/tier-region-workloads.csv` | 🔄 partial | `route tier-regions --tier T2` writes split metadata and `data/tier-region-repairs.csv`; `--gate` currently fails on `component-bridged:21` until T2 contacts are repaired |
 | 5 | Emit `data/tier-contact-witnesses.csv` | 🔄 partial | `route tier-contact-witnesses` classifies repair rows; `--gate` fails until source/contact, terminal exception, and demotion rows are resolved |
 | 6 | Emit `data/tier-candidate-columns.csv` | ✅ done | `route tier-candidate-columns --gate` emits selected/review/blocked/demote route-service columns with graph kind, objective, evidence status, and parent region |
-| 7 | Build T1 stop selector | ⬜ pending | `data/t1-stop-selector.csv`; `route t1-stop-selector --gate` |
+| 7 | Build T1 stop selector | ✅ done | `route t1-stop-selector --gate` emits `data/t1-stop-selector.csv` with ordered stop chains, hybrid-service weights, METIS regions, and split boundaries |
 | 8 | Build T1 topology repair witness docket | ⬜ pending | `data/t1-topology-repairs.csv`; no near-miss contacts pass silently |
 | 9 | Replace Beck T1 route source with optimizer-selected route/stop columns | ⬜ pending | Beck T1 diagnostics agree with selector without hand exceptions |
 | 10 | Build dual-route T2 regionalizer | ⬜ pending | T2 selected per T1-bounded region, not one global thin-line list |
