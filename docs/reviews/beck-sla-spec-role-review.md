@@ -51,11 +51,12 @@ This review adds those two local parliament voices.
    checked rather than directly optimizer-rendered. That hold is acceptable only
    if future map slices target the new contract.
 
-3. R-T4 Network Scientist: Needs graph-contract follow-through.
+3. R-T4 Network Scientist: Graph-contract follow-through now started.
    The specs distinguish topology from layout and promises from routes, which is
-   correct. The next methods gap is a formal artifact schema for primal stop
-   graphs and dual route graphs: vertices, edges, weights, partitions, selected
-   columns, and repair witnesses.
+   correct. `docs/route-stop-column-schema.md` now defines the common promise,
+   route, stop, service, repair, graph, and manifest column vocabulary. The next
+   methods gap is implementation migration: older artifacts should gradually add
+   the shared lineage fields where they are missing.
 
 4. R-T10 Transit Planner: Pass on map doctrine, asks for user meaning.
    The Beck spec is appropriately transit-like: legibility is a function of
@@ -92,7 +93,6 @@ This review adds those two local parliament voices.
 
 ## Next Spec Gaps
 
-1. `docs/route-stop-column-schema.md`
-2. `docs/t2-regional-treatment.md`
-3. `docs/t3-t4-access-optimization.md`
-4. `docs/optimizer-artifact-manifest.md`
+1. `docs/t2-regional-treatment.md`
+2. `docs/t3-t4-access-optimization.md`
+3. `docs/optimizer-artifact-manifest.md`
