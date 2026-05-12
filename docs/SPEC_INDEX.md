@@ -8,6 +8,7 @@ Start here when deciding which document owns a claim.
 | `docs/DIMENSIONS.md` | Current 16-dimension registry, evidence path, and truth label | You need the canonical rubric dimension list |
 | `docs/STANDARDS_EVALUATION.md` | Standards proof obligations, pressure-test gates, and T1/T1 evaluation framing | You need to know whether a tier standard has earned its place |
 | `specs/2026-05-10-tier-node-service-standard.md` | Route-tier and node-class service standard for deciding which routes/stops deserve national schematic prominence | You need to decide whether a route is a T1 trunk, T2 connector, T3 feeder, or T4 local spur |
+| `docs/tier-optimizer-design.md` | Constraint ordering and optimizer loop for selecting tier lines, stops, contacts, and Beck layout from SLA promises | You need the overall route/stop/T2 ordering before changing selectors or map topology |
 | `docs/tier-node-evaluation-design.md` | Implementation design for `route tier-connectivity` and route/node demotion candidates | You need to run or extend the graph-based tier connectivity evaluation |
 | `docs/milepost-4-closeout.md` | Milepost 4 closure decision, passing pressure gates, and held Blueprint/publication claims | You need to know why Pressure Test can close while Blueprint remains locked |
 | `docs/milepost-5-closeout.md` | Milepost 5 Forum closeout, review records, explicit holds, and Blueprint intake rules | You need to know what constraints Blueprint inherits from Forum |
@@ -18,6 +19,7 @@ Start here when deciding which document owns a claim.
 | `docs/milepost-8-closeout.md` | Milepost 8 closeout for the T1/T1 failure evidence campaign, improved hold, source attempt result, and next evidence step | You need to know why the selected hold remains held after source work |
 | `docs/milepost-9-plan.md` | Milepost 9 Evidence Operations checklist, repeat-window target, snapshot-history guard, and done criteria | You need the next operating plan for turning the T1/T1 improved hold into repeatable evidence work |
 | `docs/milepost-9-closeout.md` | Milepost 9 Evidence Operations closeout, gate result, source-window guard, and continued T1/T1 hold | You need to know why evidence operations closed without promoting T1/T1 diamond recovery |
+| `docs/milepost-10-plan.md` | Recursive Tier Optimizer goal, tasklist, done criteria, and first implementation slices | You need the current plan for making T1/T2/T3/T4 line and stop selection algorithmic |
 | `data/significant-moments.csv` | Flair ledger for major conceptual breakthroughs, their artifacts, commits, and next threads; gated by `route significant-moments --gate` | You need to remember why the system changed direction or preserve a major design insight |
 | `docs/significant-moments.md` | Human-readable guide for adding significant-moment flairs | You need to decide whether a breakthrough belongs in the moments ledger |
 | `docs/evidence-campaigns/milepost-8-target.md` | Milepost 8 target decision for T1/T1 failure evidence, scope, expected outcome, and non-goals | You need to know which held claim the campaign is working |

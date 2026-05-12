@@ -29,6 +29,7 @@ fn t1_line_color(corridor: &str) -> &'static str {
         "I-70" => "#f59e0b",
         "I-75" => "#06b6d4",
         "I-80" => "#3b82f6",
+        "I-84" => "#0ea5e9",
         "I-85" => "#22c55e",
         "I-90" => "#8b5cf6",
         "I-95" => "#f43f5e",
@@ -384,8 +385,8 @@ fn beck_stops() -> Vec<BeckStop> {
             180.0,
             480.0,
             false,
-            false,
-            &["I-5"],
+            true,
+            &["I-5", "I-84"],
             LabelDir::Right,
         ),
         stop(
@@ -973,7 +974,7 @@ fn beck_stops() -> Vec<BeckStop> {
             540.0,
             true,
             true,
-            &["I-80", "I-70", "I-15"],
+            &["I-80", "I-70", "I-15", "I-84"],
             LabelDir::Down,
         ),
         stop(
@@ -2005,17 +2006,7 @@ fn t1_route_stop_ids() -> Vec<(&'static str, Vec<&'static str>)> {
                 "BEN",
             ],
         ),
-        (
-            "I-69",
-            vec![
-                "HOU",
-                "MEM",
-                "INDY_APPROACH",
-                "FORT_WAYNE",
-                "CHI_APPROACH",
-                "CHI",
-            ],
-        ),
+        ("I-84", vec!["POR", "PENDLETON", "BOI", "TWIN_FALLS", "SLC"]),
         (
             "I-70",
             vec![
@@ -2191,17 +2182,6 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
         ),
         t2_line_segment(
             stops,
-            "I-84",
-            "I-5",
-            "I-70",
-            &["POR", "PENDLETON", "BOI", "TWIN_FALLS", "SLC"],
-            "Snake River",
-            "BOI",
-            (10.0, -26.0),
-            "start",
-        ),
-        t2_line_segment(
-            stops,
             "US95",
             "I-84",
             "I-90",
@@ -2318,8 +2298,8 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             stops,
             "I-44",
             "I-40",
-            "I-69",
-            &["OKC", "STL", "INDY_APPROACH", "FORT_WAYNE", "CHI_APPROACH"],
+            "I-90",
+            &["OKC", "STL", "INDY_APPROACH", "FORT_WAYNE", "CHI"],
             "St. Louis Link",
             "FORT_WAYNE",
             (0.0, 0.0),
@@ -2364,8 +2344,9 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
                 "RAWLINS",
                 "CHEYENNE",
                 "OMAHA",
+                "DSM",
                 "IOWA_CITY",
-                "CHI_APPROACH",
+                "CHI",
                 "PA_APPROACH",
             ],
             "Lincoln Highway",
@@ -2378,7 +2359,15 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             "US6",
             "I-70",
             "I-80",
-            &["SLC", "ROCK_SPRINGS", "CHEYENNE", "OMAHA", "CHI_APPROACH"],
+            &[
+                "SLC",
+                "ROCK_SPRINGS",
+                "CHEYENNE",
+                "OMAHA",
+                "DSM",
+                "IOWA_CITY",
+                "CHI",
+            ],
             "Central Plains",
             "OMAHA",
             (0.0, 0.0),
@@ -2507,7 +2496,7 @@ fn t1_badges(stops: &[BeckStop]) -> Vec<(&'static str, f64, f64)> {
         badge_at(stops, "I-20", "SHV", (-55.0, 58.0)),
         badge_at(stops, "I-35", "KC", (-35.0, 15.0)),
         badge_at(stops, "I-40", "AMA", (-40.0, 0.0)),
-        badge_at(stops, "I-69", "MEM", (0.0, -55.0)),
+        badge_at(stops, "I-84", "BOI", (0.0, -55.0)),
         badge_at(stops, "I-70", "DEN", (34.0, -28.0)),
         badge_at(stops, "I-75", "CINCINNATI", (-24.0, 100.0)),
         badge_at(stops, "I-80", "OMAHA", (-60.0, 20.0)),
@@ -3672,7 +3661,7 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
     };
     let subtitle = match variant {
         BeckVariant::T1 => "A SCHEMATIC OF AMERICA'S PRIMARY FREIGHT LINES",
-        BeckVariant::T1WithT2 => "FULL SERVICE MAP · 25 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS",
+        BeckVariant::T1WithT2 => "FULL SERVICE MAP · 24 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS",
         BeckVariant::T2Only => "T2 CONNECTORS ONLY · TRANSFER STOPS AND SERVICE RHYTHM",
     };
 
@@ -4199,21 +4188,22 @@ mod tests {
     }
 
     #[test]
-    fn beck_svg_keeps_chicago_as_i69_i80_i90_transfer_node() {
+    fn beck_svg_promotes_i84_as_boise_salt_lake_t1_connector() {
         let stops = beck_stops();
-        let chicago = stop_by_id(&stops, "CHI").point();
+        let portland = stop_by_id(&stops, "POR");
+        let boise = stop_by_id(&stops, "BOI").point();
+        let salt_lake = stop_by_id(&stops, "SLC").point();
         let lines = t1_line_segments(&stops);
-        let i69 = lines.iter().find(|line| line.corridor == "I-69").unwrap();
-        let i80 = lines.iter().find(|line| line.corridor == "I-80").unwrap();
-        let i90 = lines.iter().find(|line| line.corridor == "I-90").unwrap();
+        let i84 = lines.iter().find(|line| line.corridor == "I-84").unwrap();
 
-        assert!(path_contains_point(i69, chicago));
-        assert!(path_contains_point(i80, chicago));
-        assert!(path_contains_point(i90, chicago));
+        assert!(portland.is_interchange);
+        assert!(path_contains_point(i84, portland.point()));
+        assert!(path_contains_point(i84, boise));
+        assert!(path_contains_point(i84, salt_lake));
 
         let svg = build_beck_svg();
-        assert!(svg.contains("Chicago"));
-        assert!(svg.contains(&format!("{:.1} {:.1}", chicago.0, chicago.1)));
+        assert!(svg.contains("Boise"));
+        assert!(svg.contains(&format!("{:.1} {:.1}", boise.0, boise.1)));
     }
 
     #[test]
@@ -4555,15 +4545,15 @@ mod tests {
     fn beck_t2_svg_draws_thin_connector_overlay_tinted_to_trunks() {
         let svg = build_beck_t2_svg();
         assert!(svg.contains("LOCAL SERVICES"));
-        assert!(svg.contains("25 THIN T2 CONNECTORS"));
+        assert!(svg.contains("24 THIN T2 CONNECTORS"));
         assert!(svg.contains("T2 connector"));
         assert!(svg.contains("stroke-width=\"5.5\""));
         assert!(svg.contains("Charlotte"));
         assert!(svg.contains("NODE CLASSES"));
         let t2_routes = [
-            "US287", "I-85", "I-25", "I-15", "I-84", "US95", "I-65", "I-495", "I-59", "I-24",
-            "I-30", "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6", "US70", "US90", "I-22",
-            "I-29", "US80", "US83", "I-37",
+            "US287", "I-85", "I-25", "I-15", "US95", "I-65", "I-495", "I-59", "I-24", "I-30",
+            "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6", "US70", "US90", "I-22", "I-29",
+            "US80", "US83", "I-37",
         ];
         for route in t2_routes {
             assert!(svg.contains(&format!("data-corridor=\"{route}\"")));
@@ -4573,7 +4563,7 @@ mod tests {
         for held_route in ["I-405", "I-610", "US2", "I-285"] {
             assert!(!svg.contains(&format!("data-corridor=\"{held_route}\"")));
         }
-        assert!(svg.matches("stroke-width=\"5.5\"").count() > t2_routes.len());
+        assert!(svg.matches("stroke-width=\"5.5\"").count() >= t2_routes.len());
         assert!(svg.contains("data-parent=\"I-20\""));
         assert!(svg.contains("data-parent=\"I-95\""));
         assert!(svg.contains("data-service-class=\"long-connector\""));
@@ -4600,7 +4590,7 @@ mod tests {
         assert!(csv.contains("compact-service"));
         assert!(csv.contains("long-connector-review"));
         assert!(csv.contains("dense-transfer-review"));
-        assert!(csv.contains("duplicate-service-review"));
+        assert!(csv.contains("transfer-complexity-review"));
 
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
@@ -4614,17 +4604,14 @@ mod tests {
             .any(|row| row.color_mode == "split-parent" && !row.split_anchor.is_empty()));
         let us30 = rows.iter().find(|row| row.corridor == "US30").unwrap();
         let us6 = rows.iter().find(|row| row.corridor == "US6").unwrap();
-        assert_eq!(us30.duplicate_service_corridors, "US6");
-        assert_eq!(us6.duplicate_service_corridors, "US30");
-        assert_eq!(us30.unique_duplicate_stop_count, 3);
-        assert_eq!(us30.service_action, "keep-primary-review");
-        assert_eq!(
-            us30.qualification_basis,
-            "duplicate-service-with-unique-markets"
-        );
-        assert_eq!(us6.unique_duplicate_stop_count, 0);
-        assert_eq!(us6.service_action, "demote-review");
-        assert_eq!(us6.qualification_basis, "duplicate-subset-service");
+        assert_eq!(us30.duplicate_service_corridors, "");
+        assert_eq!(us6.duplicate_service_corridors, "");
+        assert_eq!(us30.unique_duplicate_stop_count, 9);
+        assert_eq!(us30.service_action, "keep");
+        assert_eq!(us30.qualification_basis, "distinct-parent-service");
+        assert_eq!(us6.unique_duplicate_stop_count, 7);
+        assert_eq!(us6.service_action, "keep");
+        assert_eq!(us6.qualification_basis, "distinct-parent-service");
     }
 
     #[test]
@@ -4661,13 +4648,13 @@ mod tests {
         );
         assert_eq!(
             corridors_for("long-connector"),
-            vec!["US30", "US6", "US83", "US90"]
+            vec!["I-44", "US83", "US90"]
         );
         assert_eq!(
             corridors_for("transfer-spine"),
-            vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US70", "US80"]
+            vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US30", "US6", "US70", "US80"]
         );
-        assert_eq!(corridors_for("connector").len(), 11);
+        assert_eq!(corridors_for("connector").len(), 9);
     }
 
     #[test]
@@ -4730,7 +4717,7 @@ mod tests {
         assert!(t2_lines.iter().all(|line| line.waypoints.len() >= 2));
         assert!(t2_lines.iter().all(|line| !line.service_label.is_empty()));
         assert!(t2_lines.iter().all(|line| !line.label_anchor.is_empty()));
-        assert_eq!(t2_lines.len(), 25);
+        assert_eq!(t2_lines.len(), 24);
         assert_eq!(t1_badges(&stops).len(), lines.len());
     }
 

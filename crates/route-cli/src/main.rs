@@ -1046,6 +1046,33 @@ enum Commands {
         gate: bool,
     },
 
+    /// Partition tier routes into METIS-backed regional workloads
+    TierRegions {
+        /// Path to generated tier table CSV
+        #[arg(long, default_value = "data/tier-table.csv", value_name = "FILE")]
+        tier_table: PathBuf,
+        /// Tier to regionalize
+        #[arg(long, default_value = "T2")]
+        tier: String,
+        /// Number of target service regions
+        #[arg(long, default_value_t = 4)]
+        regions: usize,
+        /// Graph model to split
+        #[arg(long, value_enum, default_value_t = TierRegionGraphArg::DualRoute)]
+        graph: TierRegionGraphArg,
+        /// Output workload CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/tier-region-workloads.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if METIS cannot produce complete non-empty regions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -1366,6 +1393,20 @@ enum GapType {
     Bottleneck,
     Resilience,
     Intermodal,
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+enum TierRegionGraphArg {
+    /// Routes are vertices; shared stops/transfers/overlaps are edges.
+    DualRoute,
+}
+
+impl TierRegionGraphArg {
+    fn service_graph_kind(&self) -> route_network::ServiceGraphKind {
+        match self {
+            Self::DualRoute => route_network::ServiceGraphKind::DualRouteGraph,
+        }
+    }
 }
 
 #[derive(clap::Subcommand, Clone, Debug)]
@@ -4695,6 +4736,49 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("{tier} connectivity gate: PASS");
+            }
+        }
+
+        Commands::TierRegions {
+            tier_table,
+            tier,
+            regions,
+            graph,
+            output,
+            gate,
+        } => {
+            println!("route tier-regions --tier {tier} --regions {regions}");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let highway_graph = load_graph(&manifest)?;
+            let t1_routes = load_tier_routes(&tier_table, "T1")
+                .with_context(|| format!("loading T1 routes from {}", tier_table.display()))?;
+            let tier_routes = load_tier_routes(&tier_table, &tier)
+                .with_context(|| format!("loading {tier} routes from {}", tier_table.display()))?;
+            let rows = tier_region_workload_rows(
+                &highway_graph,
+                &tier,
+                &tier_routes,
+                &t1_routes,
+                graph.service_graph_kind(),
+                regions,
+            )?;
+            write_tier_region_workloads(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_region_workload_summary(&tier, regions, &output, &rows);
+
+            if gate {
+                let failures = tier_region_gate_failures(&rows, regions);
+                if !failures.is_empty() {
+                    println!();
+                    println!("tier region gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier region gate failed");
+                }
+                println!();
+                println!("tier region gate: PASS");
             }
         }
 
@@ -9215,6 +9299,319 @@ fn load_tier_routes(path: &Path, tier: &str) -> Result<Vec<String>> {
     Ok(routes)
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct TierRegionWorkloadRow {
+    tier: String,
+    graph_kind: String,
+    split_objective: String,
+    requested_regions: usize,
+    region_id: usize,
+    route: String,
+    route_weight: i32,
+    route_miles: f64,
+    contact_route_count: usize,
+    component_status: String,
+    validation_status: String,
+}
+
+fn tier_region_workload_rows(
+    graph: &route_network::HighwayGraph,
+    tier: &str,
+    routes: &[String],
+    parent_routes: &[String],
+    graph_kind: route_network::ServiceGraphKind,
+    requested_regions: usize,
+) -> Result<Vec<TierRegionWorkloadRow>> {
+    if routes.is_empty() {
+        anyhow::bail!("{tier} has no routes in tier table");
+    }
+    if requested_regions == 0 {
+        anyhow::bail!("requested regions must be >= 1");
+    }
+    if requested_regions > routes.len() {
+        anyhow::bail!(
+            "requested regions ({requested_regions}) cannot exceed route count ({})",
+            routes.len()
+        );
+    }
+
+    let (mut adjacency, contact_counts) = dual_route_adjacency(graph, routes, parent_routes);
+    let (component_ids, component_count) = connected_components(&adjacency);
+    let component_status = if component_count <= 1 {
+        "connected".to_string()
+    } else {
+        bridge_components(&mut adjacency, &component_ids, component_count);
+        format!("component-bridged:{component_count}")
+    };
+    let weights = routes
+        .iter()
+        .map(|route| route_region_weight(graph.route_miles(route)))
+        .collect::<Vec<_>>();
+    let input =
+        route_network::ServiceGraphPartitionInput::new(graph_kind, adjacency, weights.clone())
+            .map_err(|err| anyhow::anyhow!(err))?;
+    let assignment =
+        route_network::partition_service_graph_input_metis(&input, requested_regions, Some(10))
+            .map_err(|err| anyhow::anyhow!(err))?;
+    validate_region_assignment(&assignment.assignment, requested_regions)?;
+
+    Ok(routes
+        .iter()
+        .enumerate()
+        .map(|(idx, route)| TierRegionWorkloadRow {
+            tier: tier.to_string(),
+            graph_kind: assignment.graph_kind.mode_name().to_string(),
+            split_objective: "route-mile-workload".to_string(),
+            requested_regions,
+            region_id: assignment.assignment[idx],
+            route: route.clone(),
+            route_weight: weights[idx],
+            route_miles: graph.route_miles(route),
+            contact_route_count: contact_counts[idx],
+            component_status: component_status.clone(),
+            validation_status: if component_status == "connected" {
+                "pass"
+            } else {
+                "review"
+            }
+            .to_string(),
+        })
+        .collect())
+}
+
+fn dual_route_adjacency(
+    graph: &route_network::HighwayGraph,
+    routes: &[String],
+    parent_routes: &[String],
+) -> (Vec<Vec<usize>>, Vec<usize>) {
+    let route_positions = routes
+        .iter()
+        .enumerate()
+        .map(|(idx, route)| (route.clone(), idx))
+        .collect::<std::collections::HashMap<_, _>>();
+    let mut node_routes =
+        std::collections::HashMap::<usize, std::collections::BTreeSet<usize>>::new();
+
+    for route in routes {
+        let Some(&route_idx) = route_positions.get(route) else {
+            continue;
+        };
+        for &edge in graph.route_edges(route) {
+            if let Some((source, target)) = graph.graph.edge_endpoints(edge) {
+                node_routes
+                    .entry(source.index())
+                    .or_default()
+                    .insert(route_idx);
+                node_routes
+                    .entry(target.index())
+                    .or_default()
+                    .insert(route_idx);
+            }
+        }
+    }
+
+    let mut adjacency_sets = vec![std::collections::BTreeSet::<usize>::new(); routes.len()];
+    for touching_routes in node_routes.values() {
+        for &a in touching_routes {
+            for &b in touching_routes {
+                if a != b {
+                    adjacency_sets[a].insert(b);
+                }
+            }
+        }
+    }
+
+    let connectivity = route_network::analyze_tier_connectivity(graph, routes, parent_routes);
+    let mut parent_route_groups = std::collections::BTreeMap::<String, Vec<usize>>::new();
+    for row in connectivity {
+        let Some(&route_idx) = route_positions.get(&row.route) else {
+            continue;
+        };
+        for parent_route in row.t1_routes {
+            parent_route_groups
+                .entry(parent_route)
+                .or_default()
+                .push(route_idx);
+        }
+    }
+    for touching_routes in parent_route_groups.values() {
+        for &a in touching_routes {
+            for &b in touching_routes {
+                if a != b {
+                    adjacency_sets[a].insert(b);
+                }
+            }
+        }
+    }
+    let contact_counts = adjacency_sets
+        .iter()
+        .map(std::collections::BTreeSet::len)
+        .collect::<Vec<_>>();
+    let adjacency = adjacency_sets
+        .into_iter()
+        .map(|neighbors| neighbors.into_iter().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    (adjacency, contact_counts)
+}
+
+fn route_region_weight(route_miles: f64) -> i32 {
+    route_miles.round().clamp(1.0, i32::MAX as f64) as i32
+}
+
+fn connected_components(adjacency: &[Vec<usize>]) -> (Vec<usize>, usize) {
+    let mut component_ids = vec![usize::MAX; adjacency.len()];
+    let mut component_count = 0usize;
+    for start in 0..adjacency.len() {
+        if component_ids[start] != usize::MAX {
+            continue;
+        }
+        let mut queue = std::collections::VecDeque::from([start]);
+        component_ids[start] = component_count;
+        while let Some(node) = queue.pop_front() {
+            for &neighbor in &adjacency[node] {
+                if component_ids[neighbor] == usize::MAX {
+                    component_ids[neighbor] = component_count;
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+        component_count += 1;
+    }
+    (component_ids, component_count)
+}
+
+fn bridge_components(
+    adjacency: &mut [Vec<usize>],
+    component_ids: &[usize],
+    component_count: usize,
+) {
+    let mut representatives = vec![None; component_count];
+    for (node, &component) in component_ids.iter().enumerate() {
+        representatives[component].get_or_insert(node);
+    }
+    for pair in representatives.windows(2) {
+        if let [Some(a), Some(b)] = pair {
+            push_unique_neighbor(&mut adjacency[*a], *b);
+            push_unique_neighbor(&mut adjacency[*b], *a);
+        }
+    }
+}
+
+fn push_unique_neighbor(neighbors: &mut Vec<usize>, neighbor: usize) {
+    if !neighbors.contains(&neighbor) {
+        neighbors.push(neighbor);
+        neighbors.sort_unstable();
+    }
+}
+
+fn validate_region_assignment(assignment: &[usize], requested_regions: usize) -> Result<()> {
+    let mut counts = vec![0usize; requested_regions];
+    for &region in assignment {
+        if region >= requested_regions {
+            anyhow::bail!("METIS assigned route to out-of-range region {region}");
+        }
+        counts[region] += 1;
+    }
+    for (region, count) in counts.into_iter().enumerate() {
+        if count == 0 {
+            anyhow::bail!("METIS produced empty region {region}");
+        }
+    }
+    Ok(())
+}
+
+fn write_tier_region_workloads(path: &Path, rows: &[TierRegionWorkloadRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_region_workload_summary(
+    tier: &str,
+    requested_regions: usize,
+    output: &Path,
+    rows: &[TierRegionWorkloadRow],
+) {
+    let mut route_counts = vec![0usize; requested_regions];
+    let mut weight_counts = vec![0i32; requested_regions];
+    for row in rows {
+        route_counts[row.region_id] += 1;
+        weight_counts[row.region_id] += row.route_weight;
+    }
+    println!(
+        "  wrote {} {tier} route workload rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for region in 0..requested_regions {
+        println!(
+            "  region {region}: {} routes, {} weighted miles",
+            route_counts[region], weight_counts[region]
+        );
+    }
+    if let Some(status) = rows.first().map(|row| row.component_status.as_str()) {
+        println!("  graph status: {status}");
+    }
+}
+
+fn tier_region_gate_failures(
+    rows: &[TierRegionWorkloadRow],
+    requested_regions: usize,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no tier region workload rows emitted".to_string());
+        return failures;
+    }
+    if let Some(status) = rows
+        .first()
+        .map(|row| row.component_status.as_str())
+        .filter(|status| status.starts_with("component-bridged:"))
+    {
+        failures.push(format!(
+            "dual route graph required {status}; repair route contacts before gate can pass"
+        ));
+    }
+    let mut route_counts = vec![0usize; requested_regions];
+    for row in rows {
+        if row.region_id >= requested_regions {
+            failures.push(format!(
+                "{} assigned to out-of-range region {}",
+                row.route, row.region_id
+            ));
+            continue;
+        }
+        if row.route_weight <= 0 {
+            failures.push(format!("{} has non-positive route weight", row.route));
+        }
+        if row.component_status == "connected"
+            && !row.validation_status.eq_ignore_ascii_case("pass")
+        {
+            failures.push(format!(
+                "{} has validation_status={}",
+                row.route, row.validation_status
+            ));
+        }
+        route_counts[row.region_id] += 1;
+    }
+    for (region, count) in route_counts.into_iter().enumerate() {
+        if count == 0 {
+            failures.push(format!("region {region} has no assigned routes"));
+        }
+    }
+    failures
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct EndpointExceptionRow {
     route: String,
@@ -13394,8 +13791,8 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_line_selector_gate_failures, t1_line_selector_rows, throughput_proof_gate_failures,
         throughput_proof_has_bounded_contract, tier_connectivity_gate_failures_with_exceptions,
-        tier_for_score, write_tier_artifacts_to, FemaTile, GapType, NbiBridgeRecord, ScoreAllRow,
-        ScoreSignalRow,
+        tier_for_score, tier_region_gate_failures, write_tier_artifacts_to, FemaTile, GapType,
+        NbiBridgeRecord, ScoreAllRow, ScoreSignalRow, TierRegionWorkloadRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -13424,6 +13821,43 @@ mod tests {
         assert_eq!(gap_type_slug(&GapType::Bottleneck), "bottleneck");
         assert_eq!(gap_type_slug(&GapType::Resilience), "resilience");
         assert_eq!(gap_type_slug(&GapType::Intermodal), "intermodal");
+    }
+
+    #[test]
+    fn tier_region_gate_fails_component_bridging() {
+        let rows = vec![
+            TierRegionWorkloadRow {
+                tier: "T2".to_string(),
+                graph_kind: "dual-route-graph".to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                requested_regions: 2,
+                region_id: 0,
+                route: "I10".to_string(),
+                route_weight: 100,
+                route_miles: 100.0,
+                contact_route_count: 1,
+                component_status: "component-bridged:2".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierRegionWorkloadRow {
+                tier: "T2".to_string(),
+                graph_kind: "dual-route-graph".to_string(),
+                split_objective: "route-mile-workload".to_string(),
+                requested_regions: 2,
+                region_id: 1,
+                route: "I20".to_string(),
+                route_weight: 100,
+                route_miles: 100.0,
+                contact_route_count: 1,
+                component_status: "component-bridged:2".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let failures = tier_region_gate_failures(&rows, 2);
+
+        assert_eq!(failures.len(), 1);
+        assert!(failures[0].contains("component-bridged:2"));
     }
 
     #[test]

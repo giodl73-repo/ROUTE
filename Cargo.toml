@@ -34,7 +34,7 @@ minilp        = "0.2"   # pure Rust LP solver — investment allocation, multi-c
 rand          = "0.8"   # reproducible RNG for chaos Monte Carlo
 
 # Graph partitioning (deferred — add to route-network when gap analysis phase begins)
-# metis-core = { git = "https://github.com/giodl73-repo/METIS-CORE.git" }
+metis-core = { git = "https://github.com/giodl73-repo/METIS-CORE.git", branch = "master" }
 # [patch.crates-io]
 # metis-core = { path = "../metis-core" }  # local development override
 

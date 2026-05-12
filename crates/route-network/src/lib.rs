@@ -9,6 +9,7 @@ pub mod flow;
 pub mod graph;
 pub mod invest;
 pub mod join;
+pub mod region;
 pub mod strategic;
 pub mod tier;
 
@@ -26,6 +27,15 @@ pub use diamond::{
 pub use flow::{corridor_max_flow, FlowResult};
 pub use graph::{HighwayEdge, HighwayGraph, HighwayNode};
 pub use invest::{allocate_investment, InvestmentCandidate, InvestmentPlan, UpgradeType};
+pub use region::{
+    linear_route_split_stops, linear_route_split_stops_with_input, linear_route_stop_regions,
+    linear_route_stop_regions_with_input, max_depth_for_target_count,
+    partition_service_graph_input_metis, partition_service_graph_kind_metis,
+    partition_service_graph_metis, LinearRouteSplitInput, LinearRouteSplitObjective,
+    LinearRouteSplitStop, LinearRouteStopRegion, MetisRegionAssignment, RegionPartitionError,
+    RegionStrategy, RegionWorkloadNode, RegionWorkloadTree, SearchCompositor, ServiceGraphKind,
+    ServiceGraphPartitionInput, ServiceWeightSpec, TierOptimizerConfig,
+};
 pub use strategic::{
     agricultural_export_score, init_designations, load_designations, military_strategic_score,
     usmca_corridor_score,
