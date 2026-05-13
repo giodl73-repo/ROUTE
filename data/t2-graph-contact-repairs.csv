@@ -1,9 +1,2 @@
 route,repair_class,source_exception_type,repair_action,required_evidence,next_artifact,optimizer_effect,validation_status
-I195,route-family-split,missing_graph_geometry,split-numbered-route-family-before-tier-decision,identify represented segment and its T1/T2 contacts,data/tier-node-exceptions.csv,blocked until route family is disambiguated,review
-I205,route-family-split,missing_graph_geometry,split-numbered-route-family-before-tier-decision,identify represented segment and its T1/T2 contacts,data/tier-node-exceptions.csv,blocked until route family is disambiguated,review
 I22,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review
-I295,route-family-split,missing_graph_geometry,split-numbered-route-family-before-tier-decision,identify represented segment and its T1/T2 contacts,data/tier-node-exceptions.csv,blocked until route family is disambiguated,review
-I30,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review
-I37,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review
-I44,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review
-I49,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review

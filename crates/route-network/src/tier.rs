@@ -2,6 +2,8 @@ use crate::graph::HighwayGraph;
 use petgraph::graph::NodeIndex;
 use std::collections::{BTreeSet, HashSet};
 
+const TIER_ROUTE_CONTACT_TOLERANCE_MILES: f64 = 1.0;
+
 pub const T1_SCORE_THRESHOLD: f64 = 70.0;
 pub const T2_SCORE_THRESHOLD: f64 = 50.0;
 pub const T3_SCORE_THRESHOLD: f64 = 30.0;
@@ -301,7 +303,48 @@ fn incident_t1_routes(
             routes.insert(route_id.to_string());
         }
     }
+    let node_coord = graph.graph[node].coord;
+    for t1_route in t1_routes {
+        if *t1_route == route || routes.contains(*t1_route) {
+            continue;
+        }
+        if route_touches_coord(
+            graph,
+            t1_route,
+            node_coord.y,
+            node_coord.x,
+            TIER_ROUTE_CONTACT_TOLERANCE_MILES,
+        ) {
+            routes.insert((*t1_route).to_string());
+        }
+    }
     routes.into_iter().collect()
+}
+
+fn route_touches_coord(
+    graph: &HighwayGraph,
+    route: &str,
+    lat: f64,
+    lon: f64,
+    tolerance_miles: f64,
+) -> bool {
+    graph.route_edges(route).iter().any(|&edge| {
+        graph.graph[edge]
+            .geometry
+            .0
+            .iter()
+            .any(|coord| haversine_miles(lat, lon, coord.y, coord.x) <= tolerance_miles)
+    })
+}
+
+fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let radius_miles = 3958.8_f64;
+    let dlat = (lat2 - lat1).to_radians();
+    let dlon = (lon2 - lon1).to_radians();
+    let lat1 = lat1.to_radians();
+    let lat2 = lat2.to_radians();
+    let a = (dlat / 2.0).sin().powi(2) + lat1.cos() * lat2.cos() * (dlon / 2.0).sin().powi(2);
+    2.0 * radius_miles * a.sqrt().asin()
 }
 
 #[cfg(test)]
@@ -323,12 +366,22 @@ mod tests {
     }
 
     fn edge(id: u64, route_id: &str, miles: f64) -> HighwayEdge {
+        edge_at(id, route_id, miles, (0.0, 0.0), (1.0, 1.0))
+    }
+
+    fn edge_at(
+        id: u64,
+        route_id: &str,
+        miles: f64,
+        start: (f64, f64),
+        end: (f64, f64),
+    ) -> HighwayEdge {
         HighwayEdge {
             id,
             route_id: route_id.to_string(),
             state: String::new(),
             road_class: route_data::RoadClass::Interstate,
-            geometry: LineString::from(vec![(0.0, 0.0), (1.0, 1.0)]),
+            geometry: LineString::from(vec![start, end]),
             length_miles: miles,
             lane_count: None,
             aadt: None,
@@ -362,6 +415,42 @@ mod tests {
         assert_eq!(rows[0].classification, TierNodeClass::TrunkConnector);
         assert_eq!(rows[0].t1_node_count, 2);
         assert!(tier_connectivity_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn t2_contact_uses_bounded_geometry_snap_when_nodes_do_not_match() {
+        let mut graph = HighwayGraph::new();
+        let west = graph.graph.add_node(node(1, -104.991, 39.740));
+        let east = graph.graph.add_node(node(2, -95.369, 29.760));
+        let t2_west = graph.graph.add_node(node(3, -104.995, 39.744));
+        let t2_east = graph.graph.add_node(node(4, -95.373, 29.764));
+        let t1a = graph.graph.add_edge(
+            west,
+            east,
+            edge_at(1, "I70", 1000.0, (-104.991, 39.740), (-95.369, 29.760)),
+        );
+        let t1b = graph.graph.add_edge(
+            east,
+            west,
+            edge_at(2, "I10", 1000.0, (-95.369, 29.760), (-104.991, 39.740)),
+        );
+        let t2 = graph.graph.add_edge(
+            t2_west,
+            t2_east,
+            edge_at(3, "I25", 400.0, (-104.995, 39.744), (-95.373, 29.764)),
+        );
+        graph.route_index.insert("I70".to_string(), vec![t1a]);
+        graph.route_index.insert("I10".to_string(), vec![t1b]);
+        graph.route_index.insert("I25".to_string(), vec![t2]);
+
+        let rows = analyze_tier_connectivity(
+            &graph,
+            &["I25".to_string()],
+            &["I10".to_string(), "I70".to_string()],
+        );
+
+        assert_eq!(rows[0].classification, TierNodeClass::TrunkConnector);
+        assert_eq!(rows[0].t1_node_count, 2);
     }
 
     #[test]

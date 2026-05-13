@@ -1,2 +1,2 @@
 route,endpoint_name,endpoint_role,exception_type,evidence_level,terminal_worthy,endpoint_action,disposition,required_evidence,next_artifact,optimizer_effect,validation_status
-I270,St. Louis / Columbus beltway,one_ended_feeder,metro_beltway_relief,heuristic,false,upgrade-endpoint-exception-or-demote,lower-tier-pressure,terminal-worthy endpoint role and exception type,data/lower-tier-pressure-witnesses.csv,kept out of T2 until endpoint exception is upgraded,review
+I285,Atlanta loop,local_access_end,metro_beltway_relief,heuristic,false,upgrade-endpoint-exception-or-demote,lower-tier-pressure,terminal-worthy endpoint role and exception type,data/lower-tier-pressure-witnesses.csv,kept out of T2 until endpoint exception is upgraded,review

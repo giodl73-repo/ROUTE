@@ -14343,7 +14343,7 @@ fn t2_parent_contact_validation_rows(
         .map(|row| (canonical_route_key(&row.route), row))
         .collect::<std::collections::HashMap<_, _>>();
 
-    held_rows
+    let mut rows = held_rows
         .iter()
         .filter(|row| row.held_action_type == "parent-contact-validation")
         .map(|row| {
@@ -14381,7 +14381,20 @@ fn t2_parent_contact_validation_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2ParentContactValidationRow {
+            route: "__all_t2_parent_contacts__".to_string(),
+            parent_trunks: String::new(),
+            observed_dual_contacts: 0,
+            validation_action: "parent-contact-clear".to_string(),
+            required_evidence: "no parent-contact validation blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "parent-contact validation lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_parent_contact_validation(
@@ -14425,8 +14438,11 @@ fn t2_parent_contact_validation_gate_failures(
     rows: &[T2ParentContactValidationRow],
 ) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 parent contact validation rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_parent_contacts__" {
+        let row = &rows[0];
+        if row.validation_action != "parent-contact-clear" || row.validation_status != "pass" {
+            failures.push("parent contact clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -14435,6 +14451,7 @@ fn t2_parent_contact_validation_gate_failures(
             || row.required_evidence.trim().is_empty()
             || row.next_artifact.trim().is_empty()
             || row.optimizer_effect.trim().is_empty()
+            || !matches!(row.validation_status.as_str(), "pass" | "review")
         {
             failures.push(format!(
                 "{} has incomplete parent contact validation",
@@ -14473,7 +14490,7 @@ fn t2_relief_evidence_rows(
         rows.sort_by_key(|row| row.rank);
     }
 
-    held_rows
+    let mut rows = held_rows
         .iter()
         .filter(|row| row.held_action_type == "relief-evidence-review")
         .map(|row| {
@@ -14521,7 +14538,23 @@ fn t2_relief_evidence_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2ReliefEvidenceRow {
+            route: "__all_t2_relief_evidence__".to_string(),
+            source_exception_type: String::new(),
+            bottleneck_match_count: 0,
+            top_bottleneck_rank: 0,
+            top_bottleneck_location: String::new(),
+            annual_cost_m: 0.0,
+            relief_action: "relief-evidence-clear".to_string(),
+            evidence_basis: "no relief-evidence validation blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "relief-evidence validation lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_relief_evidence_docket(path: &Path, rows: &[T2ReliefEvidenceRow]) -> Result<()> {
@@ -14557,8 +14590,11 @@ fn print_t2_relief_evidence_summary(output: &Path, rows: &[T2ReliefEvidenceRow])
 
 fn t2_relief_evidence_gate_failures(rows: &[T2ReliefEvidenceRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 relief evidence rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_relief_evidence__" {
+        let row = &rows[0];
+        if row.relief_action != "relief-evidence-clear" || row.validation_status != "pass" {
+            failures.push("relief evidence clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -14809,7 +14845,10 @@ fn t2_blocker_closure_rows(
         });
     }
 
-    for row in parent_rows {
+    for row in parent_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__all_"))
+    {
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_blocker_bundle_fields(&registry, &row.route);
         rows.push(T2BlockerClosureRow {
@@ -14828,7 +14867,10 @@ fn t2_blocker_closure_rows(
         });
     }
 
-    for row in relief_rows {
+    for row in relief_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__all_"))
+    {
         let (blocker_class, closure_status) =
             if row.relief_action == "source-observed-relief-review" {
                 ("relief-contact-repair", "evidence-observed")
@@ -15000,7 +15042,7 @@ fn t2_route_family_split_rows(
     closure_rows: &[T2BlockerClosureRow],
     exception_rows: &[EndpointExceptionRow],
 ) -> Vec<T2RouteFamilySplitRow> {
-    closure_rows
+    let mut rows = closure_rows
         .iter()
         .filter(|row| row.blocker_class == "route-family-split")
         .map(|row| {
@@ -15035,7 +15077,23 @@ fn t2_route_family_split_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2RouteFamilySplitRow {
+            route: "__all_t2_route_family_splits__".to_string(),
+            endpoint_name: String::new(),
+            endpoint_role: String::new(),
+            exception_type: String::new(),
+            source_artifact: "data/t2-blocker-closure.csv".to_string(),
+            family_action: "route-family-split-clear".to_string(),
+            disposition: "clear".to_string(),
+            required_evidence: "no route-family split blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "route-family split lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn t2_route_family_split_decision(
@@ -15120,8 +15178,12 @@ fn print_t2_route_family_split_summary(output: &Path, rows: &[T2RouteFamilySplit
 
 fn t2_route_family_split_gate_failures(rows: &[T2RouteFamilySplitRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 route-family split rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_route_family_splits__" {
+        let row = &rows[0];
+        if row.family_action != "route-family-split-clear" || row.validation_status != "pass" {
+            failures
+                .push("route-family split clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -15263,7 +15325,7 @@ fn t2_contact_closure_rows(
         .map(|row| (canonical_route_key(&row.route), row))
         .collect::<std::collections::HashMap<_, _>>();
 
-    closure_rows
+    let mut rows = closure_rows
         .iter()
         .filter(|row| {
             matches!(
@@ -15323,7 +15385,23 @@ fn t2_contact_closure_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2ContactClosureRow {
+            route: "__all_t2_contact_closures__".to_string(),
+            blocker_class: "contact-closure-clear".to_string(),
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 0,
+            observed_parent_trunks: String::new(),
+            contact_action: "contact-closure-clear".to_string(),
+            disposition: "clear".to_string(),
+            required_evidence: "no contact-closure blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "contact closure lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_contact_closure(path: &Path, rows: &[T2ContactClosureRow]) -> Result<()> {
@@ -15359,8 +15437,11 @@ fn print_t2_contact_closure_summary(output: &Path, rows: &[T2ContactClosureRow])
 
 fn t2_contact_closure_gate_failures(rows: &[T2ContactClosureRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 contact closure rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_contact_closures__" {
+        let row = &rows[0];
+        if row.contact_action != "contact-closure-clear" || row.validation_status != "pass" {
+            failures.push("contact closure clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -15559,6 +15640,9 @@ fn t2_closure_dispositions(
         .collect::<std::collections::HashMap<_, _>>();
 
     for row in route_family_rows {
+        if row.route.starts_with("__all_") {
+            continue;
+        }
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
@@ -15595,6 +15679,9 @@ fn t2_closure_dispositions(
         );
     }
     for row in contact_rows {
+        if row.route.starts_with("__all_") {
+            continue;
+        }
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
@@ -16295,11 +16382,17 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
         return failures;
     }
     for row in rows {
-        if row.treatment_status == "selected-treatment" && row.beck_corridor.is_empty() {
+        if row.treatment_status == "selected-treatment"
+            && row.beck_corridor.is_empty()
+            && row.selection_action != "source-needed"
+        {
             failures.push(format!("{} missing Beck T2 diagnostic", row.route));
         }
         if row.treatment_status == "selected-treatment"
-            && row.selection_action != "keep-service-column"
+            && !matches!(
+                row.selection_action.as_str(),
+                "keep-service-column" | "source-needed"
+            )
         {
             failures.push(format!(
                 "{} selected treatment requires {} before keep",
@@ -16345,7 +16438,7 @@ fn t2_service_diagnostic_queue_rows(
             ) || row.selection_basis == "missing-beck-t2-diagnostic"
                 || row.selection_basis == "closure-accepted-missing-beck-t2-diagnostic"
         })
-        .map(|row| {
+        .filter_map(|row| {
             let bundle = bundle_rows
                 .iter()
                 .find(|bundle| national_bundle_matches_route(bundle, &row.route));
@@ -16357,7 +16450,10 @@ fn t2_service_diagnostic_queue_rows(
                     )
                 })
                 .unwrap_or_else(|| (String::new(), "bundle-missing".to_string()));
-            T2ServiceDiagnosticQueueRow {
+            if bundle_status != "bundle-ready" {
+                return None;
+            }
+            Some(T2ServiceDiagnosticQueueRow {
                 route: row.route.clone(),
                 region_id: row.region_id.clone(),
                 segment_bundle_id,
@@ -16377,7 +16473,7 @@ fn t2_service_diagnostic_queue_rows(
                     "holds bundle-ready T2 route below map/game service until Beck service class exists"
                         .to_string(),
                 validation_status: "review".to_string(),
-            }
+            })
         })
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| left.route.cmp(&right.route));
@@ -21524,15 +21620,15 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "data/tier-region-workloads.csv",
                 "held-known",
                 1,
-                "component-bridged T2 graph pending contact repair",
+                "component-bridged T2 graph pending 2-route contact repair",
             ),
             (
                 "t2-contact-witnesses",
                 "route tier-contact-witnesses --gate",
                 "data/tier-contact-witnesses.csv",
                 "held-known",
-                15,
-                "held rows split by data/t2-held-contact-actions.csv into graph, parent, relief, and terminal validation",
+                2,
+                "held rows split by data/t2-held-contact-actions.csv into graph-contact and terminal validation",
             ),
             (
                 "t2-contact-resolutions",
@@ -27854,6 +27950,16 @@ mod tests {
     }
 
     #[test]
+    fn t2_parent_contact_validation_emits_clear_row_when_no_parent_blockers_remain() {
+        let rows = t2_parent_contact_validation_rows(&[], &[]);
+        let failures = t2_parent_contact_validation_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_parent_contacts__");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
     fn t2_relief_evidence_docket_uses_atri_route_matches() {
         let held = vec![
             T2HeldContactActionRow {
@@ -27894,6 +28000,16 @@ mod tests {
         assert_eq!(rows[0].relief_action, "source-observed-relief-review");
         assert_eq!(rows[0].bottleneck_match_count, 1);
         assert_eq!(rows[1].relief_action, "source-gap-demote-or-find-evidence");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_relief_evidence_docket_emits_clear_row_when_no_relief_blockers_remain() {
+        let rows = t2_relief_evidence_rows(&[], &[]);
+        let failures = t2_relief_evidence_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_relief_evidence__");
         assert!(failures.is_empty());
     }
 
@@ -28172,6 +28288,16 @@ mod tests {
     }
 
     #[test]
+    fn t2_route_family_splits_emit_clear_row_when_no_split_blockers_remain() {
+        let rows = t2_route_family_split_rows(&[], &[]);
+        let failures = t2_route_family_split_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_route_family_splits__");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
     fn t2_graph_contact_validation_splits_observed_contact_from_demotions() {
         let closure_rows = vec![
             T2BlockerClosureRow {
@@ -28331,6 +28457,16 @@ mod tests {
         assert_eq!(rows[0].disposition, "candidate-review");
         assert_eq!(rows[1].contact_action, "demote-unless-contact-added");
         assert_eq!(rows[1].disposition, "lower-tier-pressure");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_contact_closure_emits_clear_row_when_no_contact_closure_blockers_remain() {
+        let rows = t2_contact_closure_rows(&[], &[]);
+        let failures = t2_contact_closure_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_contact_closures__");
         assert!(failures.is_empty());
     }
 
@@ -28690,6 +28826,60 @@ mod tests {
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I285");
         assert_eq!(rows[0].diagnostic_status, "beck-diagnostic-missing");
         assert_eq!(rows[0].next_artifact, "data/beck-t2-diagnostics.csv");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_service_diagnostic_queue_skips_routes_before_bundle_readiness() {
+        let service_rows = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "component-1".to_string(),
+            route: "I270".to_string(),
+            parent_trunks: "I70".to_string(),
+            column_decision: "selected".to_string(),
+            treatment_status: "selected-treatment".to_string(),
+            beck_corridor: String::new(),
+            beck_service_class: String::new(),
+            beck_color_mode: String::new(),
+            beck_start_trunk: String::new(),
+            beck_end_trunk: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: String::new(),
+            qualification_basis: String::new(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bundles = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I270".to_string(),
+            bundle_role: "stitched-service".to_string(),
+            member_segment_ids: "US.HWYSEG.I270".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I270".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-1".to_string(),
+            route_labels: "I270".to_string(),
+            state_scope: String::new(),
+            evidence_state_scope: String::new(),
+            geometry_state_scope: String::new(),
+            bundle_aliases: "route:I270;route-label:I270".to_string(),
+            source_artifacts: "fixture".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            bundle_action: "author zone-bounded stops before bundle geometry".to_string(),
+            next_artifact: "data/tier-stop-candidates.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_service_diagnostic_queue_rows(&service_rows, &bundles);
+        let failures = t2_service_diagnostic_queue_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_service_diagnostics__");
         assert!(failures.is_empty());
     }
 
@@ -30005,6 +30195,30 @@ mod tests {
         assert_eq!(rows[2].beck_corridor, "I-285");
         assert_eq!(rows[2].beck_service_class, "transfer-spine");
         assert_eq!(rows[2].selection_action, "parent-region-review");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_service_selection_allows_selected_rows_to_queue_missing_beck_diagnostics() {
+        let regionalizer = vec![T2RegionalizerRow {
+            tier: "T2".to_string(),
+            region_id: "component-1".to_string(),
+            component_id: 1,
+            route: "I195".to_string(),
+            parent_trunks: "I95".to_string(),
+            route_miles: 184.0,
+            column_decision: "selected".to_string(),
+            treatment_status: "selected-treatment".to_string(),
+            evidence_status: "accepted".to_string(),
+            regionalizer_action: "include-in-regional-treatment".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = t2_service_selection_rows(&regionalizer, &[]);
+        let failures = t2_service_selection_gate_failures(&rows);
+
+        assert_eq!(rows[0].selection_action, "source-needed");
+        assert_eq!(rows[0].selection_basis, "missing-beck-t2-diagnostic");
         assert!(failures.is_empty());
     }
 
