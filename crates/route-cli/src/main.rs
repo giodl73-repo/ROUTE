@@ -575,6 +575,22 @@ enum Commands {
         gate: bool,
     },
 
+    /// Show release manifest ownership and gate release metadata
+    ReleaseManifest {
+        /// Path to release manifest CSV
+        #[arg(long, default_value = "data/release-manifest.csv", value_name = "FILE")]
+        manifest: PathBuf,
+        /// Show only rows with release metadata blockers
+        #[arg(long)]
+        blockers: bool,
+        /// Print verification commands and notes
+        #[arg(long)]
+        details: bool,
+        /// Fail if release rows have invalid metadata or missing artifacts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show Milepost 6 Blueprint feature packages and gate Forum intake rules
     Blueprint {
         /// Path to Blueprint feature-package ledger CSV
@@ -4909,6 +4925,32 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Significant moments gate: PASS");
+            }
+        }
+
+        Commands::ReleaseManifest {
+            manifest,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_release_manifest(&manifest)
+                .with_context(|| format!("loading release manifest {}", manifest.display()))?;
+            print_release_manifest(&manifest, &rows, blockers, details);
+
+            if gate {
+                let failures = release_manifest_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("release manifest gate: FAIL");
+                    println!("  {} release rows lack complete contracts.", failures.len());
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("release manifest gate failed");
+                }
+                println!();
+                println!("release manifest gate: PASS");
             }
         }
 
@@ -11150,9 +11192,34 @@ struct SignificantMomentRow {
     next_thread: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+struct ReleaseManifestRow {
+    artifact_path: String,
+    artifact_class: String,
+    owner_milepost: String,
+    release_status: String,
+    public_status: String,
+    verification_command: String,
+    notes: String,
+}
+
 fn load_significant_moments(path: &Path) -> Result<Vec<SignificantMomentRow>> {
     let file = std::fs::File::open(path)?;
     parse_significant_moments(file)
+}
+
+fn load_release_manifest(path: &Path) -> Result<Vec<ReleaseManifestRow>> {
+    let file = std::fs::File::open(path)?;
+    parse_release_manifest(file)
+}
+
+fn parse_release_manifest<R: std::io::Read>(reader: R) -> Result<Vec<ReleaseManifestRow>> {
+    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rows = Vec::new();
+    for result in rdr.deserialize() {
+        rows.push(result?);
+    }
+    Ok(rows)
 }
 
 fn parse_significant_moments<R: std::io::Read>(reader: R) -> Result<Vec<SignificantMomentRow>> {
@@ -11239,6 +11306,143 @@ fn significant_moment_gate_failures(rows: &[SignificantMomentRow]) -> Vec<String
     }
 
     failures
+}
+
+fn print_release_manifest(path: &Path, rows: &[ReleaseManifestRow], blockers: bool, details: bool) {
+    let failures = release_manifest_gate_failures(rows);
+    let failure_paths = failures
+        .iter()
+        .filter_map(|failure| failure.split_whitespace().next())
+        .collect::<std::collections::HashSet<_>>();
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| failure_paths.contains(row.artifact_path.as_str()))
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    let mut by_public_status = std::collections::BTreeMap::<String, usize>::new();
+    let mut by_release_status = std::collections::BTreeMap::<String, usize>::new();
+    for row in rows {
+        *by_public_status
+            .entry(row.public_status.clone())
+            .or_default() += 1;
+        *by_release_status
+            .entry(row.release_status.clone())
+            .or_default() += 1;
+    }
+
+    println!("route release-manifest");
+    println!("  manifest: {}", path.display());
+    println!(
+        "  artifacts: {} shown / {} total",
+        filtered.len(),
+        rows.len()
+    );
+    println!("  release: {}", format_count_map(&by_release_status));
+    println!("  public: {}", format_count_map(&by_public_status));
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<48} {:<18} {:<8} {:<18} {}",
+        "Artifact", "Class", "Owner", "Public", "Verification"
+    );
+    println!("{}", "-".repeat(128));
+    for row in filtered {
+        println!(
+            "{:<48} {:<18} {:<8} {:<18} {}",
+            truncate_for_table(&row.artifact_path, 48),
+            truncate_for_table(&row.artifact_class, 18),
+            row.owner_milepost,
+            row.public_status,
+            truncate_for_table(&row.verification_command, 36),
+        );
+        if details {
+            println!("  release: {}", row.release_status);
+            println!("  notes: {}", row.notes);
+        }
+    }
+}
+
+fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
+    if rows.is_empty() {
+        return vec!["release manifest has no rows".to_string()];
+    }
+    let allowed_release_status = ["release_candidate", "planned", "held", "retired"];
+    let allowed_public_status = ["public", "held_public", "internal", "source_needed"];
+    let mut seen_paths = std::collections::HashSet::new();
+    let mut failures = Vec::new();
+
+    for row in rows {
+        let path = row.artifact_path.trim();
+        if path.is_empty()
+            || row.artifact_class.trim().is_empty()
+            || row.owner_milepost.trim().is_empty()
+            || row.release_status.trim().is_empty()
+            || row.public_status.trim().is_empty()
+            || row.verification_command.trim().is_empty()
+            || row.notes.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete release manifest fields",
+                if path.is_empty() {
+                    "<missing-path>"
+                } else {
+                    path
+                }
+            ));
+            continue;
+        }
+        if !seen_paths.insert(path.to_string()) {
+            failures.push(format!("{path} duplicate release manifest artifact"));
+        }
+        if !release_manifest_artifact_exists(path) {
+            failures.push(format!("{path} release artifact is missing"));
+        }
+        if !row.owner_milepost.starts_with('M') || row.owner_milepost[1..].parse::<u8>().is_err() {
+            failures.push(format!(
+                "{path} has invalid owner milepost {}",
+                row.owner_milepost
+            ));
+        }
+        if !allowed_release_status.contains(&row.release_status.as_str()) {
+            failures.push(format!(
+                "{path} has invalid release status {}",
+                row.release_status
+            ));
+        }
+        if !allowed_public_status.contains(&row.public_status.as_str()) {
+            failures.push(format!(
+                "{path} has invalid public status {}",
+                row.public_status
+            ));
+        }
+        if row.public_status == "public" && row.release_status == "held" {
+            failures.push(format!("{path} cannot be public while release-held"));
+        }
+    }
+
+    for required in [
+        "data/release-manifest.csv",
+        "docs/SPEC_INDEX.md",
+        "data/source-fetch-policy.csv",
+        "docs/source-fetch-cache-policy.md",
+    ] {
+        if !seen_paths.contains(required) {
+            failures.push(format!("missing release manifest row for {required}"));
+        }
+    }
+    failures
+}
+
+fn release_manifest_artifact_exists(path: &str) -> bool {
+    let direct = std::path::Path::new(path);
+    direct.exists()
+        || std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(path)
+            .exists()
 }
 
 fn significant_moment_row_failure(row: &SignificantMomentRow) -> Option<String> {
@@ -26044,16 +26248,17 @@ mod tests {
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
-        parse_mdot_midrive_events, parse_pressure_scenarios, parse_significant_moments,
-        parse_standards_inventory, parse_standards_proof_ledger, parse_stop_candidates,
-        parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
-        parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
-        parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
-        pavement_standard_gate_failures, planned_standard_inventory_missing,
-        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
-        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
-        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
-        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
+        parse_mdot_midrive_events, parse_pressure_scenarios, parse_release_manifest,
+        parse_significant_moments, parse_standards_inventory, parse_standards_proof_ledger,
+        parse_stop_candidates, parse_t1_diamond_validation, parse_t1_evidence_windows,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        parse_throughput_proof_matrix, pavement_standard_gate_failures,
+        planned_standard_inventory_missing, pressure_scenario_gate_failures,
+        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
+        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
+        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
+        release_manifest_gate_failures, rounded_score, scenario_edge_candidates,
         significant_moment_gate_failures, significant_moment_row_failure,
         source_fetch_policy_gate_failures, source_fetch_policy_row_covers_command,
         source_fetch_policy_rows, standards_blueprint_gate_failures,
@@ -29507,6 +29712,48 @@ BAD,2026/05/12,,note,summary,,missing.md,notsha,
         assert!(!rows.is_empty());
         assert!(rows.iter().any(|row| row.flair == "Promise Horizon"));
         assert!(significant_moment_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn release_manifest_gate_requires_valid_metadata_and_existing_artifacts() {
+        let csv = "\
+artifact_path,artifact_class,owner_milepost,release_status,public_status,verification_command,notes
+docs/SPEC_INDEX.md,index,M7,release_candidate,public,manual review,index
+data/release-manifest.csv,release_manifest,M7,release_candidate,public,route release-manifest --gate,self
+docs/source-fetch-cache-policy.md,source_policy,M10,release_candidate,public,manual review,policy
+data/source-fetch-policy.csv,source_policy,M10,release_candidate,public,route source-fetch-policy --gate,ledger
+missing.md,doc,Mx,bad_status,bad_public,manual review,missing
+";
+
+        let rows = parse_release_manifest(csv.as_bytes()).expect("parse release manifest");
+        let failures = release_manifest_gate_failures(&rows);
+
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("missing.md")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("invalid owner milepost")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("invalid release status")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("invalid public status")));
+    }
+
+    #[test]
+    fn release_manifest_canonical_file_passes_gate() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/release-manifest.csv");
+        let file = std::fs::File::open(path).expect("open canonical release manifest");
+        let rows = parse_release_manifest(file).expect("parse canonical release manifest");
+
+        assert!(!rows.is_empty());
+        assert!(rows
+            .iter()
+            .any(|row| row.artifact_path == "data/source-fetch-policy.csv"));
+        assert!(release_manifest_gate_failures(&rows).is_empty());
     }
 
     #[test]

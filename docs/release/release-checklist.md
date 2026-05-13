@@ -19,6 +19,12 @@ Run:
 powershell -ExecutionPolicy Bypass -File scripts/check-mileposts.ps1
 ```
 
+For just the structured release metadata gate:
+
+```powershell
+cargo run -q -p route -- release-manifest --gate
+```
+
 For a faster documentation-only check while iterating:
 
 ```powershell
@@ -47,7 +53,7 @@ The full gate is the one that counts for closeout.
 ## Release Steps
 
 1. Run `scripts/check-mileposts.ps1`.
-2. Confirm `data/release-manifest.csv` lists any new public artifact.
+2. Run `route release-manifest --gate` and confirm `data/release-manifest.csv` lists any new public artifact.
 3. Confirm `docs/SPEC_INDEX.md` names the ownership home for any new claim.
 4. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
 5. Run `git diff --check`.

@@ -63,6 +63,7 @@ if (-not $SkipTests) {
 }
 
 Invoke-Checked "Release manifest path check" { Test-ReleaseManifestPaths }
+Invoke-Checked "Release manifest metadata gate" { cargo run -q -p route -- release-manifest --gate }
 Invoke-Checked "Forum docket path check" { Test-ForumDocketPaths }
 Invoke-Checked "Map atlas gate" { cargo run -q -p route -- map-atlas --gate }
 Invoke-Checked "T1 line selector gate" { cargo run -q -p route -- t1-line-selector --gate }

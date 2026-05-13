@@ -1,8 +1,11 @@
 artifact_path,artifact_class,owner_milepost,release_status,public_status,verification_command,notes
 TRACKER.md,status_board,M7,release_candidate,public,manual review,Live milestone status and handoff board
 docs/SPEC_INDEX.md,index,M7,release_candidate,public,manual review,Claim ownership index
+data/release-manifest.csv,release_manifest,M7,release_candidate,public,cargo run -q -p route -- release-manifest --gate,Release surface manifest with artifact ownership and verification commands
 data/significant-moments.csv,history_ledger,M10,release_candidate,public,cargo run -q -p route -- significant-moments --gate,Flair ledger for major conceptual breakthroughs and next threads
 docs/significant-moments.md,history_docs,M10,release_candidate,public,manual review,Guide for adding significant-moment flairs
+docs/source-fetch-cache-policy.md,source_policy,M10,release_candidate,public,manual review,Policy requiring scoped fetches to merge and failed fetches to preserve prior cache
+data/source-fetch-policy.csv,source_policy,M10,release_candidate,public,cargo run -q -p route -- source-fetch-policy --gate,Gateable fetch cache preservation policy ledger
 docs/SYSTEM_PLAN.md,roadmap,M0,release_candidate,public,manual review,Milepost operating model
 docs/DIMENSIONS.md,scoring_docs,M1,release_candidate,public,cargo test --workspace,Dimension registry checked by tests
 data/scores-all.csv,score_ledger,M1,release_candidate,public,cargo run -q -p route -- score-all,Current v1.4 score ledger

@@ -69,6 +69,7 @@ Milepost 10 is done when:
 | 33 | Convert pavement source gaps into state acquisition tasks | ✅ done | `route tier-pavement-acquisition-plan --gate` emits `data/tier-pavement-acquisition-plan.csv`, grouping the 6 bundle gaps into 23 state-level HPMS/DOT pavement source tasks |
 | 34 | Emit runnable pavement acquisition docket | ✅ done | `route tier-pavement-acquisition-docket --gate --priority A --script` emits `data/tier-pavement-acquisition-docket.csv`, giving fetch/`route build --all-roads`/verify commands for priority state source tasks |
 | 35 | Gate source-fetch cache preservation | ✅ done | `route source-fetch-policy --gate` emits `data/source-fetch-policy.csv`, making scoped-merge, full-replace-after-validation, and live-snapshot-preserve contracts part of the optimizer manifest |
+| 36 | Gate release-manifest metadata | ✅ done | `route release-manifest --gate` validates release rows, artifact paths, allowed statuses, owner mileposts, and source-fetch policy ownership |
 
 ## Post-Review Repair Slice
 
