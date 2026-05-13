@@ -60,7 +60,7 @@ fetchers only after the policy and cache contract are explicit.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Source plan contract | done | `data/t4-terminal-contact-source-plan.csv`; `route t4-terminal-contact-source-plan --gate`; 33 Great Lakes source-needed rows held for separate proof |
-| 02 - District source catalog | planned | map eight Great Lakes terminal districts to source families |
+| 02 - District source catalog | done | `data/t4-terminal-contact-source-catalog.csv`; eight terminal districts held as public terminal-contact proof/source-needed families |
 | 03 - Route contact proof docket | planned | create route-level source tasks for 33 rows |
 | 04 - Queue and manifest propagation | planned | keep unresolved rows visible in optimizer/release surfaces |
 | 05 - Wave close | planned | reconcile counts, residual holds, and gates |

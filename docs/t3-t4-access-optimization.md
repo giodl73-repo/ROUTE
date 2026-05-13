@@ -208,6 +208,11 @@ Current implementation status:
   separate public terminal-contact proof source, records the missing proof
   fields, and keeps every row `source-needed`/`review` until a non-seed contact
   proof artifact exists.
+- `data/t4-terminal-contact-source-catalog.csv` summarizes the eight Great
+  Lakes candidate terminal districts into district-level source-family rows. The
+  catalog names the public terminal-contact proof family, required fields,
+  source-fetch/cache blocker, and next docket without classifying individual
+  route contacts.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows

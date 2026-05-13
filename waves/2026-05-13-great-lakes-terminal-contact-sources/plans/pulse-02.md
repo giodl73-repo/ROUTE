@@ -2,7 +2,7 @@
 wave: great-lakes-terminal-contact-sources
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - freight-economist
@@ -27,12 +27,12 @@ and proof requirements without claiming route contact.
 
 ## Deliverables
 
-- [ ] Add district-level source family rows for all eight Great Lakes candidate
+- [x] Add district-level source family rows for all eight Great Lakes candidate
   terminal districts.
-- [ ] Name proof fields required to show route-to-terminal operational contact.
-- [ ] Mark source families as planned/source-needed unless a safe cache policy
+- [x] Name proof fields required to show route-to-terminal operational contact.
+- [x] Mark source families as planned/source-needed unless a safe cache policy
   already exists.
-- [ ] Document unsupported source families as blockers, not failures.
+- [x] Document unsupported source families as blockers, not failures.
 
 ## Expected Gates
 
