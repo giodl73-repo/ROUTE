@@ -1768,6 +1768,13 @@ enum Commands {
             value_name = "FILE"
         )]
         pavement_debt_budget: PathBuf,
+        /// Optimizer constraint budget CSV with generalized blocker/debt rollups
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        constraint_budget: PathBuf,
         /// Output candidate column CSV
         #[arg(
             long,
@@ -6996,6 +7003,7 @@ fn run_cli() -> Result<()> {
             endpoint_closure,
             blocker_closure,
             pavement_debt_budget,
+            constraint_budget,
             output,
             gate,
         } => {
@@ -7014,6 +7022,8 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", blocker_closure.display()))?;
             let pavement_debt_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
                 .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
+            let constraint_budget_rows = load_optimizer_constraint_budget(&constraint_budget)
+                .with_context(|| format!("loading {}", constraint_budget.display()))?;
             let dispositions = t2_closure_dispositions(
                 &route_family_rows,
                 &graph_rows,
@@ -7022,8 +7032,14 @@ fn run_cli() -> Result<()> {
                 &blocker_rows,
             );
             let pavement_debt_index = pavement_debt_budget_index(&pavement_debt_rows);
-            let column_rows =
-                tier_candidate_column_rows(&witness_rows, &dispositions, &pavement_debt_index);
+            let constraint_budget_index =
+                optimizer_constraint_budget_index(&constraint_budget_rows);
+            let column_rows = tier_candidate_column_rows(
+                &witness_rows,
+                &dispositions,
+                &pavement_debt_index,
+                &constraint_budget_index,
+            );
             write_tier_candidate_columns(&output, &column_rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_candidate_column_summary(&output, &column_rows);
@@ -13175,6 +13191,13 @@ struct TierCandidateColumnRow {
     pavement_debt_class: String,
     pavement_debt_basis: String,
     pavement_debt_artifact: String,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     column_decision: String,
     evidence_status: String,
     required_artifact: String,
@@ -13195,6 +13218,13 @@ struct T2RegionalizerRow {
     pavement_debt_cost_m: f64,
     pavement_debt_class: String,
     pavement_debt_basis: String,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     regionalizer_action: String,
     validation_status: String,
 }
@@ -13221,6 +13251,13 @@ struct T2ServiceSelectionRow {
     pavement_debt_cost_m: f64,
     pavement_debt_class: String,
     pavement_debt_basis: String,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     beck_service_action: String,
     qualification_basis: String,
     selection_action: String,
@@ -16405,6 +16442,7 @@ fn tier_candidate_column_rows(
     rows: &[TierContactWitnessInputRow],
     dispositions: &std::collections::HashMap<String, T2ClosureDisposition>,
     pavement_debt_index: &PavementDebtBudgetIndex,
+    constraint_budget_index: &OptimizerConstraintBudgetIndex,
 ) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
@@ -16419,6 +16457,19 @@ fn tier_candidate_column_rows(
                 pavement_debt_basis,
                 pavement_debt_artifact,
             ) = pavement_debt_for_candidate(&row.route, &segment_bundle_id, pavement_debt_index);
+            let (
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
+            ) = constraint_budget_for_candidate(
+                &row.route,
+                &segment_bundle_id,
+                constraint_budget_index,
+            );
             TierCandidateColumnRow {
                 tier: row.tier.clone(),
                 route: row.route.clone(),
@@ -16450,6 +16501,13 @@ fn tier_candidate_column_rows(
                 pavement_debt_class,
                 pavement_debt_basis,
                 pavement_debt_artifact,
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
                 column_decision: column_decision.to_string(),
                 evidence_status: tier_candidate_column_evidence_status(row, closure),
                 required_artifact: tier_candidate_column_required_artifact(row, closure),
@@ -16584,6 +16642,24 @@ fn tier_candidate_column_gate_failures(rows: &[TierCandidateColumnRow]) -> Vec<S
         {
             failures.push(format!(
                 "{} has pavement debt cost without debt class, basis, and artifact",
+                row.route
+            ));
+        }
+        if row.constraint_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative constraint debt cost", row.route));
+        }
+        if row.constraint_penalty_score < 0.0 {
+            failures.push(format!("{} has negative constraint penalty", row.route));
+        }
+        if (row.constraint_debt_cost_m > 0.0
+            || row.hard_blocker_count > 0
+            || row.claim_blocker_count > 0
+            || row.constraint_penalty_score > 0.0)
+            && (row.top_constraint_classes.trim().is_empty()
+                || row.constraint_ledger_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has constraint pressure without class summary and ledger artifact",
                 row.route
             ));
         }
@@ -16823,6 +16899,13 @@ fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRo
                 pavement_debt_cost_m: row.pavement_debt_cost_m,
                 pavement_debt_class: row.pavement_debt_class.clone(),
                 pavement_debt_basis: row.pavement_debt_basis.clone(),
+                hard_blocker_count: row.hard_blocker_count,
+                claim_blocker_count: row.claim_blocker_count,
+                constraint_debt_cost_m: row.constraint_debt_cost_m,
+                lifecycle_debt_cost_m: row.lifecycle_debt_cost_m,
+                constraint_penalty_score: row.constraint_penalty_score,
+                top_constraint_classes: row.top_constraint_classes.clone(),
+                constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
                 regionalizer_action: if row.column_decision == "selected" {
                     "include-in-regional-treatment"
                 } else {
@@ -16955,6 +17038,13 @@ fn t2_service_selection_rows(
                 pavement_debt_cost_m: row.pavement_debt_cost_m,
                 pavement_debt_class: row.pavement_debt_class.clone(),
                 pavement_debt_basis: row.pavement_debt_basis.clone(),
+                hard_blocker_count: row.hard_blocker_count,
+                claim_blocker_count: row.claim_blocker_count,
+                constraint_debt_cost_m: row.constraint_debt_cost_m,
+                lifecycle_debt_cost_m: row.lifecycle_debt_cost_m,
+                constraint_penalty_score: row.constraint_penalty_score,
+                top_constraint_classes: row.top_constraint_classes.clone(),
+                constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
                 beck_service_action: diagnostic
                     .map(|diag| diag.service_action.to_string())
                     .unwrap_or_default(),
@@ -17101,6 +17191,24 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
         {
             failures.push(format!(
                 "{} kept despite unresolved T2 diagnostic",
+                row.route
+            ));
+        }
+        if row.constraint_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative constraint debt cost", row.route));
+        }
+        if row.constraint_penalty_score < 0.0 {
+            failures.push(format!("{} has negative constraint penalty", row.route));
+        }
+        if (row.constraint_debt_cost_m > 0.0
+            || row.hard_blocker_count > 0
+            || row.claim_blocker_count > 0
+            || row.constraint_penalty_score > 0.0)
+            && (row.top_constraint_classes.trim().is_empty()
+                || row.constraint_ledger_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has constraint pressure without class summary and ledger artifact",
                 row.route
             ));
         }
@@ -19083,6 +19191,101 @@ fn load_optimizer_constraint_ledger(path: &Path) -> Result<Vec<OptimizerConstrai
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn load_optimizer_constraint_budget(path: &Path) -> Result<Vec<OptimizerConstraintBudgetRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+#[derive(Debug, Clone, Default)]
+struct OptimizerConstraintBudgetIndex {
+    by_bundle: std::collections::HashMap<String, OptimizerConstraintBudgetRow>,
+    by_route: std::collections::HashMap<String, OptimizerConstraintBudgetRollup>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct OptimizerConstraintBudgetRollup {
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: std::collections::BTreeSet<String>,
+    constraint_ledger_artifact: String,
+}
+
+fn optimizer_constraint_budget_index(
+    rows: &[OptimizerConstraintBudgetRow],
+) -> OptimizerConstraintBudgetIndex {
+    let mut index = OptimizerConstraintBudgetIndex::default();
+    for row in rows {
+        if !row.segment_bundle_id.trim().is_empty() {
+            index
+                .by_bundle
+                .insert(row.segment_bundle_id.clone(), row.clone());
+        }
+        if !row.route.trim().is_empty() {
+            let rollup = index
+                .by_route
+                .entry(canonical_route_key(&row.route))
+                .or_default();
+            rollup.hard_blocker_count += row.hard_blocker_count;
+            rollup.claim_blocker_count += row.claim_blocker_count;
+            rollup.constraint_debt_cost_m =
+                round_cost_m(rollup.constraint_debt_cost_m + row.constraint_debt_cost_m);
+            rollup.lifecycle_debt_cost_m =
+                round_cost_m(rollup.lifecycle_debt_cost_m + row.lifecycle_debt_cost_m);
+            rollup.constraint_penalty_score =
+                round_cost_m(rollup.constraint_penalty_score + row.constraint_penalty_score);
+            for class in row.top_constraint_classes.split('|').map(str::trim) {
+                if !class.is_empty() {
+                    rollup.top_constraint_classes.insert(class.to_string());
+                }
+            }
+            if rollup.constraint_ledger_artifact.is_empty() {
+                rollup.constraint_ledger_artifact = row.constraint_ledger_artifact.clone();
+            }
+        }
+    }
+    index
+}
+
+fn constraint_budget_for_candidate(
+    route: &str,
+    segment_bundle_id: &str,
+    index: &OptimizerConstraintBudgetIndex,
+) -> (usize, usize, f64, f64, f64, String, String) {
+    if let Some(row) = index.by_bundle.get(segment_bundle_id) {
+        return (
+            row.hard_blocker_count,
+            row.claim_blocker_count,
+            row.constraint_debt_cost_m,
+            row.lifecycle_debt_cost_m,
+            row.constraint_penalty_score,
+            row.top_constraint_classes.clone(),
+            row.constraint_ledger_artifact.clone(),
+        );
+    }
+    if let Some(rollup) = index.by_route.get(&canonical_route_key(route)) {
+        return (
+            rollup.hard_blocker_count,
+            rollup.claim_blocker_count,
+            rollup.constraint_debt_cost_m,
+            rollup.lifecycle_debt_cost_m,
+            rollup.constraint_penalty_score,
+            join_string_set(&rollup.top_constraint_classes),
+            rollup.constraint_ledger_artifact.clone(),
+        );
+    }
+    (0, 0, 0.0, 0.0, 0.0, "none".to_string(), String::new())
 }
 
 #[derive(Debug, Default)]
@@ -29340,20 +29543,20 @@ mod tests {
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
-        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintLedgerRow,
-        OptimizerMapHookRow, PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow,
-        ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow,
-        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintBudgetIndex,
+        OptimizerConstraintLedgerRow, OptimizerMapHookRow, PavementDebtBudgetIndex,
+        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
         TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
         TierTableScoreRow,
@@ -30487,6 +30690,7 @@ mod tests {
             &rows,
             &std::collections::HashMap::new(),
             &PavementDebtBudgetIndex::default(),
+            &OptimizerConstraintBudgetIndex::default(),
         );
         let failures = tier_candidate_column_gate_failures(&columns);
 
@@ -30563,7 +30767,12 @@ mod tests {
         }];
         let pavement_debt_index = pavement_debt_budget_index(&pavement_debt_rows);
 
-        let columns = tier_candidate_column_rows(&rows, &dispositions, &pavement_debt_index);
+        let columns = tier_candidate_column_rows(
+            &rows,
+            &dispositions,
+            &pavement_debt_index,
+            &OptimizerConstraintBudgetIndex::default(),
+        );
 
         assert_eq!(columns[0].column_decision, "review");
         assert_eq!(columns[0].bundle_status, "bundle-ready");
@@ -30626,8 +30835,12 @@ mod tests {
         }];
         let dispositions = t2_closure_dispositions(&[], &[], &contact_rows, &[], &blocker_rows);
 
-        let columns =
-            tier_candidate_column_rows(&rows, &dispositions, &PavementDebtBudgetIndex::default());
+        let columns = tier_candidate_column_rows(
+            &rows,
+            &dispositions,
+            &PavementDebtBudgetIndex::default(),
+            &OptimizerConstraintBudgetIndex::default(),
+        );
 
         assert_eq!(columns[0].column_decision, "blocked");
         assert_eq!(columns[0].bundle_status, "bundle-missing");
@@ -30661,6 +30874,13 @@ mod tests {
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
             pavement_debt_artifact: String::new(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             column_decision: "blocked".to_string(),
             evidence_status: "closure-bundle-pending".to_string(),
             required_artifact: "data/t2-blocker-closure.csv".to_string(),
@@ -30722,6 +30942,13 @@ mod tests {
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
             pavement_debt_artifact: String::new(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             column_decision: "review".to_string(),
             evidence_status: "closure-accepted-bundle-ready".to_string(),
             required_artifact: "data/t2-contact-closure.csv".to_string(),
@@ -30761,6 +30988,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -30822,6 +31056,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -30882,6 +31123,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -30939,6 +31187,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: "keep".to_string(),
             qualification_basis: "distinct-parent-service".to_string(),
             selection_action: "split-parallel-service".to_string(),
@@ -31967,6 +32222,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "closure-review-needs-beck-diagnostic".to_string(),
@@ -32140,6 +32402,13 @@ mod tests {
                 pavement_debt_class: "evidence-debt".to_string(),
                 pavement_debt_basis: "fixture pavement debt".to_string(),
                 pavement_debt_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 column_decision: "selected".to_string(),
                 evidence_status: "accepted".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -32169,6 +32438,13 @@ mod tests {
                 pavement_debt_class: "none".to_string(),
                 pavement_debt_basis: "no pavement debt row joined".to_string(),
                 pavement_debt_artifact: String::new(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 column_decision: "review".to_string(),
                 evidence_status: "review".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -32202,6 +32478,13 @@ mod tests {
                 pavement_debt_cost_m: 0.0,
                 pavement_debt_class: "none".to_string(),
                 pavement_debt_basis: "no pavement debt row joined".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 regionalizer_action: "include-in-regional-treatment".to_string(),
                 validation_status: "pass".to_string(),
             },
@@ -32218,6 +32501,13 @@ mod tests {
                 pavement_debt_cost_m: 5.85,
                 pavement_debt_class: "evidence-debt".to_string(),
                 pavement_debt_basis: "fixture pavement debt".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -32234,6 +32524,13 @@ mod tests {
                 pavement_debt_cost_m: 0.0,
                 pavement_debt_class: "none".to_string(),
                 pavement_debt_basis: "no pavement debt row joined".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -32267,6 +32564,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             regionalizer_action: "include-in-regional-treatment".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -32303,6 +32607,13 @@ mod tests {
                 pavement_debt_cost_m: 12.5,
                 pavement_debt_class: "repair-debt".to_string(),
                 pavement_debt_basis: "fixture repair payment pressure".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
                 selection_action: "keep-service-column".to_string(),
@@ -32330,6 +32641,13 @@ mod tests {
                 pavement_debt_cost_m: 0.0,
                 pavement_debt_class: "none".to_string(),
                 pavement_debt_basis: "no pavement debt row joined".to_string(),
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
                 selection_action: "parent-region-review".to_string(),
@@ -32547,6 +32865,13 @@ mod tests {
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -33223,6 +33548,13 @@ mod tests {
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
             pavement_debt_artifact: String::new(),
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             column_decision: "demote".to_string(),
             evidence_status: "policy-action".to_string(),
             required_artifact: "data/tier-table.csv".to_string(),

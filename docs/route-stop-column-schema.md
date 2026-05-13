@@ -78,6 +78,10 @@ should also expose the normalized summary fields from
 `claim_blocker_count`, `constraint_debt_cost_m`,
 `constraint_penalty_score`, `top_constraint_classes`, and
 `constraint_ledger_artifact`.
+`data/tier-candidate-columns.csv`, `data/t2-regionalizer.csv`, and
+`data/t2-service-selection.csv` now carry these fields for the first T2
+constraint-budget migration while preserving pavement-specific compatibility
+columns during the transition.
 
 Older artifacts may not yet include every field. New artifacts should.
 
