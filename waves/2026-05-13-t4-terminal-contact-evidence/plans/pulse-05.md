@@ -2,7 +2,7 @@
 wave: t4-terminal-contact-evidence
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - optimization-methodologist
@@ -28,12 +28,12 @@ budget, optimizer manifest, and release manifest.
 
 ## Deliverables
 
-- [ ] Regenerate all affected optimizer artifacts.
-- [ ] Update manifest/release rows if a new queue artifact is introduced.
-- [ ] Preserve the contact queue as a visible source artifact in optimizer and
+- [x] Regenerate all affected optimizer artifacts.
+- [x] Update manifest/release rows if a new queue artifact is introduced.
+- [x] Preserve the contact queue as a visible source artifact in optimizer and
   release manifests before any scenario candidate is treated as release-facing.
-- [ ] Confirm blocker counts by class and tier.
-- [ ] Document residual source-needed terminal backlog.
+- [x] Confirm blocker counts by class and tier.
+- [x] Document residual source-needed terminal backlog.
 
 ## Expected Gates
 
@@ -43,6 +43,19 @@ budget, optimizer manifest, and release manifest.
 - `route optimizer-manifest --gate`
 - `route release-manifest --gate`
 - `cargo test -p route`
+
+## Evidence
+
+- Added optimizer-manifest rows for `data/t4-terminal-contact-evidence.csv` and
+  `data/t4-terminal-scenario-readiness.csv`.
+- Added held-public release-manifest rows for both artifacts.
+- Blocker counts remain stable: 142 optimizer constraint rows, 137 constraint
+  budget rows, 0 hard blockers, and 117 claim blockers, including 69
+  `terminal_access_evidence_gap` rows.
+- Gates passed: `cargo test -p route`, `route optimizer-constraint-ledger
+  --gate`, `route optimizer-constraint-budget --gate`, `route tier-optimize
+  --all-tiers --gate`, `route optimizer-manifest --gate`, and `route
+  release-manifest --gate`.
 
 ## Non-Goals
 

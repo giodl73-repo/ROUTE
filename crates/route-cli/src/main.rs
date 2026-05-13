@@ -25258,6 +25258,22 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "t4-terminal-contact-evidence",
+                "route t4-terminal-contact-evidence --gate",
+                "data/t4-terminal-contact-evidence.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t4-terminal-scenario-readiness",
+                "route t4-terminal-scenario-readiness --gate",
+                "data/t4-terminal-scenario-readiness.csv",
+                "held-known",
+                69,
+                "terminal contact rows remain source-needed; scenario docket is held empty",
+            ),
+            (
                 "t3-t4-access-gaps",
                 "route t3-t4-access-gaps --gate",
                 "data/t3-t4-access-gaps.csv",
