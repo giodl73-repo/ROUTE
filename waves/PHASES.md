@@ -24,11 +24,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | Constraint Ledger Blocker Burn-Down | Turn normalized constraint-budget blockers into explicit decisions, starting with the I-84 hard blocker and T4 zone-assignment backlog. | done |
 | 2026-05-13 | T4 Terminal Contact Evidence | Convert zone-scoped T4 terminal evidence holds into route-to-terminal contact decisions and scenario-readiness candidates. | done |
 | 2026-05-13 | Great Lakes Terminal Contact Sources | Turn the largest terminal-contact source-needed slice into a governed source-acquisition and proof docket. | done |
+| 2026-05-13 | Columbus South Terminal Contact Proof | Run the first route-to-terminal proof pilot on the largest Great Lakes district slice. | active |
 
 ## Next Active Wave
 
-No active wave is currently set. Choose the next backlog item before running
-`/route-pulse` again.
+`2026-05-13-columbus-south-terminal-contact-proof` is active.
 
 ## Operating Rules
 
