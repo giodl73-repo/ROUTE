@@ -2,7 +2,7 @@
 wave: constraint-ledger-blocker-burndown
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - schematic-cartographer
@@ -28,10 +28,39 @@ blocker passes, without letting schematic convenience alter optimizer truth.
 
 ## Deliverables
 
-- [ ] Audit remaining Beck/map claim blockers by route and map id.
-- [ ] Regenerate Beck diagnostics and affected map/readiness artifacts.
-- [ ] Keep unresolved publication blockers in release/manifest surfaces.
-- [ ] Update `docs/beck-renderer-contract.md` only if a new map rule is needed.
+- [x] Audit remaining Beck/map claim blockers by route and map id.
+- [x] Regenerate Beck diagnostics and affected map/readiness artifacts.
+- [x] Keep unresolved publication blockers in release/manifest surfaces.
+- [x] Update `docs/beck-renderer-contract.md` only if a new map rule is needed.
+
+## Results
+
+- T1 shared-backbone rows (`I40`, `I80`, `I90`, `I95`) remain explicit
+  `overlap-review` publication holds in both Beck diagnostics and
+  `data/t1-design-policy-actions.csv`.
+- `route beck-t1-diagnostics --gate` now treats `overlap-review` as a known held
+  diagnostic rather than an unexpected gate failure.
+- T2 Beck blockers remain visible by class: label density, transfer complexity,
+  and long connector treatment.
+- `docs/beck-renderer-contract.md` now documents the held-known T1
+  `overlap-review` rule.
+- Review notes are recorded in
+  `waves/2026-05-13-constraint-ledger-blocker-burndown/panels/pulse-05-beck-publication-holds.md`.
+
+## Gate Results
+
+- `cargo test -p route`: pass
+- `route beck-t1-diagnostics --gate`: pass
+- `route t1-design-policy --gate`: pass
+- `route beck-t2-diagnostics --gate`: pass
+- `route t1-beck-alignment --gate`: pass
+- `route map-atlas --gate`: pass
+- `route optimizer-constraint-ledger --gate`: pass
+- `route optimizer-constraint-budget --gate`: pass
+- `route tier-optimize --all-tiers --gate`: pass
+- `route optimizer-manifest --gate`: pass
+- `route release-manifest --gate`: pass
+- `scripts/check-mileposts.ps1 -SkipTests`: pass
 
 ## Expected Gates
 

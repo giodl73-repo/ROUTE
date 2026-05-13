@@ -131,6 +131,9 @@ Current maps are partially optimizer-gated:
 - T2 service choices flow through `data/t2-service-selection.csv`.
 - T1/T2 Beck diagnostics feed `data/optimizer-constraint-ledger.csv` and
   `data/optimizer-constraint-budget.csv`.
+- T1 `overlap-review` diagnostics are allowed to pass the diagnostics gate only
+  as held-known shared-backbone publication blockers; the owning policy surface
+  is `data/t1-design-policy-actions.csv`.
 - Map consumers are listed by `data/optimizer-map-hooks.csv`; its gate verifies
   that both optimizer and consumer artifacts exist and that each hook has a
   `route ... --gate` command.

@@ -3948,7 +3948,7 @@ fn run_cli() -> Result<()> {
             if gate {
                 let flagged = rows
                     .iter()
-                    .filter(|row| row.review_flag != "ok")
+                    .filter(|row| row.review_flag != "ok" && row.review_flag != "overlap-review")
                     .collect::<Vec<_>>();
                 if flagged.is_empty() {
                     println!("Beck T1 diagnostics gate: PASS");

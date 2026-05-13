@@ -78,7 +78,7 @@ should follow specific T4 zone assignments or T2 game holds.
 | 02 - T4 zone-assignment queue | done | 63 zone-assignment gaps converted to explicit zone-scoped terminal evidence holds; zone-assignment blockers now 0 |
 | 03 - T4 terminal evidence holds | done | 69 zone-scoped terminal evidence holds now name terminal districts and source actions |
 | 04 - T2 game and bundle-binding holds | done | 15 service-class holds carried as held-known; 1 bundle validation hold remains |
-| 05 - Beck and publication blocker cleanup | planned | map/publication claim holds |
+| 05 - Beck and publication blocker cleanup | done | T1 overlap-review made held-known; T2 Beck blockers audited by class |
 | 06 - Wave close | planned | close after blocker counts and gates agree |
 
 ## Done Criteria
