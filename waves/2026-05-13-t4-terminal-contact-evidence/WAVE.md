@@ -1,7 +1,7 @@
 ---
 wave: t4-terminal-contact-evidence
 date_open: 2026-05-13
-status: active
+status: done
 source: constraint-ledger-blocker-burndown-closeout
 ---
 
@@ -79,7 +79,7 @@ scenario-ready.
 | 03 - Remaining zone contact pass | done | remaining 36 zone rows assigned candidate districts; all remain source-needed |
 | 04 - Scenario readiness docket | done | empty held docket: no source-backed terminal contacts |
 | 05 - Ledger and manifest propagation | done | contact queue and scenario docket registered in optimizer/release manifests |
-| 06 - Wave close | planned | close after counts, residual holds, and gates agree |
+| 06 - Wave close | done | `CLOSE.md`; final gates passed; residual 69 source-needed rows named |
 
 ## Done Criteria
 

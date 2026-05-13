@@ -64,7 +64,6 @@ Current backfill coverage:
 | `2026-05-12-optimizer-got-a-constitution` | Optimizer doctrine, T2/T3/T4 closure, bundles, manifests, source policy. |
 | `2026-05-13-constraint-ledger-spine` | Closed wave: constraint ledger/budget migration across all blocker families. |
 | `2026-05-13-constraint-ledger-blocker-burndown` | Closed wave: turned normalized constraint-budget blockers into explicit decisions and residual held-known backlogs. |
-| `2026-05-13-t4-terminal-contact-evidence` | Active wave: convert T4 terminal evidence holds into route-to-terminal contact decisions and scenario-readiness candidates. |
+| `2026-05-13-t4-terminal-contact-evidence` | Closed wave: converted T4 terminal evidence holds into a source-needed contact queue and held scenario-readiness docket. |
 
-The next planned pulse is `T4 Terminal Contact Evidence` pulse 01: create the
-terminal contact evidence schema and gate.
+No active wave is currently open.
