@@ -62,7 +62,7 @@ fetchers only after the policy and cache contract are explicit.
 | 01 - Source plan contract | done | `data/t4-terminal-contact-source-plan.csv`; `route t4-terminal-contact-source-plan --gate`; 33 Great Lakes source-needed rows held for separate proof |
 | 02 - District source catalog | done | `data/t4-terminal-contact-source-catalog.csv`; eight terminal districts held as public terminal-contact proof/source-needed families |
 | 03 - Route contact proof docket | done | `data/t4-terminal-contact-proof-docket.csv`; 33 route-level proof tasks held source-needed with attachment requirement |
-| 04 - Queue and manifest propagation | planned | keep unresolved rows visible in optimizer/release surfaces |
+| 04 - Queue and manifest propagation | done | optimizer/release manifests register source plan, catalog, and proof docket as held-public; ledger remains 142 rows with 117 claim blockers |
 | 05 - Wave close | planned | reconcile counts, residual holds, and gates |
 
 ## Done Criteria

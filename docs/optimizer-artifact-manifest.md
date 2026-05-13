@@ -99,6 +99,9 @@ The current all-tier manifest includes:
 - T3/T4 pressure intake;
 - T4 terminal access columns;
 - T4 terminal contact evidence;
+- T4 terminal contact source plan;
+- T4 terminal contact source catalog;
+- T4 terminal contact proof docket;
 - T4 terminal scenario-readiness docket;
 - T3/T4 access gaps;
 - T3 zone render board;
@@ -112,7 +115,13 @@ The current all-tier manifest includes:
 The current held-known rows are:
 
 1. T2 region workloads: bridged T2 component pending contact repair.
-2. T4 terminal scenario-readiness: 69 terminal contact rows remain
+2. T4 terminal contact source plan: 33 Great Lakes terminal contact rows remain
+   source-needed.
+3. T4 terminal contact source catalog: eight Great Lakes terminal district
+   source families remain source-needed.
+4. T4 terminal contact proof docket: 33 Great Lakes route-contact proof tasks
+   remain source-needed.
+5. T4 terminal scenario-readiness: 69 terminal contact rows remain
    source-needed, so the scenario docket is intentionally held empty.
 
 Those holds are allowed because downstream closure, demotion, pressure,
@@ -132,7 +141,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 | Source fetch cache preservation | `docs/source-fetch-cache-policy.md` and `data/source-fetch-policy.csv` |
 | Beck topology truth | `docs/beck-renderer-contract.md`, `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, and zone map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |
-| T3/T4 access doctrine | `docs/t3-t4-access-optimization.md`, `data/t4-terminal-contact-evidence.csv`, and `data/t4-terminal-scenario-readiness.csv` |
+| T3/T4 access doctrine | `docs/t3-t4-access-optimization.md`, `data/t4-terminal-contact-evidence.csv`, `data/t4-terminal-contact-source-plan.csv`, `data/t4-terminal-contact-source-catalog.csv`, `data/t4-terminal-contact-proof-docket.csv`, and `data/t4-terminal-scenario-readiness.csv` |
 | Release/publication status | `data/release-manifest.csv` and release docs |
 
 The manifest should link to the artifact that owns the proof rather than

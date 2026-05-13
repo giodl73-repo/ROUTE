@@ -38,13 +38,16 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 37,t3-zone-route-columns,route t3-zone-route-columns --gate,data/t3-zone-route-columns.csv,43,pass,0,,pass
 38,t4-terminal-access-columns,route t4-terminal-access-columns --gate,data/t4-terminal-access-columns.csv,69,pass,0,,pass
 39,t4-terminal-contact-evidence,route t4-terminal-contact-evidence --gate,data/t4-terminal-contact-evidence.csv,69,pass,0,,pass
-40,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
-41,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
-42,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
-43,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
-44,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
-45,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
-46,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
-47,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
-48,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
-49,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass
+40,t4-terminal-contact-source-plan,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-plan.csv,33,held-known,33,Great Lakes terminal contact source plan rows remain source-needed,held
+41,t4-terminal-contact-source-catalog,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-catalog.csv,8,held-known,8,Great Lakes terminal district source families remain source-needed,held
+42,t4-terminal-contact-proof-docket,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-proof-docket.csv,33,held-known,33,Great Lakes route contact proof tasks remain source-needed,held
+43,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
+44,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
+45,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
+46,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
+47,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
+48,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
+49,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
+50,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
+51,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
+52,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass

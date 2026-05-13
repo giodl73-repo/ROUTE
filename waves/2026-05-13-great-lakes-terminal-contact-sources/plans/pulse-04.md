@@ -2,7 +2,7 @@
 wave: great-lakes-terminal-contact-sources
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - optimization-methodologist
@@ -28,10 +28,10 @@ release surfaces while preserving held claims.
 
 ## Deliverables
 
-- [ ] Regenerate affected optimizer artifacts.
-- [ ] Register new source-plan/proof artifacts in optimizer and release manifests.
-- [ ] Confirm terminal blocker counts remain visible.
-- [ ] Document residual source-needed backlog.
+- [x] Regenerate affected optimizer artifacts.
+- [x] Register new source-plan/proof artifacts in optimizer and release manifests.
+- [x] Confirm terminal blocker counts remain visible.
+- [x] Document residual source-needed backlog.
 
 ## Expected Gates
 
