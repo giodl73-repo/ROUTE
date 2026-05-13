@@ -95,6 +95,13 @@ bundle-ready rows that need `data/beck-t2-diagnostics.csv` before they can
 receive a service class, map treatment, or game overlay. When no rows are
 missing diagnostics, it emits a single `service-diagnostic-clear` row.
 
+When the missing diagnostic is caused by a multi-state three-digit route label,
+the queue points back to the route-family lane instead of asking for a Beck row
+against the unsplit label. `route t2-route-family-splits --gate` consumes those
+service-diagnostic rows and emits `split-numbered-service-family` actions, so
+national T2 rendering waits for represented segment families rather than
+treating every I-295 or I-275 as one interchangeable service.
+
 ## Contact Rules
 
 A T2 route normally needs at least two valid system contacts:

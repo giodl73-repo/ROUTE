@@ -12,7 +12,7 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 11,t2-relief-evidence-docket,route t2-relief-evidence-docket --gate,data/t2-relief-evidence-docket.csv,1,pass,0,,pass
 12,t2-terminal-contact-validation,route t2-terminal-contact-validation --gate,data/t2-terminal-contact-validation.csv,1,pass,0,,pass
 13,t2-blocker-closure,route t2-blocker-closure --gate,data/t2-blocker-closure.csv,1,pass,0,,pass
-14,t2-route-family-splits,route t2-route-family-splits --gate,data/t2-route-family-splits.csv,1,pass,0,,pass
+14,t2-route-family-splits,route t2-route-family-splits --gate,data/t2-route-family-splits.csv,7,pass,0,,pass
 15,t2-graph-contact-validation,route t2-graph-contact-validation --gate,data/t2-graph-contact-validation.csv,1,pass,0,,pass
 16,t2-contact-closure,route t2-contact-closure --gate,data/t2-contact-closure.csv,1,pass,0,,pass
 17,t2-endpoint-closure,route t2-endpoint-closure --gate,data/t2-endpoint-closure.csv,1,pass,0,,pass
