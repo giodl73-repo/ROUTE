@@ -2461,6 +2461,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Roll normalized optimizer constraints up to selector-facing budget rows
+    OptimizerConstraintBudget {
+        /// Normalized optimizer constraint ledger CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-ledger.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Output optimizer constraint budget CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print per-subject budget rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if rollup rows violate selector-facing budget contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -7774,6 +7799,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("optimizer constraint ledger gate: PASS");
+            }
+        }
+
+        Commands::OptimizerConstraintBudget {
+            ledger,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route optimizer-constraint-budget");
+            let ledger_rows = load_optimizer_constraint_ledger(&ledger)
+                .with_context(|| format!("loading {}", ledger.display()))?;
+            let rows = optimizer_constraint_budget_rows(&ledger_rows);
+            write_optimizer_constraint_budget(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_optimizer_constraint_budget_summary(&output, &rows, details);
+
+            if gate {
+                let failures = optimizer_constraint_budget_gate_failures(&rows, &ledger_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer constraint budget gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer constraint budget gate failed");
+                }
+                println!();
+                println!("optimizer constraint budget gate: PASS");
             }
         }
 
@@ -13283,6 +13337,31 @@ struct OptimizerConstraintLedgerRow {
     exception_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct OptimizerConstraintBudgetRow {
+    budget_id: String,
+    optimizer_run_id: String,
+    tier: String,
+    region_id: String,
+    subject_scope: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    route: String,
+    ledger_row_count: usize,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    review_count: usize,
+    budget_debt_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    blocking_claims: String,
+    next_artifacts: String,
+    constraint_ledger_artifact: String,
     validation_status: String,
 }
 
@@ -18994,6 +19073,303 @@ fn optimizer_constraint_ledger_gate_failures(rows: &[OptimizerConstraintLedgerRo
     failures
 }
 
+fn load_optimizer_constraint_ledger(path: &Path) -> Result<Vec<OptimizerConstraintLedgerRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+#[derive(Debug, Default)]
+struct OptimizerConstraintBudgetBuilder {
+    optimizer_run_id: String,
+    tier: String,
+    region_id: String,
+    subject_scope: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    route: String,
+    ledger_row_count: usize,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    review_count: usize,
+    budget_debt_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    class_counts: std::collections::BTreeMap<String, usize>,
+    blocking_claims: std::collections::BTreeSet<String>,
+    next_artifacts: std::collections::BTreeSet<String>,
+}
+
+fn optimizer_constraint_budget_rows(
+    ledger_rows: &[OptimizerConstraintLedgerRow],
+) -> Vec<OptimizerConstraintBudgetRow> {
+    let mut builders =
+        std::collections::BTreeMap::<String, OptimizerConstraintBudgetBuilder>::new();
+
+    for row in ledger_rows {
+        let (subject_scope, subject_id) = optimizer_constraint_budget_subject(row);
+        let key = format!(
+            "{}|{}|{}|{}",
+            row.tier, row.region_id, subject_scope, subject_id
+        );
+        let builder = builders
+            .entry(key)
+            .or_insert_with(|| OptimizerConstraintBudgetBuilder {
+                optimizer_run_id: row.optimizer_run_id.clone(),
+                tier: row.tier.clone(),
+                region_id: row.region_id.clone(),
+                subject_scope: subject_scope.clone(),
+                subject_id: subject_id.clone(),
+                segment_bundle_id: if subject_scope == "bundle" {
+                    row.segment_bundle_id.clone()
+                } else {
+                    String::new()
+                },
+                route: row.route.clone(),
+                ..Default::default()
+            });
+
+        builder.ledger_row_count += 1;
+        if row.behavior_type == "identity-blocker" || row.behavior_type == "selection-hard" {
+            builder.hard_blocker_count += 1;
+        }
+        if row.behavior_type == "claim-blocker" {
+            builder.claim_blocker_count += 1;
+        }
+        if row.validation_status == "review"
+            || row.constraint_status == "review"
+            || row.constraint_status == "held"
+        {
+            builder.review_count += 1;
+        }
+        if row.behavior_type == "budget-debt" {
+            builder.budget_debt_count += 1;
+        }
+        builder.constraint_debt_cost_m =
+            round_cost_m(builder.constraint_debt_cost_m + row.budget_cost_m);
+        if row.cost_category == "lifecycle" || row.cost_category == "maintenance" {
+            builder.lifecycle_debt_cost_m =
+                round_cost_m(builder.lifecycle_debt_cost_m + row.budget_cost_m);
+        }
+        builder.constraint_penalty_score =
+            round_cost_m(builder.constraint_penalty_score + row.penalty_score);
+        *builder
+            .class_counts
+            .entry(row.constraint_class.clone())
+            .or_default() += 1;
+        for claim in row.blocks_claims.split('|').map(str::trim) {
+            if !claim.is_empty() {
+                builder.blocking_claims.insert(claim.to_string());
+            }
+        }
+        if !row.next_artifact.trim().is_empty() {
+            builder.next_artifacts.insert(row.next_artifact.clone());
+        }
+        if builder.route.is_empty() && !row.route.is_empty() {
+            builder.route = row.route.clone();
+        }
+    }
+
+    builders
+        .into_values()
+        .map(|builder| {
+            let top_constraint_classes = top_constraint_classes(&builder.class_counts);
+            let validation_status = if builder.hard_blocker_count > 0 {
+                "blocked"
+            } else if builder.claim_blocker_count > 0 || builder.review_count > 0 {
+                "review"
+            } else {
+                "pass"
+            };
+            OptimizerConstraintBudgetRow {
+                budget_id: format!(
+                    "CB-{}-{}-{}",
+                    builder.tier,
+                    builder.subject_scope.to_ascii_uppercase(),
+                    stable_id_fragment(&builder.subject_id)
+                ),
+                optimizer_run_id: builder.optimizer_run_id,
+                tier: builder.tier,
+                region_id: builder.region_id,
+                subject_scope: builder.subject_scope,
+                subject_id: builder.subject_id,
+                segment_bundle_id: builder.segment_bundle_id,
+                route: builder.route,
+                ledger_row_count: builder.ledger_row_count,
+                hard_blocker_count: builder.hard_blocker_count,
+                claim_blocker_count: builder.claim_blocker_count,
+                review_count: builder.review_count,
+                budget_debt_count: builder.budget_debt_count,
+                constraint_debt_cost_m: builder.constraint_debt_cost_m,
+                lifecycle_debt_cost_m: builder.lifecycle_debt_cost_m,
+                constraint_penalty_score: builder.constraint_penalty_score,
+                top_constraint_classes,
+                blocking_claims: join_string_set(&builder.blocking_claims),
+                next_artifacts: join_string_set(&builder.next_artifacts),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn optimizer_constraint_budget_subject(row: &OptimizerConstraintLedgerRow) -> (String, String) {
+    if !row.segment_bundle_id.trim().is_empty() {
+        ("bundle".to_string(), row.segment_bundle_id.clone())
+    } else if !row.route.trim().is_empty() {
+        ("route".to_string(), row.route.clone())
+    } else {
+        (row.constraint_scope.clone(), row.subject_id.clone())
+    }
+}
+
+fn top_constraint_classes(class_counts: &std::collections::BTreeMap<String, usize>) -> String {
+    let mut classes = class_counts.iter().collect::<Vec<_>>();
+    classes.sort_by(|left, right| right.1.cmp(left.1).then_with(|| left.0.cmp(right.0)));
+    classes
+        .into_iter()
+        .take(3)
+        .map(|(class, _)| class.as_str())
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
+fn write_optimizer_constraint_budget(
+    path: &Path,
+    rows: &[OptimizerConstraintBudgetRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_optimizer_constraint_budget_summary(
+    output: &Path,
+    rows: &[OptimizerConstraintBudgetRow],
+    details: bool,
+) {
+    let total_debt_m = rows
+        .iter()
+        .map(|row| row.constraint_debt_cost_m)
+        .sum::<f64>();
+    let hard_blockers = rows.iter().map(|row| row.hard_blocker_count).sum::<usize>();
+    let claim_blockers = rows
+        .iter()
+        .map(|row| row.claim_blocker_count)
+        .sum::<usize>();
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_status.entry(row.validation_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} optimizer constraint budget rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  constraint debt: ${total_debt_m:.2}M");
+    println!("  hard blockers: {hard_blockers}");
+    println!("  claim blockers: {claim_blockers}");
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+
+    if details {
+        println!();
+        println!(
+            "{:<4} {:<8} {:<18} {:>5} {:>5} {:>9} {}",
+            "Tier", "Scope", "Status", "Hard", "Claim", "Cost $M", "Subject"
+        );
+        println!("{}", "-".repeat(110));
+        for row in rows {
+            println!(
+                "{:<4} {:<8} {:<18} {:>5} {:>5} {:>9.2} {}",
+                row.tier,
+                row.subject_scope,
+                row.validation_status,
+                row.hard_blocker_count,
+                row.claim_blocker_count,
+                row.constraint_debt_cost_m,
+                row.subject_id
+            );
+        }
+    }
+}
+
+fn optimizer_constraint_budget_gate_failures(
+    rows: &[OptimizerConstraintBudgetRow],
+    ledger_rows: &[OptimizerConstraintLedgerRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if ledger_rows.is_empty() {
+        failures.push("optimizer constraint ledger is empty".to_string());
+    }
+    if rows.is_empty() {
+        failures.push("no optimizer constraint budget rows emitted".to_string());
+        return failures;
+    }
+    let rolled_up_count = rows.iter().map(|row| row.ledger_row_count).sum::<usize>();
+    if rolled_up_count != ledger_rows.len() {
+        failures.push(format!(
+            "budget rows roll up {} ledger rows, expected {}",
+            rolled_up_count,
+            ledger_rows.len()
+        ));
+    }
+    let mut ids = std::collections::BTreeSet::new();
+    for row in rows {
+        if !ids.insert(row.budget_id.as_str()) {
+            failures.push(format!("duplicate budget id {}", row.budget_id));
+        }
+        if row.budget_id.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.subject_scope.trim().is_empty()
+            || row.subject_id.trim().is_empty()
+            || row.top_constraint_classes.trim().is_empty()
+            || row.next_artifacts.trim().is_empty()
+            || row.constraint_ledger_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete budget row", row.budget_id));
+        }
+        if row.ledger_row_count == 0 {
+            failures.push(format!("{} has zero ledger rows", row.budget_id));
+        }
+        if row.subject_scope == "bundle" && row.segment_bundle_id.trim().is_empty() {
+            failures.push(format!("{} bundle row lacks bundle id", row.budget_id));
+        }
+        if row.budget_debt_count > 0 && row.constraint_debt_cost_m <= 0.0 {
+            failures.push(format!(
+                "{} has debt rows without positive debt cost",
+                row.budget_id
+            ));
+        }
+        if row.claim_blocker_count > 0 && row.blocking_claims.trim().is_empty() {
+            failures.push(format!(
+                "{} has claim blockers without blocking claims",
+                row.budget_id
+            ));
+        }
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -23224,6 +23600,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "optimizer-constraint-budget",
+                "route optimizer-constraint-budget --gate",
+                "data/optimizer-constraint-budget.csv",
                 "pass",
                 0,
                 "",
@@ -28888,7 +29272,8 @@ mod tests {
         lower_tier_pressure_witness_rows, map_atlas_gate_failures, merge_hpms_state_records,
         national_segment_bundle_gate_failures, national_segment_bundle_rows,
         national_segment_registry_gate_failures, national_segment_registry_rows,
-        normalized_iri_m_per_km, optimizer_constraint_ledger_gate_failures,
+        normalized_iri_m_per_km, optimizer_constraint_budget_gate_failures,
+        optimizer_constraint_budget_rows, optimizer_constraint_ledger_gate_failures,
         optimizer_constraint_ledger_rows, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
@@ -28955,19 +29340,20 @@ mod tests {
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
-        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementDebtBudgetIndex,
-        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
-        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintLedgerRow,
+        OptimizerMapHookRow, PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow,
+        ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
+        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
+        T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow,
+        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
+        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
         TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
         TierTableScoreRow,
@@ -32520,6 +32906,118 @@ mod tests {
             |row| row.constraint_class == "duplication_and_parallel_service"
                 && row.constraint_status == "pass"
         ));
+    }
+
+    #[test]
+    fn optimizer_constraint_budget_rolls_up_ledger_subjects() {
+        let ledger_rows = vec![
+            OptimizerConstraintLedgerRow {
+                constraint_id: "CON-PAVEMENT-US30".to_string(),
+                optimizer_run_id: "run-1".to_string(),
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                constraint_order: 8,
+                constraint_class: "asset_condition_debt".to_string(),
+                behavior_type: "budget-debt".to_string(),
+                constraint_scope: "bundle".to_string(),
+                subject_id: "US.HWYBUNDLE.US30".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+                national_segment_id: String::new(),
+                stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+                route: "US30".to_string(),
+                stop_id: String::new(),
+                pair_id: String::new(),
+                map_id: String::new(),
+                source_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
+                source_row_id: "US.HWYBUNDLE.US30".to_string(),
+                standard_artifact: "docs/tier-pavement-standards.md".to_string(),
+                evidence_status: "accepted".to_string(),
+                constraint_status: "debt".to_string(),
+                observed_value: "4".to_string(),
+                threshold_value: "0".to_string(),
+                measurement_unit: "blocked_members".to_string(),
+                blocks_claims: "sla|publication".to_string(),
+                budget_cost_m: 10.0,
+                cost_category: "capital_repair".to_string(),
+                cost_basis: "fixture".to_string(),
+                cost_confidence: "planning_proxy".to_string(),
+                budget_units: "repair_members=4".to_string(),
+                penalty_score: 10.0,
+                repair_action: "pay_debt".to_string(),
+                payment_action: "fund_pavement_repair".to_string(),
+                owner_jurisdiction: "IA".to_string(),
+                funding_program: "state_dot_hpms_or_nhpp".to_string(),
+                delivery_risk: "medium".to_string(),
+                exception_id: String::new(),
+                exception_artifact: String::new(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                optimizer_effect: "subtract budget cost".to_string(),
+                validation_status: "review".to_string(),
+            },
+            OptimizerConstraintLedgerRow {
+                constraint_id: "CON-T1TOPO-I84".to_string(),
+                optimizer_run_id: "run-1".to_string(),
+                tier: "T1".to_string(),
+                region_id: "national".to_string(),
+                constraint_order: 1,
+                constraint_class: "promise_portfolio".to_string(),
+                behavior_type: "selection-hard".to_string(),
+                constraint_scope: "route".to_string(),
+                subject_id: "I84".to_string(),
+                segment_bundle_id: String::new(),
+                national_segment_id: String::new(),
+                stitch_group_id: String::new(),
+                route: "I84".to_string(),
+                stop_id: String::new(),
+                pair_id: String::new(),
+                map_id: "beck-schematic".to_string(),
+                source_artifact: "data/t1-topology-repairs.csv".to_string(),
+                source_row_id: "I84".to_string(),
+                standard_artifact: "docs/tier-optimizer-design.md".to_string(),
+                evidence_status: "exception".to_string(),
+                constraint_status: "review".to_string(),
+                observed_value: "policy-review".to_string(),
+                threshold_value: "accepted".to_string(),
+                measurement_unit: "design_status".to_string(),
+                blocks_claims: "sla|publication".to_string(),
+                budget_cost_m: 0.0,
+                cost_category: String::new(),
+                cost_basis: String::new(),
+                cost_confidence: String::new(),
+                budget_units: String::new(),
+                penalty_score: 1.0,
+                repair_action: "justify-as-national-relay-or-demote-to-t2".to_string(),
+                payment_action: String::new(),
+                owner_jurisdiction: "route-program".to_string(),
+                funding_program: String::new(),
+                delivery_risk: "unknown".to_string(),
+                exception_id: "justify-as-national-relay-or-demote-to-t2".to_string(),
+                exception_artifact: "data/t1-score-exceptions.csv".to_string(),
+                next_artifact: "data/t1-score-exceptions.csv".to_string(),
+                optimizer_effect: "selected-score-exception-needs-national-role-proof".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = optimizer_constraint_budget_rows(&ledger_rows);
+        let failures = optimizer_constraint_budget_gate_failures(&rows, &ledger_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        let bundle_row = rows
+            .iter()
+            .find(|row| row.subject_scope == "bundle")
+            .expect("bundle budget row");
+        assert_eq!(bundle_row.constraint_debt_cost_m, 10.0);
+        assert_eq!(bundle_row.claim_blocker_count, 0);
+        assert_eq!(bundle_row.blocking_claims, "publication;sla");
+        let route_row = rows
+            .iter()
+            .find(|row| row.subject_id == "I84")
+            .expect("route budget row");
+        assert_eq!(route_row.hard_blocker_count, 1);
+        assert_eq!(route_row.validation_status, "blocked");
+        assert_eq!(route_row.constraint_penalty_score, 1.0);
     }
 
     #[test]

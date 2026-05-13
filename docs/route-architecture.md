@@ -93,6 +93,7 @@ surface and name the next artifact that will attach identity.
 | `data/tier-pavement-acquisition-plan.csv` | State-level source acquisition plan for pavement debt that must feed back into the member debt ledger. |
 | `data/tier-pavement-acquisition-docket.csv` | Runnable source-acquisition task list for refreshing pavement evidence and rerunning pavement debt gates. |
 | `data/optimizer-constraint-ledger.csv` | Normalized optimizer constraint ledger joining source-specific blockers, claim holds, debt, penalties, and repair actions back to bundle/member identity. |
+| `data/optimizer-constraint-budget.csv` | Selector-facing rollup of constraint ledger rows by bundle, route, tier, and region. |
 | `data/source-fetch-policy.csv` | Gateable source-fetch cache policy proving scoped refreshes merge, full refreshes replace only after validation, and failed live snapshots preserve prior cache. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |
 | `data/t3-zone-stop-placement.csv` | First stop-placement artifact carrying stable segment identity and evidence state scope. |

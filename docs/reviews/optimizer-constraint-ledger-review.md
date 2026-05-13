@@ -78,18 +78,19 @@ Implemented:
 
 - `data/optimizer-constraint-ledger.csv`
 - `route optimizer-constraint-ledger --gate`
+- `data/optimizer-constraint-budget.csv`
+- `route optimizer-constraint-budget --gate`
 
 Still required:
 
-- `data/optimizer-constraint-budget.csv`
-- `route optimizer-constraint-budget --gate`
+- selector migration to consume `data/optimizer-constraint-budget.csv`
 
 ## Decision
 
 Accept `docs/optimizer-constraint-ledger-spec.md` as the doctrine for optimizer
 constraint rows.
 
-Treat the first ledger slice as implemented for pavement debt, T1 topology
-repair, and T2 parallel-service rows. Do not treat the full constraint system as
-implemented until lower-tier access, Beck diagnostics, game/source rows, and the
-budget rollup also consume the shared schema.
+Treat the first ledger and budget slices as implemented for pavement debt, T1
+topology repair, and T2 parallel-service rows. Do not treat the full constraint
+system as implemented until lower-tier access, Beck diagnostics, game/source
+rows, and selectors also consume the shared schema.

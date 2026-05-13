@@ -221,7 +221,9 @@ their next artifact.
    topology repairs, and T2 parallel service review; follow-on slices should add
    T3/T4 access gaps, Beck diagnostics, and game/source rows.
 3. Add `route optimizer-constraint-budget --gate` to roll up selected rows by
-   `segment_bundle_id`, candidate id, tier, and region.
+   `segment_bundle_id`, candidate id, tier, and region. The first implemented
+   rollup emits selector-facing route and bundle rows with blocker counts,
+   debt, penalties, top classes, blocked claims, and next artifacts.
 4. Update T1/T2 selectors to consume the aggregate constraint budget instead of
    pavement-only columns.
 5. Expand T3/T4 selectors to emit their access and attachment blockers into the
