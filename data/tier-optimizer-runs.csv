@@ -25,8 +25,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 24,tier-segment-candidates,route tier-segment-candidates --gate,data/tier-segment-candidates.csv,3273,pass,0,,pass
 25,tier-pavement-docket,route tier-pavement-docket --gate,data/tier-pavement-docket.csv,3273,pass,0,,pass
 26,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,6,pass,0,,pass
-27,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,23,pass,0,,pass
-28,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,23,pass,0,,pass
+27,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,24,pass,0,,pass
+28,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,24,pass,0,,pass
 29,source-fetch-policy,route source-fetch-policy --gate,data/source-fetch-policy.csv,6,pass,0,,pass
 30,t2-bundle-overlays,route t2-bundle-overlays --gate,data/game/t2-bundle-overlays.csv,18,pass,0,,pass
 31,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,108,pass,0,,pass

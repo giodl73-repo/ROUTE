@@ -14,7 +14,7 @@ pub mod region;
 pub mod strategic;
 pub mod tier;
 
-pub use aggregate::aggregate_corridor;
+pub use aggregate::{aggregate_corridor, approximate_state_code, infer_edge_state};
 pub use build::{build_graph, build_graph_with_fpm};
 pub use bundle::{
     build_segment_bundles, bundle_action, normalise_bundle_key, BundleRegistry, BundleStatus,

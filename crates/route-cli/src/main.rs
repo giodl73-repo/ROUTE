@@ -16920,7 +16920,7 @@ fn tier_segment_candidate_rows(
                 } else {
                     "single-member-candidate".to_string()
                 },
-                state: edge.state.clone(),
+                state: route_network::infer_edge_state(edge),
                 length_miles: rounded_score(edge.length_miles),
                 aadt: edge
                     .aadt
@@ -17045,6 +17045,7 @@ fn tier_segment_candidate_gate_failures(
             || row.national_segment_id.trim().is_empty()
             || row.segment_bundle_id.trim().is_empty()
             || row.stitch_group_id.trim().is_empty()
+            || row.state.trim().is_empty()
             || row.route_aliases.trim().is_empty()
             || row.candidate_action.trim().is_empty()
         {
@@ -17342,6 +17343,7 @@ fn tier_pavement_docket_gate_failures(
             || row.segment_bundle_id.trim().is_empty()
             || row.stitch_group_id.trim().is_empty()
             || row.national_segment_id.trim().is_empty()
+            || row.state.trim().is_empty()
             || row.iri_m_per_km.trim().is_empty()
             || row.max_iri_m_per_km.trim().is_empty()
             || row.pavement_status.trim().is_empty()

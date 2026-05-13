@@ -2,7 +2,7 @@
 /// Only uses data already present in the graph — no external joins here.
 /// Fields requiring HPMS/NBI/Census etc. stay None until joined separately.
 use crate::corridor::{Corridor, CorridorAttributes};
-use crate::graph::HighwayGraph;
+use crate::graph::{HighwayEdge, HighwayGraph};
 use petgraph::graph::EdgeIndex;
 
 pub fn aggregate_corridor(g: &HighwayGraph, route_id: &str) -> Option<Corridor> {
@@ -229,13 +229,32 @@ fn infer_states_from_geometry(g: &HighwayGraph, edges: &[EdgeIndex]) -> Vec<Stri
     edges
         .iter()
         .flat_map(|&ei| g.graph[ei].geometry.0.iter())
-        .filter_map(|coord| approx_state_code(coord.y, coord.x).map(str::to_string))
+        .filter_map(|coord| approximate_state_code(coord.y, coord.x).map(str::to_string))
         .collect::<std::collections::BTreeSet<_>>()
         .into_iter()
         .collect()
 }
 
-fn approx_state_code(lat: f64, lon: f64) -> Option<&'static str> {
+pub fn infer_edge_state(edge: &HighwayEdge) -> String {
+    if !edge.state.trim().is_empty() {
+        return edge.state.clone();
+    }
+    let mut state_counts = std::collections::BTreeMap::<&'static str, usize>::new();
+    for coord in &edge.geometry.0 {
+        if let Some(state) = approximate_state_code(coord.y, coord.x) {
+            *state_counts.entry(state).or_default() += 1;
+        }
+    }
+    state_counts
+        .into_iter()
+        .max_by(|(state_a, count_a), (state_b, count_b)| {
+            count_a.cmp(count_b).then_with(|| state_b.cmp(state_a))
+        })
+        .map(|(state, _)| state.to_string())
+        .unwrap_or_default()
+}
+
+pub fn approximate_state_code(lat: f64, lon: f64) -> Option<&'static str> {
     match (lat, lon) {
         (35.0..=42.5, -120.2..=-114.0) => Some("NV"),
         (32.0..=42.2, -124.5..=-114.0) => Some("CA"),
@@ -250,6 +269,7 @@ fn approx_state_code(lat: f64, lon: f64) -> Option<&'static str> {
         (38.8..=41.5, -75.7..=-73.8) => Some("NJ"),
         (31.0..=37.2, -114.9..=-108.8) => Some("AZ"),
         (31.0..=37.2, -109.2..=-103.0) => Some("NM"),
+        (36.8..=41.0, -109.2..=-102.0) => Some("CO"),
         (25.5..=36.8, -106.7..=-93.4) => Some("TX"),
         (33.5..=37.2, -103.2..=-94.2) => Some("OK"),
         (36.8..=40.2, -102.2..=-94.4) => Some("KS"),
@@ -439,7 +459,7 @@ fn mean_f32(vals: &[f32]) -> Option<f32> {
 
 #[cfg(test)]
 mod tests {
-    use super::{aggregate_corridor, approx_state_code, format_coord};
+    use super::{aggregate_corridor, approximate_state_code, format_coord, infer_edge_state};
     use crate::graph::{HighwayEdge, HighwayGraph, HighwayNode};
     use geo_types::{Coord, LineString};
 
@@ -555,8 +575,34 @@ mod tests {
 
     #[test]
     fn approx_state_code_covers_i80_endpoints() {
-        assert_eq!(approx_state_code(37.77, -122.41), Some("CA"));
-        assert_eq!(approx_state_code(40.87, -74.00), Some("NJ"));
+        assert_eq!(approximate_state_code(37.77, -122.41), Some("CA"));
+        assert_eq!(approximate_state_code(40.87, -74.00), Some("NJ"));
+        assert_eq!(approximate_state_code(39.74, -104.99), Some("CO"));
+    }
+
+    #[test]
+    fn edge_state_infers_from_geometry_when_source_state_is_blank() {
+        let edge = edge_at(
+            "US287",
+            "",
+            route_data::RoadClass::UsHighway,
+            20.0,
+            (-97.4, 32.7),
+            (-97.2, 32.9),
+        );
+
+        assert_eq!(infer_edge_state(&edge), "TX");
+
+        let sourced_edge = edge_at(
+            "US287",
+            "OK",
+            route_data::RoadClass::UsHighway,
+            20.0,
+            (-97.4, 32.7),
+            (-97.2, 32.9),
+        );
+
+        assert_eq!(infer_edge_state(&sourced_edge), "OK");
     }
 
     fn node(graph: &mut HighwayGraph, id: u64, lon: f64, lat: f64) -> petgraph::graph::NodeIndex {
