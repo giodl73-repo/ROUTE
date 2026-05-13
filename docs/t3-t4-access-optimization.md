@@ -188,7 +188,9 @@ Current implementation status:
   holds upward/below-threshold rows for review.
 - `data/t4-terminal-access-columns.csv` classifies T4 local pressure into
   zone-scoped terminal-review rows with 1h access obligations and normalized
-  constraint-budget summaries.
+  constraint-budget summaries. Terminal-review rows name zone-specific
+  terminal districts from `data/intermodal_terminals.csv`; they remain held
+  until route-to-terminal contact proof is authored.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row.
