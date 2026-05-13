@@ -2,7 +2,7 @@
 wave: t4-terminal-contact-evidence
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - traffic-engineer
@@ -28,19 +28,33 @@ docket while keeping source-needed rows out of scenario and publication claims.
 
 ## Deliverables
 
-- [ ] Create a terminal scenario-readiness docket or equivalent queue.
-- [ ] Name scenario candidate(s) only for source-backed terminal contact rows.
-- [ ] Require scenario-ready rows to carry contact proof source, operational
+- [x] Create a terminal scenario-readiness docket or equivalent queue.
+- [x] Name scenario candidate(s) only for source-backed terminal contact rows.
+- [x] Require scenario-ready rows to carry contact proof source, operational
   contact basis, selected higher-tier attachment, and freight/access rationale.
-- [ ] Keep source-needed rows release-held.
-- [ ] Update review notes for any scenario candidate.
+- [x] Keep source-needed rows release-held.
+- [x] Update review notes for any scenario candidate.
 
 ## Expected Gates
 
 - `route optimizer-constraint-ledger --gate`
 - `route optimizer-constraint-budget --gate`
+- `route t4-terminal-scenario-readiness --gate`
 - `route release-manifest --gate`
 - `cargo test -p route`
+
+## Evidence
+
+- Added `data/t4-terminal-scenario-readiness.csv`.
+- The docket contains one held clear row:
+  `__all_t4_terminal_scenarios__`, because all 69 terminal-contact rows remain
+  `source-needed` and no source-backed contact row exists.
+- No scenario artifact was created and no row was promoted to publication or
+  release readiness.
+- Gates passed: `cargo test -p route`, `route
+  t4-terminal-scenario-readiness --gate`, `route optimizer-constraint-ledger
+  --gate`, `route optimizer-constraint-budget --gate`, and `route
+  release-manifest --gate`.
 
 ## Non-Goals
 

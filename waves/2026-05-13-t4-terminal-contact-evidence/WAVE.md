@@ -77,7 +77,7 @@ scenario-ready.
 | 01 - Terminal contact evidence schema | done | `data/t4-terminal-contact-evidence.csv`; terminal-evidence gaps point to queue |
 | 02 - Great Lakes contact sample | done | 33 Great Lakes rows assigned candidate districts; all remain source-needed |
 | 03 - Remaining zone contact pass | done | remaining 36 zone rows assigned candidate districts; all remain source-needed |
-| 04 - Scenario readiness docket | planned | separate scenario-ready rows from source holds |
+| 04 - Scenario readiness docket | done | empty held docket: no source-backed terminal contacts |
 | 05 - Ledger and manifest propagation | planned | regenerate normalized ledger, budget, optimizer manifest, and release surface |
 | 06 - Wave close | planned | close after counts, residual holds, and gates agree |
 

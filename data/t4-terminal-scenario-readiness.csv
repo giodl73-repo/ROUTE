@@ -1,0 +1,2 @@
+docket_id,route,zone_id,terminal_district,contact_basis,contact_proof_source,selected_higher_tier_attachment,freight_access_rationale,scenario_decision,scenario_artifact,source_evidence_status,release_status,next_artifact,validation_status
+__all_t4_terminal_scenarios__,,all-terminal-contact-zones,,no-source-backed-terminal-contact-rows,,,scenario docket remains empty until a contact row is source-backed,no-source-backed-contacts,,source-needed,held-source-needed,data/t4-terminal-contact-evidence.csv,held

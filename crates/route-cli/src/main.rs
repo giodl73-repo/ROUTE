@@ -2191,6 +2191,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit scenario-readiness docket from source-backed T4 terminal contact rows
+    T4TerminalScenarioReadiness {
+        /// T4 terminal contact evidence queue CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-evidence.csv",
+            value_name = "FILE"
+        )]
+        contact_evidence: PathBuf,
+        /// Output T4 terminal scenario-readiness docket CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-scenario-readiness.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if scenario-ready rows lack proof, attachment, or release hold
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 access gaps from held route and terminal access columns
     #[command(name = "t3-t4-access-gaps")]
     T3T4AccessGaps {
@@ -7581,6 +7603,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal contact evidence gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalScenarioReadiness {
+            contact_evidence,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-scenario-readiness");
+            let contact_rows = load_t4_terminal_contact_evidence(&contact_evidence)
+                .with_context(|| format!("loading {}", contact_evidence.display()))?;
+            let rows = t4_terminal_scenario_readiness_rows(&contact_rows);
+            write_t4_terminal_scenario_readiness(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_scenario_readiness_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_scenario_readiness_gate_failures(&rows, &contact_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal scenario readiness gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal scenario readiness gate failed");
+                }
+                println!();
+                println!("T4 terminal scenario readiness gate: PASS");
             }
         }
 
@@ -13819,6 +13869,24 @@ struct T4TerminalContactEvidenceRow {
     next_artifact: String,
     source_column_artifact: String,
     source_column_decision: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalScenarioReadinessRow {
+    docket_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district: String,
+    contact_basis: String,
+    contact_proof_source: String,
+    selected_higher_tier_attachment: String,
+    freight_access_rationale: String,
+    scenario_decision: String,
+    scenario_artifact: String,
+    source_evidence_status: String,
+    release_status: String,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -22308,6 +22376,211 @@ fn t4_terminal_contact_evidence_gate_failures(
     failures
 }
 
+fn load_t4_terminal_contact_evidence(path: &Path) -> Result<Vec<T4TerminalContactEvidenceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t4_terminal_scenario_readiness_rows(
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<T4TerminalScenarioReadinessRow> {
+    let mut rows = contact_rows
+        .iter()
+        .filter(|row| matches!(row.decision.as_str(), "source-backed" | "scenario-ready"))
+        .map(|row| T4TerminalScenarioReadinessRow {
+            docket_id: format!("T4SCENARIO-{}", stable_id_fragment(&row.queue_id)),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district: row.terminal_district_seed.clone(),
+            contact_basis: row.contact_basis.clone(),
+            contact_proof_source: row.contact_proof_source.clone(),
+            selected_higher_tier_attachment: row.selected_higher_tier_attachment.clone(),
+            freight_access_rationale: terminal_scenario_rationale(row),
+            scenario_decision: if row.decision == "scenario-ready" {
+                "scenario-candidate".to_string()
+            } else {
+                "source-backed-review".to_string()
+            },
+            scenario_artifact: if row.decision == "scenario-ready" {
+                "data/t4-terminal-scenario-readiness.csv".to_string()
+            } else {
+                String::new()
+            },
+            source_evidence_status: row.evidence_status.clone(),
+            release_status: "held-source-review".to_string(),
+            next_artifact: "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-05.md"
+                .to_string(),
+            validation_status: if row.decision == "scenario-ready" {
+                "review".to_string()
+            } else {
+                "held".to_string()
+            },
+        })
+        .collect::<Vec<_>>();
+
+    if rows.is_empty() {
+        rows.push(T4TerminalScenarioReadinessRow {
+            docket_id: "__all_t4_terminal_scenarios__".to_string(),
+            route: String::new(),
+            zone_id: "all-terminal-contact-zones".to_string(),
+            terminal_district: String::new(),
+            contact_basis: "no-source-backed-terminal-contact-rows".to_string(),
+            contact_proof_source: String::new(),
+            selected_higher_tier_attachment: String::new(),
+            freight_access_rationale:
+                "scenario docket remains empty until a contact row is source-backed".to_string(),
+            scenario_decision: "no-source-backed-contacts".to_string(),
+            scenario_artifact: String::new(),
+            source_evidence_status: "source-needed".to_string(),
+            release_status: "held-source-needed".to_string(),
+            next_artifact: "data/t4-terminal-contact-evidence.csv".to_string(),
+            validation_status: "held".to_string(),
+        });
+    }
+
+    rows.sort_by(|a, b| {
+        a.scenario_decision
+            .cmp(&b.scenario_decision)
+            .then_with(|| a.zone_id.cmp(&b.zone_id))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn terminal_scenario_rationale(row: &T4TerminalContactEvidenceRow) -> String {
+    format!(
+        "source-backed contact between {} and {}; preserves T4 access while selecting scenario scope",
+        row.route, row.terminal_district_seed
+    )
+}
+
+fn write_t4_terminal_scenario_readiness(
+    path: &Path,
+    rows: &[T4TerminalScenarioReadinessRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_scenario_readiness_summary(
+    output: &Path,
+    rows: &[T4TerminalScenarioReadinessRow],
+) {
+    let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_decision
+            .entry(row.scenario_decision.as_str())
+            .or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal scenario readiness rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in by_decision {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t4_terminal_scenario_readiness_gate_failures(
+    rows: &[T4TerminalScenarioReadinessRow],
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T4 terminal scenario readiness rows emitted".to_string());
+        return failures;
+    }
+
+    let source_backed_count = contact_rows
+        .iter()
+        .filter(|row| matches!(row.decision.as_str(), "source-backed" | "scenario-ready"))
+        .count();
+    if source_backed_count == 0
+        && !rows.iter().any(|row| {
+            row.docket_id == "__all_t4_terminal_scenarios__"
+                && row.scenario_decision == "no-source-backed-contacts"
+                && row.release_status == "held-source-needed"
+        })
+    {
+        failures.push("empty scenario docket lacks held clear row".to_string());
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.docket_id.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.contact_basis.trim().is_empty()
+            || row.freight_access_rationale.trim().is_empty()
+            || row.scenario_decision.trim().is_empty()
+            || row.source_evidence_status.trim().is_empty()
+            || row.release_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete scenario docket fields",
+                row.docket_id
+            ));
+        }
+        if !seen.insert(row.docket_id.clone()) {
+            failures.push(format!("{} is duplicated", row.docket_id));
+        }
+        if matches!(
+            row.scenario_decision.as_str(),
+            "scenario-candidate" | "source-backed-review"
+        ) && (row.route.trim().is_empty()
+            || row.terminal_district.trim().is_empty()
+            || row.contact_proof_source.trim().is_empty()
+            || row.selected_higher_tier_attachment.trim().is_empty()
+            || row.source_evidence_status != "accepted")
+        {
+            failures.push(format!(
+                "{} scenario row lacks proof, terminal, attachment, or accepted evidence",
+                row.docket_id
+            ));
+        }
+        if row.scenario_decision == "scenario-candidate" && row.scenario_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} scenario candidate lacks artifact",
+                row.docket_id
+            ));
+        }
+        if row.release_status != "held-source-review" && row.release_status != "held-source-needed"
+        {
+            failures.push(format!(
+                "{} has invalid release status {}",
+                row.docket_id, row.release_status
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "review" | "held") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.docket_id, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn t3_t4_access_gap_rows(
     route_rows: &[T3ZoneRouteColumnRow],
     terminal_rows: &[T4TerminalAccessColumnRow],
@@ -30755,6 +31028,7 @@ mod tests {
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
         t4_terminal_contact_evidence_gate_failures, t4_terminal_contact_evidence_rows,
+        t4_terminal_scenario_readiness_gate_failures, t4_terminal_scenario_readiness_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
@@ -30780,11 +31054,12 @@ mod tests {
         T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, T4TerminalScenarioReadinessRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -33132,6 +33407,89 @@ mod tests {
                 .iter()
                 .any(|failure| failure.contains("proximity-only contact cannot be scenario-ready")),
             "{proximity_failures:?}"
+        );
+    }
+
+    #[test]
+    fn t4_terminal_scenario_readiness_emits_held_clear_row_without_source_backed_contacts() {
+        let contact_rows = vec![T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-US10".to_string(),
+            route: "US10".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Minneapolis Twin Cities".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis:
+                "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+                    .to_string(),
+            contact_proof_source: String::new(),
+            evidence_status: "source-needed".to_string(),
+            selected_higher_tier_attachment: "source-needed".to_string(),
+            decision: "source-needed".to_string(),
+            next_artifact:
+                "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md".to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t4_terminal_scenario_readiness_rows(&contact_rows);
+        let failures = t4_terminal_scenario_readiness_gate_failures(&rows, &contact_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].docket_id, "__all_t4_terminal_scenarios__");
+        assert_eq!(rows[0].scenario_decision, "no-source-backed-contacts");
+        assert_eq!(rows[0].release_status, "held-source-needed");
+    }
+
+    #[test]
+    fn t4_terminal_scenario_readiness_requires_source_backed_proof() {
+        let scenario_ready = T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-I180".to_string(),
+            route: "I-180".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Chicago Intermodal Complex".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "documented truck connector to terminal gate".to_string(),
+            contact_proof_source: "future-contact-source.csv#I-180".to_string(),
+            evidence_status: "accepted".to_string(),
+            selected_higher_tier_attachment: "T3:t3-great-lakes:I-80".to_string(),
+            decision: "scenario-ready".to_string(),
+            next_artifact: "data/t4-terminal-scenario-readiness.csv".to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "pass".to_string(),
+        };
+        let rows = t4_terminal_scenario_readiness_rows(&[scenario_ready.clone()]);
+        let failures = t4_terminal_scenario_readiness_gate_failures(&rows, &[scenario_ready]);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows[0].scenario_decision, "scenario-candidate");
+        assert_eq!(rows[0].release_status, "held-source-review");
+
+        let bad_row = T4TerminalScenarioReadinessRow {
+            docket_id: "T4SCENARIO-BAD".to_string(),
+            route: "I-180".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district: "Chicago Intermodal Complex".to_string(),
+            contact_basis: "documented truck connector to terminal gate".to_string(),
+            contact_proof_source: String::new(),
+            selected_higher_tier_attachment: "T3:t3-great-lakes:I-80".to_string(),
+            freight_access_rationale: "source-backed contact".to_string(),
+            scenario_decision: "scenario-candidate".to_string(),
+            scenario_artifact: "data/t4-terminal-scenario-readiness.csv".to_string(),
+            source_evidence_status: "accepted".to_string(),
+            release_status: "held-source-review".to_string(),
+            next_artifact: "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-05.md"
+                .to_string(),
+            validation_status: "review".to_string(),
+        };
+        let bad_failures = t4_terminal_scenario_readiness_gate_failures(&[bad_row], &[]);
+        assert!(
+            bad_failures
+                .iter()
+                .any(|failure| failure.contains("lacks proof")),
+            "{bad_failures:?}"
         );
     }
 

@@ -197,6 +197,10 @@ Current implementation status:
   scenario-ready decisions, and assigns each zone sample to candidate terminal
   districts while keeping all route-contact proof source-needed until a separate
   contact proof source is authored.
+- `data/t4-terminal-scenario-readiness.csv` is the scenario-readiness docket for
+  source-backed terminal contact rows. It currently records an empty held docket:
+  no source-backed contact exists, so no terminal row is scenario-ready or
+  release-ready.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows
