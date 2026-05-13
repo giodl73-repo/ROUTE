@@ -1853,6 +1853,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_service_selection: PathBuf,
+        /// T2 bundle repair queue CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-repair-queue.csv",
+            value_name = "FILE"
+        )]
+        t2_bundle_repair_queue: PathBuf,
         /// Output segment candidate CSV
         #[arg(
             long,
@@ -6948,6 +6955,7 @@ fn run_cli() -> Result<()> {
         Commands::TierSegmentCandidates {
             t1_selector,
             t2_service_selection,
+            t2_bundle_repair_queue,
             output,
             gate,
         } => {
@@ -6959,13 +6967,16 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t1_selector.display()))?;
             let t2_rows = load_t2_service_selection(&t2_service_selection)
                 .with_context(|| format!("loading {}", t2_service_selection.display()))?;
-            let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows);
+            let repair_rows = load_t2_bundle_repair_queue(&t2_bundle_repair_queue)
+                .with_context(|| format!("loading {}", t2_bundle_repair_queue.display()))?;
+            let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows);
             write_tier_segment_candidates(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_segment_candidate_summary(&output, &rows);
 
             if gate {
-                let failures = tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows);
+                let failures =
+                    tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows, &repair_rows);
                 if !failures.is_empty() {
                     println!();
                     println!("Tier segment candidate gate: FAIL");
@@ -15722,6 +15733,23 @@ fn t2_bundle_repair_queue_rows(
         })
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| left.route.cmp(&right.route));
+    if rows.is_empty() {
+        rows.push(T2BundleRepairQueueRow {
+            route: "__all_t2_bundle_repairs__".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: "bundle-repair-clear".to_string(),
+            bundle_action: "no pending closure-bundle rows".to_string(),
+            contact_evidence_status: "no-closure-bundle-pending".to_string(),
+            candidate_decision: "clear".to_string(),
+            repair_class: "bundle-repair-clearance".to_string(),
+            repair_action: "no-bundle-repair-needed".to_string(),
+            required_artifact: "data/tier-candidate-columns.csv".to_string(),
+            next_artifact: "data/t2-service-selection.csv".to_string(),
+            optimizer_effect: "all bundle-ready candidate reviews may move to service diagnostics"
+                .to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
     rows
 }
 
@@ -15783,6 +15811,17 @@ fn t2_bundle_repair_queue_gate_failures(rows: &[T2BundleRepairQueueRow]) -> Vec<
         failures.push("no T2 bundle repair queue rows emitted".to_string());
         return failures;
     }
+    if rows.len() == 1 && rows[0].route == "__all_t2_bundle_repairs__" {
+        let row = &rows[0];
+        if row.bundle_status != "bundle-repair-clear"
+            || row.contact_evidence_status != "no-closure-bundle-pending"
+            || row.candidate_decision != "clear"
+            || row.validation_status != "pass"
+        {
+            failures.push("bundle repair clearance row has incomplete clear status".to_string());
+        }
+        return failures;
+    }
     for row in rows {
         if row.route.trim().is_empty() {
             failures.push("bundle repair queue row missing route".to_string());
@@ -15831,6 +15870,15 @@ fn t2_bundle_repair_queue_gate_failures(rows: &[T2BundleRepairQueueRow]) -> Vec<
         }
     }
     failures
+}
+
+fn load_t2_bundle_repair_queue(path: &Path) -> Result<Vec<T2BundleRepairQueueRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
 }
 
 fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRow> {
@@ -16363,6 +16411,7 @@ fn tier_segment_candidate_rows(
     graph: &route_network::HighwayGraph,
     t1_rows: &[T1LineSelectorInputRow],
     t2_rows: &[T2ServiceSelectionRow],
+    repair_rows: &[T2BundleRepairQueueRow],
 ) -> Vec<TierSegmentCandidateRow> {
     let mut service_rows = Vec::<(&str, &str, String, String, String, String)>::new();
     for row in t1_rows.iter().filter(|row| row.selected) {
@@ -16379,7 +16428,7 @@ fn tier_segment_candidate_rows(
     for row in t2_rows.iter().filter(|row| {
         matches!(
             row.selection_action.as_str(),
-            "keep-service-column" | "parent-region-review"
+            "keep-service-column" | "parent-region-review" | "source-needed"
         )
     }) {
         service_rows.push((
@@ -16391,6 +16440,22 @@ fn tier_segment_candidate_rows(
             format!(
                 "{}; {}; {}",
                 row.beck_service_class, row.qualification_basis, row.selection_basis
+            ),
+        ));
+    }
+    for row in repair_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/national-segment-bundles.csv")
+    {
+        service_rows.push((
+            "T2",
+            "t2-bundle-repair-queue",
+            "bundle-repair".to_string(),
+            row.route.clone(),
+            row.repair_class.clone(),
+            format!(
+                "{}; {}; {}",
+                row.bundle_status, row.bundle_action, row.repair_action
             ),
         ));
     }
@@ -16530,6 +16595,7 @@ fn tier_segment_candidate_gate_failures(
     rows: &[TierSegmentCandidateRow],
     t1_rows: &[T1LineSelectorInputRow],
     t2_rows: &[T2ServiceSelectionRow],
+    repair_rows: &[T2BundleRepairQueueRow],
 ) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
@@ -16587,13 +16653,25 @@ fn tier_segment_candidate_gate_failures(
     for row in t2_rows.iter().filter(|row| {
         matches!(
             row.selection_action.as_str(),
-            "keep-service-column" | "parent-region-review"
+            "keep-service-column" | "parent-region-review" | "source-needed"
         )
     }) {
         let key = ("T2".to_string(), normalise_designation(&row.route));
         if !rows_by_service.contains_key(&key) {
             failures.push(format!(
                 "T2 service {} has no segment candidates",
+                row.route
+            ));
+        }
+    }
+    for row in repair_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/national-segment-bundles.csv")
+    {
+        let key = ("T2".to_string(), normalise_designation(&row.route));
+        if !rows_by_service.contains_key(&key) {
+            failures.push(format!(
+                "T2 bundle repair {} has no segment candidates",
                 row.route
             ));
         }
@@ -28065,6 +28143,44 @@ mod tests {
     }
 
     #[test]
+    fn t2_bundle_repair_queue_emits_clearance_when_no_bundle_blockers_remain() {
+        let candidates = vec![TierCandidateColumnRow {
+            tier: "T2".to_string(),
+            route: "I285".to_string(),
+            candidate_type: "route-service-column".to_string(),
+            graph_kind: "dual-route-graph".to_string(),
+            split_objective: "route-mile-workload".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            route_miles: 172.0,
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 1,
+            parent_trunks: String::new(),
+            component_id: 1,
+            component_route_count: 18,
+            component_status: "component-bridged:21".to_string(),
+            witness_type: "graph-contact-needed".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            repair_basis: "observed T1/T2 contact".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I285".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            column_decision: "review".to_string(),
+            evidence_status: "closure-accepted-bundle-ready".to_string(),
+            required_artifact: "data/t2-contact-closure.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_bundle_repair_queue_rows(&candidates, &[]);
+        let failures = t2_bundle_repair_queue_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "__all_t2_bundle_repairs__");
+        assert_eq!(rows[0].bundle_status, "bundle-repair-clear");
+        assert_eq!(rows[0].next_artifact, "data/t2-service-selection.csv");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
     fn lower_tier_pressure_consumes_closure_demotions() {
         let tier_rows = vec![TierTableScoreRow {
             tier: "T2".to_string(),
@@ -29501,8 +29617,10 @@ mod tests {
             selected_stops: "STOP-OMAHA;STOP-DESMOINES".to_string(),
         }];
         let t2_rows = Vec::new();
-        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows);
-        let failures = tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows);
+        let repair_rows = Vec::new();
+        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows);
+        let failures =
+            tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows, &repair_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 2);

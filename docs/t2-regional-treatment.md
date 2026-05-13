@@ -79,6 +79,14 @@ Those blocked rows are emitted as `data/t2-bundle-repair-queue.csv`. That queue
 is the repair contract between T2 optimization and the core bundle registry: it
 names the route, blocker class, current bundle posture, required artifact, next
 artifact, and optimizer effect before the route can re-enter regional treatment.
+When no candidate-review rows remain bundle-blocked, the queue emits a single
+clearance row and points the optimizer to `data/t2-service-selection.csv`.
+
+Bundle-cleared rows may still be `source-needed` in T2 service selection. That
+means bundle identity is solved, but Beck/service diagnostics are not. Segment
+candidate generation keeps those rows bundle-addressable so the registry,
+pavement docket, game overlays, and future diagnostic work can refer to the
+same `segment_bundle_id` without treating the route as selected T2 service.
 
 ## Contact Rules
 
