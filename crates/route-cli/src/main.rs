@@ -11442,10 +11442,14 @@ fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
 }
 
 fn release_manifest_artifact_exists(path: &str) -> bool {
-    release_manifest_artifact_path(path).exists()
+    repo_relative_artifact_path(path).exists()
 }
 
 fn release_manifest_artifact_path(path: &str) -> PathBuf {
+    repo_relative_artifact_path(path)
+}
+
+fn repo_relative_artifact_path(path: &str) -> PathBuf {
     let direct = std::path::PathBuf::from(path);
     if direct.exists() || direct.is_absolute() {
         direct
@@ -20945,6 +20949,21 @@ fn optimizer_manifest_gate_failures(rows: &[TierOptimizerRunRow]) -> Vec<String>
         if row.row_count == 0 {
             failures.push(format!("{} has missing or empty artifact", row.artifact));
         }
+        match csv_record_count(&repo_relative_artifact_path(&row.artifact)) {
+            Ok(actual_count) if row.row_count != actual_count => {
+                failures.push(format!(
+                    "{} row_count {} does not match current artifact count {}",
+                    row.artifact, row.row_count, actual_count
+                ));
+            }
+            Err(error) => {
+                failures.push(format!(
+                    "{} row count could not be verified: {error}",
+                    row.artifact
+                ));
+            }
+            _ => {}
+        }
         if !matches!(row.gate_status.as_str(), "pass" | "held-known" | "review") {
             failures.push(format!(
                 "{} has unexpected gate status {}",
@@ -26358,6 +26377,23 @@ mod tests {
     use route_score::{score_corridor, ScoringConfig};
     use std::collections::HashMap;
 
+    fn write_optimizer_manifest_fixture(name: &str, records: usize) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "route-optimizer-manifest-{}-{}",
+            name,
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create optimizer manifest fixture dir");
+        let path = dir.join("artifact.csv");
+        let mut csv = String::from("id,value\n");
+        for index in 0..records {
+            csv.push_str(&format!("{index},fixture\n"));
+        }
+        std::fs::write(&path, csv).expect("write optimizer manifest fixture");
+        path
+    }
+
     #[test]
     fn tier_for_score_matches_megamap_thresholds() {
         assert_eq!(tier_for_score(70.0), "T1");
@@ -29198,12 +29234,14 @@ mod tests {
 
     #[test]
     fn tier_optimizer_run_gate_allows_known_held_rows() {
+        let pass_artifact = write_optimizer_manifest_fixture("gate-pass", 10);
+        let held_artifact = write_optimizer_manifest_fixture("gate-held", 40);
         let rows = vec![
             TierOptimizerRunRow {
                 step: 1,
                 optimizer_stage: "t1-stop-selector".to_string(),
                 command: "route t1-stop-selector --gate".to_string(),
-                artifact: "data/t1-stop-selector.csv".to_string(),
+                artifact: pass_artifact.display().to_string(),
                 row_count: 10,
                 gate_status: "pass".to_string(),
                 blocker_count: 0,
@@ -29214,7 +29252,7 @@ mod tests {
                 step: 2,
                 optimizer_stage: "t2-contact-witnesses".to_string(),
                 command: "route tier-contact-witnesses --gate".to_string(),
-                artifact: "data/tier-contact-witnesses.csv".to_string(),
+                artifact: held_artifact.display().to_string(),
                 row_count: 40,
                 gate_status: "held-known".to_string(),
                 blocker_count: 1,
@@ -29228,15 +29266,19 @@ mod tests {
             tier_optimizer_run_gate_failures(false, &rows),
             vec!["tier-optimize bundle gate requires --all-tiers".to_string()]
         );
+
+        let _ = std::fs::remove_dir_all(pass_artifact.parent().expect("fixture parent"));
+        let _ = std::fs::remove_dir_all(held_artifact.parent().expect("fixture parent"));
     }
 
     #[test]
     fn optimizer_manifest_gate_requires_held_blocker_contract() {
+        let artifact = write_optimizer_manifest_fixture("held-contract", 40);
         let rows = vec![TierOptimizerRunRow {
             step: 1,
             optimizer_stage: "t2-contact-witnesses".to_string(),
             command: "route tier-contact-witnesses --gate".to_string(),
-            artifact: "data/tier-contact-witnesses.csv".to_string(),
+            artifact: artifact.display().to_string(),
             row_count: 40,
             gate_status: "held-known".to_string(),
             blocker_count: 0,
@@ -29248,6 +29290,33 @@ mod tests {
 
         assert!(failures.contains(&"t2-contact-witnesses held without blocker count".to_string()));
         assert!(failures.contains(&"t2-contact-witnesses held without blocker summary".to_string()));
+        let _ = std::fs::remove_dir_all(artifact.parent().expect("fixture parent"));
+    }
+
+    #[test]
+    fn optimizer_manifest_gate_detects_stale_row_count() {
+        let artifact = write_optimizer_manifest_fixture("stale-row-count", 2);
+        let rows = vec![TierOptimizerRunRow {
+            step: 1,
+            optimizer_stage: "t1-stop-selector".to_string(),
+            command: "route t1-stop-selector --gate".to_string(),
+            artifact: artifact.display().to_string(),
+            row_count: 3,
+            gate_status: "pass".to_string(),
+            blocker_count: 0,
+            blocker_summary: String::new(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let failures = optimizer_manifest_gate_failures(&rows);
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure
+                    .contains("row_count 3 does not match current artifact count 2"))
+        );
+        let _ = std::fs::remove_dir_all(artifact.parent().expect("fixture parent"));
     }
 
     #[test]
