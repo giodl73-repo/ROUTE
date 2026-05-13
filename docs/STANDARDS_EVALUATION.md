@@ -14,6 +14,10 @@ The source acquisition plan for that ledger is `data/t1-failure-source-plan.csv`
 
 The source-health ledger is `data/t1-source-health.csv`.
 
+The pavement and ride-quality floor by tier is
+`data/tier-pavement-standards.csv`, owned by
+`docs/tier-pavement-standards.md`.
+
 ## Evaluation Rule
 
 A standard is ready for Blueprint only when it has:
@@ -115,6 +119,12 @@ Important current limitation: embedded TOML scenarios now bind stable graph edge
 
 `route standards-inventory` reads `data/standards-l1-inventory.csv` and checks that every Planned standard has an explicit L1 inventory/source row. This keeps WIM, rest/truck parking, bridge, C-D, spur, regional operations, and maintenance standards from remaining as generic data gaps.
 
+`route standards-pavement --gate` reads `data/tier-pavement-standards.csv`
+and checks that each tier has a pavement/ride-quality threshold, inspection
+cadence, freight/transit requirement, repair trigger, exception policy, and
+source contract. Pavement is a service constraint: a bundle cannot claim
+SLA-ready or transit-ready status when member segments violate the tier floor.
+
 `route standards-bridges --gate-l1` checks whether the selected tier has cached NBI bridge-condition coverage via `data/cache/nbi_bridges.csv`. This is only an L1 condition-coverage gate; load posting, vertical clearance, and state restriction joins remain blocking for publication-grade T1 bridge claims.
 
 `route pressure-scenarios` reads `data/pressure-test-scenarios.csv` and checks that each L2 scenario row has a named adversity class, tested standards, an artifact, a labeled status, and a next evidence step. This is a catalog contract, not proof that the scenarios already pass their acceptance gates.
@@ -131,6 +141,7 @@ route standards-proof --gate-pressure
 route standards-proof --gate-blueprint
 route standards-inventory
 route standards-inventory --gate --gate-planned
+route standards-pavement --gate
 route standards-bridges --tier T1 --gate-l1
 route pressure-scenarios
 route pressure-scenarios --blockers --details

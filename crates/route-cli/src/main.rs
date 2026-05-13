@@ -672,6 +672,26 @@ enum Commands {
         gate_planned: bool,
     },
 
+    /// Show pavement and ride-quality standards for each service tier
+    StandardsPavement {
+        /// Path to tier pavement standards CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-standards.csv",
+            value_name = "FILE"
+        )]
+        ledger: PathBuf,
+        /// Show only rows that still need source or implementation work
+        #[arg(long)]
+        blockers: bool,
+        /// Print full freight/transit/repair details
+        #[arg(long)]
+        details: bool,
+        /// Fail if pavement rows lack thresholds, source contract, or repair policy
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -4892,6 +4912,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Planned standard inventory gate: PASS");
+            }
+        }
+
+        Commands::StandardsPavement {
+            ledger,
+            blockers,
+            details,
+            gate,
+        } => {
+            let rows = load_pavement_standards(&ledger)
+                .with_context(|| format!("loading pavement standards {}", ledger.display()))?;
+            print_pavement_standards(&rows, blockers, details);
+
+            if gate {
+                let failures = pavement_standard_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Pavement standards gate: FAIL");
+                    println!(
+                        "  {} pavement standard rows lack enforceable contracts.",
+                        failures.len()
+                    );
+                    for failure in failures.iter().take(10) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("pavement standards gate failed");
+                }
+                println!();
+                println!("Pavement standards gate: PASS");
             }
         }
 
@@ -11520,6 +11569,126 @@ fn planned_standard_inventory_missing<'a>(
         .filter(|row| row.evidence_level.eq_ignore_ascii_case("Planned"))
         .filter(|row| !covered.contains(row.standard_id.as_str()))
         .collect()
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct PavementStandardRow {
+    tier: String,
+    road_role: String,
+    max_iri_m_per_km: f64,
+    target_pavement_condition: String,
+    freight_ride_requirement: String,
+    transit_ride_requirement: String,
+    inspection_interval_months: u16,
+    repair_trigger: String,
+    allowed_exception: String,
+    source_contract: String,
+    validation_status: String,
+}
+
+fn load_pavement_standards(path: &Path) -> Result<Vec<PavementStandardRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn print_pavement_standards(rows: &[PavementStandardRow], blockers: bool, details: bool) {
+    let failures = pavement_standard_gate_failures(rows);
+    let failure_tiers = failures
+        .iter()
+        .filter_map(|failure| failure.split_whitespace().next())
+        .collect::<std::collections::BTreeSet<_>>();
+    let filtered = if blockers {
+        rows.iter()
+            .filter(|row| failure_tiers.contains(row.tier.as_str()))
+            .collect::<Vec<_>>()
+    } else {
+        rows.iter().collect::<Vec<_>>()
+    };
+
+    println!("route standards-pavement");
+    println!("  rows: {} shown / {} total", filtered.len(), rows.len());
+    println!("  gate blockers: {}", failures.len());
+    println!();
+    println!(
+        "{:<4} {:<24} {:>7} {:<12} {}",
+        "Tier", "Role", "IRI", "Condition", "Repair trigger"
+    );
+    println!("{}", "-".repeat(112));
+    for row in filtered {
+        println!(
+            "{:<4} {:<24} {:>7.2} {:<12} {}",
+            row.tier,
+            truncate_for_table(&row.road_role, 24),
+            row.max_iri_m_per_km,
+            row.target_pavement_condition,
+            row.repair_trigger
+        );
+        if details {
+            println!("  freight: {}", row.freight_ride_requirement);
+            println!("  transit: {}", row.transit_ride_requirement);
+            println!("  inspection: {} months", row.inspection_interval_months);
+            println!("  exception: {}", row.allowed_exception);
+            println!("  source: {}", row.source_contract);
+            println!("  status: {}", row.validation_status);
+        }
+    }
+}
+
+fn pavement_standard_gate_failures(rows: &[PavementStandardRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("pavement standards ledger has no rows".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        let tier = row.tier.trim();
+        if !seen.insert(tier.to_string()) {
+            failures.push(format!("{tier} duplicate pavement standard row"));
+        }
+        if !matches!(tier, "T1" | "T2" | "T3" | "T4") {
+            failures.push(format!("{tier} invalid pavement tier"));
+        }
+        if row.road_role.trim().is_empty()
+            || row.target_pavement_condition.trim().is_empty()
+            || row.freight_ride_requirement.trim().is_empty()
+            || row.transit_ride_requirement.trim().is_empty()
+            || row.repair_trigger.trim().is_empty()
+            || row.allowed_exception.trim().is_empty()
+            || row.source_contract.trim().is_empty()
+        {
+            failures.push(format!("{tier} has incomplete pavement standard fields"));
+        }
+        if !row.max_iri_m_per_km.is_finite() || row.max_iri_m_per_km <= 0.0 {
+            failures.push(format!(
+                "{tier} has invalid max IRI {}",
+                row.max_iri_m_per_km
+            ));
+        }
+        if row.inspection_interval_months == 0 || row.inspection_interval_months > 36 {
+            failures.push(format!(
+                "{tier} has invalid inspection interval {}",
+                row.inspection_interval_months
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{tier} has invalid validation status {}",
+                row.validation_status
+            ));
+        }
+    }
+    for tier in ["T1", "T2", "T3", "T4"] {
+        if !seen.contains(tier) {
+            failures.push(format!("{tier} missing pavement standard row"));
+        }
+    }
+    failures
 }
 
 fn load_tier_routes(path: &Path, tier: &str) -> Result<Vec<String>> {
@@ -24085,17 +24254,17 @@ mod tests {
         parse_t1_diamond_validation, parse_t1_evidence_windows, parse_t1_failure_events,
         parse_t1_failure_ledger, parse_t1_failure_source_plan, parse_t1_snapshot_plan,
         parse_t1_source_health, parse_tdot_smartway_events, parse_throughput_proof_matrix,
-        planned_standard_inventory_missing, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
-        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
-        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
-        rounded_score, scenario_edge_candidates, significant_moment_gate_failures,
-        significant_moment_row_failure, standards_blueprint_gate_failures,
-        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
-        standards_inventory_row_has_contract, standards_pressure_gate_failures,
-        stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
-        stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
-        t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
+        pavement_standard_gate_failures, planned_standard_inventory_missing,
+        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
+        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
+        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
+        pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
+        significant_moment_gate_failures, significant_moment_row_failure,
+        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        standards_inventory_gate_failures, standards_inventory_row_has_contract,
+        standards_pressure_gate_failures, stop_candidate_gate_failures, stop_coverage_for_routes,
+        stop_coverage_gate_failures, stop_plan_for_route, stop_plan_gate_failures,
+        summarize_t1_failure_events, t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
@@ -24131,17 +24300,17 @@ mod tests {
         tier_segment_candidate_rows, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
-        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
-        ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow,
-        T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
+        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
+        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -27241,6 +27410,48 @@ T1-REST,rest ledger,state DOT,source_needed,artifact,T1 rest areas,gap,next
 
         assert!(standards_inventory_gate_failures(&inventory).is_empty());
         assert!(planned_standard_inventory_missing(&standards, &inventory).is_empty());
+    }
+
+    #[test]
+    fn pavement_standards_require_tier_thresholds_and_contracts() {
+        let rows = vec![
+            PavementStandardRow {
+                tier: "T1".to_string(),
+                road_role: "national timed-freight spine".to_string(),
+                max_iri_m_per_km: 1.5,
+                target_pavement_condition: "good".to_string(),
+                freight_ride_requirement: "no roughness padding".to_string(),
+                transit_ride_requirement: "coach-speed ride quality".to_string(),
+                inspection_interval_months: 6,
+                repair_trigger: "repair above threshold".to_string(),
+                allowed_exception: "temporary construction only".to_string(),
+                source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            PavementStandardRow {
+                tier: "T2".to_string(),
+                road_role: "regional connector".to_string(),
+                max_iri_m_per_km: 0.0,
+                target_pavement_condition: String::new(),
+                freight_ride_requirement: String::new(),
+                transit_ride_requirement: "regional coach ride quality".to_string(),
+                inspection_interval_months: 48,
+                repair_trigger: String::new(),
+                allowed_exception: String::new(),
+                source_contract: String::new(),
+                validation_status: "unknown".to_string(),
+            },
+        ];
+
+        let failures = pavement_standard_gate_failures(&rows);
+
+        assert!(failures.iter().any(|failure| failure.contains("T2")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("T3 missing")));
+        assert!(failures
+            .iter()
+            .any(|failure| failure.contains("T4 missing")));
     }
 
     #[test]

@@ -111,6 +111,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 | Promise-pair selection | `data/t1-sla-candidate-pairs.csv` |
 | Route/stop/service schema | `docs/route-stop-column-schema.md` |
 | Segment identity and bundle joins | `docs/route-architecture.md`, `docs/national-segment-identity-spec.md`, `docs/tier-segment-stitching-spec.md`, `data/tier-segment-candidates.csv`, `data/national-segment-registry.csv`, `data/national-segment-bundles.csv`, and `data/bundle-architecture.csv` |
+| Pavement and ride-quality floors | `docs/tier-pavement-standards.md` and `data/tier-pavement-standards.csv` |
 | Beck topology truth | `docs/beck-renderer-contract.md` plus map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |
 | T3/T4 access doctrine | `docs/t3-t4-access-optimization.md` |
