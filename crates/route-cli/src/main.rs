@@ -1579,6 +1579,13 @@ enum Commands {
             value_name = "FILE"
         )]
         service_diagnostics: PathBuf,
+        /// National segment bundle CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        bundles: PathBuf,
         /// Endpoint exception ledger CSV
         #[arg(
             long,
@@ -1918,6 +1925,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_bundle_repair_queue: PathBuf,
+        /// T2 route-family split docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-route-family-splits.csv",
+            value_name = "FILE"
+        )]
+        t2_route_family_splits: PathBuf,
         /// Output segment candidate CSV
         #[arg(
             long,
@@ -6718,6 +6732,7 @@ fn run_cli() -> Result<()> {
         Commands::T2RouteFamilySplits {
             closure,
             service_diagnostics,
+            bundles,
             exceptions,
             output,
             gate,
@@ -6727,11 +6742,14 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", closure.display()))?;
             let service_diagnostic_rows = load_t2_service_diagnostic_queue(&service_diagnostics)
                 .with_context(|| format!("loading {}", service_diagnostics.display()))?;
+            let bundle_rows = load_national_segment_bundles(&bundles)
+                .with_context(|| format!("loading {}", bundles.display()))?;
             let exception_rows = load_endpoint_exceptions(&exceptions)
                 .with_context(|| format!("loading {}", exceptions.display()))?;
             let rows = t2_route_family_split_rows(
                 &closure_rows,
                 &service_diagnostic_rows,
+                &bundle_rows,
                 &exception_rows,
             );
             write_t2_route_family_splits(&output, &rows)
@@ -7081,6 +7099,7 @@ fn run_cli() -> Result<()> {
             t1_selector,
             t2_service_selection,
             t2_bundle_repair_queue,
+            t2_route_family_splits,
             output,
             gate,
         } => {
@@ -7094,7 +7113,15 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t2_service_selection.display()))?;
             let repair_rows = load_t2_bundle_repair_queue(&t2_bundle_repair_queue)
                 .with_context(|| format!("loading {}", t2_bundle_repair_queue.display()))?;
-            let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows);
+            let route_family_rows = load_t2_route_family_splits(&t2_route_family_splits)
+                .with_context(|| format!("loading {}", t2_route_family_splits.display()))?;
+            let rows = tier_segment_candidate_rows(
+                &graph,
+                &t1_rows,
+                &t2_rows,
+                &repair_rows,
+                &route_family_rows,
+            );
             write_tier_segment_candidates(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_segment_candidate_summary(&output, &rows);
@@ -15215,6 +15242,7 @@ fn load_t2_blocker_closure(path: &Path) -> Result<Vec<T2BlockerClosureRow>> {
 fn t2_route_family_split_rows(
     closure_rows: &[T2BlockerClosureRow],
     service_diagnostic_rows: &[T2ServiceDiagnosticQueueRow],
+    bundle_rows: &[NationalSegmentBundleRow],
     exception_rows: &[EndpointExceptionRow],
 ) -> Vec<T2RouteFamilySplitRow> {
     let mut emitted_routes = std::collections::BTreeSet::<String>::new();
@@ -15285,6 +15313,87 @@ fn t2_route_family_split_rows(
                 validation_status: "review".to_string(),
             }),
     );
+    let mut service_bundle_count_by_route =
+        std::collections::BTreeMap::<String, std::collections::BTreeSet<String>>::new();
+    for row in service_diagnostic_rows {
+        service_bundle_count_by_route
+            .entry(canonical_route_key(&row.route))
+            .or_default()
+            .insert(row.segment_bundle_id.clone());
+    }
+    rows.extend(
+        service_bundle_count_by_route
+            .into_iter()
+            .filter(|(route, bundles)| bundles.len() > 1 && is_three_digit_interstate(route))
+            .filter(|(route, _)| {
+                if emitted_routes.contains(route) {
+                    return false;
+                }
+                emitted_routes.insert(route.clone());
+                true
+            })
+            .map(|(route, bundles)| T2RouteFamilySplitRow {
+                route,
+                endpoint_name: String::new(),
+                endpoint_role: "service_diagnostic_route_family".to_string(),
+                exception_type: "route-family-segment-bundles-present".to_string(),
+                source_artifact: "data/t2-service-diagnostic-queue.csv".to_string(),
+                family_action: "split-numbered-service-family".to_string(),
+                disposition: "segment-family-split-complete".to_string(),
+                required_evidence: format!(
+                    "{} represented segment bundles emitted",
+                    bundles.len()
+                ),
+                next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+                optimizer_effect:
+                    "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
+                        .to_string(),
+                validation_status: "pass".to_string(),
+            }),
+    );
+    let mut scoped_bundle_count_by_route =
+        std::collections::BTreeMap::<String, std::collections::BTreeSet<String>>::new();
+    for bundle in bundle_rows {
+        if !bundle.bundle_aliases.contains("route-family-scope:") {
+            continue;
+        }
+        for route in semicolon_values(&bundle.route_labels) {
+            scoped_bundle_count_by_route
+                .entry(canonical_route_key(&route))
+                .or_default()
+                .insert(bundle.segment_bundle_id.clone());
+        }
+    }
+    rows.extend(
+        scoped_bundle_count_by_route
+            .into_iter()
+            .filter(|(route, bundles)| bundles.len() > 1 && is_three_digit_interstate(route))
+            .filter(|(route, _)| {
+                if emitted_routes.contains(route) {
+                    return false;
+                }
+                emitted_routes.insert(route.clone());
+                true
+            })
+            .map(|(route, bundles)| T2RouteFamilySplitRow {
+                route,
+                endpoint_name: String::new(),
+                endpoint_role: "service_diagnostic_route_family".to_string(),
+                exception_type: "route-family-segment-bundles-present".to_string(),
+                source_artifact: "data/national-segment-bundles.csv".to_string(),
+                family_action: "split-numbered-service-family".to_string(),
+                disposition: "segment-family-split-complete".to_string(),
+                required_evidence: format!(
+                    "{} represented segment bundles emitted",
+                    bundles.len()
+                ),
+                next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+                optimizer_effect:
+                    "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
+                        .to_string(),
+                validation_status: "pass".to_string(),
+            }),
+    );
     if rows.is_empty() {
         rows.push(T2RouteFamilySplitRow {
             route: "__all_t2_route_family_splits__".to_string(),
@@ -15301,6 +15410,14 @@ fn t2_route_family_split_rows(
         });
     }
     rows
+}
+
+fn is_three_digit_interstate(route: &str) -> bool {
+    canonical_route_key(route)
+        .strip_prefix('I')
+        .and_then(|number| number.parse::<u16>().ok())
+        .map(|number| number >= 100)
+        .unwrap_or_default()
 }
 
 fn t2_route_family_split_decision(
@@ -16702,37 +16819,36 @@ fn t2_service_diagnostic_queue_rows(
             ) || row.selection_basis == "missing-beck-t2-diagnostic"
                 || row.selection_basis == "closure-accepted-missing-beck-t2-diagnostic"
         })
-        .filter_map(|row| {
-            let bundle = bundle_rows
+        .flat_map(|row| {
+            bundle_rows
                 .iter()
-                .find(|bundle| national_bundle_matches_route(bundle, &row.route));
-            let (segment_bundle_id, bundle_status) = bundle
-                .map(|bundle| {
-                    (
-                        bundle.segment_bundle_id.clone(),
-                        bundle.bundle_status.clone(),
-                    )
+                .filter(|bundle| {
+                    bundle.bundle_status == "bundle-ready"
+                        && national_bundle_matches_route(bundle, &row.route)
                 })
-                .unwrap_or_else(|| (String::new(), "bundle-missing".to_string()));
-            if bundle_status != "bundle-ready" {
-                return None;
-            }
-            let (diagnostic_status, service_diagnostic_action, next_artifact, optimizer_effect) =
-                t2_service_diagnostic_contract(row, bundle);
-            Some(T2ServiceDiagnosticQueueRow {
-                route: row.route.clone(),
-                region_id: row.region_id.clone(),
-                segment_bundle_id,
-                bundle_status,
-                selection_action: row.selection_action.clone(),
-                selection_basis: row.selection_basis.clone(),
-                diagnostic_status: diagnostic_status.to_string(),
-                service_diagnostic_action: service_diagnostic_action.to_string(),
-                required_artifact: "data/t2-service-selection.csv".to_string(),
-                next_artifact: next_artifact.to_string(),
-                optimizer_effect: optimizer_effect.to_string(),
-                validation_status: "review".to_string(),
-            })
+                .map(|bundle| {
+                    let (
+                        diagnostic_status,
+                        service_diagnostic_action,
+                        next_artifact,
+                        optimizer_effect,
+                    ) = t2_service_diagnostic_contract(row, Some(bundle));
+                    T2ServiceDiagnosticQueueRow {
+                        route: row.route.clone(),
+                        region_id: row.region_id.clone(),
+                        segment_bundle_id: bundle.segment_bundle_id.clone(),
+                        bundle_status: bundle.bundle_status.clone(),
+                        selection_action: row.selection_action.clone(),
+                        selection_basis: row.selection_basis.clone(),
+                        diagnostic_status: diagnostic_status.to_string(),
+                        service_diagnostic_action: service_diagnostic_action.to_string(),
+                        required_artifact: "data/t2-service-selection.csv".to_string(),
+                        next_artifact: next_artifact.to_string(),
+                        optimizer_effect: optimizer_effect.to_string(),
+                        validation_status: "review".to_string(),
+                    }
+                })
+                .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| left.route.cmp(&right.route));
@@ -17258,7 +17374,13 @@ fn tier_segment_candidate_rows(
     t1_rows: &[T1LineSelectorInputRow],
     t2_rows: &[T2ServiceSelectionRow],
     repair_rows: &[T2BundleRepairQueueRow],
+    route_family_rows: &[T2RouteFamilySplitRow],
 ) -> Vec<TierSegmentCandidateRow> {
+    let split_service_families = route_family_rows
+        .iter()
+        .filter(|row| row.family_action == "split-numbered-service-family")
+        .map(|row| canonical_route_key(&row.route))
+        .collect::<std::collections::BTreeSet<_>>();
     let mut service_rows = Vec::<(&str, &str, String, String, String, String)>::new();
     for row in t1_rows.iter().filter(|row| row.selected) {
         service_rows.push((
@@ -17309,13 +17431,23 @@ fn tier_segment_candidate_rows(
     let mut rows = Vec::new();
     for (tier, source_selector, region_id, route, selector_basis, action_basis) in service_rows {
         let route_key = normalise_designation(&route);
-        let segment_bundle_id = tier_candidate_bundle_id(tier, &region_id, &route_key);
-        let stitch_group_id = tier_candidate_stitch_group_id(tier, &region_id, &route_key);
+        let split_by_state =
+            tier == "T2" && split_service_families.contains(&canonical_route_key(&route_key));
         let mut edges = graph.route_edges(&route_key).to_vec();
         edges.sort_by_key(|edge_idx| graph.graph[*edge_idx].id);
         let edge_count = edges.len();
         for (edge_sequence, edge_idx) in edges.into_iter().enumerate() {
             let edge = &graph.graph[edge_idx];
+            let edge_state = route_network::infer_edge_state(edge);
+            let bundle_scope = if split_by_state {
+                edge_state.clone()
+            } else {
+                String::new()
+            };
+            let segment_bundle_id =
+                tier_candidate_bundle_id(tier, &region_id, &route_key, &bundle_scope);
+            let stitch_group_id =
+                tier_candidate_stitch_group_id(tier, &region_id, &route_key, &bundle_scope);
             rows.push(TierSegmentCandidateRow {
                 tier: tier.to_string(),
                 source_selector: source_selector.to_string(),
@@ -17331,7 +17463,7 @@ fn tier_segment_candidate_rows(
                 } else {
                     "single-member-candidate".to_string()
                 },
-                state: route_network::infer_edge_state(edge),
+                state: edge_state,
                 length_miles: rounded_score(edge.length_miles),
                 aadt: edge
                     .aadt
@@ -17341,7 +17473,7 @@ fn tier_segment_candidate_rows(
                     .lane_count
                     .map(|value| value.to_string())
                     .unwrap_or_else(|| "unknown".to_string()),
-                route_aliases: tier_candidate_aliases(tier, &region_id, &route_key),
+                route_aliases: tier_candidate_aliases(tier, &region_id, &route_key, &bundle_scope),
                 selector_basis: selector_basis.clone(),
                 candidate_action: action_basis.clone(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
@@ -17378,29 +17510,47 @@ fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> String {
     )
 }
 
-fn tier_candidate_bundle_id(tier: &str, region_id: &str, route: &str) -> String {
+fn tier_candidate_bundle_id(tier: &str, region_id: &str, route: &str, bundle_scope: &str) -> String {
+    let identity = if bundle_scope.trim().is_empty() {
+        format!("candidate-bundle|{tier}|{region_id}|{route}")
+    } else {
+        format!("candidate-bundle|{tier}|{region_id}|{route}|{bundle_scope}")
+    };
     format!(
         "US.HWYBUNDLE.{:016X}",
-        stable_segment_hash(&format!("candidate-bundle|{tier}|{region_id}|{route}"))
+        stable_segment_hash(&identity)
     )
 }
 
-fn tier_candidate_stitch_group_id(tier: &str, region_id: &str, route: &str) -> String {
+fn tier_candidate_stitch_group_id(
+    tier: &str,
+    region_id: &str,
+    route: &str,
+    bundle_scope: &str,
+) -> String {
+    let identity = if bundle_scope.trim().is_empty() {
+        format!("candidate-stitch|{tier}|{region_id}|{route}")
+    } else {
+        format!("candidate-stitch|{tier}|{region_id}|{route}|{bundle_scope}")
+    };
     format!(
         "US.HWYSTITCH.{:016X}",
-        stable_segment_hash(&format!("candidate-stitch|{tier}|{region_id}|{route}"))
+        stable_segment_hash(&identity)
     )
 }
 
-fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str) -> String {
-    [
+fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str, bundle_scope: &str) -> String {
+    let mut aliases = vec![
         format!("current-tier:{tier}"),
         format!("current-zone:{region_id}"),
         format!("route:{route}"),
         format!("route-label:{route}"),
         "layer:segment-candidate".to_string(),
-    ]
-    .join(";")
+    ];
+    if !bundle_scope.trim().is_empty() {
+        aliases.push(format!("route-family-scope:{bundle_scope}"));
+    }
+    aliases.join(";")
 }
 
 fn write_tier_segment_candidates(path: &Path, rows: &[TierSegmentCandidateRow]) -> Result<()> {
@@ -27852,8 +28002,9 @@ mod tests {
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow, T2ContactClosureRow,
         T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow,
         T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
         T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
         TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
@@ -28684,7 +28835,7 @@ mod tests {
             },
         ];
 
-        let rows = t2_route_family_split_rows(&closure_rows, &[], &exceptions);
+        let rows = t2_route_family_split_rows(&closure_rows, &[], &[], &exceptions);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows[0].family_action, "split-numbered-family");
@@ -28696,7 +28847,7 @@ mod tests {
 
     #[test]
     fn t2_route_family_splits_emit_clear_row_when_no_split_blockers_remain() {
-        let rows = t2_route_family_split_rows(&[], &[], &[]);
+        let rows = t2_route_family_split_rows(&[], &[], &[], &[]);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -28722,7 +28873,7 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows = t2_route_family_split_rows(&[], &service_rows, &[]);
+        let rows = t2_route_family_split_rows(&[], &service_rows, &[], &[]);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -30873,7 +31024,7 @@ mod tests {
         }];
         let t2_rows = Vec::new();
         let repair_rows = Vec::new();
-        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows);
+        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows, &[]);
         let failures =
             tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows, &repair_rows);
 
@@ -30884,6 +31035,121 @@ mod tests {
         assert_ne!(rows[0].national_segment_id, rows[1].national_segment_id);
         assert_eq!(rows[0].segment_bundle_id, rows[1].segment_bundle_id);
         assert_eq!(rows[0].member_role, "stitched-member");
+    }
+
+    #[test]
+    fn tier_segment_candidates_split_numbered_t2_families_by_state() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let c = graph.graph.add_node(HighwayNode {
+            id: 3,
+            coord: coord! { x: 2.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let e1 = graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 20,
+                route_id: "I295".to_string(),
+                state: "NJ".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 1.0, y: 0.0 },
+                ]),
+                length_miles: 10.0,
+                lane_count: Some(4),
+                aadt: Some(40_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        let e2 = graph.graph.add_edge(
+            b,
+            c,
+            HighwayEdge {
+                id: 21,
+                route_id: "I295".to_string(),
+                state: "ME".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 1.0, y: 0.0 },
+                    coord! { x: 2.0, y: 0.0 },
+                ]),
+                length_miles: 20.0,
+                lane_count: Some(4),
+                aadt: Some(45_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.route_index.insert("I295".to_string(), vec![e1, e2]);
+
+        let t2_rows = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I295".to_string(),
+            parent_trunks: "I95".to_string(),
+            column_decision: "selected".to_string(),
+            treatment_status: "selected-treatment".to_string(),
+            beck_corridor: String::new(),
+            beck_service_class: String::new(),
+            beck_color_mode: String::new(),
+            beck_start_trunk: String::new(),
+            beck_end_trunk: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: String::new(),
+            qualification_basis: String::new(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let route_family_rows = vec![T2RouteFamilySplitRow {
+            route: "I295".to_string(),
+            endpoint_name: String::new(),
+            endpoint_role: "service_diagnostic_route_family".to_string(),
+            exception_type: "route-family-diagnostic-split-needed".to_string(),
+            source_artifact: "data/t2-service-diagnostic-queue.csv".to_string(),
+            family_action: "split-numbered-service-family".to_string(),
+            disposition: "blocked".to_string(),
+            required_evidence: "represented segment family".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            optimizer_effect: "split before rendering".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows =
+            tier_segment_candidate_rows(&graph, &[], &t2_rows, &[], &route_family_rows);
+        let bundle_ids = rows
+            .iter()
+            .map(|row| row.segment_bundle_id.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(bundle_ids.len(), 2);
+        assert!(rows[0].route_aliases.contains("route-family-scope:NJ"));
+        assert!(rows[1].route_aliases.contains("route-family-scope:ME"));
     }
 
     #[test]

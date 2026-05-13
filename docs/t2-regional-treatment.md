@@ -102,6 +102,12 @@ service-diagnostic rows and emits `split-numbered-service-family` actions, so
 national T2 rendering waits for represented segment families rather than
 treating every I-295 or I-275 as one interchangeable service.
 
+The split is materialized upstream in `route tier-segment-candidates`: T2 routes
+with `split-numbered-service-family` rows receive state-scoped
+`segment_bundle_id` and `stitch_group_id` values. Once those bundles exist, the
+route-family docket keeps a `segment-family-split-complete` row so future
+regeneration does not collapse the family back into a single route-label bundle.
+
 ## Contact Rules
 
 A T2 route normally needs at least two valid system contacts:
