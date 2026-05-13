@@ -33,11 +33,12 @@ The Beck renderer must prefer generated optimizer artifacts in this order:
 6. `data/t1-beck-alignment.csv`
 7. `data/t2-regionalizer.csv`
 8. `data/t2-service-selection.csv`
-9. `data/t3-zone-render-board.csv`
-10. `data/t3-zone-stop-placement.csv`
-11. `data/t1-feedback-docket.csv`
-12. `data/optimizer-map-hooks.csv`
-13. hand-authored Beck fixtures, only as compatibility fallbacks
+9. `data/game/t2-bundle-overlays.csv`
+10. `data/t3-zone-render-board.csv`
+11. `data/t3-zone-stop-placement.csv`
+12. `data/t1-feedback-docket.csv`
+13. `data/optimizer-map-hooks.csv`
+14. hand-authored Beck fixtures, only as compatibility fallbacks
 
 If a hand-authored fixture disagrees with an optimizer artifact, the renderer
 must emit a diagnostic row rather than silently choosing the fixture.

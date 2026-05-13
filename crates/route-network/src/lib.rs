@@ -17,7 +17,8 @@ pub mod tier;
 pub use aggregate::aggregate_corridor;
 pub use build::{build_graph, build_graph_with_fpm};
 pub use bundle::{
-    build_segment_bundles, bundle_action, BundleStatus, SegmentBundle, SegmentBundleMember,
+    build_segment_bundles, bundle_action, normalise_bundle_key, BundleRegistry, BundleStatus,
+    SegmentBundle, SegmentBundleMember,
 };
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
 pub use corridor::{Corridor, CorridorAttributes};

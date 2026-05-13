@@ -92,6 +92,8 @@ should use `route_network::SegmentBundleMember`,
 `route_network::SegmentBundle`, `route_network::BundleStatus`,
 `route_network::build_segment_bundles`, and `route_network::bundle_action`
 instead of rebuilding bundle rollups inside downstream crates.
+Efficient lookup semantics are owned by `docs/bundle-registry-spec.md` and
+implemented through `route_network::BundleRegistry`.
 `route bundle-architecture --gate` emits `data/bundle-architecture.csv` as the
 crate-level adoption certificate for this rule.
 

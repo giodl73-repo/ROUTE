@@ -3,5 +3,6 @@ t1-selector-beck-schematic,data/t1-stop-selector.csv,maps/beck-schematic.png,map
 t2-selection-t2-schematic,data/t2-service-selection.csv,maps/beck-schematic-t2-only.png,map,route t2-service-selection --gate,T2 schematic classes are backed by service-selection rows,pass
 lower-tier-pressure-t3-zones,data/lower-tier-pressure-witnesses.csv,data/t3-regional-zone-plan.csv,map-plan,route lower-tier-pressure-witnesses --gate,T3/T4 pressure rows feed regional zone planning and map backlogs,pass
 map-atlas-game-campaign,data/map-atlas.csv,data/game/campaign-spine.csv,game-ledger,route game campaign --gate,Campaign stops reference gated atlas ids,pass
-t2-selection-game-overlays,data/t2-service-selection.csv,data/game/t2-service-overlays.csv,game-ledger,route game t2-overlays --gate,Game overlays target T2 service classes selected and reviewed by optimizer,pass
+t2-selection-game-overlays,data/t2-service-selection.csv,data/game/t2-bundle-overlays.csv,game-ledger,route t2-bundle-overlays --gate,Game overlays target bundle-bound or explicitly pending T2 service columns,pass
+t2-service-class-game-overlays,data/game/t2-service-overlays.csv,data/game/t2-bundle-overlays.csv,game-ledger,route t2-bundle-overlays --gate,Service-class levers are joined to T2 service columns through bundle overlay rows,pass
 t2-overlays-scenario-hooks,data/game/t2-service-overlays.csv,data/game/t2-scenario-hooks.csv,game-ledger,route game t2-hooks --gate,Scenario hooks consume service-class overlay contracts,pass

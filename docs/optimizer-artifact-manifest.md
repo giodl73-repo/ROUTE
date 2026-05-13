@@ -81,6 +81,7 @@ The current all-tier manifest includes:
 - T2 candidate columns;
 - T2 regionalizer;
 - T2 service selection;
+- T2 bundle overlays;
 - lower-tier pressure witnesses;
 - T3/T4 pressure intake;
 - T3 zone render board;

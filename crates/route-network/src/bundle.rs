@@ -74,6 +74,133 @@ impl BundleStatus {
             "review"
         }
     }
+
+    pub fn from_label(label: &str) -> Self {
+        match label {
+            "bundle-ready" => Self::BundleReady,
+            "invalid-single-segment-bundle" => Self::InvalidSingleSegmentBundle,
+            "missing-members" => Self::MissingMembers,
+            "needs-stitched-members" => Self::NeedsStitchedMembers,
+            "needs-stop-chain" => Self::NeedsStopChain,
+            "needs-terminal-stop" => Self::NeedsTerminalStop,
+            _ => Self::BundleReview,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BundleRegistry {
+    bundles: Vec<SegmentBundle>,
+    by_bundle_id: BTreeMap<String, usize>,
+    by_route_label: BTreeMap<String, Vec<usize>>,
+    by_alias: BTreeMap<String, Vec<usize>>,
+    by_member_segment_id: BTreeMap<String, Vec<usize>>,
+    by_stitch_group_id: BTreeMap<String, Vec<usize>>,
+    by_tier: BTreeMap<String, Vec<usize>>,
+    by_zone: BTreeMap<String, Vec<usize>>,
+}
+
+impl BundleRegistry {
+    pub fn new(bundles: Vec<SegmentBundle>) -> Self {
+        let mut registry = Self {
+            bundles,
+            ..Default::default()
+        };
+        registry.rebuild_indexes();
+        registry
+    }
+
+    pub fn bundles(&self) -> &[SegmentBundle] {
+        &self.bundles
+    }
+
+    pub fn get(&self, segment_bundle_id: &str) -> Option<&SegmentBundle> {
+        self.by_bundle_id
+            .get(segment_bundle_id)
+            .and_then(|idx| self.bundles.get(*idx))
+    }
+
+    pub fn by_route_label(&self, route_label: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_route_label, &normalise_bundle_key(route_label))
+    }
+
+    pub fn by_alias(&self, alias: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_alias, &normalise_bundle_key(alias))
+    }
+
+    pub fn by_member_segment_id(&self, national_segment_id: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_member_segment_id, national_segment_id)
+    }
+
+    pub fn by_stitch_group_id(&self, stitch_group_id: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_stitch_group_id, stitch_group_id)
+    }
+
+    pub fn by_tier(&self, tier: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_tier, tier)
+    }
+
+    pub fn by_zone(&self, zone: &str) -> Vec<&SegmentBundle> {
+        self.lookup_many(&self.by_zone, zone)
+    }
+
+    fn lookup_many(&self, index: &BTreeMap<String, Vec<usize>>, key: &str) -> Vec<&SegmentBundle> {
+        index
+            .get(key)
+            .into_iter()
+            .flatten()
+            .filter_map(|idx| self.bundles.get(*idx))
+            .collect()
+    }
+
+    fn rebuild_indexes(&mut self) {
+        for (idx, bundle) in self.bundles.iter().enumerate() {
+            self.by_bundle_id
+                .insert(bundle.segment_bundle_id.clone(), idx);
+            for route_label in &bundle.route_labels {
+                insert_index(
+                    &mut self.by_route_label,
+                    normalise_bundle_key(route_label),
+                    idx,
+                );
+            }
+            for alias in &bundle.bundle_aliases {
+                insert_index(&mut self.by_alias, normalise_bundle_key(alias), idx);
+                if let Some((_, value)) = alias.split_once(':') {
+                    insert_index(&mut self.by_alias, normalise_bundle_key(value), idx);
+                }
+            }
+            for member_id in &bundle.member_segment_ids {
+                insert_index(&mut self.by_member_segment_id, member_id.clone(), idx);
+            }
+            for stitch_group_id in &bundle.stitch_group_ids {
+                insert_index(&mut self.by_stitch_group_id, stitch_group_id.clone(), idx);
+            }
+            for tier in &bundle.current_tiers {
+                insert_index(&mut self.by_tier, tier.clone(), idx);
+            }
+            for zone in &bundle.current_zone_ids {
+                insert_index(&mut self.by_zone, zone.clone(), idx);
+            }
+        }
+    }
+}
+
+pub fn normalise_bundle_key(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_uppercase())
+        .collect()
+}
+
+fn insert_index(index: &mut BTreeMap<String, Vec<usize>>, key: String, idx: usize) {
+    if !key.trim().is_empty() {
+        let rows = index.entry(key).or_default();
+        if !rows.contains(&idx) {
+            rows.push(idx);
+        }
+    }
 }
 
 #[derive(Default)]
@@ -249,7 +376,7 @@ fn insert_semicolon_values(target: &mut BTreeSet<String>, value: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::{build_segment_bundles, BundleStatus, SegmentBundleMember};
+    use super::{build_segment_bundles, BundleRegistry, BundleStatus, SegmentBundleMember};
 
     #[test]
     fn bundles_are_built_as_service_objects_from_segment_members() {
@@ -300,5 +427,37 @@ mod tests {
         );
         assert_eq!(bundles[0].state_scope, ["IA", "IL"]);
         assert_eq!(bundles[0].bundle_status, BundleStatus::BundleReady);
+    }
+
+    #[test]
+    fn bundle_registry_resolves_common_render_sim_and_game_keys() {
+        let bundles = build_segment_bundles(&[SegmentBundleMember {
+            national_segment_id: "US.HWYSEG.I80-IA".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I80".to_string(),
+            bundle_role: "single-segment".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I80".to_string(),
+            current_tier: "T1".to_string(),
+            current_zone_id: "national".to_string(),
+            route_label: "I-80".to_string(),
+            state_scope: "IA".to_string(),
+            evidence_state_scope: "IA".to_string(),
+            geometry_state_scope: String::new(),
+            bundle_aliases: "route:I-80;old-route:I80".to_string(),
+            source_artifacts: "fixture".to_string(),
+            registry_action: "eligible-for-geometry-layout".to_string(),
+            validation_status: "pass".to_string(),
+            member_segment_ids: "US.HWYSEG.I80-IA".to_string(),
+        }]);
+        let registry = BundleRegistry::new(bundles);
+
+        assert!(registry.get("US.HWYBUNDLE.I80").is_some());
+        assert_eq!(registry.by_route_label("I80").len(), 1);
+        assert_eq!(registry.by_route_label("I-80").len(), 1);
+        assert_eq!(registry.by_alias("old-route:I80").len(), 1);
+        assert_eq!(registry.by_alias("I80").len(), 1);
+        assert_eq!(registry.by_member_segment_id("US.HWYSEG.I80-IA").len(), 1);
+        assert_eq!(registry.by_stitch_group_id("US.HWYSTITCH.I80").len(), 1);
+        assert_eq!(registry.by_tier("T1").len(), 1);
+        assert_eq!(registry.by_zone("national").len(), 1);
     }
 }

@@ -1606,6 +1606,42 @@ enum Commands {
         gate: bool,
     },
 
+    /// Bind T2 game/ops service overlays to national segment bundles where available
+    T2BundleOverlays {
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        service_selection: PathBuf,
+        /// National segment bundle CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        bundles: PathBuf,
+        /// T2 game service-class overlay CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-service-overlays.csv",
+            value_name = "FILE"
+        )]
+        game_overlays: PathBuf,
+        /// Output bundle-bound T2 overlay CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/game/t2-bundle-overlays.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if rows lack explicit bundle binding or pending-binding status
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 pressure witnesses that can roll lower-tier gaps back upward
     LowerTierPressureWitnesses {
         /// Tier score table CSV
@@ -6377,6 +6413,40 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 service selection gate: PASS");
+            }
+        }
+
+        Commands::T2BundleOverlays {
+            service_selection,
+            bundles,
+            game_overlays,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-overlays");
+            let service_rows = load_t2_service_selection(&service_selection)
+                .with_context(|| format!("loading {}", service_selection.display()))?;
+            let bundle_rows = load_national_segment_bundles(&bundles)
+                .with_context(|| format!("loading {}", bundles.display()))?;
+            let overlay_rows = load_game_t2_service_overlays(&game_overlays)
+                .with_context(|| format!("loading {}", game_overlays.display()))?;
+            let rows = t2_bundle_overlay_rows(&service_rows, &bundle_rows, &overlay_rows);
+            write_t2_bundle_overlays(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_overlay_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_overlay_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle overlay gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle overlay gate failed");
+                }
+                println!();
+                println!("T2 bundle overlay gate: PASS");
             }
         }
 
@@ -11771,6 +11841,37 @@ struct T2ServiceSelectionRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
+struct GameT2ServiceOverlayRow {
+    service_class: String,
+    map_id: String,
+    scenario_hook: String,
+    incident_lever: String,
+    upgrade_lever: String,
+    restitch_lever: String,
+    release_gate: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct T2BundleOverlayRow {
+    tier: String,
+    region_id: String,
+    route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    service_class: String,
+    map_id: String,
+    scenario_hook: String,
+    incident_lever: String,
+    upgrade_lever: String,
+    restitch_lever: String,
+    release_gate: String,
+    source_artifacts: String,
+    binding_status: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
 struct TierTableScoreRow {
     tier: String,
     route: String,
@@ -14562,6 +14663,224 @@ fn load_t2_service_selection(path: &Path) -> Result<Vec<T2ServiceSelectionRow>> 
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn load_national_segment_bundles(path: &Path) -> Result<Vec<NationalSegmentBundleRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_game_t2_service_overlays(path: &Path) -> Result<Vec<GameT2ServiceOverlayRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_overlay_rows(
+    service_rows: &[T2ServiceSelectionRow],
+    bundle_rows: &[NationalSegmentBundleRow],
+    overlay_rows: &[GameT2ServiceOverlayRow],
+) -> Vec<T2BundleOverlayRow> {
+    let registry = route_network::BundleRegistry::new(
+        bundle_rows
+            .iter()
+            .map(segment_bundle_from_national_row)
+            .collect(),
+    );
+    let overlay_by_class = overlay_rows
+        .iter()
+        .map(|row| (row.service_class.clone(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    service_rows
+        .iter()
+        .map(|service| {
+            let route_bundles = registry.by_route_label(&service.route);
+            let bundle = route_bundles.first().copied();
+            let overlay = overlay_by_class.get(&service.beck_service_class);
+            let service_class = if service.beck_service_class.trim().is_empty() {
+                "unclassified".to_string()
+            } else {
+                service.beck_service_class.clone()
+            };
+            let (binding_status, next_artifact, validation_status) = match (bundle, overlay) {
+                (Some(bundle), Some(_))
+                    if bundle
+                        .validation_statuses
+                        .iter()
+                        .all(|status| status == "pass") =>
+                {
+                    ("bundle-bound", "data/game/t2-scenario-hooks.csv", "pass")
+                }
+                (Some(_), Some(_)) => (
+                    "bundle-bound-review",
+                    "data/national-segment-bundles.csv",
+                    "review",
+                ),
+                (None, Some(_)) => (
+                    "bundle-binding-pending",
+                    "data/national-segment-bundles.csv",
+                    "review",
+                ),
+                (_, None) => (
+                    "service-class-overlay-pending",
+                    "data/game/t2-service-overlays.csv",
+                    "review",
+                ),
+            };
+            T2BundleOverlayRow {
+                tier: service.tier.clone(),
+                region_id: service.region_id.clone(),
+                route: service.route.clone(),
+                segment_bundle_id: bundle
+                    .map(|bundle| bundle.segment_bundle_id.clone())
+                    .unwrap_or_default(),
+                bundle_status: bundle
+                    .map(|bundle| bundle.bundle_status.as_str().to_string())
+                    .unwrap_or_else(|| "missing-bundle".to_string()),
+                service_class,
+                map_id: overlay.map(|row| row.map_id.clone()).unwrap_or_default(),
+                scenario_hook: overlay
+                    .map(|row| row.scenario_hook.clone())
+                    .unwrap_or_default(),
+                incident_lever: overlay
+                    .map(|row| row.incident_lever.clone())
+                    .unwrap_or_default(),
+                upgrade_lever: overlay
+                    .map(|row| row.upgrade_lever.clone())
+                    .unwrap_or_default(),
+                restitch_lever: overlay
+                    .map(|row| row.restitch_lever.clone())
+                    .unwrap_or_default(),
+                release_gate: overlay
+                    .map(|row| row.release_gate.clone())
+                    .unwrap_or_default(),
+                source_artifacts:
+                    "data/t2-service-selection.csv;data/national-segment-bundles.csv;data/game/t2-service-overlays.csv"
+                        .to_string(),
+                binding_status: binding_status.to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn segment_bundle_from_national_row(
+    row: &NationalSegmentBundleRow,
+) -> route_network::SegmentBundle {
+    route_network::SegmentBundle {
+        segment_bundle_id: row.segment_bundle_id.clone(),
+        bundle_role: row.bundle_role.clone(),
+        member_segment_ids: semicolon_values(&row.member_segment_ids),
+        stitch_group_ids: semicolon_values(&row.stitch_group_ids),
+        current_tiers: semicolon_values(&row.current_tiers),
+        current_zone_ids: semicolon_values(&row.current_zone_ids),
+        route_labels: semicolon_values(&row.route_labels),
+        state_scope: semicolon_values(&row.state_scope),
+        evidence_state_scope: semicolon_values(&row.evidence_state_scope),
+        geometry_state_scope: semicolon_values(&row.geometry_state_scope),
+        bundle_aliases: semicolon_values(&row.bundle_aliases),
+        source_artifacts: semicolon_values(&row.source_artifacts),
+        registry_actions: Vec::new(),
+        validation_statuses: vec![row.validation_status.clone()],
+        bundle_status: route_network::BundleStatus::from_label(&row.bundle_status),
+    }
+}
+
+fn write_t2_bundle_overlays(path: &Path, rows: &[T2BundleOverlayRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_overlay_summary(output: &Path, rows: &[T2BundleOverlayRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.binding_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle overlay rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 bundle overlay rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.binding_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.source_artifacts.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete bundle overlay fields",
+                row.route
+            ));
+        }
+        if !matches!(
+            row.binding_status.as_str(),
+            "bundle-bound"
+                | "bundle-bound-review"
+                | "bundle-binding-pending"
+                | "service-class-overlay-pending"
+        ) {
+            failures.push(format!(
+                "{} has unknown binding status {}",
+                row.route, row.binding_status
+            ));
+        }
+        if row.binding_status.starts_with("bundle-bound")
+            && !row.segment_bundle_id.starts_with("US.HWYBUNDLE.")
+        {
+            failures.push(format!(
+                "{} claims bundle binding without a bundle id",
+                row.route
+            ));
+        }
+        if row.binding_status == "bundle-bound" && row.validation_status != "pass" {
+            failures.push(format!("{} bound bundle did not pass", row.route));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.route, row.validation_status
+            ));
+        }
+    }
+    failures
 }
 
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
@@ -17833,6 +18152,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "t2-bundle-overlays",
+                "route t2-bundle-overlays --gate",
+                "data/game/t2-bundle-overlays.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -18161,10 +18488,18 @@ fn optimizer_map_hook_rows() -> Vec<OptimizerMapHookRow> {
         (
             "t2-selection-game-overlays",
             "data/t2-service-selection.csv",
-            "data/game/t2-service-overlays.csv",
+            "data/game/t2-bundle-overlays.csv",
             "game-ledger",
-            "route game t2-overlays --gate",
-            "Game overlays target T2 service classes selected and reviewed by optimizer",
+            "route t2-bundle-overlays --gate",
+            "Game overlays target bundle-bound or explicitly pending T2 service columns",
+        ),
+        (
+            "t2-service-class-game-overlays",
+            "data/game/t2-service-overlays.csv",
+            "data/game/t2-bundle-overlays.csv",
+            "game-ledger",
+            "route t2-bundle-overlays --gate",
+            "Service-class levers are joined to T2 service columns through bundle overlay rows",
         ),
         (
             "t2-overlays-scenario-hooks",
@@ -18276,7 +18611,7 @@ fn bundle_architecture_rows() -> Vec<BundleArchitectureRow> {
             "bundle-identity-owner",
             "route_network::build_segment_bundles",
             "crates/route-network/src/bundle.rs",
-            "pub struct SegmentBundle;pub struct SegmentBundleMember;pub enum BundleStatus;pub fn build_segment_bundles;pub fn bundle_action",
+            "pub struct SegmentBundle;pub struct SegmentBundleMember;pub struct BundleRegistry;pub enum BundleStatus;pub fn build_segment_bundles;pub fn bundle_action",
             "bundle-native",
             "use as canonical bundle rollup and status API",
         ),
@@ -23434,7 +23769,8 @@ mod tests {
         t1_line_selector_rows, t1_sla_candidate_pair_gate_failures, t1_sla_candidate_pair_rows,
         t1_stop_selector_gate_failures, t1_stop_selector_rows, t1_topology_repair_gate_failures,
         t1_topology_repair_rows, t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
-        t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows, t2_closure_dispositions,
+        t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows,
+        t2_bundle_overlay_gate_failures, t2_bundle_overlay_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
@@ -23459,7 +23795,8 @@ mod tests {
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, MapAtlasRow,
+        EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
+        LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
         ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow,
@@ -25566,6 +25903,97 @@ mod tests {
             rows[2].selection_action,
             "closure-review-needs-beck-diagnostic"
         );
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_bundle_overlays_use_registry_and_mark_pending_bindings() {
+        let service_rows = vec![
+            T2ServiceSelectionRow {
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I-15".to_string(),
+                parent_trunks: "I5;I70".to_string(),
+                column_decision: "selected".to_string(),
+                treatment_status: "selected-treatment".to_string(),
+                beck_corridor: "I-15".to_string(),
+                beck_service_class: "connector".to_string(),
+                beck_color_mode: "split-parent".to_string(),
+                beck_start_trunk: "I-5".to_string(),
+                beck_end_trunk: "I-70".to_string(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                beck_service_action: "keep".to_string(),
+                qualification_basis: "distinct-parent-service".to_string(),
+                selection_action: "keep-service-column".to_string(),
+                selection_basis: "diagnostic-backed-distinct-service".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T2ServiceSelectionRow {
+                tier: "T2".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I-29".to_string(),
+                parent_trunks: "I80;I35".to_string(),
+                column_decision: "review".to_string(),
+                treatment_status: "review-treatment".to_string(),
+                beck_corridor: "I-29".to_string(),
+                beck_service_class: "connector".to_string(),
+                beck_color_mode: "split-parent".to_string(),
+                beck_start_trunk: "I-80".to_string(),
+                beck_end_trunk: "I-35".to_string(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                beck_service_action: "keep".to_string(),
+                qualification_basis: "distinct-parent-service".to_string(),
+                selection_action: "parent-region-review".to_string(),
+                selection_basis: "regionalizer-review-treatment".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let bundles = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I15".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: "US.HWYSEG.I15".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I15".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-1".to_string(),
+            route_labels: "I15".to_string(),
+            state_scope: "CA;NV;UT".to_string(),
+            evidence_state_scope: "CA;NV;UT".to_string(),
+            geometry_state_scope: String::new(),
+            bundle_aliases: "route:I15".to_string(),
+            source_artifacts: "fixture".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+        let overlays = vec![GameT2ServiceOverlayRow {
+            service_class: "connector".to_string(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            scenario_hook: "T2 bridge between parent trunks".to_string(),
+            incident_lever: "reroute pressure".to_string(),
+            upgrade_lever: "upgrade to transfer-spine".to_string(),
+            restitch_lever: "restitch to nearest transfer stop".to_string(),
+            release_gate: "beck-t2-service-standards gate".to_string(),
+        }];
+
+        let rows = t2_bundle_overlay_rows(&service_rows, &bundles, &overlays);
+        let failures = t2_bundle_overlay_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I15");
+        assert_eq!(rows[0].binding_status, "bundle-bound");
+        assert_eq!(rows[1].binding_status, "bundle-binding-pending");
         assert!(failures.is_empty());
     }
 
