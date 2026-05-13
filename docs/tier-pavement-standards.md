@@ -73,3 +73,8 @@ bundle. It records member count, blocked member count, blocker statuses, affecte
 edge ids, and the next source or repair action. T1/T2 bundles may not move from
 `bundle-review` to `bundle-ready` until their source-gap row disappears or is
 replaced by passing pavement evidence.
+
+When selected graph members do not carry per-edge state codes, the source-gap
+command infers `affected_states` from the route geometry through the corridor
+aggregator. Edge ids remain the exact source handles; state scope is used to
+plan DOT/HPMS acquisition coverage.

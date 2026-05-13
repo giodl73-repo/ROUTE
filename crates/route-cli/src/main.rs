@@ -5055,9 +5055,12 @@ fn run_cli() -> Result<()> {
             gate,
         } => {
             println!("route tier-pavement-source-gaps");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
             let docket_rows = load_tier_pavement_docket(&docket)
                 .with_context(|| format!("loading {}", docket.display()))?;
-            let rows = tier_pavement_source_gap_rows(&docket_rows);
+            let rows = tier_pavement_source_gap_rows(Some(&graph), &docket_rows);
             write_tier_pavement_source_gaps(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_pavement_source_gap_summary(&output, &rows, details);
@@ -15860,6 +15863,7 @@ struct TierPavementSourceGapBuilder {
 }
 
 fn tier_pavement_source_gap_rows(
+    graph: Option<&route_network::HighwayGraph>,
     docket_rows: &[TierPavementDocketRow],
 ) -> Vec<TierPavementSourceGapRow> {
     let mut builders = std::collections::BTreeMap::<String, TierPavementSourceGapBuilder>::new();
@@ -15894,7 +15898,11 @@ fn tier_pavement_source_gap_rows(
         .filter(|builder| builder.blocker_count > 0)
         .map(|builder| {
             let blocker_statuses = join_string_set(&builder.blocker_statuses);
-            let affected_states = join_string_set(&builder.affected_states);
+            let affected_states = if builder.affected_states.is_empty() {
+                tier_pavement_route_state_scope(graph, &builder.route)
+            } else {
+                join_string_set(&builder.affected_states)
+            };
             let affected_edge_ids = builder
                 .affected_edge_ids
                 .iter()
@@ -15923,6 +15931,16 @@ fn tier_pavement_source_gap_rows(
             }
         })
         .collect()
+}
+
+fn tier_pavement_route_state_scope(
+    graph: Option<&route_network::HighwayGraph>,
+    route: &str,
+) -> String {
+    graph
+        .and_then(|graph| route_network::aggregate_corridor(graph, route))
+        .map(|corridor| corridor.states.join(";"))
+        .unwrap_or_default()
 }
 
 fn tier_pavement_source_gap_decision(
@@ -25140,10 +25158,10 @@ mod tests {
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
-        tier_pavement_source_gap_gate_failures, tier_pavement_source_gap_rows,
-        tier_region_gate_failures, tier_segment_candidate_gate_failures,
-        tier_segment_candidate_rows, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
+        tier_pavement_route_state_scope, tier_pavement_source_gap_gate_failures,
+        tier_pavement_source_gap_rows, tier_region_gate_failures,
+        tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
+        AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
         ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
@@ -27731,7 +27749,7 @@ mod tests {
             },
         ];
 
-        let rows: Vec<TierPavementSourceGapRow> = tier_pavement_source_gap_rows(&docket_rows);
+        let rows: Vec<TierPavementSourceGapRow> = tier_pavement_source_gap_rows(None, &docket_rows);
         let failures = tier_pavement_source_gap_gate_failures(&rows, &docket_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
@@ -27743,6 +27761,7 @@ mod tests {
         assert!(rows[0]
             .source_action
             .contains("join HPMS/state pavement condition"));
+        assert_eq!(tier_pavement_route_state_scope(None, "US30"), "");
     }
 
     #[test]
