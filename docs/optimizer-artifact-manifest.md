@@ -97,6 +97,7 @@ The current all-tier manifest includes:
 - T2 bundle overlays;
 - lower-tier pressure witnesses;
 - T3/T4 pressure intake;
+- T3/T4 access gaps;
 - T3 zone render board;
 - T3 zone stop placement;
 - national segment registry;

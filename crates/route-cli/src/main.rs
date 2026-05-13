@@ -2480,6 +2480,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_parallel_service_queue: PathBuf,
+        /// T3/T4 access gap CSV
+        #[arg(
+            long,
+            default_value = "data/t3-t4-access-gaps.csv",
+            value_name = "FILE"
+        )]
+        t3_t4_access_gaps: PathBuf,
         /// Output normalized constraint ledger CSV
         #[arg(
             long,
@@ -7829,6 +7836,7 @@ fn run_cli() -> Result<()> {
             pavement_debt_budget,
             t1_topology_repairs,
             t2_parallel_service_queue,
+            t3_t4_access_gaps,
             output,
             details,
             gate,
@@ -7840,8 +7848,14 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t1_topology_repairs.display()))?;
             let parallel_rows = load_t2_parallel_service_queue(&t2_parallel_service_queue)
                 .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
-            let rows =
-                optimizer_constraint_ledger_rows(&pavement_rows, &topology_rows, &parallel_rows);
+            let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
+                .with_context(|| format!("loading {}", t3_t4_access_gaps.display()))?;
+            let rows = optimizer_constraint_ledger_rows(
+                &pavement_rows,
+                &topology_rows,
+                &parallel_rows,
+                &access_gap_rows,
+            );
             write_optimizer_constraint_ledger(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_optimizer_constraint_ledger_summary(&output, &rows, details);
@@ -18856,6 +18870,7 @@ fn optimizer_constraint_ledger_rows(
     pavement_rows: &[TierPavementDebtBudgetRow],
     topology_rows: &[T1TopologyRepairRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
+    access_gap_rows: &[T3T4AccessGapRow],
 ) -> Vec<OptimizerConstraintLedgerRow> {
     let mut rows = Vec::new();
 
@@ -19046,6 +19061,75 @@ fn optimizer_constraint_ledger_rows(
             exception_artifact: String::new(),
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.optimizer_effect.clone(),
+            validation_status: row.validation_status.clone(),
+        });
+    }
+
+    for row in access_gap_rows {
+        let tier = if row.source_surface == "t4-terminal-access-columns"
+            || row.promise_horizon_hours == 1
+        {
+            "T4"
+        } else {
+            "T3"
+        };
+        let (constraint_class, repair_action) = match row.gap_class.as_str() {
+            "below-threshold-feeder" => ("lower_tier_feeder_gap", row.repair_action.as_str()),
+            "terminal-evidence-needed" => {
+                ("terminal_access_evidence_gap", row.repair_action.as_str())
+            }
+            "zone-assignment-needed" => ("zone_assignment_gap", row.repair_action.as_str()),
+            _ => ("lower_tier_access_gap", row.repair_action.as_str()),
+        };
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T3T4-{}", stable_id_fragment(&row.gap_id)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: tier.to_string(),
+            region_id: row.zone_id.clone(),
+            constraint_order: 12,
+            constraint_class: constraint_class.to_string(),
+            behavior_type: "claim-blocker".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.route.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: row.zone_id.clone(),
+            source_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            source_row_id: row.gap_id.clone(),
+            standard_artifact: "docs/t3-t4-access-optimization.md".to_string(),
+            evidence_status: "review".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: row.current_score.to_string(),
+            threshold_value: if row.promise_horizon_hours == 1 {
+                "terminal evidence".to_string()
+            } else {
+                format!("{T3_THRESHOLD:.1}")
+            },
+            measurement_unit: if row.promise_horizon_hours == 1 {
+                "terminal_access_evidence".to_string()
+            } else {
+                "route_score".to_string()
+            },
+            blocks_claims: "upgrade|map|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("promise_horizon_hours={}", row.promise_horizon_hours),
+            penalty_score: 1.0,
+            repair_action: repair_action.to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: row.gap_class.clone(),
+            exception_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.gap_reason.clone(),
             validation_status: row.validation_status.clone(),
         });
     }
@@ -33543,12 +33627,40 @@ mod tests {
             optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
             validation_status: "pass".to_string(),
         }];
+        let access_gap_rows = vec![T3T4AccessGapRow {
+            gap_id: "T3GAP-T3SOUTHEAST-US90Z".to_string(),
+            source_surface: "t3-zone-route-columns".to_string(),
+            route: "US90Z".to_string(),
+            zone_id: "t3-southeast".to_string(),
+            current_score: 29.9,
+            constraint_adjusted_score: 29.9,
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
+            promise_horizon_hours: 6,
+            gap_class: "below-threshold-feeder".to_string(),
+            gap_reason: "candidate is below T3 threshold for a 6h feeder obligation".to_string(),
+            required_evidence: "score-or-terminal-evidence-required".to_string(),
+            repair_action: "prove-terminal-evidence-or-keep-t4".to_string(),
+            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        }];
 
-        let rows = optimizer_constraint_ledger_rows(&pavement_rows, &topology_rows, &parallel_rows);
+        let rows = optimizer_constraint_ledger_rows(
+            &pavement_rows,
+            &topology_rows,
+            &parallel_rows,
+            &access_gap_rows,
+        );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
         assert!(failures.is_empty(), "{failures:?}");
-        assert_eq!(rows.len(), 3);
+        assert_eq!(rows.len(), 4);
         assert!(rows
             .iter()
             .any(|row| row.constraint_class == "asset_condition_debt"
@@ -33562,6 +33674,11 @@ mod tests {
             |row| row.constraint_class == "duplication_and_parallel_service"
                 && row.constraint_status == "pass"
         ));
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "lower_tier_feeder_gap"
+                && row.behavior_type == "claim-blocker"
+                && row.source_artifact == "data/t3-t4-access-gaps.csv"));
     }
 
     #[test]

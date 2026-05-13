@@ -217,9 +217,9 @@ their next artifact.
 1. Inventory current blocker/debt/diagnostic fields and map them to the
    constraint classes in this spec.
 2. Add `route optimizer-constraint-ledger --gate` as a normalizer over current
-   source ledgers. The first implemented slice covers pavement debt, T1
-   topology repairs, and T2 parallel service review; follow-on slices should add
-   T3/T4 access gaps, Beck diagnostics, and game/source rows.
+   source ledgers. The implemented slices cover pavement debt, T1 topology
+   repairs, T2 parallel service review, and T3/T4 access gaps; follow-on slices
+   should add Beck diagnostics and game/source rows.
 3. Add `route optimizer-constraint-budget --gate` to roll up selected rows by
    `segment_bundle_id`, candidate id, tier, and region. The first implemented
    rollup emits selector-facing route and bundle rows with blocker counts,
@@ -231,9 +231,9 @@ their next artifact.
    columns, T4 terminal access columns, and T3/T4 access gaps while preserving
    pavement-specific compatibility fields where downstream tools still expect
    them.
-5. Expand T3/T4 access and attachment blockers into the same ledger so the
-   lower-tier budget fields become populated by current-run access evidence,
-   not only by any prior budget row.
+5. Expand remaining renderer, game, and source blockers into the same ledger so
+   every publication, incident, upgrade, and evidence-fetch decision has the
+   same typed blocker/debt surface as selectors.
 6. Add manifest rows so the all-tier optimizer bundle proves the ledger and
    aggregate budget were generated for the same run.
 

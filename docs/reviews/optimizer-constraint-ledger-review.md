@@ -83,10 +83,10 @@ Implemented:
 
 Still required:
 
-- T3/T4 access-row migration into the normalized ledger so lower-tier budget
-  fields are populated by current-run access evidence
 - renderer/game/source-row migration to consume the same budget summary when
   they make claim, upgrade, incident, or publication decisions
+- Beck diagnostic migration into the ledger so schematic defects and map holds
+  roll up through the same budget surface
 
 ## Decision
 
@@ -98,9 +98,8 @@ topology repair, and T2 parallel-service rows. The T1 line selector now carries
 constraint-adjusted score, blocker counts, debt, penalty, class summary, and
 ledger artifact fields. T2 candidate columns, regionalizer rows, and
 service-selection rows carry the same generalized constraint budget summary
-alongside pavement compatibility fields. T3 zone route columns, T4 terminal
-access columns, and T3/T4 access gaps now carry the same summary fields, giving
-lower-tier selectors the same budget surface even before current-run access
-gaps are normalized into the ledger. Do not treat the full constraint system as
-implemented until lower-tier access rows enter the ledger and Beck diagnostics,
-game rows, and source rows also consume the shared schema.
+alongside pavement compatibility fields. T3/T4 access gaps now enter the
+normalized ledger, and T3 zone route columns, T4 terminal access columns, and
+T3/T4 access gaps carry the resulting budget fields back through the lower-tier
+selector cycle. Do not treat the full constraint system as implemented until
+Beck diagnostics, game rows, and source rows also consume the shared schema.

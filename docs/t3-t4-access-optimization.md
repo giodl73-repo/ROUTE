@@ -192,6 +192,13 @@ Current implementation status:
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder, terminal-evidence, and zone-assignment gap classes,
   inheriting constraint pressure from the held selector row.
+- `data/optimizer-constraint-ledger.csv` normalizes those access gaps into
+  `lower_tier_feeder_gap`, `terminal_access_evidence_gap`, and
+  `zone_assignment_gap` claim blockers so lower-tier pressure feeds the shared
+  optimizer budget.
+- `data/optimizer-constraint-budget.csv` rolls those access blockers back into
+  T3/T4 route rows as `claim_blocker_count`, `constraint_penalty_score`, and
+  `top_constraint_classes`.
 - `data/t3-zone-map-diagnostics.csv` joins selected T3 route columns, access
   gaps, and map atlas ids into zone-map readiness decisions.
 - `data/t3-zone-render-board.csv` turns map diagnostics into renderer/game board
@@ -213,7 +220,6 @@ Current implementation status:
 Current gaps:
 
 - no full T3 zone optimizer yet;
-- no T3/T4 access-promise ledger;
 - county/source enrichment is not yet attached to the zone obligation table;
 - T3 geometry still needs bend constraints after zone-bounded stop placement;
 - T4 still needs terminal/source enrichment and rendered local inset treatment.
