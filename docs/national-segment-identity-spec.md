@@ -177,3 +177,10 @@ zone-bounded evidence scope from selected stop chains.
 segment identity. The registry is the surface downstream optimizers, renderers,
 incident overlays, and game systems should join against before trusting route
 labels.
+
+`route national-segment-bundles --gate` rolls the registry up to
+`data/national-segment-bundles.csv`, producing one row per service/corridor
+bundle. Downstream service lines, Beck renderers, game overlays, incidents,
+promotion reviews, and stitch decisions should use bundles as their default
+join surface. Segment ids remain the lower-level physical members inside those
+bundles.

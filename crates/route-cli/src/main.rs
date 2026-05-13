@@ -1923,6 +1923,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit service/corridor bundles from the national segment registry
+    NationalSegmentBundles {
+        /// National segment registry CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-registry.csv",
+            value_name = "FILE"
+        )]
+        registry: PathBuf,
+        /// Output national segment bundle CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if bundles lack members, aliases, or valid segment references
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6682,6 +6704,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("National segment registry gate: PASS");
+            }
+        }
+
+        Commands::NationalSegmentBundles {
+            registry,
+            output,
+            gate,
+        } => {
+            println!("route national-segment-bundles");
+            let registry_rows = load_national_segment_registry(&registry)
+                .with_context(|| format!("loading {}", registry.display()))?;
+            let rows = national_segment_bundle_rows(&registry_rows);
+            write_national_segment_bundles(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_national_segment_bundle_summary(&output, &rows);
+
+            if gate {
+                let failures = national_segment_bundle_gate_failures(&rows, &registry_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("National segment bundle gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("national segment bundle gate failed");
+                }
+                println!();
+                println!("National segment bundle gate: PASS");
             }
         }
 
@@ -11883,6 +11933,27 @@ struct NationalSegmentRegistryRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct NationalSegmentBundleRow {
+    segment_bundle_id: String,
+    bundle_role: String,
+    member_segment_ids: String,
+    member_count: usize,
+    stitch_group_ids: String,
+    current_tiers: String,
+    current_zone_ids: String,
+    route_labels: String,
+    state_scope: String,
+    evidence_state_scope: String,
+    geometry_state_scope: String,
+    bundle_aliases: String,
+    source_artifacts: String,
+    bundle_status: String,
+    bundle_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -16967,6 +17038,302 @@ fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) 
     failures
 }
 
+fn load_national_segment_registry(path: &Path) -> Result<Vec<NationalSegmentRegistryRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+#[derive(Default)]
+struct NationalSegmentBundleBuilder {
+    segment_bundle_id: String,
+    bundle_role: String,
+    member_segment_ids: std::collections::BTreeSet<String>,
+    stitch_group_ids: std::collections::BTreeSet<String>,
+    current_tiers: std::collections::BTreeSet<String>,
+    current_zone_ids: std::collections::BTreeSet<String>,
+    route_labels: std::collections::BTreeSet<String>,
+    state_scope: std::collections::BTreeSet<String>,
+    evidence_state_scope: std::collections::BTreeSet<String>,
+    geometry_state_scope: std::collections::BTreeSet<String>,
+    bundle_aliases: std::collections::BTreeSet<String>,
+    source_artifacts: std::collections::BTreeSet<String>,
+    registry_actions: std::collections::BTreeSet<String>,
+    validation_statuses: std::collections::BTreeSet<String>,
+}
+
+fn national_segment_bundle_rows(
+    registry_rows: &[NationalSegmentRegistryRow],
+) -> Vec<NationalSegmentBundleRow> {
+    let mut builders = std::collections::BTreeMap::<String, NationalSegmentBundleBuilder>::new();
+
+    for row in registry_rows {
+        let builder = builders
+            .entry(row.segment_bundle_id.clone())
+            .or_insert_with(|| NationalSegmentBundleBuilder {
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_role: row.bundle_role.clone(),
+                ..Default::default()
+            });
+        if builder.bundle_role.is_empty() {
+            builder.bundle_role = row.bundle_role.clone();
+        }
+        insert_semicolon_values(&mut builder.member_segment_ids, &row.member_segment_ids);
+        builder.stitch_group_ids.insert(row.stitch_group_id.clone());
+        builder.current_tiers.insert(row.current_tier.clone());
+        builder.current_zone_ids.insert(row.current_zone_id.clone());
+        if !row.route_label.trim().is_empty() {
+            builder.route_labels.insert(row.route_label.clone());
+        }
+        insert_semicolon_values(&mut builder.state_scope, &row.state_scope);
+        insert_semicolon_values(&mut builder.evidence_state_scope, &row.evidence_state_scope);
+        insert_semicolon_values(&mut builder.geometry_state_scope, &row.geometry_state_scope);
+        insert_semicolon_values(&mut builder.bundle_aliases, &row.bundle_aliases);
+        insert_semicolon_values(&mut builder.source_artifacts, &row.source_artifacts);
+        builder.registry_actions.insert(row.registry_action.clone());
+        builder
+            .validation_statuses
+            .insert(row.validation_status.clone());
+    }
+
+    builders
+        .into_values()
+        .map(|builder| {
+            let member_count = builder.member_segment_ids.len();
+            let bundle_status = national_segment_bundle_status(
+                builder.bundle_role.as_str(),
+                member_count,
+                &builder.registry_actions,
+                &builder.validation_statuses,
+            );
+            let (bundle_action, next_artifact) =
+                national_segment_bundle_action(bundle_status, &builder.registry_actions);
+            NationalSegmentBundleRow {
+                segment_bundle_id: builder.segment_bundle_id,
+                bundle_role: builder.bundle_role,
+                member_segment_ids: join_string_set(&builder.member_segment_ids),
+                member_count,
+                stitch_group_ids: join_string_set(&builder.stitch_group_ids),
+                current_tiers: join_string_set(&builder.current_tiers),
+                current_zone_ids: join_string_set(&builder.current_zone_ids),
+                route_labels: join_string_set(&builder.route_labels),
+                state_scope: join_string_set(&builder.state_scope),
+                evidence_state_scope: join_string_set(&builder.evidence_state_scope),
+                geometry_state_scope: join_string_set(&builder.geometry_state_scope),
+                bundle_aliases: join_string_set(&builder.bundle_aliases),
+                source_artifacts: join_string_set(&builder.source_artifacts),
+                bundle_status: bundle_status.to_string(),
+                bundle_action: bundle_action.to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: if bundle_status == "bundle-ready" {
+                    "pass".to_string()
+                } else {
+                    "review".to_string()
+                },
+            }
+        })
+        .collect()
+}
+
+fn national_segment_bundle_status(
+    bundle_role: &str,
+    member_count: usize,
+    registry_actions: &std::collections::BTreeSet<String>,
+    validation_statuses: &std::collections::BTreeSet<String>,
+) -> &'static str {
+    if member_count == 0 {
+        return "missing-members";
+    }
+    if bundle_role == "single-segment" && member_count != 1 {
+        return "invalid-single-segment-bundle";
+    }
+    if bundle_role != "single-segment" && member_count < 2 {
+        return "needs-stitched-members";
+    }
+    if registry_actions
+        .iter()
+        .any(|action| action == "author-zone-bounded-stop-chain")
+    {
+        return "needs-stop-chain";
+    }
+    if registry_actions
+        .iter()
+        .any(|action| action == "complete-terminal-stop-chain")
+    {
+        return "needs-terminal-stop";
+    }
+    if validation_statuses.iter().all(|status| status == "pass") {
+        "bundle-ready"
+    } else {
+        "bundle-review"
+    }
+}
+
+fn national_segment_bundle_action(
+    bundle_status: &str,
+    registry_actions: &std::collections::BTreeSet<String>,
+) -> (&'static str, &'static str) {
+    match bundle_status {
+        "bundle-ready" => ("use bundle as service join surface", "maps/t3-zone"),
+        "needs-terminal-stop" => (
+            "complete terminal stop chain before service geometry",
+            "data/t3-zone-stop-placement.csv",
+        ),
+        "needs-stop-chain" => (
+            "author zone-bounded stops before bundle geometry",
+            "data/tier-stop-candidates.csv",
+        ),
+        "needs-stitched-members" => (
+            "add ordered member segments before promotion or stitched service",
+            "data/national-segment-registry.csv",
+        ),
+        _ if registry_actions
+            .iter()
+            .any(|action| action == "track-zone-or-backlog-identity") =>
+        {
+            (
+                "keep zone or backlog bundle visible but out of service geometry",
+                "data/national-segment-registry.csv",
+            )
+        }
+        _ => (
+            "review bundle membership and identity fields",
+            "data/national-segment-registry.csv",
+        ),
+    }
+}
+
+fn write_national_segment_bundles(path: &Path, rows: &[NationalSegmentBundleRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_national_segment_bundle_summary(output: &Path, rows: &[NationalSegmentBundleRow]) {
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_status.entry(row.bundle_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} national segment bundle rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+}
+
+fn national_segment_bundle_gate_failures(
+    rows: &[NationalSegmentBundleRow],
+    registry_rows: &[NationalSegmentRegistryRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no national segment bundle rows emitted".to_string());
+        return failures;
+    }
+
+    let registry_segment_ids = registry_rows
+        .iter()
+        .map(|row| row.national_segment_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    let registry_bundle_ids = registry_rows
+        .iter()
+        .map(|row| row.segment_bundle_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.segment_bundle_id.trim().is_empty()
+            || row.bundle_role.trim().is_empty()
+            || row.member_segment_ids.trim().is_empty()
+            || row.member_count == 0
+            || row.stitch_group_ids.trim().is_empty()
+            || row.current_tiers.trim().is_empty()
+            || row.current_zone_ids.trim().is_empty()
+            || row.bundle_aliases.trim().is_empty()
+            || row.source_artifacts.trim().is_empty()
+            || row.bundle_status.trim().is_empty()
+            || row.bundle_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete bundle fields",
+                row.segment_bundle_id
+            ));
+        }
+        if !seen.insert(row.segment_bundle_id.clone()) {
+            failures.push(format!("{} is duplicated", row.segment_bundle_id));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!("{} is not a bundle id", row.segment_bundle_id));
+        }
+        if !registry_bundle_ids.contains(&row.segment_bundle_id) {
+            failures.push(format!(
+                "{} has no backing segment-registry row",
+                row.segment_bundle_id
+            ));
+        }
+        let member_ids = semicolon_values(&row.member_segment_ids);
+        if member_ids.len() != row.member_count {
+            failures.push(format!(
+                "{} member_count {} does not match member list {}",
+                row.segment_bundle_id,
+                row.member_count,
+                member_ids.len()
+            ));
+        }
+        for member_id in &member_ids {
+            if !registry_segment_ids.contains(member_id) {
+                failures.push(format!(
+                    "{} references unknown member {}",
+                    row.segment_bundle_id, member_id
+                ));
+            }
+        }
+        if row.bundle_role == "single-segment" && row.member_count != 1 {
+            failures.push(format!(
+                "{} single-segment bundle has {} members",
+                row.segment_bundle_id, row.member_count
+            ));
+        }
+        if row.bundle_role != "single-segment"
+            && row.member_count < 2
+            && row.validation_status == "pass"
+        {
+            failures.push(format!(
+                "{} non-single bundle passed with fewer than two members",
+                row.segment_bundle_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.segment_bundle_id, row.validation_status
+            ));
+        }
+    }
+
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -17599,6 +17966,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "national-segment-registry",
                 "route national-segment-registry --gate",
                 "data/national-segment-registry.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "national-segment-bundles",
+                "route national-segment-bundles --gate",
+                "data/national-segment-bundles.csv",
                 "pass",
                 0,
                 "",
@@ -22882,7 +23257,8 @@ mod tests {
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, national_segment_registry_gate_failures,
+        map_atlas_gate_failures, national_segment_bundle_gate_failures,
+        national_segment_bundle_rows, national_segment_registry_gate_failures,
         national_segment_registry_rows, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
@@ -22935,16 +23311,17 @@ mod tests {
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GapType, LowerTierPressureWitnessRow, MapAtlasRow,
-        NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow, ScoreSignalRow, StopCandidateRow,
-        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow,
-        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
+        ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
+        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
+        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -24674,6 +25051,44 @@ mod tests {
         assert_eq!(rows[0].evidence_state_scope, "AL;TN");
         assert_eq!(rows[0].geometry_state_scope, "");
         assert_eq!(rows[0].registry_action, "eligible-for-geometry-layout");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn national_segment_bundles_roll_up_registry_members() {
+        let registry_rows = vec![NationalSegmentRegistryRow {
+            member_segment_ids: "US.HWYSEG.I65-SOUTHEAST".to_string(),
+            bundle_role: "single-segment".to_string(),
+            national_segment_id: "US.HWYSEG.I65-SOUTHEAST".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I65-SOUTHEAST".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I65-SOUTHEAST".to_string(),
+            current_zone_id: "t3-southeast".to_string(),
+            current_tier: "T3".to_string(),
+            route_label: "I65".to_string(),
+            zone_id: "t3-southeast".to_string(),
+            route: "I65".to_string(),
+            state_scope: "AL;TN".to_string(),
+            evidence_state_scope: "AL;TN".to_string(),
+            geometry_state_scope: String::new(),
+            segment_aliases: "current-tier:T3;current-zone:t3-southeast;route:I65".to_string(),
+            bundle_aliases: "current-tier:T3;current-zone:t3-southeast;route:I65".to_string(),
+            board_layers: "selected-route;stop-placement".to_string(),
+            source_artifacts: "data/t3-zone-render-board.csv".to_string(),
+            stop_placement_status: "ready-for-stop-layout".to_string(),
+            registry_action: "eligible-for-geometry-layout".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = national_segment_bundle_rows(&registry_rows);
+        let failures = national_segment_bundle_gate_failures(&rows, &registry_rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I65-SOUTHEAST");
+        assert_eq!(rows[0].bundle_role, "single-segment");
+        assert_eq!(rows[0].member_count, 1);
+        assert_eq!(rows[0].member_segment_ids, "US.HWYSEG.I65-SOUTHEAST");
+        assert_eq!(rows[0].bundle_status, "bundle-ready");
+        assert_eq!(rows[0].validation_status, "pass");
         assert!(failures.is_empty());
     }
 

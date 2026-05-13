@@ -59,6 +59,7 @@ Milepost 10 is done when:
 | 23 | Add T3 zone render board | ✅ done | `route t3-zone-render-board --gate` emits `data/t3-zone-render-board.csv`, exposing optimizer-selected routes, review connectors, held gaps, and unassigned backlog to renderers and game overlays |
 | 24 | Add T3 zone stop placement | ✅ done | `route t3-zone-stop-placement --gate` emits `data/t3-zone-stop-placement.csv`, checking selected T3 routes against zone-bounded stop chains before geometry generation |
 | 25 | Add national segment registry | ✅ done | `route national-segment-registry --gate` emits `data/national-segment-registry.csv`, merging segment ids, bundles, aliases, state scopes, and layer coverage into one auditable join surface |
+| 26 | Add national segment bundles | ✅ done | `route national-segment-bundles --gate` emits `data/national-segment-bundles.csv`, making bundles the default service/corridor join surface for renderers, overlays, incidents, promotion, and games |
 
 ## Post-Review Repair Slice
 

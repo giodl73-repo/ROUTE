@@ -13,9 +13,10 @@ This document owns the common schema vocabulary for T1/T2/T3/T4 route, stop,
 service, and repair artifacts.
 
 Column artifacts are not allowed to treat a route label as stable identity once
-they describe a physical segment or service. New segment-bearing columns should
-carry `national_segment_id` or `segment_bundle_id`, or point to
-`data/national-segment-registry.csv` as the identity join surface.
+they describe a physical segment or service. New service/corridor columns
+should carry `segment_bundle_id` and join through
+`data/national-segment-bundles.csv`; lower-level physical segment rows should
+carry `national_segment_id` or point to `data/national-segment-registry.csv`.
 
 ## Column Types
 

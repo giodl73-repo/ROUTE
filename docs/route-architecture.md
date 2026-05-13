@@ -49,8 +49,11 @@ surface and name the next artifact that will attach identity.
 4. A service line can contain many physical segments through a bundle.
 5. Stops and geometry may refine `state_scope`, but route labels may not infer
    state scope by themselves.
-6. Renderers, game overlays, incident ledgers, and promotion dockets should join
-   through the segment registry or a bundle derived from it.
+6. Every stable segment must belong to a bundle, even when that bundle contains
+   only one segment.
+7. Renderers, game overlays, incident ledgers, and promotion dockets should join
+   through bundles first, then fall back to individual segment ids only when
+   the artifact is explicitly segment-level.
 
 ## Core Artifacts
 
@@ -58,9 +61,10 @@ surface and name the next artifact that will attach identity.
 | --- | --- |
 | `docs/national-segment-identity-spec.md` | Defines segment, bundle, stitch, alias, and state-scope grammar. |
 | `data/national-segment-registry.csv` | Current machine-readable identity registry. |
+| `data/national-segment-bundles.csv` | Current machine-readable service/corridor bundle registry derived from segment identity. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |
 | `data/t3-zone-stop-placement.csv` | First stop-placement artifact carrying stable segment identity and evidence state scope. |
-| `data/tier-optimizer-runs.csv` | Run certificate proving the identity registry participates in the optimizer bundle. |
+| `data/tier-optimizer-runs.csv` | Run certificate proving identity and bundle artifacts participate in the optimizer bundle. |
 
 ## Crate Direction
 
@@ -83,6 +87,7 @@ modified optimizer artifacts should include, or explicitly point to, one of:
 - `national_segment_id`
 - `segment_bundle_id`
 - `stitch_group_id`
+- `data/national-segment-bundles.csv`
 - `data/national-segment-registry.csv`
 
 When a row cannot attach identity yet, it must be labeled as review/held and
