@@ -12,6 +12,7 @@ for each tier. The command contract is:
 
 ```text
 route standards-pavement --gate
+route tier-pavement-docket --gate
 ```
 
 ## Rule
@@ -46,6 +47,22 @@ The first evidence source is HPMS IRI where joined to graph edges. State pavemen
 condition feeds should replace or supplement HPMS when they provide better
 segment resolution.
 
-The next implementation step is to join pavement evidence to
-`data/tier-segment-candidates.csv`, then emit a pavement repair docket for
-candidate bundle members that violate their tier floor.
+HPMS source/cache values may arrive in inches per mile. The pavement docket
+normalizes graph IRI values above `20` as inches-per-mile source values into
+meters per kilometer before applying tier floors, while leaving already-normal
+meters-per-kilometer values unchanged.
+
+`data/tier-pavement-docket.csv` joins `data/tier-segment-candidates.csv` to the
+graph edge IRI evidence and emits a segment-level status:
+
+| Status | Meaning |
+|---|---|
+| `pavement-floor-pass` | The member segment has IRI evidence at or below its tier floor. |
+| `pavement-repair-required` | The member segment has IRI evidence above its tier floor and must be repaired before SLA/transit readiness is claimed. |
+| `pavement-source-needed` | The member segment is selected, but pavement evidence is not joined yet. |
+| `missing-tier-standard` | The selected tier has no pavement threshold row. |
+| `missing-graph-edge` | The candidate references an edge id that is no longer present in the graph. |
+
+The docket gate requires complete row contracts and known statuses. It does not
+fail merely because a row is a repair/source blocker; those rows are the point of
+the docket and must remain visible to the optimizer.

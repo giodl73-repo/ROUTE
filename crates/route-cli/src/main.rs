@@ -692,6 +692,37 @@ enum Commands {
         gate: bool,
     },
 
+    /// Join tier segment candidates to pavement evidence and emit repair/source blockers
+    TierPavementDocket {
+        /// Path to generated tier segment candidate CSV
+        #[arg(
+            long,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        segments: PathBuf,
+        /// Path to tier pavement standards CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-standards.csv",
+            value_name = "FILE"
+        )]
+        standards: PathBuf,
+        /// Output pavement docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print detailed blocker/source fields
+        #[arg(long)]
+        details: bool,
+        /// Fail if docket rows lack complete pavement contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -4941,6 +4972,41 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Pavement standards gate: PASS");
+            }
+        }
+
+        Commands::TierPavementDocket {
+            segments,
+            standards,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route tier-pavement-docket");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+            let segment_rows = load_tier_segment_candidates(&segments)
+                .with_context(|| format!("loading {}", segments.display()))?;
+            let standard_rows = load_pavement_standards(&standards)
+                .with_context(|| format!("loading {}", standards.display()))?;
+            let rows = tier_pavement_docket_rows(&graph, &segment_rows, &standard_rows);
+            write_tier_pavement_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_docket_summary(&output, &rows, details);
+
+            if gate {
+                let failures = tier_pavement_docket_gate_failures(&rows, &segment_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement docket gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement docket gate failed");
+                }
+                println!();
+                println!("Tier pavement docket gate: PASS");
             }
         }
 
@@ -12099,7 +12165,7 @@ struct T2BundleOverlayRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierSegmentCandidateRow {
     tier: String,
     source_selector: String,
@@ -12118,6 +12184,30 @@ struct TierSegmentCandidateRow {
     route_aliases: String,
     selector_basis: String,
     candidate_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementDocketRow {
+    tier: String,
+    source_selector: String,
+    region_id: String,
+    route: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    national_segment_id: String,
+    edge_id: u64,
+    edge_sequence: usize,
+    state: String,
+    length_miles: f64,
+    iri_m_per_km: String,
+    max_iri_m_per_km: String,
+    pavement_status: String,
+    repair_action: String,
+    freight_ride_requirement: String,
+    transit_ride_requirement: String,
+    source_contract: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -15374,6 +15464,274 @@ fn tier_segment_candidate_gate_failures(
         }
     }
 
+    failures
+}
+
+fn load_tier_segment_candidates(path: &Path) -> Result<Vec<TierSegmentCandidateRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_docket_rows(
+    graph: &route_network::HighwayGraph,
+    segment_rows: &[TierSegmentCandidateRow],
+    standard_rows: &[PavementStandardRow],
+) -> Vec<TierPavementDocketRow> {
+    let standards = standard_rows
+        .iter()
+        .map(|row| (row.tier.trim().to_string(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let edge_by_id = graph
+        .graph
+        .edge_indices()
+        .map(|idx| (graph.graph[idx].id, &graph.graph[idx]))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    segment_rows
+        .iter()
+        .map(|segment| {
+            let standard = standards.get(segment.tier.trim());
+            let edge = edge_by_id.get(&segment.edge_id).copied();
+            let iri = edge.and_then(|edge| normalized_iri_m_per_km(edge.iri));
+            let max_iri = standard.map(|row| row.max_iri_m_per_km);
+            let (pavement_status, repair_action, next_artifact, validation_status) =
+                tier_pavement_decision(segment, standard.copied(), edge, iri);
+
+            TierPavementDocketRow {
+                tier: segment.tier.clone(),
+                source_selector: segment.source_selector.clone(),
+                region_id: segment.region_id.clone(),
+                route: segment.route.clone(),
+                segment_bundle_id: segment.segment_bundle_id.clone(),
+                stitch_group_id: segment.stitch_group_id.clone(),
+                national_segment_id: segment.national_segment_id.clone(),
+                edge_id: segment.edge_id,
+                edge_sequence: segment.edge_sequence,
+                state: segment.state.clone(),
+                length_miles: segment.length_miles,
+                iri_m_per_km: iri
+                    .map(|value| format!("{:.2}", value))
+                    .unwrap_or_else(|| "unknown".to_string()),
+                max_iri_m_per_km: max_iri
+                    .map(|value| format!("{value:.2}"))
+                    .unwrap_or_else(|| "unknown".to_string()),
+                pavement_status,
+                repair_action,
+                freight_ride_requirement: standard
+                    .map(|row| row.freight_ride_requirement.clone())
+                    .unwrap_or_else(|| "tier pavement standard missing".to_string()),
+                transit_ride_requirement: standard
+                    .map(|row| row.transit_ride_requirement.clone())
+                    .unwrap_or_else(|| "tier pavement standard missing".to_string()),
+                source_contract: standard
+                    .map(|row| row.source_contract.clone())
+                    .unwrap_or_else(|| "data/tier-pavement-standards.csv".to_string()),
+                next_artifact,
+                validation_status,
+            }
+        })
+        .collect()
+}
+
+fn tier_pavement_decision(
+    segment: &TierSegmentCandidateRow,
+    standard: Option<&PavementStandardRow>,
+    edge: Option<&route_network::HighwayEdge>,
+    iri: Option<f32>,
+) -> (String, String, String, String) {
+    let Some(standard) = standard else {
+        return (
+            "missing-tier-standard".to_string(),
+            format!("author pavement standard for {}", segment.tier),
+            "data/tier-pavement-standards.csv".to_string(),
+            "review".to_string(),
+        );
+    };
+    if edge.is_none() {
+        return (
+            "missing-graph-edge".to_string(),
+            format!("rebuild segment candidate edge {}", segment.edge_id),
+            "data/tier-segment-candidates.csv".to_string(),
+            "review".to_string(),
+        );
+    }
+    let Some(iri) = iri else {
+        return (
+            "pavement-source-needed".to_string(),
+            format!(
+                "join pavement condition/HPMS IRI for {} edge {} before bundle promotion",
+                segment.route, segment.edge_id
+            ),
+            "data/standards-l1-inventory.csv".to_string(),
+            "review".to_string(),
+        );
+    };
+    if f64::from(iri) <= standard.max_iri_m_per_km {
+        (
+            "pavement-floor-pass".to_string(),
+            "no pavement repair required before promotion".to_string(),
+            "data/national-segment-registry.csv".to_string(),
+            "pass".to_string(),
+        )
+    } else {
+        (
+            "pavement-repair-required".to_string(),
+            standard.repair_trigger.clone(),
+            "data/tier-pavement-docket.csv".to_string(),
+            "review".to_string(),
+        )
+    }
+}
+
+fn normalized_iri_m_per_km(raw_iri: Option<f32>) -> Option<f32> {
+    raw_iri.map(|value| {
+        if value > 20.0 {
+            value * 0.015_782_8
+        } else {
+            value
+        }
+    })
+}
+
+fn write_tier_pavement_docket(path: &Path, rows: &[TierPavementDocketRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_docket_summary(
+    output: &Path,
+    rows: &[TierPavementDocketRow],
+    details: bool,
+) {
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_tier = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_status.entry(row.pavement_status.as_str()).or_default() += 1;
+        *by_tier.entry(row.tier.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} pavement docket rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (tier, count) in by_tier {
+        println!("  {tier}: {count}");
+    }
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+
+    if details {
+        println!();
+        println!(
+            "{:<4} {:<8} {:<8} {:>7} {:>7} {:<24} {}",
+            "Tier", "Route", "State", "IRI", "Max", "Status", "Repair action"
+        );
+        println!("{}", "-".repeat(116));
+        for row in rows.iter().filter(|row| row.validation_status == "review") {
+            println!(
+                "{:<4} {:<8} {:<8} {:>7} {:>7} {:<24} {}",
+                row.tier,
+                row.route,
+                row.state,
+                row.iri_m_per_km,
+                row.max_iri_m_per_km,
+                row.pavement_status,
+                truncate_for_table(&row.repair_action, 48)
+            );
+        }
+    }
+}
+
+fn tier_pavement_docket_gate_failures(
+    rows: &[TierPavementDocketRow],
+    segment_rows: &[TierSegmentCandidateRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no tier pavement docket rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() != segment_rows.len() {
+        failures.push(format!(
+            "pavement docket row count {} does not match segment candidate count {}",
+            rows.len(),
+            segment_rows.len()
+        ));
+    }
+
+    let mut seen = std::collections::BTreeSet::<(String, u64)>::new();
+    for row in rows {
+        if row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.national_segment_id.trim().is_empty()
+            || row.iri_m_per_km.trim().is_empty()
+            || row.max_iri_m_per_km.trim().is_empty()
+            || row.pavement_status.trim().is_empty()
+            || row.repair_action.trim().is_empty()
+            || row.source_contract.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{}:{} edge {} has incomplete pavement docket fields",
+                row.tier, row.route, row.edge_id
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!("{} is not a bundle id", row.segment_bundle_id));
+        }
+        if !row.national_segment_id.starts_with("US.HWYSEG.") {
+            failures.push(format!("{} is not a segment id", row.national_segment_id));
+        }
+        if !seen.insert((row.segment_bundle_id.clone(), row.edge_id)) {
+            failures.push(format!(
+                "{} repeats pavement edge {}",
+                row.segment_bundle_id, row.edge_id
+            ));
+        }
+        if !matches!(
+            row.pavement_status.as_str(),
+            "pavement-floor-pass"
+                | "pavement-repair-required"
+                | "pavement-source-needed"
+                | "missing-tier-standard"
+                | "missing-graph-edge"
+        ) {
+            failures.push(format!(
+                "{}:{} edge {} has unknown pavement status {}",
+                row.tier, row.route, row.edge_id, row.pavement_status
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{}:{} edge {} has invalid validation status {}",
+                row.tier, row.route, row.edge_id, row.validation_status
+            ));
+        }
+        if row.validation_status == "pass" && row.pavement_status != "pavement-floor-pass" {
+            failures.push(format!(
+                "{}:{} edge {} passes without a pavement-floor-pass status",
+                row.tier, row.route, row.edge_id
+            ));
+        }
+    }
     failures
 }
 
@@ -18649,6 +19007,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-segment-candidates",
                 "route tier-segment-candidates --gate",
                 "data/tier-segment-candidates.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "tier-pavement-docket",
+                "route tier-pavement-docket --gate",
+                "data/tier-pavement-docket.csv",
                 "pass",
                 0,
                 "",
@@ -24245,7 +24611,7 @@ mod tests {
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
         map_atlas_gate_failures, national_segment_bundle_gate_failures,
         national_segment_bundle_rows, national_segment_registry_gate_failures,
-        national_segment_registry_rows, optimizer_manifest_gate_failures,
+        national_segment_registry_rows, normalized_iri_m_per_km, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
@@ -24296,9 +24662,9 @@ mod tests {
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
-        tier_region_gate_failures, tier_segment_candidate_gate_failures,
-        tier_segment_candidate_rows, write_tier_artifacts_to, AtriBottleneckRow,
-        EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
+        tier_pavement_docket_gate_failures, tier_pavement_docket_rows, tier_region_gate_failures,
+        tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
+        AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
         ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
@@ -24310,7 +24676,8 @@ mod tests {
         T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        TierOptimizerRunRow, TierPavementDocketRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -26580,6 +26947,148 @@ mod tests {
         assert_ne!(rows[0].national_segment_id, rows[1].national_segment_id);
         assert_eq!(rows[0].segment_bundle_id, rows[1].segment_bundle_id);
         assert_eq!(rows[0].member_role, "stitched-member");
+    }
+
+    #[test]
+    fn tier_pavement_docket_marks_pass_repair_and_source_needed_segments() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 0.0 },
+            is_interchange: true,
+        });
+        let c = graph.graph.add_node(HighwayNode {
+            id: 3,
+            coord: coord! { x: 2.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let d = graph.graph.add_node(HighwayNode {
+            id: 4,
+            coord: coord! { x: 3.0, y: 0.0 },
+            is_interchange: false,
+        });
+        graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 10,
+                route_id: "I80".to_string(),
+                state: "NE".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 1.0, y: 0.0 },
+                ]),
+                length_miles: 50.0,
+                lane_count: Some(4),
+                aadt: Some(40_000),
+                pct_truck: None,
+                iri: Some(64.0),
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.graph.add_edge(
+            b,
+            c,
+            HighwayEdge {
+                id: 11,
+                route_id: "I80".to_string(),
+                state: "IA".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 1.0, y: 0.0 },
+                    coord! { x: 2.0, y: 0.0 },
+                ]),
+                length_miles: 60.0,
+                lane_count: Some(4),
+                aadt: Some(45_000),
+                pct_truck: None,
+                iri: Some(133.0),
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.graph.add_edge(
+            c,
+            d,
+            HighwayEdge {
+                id: 12,
+                route_id: "I80".to_string(),
+                state: "IL".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 2.0, y: 0.0 },
+                    coord! { x: 3.0, y: 0.0 },
+                ]),
+                length_miles: 70.0,
+                lane_count: Some(4),
+                aadt: Some(50_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+
+        let segment_rows = [10_u64, 11, 12]
+            .into_iter()
+            .enumerate()
+            .map(|(idx, edge_id)| TierSegmentCandidateRow {
+                tier: "T1".to_string(),
+                source_selector: "fixture".to_string(),
+                region_id: "national".to_string(),
+                route: "I80".to_string(),
+                edge_id,
+                edge_sequence: idx + 1,
+                national_segment_id: format!("US.HWYSEG.{edge_id:016X}"),
+                segment_bundle_id: "US.HWYBUNDLE.FIXTURE".to_string(),
+                stitch_group_id: "US.HWYSTITCH.FIXTURE".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "fixture".to_string(),
+                length_miles: 10.0,
+                aadt: "unknown".to_string(),
+                lane_count: "unknown".to_string(),
+                route_aliases: "route:I80".to_string(),
+                selector_basis: "fixture".to_string(),
+                candidate_action: "fixture".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            })
+            .collect::<Vec<_>>();
+        let standards = vec![PavementStandardRow {
+            tier: "T1".to_string(),
+            road_role: "national timed-freight spine".to_string(),
+            max_iri_m_per_km: 1.5,
+            target_pavement_condition: "good".to_string(),
+            freight_ride_requirement: "no roughness padding".to_string(),
+            transit_ride_requirement: "coach-speed ride quality".to_string(),
+            inspection_interval_months: 6,
+            repair_trigger: "repair above threshold".to_string(),
+            allowed_exception: "temporary construction only".to_string(),
+            source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows: Vec<TierPavementDocketRow> =
+            tier_pavement_docket_rows(&graph, &segment_rows, &standards);
+        let failures = tier_pavement_docket_gate_failures(&rows, &segment_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows[0].pavement_status, "pavement-floor-pass");
+        assert_eq!(rows[1].pavement_status, "pavement-repair-required");
+        assert_eq!(rows[2].pavement_status, "pavement-source-needed");
+        assert_eq!(rows[0].iri_m_per_km, "1.01");
+        assert_eq!(rows[1].repair_action, "repair above threshold");
+        assert!((normalized_iri_m_per_km(Some(64.0)).unwrap() - 1.010).abs() < 0.01);
     }
 
     #[test]

@@ -19,7 +19,7 @@ pub struct HpmsRecord {
     /// Lane count (both directions combined)
     #[serde(rename = "LANE_COUNT")]
     pub lane_count: Option<u8>,
-    /// International Roughness Index (m/km; lower = smoother)
+    /// International Roughness Index source value; HPMS cache values are commonly inches/mile.
     #[serde(rename = "IRI")]
     pub iri: Option<f32>,
     /// Posted speed limit (mph)

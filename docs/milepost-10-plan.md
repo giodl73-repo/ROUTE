@@ -46,7 +46,7 @@ Milepost 10 is done when:
 | 10 | Build dual-route T2 regionalizer | 🔄 partial | `route t2-regionalizer --gate` emits `data/t2-regionalizer.csv` from selected/review candidate columns; next slice splits by real T1-bounded regions after contact repairs |
 | 11 | Add T2 duplicate-service and parent-trunk column selection | ✅ done | `route t2-service-selection --gate` emits `data/t2-service-selection.csv` with keep, parent-review, duplicate, parallel, and source-needed actions from regionalizer plus Beck diagnostics |
 | 12 | Build T3/T4 lower-tier pressure witnesses | ✅ done | `route lower-tier-pressure-witnesses --gate` emits `data/lower-tier-pressure-witnesses.csv` with T2 demotion pressure plus near-threshold T3/T4 upgrade pressure |
-| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with 30 passing optimizer stages and 2 explicit held-known T2 blockers |
+| 13 | Add optimizer run manifest and gate bundle | ✅ done | `route tier-optimize --all-tiers --gate` emits `data/tier-optimizer-runs.csv` with passing optimizer stages and 2 explicit held-known T2 blockers |
 | 14 | Regenerate maps and game overlays from optimizer outputs | ✅ done | `route optimizer-map-hooks --gate` emits `data/optimizer-map-hooks.csv`, linking optimizer outputs to Beck maps, T3 zone planning, map atlas, and game overlay ledgers |
 | 15 | Review Milepost 10 outputs | ✅ done | `docs/reviews/milepost-10-optimizer-review.md` records passing optimizer artifacts, held T2 blockers, and remaining direct-renderer risks |
 | 16 | Add conservative T1 feedback docket | ✅ done | `route t1-feedback-docket --gate` emits `data/t1-feedback-docket.csv`; lower-tier pressure reaches T1 only with a named SLA/stop/topology dependency |
@@ -63,6 +63,7 @@ Milepost 10 is done when:
 | 27 | Gate bundle architecture adoption | ✅ done | `route bundle-architecture --gate` emits `data/bundle-architecture.csv`, proving each Rust crate has a bundle-facing role and API entrypoint |
 | 28 | Add bundle registry and T2 overlay binding | ✅ done | `route t2-bundle-overlays --gate` emits `data/game/t2-bundle-overlays.csv`, using `route_network::BundleRegistry` to bind game/ops levers to bundles or mark pending bundle identity |
 | 29 | Pivot T1/T2 bundles to segment-level stitching | 🔄 partial | `docs/tier-segment-stitching-spec.md` and `route tier-segment-candidates --gate` make T1/T2 selectors decompose into graph edge members before bundle promotion |
+| 30 | Join T1/T2 segment candidates to pavement standards | ✅ done | `route tier-pavement-docket --gate` emits `data/tier-pavement-docket.csv`, marking each selected member as pavement-pass, repair-required, or source-needed before SLA/transit readiness |
 
 ## Post-Review Repair Slice
 
