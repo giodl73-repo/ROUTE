@@ -219,6 +219,11 @@ Current implementation status:
   higher-tier attachment requirement, source family, proof blocker, and scenario
   hold. All tasks remain `source-needed` until a traceable contact proof artifact
   exists.
+- `data/t4-terminal-contact-proof-artifact-contract.csv` is the manual/cache
+  proof artifact contract for terminal-contact source acquisition. It requires
+  route, terminal district, route-to-terminal contact statement, source title,
+  source URL or cached artifact, capture date, selected higher-tier attachment,
+  and validation decision before any row can become `source-backed`.
 - `data/t4-terminal-columbus-proof-intake.csv` filters the Columbus South pilot
   slice from the Great Lakes proof docket. It carries exactly eight source-needed
   route tasks into the proof pilot and rejects non-Columbus rows.

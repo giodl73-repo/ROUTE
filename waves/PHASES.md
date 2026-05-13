@@ -25,10 +25,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T4 Terminal Contact Evidence | Convert zone-scoped T4 terminal evidence holds into route-to-terminal contact decisions and scenario-readiness candidates. | done |
 | 2026-05-13 | Great Lakes Terminal Contact Sources | Turn the largest terminal-contact source-needed slice into a governed source-acquisition and proof docket. | done |
 | 2026-05-13 | Columbus South Terminal Contact Proof | Run the first route-to-terminal proof pilot on the largest Great Lakes district slice. | done |
+| 2026-05-13 | Terminal Contact Source Acquisition Spine | Build the manual/cached proof artifact loop that can promote terminal-contact rows without seed laundering. | active |
 
 ## Next Active Wave
 
-No wave is currently active.
+`2026-05-13-terminal-contact-source-acquisition-spine` is active.
 
 ## Operating Rules
 

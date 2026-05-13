@@ -2249,6 +2249,21 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit terminal-contact proof artifact contract
+    T4TerminalContactProofArtifactContract {
+        /// Output terminal-contact proof artifact contract CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-contact-proof-artifact-contract.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if contract rows do not protect source-backed promotion
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit Columbus South terminal-contact proof intake from Great Lakes proof docket
     T4TerminalColumbusProofIntake {
         /// Great Lakes route contact proof docket CSV
@@ -7781,6 +7796,28 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal contact source plan gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalContactProofArtifactContract { output, gate } => {
+            println!("route t4-terminal-contact-proof-artifact-contract");
+            let rows = t4_terminal_contact_proof_artifact_contract_rows();
+            write_t4_terminal_contact_proof_artifact_contract(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_contact_proof_artifact_contract_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_contact_proof_artifact_contract_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal contact proof artifact contract gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal contact proof artifact contract gate failed");
+                }
+                println!();
+                println!("T4 terminal contact proof artifact contract gate: PASS");
             }
         }
 
@@ -14154,6 +14191,22 @@ struct T4TerminalContactSourceCatalogRow {
     acquisition_status: String,
     proof_blocker: String,
     cache_policy_artifact: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalContactProofArtifactContractRow {
+    contract_id: String,
+    source_family: String,
+    accepted_proof_status: String,
+    required_fields: String,
+    allowed_artifact_modes: String,
+    prohibited_sources: String,
+    promotion_rule: String,
+    source_needed_decision: String,
+    blocked_decision: String,
+    rejected_decision: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -23332,6 +23385,175 @@ fn t4_terminal_contact_proof_docket_gate_failures(
     failures
 }
 
+fn t4_terminal_contact_proof_artifact_contract_rows(
+) -> Vec<T4TerminalContactProofArtifactContractRow> {
+    vec![T4TerminalContactProofArtifactContractRow {
+        contract_id: "T4CONTACT-PROOF-CONTRACT-001".to_string(),
+        source_family: "public-terminal-contact-proof".to_string(),
+        accepted_proof_status: "source-backed".to_string(),
+        required_fields:
+            "route; terminal district; route-to-terminal contact statement; source title; source url or cached artifact; capture date; selected higher-tier attachment; validation decision"
+                .to_string(),
+        allowed_artifact_modes: "manual-citation;cached-source-artifact".to_string(),
+        prohibited_sources: "data/intermodal_terminals.csv;terminal district seed;route proximity;district membership"
+            .to_string(),
+        promotion_rule:
+            "source-backed requires a non-seed source artifact naming route terminal district contact statement source title url-or-cache capture date selected higher-tier attachment and validation decision"
+                .to_string(),
+        source_needed_decision:
+            "missing proof artifact remains source-needed and review".to_string(),
+        blocked_decision:
+            "inaccessible or policy-unsupported source remains blocked with blocker text".to_string(),
+        rejected_decision:
+            "artifact that does not name route-to-terminal contact remains rejected and cannot feed scenario readiness"
+                .to_string(),
+        next_artifact:
+            "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-02.md"
+                .to_string(),
+        validation_status: "pass".to_string(),
+    }]
+}
+
+fn write_t4_terminal_contact_proof_artifact_contract(
+    path: &Path,
+    rows: &[T4TerminalContactProofArtifactContractRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_contact_proof_artifact_contract_summary(
+    output: &Path,
+    rows: &[T4TerminalContactProofArtifactContractRow],
+) {
+    println!(
+        "  wrote {} terminal contact proof artifact contract rows to {}",
+        rows.len(),
+        output.display()
+    );
+}
+
+fn t4_terminal_contact_proof_artifact_contract_gate_failures(
+    rows: &[T4TerminalContactProofArtifactContractRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no terminal contact proof artifact contract rows emitted".to_string());
+        return failures;
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.contract_id.trim().is_empty()
+            || row.source_family.trim().is_empty()
+            || row.accepted_proof_status.trim().is_empty()
+            || row.required_fields.trim().is_empty()
+            || row.allowed_artifact_modes.trim().is_empty()
+            || row.prohibited_sources.trim().is_empty()
+            || row.promotion_rule.trim().is_empty()
+            || row.source_needed_decision.trim().is_empty()
+            || row.blocked_decision.trim().is_empty()
+            || row.rejected_decision.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete contract fields",
+                row.contract_id
+            ));
+        }
+        if !seen.insert(row.contract_id.clone()) {
+            failures.push(format!("{} appears more than once", row.contract_id));
+        }
+        if row.source_family != "public-terminal-contact-proof" {
+            failures.push(format!(
+                "{} has unsupported source family {}",
+                row.contract_id, row.source_family
+            ));
+        }
+        if row.accepted_proof_status != "source-backed" {
+            failures.push(format!(
+                "{} does not define source-backed acceptance",
+                row.contract_id
+            ));
+        }
+        for required in [
+            "route",
+            "terminal district",
+            "route-to-terminal contact statement",
+            "source title",
+            "source url or cached artifact",
+            "capture date",
+            "selected higher-tier attachment",
+            "validation decision",
+        ] {
+            if !row.required_fields.contains(required) {
+                failures.push(format!(
+                    "{} missing required proof field {}",
+                    row.contract_id, required
+                ));
+            }
+        }
+        for mode in ["manual-citation", "cached-source-artifact"] {
+            if !row.allowed_artifact_modes.contains(mode) {
+                failures.push(format!(
+                    "{} missing allowed artifact mode {}",
+                    row.contract_id, mode
+                ));
+            }
+        }
+        for prohibited in [
+            "data/intermodal_terminals.csv",
+            "terminal district seed",
+            "route proximity",
+            "district membership",
+        ] {
+            if !row.prohibited_sources.contains(prohibited) {
+                failures.push(format!(
+                    "{} missing prohibited source {}",
+                    row.contract_id, prohibited
+                ));
+            }
+        }
+        if !row.promotion_rule.contains("non-seed source artifact")
+            || !row
+                .promotion_rule
+                .contains("route terminal district contact statement")
+        {
+            failures.push(format!(
+                "{} promotion rule does not require non-seed route contact proof",
+                row.contract_id
+            ));
+        }
+        if !row.source_needed_decision.contains("source-needed")
+            || !row.blocked_decision.contains("blocked")
+            || !row.rejected_decision.contains("rejected")
+        {
+            failures.push(format!(
+                "{} does not preserve unresolved/rejected decision states",
+                row.contract_id
+            ));
+        }
+        if row.validation_status != "pass" {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.contract_id, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn load_t4_terminal_contact_proof_docket(
     path: &Path,
 ) -> Result<Vec<T4TerminalContactProofDocketRow>> {
@@ -26856,6 +27078,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "held-known",
                 33,
                 "Great Lakes route contact proof tasks remain source-needed",
+            ),
+            (
+                "t4-terminal-contact-proof-artifact-contract",
+                "route t4-terminal-contact-proof-artifact-contract --gate",
+                "data/t4-terminal-contact-proof-artifact-contract.csv",
+                "pass",
+                0,
+                "",
             ),
             (
                 "t4-terminal-columbus-proof-intake",
@@ -32663,6 +32893,8 @@ mod tests {
         t4_terminal_columbus_proof_intake_gate_failures, t4_terminal_columbus_proof_intake_rows,
         t4_terminal_columbus_source_access_gate_failures, t4_terminal_columbus_source_access_rows,
         t4_terminal_contact_evidence_gate_failures, t4_terminal_contact_evidence_rows,
+        t4_terminal_contact_proof_artifact_contract_gate_failures,
+        t4_terminal_contact_proof_artifact_contract_rows,
         t4_terminal_contact_proof_docket_gate_failures, t4_terminal_contact_proof_docket_rows,
         t4_terminal_contact_source_catalog_gate_failures, t4_terminal_contact_source_catalog_rows,
         t4_terminal_contact_source_plan_gate_failures, t4_terminal_contact_source_plan_rows,
@@ -32694,13 +32926,13 @@ mod tests {
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactEvidenceRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
-        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactSourceCatalogRow,
+        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -35131,6 +35363,63 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.route == "US22" && row.terminal_district == "Columbus South"));
+    }
+
+    #[test]
+    fn t4_terminal_contact_proof_artifact_contract_requires_non_seed_proof() {
+        let rows = t4_terminal_contact_proof_artifact_contract_rows();
+        let failures = t4_terminal_contact_proof_artifact_contract_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].accepted_proof_status, "source-backed");
+        assert!(rows[0]
+            .required_fields
+            .contains("route-to-terminal contact statement"));
+        assert!(rows[0]
+            .prohibited_sources
+            .contains("data/intermodal_terminals.csv"));
+        assert!(rows[0].promotion_rule.contains("non-seed source artifact"));
+    }
+
+    #[test]
+    fn t4_terminal_contact_proof_artifact_contract_rejects_seed_laundering() {
+        let bad_row = T4TerminalContactProofArtifactContractRow {
+            contract_id: "T4CONTACT-PROOF-CONTRACT-BAD".to_string(),
+            source_family: "public-terminal-contact-proof".to_string(),
+            accepted_proof_status: "source-backed".to_string(),
+            required_fields:
+                "route; terminal district; route-to-terminal contact statement; source title; source url or cached artifact; capture date; selected higher-tier attachment; validation decision"
+                    .to_string(),
+            allowed_artifact_modes: "manual-citation;cached-source-artifact".to_string(),
+            prohibited_sources: "route proximity".to_string(),
+            promotion_rule:
+                "source-backed requires a route terminal district contact statement"
+                    .to_string(),
+            source_needed_decision:
+                "missing proof artifact remains source-needed and review".to_string(),
+            blocked_decision: "inaccessible source remains blocked".to_string(),
+            rejected_decision: "bad artifact remains rejected".to_string(),
+            next_artifact:
+                "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-02.md"
+                    .to_string(),
+            validation_status: "pass".to_string(),
+        };
+
+        let failures = t4_terminal_contact_proof_artifact_contract_gate_failures(&[bad_row]);
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("data/intermodal_terminals.csv")),
+            "{failures:?}"
+        );
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("non-seed route contact proof")),
+            "{failures:?}"
+        );
     }
 
     #[test]
