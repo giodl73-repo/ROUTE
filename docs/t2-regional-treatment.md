@@ -34,6 +34,7 @@ Current T2 treatment consumes:
 | `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, and parent-trunk lineage |
 | `data/t2-contact-resolutions.csv` | Contact resolution and demotion decisions |
 | `data/t2-blocker-closure.csv` | Consolidated held blocker dispositions joined to bundle identity/status |
+| `data/t2-bundle-repair-queue.csv` | Bundle-blocked candidate-review rows and the exact registry/stop repair needed before T2 re-entry |
 | `data/t3-t4-pressure-intake.csv` | Lower-tier intake after T2 demotion or upgrade pressure |
 | `data/t1-feedback-docket.csv` | Conservative upward feedback from lower tiers to T1 |
 
@@ -73,6 +74,11 @@ evidence can re-enter regionalizer review only when the associated blocker
 closure has a ready bundle. If the blocker closure says `bundle-missing`,
 `needs-stop-chain`, or `needs-terminal-stop`, the candidate remains blocked
 until the bundle registry catches up.
+
+Those blocked rows are emitted as `data/t2-bundle-repair-queue.csv`. That queue
+is the repair contract between T2 optimization and the core bundle registry: it
+names the route, blocker class, current bundle posture, required artifact, next
+artifact, and optimizer effect before the route can re-enter regional treatment.
 
 ## Contact Rules
 

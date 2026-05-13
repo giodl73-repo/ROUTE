@@ -81,6 +81,7 @@ The current all-tier manifest includes:
 - T2 contact witnesses;
 - T2 contact/blocker closure surfaces;
 - T2 candidate columns;
+- T2 bundle repair queue;
 - T2 regionalizer;
 - T2 service selection;
 - T1/T2 segment candidates;

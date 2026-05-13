@@ -1812,6 +1812,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit bundle repair actions for T2 closure rows blocked by bundle posture
+    T2BundleRepairQueue {
+        /// Tier candidate column CSV
+        #[arg(
+            long,
+            default_value = "data/tier-candidate-columns.csv",
+            value_name = "FILE"
+        )]
+        candidates: PathBuf,
+        /// T2 blocker closure CSV
+        #[arg(
+            long,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        blocker_closure: PathBuf,
+        /// Output T2 bundle repair queue CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-repair-queue.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if pending bundle rows lack repair actions
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit segment-level T1/T2 bundle candidates from selector outputs and the highway graph
     TierSegmentCandidates {
         /// T1 line selector CSV
@@ -6882,6 +6911,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 bundle overlay gate: PASS");
+            }
+        }
+
+        Commands::T2BundleRepairQueue {
+            candidates,
+            blocker_closure,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-repair-queue");
+            let candidate_rows = load_tier_candidate_columns(&candidates)
+                .with_context(|| format!("loading {}", candidates.display()))?;
+            let blocker_rows = load_t2_blocker_closure(&blocker_closure)
+                .with_context(|| format!("loading {}", blocker_closure.display()))?;
+            let rows = t2_bundle_repair_queue_rows(&candidate_rows, &blocker_rows);
+            write_t2_bundle_repair_queue(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_repair_queue_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_repair_queue_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle repair queue gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle repair queue gate failed");
+                }
+                println!();
+                println!("T2 bundle repair queue gate: PASS");
             }
         }
 
@@ -12833,6 +12893,22 @@ struct T2BundleOverlayRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleRepairQueueRow {
+    route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    bundle_action: String,
+    contact_evidence_status: String,
+    candidate_decision: String,
+    repair_class: String,
+    repair_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierSegmentCandidateRow {
     tier: String,
     source_selector: String,
@@ -15592,6 +15668,169 @@ fn load_tier_candidate_columns(path: &Path) -> Result<Vec<TierCandidateColumnRow
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn t2_bundle_repair_queue_rows(
+    candidate_rows: &[TierCandidateColumnRow],
+    blocker_rows: &[T2BlockerClosureRow],
+) -> Vec<T2BundleRepairQueueRow> {
+    let blockers_by_route = blocker_rows
+        .iter()
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::HashMap<_, _>>();
+    let mut rows = candidate_rows
+        .iter()
+        .filter(|row| row.tier.eq_ignore_ascii_case("T2"))
+        .filter(|row| row.evidence_status == "closure-bundle-pending")
+        .map(|row| {
+            let blocker = blockers_by_route.get(&canonical_route_key(&row.route));
+            let bundle_status = if row.bundle_status.trim().is_empty() {
+                blocker
+                    .map(|blocker| blocker.bundle_status.clone())
+                    .unwrap_or_else(|| "bundle-unchecked".to_string())
+            } else {
+                row.bundle_status.clone()
+            };
+            let bundle_action = if row.bundle_action.trim().is_empty() {
+                blocker
+                    .map(|blocker| blocker.bundle_action.clone())
+                    .unwrap_or_else(|| "join blocker closure to bundle registry".to_string())
+            } else {
+                row.bundle_action.clone()
+            };
+            let (repair_action, next_artifact) =
+                t2_bundle_repair_queue_action(bundle_status.as_str());
+            T2BundleRepairQueueRow {
+                route: row.route.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_status: bundle_status.clone(),
+                bundle_action,
+                contact_evidence_status: row.evidence_status.clone(),
+                candidate_decision: row.column_decision.clone(),
+                repair_class: blocker
+                    .map(|blocker| blocker.blocker_class.clone())
+                    .unwrap_or_else(|| "candidate-closure-bundle".to_string()),
+                repair_action: repair_action.to_string(),
+                required_artifact: row.required_artifact.clone(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: format!(
+                    "{} remains out of T2 regionalizer until {}",
+                    row.route, bundle_status
+                ),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn t2_bundle_repair_queue_action(bundle_status: &str) -> (&'static str, &'static str) {
+    match bundle_status {
+        "bundle-missing" => (
+            "add-or-split-segment-bundle-before-regionalizer",
+            "data/national-segment-bundles.csv",
+        ),
+        "needs-stop-chain" => (
+            "author-stop-chain-before-regionalizer",
+            "data/tier-stop-candidates.csv",
+        ),
+        "needs-terminal-stop" => (
+            "complete-terminal-stop-before-regionalizer",
+            "data/tier-stop-candidates.csv",
+        ),
+        _ => (
+            "resolve-bundle-readiness-before-regionalizer",
+            "data/t2-blocker-closure.csv",
+        ),
+    }
+}
+
+fn write_t2_bundle_repair_queue(path: &Path, rows: &[T2BundleRepairQueueRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_repair_queue_summary(output: &Path, rows: &[T2BundleRepairQueueRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.bundle_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} bundle repair queue rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_bundle_repair_queue_gate_failures(rows: &[T2BundleRepairQueueRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 bundle repair queue rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty() {
+            failures.push("bundle repair queue row missing route".to_string());
+        }
+        if row.bundle_status.trim().is_empty() {
+            failures.push(format!("{} missing bundle_status", row.route));
+        }
+        if row.bundle_status == "bundle-ready" {
+            failures.push(format!(
+                "{} is bundle-ready but remains in repair queue",
+                row.route
+            ));
+        }
+        if row.bundle_action.trim().is_empty() {
+            failures.push(format!("{} missing bundle_action", row.route));
+        }
+        if row.contact_evidence_status != "closure-bundle-pending" {
+            failures.push(format!(
+                "{} repair queue row is not closure-bundle-pending",
+                row.route
+            ));
+        }
+        if row.candidate_decision != "blocked" {
+            failures.push(format!(
+                "{} bundle-pending candidate is not blocked",
+                row.route
+            ));
+        }
+        if row.repair_class.trim().is_empty() {
+            failures.push(format!("{} missing repair_class", row.route));
+        }
+        if row.repair_action.trim().is_empty() {
+            failures.push(format!("{} missing repair_action", row.route));
+        }
+        if row.required_artifact.trim().is_empty() {
+            failures.push(format!("{} missing required_artifact", row.route));
+        }
+        if row.next_artifact.trim().is_empty() {
+            failures.push(format!("{} missing next_artifact", row.route));
+        }
+        if row.optimizer_effect.trim().is_empty() {
+            failures.push(format!("{} missing optimizer_effect", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!("{} repair queue row must remain review", row.route));
+        }
+    }
+    failures
 }
 
 fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRow> {
@@ -20872,6 +21111,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-candidate-columns",
                 "route tier-candidate-columns --gate",
                 "data/tier-candidate-columns.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-bundle-repair-queue",
+                "route t2-bundle-repair-queue --gate",
+                "data/t2-bundle-repair-queue.csv",
                 "pass",
                 0,
                 "",
@@ -26622,7 +26869,8 @@ mod tests {
         t1_stop_selector_gate_failures, t1_stop_selector_rows, t1_topology_repair_gate_failures,
         t1_topology_repair_rows, t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows,
-        t2_bundle_overlay_gate_failures, t2_bundle_overlay_rows, t2_closure_dispositions,
+        t2_bundle_overlay_gate_failures, t2_bundle_overlay_rows,
+        t2_bundle_repair_queue_gate_failures, t2_bundle_repair_queue_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
@@ -26657,16 +26905,17 @@ mod tests {
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
         ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
         T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactClosureRow, T2ContactResolutionRow,
-        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDocketRow, TierPavementSourceGapRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
+        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
+        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -27756,6 +28005,63 @@ mod tests {
         assert_eq!(columns[0].bundle_status, "bundle-missing");
         assert_eq!(columns[0].evidence_status, "closure-bundle-pending");
         assert_eq!(columns[0].required_artifact, "data/t2-blocker-closure.csv");
+    }
+
+    #[test]
+    fn t2_bundle_repair_queue_names_bundle_blockers() {
+        let candidates = vec![TierCandidateColumnRow {
+            tier: "T2".to_string(),
+            route: "I285".to_string(),
+            candidate_type: "route-service-column".to_string(),
+            graph_kind: "dual-route-graph".to_string(),
+            split_objective: "route-mile-workload".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            route_miles: 172.0,
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 1,
+            parent_trunks: String::new(),
+            component_id: 1,
+            component_route_count: 18,
+            component_status: "component-bridged:21".to_string(),
+            witness_type: "graph-contact-needed".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            repair_basis: "observed T1/T2 contact".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: "bundle-missing".to_string(),
+            bundle_action: "resolve route family or add segment bundle".to_string(),
+            column_decision: "blocked".to_string(),
+            evidence_status: "closure-bundle-pending".to_string(),
+            required_artifact: "data/t2-blocker-closure.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let blockers = vec![T2BlockerClosureRow {
+            route: "I285".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: "bundle-missing".to_string(),
+            bundle_action: "resolve route family or add segment bundle".to_string(),
+            source_surface: "t2-relief-evidence-docket".to_string(),
+            blocker_class: "relief-contact-repair".to_string(),
+            blocker_action: "source-observed-relief-review".to_string(),
+            required_evidence: "atri-bottleneck-route-match".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "retain relief review only after contact repair validates"
+                .to_string(),
+            closure_status: "evidence-observed".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows: Vec<T2BundleRepairQueueRow> = t2_bundle_repair_queue_rows(&candidates, &blockers);
+        let failures = t2_bundle_repair_queue_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I285");
+        assert_eq!(rows[0].repair_class, "relief-contact-repair");
+        assert_eq!(
+            rows[0].repair_action,
+            "add-or-split-segment-bundle-before-regionalizer"
+        );
+        assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
+        assert!(failures.is_empty());
     }
 
     #[test]

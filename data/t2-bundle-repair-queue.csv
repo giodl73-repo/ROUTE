@@ -1,0 +1,3 @@
+route,segment_bundle_id,bundle_status,bundle_action,contact_evidence_status,candidate_decision,repair_class,repair_action,required_artifact,next_artifact,optimizer_effect,validation_status
+I285,,bundle-missing,resolve route family or add segment bundle,closure-bundle-pending,blocked,relief-contact-repair,add-or-split-segment-bundle-before-regionalizer,data/t2-blocker-closure.csv,data/national-segment-bundles.csv,I285 remains out of T2 regionalizer until bundle-missing,review
+I405,,bundle-missing,resolve route family or add segment bundle,closure-bundle-pending,blocked,relief-contact-repair,add-or-split-segment-bundle-before-regionalizer,data/t2-blocker-closure.csv,data/national-segment-bundles.csv,I405 remains out of T2 regionalizer until bundle-missing,review
