@@ -5,6 +5,8 @@ Start here when deciding which document owns a claim.
 | Document | Owns | Use when |
 |---|---|---|
 | `docs/SYSTEM_PLAN.md` | Living roadmap, Milepost phases, roles, truth labels, forward plan | You need the current operating plan |
+| `waves/PHASES.md` | Active wave index and execution rail for pulse-driven ROUTE work | You need to know what "continue", "next pulse", or "active wave" should do |
+| `docs/wave-execution.md` | ROUTE wave/pulse operating contract and local `/route-XXX` skill map | You need to create, review, execute, or close wave/pulse work |
 | `docs/route-architecture.md` | Core ROUTE architecture invariant: bundles are the service abstraction; segment ids are physical members; route labels are mutable presentation attributes | You need to decide whether an artifact should join through bundles, member segments, stitch groups, or display labels |
 | `docs/bundle-registry-spec.md` | Bundle registry lookup semantics, required indexes, ambiguity rules, and render/sim/game/report consumer contracts | You need to resolve bundle ids efficiently for imaging, scenarios, overlays, or graph-member expansion |
 | `docs/tier-segment-stitching-spec.md` | Segment-level T1/T2 stitching rule: selectors nominate service needs, graph edges become candidate members, and only validated ordered members become bundles | You need to prevent whole-route Interstate assumptions in T1/T2 bundle analysis |

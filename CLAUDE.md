@@ -125,21 +125,30 @@ Three editorial roles gate the `validated` status. Run after parliament, before 
 
 When the user says **"continue"**, **"resume"**, or equivalent:
 
-1. Read the latest handoff in `docs/handoff/` (sorted by filename `YYYY-MM-DD-<slug>.md`).
-2. Confirm TRACKER and axis-pool state match the handoff's claim.
-3. Report in one sentence: current rubric version + most recent corridor scored + top 1-3 next priorities.
-4. Ask which priority to start on (or `go` / `1` for the top one).
+1. Read `waves/PHASES.md` and the first active wave's `WAVE.md`.
+2. Read the first planned pulse under `waves/{active}/plans/`.
+3. Confirm TRACKER / `docs/SYSTEM_PLAN.md` do not contradict the active wave.
+4. Report in one sentence: active wave + current pulse + top gate.
+5. Continue execution unless the user explicitly asks for status only.
 
-End every substantive session: run `/route-handoff <slug>` to write a fresh resume point before context is cleared.
+Historical handoffs may still exist, but waves are now the primary execution
+rail. End every substantive wave slice by updating the pulse file, wave card,
+and committing.
 
 ---
 
-## 9. Skills (Planned)
+## 9. Skills
 
-Build when friction from doing the job manually is clear. YAGNI is the law.
+Local skills live in `.claude/skills/` and should be used when the user names
+them or asks for wave/pulse/role-review execution.
 
 | Skill | Purpose | Status |
 |---|---|---|
+| `route-wave` | Inspect, create, advance, and close ROUTE waves | active |
+| `route-plan` | Draft wave/pulse plans with gates, roles, and deliverables | active |
+| `route-pulse` | Execute the next planned pulse in the active wave | active |
+| `route-review` | Run `.roles` review and write findings | active |
+| `route-fork` | Materialize pulse + role context for delegated execution | active |
 | `route-score` | Score any corridor against the dimension pool; update scoring ledger | planned |
 | `route-panel` | Run 7-voice Parliament review; produce stakes, argument, summary | planned |
 | `route-gap-find` | Analyze scored corpus; identify empty regions in dimension space | planned |
