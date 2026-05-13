@@ -22066,12 +22066,8 @@ fn t4_terminal_contact_evidence_rows(
 }
 
 fn terminal_district_seed_for_row(row: &T4TerminalAccessColumnRow) -> String {
-    if row.zone_id == "t3-great-lakes" {
-        great_lakes_terminal_seed_for_route(&row.route)
-            .unwrap_or_else(|| terminal_district_seed(&row.terminal_obligation))
-    } else {
-        terminal_district_seed(&row.terminal_obligation)
-    }
+    terminal_seed_for_zone_route(&row.zone_id, &row.route)
+        .unwrap_or_else(|| terminal_district_seed(&row.terminal_obligation))
 }
 
 fn terminal_district_seed(terminal_obligation: &str) -> String {
@@ -22097,8 +22093,47 @@ fn great_lakes_terminal_seed_for_route(route: &str) -> Option<String> {
     Some(district.to_string())
 }
 
+fn terminal_seed_for_zone_route(zone_id: &str, route: &str) -> Option<String> {
+    let key = canonical_route_key(route);
+    let district = match zone_id {
+        "t3-great-lakes" => return great_lakes_terminal_seed_for_route(route),
+        "t3-southeast" => match key.as_str() {
+            "I140" | "US301" => "Savannah Garden City",
+            "I175" => "Miami Hialeah",
+            "I185" | "US278" | "US84" => "Atlanta Hulsey",
+            "I795" | "US119" => "Charlotte Intermodal",
+            "US45E" | "US45W" | "US82" | "US90Z" => "New Orleans Gentilly",
+            _ => return None,
+        },
+        "t3-mid-south" => match key.as_str() {
+            "I169" | "US24" | "US66" => "Kansas City Gateway",
+            "I181" | "I277" | "US421" => "Louisville KentuckyOne",
+            "I255" => "St. Louis Gateway",
+            "I759" | "I840" | "US167" | "US270" => "Memphis Intermodal",
+            _ => return None,
+        },
+        "t3-mountain-west" => match key.as_str() {
+            "I135" | "I335" | "US76" => "Kansas City Gateway",
+            "I705" => "Seattle BNSF",
+            "I880" => "Los Angeles/Long Beach",
+            "US14" | "US95" => "Salt Lake City",
+            "US26" => "Portland Albina",
+            "US87" => "Denver Logistics Hub",
+            _ => return None,
+        },
+        "t3-texas-border" => match key.as_str() {
+            "I510" => "New Orleans Gentilly",
+            "I69E" | "US281" => "San Antonio Kirby",
+            "US96" => "Houston Englewood",
+            _ => return None,
+        },
+        _ => return None,
+    };
+    Some(district.to_string())
+}
+
 fn terminal_contact_basis_for_row(row: &T4TerminalAccessColumnRow) -> String {
-    if row.zone_id == "t3-great-lakes" {
+    if terminal_seed_for_zone_route(&row.zone_id, &row.route).is_some() {
         "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
             .to_string()
     } else {
@@ -32895,7 +32930,7 @@ mod tests {
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].terminal_district_seed, "Atlanta Hulsey");
+        assert_eq!(rows[0].terminal_district_seed, "New Orleans Gentilly");
         assert_eq!(
             rows[0].terminal_district_seed_source,
             "data/intermodal_terminals.csv"
@@ -32983,6 +33018,57 @@ mod tests {
         assert!(rows.iter().all(|row| row
             .contact_basis
             .contains("route-to-terminal contact source still needed")));
+    }
+
+    #[test]
+    fn t4_terminal_contact_evidence_classifies_remaining_zone_districts() {
+        let terminal_rows = [
+            ("US90Z", "t3-southeast", "New Orleans Gentilly"),
+            ("I-840", "t3-mid-south", "Memphis Intermodal"),
+            ("I-705", "t3-mountain-west", "Seattle BNSF"),
+            ("US96", "t3-texas-border", "Houston Englewood"),
+        ]
+        .into_iter()
+        .map(|(route, zone_id, _)| T4TerminalAccessColumnRow {
+            route: route.to_string(),
+            zone_id: zone_id.to_string(),
+            current_score: 28.0,
+            constraint_adjusted_score: 27.0,
+            hard_blocker_count: 0,
+            claim_blocker_count: 1,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 1.0,
+            top_constraint_classes: "terminal_access_evidence_gap".to_string(),
+            constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            access_class: "terminal-upgrade-candidate".to_string(),
+            terminal_obligation: "prove one-hour access to a terminal district".to_string(),
+            promise_horizon_hours: 1,
+            column_decision: "terminal-review".to_string(),
+            evidence_required: "district seed plus route-to-terminal contact proof".to_string(),
+            map_treatment: "show-as-local-inset-candidate".to_string(),
+            selection_basis: "within five points of T3 threshold".to_string(),
+            source_artifact: "data/tier-table.csv".to_string(),
+            next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            optimizer_effect: "hold for contact proof".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+
+        let rows = t4_terminal_contact_evidence_rows(&terminal_rows);
+        let failures = t4_terminal_contact_evidence_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        for (route, _, district) in [
+            ("US90Z", "t3-southeast", "New Orleans Gentilly"),
+            ("I-840", "t3-mid-south", "Memphis Intermodal"),
+            ("I-705", "t3-mountain-west", "Seattle BNSF"),
+            ("US96", "t3-texas-border", "Houston Englewood"),
+        ] {
+            assert!(rows.iter().any(|row| row.route == route
+                && row.terminal_district_seed == district
+                && row.decision == "source-needed"));
+        }
     }
 
     #[test]

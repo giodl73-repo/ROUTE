@@ -194,9 +194,9 @@ Current implementation status:
 - `data/t4-terminal-contact-evidence.csv` is the route-to-terminal contact queue
   for those held T4 rows. It keeps terminal district seed sources separate from
   contact proof sources, enumerates source-needed/source-backed/held/demotion/
-  scenario-ready decisions, and assigns the Great Lakes sample to candidate
-  terminal districts while keeping all route-contact proof source-needed before
-  remaining-zone classification.
+  scenario-ready decisions, and assigns each zone sample to candidate terminal
+  districts while keeping all route-contact proof source-needed until a separate
+  contact proof source is authored.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows
