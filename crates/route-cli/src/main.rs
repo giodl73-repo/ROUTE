@@ -20202,7 +20202,38 @@ fn source_fetch_policy_gate_failures(rows: &[SourceFetchPolicyRow]) -> Vec<Strin
             failures.push(format!("missing source fetch family {required}"));
         }
     }
+    for command in known_source_fetch_commands() {
+        if !rows
+            .iter()
+            .any(|row| source_fetch_policy_row_covers_command(row, command))
+        {
+            failures.push(format!("missing source fetch command policy for {command}"));
+        }
+    }
     failures
+}
+
+fn known_source_fetch_commands() -> &'static [&'static str] {
+    &[
+        "route fetch",
+        "route fetch-hpms",
+        "route fetch-hpms --states",
+        "route fetch-acs",
+        "route fetch-acs-income",
+        "route fetch-fema-d1",
+        "route fetch-fema",
+        "route t1-fetch-iowa511",
+        "route t1-fetch-tdot-smartway",
+        "route t1-fetch-mdot-midrive",
+        "route t1-fetch-indot-trafficwise",
+    ]
+}
+
+fn source_fetch_policy_row_covers_command(row: &SourceFetchPolicyRow, command: &str) -> bool {
+    row.commands
+        .split(';')
+        .map(str::trim)
+        .any(|candidate| candidate == command || candidate.starts_with(&format!("{command} ")))
 }
 
 fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
@@ -26004,11 +26035,12 @@ mod tests {
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         endpoint_exception_gate_failures, endpoint_exception_is_terminal_worthy,
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
-        forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
-        lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, merge_hpms_state_records, national_segment_bundle_gate_failures,
-        national_segment_bundle_rows, national_segment_registry_gate_failures,
-        national_segment_registry_rows, normalized_iri_m_per_km, optimizer_manifest_gate_failures,
+        forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor,
+        known_source_fetch_commands, load_tier_routes, lower_tier_pressure_witness_gate_failures,
+        lower_tier_pressure_witness_rows, map_atlas_gate_failures, merge_hpms_state_records,
+        national_segment_bundle_gate_failures, national_segment_bundle_rows,
+        national_segment_registry_gate_failures, national_segment_registry_rows,
+        normalized_iri_m_per_km, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
@@ -26023,12 +26055,13 @@ mod tests {
         pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
         pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
         significant_moment_gate_failures, significant_moment_row_failure,
-        source_fetch_policy_gate_failures, source_fetch_policy_rows,
-        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
-        standards_inventory_gate_failures, standards_inventory_row_has_contract,
-        standards_pressure_gate_failures, stop_candidate_gate_failures, stop_coverage_for_routes,
-        stop_coverage_gate_failures, stop_plan_for_route, stop_plan_gate_failures,
-        summarize_t1_failure_events, t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
+        source_fetch_policy_gate_failures, source_fetch_policy_row_covers_command,
+        source_fetch_policy_rows, standards_blueprint_gate_failures,
+        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
+        standards_inventory_row_has_contract, standards_pressure_gate_failures,
+        stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
+        stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
+        t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
@@ -28821,6 +28854,13 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.policy_doc == "docs/source-fetch-cache-policy.md"));
+        for command in known_source_fetch_commands() {
+            assert!(
+                rows.iter()
+                    .any(|row| source_fetch_policy_row_covers_command(row, command)),
+                "{command} missing from source fetch policy"
+            );
+        }
     }
 
     #[test]
