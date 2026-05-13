@@ -6,16 +6,19 @@ Build one principled optimizer for tier lines, stops, contacts, and schematic la
 The optimizer should replace the current pattern of selecting routes first and then
 repairing stops/map geometry by hand.
 
-The optimizer's decision object is a segment or segment bundle, not a route
-label. `route` remains useful display/input shorthand, but selected columns,
-repair witnesses, map rows, game hooks, and promotion dockets should join
-through the national segment identity grammar in
+The optimizer's decision object is a segment bundle, not a route label. A
+bundle may currently contain one physical segment, but it is still the service
+object the optimizer selects, draws, upgrades, repairs, and simulates.
+`route` remains useful display/input shorthand, and `national_segment_id`
+remains the member-level physical key, but selected columns, repair witnesses,
+map rows, game hooks, and promotion dockets should join through the bundle
+grammar in
 `docs/route-architecture.md` and `docs/national-segment-identity-spec.md`.
 
 The desired outcome is:
 
 ```text
-SLA promises -> segment/bundle columns -> tier lines -> stop set -> contact validity -> schematic layout -> T2/T3 attachments
+SLA promises -> bundle columns -> tier lines -> stop set -> contact validity -> schematic layout -> T2/T3 attachments
 ```
 
 with feedback loops when a later constraint proves an earlier choice infeasible.
@@ -45,7 +48,7 @@ bespoke selector. The direct translations are:
 | ApportionRegions reusable spine | T1 national spine that remains comparable across budgets and scenarios |
 | Capacity-constrained clustering | Stop and route budgets with explicit capacity/status lineage |
 | Flow construction | Assign lower-tier demand, city pairs, and access obligations to eligible tier corridors |
-| Branch-and-price columns | Candidate route/stop bundles selected by a master problem |
+| Branch-and-price columns | Candidate bundle/stop columns selected by a master problem |
 | Local search | Validity-preserving repairs after an initial tier plan exists |
 | Pareto frontier | Compare competing national designs under SLA, budget, resilience, and access objectives |
 | Audit certificate fixed point | One verifier contract for selected lines, stops, contacts, exceptions, and generated maps |

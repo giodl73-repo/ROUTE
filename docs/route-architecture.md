@@ -4,13 +4,31 @@
 
 This document owns the core architecture invariant for ROUTE:
 
-> Route labels are presentation attributes. Stable segment identity is the
-> system join key.
+> Bundles are the core service abstraction. Segment ids are stable physical
+> members. Route labels are presentation attributes.
 
 ROUTE may display, score, render, promote, rename, or bundle a corridor using
 labels such as `I-65`, `US2`, or `T3 Southeast`, but internal artifacts must not
 use those labels as primary identity once a row describes a physical route
-segment or a service built from segments.
+segment or a service built from segments. The default join key for a service,
+line, incident overlay, upgrade, promise, map row, or game object is
+`segment_bundle_id`; `national_segment_id` is used when the row is explicitly
+about one physical member inside a bundle.
+
+## Core Abstraction
+
+A bundle is the object ROUTE plans, draws, upgrades, simulates, promises
+against, and teaches to the game. It can be:
+
+- a single physical segment;
+- a stitched corridor made from multiple physical segments;
+- a promoted service that keeps old names and new names as aliases;
+- a detour, relief, or special-lane service over known members.
+
+Every segment-bearing artifact should either carry `segment_bundle_id` directly
+or point to `data/national-segment-bundles.csv` as the join surface. Segment ids
+remain mandatory because bundles need auditable physical membership, but
+segments are not the user-facing service unit.
 
 ## Core Spine
 
@@ -28,7 +46,8 @@ Everything else attaches to those layers:
 ```text
 raw network geometry
   -> national segment identity
-  -> bundles / stitch groups
+  -> bundles as service/corridor objects
+  -> stitch groups for continuity claims
   -> tier optimizer columns
   -> stops / contacts / state scopes
   -> Beck geometry and game overlays
@@ -46,7 +65,7 @@ surface and name the next artifact that will attach identity.
    renderer layer, or promotion status.
 3. A route designation can appear many times in the registry when it names
    different physical segments.
-4. A service line can contain many physical segments through a bundle.
+4. Every service/corridor row should use a bundle as its primary identity.
 5. Stops and geometry may refine `state_scope`, but route labels may not infer
    state scope by themselves.
 6. Every stable segment must belong to a bundle, even when that bundle contains

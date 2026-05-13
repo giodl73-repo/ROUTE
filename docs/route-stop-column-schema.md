@@ -12,6 +12,13 @@ needed to resolve it.
 This document owns the common schema vocabulary for T1/T2/T3/T4 route, stop,
 service, and repair artifacts.
 
+The core column abstraction is the bundle. A route column, service column,
+repair witness, map hook, incident row, or game overlay should identify the
+service/corridor with `segment_bundle_id` unless it is deliberately describing
+one physical member segment. Stop columns may attach to a bundle, a member
+segment, or both, depending on whether the stop belongs to the service or to a
+particular physical extent.
+
 Column artifacts are not allowed to treat a route label as stable identity once
 they describe a physical segment or service. New service/corridor columns
 should carry `segment_bundle_id` and join through
@@ -40,7 +47,8 @@ equivalent:
 | Field | Meaning |
 |---|---|
 | `tier` | T1, T2, T3, or T4 scope |
-| `national_segment_id` or `segment_bundle_id` | Stable segment or bundle identity when the row describes a physical route/service |
+| `segment_bundle_id` | Stable bundle identity when the row describes a service, corridor, route column, map row, incident, upgrade, or game overlay |
+| `national_segment_id` | Stable physical member identity when the row deliberately describes one segment inside a bundle |
 | `column_id` or stable natural key | Stable identifier for diffing and references |
 | `candidate_type` | Promise pair, route, stop, service, repair, or manifest |
 | `graph_kind` | Primal stop graph, dual route graph, path graph, or none |
