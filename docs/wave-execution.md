@@ -45,8 +45,24 @@ Local skills live under `.claude/skills/`:
 
 ## How This Retrofits Existing Work
 
-The first active wave, `Constraint Ledger Spine`, backfills the optimizer work
-already done in recent commits. It records pavement debt, bundle/T2 blockers,
-ledger/budget creation, selector adoption, and Beck diagnostic migration as
-completed pulses. The next planned pulse is game/source migration into the same
-ledger.
+The wave tree is explicitly historical for work completed before the wave system
+existed. Backfilled waves cite commit hashes or commit ranges in each pulse
+instead of pretending the pulse plan existed before the work.
+
+Current backfill coverage:
+
+| Wave | Commit-history role |
+|---|---|
+| `2026-05-06-ground-survey` | Project/spec/workspace/source/scoring/research bootstrap. |
+| `2026-05-07-research-module-sprint` | Papers, reviews, tier candidates, relay/SLA/intervention models. |
+| `2026-05-08-instrument-calibration` | v1.4 scorer, live/proxy dimensions, confidence ledgers. |
+| `2026-05-09-milepost-gates` | Atlas/Fault Lines/Pressure Test gates, source health, primitive tests. |
+| `2026-05-10-system-became-playable` | Interstate Tycoon paper, CLI, browser, and campaign spine. |
+| `2026-05-10-maps-became-contracts` | Map atlas, Beck schematics, game map reuse. |
+| `2026-05-11-stops-bend-the-map` | Stop-first Beck grammar and T2 schematic diagnostics. |
+| `2026-05-12-promise-horizon` | T1 promise selector, design review, METIS stop/topology gates. |
+| `2026-05-12-optimizer-got-a-constitution` | Optimizer doctrine, T2/T3/T4 closure, bundles, manifests, source policy. |
+| `2026-05-13-constraint-ledger-spine` | Active wave: constraint ledger/budget migration across all blocker families. |
+
+The next planned pulse remains `Constraint Ledger Spine` pulse 06: game/source
+migration into the same ledger.

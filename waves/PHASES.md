@@ -11,6 +11,10 @@ reviews, close notes, and the commits that changed the system.
 
 | Date | Wave | Mission | Status |
 |---|---|---|---|
+| 2026-05-06 | Ground Survey | Bootstrap ROUTE specs, roles, Rust workspace, first scoring/build/fetch path, and research module frame. | done |
+| 2026-05-07 | Research Module Sprint | Expand ROUTE into papers, tier candidates, relay/SLA simulations, maps, and panel/recheck workflow. | done |
+| 2026-05-08 | Instrument Calibration | Make the v1.4 scorer evidence-labeled and boringly reproducible across all dimensions. | done |
+| 2026-05-09 | Milepost Gates | Close Instrument, Atlas, Fault Lines, and Pressure Test gates with source, scenario, and primitive-test coverage. | done |
 | 2026-05-10 | System Became Playable | Interstate Tycoon became the game-facing proof surface and map-backed campaign spine. | done |
 | 2026-05-10 | Maps Became Contracts | Map atlas and Beck schematics became gated release/game artifacts instead of screenshots. | done |
 | 2026-05-11 | Stops Bend the Map | Beck geometry shifted to stop-first rules: stops own bends, transfers, intersections, labels, and spacing. | done |
