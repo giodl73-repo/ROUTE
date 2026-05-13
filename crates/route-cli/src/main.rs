@@ -2022,6 +2022,20 @@ enum Commands {
             value_name = "FILE"
         )]
         stop_placement: PathBuf,
+        /// T1/T2 segment candidate CSV
+        #[arg(
+            long,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        segment_candidates: PathBuf,
+        /// T1/T2 pavement readiness docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-docket.csv",
+            value_name = "FILE"
+        )]
+        pavement_docket: PathBuf,
         /// Output national segment registry CSV
         #[arg(
             long,
@@ -6938,6 +6952,8 @@ fn run_cli() -> Result<()> {
         Commands::NationalSegmentRegistry {
             render_board,
             stop_placement,
+            segment_candidates,
+            pavement_docket,
             output,
             gate,
         } => {
@@ -6946,7 +6962,16 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", render_board.display()))?;
             let placement_rows = load_t3_zone_stop_placement(&stop_placement)
                 .with_context(|| format!("loading {}", stop_placement.display()))?;
-            let rows = national_segment_registry_rows(&board_rows, &placement_rows);
+            let segment_rows = load_tier_segment_candidates(&segment_candidates)
+                .with_context(|| format!("loading {}", segment_candidates.display()))?;
+            let pavement_rows = load_tier_pavement_docket(&pavement_docket)
+                .with_context(|| format!("loading {}", pavement_docket.display()))?;
+            let rows = national_segment_registry_rows(
+                &board_rows,
+                &placement_rows,
+                &segment_rows,
+                &pavement_rows,
+            );
             write_national_segment_registry(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_national_segment_registry_summary(&output, &rows);
@@ -15613,6 +15638,18 @@ fn write_tier_pavement_docket(path: &Path, rows: &[TierPavementDocketRow]) -> Re
     Ok(())
 }
 
+fn load_tier_pavement_docket(path: &Path) -> Result<Vec<TierPavementDocketRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn print_tier_pavement_docket_summary(
     output: &Path,
     rows: &[TierPavementDocketRow],
@@ -17942,8 +17979,10 @@ fn load_t3_zone_stop_placement(path: &Path) -> Result<Vec<T3ZoneStopPlacementRow
 struct NationalSegmentRegistryBuilder {
     national_segment_id: String,
     segment_bundle_id: String,
+    bundle_role: String,
     stitch_group_id: String,
     zone_id: String,
+    current_tier: String,
     route: String,
     evidence_state_scope: std::collections::BTreeSet<String>,
     geometry_state_scope: std::collections::BTreeSet<String>,
@@ -17958,17 +17997,33 @@ struct NationalSegmentRegistryBuilder {
 fn national_segment_registry_rows(
     board_rows: &[T3ZoneRenderBoardRow],
     placement_rows: &[T3ZoneStopPlacementRow],
+    segment_rows: &[TierSegmentCandidateRow],
+    pavement_rows: &[TierPavementDocketRow],
 ) -> Vec<NationalSegmentRegistryRow> {
     let mut builders = std::collections::BTreeMap::<String, NationalSegmentRegistryBuilder>::new();
+    let pavement_by_member = pavement_rows
+        .iter()
+        .map(|row| {
+            (
+                national_segment_member_key(&row.segment_bundle_id, &row.national_segment_id),
+                row,
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
 
     for row in board_rows {
         let builder = builders
-            .entry(row.national_segment_id.clone())
+            .entry(national_segment_member_key(
+                &row.segment_bundle_id,
+                &row.national_segment_id,
+            ))
             .or_insert_with(|| NationalSegmentRegistryBuilder {
                 national_segment_id: row.national_segment_id.clone(),
                 segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_role: "single-segment".to_string(),
                 stitch_group_id: row.stitch_group_id.clone(),
                 zone_id: row.zone_id.clone(),
+                current_tier: "T3".to_string(),
                 route: row.route.clone(),
                 ..Default::default()
             });
@@ -17977,6 +18032,7 @@ fn national_segment_registry_rows(
             &row.segment_bundle_id,
             &row.stitch_group_id,
             &row.zone_id,
+            "T3",
             &row.route,
         );
         builder.board_layers.insert(row.board_layer.clone());
@@ -17990,12 +18046,17 @@ fn national_segment_registry_rows(
 
     for row in placement_rows {
         let builder = builders
-            .entry(row.national_segment_id.clone())
+            .entry(national_segment_member_key(
+                &row.segment_bundle_id,
+                &row.national_segment_id,
+            ))
             .or_insert_with(|| NationalSegmentRegistryBuilder {
                 national_segment_id: row.national_segment_id.clone(),
                 segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_role: "single-segment".to_string(),
                 stitch_group_id: row.stitch_group_id.clone(),
                 zone_id: row.zone_id.clone(),
+                current_tier: "T3".to_string(),
                 route: row.route.clone(),
                 ..Default::default()
             });
@@ -18004,6 +18065,7 @@ fn national_segment_registry_rows(
             &row.segment_bundle_id,
             &row.stitch_group_id,
             &row.zone_id,
+            "T3",
             &row.route,
         );
         builder.board_layers.insert("stop-placement".to_string());
@@ -18017,6 +18079,67 @@ fn national_segment_registry_rows(
         builder
             .validation_statuses
             .insert(row.validation_status.clone());
+    }
+
+    for row in segment_rows {
+        let builder = builders
+            .entry(national_segment_member_key(
+                &row.segment_bundle_id,
+                &row.national_segment_id,
+            ))
+            .or_insert_with(|| NationalSegmentRegistryBuilder {
+                national_segment_id: row.national_segment_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_role: tier_segment_bundle_role(row).to_string(),
+                stitch_group_id: row.stitch_group_id.clone(),
+                zone_id: row.region_id.clone(),
+                current_tier: row.tier.clone(),
+                route: row.route.clone(),
+                ..Default::default()
+            });
+        merge_segment_identity(
+            builder,
+            &row.segment_bundle_id,
+            &row.stitch_group_id,
+            &row.region_id,
+            &row.tier,
+            &row.route,
+        );
+        insert_non_empty_string(&mut builder.evidence_state_scope, &row.state);
+        insert_non_empty_string(&mut builder.geometry_state_scope, &row.state);
+        builder
+            .board_layers
+            .insert("tier-segment-candidate".to_string());
+        insert_semicolon_values(
+            &mut builder.source_artifacts,
+            "data/tier-segment-candidates.csv",
+        );
+        insert_semicolon_values(&mut builder.segment_aliases, &row.route_aliases);
+        insert_semicolon_values(&mut builder.bundle_aliases, &row.route_aliases);
+        builder
+            .stop_placement_status
+            .insert(format!("member-role:{}", row.member_role));
+
+        if let Some(pavement) = pavement_by_member.get(&national_segment_member_key(
+            &row.segment_bundle_id,
+            &row.national_segment_id,
+        )) {
+            insert_semicolon_values(
+                &mut builder.source_artifacts,
+                "data/tier-pavement-docket.csv",
+            );
+            builder
+                .stop_placement_status
+                .insert(pavement.pavement_status.clone());
+            builder
+                .validation_statuses
+                .insert(pavement.validation_status.clone());
+        } else {
+            builder
+                .stop_placement_status
+                .insert("pavement-docket-missing".to_string());
+            builder.validation_statuses.insert("review".to_string());
+        }
     }
 
     builders
@@ -18047,12 +18170,12 @@ fn national_segment_registry_rows(
             let route_label = normalise_designation(&builder.route);
             NationalSegmentRegistryRow {
                 member_segment_ids: builder.national_segment_id.clone(),
-                bundle_role: "single-segment".to_string(),
+                bundle_role: builder.bundle_role,
                 national_segment_id: builder.national_segment_id,
                 segment_bundle_id: builder.segment_bundle_id,
                 stitch_group_id: builder.stitch_group_id,
                 current_zone_id: builder.zone_id.clone(),
-                current_tier: "T3".to_string(),
+                current_tier: builder.current_tier,
                 route_label: route_label.clone(),
                 zone_id: builder.zone_id,
                 route: builder.route,
@@ -18076,6 +18199,7 @@ fn merge_segment_identity(
     segment_bundle_id: &str,
     stitch_group_id: &str,
     zone_id: &str,
+    current_tier: &str,
     route: &str,
 ) {
     if builder.segment_bundle_id.is_empty() {
@@ -18087,9 +18211,28 @@ fn merge_segment_identity(
     if builder.zone_id.is_empty() {
         builder.zone_id = zone_id.to_string();
     }
+    if builder.current_tier.is_empty() {
+        builder.current_tier = current_tier.to_string();
+    }
     if builder.route.is_empty() {
         builder.route = route.to_string();
     }
+}
+
+fn tier_segment_bundle_role(row: &TierSegmentCandidateRow) -> &'static str {
+    if row.member_role == "stitched-member" {
+        "stitched-service"
+    } else {
+        "single-segment"
+    }
+}
+
+fn national_segment_member_key(segment_bundle_id: &str, national_segment_id: &str) -> String {
+    format!(
+        "{}|{}",
+        segment_bundle_id.trim(),
+        national_segment_id.trim()
+    )
 }
 
 fn insert_semicolon_values(target: &mut std::collections::BTreeSet<String>, value: &str) {
@@ -18099,6 +18242,12 @@ fn insert_semicolon_values(target: &mut std::collections::BTreeSet<String>, valu
         .filter(|item| !item.is_empty())
     {
         target.insert(item.to_string());
+    }
+}
+
+fn insert_non_empty_string(target: &mut std::collections::BTreeSet<String>, value: &str) {
+    if !value.trim().is_empty() {
+        target.insert(value.trim().to_string());
     }
 }
 
@@ -18114,6 +18263,17 @@ fn national_segment_registry_action(
 ) -> &'static str {
     if board_layers.contains("zone-summary") || board_layers.contains("unassigned-gap-backlog") {
         return "track-zone-or-backlog-identity";
+    }
+    if stop_statuses.contains("pavement-source-needed")
+        || stop_statuses.contains("pavement-docket-missing")
+    {
+        return "join-pavement-evidence-before-service-readiness";
+    }
+    if stop_statuses.contains("pavement-repair-required") {
+        return "repair-pavement-before-service-readiness";
+    }
+    if board_layers.contains("tier-segment-candidate") {
+        return "eligible-for-service-bundle";
     }
     if stop_statuses.contains("ready-for-stop-layout") {
         return "eligible-for-geometry-layout";
@@ -18182,8 +18342,14 @@ fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) 
                 row.national_segment_id
             ));
         }
-        if !seen.insert(row.national_segment_id.clone()) {
-            failures.push(format!("{} is duplicated", row.national_segment_id));
+        if !seen.insert(national_segment_member_key(
+            &row.segment_bundle_id,
+            &row.national_segment_id,
+        )) {
+            failures.push(format!(
+                "{} is duplicated in bundle {}",
+                row.national_segment_id, row.segment_bundle_id
+            ));
         }
         if !row.national_segment_id.starts_with("US.HWYSEG.") {
             failures.push(format!(
@@ -18236,6 +18402,14 @@ fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) 
             failures.push(format!(
                 "{} selected route missing stop placement status",
                 row.national_segment_id
+            ));
+        }
+        if matches!(row.current_tier.as_str(), "T1" | "T2")
+            && !row.stop_placement_status.contains("pavement-")
+        {
+            failures.push(format!(
+                "{} {} member lacks pavement readiness status",
+                row.current_tier, row.national_segment_id
             ));
         }
         if row.stop_placement_status.contains("ready-for-stop-layout")
@@ -26391,7 +26565,7 @@ mod tests {
             validation_status: "pass".to_string(),
         }];
 
-        let rows = national_segment_registry_rows(&board_rows, &placement_rows);
+        let rows = national_segment_registry_rows(&board_rows, &placement_rows, &[], &[]);
         let failures = national_segment_registry_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -26446,6 +26620,117 @@ mod tests {
         assert_eq!(rows[0].bundle_status, "bundle-ready");
         assert_eq!(rows[0].validation_status, "pass");
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn national_registry_ingests_tier_segment_members_and_pavement_readiness() {
+        let segment_rows = vec![
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I15".to_string(),
+                edge_id: 100,
+                edge_sequence: 1,
+                national_segment_id: "US.HWYSEG.0000000000000100".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I15".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I15".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "CA".to_string(),
+                length_miles: 10.0,
+                aadt: "100000".to_string(),
+                lane_count: "6".to_string(),
+                route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
+                selector_basis: "I80;I10".to_string(),
+                candidate_action: "connector".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I15".to_string(),
+                edge_id: 101,
+                edge_sequence: 2,
+                national_segment_id: "US.HWYSEG.0000000000000101".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I15".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I15".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "NV".to_string(),
+                length_miles: 12.0,
+                aadt: "90000".to_string(),
+                lane_count: "4".to_string(),
+                route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
+                selector_basis: "I80;I10".to_string(),
+                candidate_action: "connector".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let pavement_rows = vec![
+            TierPavementDocketRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I15".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I15".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I15".to_string(),
+                national_segment_id: "US.HWYSEG.0000000000000100".to_string(),
+                edge_id: 100,
+                edge_sequence: 1,
+                state: "CA".to_string(),
+                length_miles: 10.0,
+                iri_m_per_km: "1.20".to_string(),
+                max_iri_m_per_km: "1.90".to_string(),
+                pavement_status: "pavement-floor-pass".to_string(),
+                repair_action: "no pavement repair required before promotion".to_string(),
+                freight_ride_requirement: "regional freight ride quality".to_string(),
+                transit_ride_requirement: "regional coach ride quality".to_string(),
+                source_contract: "HPMS IRI".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            TierPavementDocketRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "I15".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I15".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I15".to_string(),
+                national_segment_id: "US.HWYSEG.0000000000000101".to_string(),
+                edge_id: 101,
+                edge_sequence: 2,
+                state: "NV".to_string(),
+                length_miles: 12.0,
+                iri_m_per_km: "unknown".to_string(),
+                max_iri_m_per_km: "1.90".to_string(),
+                pavement_status: "pavement-source-needed".to_string(),
+                repair_action: "join pavement condition before bundle promotion".to_string(),
+                freight_ride_requirement: "regional freight ride quality".to_string(),
+                transit_ride_requirement: "regional coach ride quality".to_string(),
+                source_contract: "HPMS IRI".to_string(),
+                next_artifact: "data/standards-l1-inventory.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let registry_rows = national_segment_registry_rows(&[], &[], &segment_rows, &pavement_rows);
+        let registry_failures = national_segment_registry_gate_failures(&registry_rows);
+        let bundle_rows = national_segment_bundle_rows(&registry_rows);
+
+        assert!(registry_failures.is_empty(), "{registry_failures:?}");
+        assert_eq!(registry_rows.len(), 2);
+        assert!(registry_rows
+            .iter()
+            .any(|row| row.registry_action == "join-pavement-evidence-before-service-readiness"));
+        assert_eq!(bundle_rows.len(), 1);
+        assert_eq!(bundle_rows[0].member_count, 2);
+        assert_eq!(bundle_rows[0].bundle_status, "bundle-review");
+        assert_eq!(
+            bundle_rows[0].next_artifact,
+            "data/tier-pavement-docket.csv"
+        );
     }
 
     #[test]

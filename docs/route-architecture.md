@@ -85,6 +85,8 @@ surface and name the next artifact that will attach identity.
 | `docs/tier-pavement-standards.md` | Defines the pavement/ride-quality floor that candidate and bundle members must satisfy before SLA, freight, transit, or promotion claims pass. |
 | `data/national-segment-registry.csv` | Current machine-readable identity registry. |
 | `data/national-segment-bundles.csv` | Current machine-readable service/corridor bundle registry derived from segment identity. |
+| `data/tier-segment-candidates.csv` | T1/T2 selector output decomposed into graph-edge bundle members before route labels can become services. |
+| `data/tier-pavement-docket.csv` | Segment-member pavement readiness surface consumed by the registry before T1/T2 bundles can claim service readiness. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |
 | `data/t3-zone-stop-placement.csv` | First stop-placement artifact carrying stable segment identity and evidence state scope. |
 | `data/tier-optimizer-runs.csv` | Run certificate proving identity and bundle artifacts participate in the optimizer bundle. |

@@ -98,6 +98,9 @@ Reports:
 
 The current gates are:
 
+- `route national-segment-registry --gate`: verifies bundle-member identity rows
+  from T1/T2 segment candidates, pavement readiness, and T3 render/stop
+  artifacts.
 - `route national-segment-bundles --gate`: verifies bundle rows and member ids.
 - `route bundle-architecture --gate`: verifies crate-level bundle-facing APIs.
 - `route t2-bundle-overlays --gate`: verifies game/ops T2 overlay rows either

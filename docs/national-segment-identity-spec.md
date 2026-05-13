@@ -173,15 +173,21 @@ stitch, and alias fields for T3 zone board rows.
 zone-bounded evidence scope from selected stop chains.
 
 `route national-segment-registry --gate` merges segment-bearing artifacts into
-`data/national-segment-registry.csv`, producing one auditable row per stable
-segment identity. The registry is the surface downstream optimizers, renderers,
-incident overlays, and game systems should join against before trusting route
-labels.
+`data/national-segment-registry.csv`, producing auditable bundle-member rows.
+The registry is keyed by the bundle/member relationship, not route label alone,
+because the same physical segment may participate in more than one service
+bundle. Downstream optimizers, renderers, incident overlays, and game systems
+should join against this registry before trusting route labels.
 
 `route tier-segment-candidates --gate` decomposes T1/T2 selector outputs into
 graph edge-level segment candidates before any route label can be promoted into
 a stitched bundle. This is the pre-registry analysis surface for national and
 regional service lines.
+
+`route tier-pavement-docket --gate` joins those T1/T2 segment candidates to the
+pavement standard. The registry consumes the docket so a T1/T2 bundle member is
+`pass` only when pavement readiness passes; source-needed or repair-required
+pavement rows keep the owning bundle in review.
 
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor

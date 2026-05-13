@@ -58,12 +58,13 @@ Milepost 10 is done when:
 | 22 | Add T3 zone map diagnostics | ✅ done | `route t3-zone-map-diagnostics --gate` emits `data/t3-zone-map-diagnostics.csv`, proving each T3 zone map has selected feeder routes and gap-callout status |
 | 23 | Add T3 zone render board | ✅ done | `route t3-zone-render-board --gate` emits `data/t3-zone-render-board.csv`, exposing optimizer-selected routes, review connectors, held gaps, and unassigned backlog to renderers and game overlays |
 | 24 | Add T3 zone stop placement | ✅ done | `route t3-zone-stop-placement --gate` emits `data/t3-zone-stop-placement.csv`, checking selected T3 routes against zone-bounded stop chains before geometry generation |
-| 25 | Add national segment registry | ✅ done | `route national-segment-registry --gate` emits `data/national-segment-registry.csv`, merging segment ids, bundles, aliases, state scopes, and layer coverage into one auditable join surface |
+| 25 | Add national segment registry | ✅ done | `route national-segment-registry --gate` emits `data/national-segment-registry.csv`, merging T1/T2 segment candidates, pavement readiness, T3 render rows, bundles, aliases, state scopes, and layer coverage into one auditable join surface |
 | 26 | Add national segment bundles | ✅ done | `route national-segment-bundles --gate` emits `data/national-segment-bundles.csv`, making bundles the default service/corridor join surface for renderers, overlays, incidents, promotion, and games |
 | 27 | Gate bundle architecture adoption | ✅ done | `route bundle-architecture --gate` emits `data/bundle-architecture.csv`, proving each Rust crate has a bundle-facing role and API entrypoint |
 | 28 | Add bundle registry and T2 overlay binding | ✅ done | `route t2-bundle-overlays --gate` emits `data/game/t2-bundle-overlays.csv`, using `route_network::BundleRegistry` to bind game/ops levers to bundles or mark pending bundle identity |
 | 29 | Pivot T1/T2 bundles to segment-level stitching | 🔄 partial | `docs/tier-segment-stitching-spec.md` and `route tier-segment-candidates --gate` make T1/T2 selectors decompose into graph edge members before bundle promotion |
 | 30 | Join T1/T2 segment candidates to pavement standards | ✅ done | `route tier-pavement-docket --gate` emits `data/tier-pavement-docket.csv`, marking each selected member as pavement-pass, repair-required, or source-needed before SLA/transit readiness |
+| 31 | Feed T1/T2 segment members into bundle registry | ✅ done | `route national-segment-registry --gate` now consumes `data/tier-segment-candidates.csv` and `data/tier-pavement-docket.csv`; T1/T2 bundle readiness now depends on member pavement readiness |
 
 ## Post-Review Repair Slice
 
