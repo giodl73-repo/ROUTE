@@ -32,6 +32,7 @@ Current T2 treatment consumes:
 | `data/tier-candidate-columns.csv` | Route-service candidate columns and repair lineage |
 | `data/t2-regionalizer.csv` | First-pass regional treatment rows |
 | `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, and parent-trunk lineage |
+| `data/t2-service-diagnostic-queue.csv` | Bundle-ready service rows still missing Beck/service diagnostics before map or game binding |
 | `data/t2-contact-resolutions.csv` | Contact resolution and demotion decisions |
 | `data/t2-blocker-closure.csv` | Consolidated held blocker dispositions joined to bundle identity/status |
 | `data/t2-bundle-repair-queue.csv` | Bundle-blocked candidate-review rows and the exact registry/stop repair needed before T2 re-entry |
@@ -87,6 +88,10 @@ means bundle identity is solved, but Beck/service diagnostics are not. Segment
 candidate generation keeps those rows bundle-addressable so the registry,
 pavement docket, game overlays, and future diagnostic work can refer to the
 same `segment_bundle_id` without treating the route as selected T2 service.
+
+`data/t2-service-diagnostic-queue.csv` owns that next handoff. It is emitted for
+bundle-ready rows such as I285 and I405 that need `data/beck-t2-diagnostics.csv`
+before they can receive a service class, map treatment, or game overlay.
 
 ## Contact Rules
 

@@ -1776,6 +1776,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit Beck/service diagnostic work for bundle-ready T2 rows still held from map/game service
+    T2ServiceDiagnosticQueue {
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        service_selection: PathBuf,
+        /// National segment bundle CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        bundles: PathBuf,
+        /// Output T2 service diagnostic queue CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-service-diagnostic-queue.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if pending service diagnostics lack bundle identity or next work
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Bind T2 game/ops service overlays to national segment bundles where available
     T2BundleOverlays {
         /// T2 service selection CSV
@@ -6884,6 +6913,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 service selection gate: PASS");
+            }
+        }
+
+        Commands::T2ServiceDiagnosticQueue {
+            service_selection,
+            bundles,
+            output,
+            gate,
+        } => {
+            println!("route t2-service-diagnostic-queue");
+            let service_rows = load_t2_service_selection(&service_selection)
+                .with_context(|| format!("loading {}", service_selection.display()))?;
+            let bundle_rows = load_national_segment_bundles(&bundles)
+                .with_context(|| format!("loading {}", bundles.display()))?;
+            let rows = t2_service_diagnostic_queue_rows(&service_rows, &bundle_rows);
+            write_t2_service_diagnostic_queue(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_service_diagnostic_queue_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_service_diagnostic_queue_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 service diagnostic queue gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 service diagnostic queue gate failed");
+                }
+                println!();
+                println!("T2 service diagnostic queue gate: PASS");
             }
         }
 
@@ -12904,6 +12964,22 @@ struct T2BundleOverlayRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2ServiceDiagnosticQueueRow {
+    route: String,
+    region_id: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    selection_action: String,
+    selection_basis: String,
+    diagnostic_status: String,
+    service_diagnostic_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BundleRepairQueueRow {
     route: String,
     segment_bundle_id: String,
@@ -16187,6 +16263,173 @@ fn load_t2_service_selection(path: &Path) -> Result<Vec<T2ServiceSelectionRow>> 
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn t2_service_diagnostic_queue_rows(
+    service_rows: &[T2ServiceSelectionRow],
+    bundle_rows: &[NationalSegmentBundleRow],
+) -> Vec<T2ServiceDiagnosticQueueRow> {
+    let mut rows = service_rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.selection_action.as_str(),
+                "source-needed" | "closure-review-needs-beck-diagnostic"
+            ) || row.selection_basis == "missing-beck-t2-diagnostic"
+                || row.selection_basis == "closure-accepted-missing-beck-t2-diagnostic"
+        })
+        .map(|row| {
+            let bundle = bundle_rows
+                .iter()
+                .find(|bundle| national_bundle_matches_route(bundle, &row.route));
+            let (segment_bundle_id, bundle_status) = bundle
+                .map(|bundle| {
+                    (
+                        bundle.segment_bundle_id.clone(),
+                        bundle.bundle_status.clone(),
+                    )
+                })
+                .unwrap_or_else(|| (String::new(), "bundle-missing".to_string()));
+            T2ServiceDiagnosticQueueRow {
+                route: row.route.clone(),
+                region_id: row.region_id.clone(),
+                segment_bundle_id,
+                bundle_status,
+                selection_action: row.selection_action.clone(),
+                selection_basis: row.selection_basis.clone(),
+                diagnostic_status: if row.beck_corridor.trim().is_empty() {
+                    "beck-diagnostic-missing".to_string()
+                } else {
+                    "beck-diagnostic-review".to_string()
+                },
+                service_diagnostic_action: "author-beck-t2-diagnostic-before-map-overlay"
+                    .to_string(),
+                required_artifact: "data/t2-service-selection.csv".to_string(),
+                next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+                optimizer_effect:
+                    "holds bundle-ready T2 route below map/game service until Beck service class exists"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    if rows.is_empty() {
+        rows.push(T2ServiceDiagnosticQueueRow {
+            route: "__all_t2_service_diagnostics__".to_string(),
+            region_id: String::new(),
+            segment_bundle_id: String::new(),
+            bundle_status: "service-diagnostic-clear".to_string(),
+            selection_action: "clear".to_string(),
+            selection_basis: "no-missing-beck-t2-diagnostics".to_string(),
+            diagnostic_status: "service-diagnostic-clear".to_string(),
+            service_diagnostic_action: "no-service-diagnostic-work-needed".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
+            optimizer_effect: "all T2 service rows have Beck diagnostic posture".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
+}
+
+fn national_bundle_matches_route(bundle: &NationalSegmentBundleRow, route: &str) -> bool {
+    let key = canonical_route_key(route);
+    bundle
+        .route_labels
+        .split(';')
+        .chain(bundle.bundle_aliases.split(';').filter_map(|alias| {
+            alias
+                .strip_prefix("route:")
+                .or_else(|| alias.strip_prefix("route-label:"))
+        }))
+        .any(|candidate| canonical_route_key(candidate) == key)
+}
+
+fn write_t2_service_diagnostic_queue(
+    path: &Path,
+    rows: &[T2ServiceDiagnosticQueueRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_service_diagnostic_queue_summary(output: &Path, rows: &[T2ServiceDiagnosticQueueRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.diagnostic_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} service diagnostic queue rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnosticQueueRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 service diagnostic queue rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() == 1 && rows[0].route == "__all_t2_service_diagnostics__" {
+        let row = &rows[0];
+        if row.diagnostic_status != "service-diagnostic-clear" || row.validation_status != "pass" {
+            failures
+                .push("service diagnostic clearance row has incomplete clear status".to_string());
+        }
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty() {
+            failures.push("service diagnostic queue row missing route".to_string());
+        }
+        if row.region_id.trim().is_empty() {
+            failures.push(format!("{} missing region_id", row.route));
+        }
+        if row.segment_bundle_id.trim().is_empty() {
+            failures.push(format!("{} missing segment_bundle_id", row.route));
+        }
+        if row.bundle_status != "bundle-ready" {
+            failures.push(format!(
+                "{} service diagnostic row is not bundle-ready ({})",
+                row.route, row.bundle_status
+            ));
+        }
+        if row.diagnostic_status != "beck-diagnostic-missing" {
+            failures.push(format!(
+                "{} unexpected diagnostic_status {}",
+                row.route, row.diagnostic_status
+            ));
+        }
+        if row.service_diagnostic_action.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!("{} missing diagnostic action artifacts", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} diagnostic queue row must remain review",
+                row.route
+            ));
+        }
+    }
+    failures
 }
 
 fn load_national_segment_bundles(path: &Path) -> Result<Vec<NationalSegmentBundleRow>> {
@@ -21213,6 +21456,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-service-selection",
                 "route t2-service-selection --gate",
                 "data/t2-service-selection.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-service-diagnostic-queue",
+                "route t2-service-diagnostic-queue --gate",
+                "data/t2-service-diagnostic-queue.csv",
                 "pass",
                 0,
                 "",
@@ -26958,6 +27209,7 @@ mod tests {
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
+        t2_service_diagnostic_queue_gate_failures, t2_service_diagnostic_queue_rows,
         t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
         t3_national_segment_id, t3_segment_aliases, t3_segment_bundle_id, t3_stitch_group_id,
@@ -26986,7 +27238,7 @@ mod tests {
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow, T2ContactClosureRow,
         T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceSelectionRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
         T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
         T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
         T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
@@ -28177,6 +28429,64 @@ mod tests {
         assert_eq!(rows[0].route, "__all_t2_bundle_repairs__");
         assert_eq!(rows[0].bundle_status, "bundle-repair-clear");
         assert_eq!(rows[0].next_artifact, "data/t2-service-selection.csv");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_service_diagnostic_queue_names_missing_beck_rows() {
+        let service_rows = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "component-1".to_string(),
+            route: "I285".to_string(),
+            parent_trunks: String::new(),
+            column_decision: "review".to_string(),
+            treatment_status: "review-treatment".to_string(),
+            beck_corridor: String::new(),
+            beck_service_class: String::new(),
+            beck_color_mode: String::new(),
+            beck_start_trunk: String::new(),
+            beck_end_trunk: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: String::new(),
+            qualification_basis: String::new(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bundles = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I285".to_string(),
+            bundle_role: "stitched-service".to_string(),
+            member_segment_ids: "US.HWYSEG.I285".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I285".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-1".to_string(),
+            route_labels: "I285".to_string(),
+            state_scope: String::new(),
+            evidence_state_scope: String::new(),
+            geometry_state_scope: String::new(),
+            bundle_aliases: "route:I285;route-label:I285".to_string(),
+            source_artifacts: "fixture".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows: Vec<T2ServiceDiagnosticQueueRow> =
+            t2_service_diagnostic_queue_rows(&service_rows, &bundles);
+        let failures = t2_service_diagnostic_queue_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I285");
+        assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I285");
+        assert_eq!(rows[0].diagnostic_status, "beck-diagnostic-missing");
+        assert_eq!(rows[0].next_artifact, "data/beck-t2-diagnostics.csv");
         assert!(failures.is_empty());
     }
 
