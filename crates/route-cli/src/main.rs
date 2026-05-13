@@ -2169,6 +2169,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T4 terminal contact evidence queue from held terminal access columns
+    T4TerminalContactEvidence {
+        /// T4 terminal/local access columns CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-access-columns.csv",
+            value_name = "FILE"
+        )]
+        terminal_columns: PathBuf,
+        /// Output T4 terminal contact evidence queue CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-contact-evidence.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if contact evidence rows violate source/decision rules
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 access gaps from held route and terminal access columns
     #[command(name = "t3-t4-access-gaps")]
     T3T4AccessGaps {
@@ -7531,6 +7553,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal access column gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalContactEvidence {
+            terminal_columns,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-contact-evidence");
+            let terminal_rows = load_t4_terminal_access_columns(&terminal_columns)
+                .with_context(|| format!("loading {}", terminal_columns.display()))?;
+            let rows = t4_terminal_contact_evidence_rows(&terminal_rows);
+            write_t4_terminal_contact_evidence(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_contact_evidence_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_contact_evidence_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal contact evidence gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal contact evidence gate failed");
+                }
+                println!();
+                println!("T4 terminal contact evidence gate: PASS");
             }
         }
 
@@ -13751,6 +13801,24 @@ struct T4TerminalAccessColumnRow {
     source_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalContactEvidenceRow {
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district_seed: String,
+    terminal_district_seed_source: String,
+    contact_basis: String,
+    contact_proof_source: String,
+    evidence_status: String,
+    selected_higher_tier_attachment: String,
+    decision: String,
+    next_artifact: String,
+    source_column_artifact: String,
+    source_column_decision: String,
     validation_status: String,
 }
 
@@ -21960,6 +22028,217 @@ fn load_t4_terminal_access_columns(path: &Path) -> Result<Vec<T4TerminalAccessCo
     Ok(rows)
 }
 
+fn t4_terminal_contact_evidence_rows(
+    terminal_rows: &[T4TerminalAccessColumnRow],
+) -> Vec<T4TerminalContactEvidenceRow> {
+    let mut rows = terminal_rows
+        .iter()
+        .filter(|row| row.column_decision == "terminal-review")
+        .map(|row| T4TerminalContactEvidenceRow {
+            queue_id: format!(
+                "T4CONTACT-{}-{}",
+                canonical_route_key(&row.zone_id),
+                canonical_route_key(&row.route)
+            ),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district_seed: terminal_district_seed(&row.terminal_obligation),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "source-needed-route-to-terminal-contact".to_string(),
+            contact_proof_source: String::new(),
+            evidence_status: "source-needed".to_string(),
+            selected_higher_tier_attachment: "source-needed".to_string(),
+            decision: "source-needed".to_string(),
+            next_artifact: terminal_contact_next_artifact(&row.zone_id),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: row.column_decision.clone(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.zone_id
+            .cmp(&b.zone_id)
+            .then_with(|| a.decision.cmp(&b.decision))
+            .then_with(|| a.route.cmp(&b.route))
+    });
+    rows
+}
+
+fn terminal_district_seed(terminal_obligation: &str) -> String {
+    terminal_obligation
+        .split_once(": ")
+        .map(|(_, seed)| seed.to_string())
+        .unwrap_or_else(|| terminal_obligation.to_string())
+}
+
+fn terminal_contact_next_artifact(zone_id: &str) -> String {
+    match zone_id {
+        "t3-great-lakes" => {
+            "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md".to_string()
+        }
+        _ => "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-03.md".to_string(),
+    }
+}
+
+fn write_t4_terminal_contact_evidence(
+    path: &Path,
+    rows: &[T4TerminalContactEvidenceRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_contact_evidence_summary(
+    output: &Path,
+    rows: &[T4TerminalContactEvidenceRow],
+) {
+    let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_decision.entry(row.decision.as_str()).or_default() += 1;
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal contact evidence rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+    for (decision, count) in by_decision {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t4_terminal_contact_evidence_gate_failures(
+    rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T4 terminal contact evidence rows emitted".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.terminal_district_seed.trim().is_empty()
+            || row.terminal_district_seed_source.trim().is_empty()
+            || row.contact_basis.trim().is_empty()
+            || row.evidence_status.trim().is_empty()
+            || row.selected_higher_tier_attachment.trim().is_empty()
+            || row.decision.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete terminal contact evidence fields",
+                row.queue_id
+            ));
+        }
+        if !seen.insert(row.queue_id.clone()) {
+            failures.push(format!("{} is duplicated", row.queue_id));
+        }
+        if row.terminal_district_seed_source == row.contact_proof_source
+            && !row.contact_proof_source.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} uses terminal district seed source as contact proof",
+                row.queue_id
+            ));
+        }
+        if !matches!(
+            row.decision.as_str(),
+            "source-needed"
+                | "source-backed"
+                | "demotion/local-only"
+                | "held-known"
+                | "scenario-ready"
+        ) {
+            failures.push(format!(
+                "{} has invalid decision {}",
+                row.queue_id, row.decision
+            ));
+        }
+        if !matches!(
+            row.evidence_status.as_str(),
+            "source-needed" | "accepted" | "held-known" | "demoted"
+        ) {
+            failures.push(format!(
+                "{} has invalid evidence status {}",
+                row.queue_id, row.evidence_status
+            ));
+        }
+        if row.decision == "source-needed" {
+            if row.evidence_status != "source-needed" || !row.contact_proof_source.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} source-needed decision has contact proof or non-source-needed evidence",
+                    row.queue_id
+                ));
+            }
+            if row.validation_status != "review" {
+                failures.push(format!(
+                    "{} source-needed row must remain review",
+                    row.queue_id
+                ));
+            }
+        }
+        if matches!(row.decision.as_str(), "source-backed" | "scenario-ready")
+            && (row.evidence_status != "accepted"
+                || row.contact_proof_source.trim().is_empty()
+                || row.selected_higher_tier_attachment.trim().is_empty()
+                || row.selected_higher_tier_attachment == "source-needed")
+        {
+            failures.push(format!(
+                "{} source-backed/scenario-ready decision lacks proof or attachment",
+                row.queue_id
+            ));
+        }
+        if row.decision == "scenario-ready"
+            && row.contact_basis.to_ascii_lowercase().contains("proximity")
+        {
+            failures.push(format!(
+                "{} proximity-only contact cannot be scenario-ready",
+                row.queue_id
+            ));
+        }
+        if row.decision == "demotion/local-only" && row.evidence_status != "demoted" {
+            failures.push(format!(
+                "{} demotion/local-only decision must use demoted evidence status",
+                row.queue_id
+            ));
+        }
+        if row.decision == "held-known" && row.evidence_status != "held-known" {
+            failures.push(format!(
+                "{} held-known decision must use held-known evidence status",
+                row.queue_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review" | "held") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.queue_id, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn t3_t4_access_gap_rows(
     route_rows: &[T3ZoneRouteColumnRow],
     terminal_rows: &[T4TerminalAccessColumnRow],
@@ -22046,7 +22325,11 @@ fn t3_t4_access_gap_rows(
             gap_reason: row.selection_basis.clone(),
             required_evidence: row.evidence_required.clone(),
             repair_action: repair_action.to_string(),
-            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            next_artifact: if row.column_decision == "terminal-review" {
+                "data/t4-terminal-contact-evidence.csv".to_string()
+            } else {
+                "data/t3-zone-map-diagnostics.csv".to_string()
+            },
             upward_pressure_allowed: false,
             validation_status: "review".to_string(),
         });
@@ -30402,6 +30685,7 @@ mod tests {
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
+        t4_terminal_contact_evidence_gate_failures, t4_terminal_contact_evidence_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
@@ -30427,11 +30711,11 @@ mod tests {
         T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -32535,7 +32819,123 @@ mod tests {
         assert!(classes.contains("terminal-evidence-needed"));
         assert!(classes.contains("zone-assignment-needed"));
         assert!(rows.iter().all(|row| !row.upward_pressure_allowed));
+        assert!(rows
+            .iter()
+            .any(|row| row.gap_class == "terminal-evidence-needed"
+                && row.next_artifact == "data/t4-terminal-contact-evidence.csv"));
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t4_terminal_contact_evidence_queue_keeps_seed_sources_separate() {
+        let terminal_rows = vec![T4TerminalAccessColumnRow {
+            route: "US90Z".to_string(),
+            zone_id: "t3-southeast".to_string(),
+            current_score: 29.9,
+            constraint_adjusted_score: 29.9,
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
+            access_class: "terminal-upgrade-candidate".to_string(),
+            terminal_obligation:
+                "prove one-hour access to a Southeast / Appalachia terminal district: Atlanta Hulsey"
+                    .to_string(),
+            promise_horizon_hours: 1,
+            column_decision: "terminal-review".to_string(),
+            evidence_required:
+                "district seed plus route-to-terminal contact proof from separate source".to_string(),
+            map_treatment: "show-as-local-inset-candidate".to_string(),
+            selection_basis: "within five points of T3 threshold".to_string(),
+            source_artifact: "data/tier-table.csv".to_string(),
+            next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            optimizer_effect: "hold for contact proof".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t4_terminal_contact_evidence_rows(&terminal_rows);
+        let failures = t4_terminal_contact_evidence_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].terminal_district_seed, "Atlanta Hulsey");
+        assert_eq!(
+            rows[0].terminal_district_seed_source,
+            "data/intermodal_terminals.csv"
+        );
+        assert_eq!(rows[0].contact_proof_source, "");
+        assert_eq!(rows[0].decision, "source-needed");
+        assert_eq!(
+            rows[0].next_artifact,
+            "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-03.md"
+        );
+    }
+
+    #[test]
+    fn t4_terminal_contact_evidence_gate_separates_source_needed_from_scenario_ready() {
+        let source_needed = T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-US10".to_string(),
+            route: "US10".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Minneapolis Twin Cities".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "source-needed-route-to-terminal-contact".to_string(),
+            contact_proof_source: String::new(),
+            evidence_status: "source-needed".to_string(),
+            selected_higher_tier_attachment: "source-needed".to_string(),
+            decision: "source-needed".to_string(),
+            next_artifact: "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md"
+                .to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "review".to_string(),
+        };
+        let scenario_ready = T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-I180".to_string(),
+            route: "I-180".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Chicago Intermodal Complex".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "documented truck connector to terminal gate".to_string(),
+            contact_proof_source: "future-contact-source.csv#I-180".to_string(),
+            evidence_status: "accepted".to_string(),
+            selected_higher_tier_attachment: "T3:t3-great-lakes:I-80".to_string(),
+            decision: "scenario-ready".to_string(),
+            next_artifact: "data/t4-terminal-scenario-readiness.csv".to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "pass".to_string(),
+        };
+        let proximity_only = T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-US22".to_string(),
+            route: "US22".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Columbus South".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "proximity-only terminal district".to_string(),
+            contact_proof_source: "future-contact-source.csv#US22".to_string(),
+            evidence_status: "accepted".to_string(),
+            selected_higher_tier_attachment: "T3:t3-great-lakes:I-70".to_string(),
+            decision: "scenario-ready".to_string(),
+            next_artifact: "data/t4-terminal-scenario-readiness.csv".to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "pass".to_string(),
+        };
+
+        assert!(
+            t4_terminal_contact_evidence_gate_failures(&[source_needed, scenario_ready]).is_empty()
+        );
+        let proximity_failures = t4_terminal_contact_evidence_gate_failures(&[proximity_only]);
+        assert!(
+            proximity_failures
+                .iter()
+                .any(|failure| failure.contains("proximity-only contact cannot be scenario-ready")),
+            "{proximity_failures:?}"
+        );
     }
 
     #[test]

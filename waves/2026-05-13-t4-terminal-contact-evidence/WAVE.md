@@ -74,7 +74,7 @@ scenario-ready.
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - Terminal contact evidence schema | planned | create queue contract and gate |
+| 01 - Terminal contact evidence schema | done | `data/t4-terminal-contact-evidence.csv`; terminal-evidence gaps point to queue |
 | 02 - Great Lakes contact sample | planned | classify the 33-row largest zone sample |
 | 03 - Remaining zone contact pass | planned | classify Southeast, Mid-South, Mountain West, and Texas Border rows |
 | 04 - Scenario readiness docket | planned | separate scenario-ready rows from source holds |

@@ -191,9 +191,15 @@ Current implementation status:
   constraint-budget summaries. Terminal-review rows name zone-specific
   terminal districts from `data/intermodal_terminals.csv`; they remain held
   until route-to-terminal contact proof is authored.
+- `data/t4-terminal-contact-evidence.csv` is the route-to-terminal contact queue
+  for those held T4 rows. It keeps terminal district seed sources separate from
+  contact proof sources, enumerates source-needed/source-backed/held/demotion/
+  scenario-ready decisions, and sends Great Lakes rows to the bounded sample
+  pulse before remaining-zone classification.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
-  constraint pressure from the held selector row.
+  constraint pressure from the held selector row. Terminal-evidence gap rows
+  point to `data/t4-terminal-contact-evidence.csv` as their next artifact.
 - `data/optimizer-constraint-ledger.csv` normalizes those access gaps into
   `lower_tier_feeder_gap` and `terminal_access_evidence_gap` claim blockers so
   lower-tier pressure feeds the shared optimizer budget.
