@@ -217,8 +217,9 @@ their next artifact.
 1. Inventory current blocker/debt/diagnostic fields and map them to the
    constraint classes in this spec.
 2. Add `route optimizer-constraint-ledger --gate` as a normalizer over current
-   source ledgers, starting with pavement debt, topology repairs, T2 parallel
-   service review, T3/T4 access gaps, and Beck diagnostics.
+   source ledgers. The first implemented slice covers pavement debt, T1
+   topology repairs, and T2 parallel service review; follow-on slices should add
+   T3/T4 access gaps, Beck diagnostics, and game/source rows.
 3. Add `route optimizer-constraint-budget --gate` to roll up selected rows by
    `segment_bundle_id`, candidate id, tier, and region.
 4. Update T1/T2 selectors to consume the aggregate constraint budget instead of

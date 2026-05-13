@@ -2422,6 +2422,45 @@ enum Commands {
         gate: bool,
     },
 
+    /// Normalize optimizer blockers, claim holds, debts, and penalties into one ledger
+    OptimizerConstraintLedger {
+        /// Pavement debt budget CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-debt-budget.csv",
+            value_name = "FILE"
+        )]
+        pavement_debt_budget: PathBuf,
+        /// T1 topology repair CSV
+        #[arg(
+            long,
+            default_value = "data/t1-topology-repairs.csv",
+            value_name = "FILE"
+        )]
+        t1_topology_repairs: PathBuf,
+        /// T2 parallel service queue CSV
+        #[arg(
+            long,
+            default_value = "data/t2-parallel-service-queue.csv",
+            value_name = "FILE"
+        )]
+        t2_parallel_service_queue: PathBuf,
+        /// Output normalized constraint ledger CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/optimizer-constraint-ledger.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print per-class detail rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if normalized rows violate the constraint ledger contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -7699,6 +7738,42 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("optimizer manifest gate: PASS");
+            }
+        }
+
+        Commands::OptimizerConstraintLedger {
+            pavement_debt_budget,
+            t1_topology_repairs,
+            t2_parallel_service_queue,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route optimizer-constraint-ledger");
+            let pavement_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
+                .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
+            let topology_rows = load_t1_topology_repairs(&t1_topology_repairs)
+                .with_context(|| format!("loading {}", t1_topology_repairs.display()))?;
+            let parallel_rows = load_t2_parallel_service_queue(&t2_parallel_service_queue)
+                .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
+            let rows =
+                optimizer_constraint_ledger_rows(&pavement_rows, &topology_rows, &parallel_rows);
+            write_optimizer_constraint_ledger(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_optimizer_constraint_ledger_summary(&output, &rows, details);
+
+            if gate {
+                let failures = optimizer_constraint_ledger_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer constraint ledger gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer constraint ledger gate failed");
+                }
+                println!();
+                println!("optimizer constraint ledger gate: PASS");
             }
         }
 
@@ -13167,6 +13242,51 @@ struct T2ParallelServiceQueueRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct OptimizerConstraintLedgerRow {
+    constraint_id: String,
+    optimizer_run_id: String,
+    tier: String,
+    region_id: String,
+    constraint_order: u8,
+    constraint_class: String,
+    behavior_type: String,
+    constraint_scope: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    national_segment_id: String,
+    stitch_group_id: String,
+    route: String,
+    stop_id: String,
+    pair_id: String,
+    map_id: String,
+    source_artifact: String,
+    source_row_id: String,
+    standard_artifact: String,
+    evidence_status: String,
+    constraint_status: String,
+    observed_value: String,
+    threshold_value: String,
+    measurement_unit: String,
+    blocks_claims: String,
+    budget_cost_m: f64,
+    cost_category: String,
+    cost_basis: String,
+    cost_confidence: String,
+    budget_units: String,
+    penalty_score: f64,
+    repair_action: String,
+    payment_action: String,
+    owner_jurisdiction: String,
+    funding_program: String,
+    delivery_risk: String,
+    exception_id: String,
+    exception_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BundleRepairQueueRow {
     route: String,
     segment_bundle_id: String,
@@ -14586,9 +14706,8 @@ fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepairRow]) -> Ve
     if rows.len() == 1 && rows[0].route == "__all_t2_graph_contact_repairs__" {
         let row = &rows[0];
         if row.repair_action != "graph-contact-repair-clear" || row.validation_status != "pass" {
-            failures.push(
-                "graph contact repair clearance row has incomplete clear status".to_string(),
-            );
+            failures
+                .push("graph contact repair clearance row has incomplete clear status".to_string());
         }
         return failures;
     }
@@ -15029,8 +15148,7 @@ fn t2_terminal_contact_validation_gate_failures(
     if rows.len() == 1 && rows[0].route == "__all_t2_terminal_contacts__" {
         let row = &rows[0];
         if row.terminal_action != "terminal-contact-clear" || row.validation_status != "pass" {
-            failures
-                .push("terminal contact clearance row has incomplete clear status".to_string());
+            failures.push("terminal contact clearance row has incomplete clear status".to_string());
         }
         return failures;
     }
@@ -15736,8 +15854,7 @@ fn t2_graph_contact_validation_gate_failures(rows: &[T2GraphContactValidationRow
     if rows.len() == 1 && rows[0].route == "__all_t2_graph_contacts__" {
         let row = &rows[0];
         if row.contact_action != "graph-contact-clear" || row.validation_status != "pass" {
-            failures
-                .push("graph contact clearance row has incomplete clear status".to_string());
+            failures.push("graph contact clearance row has incomplete clear status".to_string());
         }
         return failures;
     }
@@ -17655,16 +17772,18 @@ fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> String {
     )
 }
 
-fn tier_candidate_bundle_id(tier: &str, region_id: &str, route: &str, bundle_scope: &str) -> String {
+fn tier_candidate_bundle_id(
+    tier: &str,
+    region_id: &str,
+    route: &str,
+    bundle_scope: &str,
+) -> String {
     let identity = if bundle_scope.trim().is_empty() {
         format!("candidate-bundle|{tier}|{region_id}|{route}")
     } else {
         format!("candidate-bundle|{tier}|{region_id}|{route}|{bundle_scope}")
     };
-    format!(
-        "US.HWYBUNDLE.{:016X}",
-        stable_segment_hash(&identity)
-    )
+    format!("US.HWYBUNDLE.{:016X}", stable_segment_hash(&identity))
 }
 
 fn tier_candidate_stitch_group_id(
@@ -17678,10 +17797,7 @@ fn tier_candidate_stitch_group_id(
     } else {
         format!("candidate-stitch|{tier}|{region_id}|{route}|{bundle_scope}")
     };
-    format!(
-        "US.HWYSTITCH.{:016X}",
-        stable_segment_hash(&identity)
-    )
+    format!("US.HWYSTITCH.{:016X}", stable_segment_hash(&identity))
 }
 
 fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str, bundle_scope: &str) -> String {
@@ -18456,6 +18572,426 @@ fn load_tier_pavement_debt_budget(path: &Path) -> Result<Vec<TierPavementDebtBud
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn load_t1_topology_repairs(path: &Path) -> Result<Vec<T1TopologyRepairRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQueueRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn optimizer_constraint_ledger_rows(
+    pavement_rows: &[TierPavementDebtBudgetRow],
+    topology_rows: &[T1TopologyRepairRow],
+    parallel_rows: &[T2ParallelServiceQueueRow],
+) -> Vec<OptimizerConstraintLedgerRow> {
+    let mut rows = Vec::new();
+
+    for row in pavement_rows {
+        let repair_debt = row.debt_class.contains("repair");
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!(
+                "CON-PAVEMENT-{}",
+                stable_id_fragment(&row.segment_bundle_id)
+            ),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: row.tier.clone(),
+            region_id: row.region_id.clone(),
+            constraint_order: 8,
+            constraint_class: "asset_condition_debt".to_string(),
+            behavior_type: "budget-debt".to_string(),
+            constraint_scope: "bundle".to_string(),
+            subject_id: row.segment_bundle_id.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            national_segment_id: String::new(),
+            stitch_group_id: row.stitch_group_id.clone(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: String::new(),
+            source_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
+            source_row_id: row.segment_bundle_id.clone(),
+            standard_artifact: "docs/tier-pavement-standards.md".to_string(),
+            evidence_status: if repair_debt {
+                "accepted".to_string()
+            } else {
+                "source-needed".to_string()
+            },
+            constraint_status: "debt".to_string(),
+            observed_value: row.blocked_member_count.to_string(),
+            threshold_value: "0".to_string(),
+            measurement_unit: "blocked_members".to_string(),
+            blocks_claims: "sla|transit|upgrade|publication".to_string(),
+            budget_cost_m: row.total_debt_cost_m,
+            cost_category: if repair_debt {
+                "capital_repair".to_string()
+            } else {
+                "source_acquisition".to_string()
+            },
+            cost_basis: row.budget_basis.clone(),
+            cost_confidence: "planning_proxy".to_string(),
+            budget_units: format!(
+                "evidence_members={};repair_members={}",
+                row.evidence_debt_units, row.repair_debt_units
+            ),
+            penalty_score: row.total_debt_cost_m,
+            repair_action: if repair_debt {
+                "pay_debt".to_string()
+            } else {
+                "source_needed".to_string()
+            },
+            payment_action: if repair_debt {
+                "fund_pavement_repair".to_string()
+            } else {
+                "fund_source_acquisition".to_string()
+            },
+            owner_jurisdiction: row.affected_states.clone(),
+            funding_program: "state_dot_hpms_or_nhpp".to_string(),
+            delivery_risk: if repair_debt { "medium" } else { "unknown" }.to_string(),
+            exception_id: String::new(),
+            exception_artifact: String::new(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_penalty.clone(),
+            validation_status: row.validation_status.clone(),
+        });
+    }
+
+    for row in topology_rows {
+        let (constraint_order, constraint_class, behavior_type, constraint_status, blocks_claims) =
+            t1_topology_constraint_mapping(row);
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T1TOPO-{}", stable_id_fragment(&row.route)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T1".to_string(),
+            region_id: "national".to_string(),
+            constraint_order,
+            constraint_class: constraint_class.to_string(),
+            behavior_type: behavior_type.to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.route.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic".to_string(),
+            source_artifact: "data/t1-topology-repairs.csv".to_string(),
+            source_row_id: row.route.clone(),
+            standard_artifact: "docs/tier-optimizer-design.md".to_string(),
+            evidence_status: if row.validation_status == "pass" {
+                "accepted".to_string()
+            } else {
+                "exception".to_string()
+            },
+            constraint_status: constraint_status.to_string(),
+            observed_value: row.design_status.clone(),
+            threshold_value: "accepted".to_string(),
+            measurement_unit: "design_status".to_string(),
+            blocks_claims: blocks_claims.to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: String::new(),
+            penalty_score: if row.validation_status == "review" {
+                1.0
+            } else {
+                0.0
+            },
+            repair_action: row.next_action.clone(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: if row.validation_status == "review" {
+                row.next_action.clone()
+            } else {
+                String::new()
+            },
+            exception_artifact: if row.validation_status == "review" {
+                row.next_artifact.clone()
+            } else {
+                String::new()
+            },
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.repair_basis.clone(),
+            validation_status: row.validation_status.clone(),
+        });
+    }
+
+    for row in parallel_rows {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T2PAR-{}", stable_id_fragment(&row.route)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: row.region_id.clone(),
+            constraint_order: 11,
+            constraint_class: "duplication_and_parallel_service".to_string(),
+            behavior_type: if row.validation_status == "pass" {
+                "review".to_string()
+            } else {
+                "penalty-soft".to_string()
+            },
+            constraint_scope: "route".to_string(),
+            subject_id: row.route.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            source_artifact: "data/t2-parallel-service-queue.csv".to_string(),
+            source_row_id: row.route.clone(),
+            standard_artifact: "docs/t2-regional-treatment.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: if row.validation_status == "pass" {
+                "pass".to_string()
+            } else {
+                "review".to_string()
+            },
+            observed_value: row.close_parallel_count.to_string(),
+            threshold_value: "0".to_string(),
+            measurement_unit: "close_parallel_services".to_string(),
+            blocks_claims: if row.validation_status == "pass" {
+                String::new()
+            } else {
+                "promotion|map|publication".to_string()
+            },
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: String::new(),
+            penalty_score: row.close_parallel_count as f64,
+            repair_action: row.parallel_action.clone(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: String::new(),
+            exception_artifact: String::new(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.optimizer_effect.clone(),
+            validation_status: row.validation_status.clone(),
+        });
+    }
+
+    rows.sort_by(|left, right| {
+        left.constraint_order
+            .cmp(&right.constraint_order)
+            .then_with(|| left.constraint_id.cmp(&right.constraint_id))
+    });
+    rows
+}
+
+fn t1_topology_constraint_mapping(
+    row: &T1TopologyRepairRow,
+) -> (u8, &'static str, &'static str, String, &'static str) {
+    match row.repair_type.as_str() {
+        "shared-backbone-policy" => (
+            13,
+            "schematic_geometry",
+            "claim-blocker",
+            "review".to_string(),
+            "map|publication",
+        ),
+        "national-relay-justification" => (
+            1,
+            "promise_portfolio",
+            "selection-hard",
+            "review".to_string(),
+            "sla|publication",
+        ),
+        "held-candidate" => (
+            3,
+            "route_budget",
+            "review",
+            row.validation_status.clone(),
+            "",
+        ),
+        _ => (
+            5,
+            "topology_connectivity",
+            "review",
+            row.validation_status.clone(),
+            "map|publication",
+        ),
+    }
+}
+
+fn stable_id_fragment(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_uppercase()
+}
+
+fn write_optimizer_constraint_ledger(
+    path: &Path,
+    rows: &[OptimizerConstraintLedgerRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_optimizer_constraint_ledger_summary(
+    output: &Path,
+    rows: &[OptimizerConstraintLedgerRow],
+    details: bool,
+) {
+    let mut by_class = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_behavior = std::collections::BTreeMap::<&str, usize>::new();
+    let total_debt_m = rows.iter().map(|row| row.budget_cost_m).sum::<f64>();
+    for row in rows {
+        *by_class.entry(row.constraint_class.as_str()).or_default() += 1;
+        *by_behavior.entry(row.behavior_type.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} optimizer constraint rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  constraint debt: ${total_debt_m:.2}M");
+    for (class, count) in by_class {
+        println!("  {class}: {count}");
+    }
+    for (behavior, count) in by_behavior {
+        println!("  {behavior}: {count}");
+    }
+
+    if details {
+        println!();
+        println!(
+            "{:<4} {:<28} {:<16} {:<8} {:>9} {}",
+            "Tier", "Class", "Behavior", "Status", "Cost $M", "Subject"
+        );
+        println!("{}", "-".repeat(110));
+        for row in rows {
+            println!(
+                "{:<4} {:<28} {:<16} {:<8} {:>9.2} {}",
+                row.tier,
+                row.constraint_class,
+                row.behavior_type,
+                row.validation_status,
+                row.budget_cost_m,
+                row.subject_id
+            );
+        }
+    }
+}
+
+fn optimizer_constraint_ledger_gate_failures(rows: &[OptimizerConstraintLedgerRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no optimizer constraint ledger rows emitted".to_string());
+        return failures;
+    }
+
+    let mut ids = std::collections::BTreeSet::new();
+    for row in rows {
+        if !ids.insert(row.constraint_id.as_str()) {
+            failures.push(format!("duplicate constraint id {}", row.constraint_id));
+        }
+        if row.constraint_id.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.constraint_class.trim().is_empty()
+            || row.behavior_type.trim().is_empty()
+            || row.constraint_scope.trim().is_empty()
+            || row.subject_id.trim().is_empty()
+            || row.source_artifact.trim().is_empty()
+            || row.source_row_id.trim().is_empty()
+            || row.standard_artifact.trim().is_empty()
+            || row.evidence_status.trim().is_empty()
+            || row.constraint_status.trim().is_empty()
+            || row.repair_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete required fields",
+                row.constraint_id
+            ));
+        }
+        if matches!(
+            row.constraint_scope.as_str(),
+            "bundle" | "segment" | "service" | "corridor"
+        ) && row.segment_bundle_id.trim().is_empty()
+            && row.national_segment_id.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} is segment-bearing but lacks bundle/member identity",
+                row.constraint_id
+            ));
+        }
+        if row.behavior_type == "budget-debt" {
+            if row.budget_cost_m <= 0.0
+                || row.cost_category.trim().is_empty()
+                || row.cost_basis.trim().is_empty()
+                || row.cost_confidence.trim().is_empty()
+                || row.payment_action.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} has incomplete budget-debt contract",
+                    row.constraint_id
+                ));
+            }
+        }
+        if row.behavior_type == "claim-blocker" && row.blocks_claims.trim().is_empty() {
+            failures.push(format!(
+                "{} does not name blocked claims",
+                row.constraint_id
+            ));
+        }
+        if row.behavior_type == "selection-hard"
+            && (row.exception_id.trim().is_empty() || row.exception_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} selection-hard row lacks exception lineage",
+                row.constraint_id
+            ));
+        }
+        if !row.observed_value.trim().is_empty()
+            && (row.threshold_value.trim().is_empty() || row.measurement_unit.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has observed value without threshold/unit",
+                row.constraint_id
+            ));
+        }
+    }
+    failures
 }
 
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
@@ -22685,6 +23221,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "optimizer-constraint-ledger",
+                "route optimizer-constraint-ledger --gate",
+                "data/optimizer-constraint-ledger.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -24820,7 +25364,7 @@ struct T1DesignReviewCsvRow {
     next_design_action: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T1TopologyRepairRow {
     route: String,
     selected: bool,
@@ -28344,7 +28888,8 @@ mod tests {
         lower_tier_pressure_witness_rows, map_atlas_gate_failures, merge_hpms_state_records,
         national_segment_bundle_gate_failures, national_segment_bundle_rows,
         national_segment_registry_gate_failures, national_segment_registry_rows,
-        normalized_iri_m_per_km, optimizer_manifest_gate_failures,
+        normalized_iri_m_per_km, optimizer_constraint_ledger_gate_failures,
+        optimizer_constraint_ledger_rows, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
@@ -28413,10 +28958,11 @@ mod tests {
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementDebtBudgetIndex,
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow,
-        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
         T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
@@ -29919,7 +30465,10 @@ mod tests {
         let rows = t2_service_diagnostic_queue_rows(&service_rows, &bundles);
         let failures = t2_service_diagnostic_queue_gate_failures(&rows);
 
-        assert_eq!(rows[0].diagnostic_status, "route-family-diagnostic-split-needed");
+        assert_eq!(
+            rows[0].diagnostic_status,
+            "route-family-diagnostic-split-needed"
+        );
         assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
         assert!(failures.is_empty());
     }
@@ -30960,10 +31509,7 @@ mod tests {
         assert_eq!(bundle_rows.len(), 1);
         assert_eq!(bundle_rows[0].member_count, 2);
         assert_eq!(bundle_rows[0].bundle_status, "bundle-ready");
-        assert_eq!(
-            bundle_rows[0].next_artifact,
-            "maps/t3-zone"
-        );
+        assert_eq!(bundle_rows[0].next_artifact, "maps/t3-zone");
     }
 
     #[test]
@@ -31635,8 +32181,7 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows =
-            tier_segment_candidate_rows(&graph, &[], &t2_rows, &[], &route_family_rows);
+        let rows = tier_segment_candidate_rows(&graph, &[], &t2_rows, &[], &route_family_rows);
         let bundle_ids = rows
             .iter()
             .map(|row| row.segment_bundle_id.as_str())
@@ -31905,6 +32450,76 @@ mod tests {
         assert_eq!(rows[1].repair_debt_units, 4);
         assert_eq!(rows[1].total_debt_cost_m, 10.0);
         assert!(rows[1].optimizer_penalty.contains("budget-cost"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_normalizes_first_source_families() {
+        let pavement_rows = vec![TierPavementDebtBudgetRow {
+            tier: "T2".to_string(),
+            route: "US30".to_string(),
+            region_id: "component-1".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+            stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+            debt_class: "repair-debt".to_string(),
+            blocked_member_count: 4,
+            affected_states: "IA".to_string(),
+            evidence_debt_units: 0,
+            repair_debt_units: 4,
+            estimated_evidence_cost_m: 0.0,
+            estimated_repair_cost_m: 10.0,
+            total_debt_cost_m: 10.0,
+            budget_basis: "fixture pavement debt".to_string(),
+            optimizer_penalty: "subtract 10 budget-cost units".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let topology_rows = vec![T1TopologyRepairRow {
+            route: "I84".to_string(),
+            selected: true,
+            design_role: "score-backbone-exception".to_string(),
+            design_status: "policy-review".to_string(),
+            beck_review_flag: "ok".to_string(),
+            overlap_corridors: String::new(),
+            repair_type: "national-relay-justification".to_string(),
+            repair_basis: "selected-score-exception-needs-national-role-proof".to_string(),
+            next_artifact: "data/t1-score-exceptions.csv".to_string(),
+            next_action: "justify-as-national-relay-or-demote-to-t2".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let parallel_rows = vec![T2ParallelServiceQueueRow {
+            route: "__all_t2_parallel_services__".to_string(),
+            region_id: String::new(),
+            beck_corridor: String::new(),
+            service_class: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            selection_action: "clear".to_string(),
+            selection_basis: "no-close-parallel-t2-services".to_string(),
+            parallel_action: "no-parallel-service-work-needed".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
+            optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(&pavement_rows, &topology_rows, &parallel_rows);
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 3);
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "asset_condition_debt"
+                && row.behavior_type == "budget-debt"));
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "promise_portfolio"
+                && row.behavior_type == "selection-hard"
+                && !row.exception_artifact.is_empty()));
+        assert!(rows.iter().any(
+            |row| row.constraint_class == "duplication_and_parallel_service"
+                && row.constraint_status == "pass"
+        ));
     }
 
     #[test]

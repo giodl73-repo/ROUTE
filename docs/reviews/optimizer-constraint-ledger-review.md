@@ -74,11 +74,14 @@ generic `constraint_status`.
 
 ## Required Next Artifacts
 
-Still required:
+Implemented:
 
 - `data/optimizer-constraint-ledger.csv`
-- `data/optimizer-constraint-budget.csv`
 - `route optimizer-constraint-ledger --gate`
+
+Still required:
+
+- `data/optimizer-constraint-budget.csv`
 - `route optimizer-constraint-budget --gate`
 
 ## Decision
@@ -86,6 +89,7 @@ Still required:
 Accept `docs/optimizer-constraint-ledger-spec.md` as the doctrine for optimizer
 constraint rows.
 
-Do not treat the ledger as implemented until a gate normalizes current pavement,
-topology, T2 service, lower-tier access, Beck, and game/source rows into the
-shared schema and the all-tier optimizer manifest records that stage.
+Treat the first ledger slice as implemented for pavement debt, T1 topology
+repair, and T2 parallel-service rows. Do not treat the full constraint system as
+implemented until lower-tier access, Beck diagnostics, game/source rows, and the
+budget rollup also consume the shared schema.
