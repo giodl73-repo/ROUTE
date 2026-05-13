@@ -189,6 +189,10 @@ pavement standard. The registry consumes the docket so a T1/T2 bundle member is
 `pass` only when pavement readiness passes; source-needed or repair-required
 pavement rows keep the owning bundle in review.
 
+`route tier-pavement-source-gaps --gate` aggregates those review members back to
+bundle-level source or repair actions. This is the closure surface for
+T1/T2 bundles whose only registry blocker is pavement evidence.
+
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor
 bundle. Downstream service lines, Beck renderers, game overlays, incidents,

@@ -723,6 +723,30 @@ enum Commands {
         gate: bool,
     },
 
+    /// Aggregate pavement repair/source blockers by service bundle
+    TierPavementSourceGaps {
+        /// Path to tier pavement docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-docket.csv",
+            value_name = "FILE"
+        )]
+        docket: PathBuf,
+        /// Output pavement source-gap CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-gaps.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print per-bundle detail rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if source-gap rows lack action contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -5021,6 +5045,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement docket gate: PASS");
+            }
+        }
+
+        Commands::TierPavementSourceGaps {
+            docket,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route tier-pavement-source-gaps");
+            let docket_rows = load_tier_pavement_docket(&docket)
+                .with_context(|| format!("loading {}", docket.display()))?;
+            let rows = tier_pavement_source_gap_rows(&docket_rows);
+            write_tier_pavement_source_gaps(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_source_gap_summary(&output, &rows, details);
+
+            if gate {
+                let failures = tier_pavement_source_gap_gate_failures(&rows, &docket_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement source-gap gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement source-gap gate failed");
+                }
+                println!();
+                println!("Tier pavement source-gap gate: PASS");
             }
         }
 
@@ -12237,6 +12290,25 @@ struct TierPavementDocketRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementSourceGapRow {
+    tier: String,
+    route: String,
+    region_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    member_count: usize,
+    blocker_count: usize,
+    blocker_statuses: String,
+    affected_states: String,
+    affected_edge_ids: String,
+    source_contract: String,
+    source_action: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct TierTableScoreRow {
     tier: String,
@@ -15772,6 +15844,229 @@ fn tier_pavement_docket_gate_failures(
     failures
 }
 
+#[derive(Default)]
+struct TierPavementSourceGapBuilder {
+    tier: String,
+    route: String,
+    region_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    member_count: usize,
+    blocker_count: usize,
+    blocker_statuses: std::collections::BTreeSet<String>,
+    affected_states: std::collections::BTreeSet<String>,
+    affected_edge_ids: std::collections::BTreeSet<u64>,
+    source_contracts: std::collections::BTreeSet<String>,
+}
+
+fn tier_pavement_source_gap_rows(
+    docket_rows: &[TierPavementDocketRow],
+) -> Vec<TierPavementSourceGapRow> {
+    let mut builders = std::collections::BTreeMap::<String, TierPavementSourceGapBuilder>::new();
+
+    for row in docket_rows {
+        let builder = builders
+            .entry(row.segment_bundle_id.clone())
+            .or_insert_with(|| TierPavementSourceGapBuilder {
+                tier: row.tier.clone(),
+                route: row.route.clone(),
+                region_id: row.region_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                stitch_group_id: row.stitch_group_id.clone(),
+                ..Default::default()
+            });
+        builder.member_count += 1;
+        if row.validation_status == "review" || row.pavement_status != "pavement-floor-pass" {
+            builder.blocker_count += 1;
+            builder.blocker_statuses.insert(row.pavement_status.clone());
+            if !row.state.trim().is_empty() {
+                builder.affected_states.insert(row.state.clone());
+            }
+            builder.affected_edge_ids.insert(row.edge_id);
+            if !row.source_contract.trim().is_empty() {
+                builder.source_contracts.insert(row.source_contract.clone());
+            }
+        }
+    }
+
+    builders
+        .into_values()
+        .filter(|builder| builder.blocker_count > 0)
+        .map(|builder| {
+            let blocker_statuses = join_string_set(&builder.blocker_statuses);
+            let affected_states = join_string_set(&builder.affected_states);
+            let affected_edge_ids = builder
+                .affected_edge_ids
+                .iter()
+                .map(|edge_id| edge_id.to_string())
+                .collect::<Vec<_>>()
+                .join(";");
+            let source_contract = join_string_set(&builder.source_contracts);
+            let (source_action, next_artifact, optimizer_effect, validation_status) =
+                tier_pavement_source_gap_decision(&blocker_statuses);
+            TierPavementSourceGapRow {
+                tier: builder.tier,
+                route: builder.route,
+                region_id: builder.region_id,
+                segment_bundle_id: builder.segment_bundle_id,
+                stitch_group_id: builder.stitch_group_id,
+                member_count: builder.member_count,
+                blocker_count: builder.blocker_count,
+                blocker_statuses,
+                affected_states,
+                affected_edge_ids,
+                source_contract,
+                source_action: source_action.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn tier_pavement_source_gap_decision(
+    blocker_statuses: &str,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    if blocker_statuses.contains("pavement-repair-required") {
+        return (
+            "scope pavement repair package for failing member segments",
+            "data/tier-pavement-docket.csv",
+            "bundle remains review until repair package or engineering exception closes rough-road members",
+            "review",
+        );
+    }
+    if blocker_statuses.contains("pavement-source-needed") {
+        return (
+            "join HPMS/state pavement condition rows for affected member edges",
+            "data/standards-l1-inventory.csv",
+            "bundle remains review until pavement evidence can pass or create repair rows",
+            "review",
+        );
+    }
+    (
+        "review pavement docket status",
+        "data/tier-pavement-docket.csv",
+        "bundle remains review until pavement blocker is classified",
+        "review",
+    )
+}
+
+fn write_tier_pavement_source_gaps(path: &Path, rows: &[TierPavementSourceGapRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_source_gap_summary(
+    output: &Path,
+    rows: &[TierPavementSourceGapRow],
+    details: bool,
+) {
+    let mut by_tier = std::collections::BTreeMap::<&str, usize>::new();
+    let mut blocker_total = 0usize;
+    for row in rows {
+        *by_tier.entry(row.tier.as_str()).or_default() += 1;
+        blocker_total += row.blocker_count;
+    }
+    println!(
+        "  wrote {} pavement source-gap rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  blocked member segments: {blocker_total}");
+    for (tier, count) in by_tier {
+        println!("  {tier}: {count}");
+    }
+
+    if details {
+        println!();
+        println!(
+            "{:<4} {:<8} {:>7} {:>7} {:<22} {}",
+            "Tier", "Route", "Members", "Blocked", "States", "Action"
+        );
+        println!("{}", "-".repeat(112));
+        for row in rows {
+            println!(
+                "{:<4} {:<8} {:>7} {:>7} {:<22} {}",
+                row.tier,
+                row.route,
+                row.member_count,
+                row.blocker_count,
+                truncate_for_table(&row.affected_states, 22),
+                truncate_for_table(&row.source_action, 52)
+            );
+        }
+    }
+}
+
+fn tier_pavement_source_gap_gate_failures(
+    rows: &[TierPavementSourceGapRow],
+    docket_rows: &[TierPavementDocketRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_blocker_bundles = docket_rows
+        .iter()
+        .filter(|row| {
+            row.validation_status == "review" || row.pavement_status != "pavement-floor-pass"
+        })
+        .map(|row| row.segment_bundle_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    if rows.len() != expected_blocker_bundles.len() {
+        failures.push(format!(
+            "source-gap rows {} do not match blocker bundle count {}",
+            rows.len(),
+            expected_blocker_bundles.len()
+        ));
+    }
+    for row in rows {
+        if row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.blocker_statuses.trim().is_empty()
+            || row.affected_edge_ids.trim().is_empty()
+            || row.source_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete pavement source-gap row",
+                row.route
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!("{} is not a bundle id", row.segment_bundle_id));
+        }
+        if !row.stitch_group_id.starts_with("US.HWYSTITCH.") {
+            failures.push(format!("{} is not a stitch id", row.stitch_group_id));
+        }
+        if row.blocker_count == 0 || row.member_count < row.blocker_count {
+            failures.push(format!(
+                "{} has invalid pavement blocker count {}/{}",
+                row.route, row.blocker_count, row.member_count
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.route, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -19189,6 +19484,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-pavement-docket",
                 "route tier-pavement-docket --gate",
                 "data/tier-pavement-docket.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "tier-pavement-source-gaps",
+                "route tier-pavement-source-gaps --gate",
+                "data/tier-pavement-source-gaps.csv",
                 "pass",
                 0,
                 "",
@@ -24836,9 +25139,11 @@ mod tests {
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
-        tier_pavement_docket_gate_failures, tier_pavement_docket_rows, tier_region_gate_failures,
-        tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
-        AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
+        tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
+        tier_pavement_source_gap_gate_failures, tier_pavement_source_gap_rows,
+        tier_region_gate_failures, tier_segment_candidate_gate_failures,
+        tier_segment_candidate_rows, write_tier_artifacts_to, AtriBottleneckRow,
+        EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
         ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
@@ -24850,8 +25155,9 @@ mod tests {
         T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementDocketRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        TierOptimizerRunRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -27374,6 +27680,69 @@ mod tests {
         assert_eq!(rows[0].iri_m_per_km, "1.01");
         assert_eq!(rows[1].repair_action, "repair above threshold");
         assert!((normalized_iri_m_per_km(Some(64.0)).unwrap() - 1.010).abs() < 0.01);
+    }
+
+    #[test]
+    fn tier_pavement_source_gaps_roll_up_blocked_members_by_bundle() {
+        let docket_rows = vec![
+            TierPavementDocketRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "US30".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+                stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+                national_segment_id: "US.HWYSEG.0000000000000001".to_string(),
+                edge_id: 1,
+                edge_sequence: 1,
+                state: "NE".to_string(),
+                length_miles: 10.0,
+                iri_m_per_km: "1.20".to_string(),
+                max_iri_m_per_km: "1.90".to_string(),
+                pavement_status: "pavement-floor-pass".to_string(),
+                repair_action: "no pavement repair required before promotion".to_string(),
+                freight_ride_requirement: "regional freight ride quality".to_string(),
+                transit_ride_requirement: "regional coach ride quality".to_string(),
+                source_contract: "HPMS IRI".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            TierPavementDocketRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-1".to_string(),
+                route: "US30".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+                stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+                national_segment_id: "US.HWYSEG.0000000000000002".to_string(),
+                edge_id: 2,
+                edge_sequence: 2,
+                state: "IA".to_string(),
+                length_miles: 12.0,
+                iri_m_per_km: "unknown".to_string(),
+                max_iri_m_per_km: "1.90".to_string(),
+                pavement_status: "pavement-source-needed".to_string(),
+                repair_action: "join pavement condition before bundle promotion".to_string(),
+                freight_ride_requirement: "regional freight ride quality".to_string(),
+                transit_ride_requirement: "regional coach ride quality".to_string(),
+                source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+                next_artifact: "data/standards-l1-inventory.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows: Vec<TierPavementSourceGapRow> = tier_pavement_source_gap_rows(&docket_rows);
+        let failures = tier_pavement_source_gap_gate_failures(&rows, &docket_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "US30");
+        assert_eq!(rows[0].member_count, 2);
+        assert_eq!(rows[0].blocker_count, 1);
+        assert_eq!(rows[0].affected_states, "IA");
+        assert!(rows[0]
+            .source_action
+            .contains("join HPMS/state pavement condition"));
     }
 
     #[test]

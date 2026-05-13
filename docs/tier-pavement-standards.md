@@ -13,6 +13,7 @@ for each tier. The command contract is:
 ```text
 route standards-pavement --gate
 route tier-pavement-docket --gate
+route tier-pavement-source-gaps --gate
 ```
 
 ## Rule
@@ -66,3 +67,9 @@ graph edge IRI evidence and emits a segment-level status:
 The docket gate requires complete row contracts and known statuses. It does not
 fail merely because a row is a repair/source blocker; those rows are the point of
 the docket and must remain visible to the optimizer.
+
+`data/tier-pavement-source-gaps.csv` rolls review rows up to one row per affected
+bundle. It records member count, blocked member count, blocker statuses, affected
+edge ids, and the next source or repair action. T1/T2 bundles may not move from
+`bundle-review` to `bundle-ready` until their source-gap row disappears or is
+replaced by passing pavement evidence.
