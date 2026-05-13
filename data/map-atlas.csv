@@ -1,7 +1,7 @@
 map_id,path,map_type,render_command,expected_width,expected_height,min_bytes,tier_role,game_use
 national-tier,maps/all-tiers.png,national-tier,"route map all --output maps/all-tiers.png",2400,1350,400000,"T1/T2/T3/T4 national tier overview","Game campaign atlas and public project overview"
 beck-schematic,maps/beck-schematic.png,schematic,"route map beck --output maps/beck-schematic.png",2400,1350,250000,"T1 relay topology and hub graph","Tutorial topology explanation and campaign route network"
-beck-schematic-t2,maps/beck-schematic-t2.png,schematic,"route map beck-t2 --output maps/beck-schematic-t2.png",2400,1350,250000,"T1 relay topology with 25 coverage-passing T2 local-service connectors","Expanded network planning and feeder-route explanation"
+beck-schematic-t2,maps/beck-schematic-t2.png,schematic,"route map beck-t2 --output maps/beck-schematic-t2.png",2400,1350,250000,"T1 relay topology with 26 coverage-passing T2 local-service connectors","Expanded network planning and feeder-route explanation"
 beck-schematic-t2-only,maps/beck-schematic-t2-only.png,schematic,"route map beck-t2-only --output maps/beck-schematic-t2-only.png",2400,1350,250000,"T2 service-class schematic with connector, compact-service, transfer-spine, and long-connector semantics","T2 service-class tutorial, incident overlay, and upgrade/restitching board"
 i5-region,maps/i5.png,t1-region,"route map I-5 --output maps/i5.png",1800,1000,80000,"T1 corridor regional context","West Coast campaign node and corridor lesson"
 i10-region,maps/i10.png,t1-region,"route map I-10 --output maps/i10.png",1800,1000,100000,"T1 corridor regional context","Southern tier campaign node and port/surge lesson"

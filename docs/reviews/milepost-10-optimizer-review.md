@@ -92,7 +92,8 @@ blockers rather than treating the current graph as complete.
    returns I30, I44, I285, and I405 to candidate review from closure evidence.
    `data/lower-tier-pressure-witnesses.csv` adds 10 closure-demotion pressure
    rows. `data/t2-service-selection.csv` keeps I285 and I405 in review as
-   closure-accepted rows that still need Beck diagnostics before rendering.
+   closure-accepted rows with Beck diagnostics and transfer-spine map/game
+   treatments, rather than unconditional T1 promotion.
 
 5. `data/t3-t4-pressure-intake.csv` is the first thin lower-tier recursive
    pass. It classifies 90 rows as T3 regional intake and 18 near-threshold T3

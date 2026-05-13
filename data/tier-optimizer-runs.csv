@@ -20,9 +20,9 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 19,t2-bundle-repair-queue,route t2-bundle-repair-queue --gate,data/t2-bundle-repair-queue.csv,1,pass,0,,pass
 20,t2-regionalizer,route t2-regionalizer --gate,data/t2-regionalizer.csv,18,pass,0,,pass
 21,t2-service-selection,route t2-service-selection --gate,data/t2-service-selection.csv,18,pass,0,,pass
-22,t2-service-diagnostic-queue,route t2-service-diagnostic-queue --gate,data/t2-service-diagnostic-queue.csv,2,pass,0,,pass
-23,tier-segment-candidates,route tier-segment-candidates --gate,data/tier-segment-candidates.csv,3273,pass,0,,pass
-24,tier-pavement-docket,route tier-pavement-docket --gate,data/tier-pavement-docket.csv,3273,pass,0,,pass
+22,t2-service-diagnostic-queue,route t2-service-diagnostic-queue --gate,data/t2-service-diagnostic-queue.csv,1,pass,0,,pass
+23,tier-segment-candidates,route tier-segment-candidates --gate,data/tier-segment-candidates.csv,3229,pass,0,,pass
+24,tier-pavement-docket,route tier-pavement-docket --gate,data/tier-pavement-docket.csv,3229,pass,0,,pass
 25,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,6,pass,0,,pass
 26,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,23,pass,0,,pass
 27,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,23,pass,0,,pass
@@ -37,8 +37,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 36,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
 37,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,61,pass,0,,pass
 38,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
-39,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3318,pass,0,,pass
-40,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,78,pass,0,,pass
+39,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3274,pass,0,,pass
+40,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,77,pass,0,,pass
 41,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
 42,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
 43,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,39,pass,0,,pass

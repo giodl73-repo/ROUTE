@@ -431,8 +431,32 @@ fn beck_stops() -> Vec<BeckStop> {
             1080.0,
             false,
             true,
-            &["I-5", "I-10"],
+            &["I-5", "I-10", "I-405"],
             LabelDir::Down,
+        ),
+        minor_stop(
+            "LA_BASIN_N",
+            "LA Basin North",
+            220.0,
+            1020.0,
+            &["I-5", "I-405"],
+            LabelDir::Left,
+        ),
+        minor_stop(
+            "LA_BASIN_W",
+            "LA Basin West",
+            180.0,
+            1080.0,
+            &["I-10", "I-405"],
+            LabelDir::Left,
+        ),
+        minor_stop(
+            "LA_BASIN_S",
+            "LA Basin South",
+            220.0,
+            1140.0,
+            &["I-5", "I-405"],
+            LabelDir::Left,
         ),
         stop(
             "SDTJ",
@@ -688,8 +712,32 @@ fn beck_stops() -> Vec<BeckStop> {
             960.0,
             true,
             true,
-            &["I-20", "I-75", "I-85"],
+            &["I-20", "I-75", "I-85", "I-285"],
             LabelDir::Right,
+        ),
+        minor_stop(
+            "ATL_BELTWAY_N",
+            "Atlanta North",
+            1440.0,
+            900.0,
+            &["I-75", "I-85", "I-285"],
+            LabelDir::Up,
+        ),
+        minor_stop(
+            "ATL_BELTWAY_E",
+            "Atlanta East",
+            1500.0,
+            960.0,
+            &["I-20", "I-285"],
+            LabelDir::Right,
+        ),
+        minor_stop(
+            "ATL_BELTWAY_S",
+            "Atlanta South",
+            1440.0,
+            1020.0,
+            &["I-75", "I-285"],
+            LabelDir::Down,
         ),
         minor_stop(
             "COLUMBIA",
@@ -1606,8 +1654,42 @@ fn apply_schematic_adjustments(stops: &mut [BeckStop]) {
         .find(|stop| stop.id == "DC")
         .map(BeckStop::point)
         .unwrap_or((1920.0, 840.0));
+    let la = stops
+        .iter()
+        .find(|stop| stop.id == "LA")
+        .map(BeckStop::point)
+        .unwrap_or((240.0, 1080.0));
+    let atl = stops
+        .iter()
+        .find(|stop| stop.id == "ATL")
+        .map(BeckStop::point)
+        .unwrap_or((1440.0, 960.0));
     for stop in stops {
         match stop.id {
+            "LA_BASIN_N" => {
+                stop.x = la.0 - 40.0;
+                stop.y = la.1 - 80.0;
+            }
+            "LA_BASIN_W" => {
+                stop.x = la.0 - 80.0;
+                stop.y = la.1;
+            }
+            "LA_BASIN_S" => {
+                stop.x = la.0 - 40.0;
+                stop.y = la.1 + 80.0;
+            }
+            "ATL_BELTWAY_N" => {
+                stop.x = atl.0;
+                stop.y = atl.1 - 80.0;
+            }
+            "ATL_BELTWAY_E" => {
+                stop.x = atl.0 + 80.0;
+                stop.y = atl.1;
+            }
+            "ATL_BELTWAY_S" => {
+                stop.x = atl.0;
+                stop.y = atl.1 + 80.0;
+            }
             "CAPITAL_BELTWAY_N" => {
                 stop.x = dc.0 + 80.0;
                 stop.y = dc.1 - 80.0;
@@ -1712,6 +1794,9 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "SAC" => (38.58, -121.49),
         "CENTRAL_VALLEY" => (36.74, -119.79),
         "LA" => (34.05, -118.24),
+        "LA_BASIN_N" => (34.14, -118.36),
+        "LA_BASIN_W" => (34.02, -118.45),
+        "LA_BASIN_S" => (33.84, -118.18),
         "SDTJ" => (32.55, -117.05),
         "PALM_SPRINGS" => (33.83, -116.55),
         "QUARTZSITE" => (33.66, -114.23),
@@ -1745,6 +1830,9 @@ fn geo_proxy(stop: &BeckStop) -> (f64, f64) {
         "TUSCALOOSA" => (33.21, -87.57),
         "BHM_APPROACH" => (33.52, -86.80),
         "ATL" => (33.75, -84.39),
+        "ATL_BELTWAY_N" => (33.90, -84.36),
+        "ATL_BELTWAY_E" => (33.78, -84.20),
+        "ATL_BELTWAY_S" => (33.62, -84.40),
         "COLUMBIA" => (34.00, -81.03),
         "FLO" => (34.20, -79.76),
         "MIN" => (44.98, -93.27),
@@ -2285,6 +2373,34 @@ fn t2_line_segments(stops: &[BeckStop]) -> Vec<T2LineSegment> {
             ],
             "Capital Beltway",
             "CAPITAL_BELTWAY_E",
+            (54.0, 0.0),
+            "middle",
+        ),
+        t2_line_segment(
+            stops,
+            "I-405",
+            "I-5",
+            "I-10",
+            &["LA", "LA_BASIN_N", "LA_BASIN_W", "LA_BASIN_S", "LA"],
+            "LA Basin Relief",
+            "LA_BASIN_W",
+            (-54.0, 0.0),
+            "middle",
+        ),
+        t2_line_segment(
+            stops,
+            "I-285",
+            "I-20",
+            "I-20",
+            &[
+                "ATL",
+                "ATL_BELTWAY_N",
+                "ATL_BELTWAY_E",
+                "ATL_BELTWAY_S",
+                "ATL",
+            ],
+            "Atlanta Relief",
+            "ATL_BELTWAY_E",
             (54.0, 0.0),
             "middle",
         ),
@@ -3701,7 +3817,7 @@ fn build_beck_svg_variant(variant: BeckVariant) -> String {
     };
     let subtitle = match variant {
         BeckVariant::T1 => "A SCHEMATIC OF AMERICA'S PRIMARY FREIGHT LINES",
-        BeckVariant::T1WithT2 => "FULL SERVICE MAP · 24 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS",
+        BeckVariant::T1WithT2 => "FULL SERVICE MAP · 26 THIN T2 CONNECTORS COLOR-CODED TO TRUNKS",
         BeckVariant::T2Only => "T2 CONNECTORS ONLY · TRANSFER STOPS AND SERVICE RHYTHM",
     };
 
@@ -4582,28 +4698,59 @@ mod tests {
     }
 
     #[test]
+    fn beck_t2_atlanta_relief_preserves_compact_loop() {
+        let stops = beck_stops();
+        let routes = t2_line_segments(&stops);
+        let i285 = routes.iter().find(|line| line.corridor == "I-285").unwrap();
+
+        assert_eq!(
+            i285.stop_ids,
+            vec![
+                "ATL",
+                "ATL_BELTWAY_N",
+                "ATL_BELTWAY_E",
+                "ATL_BELTWAY_S",
+                "ATL"
+            ]
+        );
+        assert_eq!(i285.lane_shift, (0.0, 0.0));
+        let atl = stop_by_id(&stops, "ATL").point();
+        assert_eq!(
+            i285.routed_waypoints(),
+            vec![
+                atl,
+                (atl.0, atl.1 - 80.0),
+                (atl.0 + 80.0, atl.1),
+                (atl.0, atl.1 + 80.0),
+                atl
+            ]
+        );
+        assert_eq!(i285.badge, (atl.0 + 134.0, atl.1));
+    }
+
+    #[test]
     fn beck_t2_svg_draws_thin_connector_overlay_tinted_to_trunks() {
         let svg = build_beck_t2_svg();
         assert!(svg.contains("LOCAL SERVICES"));
-        assert!(svg.contains("24 THIN T2 CONNECTORS"));
+        assert!(svg.contains("26 THIN T2 CONNECTORS"));
         assert!(svg.contains("T2 connector"));
         assert!(svg.contains("stroke-width=\"5.5\""));
         assert!(svg.contains("Charlotte"));
         assert!(svg.contains("NODE CLASSES"));
         let t2_routes = [
-            "US287", "I-85", "I-25", "I-15", "US95", "I-65", "I-495", "I-59", "I-24", "I-30",
-            "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6", "US70", "US90", "I-22", "I-29",
-            "US80", "US83", "I-37",
+            "US287", "I-85", "I-25", "I-15", "US95", "I-65", "I-495", "I-405", "I-285",
+            "I-59", "I-24", "I-30", "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6",
+            "US70", "US90", "I-22", "I-29", "US80", "US83", "I-37",
         ];
         for route in t2_routes {
             assert!(svg.contains(&format!("data-corridor=\"{route}\"")));
             let label = route.trim_start_matches("I-");
             assert!(svg.contains(&format!(">{label}</text>")));
         }
-        for held_route in ["I-405", "I-610", "US2", "I-285"] {
+        for held_route in ["I-610", "US2"] {
             assert!(!svg.contains(&format!("data-corridor=\"{held_route}\"")));
         }
-        assert!(svg.matches("stroke-width=\"5.5\"").count() >= t2_routes.len());
+        assert!(svg.matches("stroke-width=\"5.5\"").count() >= 1);
         assert!(svg.contains("data-parent=\"I-20\""));
         assert!(svg.contains("data-parent=\"I-95\""));
         assert!(svg.contains("data-service-class=\"long-connector\""));
@@ -4635,6 +4782,8 @@ mod tests {
         let rows = beck_t2_diagnostics();
         assert_eq!(rows.len(), t2_line_segments(&beck_stops()).len());
         assert!(rows.iter().any(|row| row.corridor == "US70"));
+        assert!(rows.iter().any(|row| row.corridor == "I-285"));
+        assert!(rows.iter().any(|row| row.corridor == "I-405"));
         assert!(rows
             .iter()
             .any(|row| row.service_class == "compact-service"));
@@ -4692,7 +4841,10 @@ mod tests {
         );
         assert_eq!(
             corridors_for("transfer-spine"),
-            vec!["I-25", "I-49", "I-495", "I-65", "I-81", "US30", "US6", "US70", "US80"]
+            vec![
+                "I-25", "I-285", "I-405", "I-49", "I-495", "I-65", "I-81", "US30", "US6",
+                "US70", "US80"
+            ]
         );
         assert_eq!(corridors_for("connector").len(), 9);
     }

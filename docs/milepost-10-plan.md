@@ -151,8 +151,9 @@ lower-tier pressure unless its endpoint exception is upgraded with evidence.
 `route lower-tier-pressure-witnesses --gate` now consume the T2 closure
 artifacts. Closure-backed T2 reviews add I30, I44, I285, and I405 back to
 candidate review; closure demotions add 10 lower-tier pressure rows. The T2
-service selector now records I285 and I405 as closure-accepted rows that still
-need Beck diagnostics before map/service landing.
+service selector now records I285 and I405 as closure-accepted review rows with
+Beck diagnostics, transfer-spine classes, and bundle overlays, without treating
+either relief loop as an automatic T1 promotion.
 
 `route t3t4-pressure-intake --gate` now emits
 `data/t3-t4-pressure-intake.csv`, a thin lower-tier intake pass over 108 pressure

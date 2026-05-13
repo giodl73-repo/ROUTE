@@ -83,15 +83,16 @@ artifact, and optimizer effect before the route can re-enter regional treatment.
 When no candidate-review rows remain bundle-blocked, the queue emits a single
 clearance row and points the optimizer to `data/t2-service-selection.csv`.
 
-Bundle-cleared rows may still be `source-needed` in T2 service selection. That
-means bundle identity is solved, but Beck/service diagnostics are not. Segment
-candidate generation keeps those rows bundle-addressable so the registry,
-pavement docket, game overlays, and future diagnostic work can refer to the
-same `segment_bundle_id` without treating the route as selected T2 service.
+Bundle-cleared rows may still require a service diagnostic before they can
+receive a map/game treatment. Segment candidate generation keeps those rows
+bundle-addressable so the registry, pavement docket, game overlays, and future
+diagnostic work can refer to the same `segment_bundle_id` without treating the
+route as selected T2 service prematurely.
 
 `data/t2-service-diagnostic-queue.csv` owns that next handoff. It is emitted for
-bundle-ready rows such as I285 and I405 that need `data/beck-t2-diagnostics.csv`
-before they can receive a service class, map treatment, or game overlay.
+bundle-ready rows that need `data/beck-t2-diagnostics.csv` before they can
+receive a service class, map treatment, or game overlay. When no rows are
+missing diagnostics, it emits a single `service-diagnostic-clear` row.
 
 ## Contact Rules
 
@@ -155,8 +156,8 @@ Relief loops are not automatically T2. They require:
 4. a map treatment that does not create a same-color self-loop.
 
 I285 and I405 are current examples of relief candidates with evidence/closure
-history but missing Beck diagnostic completion before they can land cleanly as
-T2 service.
+history that now have Beck diagnostics, service classes, and bundle overlays,
+while remaining review-treatment rows rather than unconditional T2 promotion.
 
 ## Regionalization Rules
 
@@ -232,5 +233,6 @@ Current gaps:
 - T2 still lacks its own 24h/12h promise-pair portfolio.
 - The large bridged component needs real T1-bounded region splitting.
 - T2 stops are not yet selected with the same maturity as T1 stops.
-- I285 and I405 still need Beck diagnostics before map/service landing.
+- T2 relief rows such as I285 and I405 still need policy review before any T1
+  promotion, even though their T2 Beck/service diagnostics now land cleanly.
 - T3/T4 access is still intake pressure, not full regional optimization.

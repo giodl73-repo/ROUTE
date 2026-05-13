@@ -29759,10 +29759,9 @@ mod tests {
         assert_eq!(rows[0].beck_corridor, "I-15");
         assert_eq!(rows[0].selection_action, "keep-service-column");
         assert_eq!(rows[1].selection_action, "parent-region-review");
-        assert_eq!(
-            rows[2].selection_action,
-            "closure-review-needs-beck-diagnostic"
-        );
+        assert_eq!(rows[2].beck_corridor, "I-285");
+        assert_eq!(rows[2].beck_service_class, "transfer-spine");
+        assert_eq!(rows[2].selection_action, "parent-region-review");
         assert!(failures.is_empty());
     }
 
