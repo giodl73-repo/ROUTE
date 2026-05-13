@@ -187,23 +187,22 @@ Current implementation status:
   the obligation table, carries normalized constraint-budget summaries, and
   holds upward/below-threshold rows for review.
 - `data/t4-terminal-access-columns.csv` classifies T4 local pressure into
-  terminal-review and zone-assignment-needed rows with 1h access obligations
-  and normalized constraint-budget summaries.
+  zone-scoped terminal-review rows with 1h access obligations and normalized
+  constraint-budget summaries.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
-  below-threshold feeder, terminal-evidence, and zone-assignment gap classes,
-  inheriting constraint pressure from the held selector row.
+  below-threshold feeder and terminal-evidence gap classes, inheriting
+  constraint pressure from the held selector row.
 - `data/optimizer-constraint-ledger.csv` normalizes those access gaps into
-  `lower_tier_feeder_gap`, `terminal_access_evidence_gap`, and
-  `zone_assignment_gap` claim blockers so lower-tier pressure feeds the shared
-  optimizer budget.
+  `lower_tier_feeder_gap` and `terminal_access_evidence_gap` claim blockers so
+  lower-tier pressure feeds the shared optimizer budget.
 - `data/optimizer-constraint-budget.csv` rolls those access blockers back into
   T3/T4 route rows as `claim_blocker_count`, `constraint_penalty_score`, and
   `top_constraint_classes`.
 - `data/t3-zone-map-diagnostics.csv` joins selected T3 route columns, access
   gaps, and map atlas ids into zone-map readiness decisions.
 - `data/t3-zone-render-board.csv` turns map diagnostics into renderer/game board
-  rows: zone summaries, selected T3 route columns, review connectors, held-gap
-  callouts, and unassigned local-access backlog.
+  rows: zone summaries, selected T3 route columns, review connectors, and
+  held-gap callouts.
 - `data/t3-zone-stop-placement.csv` checks selected render-board routes against
   zone-bounded stop candidates, separating render-ready stop chains from
   stop-authoring gaps.

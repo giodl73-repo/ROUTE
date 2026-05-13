@@ -2,7 +2,7 @@
 wave: constraint-ledger-blocker-burndown
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - optimization-methodologist
@@ -30,13 +30,39 @@ queue with explicit zone, demotion, local-inset, or hold decisions.
 
 ## Deliverables
 
-- [ ] Add a zone-assignment action queue or extend the existing diagnostics with
+- [x] Add a zone-assignment action queue or extend the existing diagnostics with
   explicit decisions.
-- [ ] Classify each `zone_assignment_gap` row as zone assignment, local inset,
+- [x] Classify each `zone_assignment_gap` row as zone assignment, local inset,
   demotion, source-needed, or held-known.
-- [ ] Regenerate T3/T4 diagnostics, render-board, ledger, and budget artifacts.
-- [ ] Update `docs/t3-t4-access-optimization.md` only if a new zone taxonomy or
+- [x] Regenerate T3/T4 diagnostics, render-board, ledger, and budget artifacts.
+- [x] Update `docs/t3-t4-access-optimization.md` only if a new zone taxonomy or
   decision rule is introduced.
+
+## Results
+
+- The 63 opening `zone_assignment_gap` rows were resolved by extending the
+  deterministic T3 zone map used by `data/t4-terminal-access-columns.csv`.
+- `data/t4-terminal-access-columns.csv` now assigns all 69 T4 local-access rows
+  to one of the five existing T3 zones; no new zone taxonomy was introduced.
+- `data/t3-t4-access-gaps.csv` now carries those rows as explicit
+  `terminal-evidence-needed` holds with zone ids and next artifacts.
+- `data/optimizer-constraint-ledger.csv` and
+  `data/optimizer-constraint-budget.csv` now contain 0 `zone_assignment_gap`
+  rows and 69 `terminal_access_evidence_gap` rows.
+
+## Gate Results
+
+- `cargo test -p route`: pass
+- `route t4-terminal-access-columns --gate`: pass
+- `route t3-t4-access-gaps --gate`: pass
+- `route t3-zone-map-diagnostics --gate`: pass
+- `route t3-zone-render-board --gate`: pass
+- `route optimizer-constraint-ledger --gate`: pass
+- `route optimizer-constraint-budget --gate`: pass
+- `route tier-optimize --all-tiers --gate`: pass
+- `route optimizer-manifest --gate`: pass
+- `route release-manifest --gate`: pass
+- `scripts/check-mileposts.ps1 -SkipTests`: pass
 
 ## Expected Gates
 
