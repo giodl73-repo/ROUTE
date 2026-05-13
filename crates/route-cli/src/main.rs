@@ -11400,6 +11400,12 @@ fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
         if !release_manifest_artifact_exists(path) {
             failures.push(format!("{path} release artifact is missing"));
         }
+        if !release_manifest_verification_command_allowed(row) {
+            failures.push(format!(
+                "{path} has unsupported verification command {}",
+                row.verification_command
+            ));
+        }
         if !row.owner_milepost.starts_with('M') || row.owner_milepost[1..].parse::<u8>().is_err() {
             failures.push(format!(
                 "{path} has invalid owner milepost {}",
@@ -11439,6 +11445,53 @@ fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
         failures.extend(release_manifest_optimizer_bundle_failures());
     }
     failures
+}
+
+fn release_manifest_verification_command_allowed(row: &ReleaseManifestRow) -> bool {
+    let command = row.verification_command.trim();
+    if command == "manual review" {
+        return release_manifest_manual_review_allowed(row);
+    }
+    if command == "cargo test --workspace" {
+        return true;
+    }
+    if command.starts_with("powershell -ExecutionPolicy Bypass -File ") {
+        return true;
+    }
+    let route_args = command
+        .strip_prefix("cargo run -q -p route -- ")
+        .or_else(|| command.strip_prefix("route "));
+    let Some(route_args) = route_args else {
+        return false;
+    };
+    let parts: Vec<&str> = route_args.split_whitespace().collect();
+    if parts.iter().any(|part| part.starts_with("--gate")) {
+        return true;
+    }
+    matches!(
+        parts.as_slice(),
+        ["score-all"] | ["beck-t1-diagnostics"] | ["gap", "--type", _]
+    )
+}
+
+fn release_manifest_manual_review_allowed(row: &ReleaseManifestRow) -> bool {
+    let path = row.artifact_path.trim();
+    let class = row.artifact_class.trim();
+    path.starts_with("docs/")
+        || path.starts_with("specs/")
+        || path == "TRACKER.md"
+        || path.ends_with("phase-sequence.csv")
+        || class.contains("doc")
+        || class.contains("plan")
+        || class.contains("review")
+        || class.contains("closeout")
+        || class.contains("spec")
+        || class.contains("standard")
+        || class.contains("policy")
+        || class.contains("roadmap")
+        || class.contains("index")
+        || class.contains("status")
+        || class.contains("script")
 }
 
 fn release_manifest_artifact_exists(path: &str) -> bool {
@@ -29900,6 +29953,7 @@ docs/SPEC_INDEX.md,index,M7,release_candidate,public,manual review,index
 data/release-manifest.csv,release_manifest,M7,release_candidate,public,route release-manifest --gate,self
 docs/source-fetch-cache-policy.md,source_policy,M10,release_candidate,public,manual review,policy
 data/source-fetch-policy.csv,source_policy,M10,release_candidate,public,route source-fetch-policy --gate,ledger
+data/map-atlas.csv,map_manifest,M2,release_candidate,public,spreadsheet check,bad command
 missing.md,doc,Mx,bad_status,bad_public,manual review,missing
 ";
 
@@ -29918,6 +29972,9 @@ missing.md,doc,Mx,bad_status,bad_public,manual review,missing
         assert!(failures
             .iter()
             .any(|failure| failure.contains("invalid public status")));
+        assert!(failures.iter().any(|failure| failure.contains(
+            "data/map-atlas.csv has unsupported verification command spreadsheet check"
+        )));
     }
 
     #[test]

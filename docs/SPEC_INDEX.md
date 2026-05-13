@@ -48,7 +48,7 @@ Start here when deciding which document owns a claim.
 | `docs/reviews/milepost-8-closeout-review.md` | Closeout review for Milepost 8 metadata consistency, source-plan wording, and residual risks | You need the post-closeout QA review for the evidence campaign |
 | `docs/reviews/milepost-5-7-source-release-review.md` | Review of Milepost 5-7 source traceability, held outputs, release gate coverage, and residual risks | You need the post-closeout source/release review findings |
 | `docs/release/release-checklist.md` | Release policy for public, held, internal, and source-needed artifacts plus local release steps | You need to decide whether an artifact can be published |
-| `data/release-manifest.csv` | Release artifact manifest with owner milepost, public status, verification command, notes, and `route release-manifest --gate` metadata checks | You need to verify the current release surface |
+| `data/release-manifest.csv` | Release artifact manifest with owner milepost, public status, verification command, notes, and `route release-manifest --gate` metadata plus verification-command shape checks | You need to verify the current release surface |
 | `docs/blueprint/milepost-6-plan.md` | Milepost 6 Blueprint slice plan, Forum intake rules, done criteria, and package spine | You need the current plan for finishing Blueprint |
 | `docs/blueprint/feature-packages.md` | Human-readable Blueprint package taxonomy and package briefs tied to the package ledger | You need to understand how package classes should be used before promotion |
 | `docs/blueprint/phase-sequence.md` | Blueprint phase order and promotion rules for Phase 0/1/2 packages | You need the evidence order before interpreting package sequence as investment scope |
