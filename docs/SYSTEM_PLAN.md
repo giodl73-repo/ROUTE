@@ -81,6 +81,8 @@ defined in `docs/route-architecture.md` and
 | `route-cli` | Command parsing, orchestration, terminal output, artifact gates during migration | Business logic or identity policy that cannot be unit-tested elsewhere |
 
 The desired direction is to keep moving logic out of `route-cli` and into library crates. The CLI should become a thin conductor.
+`route bundle-architecture --gate` is the current guardrail for that direction:
+it verifies the bundle-facing API contract across all Rust crates.
 
 ---
 

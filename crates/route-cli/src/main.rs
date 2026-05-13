@@ -2053,6 +2053,21 @@ enum Commands {
         gate: bool,
     },
 
+    /// Verify crate-level bundle-facing API adoption
+    BundleArchitecture {
+        /// Output bundle architecture adoption CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/bundle-architecture.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any crate lacks its required bundle-facing API surface
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Review route endpoint exception records for tier promotion/demotion decisions
     EndpointExceptions {
         /// Path to endpoint exception ledger CSV
@@ -6867,6 +6882,28 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("optimizer map hook gate: PASS");
+            }
+        }
+
+        Commands::BundleArchitecture { output, gate } => {
+            println!("route bundle-architecture");
+            let rows = bundle_architecture_rows();
+            write_bundle_architecture(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_bundle_architecture_summary(&output, &rows);
+
+            if gate {
+                let failures = bundle_architecture_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("bundle architecture gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("bundle architecture gate failed");
+                }
+                println!();
+                println!("bundle architecture gate: PASS");
             }
         }
 
@@ -12002,6 +12039,18 @@ struct OptimizerMapHookRow {
     consumer_type: String,
     gate_command: String,
     link_basis: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct BundleArchitectureRow {
+    crate_name: String,
+    role: String,
+    bundle_entrypoint: String,
+    source_path: String,
+    required_tokens: String,
+    architecture_status: String,
+    next_action: String,
     validation_status: String,
 }
 
@@ -17872,6 +17921,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "bundle-architecture",
+                "route bundle-architecture --gate",
+                "data/bundle-architecture.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "t2-bubble-up-review",
                 "route t2-bubble-up-review --gate",
                 "data/t2-bubble-up-review.csv",
@@ -18197,6 +18254,204 @@ fn optimizer_map_hook_gate_failures(rows: &[OptimizerMapHookRow]) -> Vec<String>
             failures.push(format!(
                 "{} missing optimizer or consumer artifact",
                 row.hook_id
+            ));
+        }
+    }
+    failures
+}
+
+fn bundle_architecture_rows() -> Vec<BundleArchitectureRow> {
+    [
+        (
+            "route-data",
+            "raw-source-ingestion",
+            "source rows remain upstream; downstream converts to SegmentBundleMember",
+            "crates/route-data/src/lib.rs",
+            "SegmentBundleMember;bundles the system abstraction",
+            "bundle-upstream",
+            "keep raw ingestion free of optimizer identity policy",
+        ),
+        (
+            "route-network",
+            "bundle-identity-owner",
+            "route_network::build_segment_bundles",
+            "crates/route-network/src/bundle.rs",
+            "pub struct SegmentBundle;pub struct SegmentBundleMember;pub enum BundleStatus;pub fn build_segment_bundles;pub fn bundle_action",
+            "bundle-native",
+            "use as canonical bundle rollup and status API",
+        ),
+        (
+            "route-score",
+            "bundle-scoring",
+            "route_score::score_bundle",
+            "crates/route-score/src/score.rs",
+            "pub struct BundleScores;pub fn score_bundle",
+            "bundle-native",
+            "score service/corridor bundles before falling back to corridor compatibility",
+        ),
+        (
+            "route-map",
+            "bundle-rendering",
+            "route_map::build_bundle_svg",
+            "crates/route-map/src/renderer.rs",
+            "pub struct BundleRenderIdentity;pub fn build_bundle_svg;segment_bundle_id",
+            "bundle-native",
+            "render maps with bundle identity carried through output metadata",
+        ),
+        (
+            "route-sim",
+            "bundle-simulation",
+            "route_sim::BundleIncidentSpec",
+            "crates/route-sim/src/incident.rs",
+            "pub struct BundleIncidentSpec;pub fn apply_bundle_incident",
+            "bundle-native",
+            "attach incidents and SLA outcomes to bundles by default",
+        ),
+        (
+            "route-report",
+            "bundle-publication",
+            "route_report::write_bundle_corpus_entry",
+            "crates/route-report/src/lib.rs",
+            "pub fn write_bundle_corpus_entry;bundle:",
+            "bundle-native",
+            "publish corpus/report artifacts with bundle frontmatter",
+        ),
+        (
+            "route-cli",
+            "bundle-orchestration",
+            "route national-segment-bundles --gate",
+            "crates/route-cli/src/main.rs",
+            "NationalSegmentBundles;route_network::build_segment_bundles;BundleArchitecture",
+            "bundle-native",
+            "orchestrate gates while moving identity policy into library crates",
+        ),
+    ]
+    .into_iter()
+    .map(
+        |(
+            crate_name,
+            role,
+            bundle_entrypoint,
+            source_path,
+            required_tokens,
+            architecture_status,
+            next_action,
+        )| {
+            let missing_tokens = missing_source_tokens(source_path, required_tokens);
+            let validation_status = if missing_tokens.is_empty() {
+                "pass"
+            } else {
+                "missing-token"
+            };
+            BundleArchitectureRow {
+                crate_name: crate_name.to_string(),
+                role: role.to_string(),
+                bundle_entrypoint: bundle_entrypoint.to_string(),
+                source_path: source_path.to_string(),
+                required_tokens: required_tokens.to_string(),
+                architecture_status: architecture_status.to_string(),
+                next_action: if missing_tokens.is_empty() {
+                    next_action.to_string()
+                } else {
+                    format!("restore required tokens: {}", missing_tokens.join(";"))
+                },
+                validation_status: validation_status.to_string(),
+            }
+        },
+    )
+    .collect()
+}
+
+fn missing_source_tokens(source_path: &str, required_tokens: &str) -> Vec<String> {
+    let Ok(source) = std::fs::read_to_string(resolve_repo_path(source_path)) else {
+        return semicolon_values(required_tokens);
+    };
+    semicolon_values(required_tokens)
+        .into_iter()
+        .filter(|token| !source.contains(token))
+        .collect()
+}
+
+fn resolve_repo_path(path: &str) -> PathBuf {
+    let direct = PathBuf::from(path);
+    if direct.exists() {
+        return direct;
+    }
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .map(|workspace| workspace.join(path))
+        .unwrap_or(direct)
+}
+
+fn write_bundle_architecture(path: &Path, rows: &[BundleArchitectureRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_bundle_architecture_summary(output: &Path, rows: &[BundleArchitectureRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.validation_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} bundle architecture rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn bundle_architecture_gate_failures(rows: &[BundleArchitectureRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no bundle architecture rows emitted".to_string());
+        return failures;
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.crate_name.trim().is_empty()
+            || row.role.trim().is_empty()
+            || row.bundle_entrypoint.trim().is_empty()
+            || row.source_path.trim().is_empty()
+            || row.required_tokens.trim().is_empty()
+            || row.architecture_status.trim().is_empty()
+            || row.next_action.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete architecture row",
+                row.crate_name
+            ));
+        }
+        if !seen.insert(row.crate_name.clone()) {
+            failures.push(format!("{} has duplicate architecture row", row.crate_name));
+        }
+        if row.validation_status != "pass" {
+            failures.push(format!(
+                "{} bundle architecture check failed: {}",
+                row.crate_name, row.next_action
+            ));
+        }
+        if !matches!(
+            row.architecture_status.as_str(),
+            "bundle-native" | "bundle-upstream"
+        ) {
+            failures.push(format!(
+                "{} has unknown architecture status {}",
+                row.crate_name, row.architecture_status
             ));
         }
     }
@@ -23144,7 +23399,8 @@ mod tests {
         atlas_candidate_ids, beck_t2_diagnostics_gate_failure, blueprint_cost_gate_failures,
         blueprint_cost_row_failure, blueprint_evidence_gate_failures,
         blueprint_evidence_row_failure, blueprint_gate_failures, blueprint_row_contract_failure,
-        bridge_standard_missing_routes, confidence_risk_dimensions, dimension_confidence_risks,
+        bridge_standard_missing_routes, bundle_architecture_gate_failures,
+        bundle_architecture_rows, confidence_risk_dimensions, dimension_confidence_risks,
         dimension_confidence_values, dimension_estimated_values, dimension_score_values,
         endpoint_exception_gate_failures, endpoint_exception_is_terminal_worthy,
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
@@ -25489,6 +25745,24 @@ mod tests {
             optimizer_map_hook_gate_failures(&rows),
             vec!["missing-hook missing optimizer or consumer artifact".to_string()]
         );
+    }
+
+    #[test]
+    fn bundle_architecture_gate_requires_all_crate_entrypoints() {
+        let rows = bundle_architecture_rows();
+        let failures = bundle_architecture_gate_failures(&rows);
+
+        assert!(rows.iter().any(|row| row.crate_name == "route-network"
+            && row.bundle_entrypoint == "route_network::build_segment_bundles"));
+        assert!(rows.iter().any(|row| row.crate_name == "route-score"
+            && row.bundle_entrypoint == "route_score::score_bundle"));
+        assert!(rows.iter().any(|row| row.crate_name == "route-map"
+            && row.bundle_entrypoint == "route_map::build_bundle_svg"));
+        assert!(rows.iter().any(|row| row.crate_name == "route-sim"
+            && row.bundle_entrypoint == "route_sim::BundleIncidentSpec"));
+        assert!(rows.iter().any(|row| row.crate_name == "route-report"
+            && row.bundle_entrypoint == "route_report::write_bundle_corpus_entry"));
+        assert!(failures.is_empty());
     }
 
     #[test]

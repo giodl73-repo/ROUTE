@@ -30,5 +30,6 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 29,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
 30,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,49,pass,0,,pass
 31,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,49,pass,0,,pass
-32,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
-33,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,39,pass,0,,pass
+32,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
+33,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
+34,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,39,pass,0,,pass

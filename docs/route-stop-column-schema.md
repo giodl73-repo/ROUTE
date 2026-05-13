@@ -25,7 +25,8 @@ serialize those bundles to CSV, but the bundle logic belongs in
 `route_network::build_segment_bundles`. Downstream crate entrypoints should be
 bundle-facing: `route_score::score_bundle`, `route_map::build_bundle_svg`,
 `route_sim::BundleIncidentSpec`, and
-`route_report::write_bundle_corpus_entry`.
+`route_report::write_bundle_corpus_entry`. `route bundle-architecture --gate`
+checks those entrypoints and writes `data/bundle-architecture.csv`.
 
 Column artifacts are not allowed to treat a route label as stable identity once
 they describe a physical segment or service. New service/corridor columns
