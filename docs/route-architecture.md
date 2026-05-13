@@ -87,6 +87,12 @@ surface and name the next artifact that will attach identity.
 
 ## Crate Direction
 
+Bundle construction is now a shared `route-network` responsibility. New code
+should use `route_network::SegmentBundleMember`,
+`route_network::SegmentBundle`, `route_network::BundleStatus`,
+`route_network::build_segment_bundles`, and `route_network::bundle_action`
+instead of rebuilding bundle rollups inside downstream crates.
+
 The current implementation still creates several identity rows in `route-cli`.
 That is acceptable as an implementation slice, but the architecture target is:
 

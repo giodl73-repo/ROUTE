@@ -1,5 +1,6 @@
 pub mod aggregate;
 pub mod build;
+pub mod bundle;
 pub mod centrality;
 pub mod connectivity;
 pub mod corridor;
@@ -15,6 +16,9 @@ pub mod tier;
 
 pub use aggregate::aggregate_corridor;
 pub use build::{build_graph, build_graph_with_fpm};
+pub use bundle::{
+    build_segment_bundles, bundle_action, BundleStatus, SegmentBundle, SegmentBundleMember,
+};
 pub use connectivity::{analyze_t1_connectivity, T1ConnectivityReport};
 pub use corridor::{Corridor, CorridorAttributes};
 pub use coverage::{

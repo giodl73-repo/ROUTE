@@ -19,6 +19,11 @@ one physical member segment. Stop columns may attach to a bundle, a member
 segment, or both, depending on whether the stop belongs to the service or to a
 particular physical extent.
 
+Implementation note: Rust producers and consumers should use the shared
+`route-network` bundle types instead of local rollup structs. The CLI may
+serialize those bundles to CSV, but the bundle logic belongs in
+`route_network::build_segment_bundles`.
+
 Column artifacts are not allowed to treat a route label as stable identity once
 they describe a physical segment or service. New service/corridor columns
 should carry `segment_bundle_id` and join through
