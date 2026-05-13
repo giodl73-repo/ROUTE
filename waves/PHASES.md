@@ -21,11 +21,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-12 | Promise Horizon | Tiering became a promise-horizon system: T1 48/36h, T2 24/12h, T3 6h, T4 1h. | done |
 | 2026-05-12 | Optimizer Got a Constitution | SLA portfolio, Beck contract, T2/T3/T4 doctrine, manifest, and role reviews became optimizer doctrine. | done |
 | 2026-05-13 | Constraint Ledger Spine | Normalize every blocker/debt/diagnostic source into the optimizer ledger and budget selectors consume. | done |
+| 2026-05-13 | Constraint Ledger Blocker Burn-Down | Turn normalized constraint-budget blockers into explicit decisions, starting with the I-84 hard blocker and T4 zone-assignment backlog. | active |
 
 ## Next Active Wave
 
-No wave is currently active. Create or select the next wave before running the
-next pulse.
+`2026-05-13-constraint-ledger-blocker-burndown` is active.
 
 ## Operating Rules
 
