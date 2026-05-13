@@ -74,4 +74,5 @@ scripts/poll-t1-iowa511.ps1,evidence_operations_script,M9,release_candidate,publ
 docs/evidence-campaigns/milepost-9-indot-ohgo-enrichment.md,evidence_operations_record,M9,release_candidate,public,manual review,INDOT/OHGO enrichment path for I-80/I-90 shared-corridor evidence
 docs/evidence-campaigns/milepost-9-snapshot-history-guard.md,evidence_operations_guard,M9,release_candidate,public,cargo run -q -p route -- t1-evidence-windows --gate-windows,Snapshot-history promotion guard for T1/T1 evidence windows
 docs/reviews/milepost-9-evidence-operations-review.md,review,M9,release_candidate,public,manual review,Milepost 9 evidence operations review and continued hold decision
+docs/reviews/optimizer-constraint-ledger-review.md,review,M10,release_candidate,public,manual review,Role-persona review accepting the optimizer constraint ledger spec as doctrine with implementation hold
 docs/reviews/milepost-9-closeout-review.md,review,M9,release_candidate,public,manual review,Milepost 9 closeout QA review

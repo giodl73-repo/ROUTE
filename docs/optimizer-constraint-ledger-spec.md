@@ -107,20 +107,37 @@ Required fields:
 | `map_id` | Map or schematic artifact when relevant. |
 | `source_artifact` | Artifact that produced the row. |
 | `source_row_id` | Stable source-row key when available. |
+| `standard_artifact` | Spec, standard, or source table that defines the threshold being tested. |
 | `evidence_status` | `accepted`, `source-needed`, `heuristic`, `planned`, `exception`, or `missing`. |
 | `constraint_status` | `pass`, `review`, `blocked`, `debt`, `penalty`, `held`, or `fail`. |
+| `observed_value` | Source measurement when a row compares an observed condition to a threshold. |
+| `threshold_value` | Required floor, ceiling, or target value. |
+| `measurement_unit` | Unit for observed and threshold values, such as `iri_in_per_mile`, `hours`, `tons`, `vc_ratio`, `feet`, or `stops`. |
 | `blocks_claims` | Pipe-delimited claim families blocked by this row, such as `sla|transit|publication`. |
 | `budget_cost_m` | Cost in millions when the row creates capital/source/payment debt. |
+| `cost_category` | `source_acquisition`, `capital_repair`, `capital_upgrade`, `operations`, `maintenance`, `lifecycle`, or `right_of_way`. |
+| `cost_basis` | Source, proxy, or formula used to estimate `budget_cost_m`. |
+| `cost_confidence` | `observed`, `engineered_estimate`, `planning_proxy`, or `unknown`. |
 | `budget_units` | Optional non-dollar budget units such as stops, lanes, crews, or route slots. |
 | `penalty_score` | Comparable soft penalty, with higher meaning worse. |
 | `repair_action` | Deterministic repair action such as `add_stop`, `replace_route`, `source_needed`, `pay_debt`, `split_bundle`, or `demote`. |
 | `payment_action` | Acquisition, repair, upgrade, or funding action when debt exists. |
+| `owner_jurisdiction` | State, MPO, DOT district, federal agency, or local owner expected to carry delivery or maintenance work. |
+| `funding_program` | Candidate or required funding program when known. |
+| `delivery_risk` | `low`, `medium`, `high`, `unknown`, or a source-specific delivery hold. |
+| `exception_id` | Exception or policy-review row that allows a hard row to be carried. |
+| `exception_artifact` | Artifact that owns the exception decision. |
 | `next_artifact` | Artifact or command expected to close, review, or carry the row. |
 | `optimizer_effect` | Short explanation of how this row affects selection. |
 | `validation_status` | `pass`, `review`, `held`, `blocked`, or `fail`. |
 
 Optional producers may include richer source-specific columns, but candidate
 selectors and manifests should rely only on the normalized fields above.
+
+Measurement fields are required when the row claims pass/fail against a physical
+or operational standard. Cost fields are required when the row creates budget
+debt. Exception fields are required when a selected candidate carries a
+`selection-hard` row.
 
 ## Aggregation Contract
 
@@ -131,6 +148,8 @@ Examples of source ledgers:
 | Source family | Current or expected source |
 |---|---|
 | Pavement and ride quality | `data/tier-pavement-debt-budget.csv` |
+| Bridge, clearance, grade, and safety condition | National Bridge Inventory, HPMS, state DOT source ledgers, future condition dockets |
+| Capacity and reliability | NPMRDS/FPM, ATRI bottlenecks, HCM-derived capacity ledgers, future SLA reliability dockets |
 | Segment and bundle identity | `data/national-segment-registry.csv`, `data/national-segment-bundles.csv` |
 | T1 promise portfolio | `data/t1-sla-pairs.csv`, `data/t1-sla-candidate-pairs.csv` |
 | T1 line and stop selection | `data/t1-line-selector.csv`, `data/t1-stop-selector.csv` |
@@ -162,6 +181,7 @@ expose these summary fields once the normalized ledger exists:
 | `hard_blocker_count` | Count of unresolved `identity-blocker` and `selection-hard` rows. |
 | `claim_blocker_count` | Count of unresolved claim blockers. |
 | `constraint_debt_cost_m` | Sum of budget debt rows affecting the candidate. |
+| `lifecycle_debt_cost_m` | Lifecycle and maintenance subset of budget debt, when available. |
 | `constraint_penalty_score` | Sum or declared aggregate of soft penalties. |
 | `top_constraint_classes` | Pipe-delimited highest-impact unresolved classes. |
 | `constraint_ledger_artifact` | Usually `data/optimizer-constraint-ledger.csv`. |
@@ -180,7 +200,12 @@ The normalized ledger gate should fail when:
   `national_segment_id`;
 - a blocker, debt, or review row lacks `next_artifact` or `repair_action`;
 - a budget-debt row lacks `budget_cost_m` or `payment_action`;
+- a budget-debt row lacks `cost_category`, `cost_basis`, or `cost_confidence`;
+- a physical or operational pass/fail row lacks `standard_artifact`,
+  `observed_value`, `threshold_value`, or `measurement_unit`;
 - a claim-blocker row does not name `blocks_claims`;
+- a selected candidate carries `selection-hard` only by exception but lacks
+  `exception_id` and `exception_artifact`;
 - a source-specific artifact invents a new constraint class not listed here.
 
 The gate may pass with claim blockers, budget debt, penalties, or review rows
