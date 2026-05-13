@@ -317,24 +317,6 @@ pub fn bundle_action(
                 "data/national-segment-registry.csv",
             )
         }
-        _ if registry_actions
-            .iter()
-            .any(|action| action == "join-pavement-evidence-before-service-readiness") =>
-        {
-            (
-                "join pavement evidence before service readiness",
-                "data/tier-pavement-docket.csv",
-            )
-        }
-        _ if registry_actions
-            .iter()
-            .any(|action| action == "repair-pavement-before-service-readiness") =>
-        {
-            (
-                "repair pavement before service readiness",
-                "data/tier-pavement-docket.csv",
-            )
-        }
         _ => (
             "review bundle membership and identity fields",
             "data/national-segment-registry.csv",

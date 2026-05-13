@@ -17773,7 +17773,7 @@ fn tier_pavement_decision(
         return (
             "pavement-source-needed".to_string(),
             format!(
-                "join pavement condition/HPMS IRI for {} edge {} before bundle promotion",
+                "record pavement evidence debt for {} edge {} before SLA or transit readiness claim",
                 segment.route, segment.edge_id
             ),
             "data/standards-l1-inventory.csv".to_string(),
@@ -17783,7 +17783,7 @@ fn tier_pavement_decision(
     if f64::from(iri) <= standard.max_iri_m_per_km {
         (
             "pavement-floor-pass".to_string(),
-            "no pavement repair required before promotion".to_string(),
+            "no pavement debt payment required for this member".to_string(),
             "data/national-segment-registry.csv".to_string(),
             "pass".to_string(),
         )
@@ -18059,24 +18059,24 @@ fn tier_pavement_source_gap_decision(
 ) -> (&'static str, &'static str, &'static str, &'static str) {
     if blocker_statuses.contains("pavement-repair-required") {
         return (
-            "scope pavement repair package for failing member segments",
+            "price pavement repair debt for failing member segments",
             "data/tier-pavement-docket.csv",
-            "bundle remains review until repair package or engineering exception closes rough-road members",
+            "bundle remains service-addressable while pavement repair debt is priced and paid before SLA or transit readiness claims",
             "review",
         );
     }
     if blocker_statuses.contains("pavement-source-needed") {
         return (
-            "join HPMS/state pavement condition rows for affected member edges",
+            "price pavement evidence debt for affected member edges",
             "data/standards-l1-inventory.csv",
-            "bundle remains review until pavement evidence can pass or create repair rows",
+            "bundle remains service-addressable while pavement source debt is acquired and converted to pass or repair debt",
             "review",
         );
     }
     (
-        "review pavement docket status",
+        "review pavement debt status",
         "data/tier-pavement-docket.csv",
-        "bundle remains review until pavement blocker is classified",
+        "bundle remains service-addressable while pavement debt is classified",
         "review",
     )
 }
@@ -18113,7 +18113,7 @@ fn print_tier_pavement_source_gap_summary(
         rows.len(),
         output.display()
     );
-    println!("  blocked member segments: {blocker_total}");
+    println!("  pavement debt member segments: {blocker_total}");
     for (tier, count) in by_tier {
         println!("  {tier}: {count}");
     }
@@ -18336,7 +18336,7 @@ fn print_tier_pavement_acquisition_plan_summary(
         rows.len(),
         output.display()
     );
-    println!("  assigned blocked member coverage: {blocked_total}");
+    println!("  assigned pavement debt member coverage: {blocked_total}");
     for (priority, count) in by_priority {
         println!("  priority {priority}: {count}");
     }
@@ -20959,14 +20959,10 @@ fn national_segment_registry_rows(
             builder
                 .stop_placement_status
                 .insert(pavement.pavement_status.clone());
-            builder
-                .validation_statuses
-                .insert(pavement.validation_status.clone());
         } else {
             builder
                 .stop_placement_status
                 .insert("pavement-docket-missing".to_string());
-            builder.validation_statuses.insert("review".to_string());
         }
     }
 
@@ -21091,14 +21087,6 @@ fn national_segment_registry_action(
 ) -> &'static str {
     if board_layers.contains("zone-summary") || board_layers.contains("unassigned-gap-backlog") {
         return "track-zone-or-backlog-identity";
-    }
-    if stop_statuses.contains("pavement-source-needed")
-        || stop_statuses.contains("pavement-docket-missing")
-    {
-        return "join-pavement-evidence-before-service-readiness";
-    }
-    if stop_statuses.contains("pavement-repair-required") {
-        return "repair-pavement-before-service-readiness";
     }
     if board_layers.contains("tier-segment-candidate") {
         return "eligible-for-service-bundle";
@@ -30456,7 +30444,7 @@ mod tests {
                 iri_m_per_km: "1.20".to_string(),
                 max_iri_m_per_km: "1.90".to_string(),
                 pavement_status: "pavement-floor-pass".to_string(),
-                repair_action: "no pavement repair required before promotion".to_string(),
+                repair_action: "no pavement debt payment required for this member".to_string(),
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
@@ -30478,7 +30466,7 @@ mod tests {
                 iri_m_per_km: "unknown".to_string(),
                 max_iri_m_per_km: "1.90".to_string(),
                 pavement_status: "pavement-source-needed".to_string(),
-                repair_action: "join pavement condition before bundle promotion".to_string(),
+                repair_action: "record pavement evidence debt".to_string(),
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
@@ -30495,13 +30483,13 @@ mod tests {
         assert_eq!(registry_rows.len(), 2);
         assert!(registry_rows
             .iter()
-            .any(|row| row.registry_action == "join-pavement-evidence-before-service-readiness"));
+            .all(|row| row.registry_action == "eligible-for-service-bundle"));
         assert_eq!(bundle_rows.len(), 1);
         assert_eq!(bundle_rows[0].member_count, 2);
-        assert_eq!(bundle_rows[0].bundle_status, "bundle-review");
+        assert_eq!(bundle_rows[0].bundle_status, "bundle-ready");
         assert_eq!(
             bundle_rows[0].next_artifact,
-            "data/tier-pavement-docket.csv"
+            "maps/t3-zone"
         );
     }
 
@@ -31312,7 +31300,7 @@ mod tests {
                 iri_m_per_km: "1.20".to_string(),
                 max_iri_m_per_km: "1.90".to_string(),
                 pavement_status: "pavement-floor-pass".to_string(),
-                repair_action: "no pavement repair required before promotion".to_string(),
+                repair_action: "no pavement debt payment required for this member".to_string(),
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
@@ -31334,7 +31322,7 @@ mod tests {
                 iri_m_per_km: "unknown".to_string(),
                 max_iri_m_per_km: "1.90".to_string(),
                 pavement_status: "pavement-source-needed".to_string(),
-                repair_action: "join pavement condition before bundle promotion".to_string(),
+                repair_action: "record pavement evidence debt".to_string(),
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI plus state pavement feeds".to_string(),
@@ -31354,7 +31342,7 @@ mod tests {
         assert_eq!(rows[0].affected_states, "IA");
         assert!(rows[0]
             .source_action
-            .contains("join HPMS/state pavement condition"));
+            .contains("price pavement evidence debt"));
         assert_eq!(tier_pavement_route_state_scope(None, "US30"), "");
     }
 
@@ -31373,9 +31361,9 @@ mod tests {
                 affected_states: "IA;NE;WY".to_string(),
                 affected_edge_ids: "1;2;3".to_string(),
                 source_contract: "HPMS IRI plus state pavement feeds".to_string(),
-                source_action: "join HPMS/state pavement condition rows".to_string(),
+                source_action: "price pavement evidence debt".to_string(),
                 next_artifact: "data/standards-l1-inventory.csv".to_string(),
-                optimizer_effect: "bundle remains review".to_string(),
+                optimizer_effect: "bundle remains service-addressable".to_string(),
                 validation_status: "review".to_string(),
             },
             TierPavementSourceGapRow {
@@ -31390,9 +31378,9 @@ mod tests {
                 affected_states: "IA;NE".to_string(),
                 affected_edge_ids: "4;5".to_string(),
                 source_contract: "HPMS IRI plus state pavement feeds".to_string(),
-                source_action: "join HPMS/state pavement condition rows".to_string(),
+                source_action: "price pavement evidence debt".to_string(),
                 next_artifact: "data/standards-l1-inventory.csv".to_string(),
-                optimizer_effect: "bundle remains review".to_string(),
+                optimizer_effect: "bundle remains service-addressable".to_string(),
                 validation_status: "review".to_string(),
             },
         ];

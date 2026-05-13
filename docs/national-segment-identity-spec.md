@@ -185,17 +185,20 @@ a stitched bundle. This is the pre-registry analysis surface for national and
 regional service lines.
 
 `route tier-pavement-docket --gate` joins those T1/T2 segment candidates to the
-pavement standard. The registry consumes the docket so a T1/T2 bundle member is
-`pass` only when pavement readiness passes; source-needed or repair-required
-pavement rows keep the owning bundle in review.
+pavement standard. The registry consumes the docket as a debt/payment surface,
+not as bundle identity truth: source-needed or repair-required pavement rows
+remain visible on the member, but the owning bundle can stay service-addressable
+while the debt is priced and paid.
 
-`route tier-pavement-source-gaps --gate` aggregates those review members back to
-bundle-level source or repair actions. This is the closure surface for
-T1/T2 bundles whose only registry blocker is pavement evidence.
+`route tier-pavement-source-gaps --gate` aggregates those debt members back to
+bundle-level source or repair actions. This is the closure surface for T1/T2
+bundles whose pavement work must be paid before SLA, transit, upgrade, or
+publication claims pass.
 
-`route tier-pavement-acquisition-plan --gate` groups those bundle blockers into
+`route tier-pavement-acquisition-plan --gate` groups those bundle debt rows into
 state-level HPMS/DOT pavement source tasks. It is an acquisition planner, not a
-readiness proof; member readiness still closes through `data/tier-pavement-docket.csv`.
+readiness proof; member pavement debt still closes through
+`data/tier-pavement-docket.csv`.
 
 `route tier-pavement-acquisition-docket --gate` converts acquisition-plan rows
 into runnable fetch/rebuild/verify commands. The docket may be filtered by

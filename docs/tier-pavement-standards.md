@@ -18,14 +18,15 @@ route tier-pavement-source-gaps --gate
 
 ## Rule
 
-Pavement is a service constraint, not a decoration:
+Pavement is a service-claim and capital-debt constraint, not a decoration:
 
 1. Segment candidates carry physical edge identity.
 2. Pavement evidence attaches to those segment ids.
-3. A bundle cannot claim an SLA-ready or transit-ready service if member
-   segments violate the tier pavement floor.
-4. Bad pavement creates a repair task before promotion, upgrade, or publication
-   proof.
+3. A bundle can remain service-addressable while pavement work is outstanding.
+4. A bundle cannot claim SLA-ready or transit-ready service if member segments
+   violate the tier pavement floor.
+5. Bad pavement creates a repair debt/payment task before SLA, transit,
+   upgrade, or publication proof.
 
 ## Tier Floors
 
@@ -58,9 +59,9 @@ graph edge IRI evidence and emits a segment-level status:
 
 | Status | Meaning |
 |---|---|
-| `pavement-floor-pass` | The member segment has IRI evidence at or below its tier floor. |
-| `pavement-repair-required` | The member segment has IRI evidence above its tier floor and must be repaired before SLA/transit readiness is claimed. |
-| `pavement-source-needed` | The member segment is selected, but pavement evidence is not joined yet. |
+| `pavement-floor-pass` | The member segment has IRI evidence at or below its tier floor and carries no pavement debt. |
+| `pavement-repair-required` | The member segment has IRI evidence above its tier floor and creates repair debt before SLA/transit readiness is claimed. |
+| `pavement-source-needed` | The member segment is selected, but pavement evidence is not joined yet, so source-acquisition debt is recorded. |
 | `missing-tier-standard` | The selected tier has no pavement threshold row. |
 | `missing-graph-edge` | The candidate references an edge id that is no longer present in the graph. |
 
@@ -68,11 +69,11 @@ The docket gate requires complete row contracts and known statuses. It does not
 fail merely because a row is a repair/source blocker; those rows are the point of
 the docket and must remain visible to the optimizer.
 
-`data/tier-pavement-source-gaps.csv` rolls review rows up to one row per affected
+`data/tier-pavement-source-gaps.csv` rolls debt rows up to one row per affected
 bundle. It records member count, blocked member count, blocker statuses, affected
-edge ids, and the next source or repair action. T1/T2 bundles may not move from
-`bundle-review` to `bundle-ready` until their source-gap row disappears or is
-replaced by passing pavement evidence.
+edge ids, and the next source, repair, or payment action. T1/T2 bundles may stay
+`bundle-ready` as route/service identities, but pavement debt must be paid down
+before SLA, transit, upgrade, or publication claims can pass.
 
 When selected graph members do not carry per-edge state codes, the source-gap
 command infers `affected_states` from the route geometry through the corridor
@@ -87,8 +88,8 @@ member-level pavement docket.
 
 `data/tier-pavement-acquisition-docket.csv` turns the state plan into runnable
 tasks. Each row names the `route fetch-hpms --states <STATE>` command, the graph
-rebuild command, and the pavement verification commands that must be rerun
-before a bundle can leave review. State-scoped HPMS fetches merge the refreshed
+rebuild command, and the pavement verification commands that must be rerun before
+the pavement debt ledger can close. State-scoped HPMS fetches merge the refreshed
 state rows into `data/cache/hpms_2018.csv` instead of replacing the national
 cache, and docket rebuilds use `route build --all-roads` so T2 US-route members
-receive pavement evidence before bundle review.
+receive pavement evidence for debt/payment planning.
