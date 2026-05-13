@@ -74,7 +74,7 @@ should follow specific T4 zone assignments or T2 game holds.
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - I-84 T1 hard blocker decision | planned | scenario/counterfactual first |
+| 01 - I-84 T1 hard blocker decision | done | I-84 kept as explicit national-relay exception; hard blockers now 0 |
 | 02 - T4 zone-assignment queue | planned | classify 63 zone gaps |
 | 03 - T4 terminal evidence holds | planned | terminal/source enrichment or explicit holds |
 | 04 - T2 game and bundle-binding holds | planned | service-overlay/bundle binding repair |

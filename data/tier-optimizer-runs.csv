@@ -1,7 +1,7 @@
 step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocker_summary,validation_status
 1,t1-sla-candidate-pairs,route t1-sla-candidate-pairs --gate,data/t1-sla-candidate-pairs.csv,36,pass,0,,pass
 2,t1-stop-selector,route t1-stop-selector --gate,data/t1-stop-selector.csv,90,pass,0,,pass
-3,t1-topology-repairs,route t1-topology-repairs --gate,data/t1-topology-repairs.csv,11,pass,0,,pass
+3,t1-topology-repairs,route t1-topology-repairs --gate,data/t1-topology-repairs.csv,10,pass,0,,pass
 4,t1-beck-alignment,route t1-beck-alignment --gate,data/t1-beck-alignment.csv,11,pass,0,,pass
 5,t2-region-workloads,route tier-regions --tier T2 --gate,data/tier-region-workloads.csv,40,held-known,2,raw graph rows resolved downstream by Beck contact and relief evidence,held
 6,t2-contact-witnesses,route tier-contact-witnesses --gate,data/tier-contact-witnesses.csv,40,pass,0,,pass
@@ -28,8 +28,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,13,pass,0,,pass
 28,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,28,pass,0,,pass
 29,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,28,pass,0,,pass
-30,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,143,pass,0,,pass
-31,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,138,pass,0,,pass
+30,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,142,pass,0,,pass
+31,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,137,pass,0,,pass
 32,source-fetch-policy,route source-fetch-policy --gate,data/source-fetch-policy.csv,6,pass,0,,pass
 33,t2-bundle-overlays,route t2-bundle-overlays --gate,data/game/t2-bundle-overlays.csv,40,pass,0,,pass
 34,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,87,pass,0,,pass

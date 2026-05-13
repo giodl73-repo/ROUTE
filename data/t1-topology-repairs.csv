@@ -4,7 +4,6 @@ I80,true,promise-spine,policy-review,overlap-review,I-90,shared-backbone-policy,
 I90,true,promise-spine,policy-review,overlap-review,I-80,shared-backbone-policy,selected-t1-route-shares-beck-segment,data/t1-design-policy-actions.csv,resolve-shared-segment-map-policy,review
 I40,true,promise-spine,policy-review,overlap-review,I-95,shared-backbone-policy,selected-t1-route-shares-beck-segment,data/t1-design-policy-actions.csv,resolve-shared-segment-map-policy,review
 I69,false,score-backbone-demoted,held,missing-diagnostic,,held-candidate,outside-current-t1-budget-or-demoted,data/t1-line-selector.csv,score-exception-demoted,pass
-I84,true,score-backbone-exception,policy-review,ok,,national-relay-justification,selected-score-exception-needs-national-role-proof,data/t1-score-exceptions.csv,justify-as-national-relay-or-demote-to-t2,review
 I64,false,cutline-candidate,held,missing-diagnostic,,held-candidate,outside-current-t1-budget-or-demoted,data/t1-line-selector.csv,hold-outside-current-budget,pass
 I94,false,cutline-candidate,held,missing-diagnostic,,held-candidate,outside-current-t1-budget-or-demoted,data/t1-line-selector.csv,hold-outside-current-budget,pass
 I395,false,cutline-candidate,held,missing-diagnostic,,held-candidate,outside-current-t1-budget-or-demoted,data/t1-line-selector.csv,hold-outside-current-budget,pass

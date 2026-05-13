@@ -2,7 +2,7 @@
 wave: constraint-ledger-blocker-burndown
 pulse: 01
 date: 2026-05-13
-status: planned
+status: done
 depends_on: []
 governing_roles:
   - optimization-methodologist
@@ -29,13 +29,25 @@ budget: `I84` as a T1 `promise_portfolio` exception.
 
 ## Deliverables
 
-- [ ] Run a bounded counterfactual: `justify-as-national-relay` vs
+- [x] Run a bounded counterfactual: `justify-as-national-relay` vs
   `demote-to-t2`.
-- [ ] Update `data/t1-score-exceptions.csv` with the chosen decision and
+- [x] Update `data/t1-score-exceptions.csv` with the chosen decision and
   evidence basis.
-- [ ] Regenerate affected optimizer artifacts.
-- [ ] Update docs or review notes if the decision changes T1 exception doctrine.
-- [ ] Add or update tests if selector behavior changes.
+- [x] Regenerate affected optimizer artifacts.
+- [x] Update docs or review notes if the decision changes T1 exception doctrine.
+- [x] Add or update tests if selector behavior changes.
+
+## Result
+
+I-84 is kept as an explicit T1 national-relay exception, not as a hidden
+score-only promotion. The bounded counterfactual showed that demoting I-84 to T2
+does not produce a clean T1 replacement under the current route and stop budgets:
+I-64 remains outside the selected T1 set without recutting budgets or promise
+portfolio rows.
+
+The selected I-84 row now uses `score-exception-keep`, the T1 design review marks
+the row accepted, and the optimizer constraint ledger no longer emits
+`CON-T1TOPO-I84`.
 
 ## Expected Gates
 

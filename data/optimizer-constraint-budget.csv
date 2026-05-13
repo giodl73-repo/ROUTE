@@ -6,7 +6,6 @@ CB-T1-ROUTE-I55,tier-optimizer-current,T1,national,route,I55,,I55,1,0,0,0,0,0.0,
 CB-T1-ROUTE-I64,tier-optimizer-current,T1,national,route,I64,,I64,1,0,0,0,0,0.0,0.0,0.0,route_budget,,data/t1-line-selector.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T1-ROUTE-I69,tier-optimizer-current,T1,national,route,I69,,I69,1,0,0,0,0,0.0,0.0,0.0,route_budget,,data/t1-line-selector.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T1-ROUTE-I80,tier-optimizer-current,T1,national,route,I80,,I80,2,0,2,2,0,0.0,0.0,3.0,beck_schematic_geometry|schematic_geometry,map;publication,data/t1-design-policy-actions.csv,data/optimizer-constraint-ledger.csv,review
-CB-T1-ROUTE-I84,tier-optimizer-current,T1,national,route,I84,,I84,1,1,0,1,0,0.0,0.0,1.0,promise_portfolio,publication;sla,data/t1-score-exceptions.csv,data/optimizer-constraint-ledger.csv,blocked
 CB-T1-ROUTE-I90,tier-optimizer-current,T1,national,route,I90,,I90,2,0,2,2,0,0.0,0.0,3.0,beck_schematic_geometry|schematic_geometry,map;publication,data/t1-design-policy-actions.csv,data/optimizer-constraint-ledger.csv,review
 CB-T1-ROUTE-I94,tier-optimizer-current,T1,national,route,I94,,I94,1,0,0,0,0,0.0,0.0,0.0,route_budget,,data/t1-line-selector.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T1-ROUTE-I95,tier-optimizer-current,T1,national,route,I95,,I95,2,0,2,2,0,0.0,0.0,3.0,beck_schematic_geometry|schematic_geometry,map;publication,data/t1-design-policy-actions.csv,data/optimizer-constraint-ledger.csv,review

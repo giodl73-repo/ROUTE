@@ -26007,6 +26007,15 @@ fn t1_line_selector_rows(
         .filter(|row| matches!(row.decision.trim(), "demote" | "replace"))
         .map(|row| normalise_designation(&row.route))
         .collect::<std::collections::BTreeSet<_>>();
+    let score_exception_decisions = score_exception_rows
+        .iter()
+        .map(|row| {
+            (
+                normalise_designation(&row.route),
+                row.decision.trim().to_string(),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut required_route_pairs = std::collections::BTreeMap::<String, Vec<String>>::new();
     let mut required_route_priority = std::collections::BTreeMap::<String, u8>::new();
     for pair in &sla_rows {
@@ -26098,6 +26107,13 @@ fn t1_line_selector_rows(
         let sla_pair_count = route_sla_pairs.len();
         let is_t1 = row.tier.trim().eq_ignore_ascii_case("T1");
         let score_exception_demoted = sla_pair_count == 0 && demoted_score_routes.contains(&route);
+        let score_exception_decision = if sla_pair_count == 0 {
+            score_exception_decisions.get(&route).map(String::as_str)
+        } else {
+            None
+        };
+        let score_exception_kept =
+            matches!(score_exception_decision, Some("keep" | "conditional_keep"));
         let (
             hard_blocker_count,
             claim_blocker_count,
@@ -26110,7 +26126,7 @@ fn t1_line_selector_rows(
         let constraint_adjusted_score = row.score - constraint_penalty_score;
         let has_budget =
             selected_routes < route_budget && route_stops.len() <= remaining_stop_budget;
-        let selected = (sla_pair_count > 0 || (is_t1 && !score_exception_demoted)) && has_budget;
+        let selected = (sla_pair_count > 0 || (is_t1 && score_exception_kept)) && has_budget;
         let decision = if selected {
             "select"
         } else if sla_pair_count > 0 {
@@ -26127,6 +26143,10 @@ fn t1_line_selector_rows(
         let reason = if selected {
             if sla_pair_count > 0 {
                 "sla-required-budget-fit"
+            } else if score_exception_decision == Some("keep") {
+                "score-exception-keep"
+            } else if score_exception_kept {
+                "score-exception-conditional-keep"
             } else {
                 "score-ranked-budget-fit"
             }
@@ -26291,7 +26311,10 @@ fn t1_line_selector_gate_failures(
             && row.hard_blocker_count > 0
             && !matches!(
                 row.reason,
-                "sla-required-budget-fit" | "score-ranked-budget-fit"
+                "sla-required-budget-fit"
+                    | "score-ranked-budget-fit"
+                    | "score-exception-keep"
+                    | "score-exception-conditional-keep"
             )
         {
             failures.push(format!(
@@ -26644,9 +26667,16 @@ fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignRev
             } else {
                 "cutline-candidate"
             };
+            let explicit_score_exception_keep = matches!(
+                row.reason,
+                "score-exception-keep" | "score-exception-conditional-keep"
+            );
             let design_status = if !row.selected {
                 "held"
-            } else if diagnostic.is_none() || row.sla_pair_count == 0 || beck_review_flag != "ok" {
+            } else if diagnostic.is_none()
+                || (row.sla_pair_count == 0 && !explicit_score_exception_keep)
+                || beck_review_flag != "ok"
+            {
                 "policy-review"
             } else {
                 "accepted"
@@ -26659,7 +26689,7 @@ fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<T1DesignRev
                 "hold-outside-current-budget"
             } else if diagnostic.is_none() {
                 "add-beck-diagnostic-row"
-            } else if row.sla_pair_count == 0 {
+            } else if row.sla_pair_count == 0 && !explicit_score_exception_keep {
                 "justify-as-national-relay-or-demote-to-t2"
             } else if beck_review_flag != "ok" {
                 "resolve-shared-segment-map-policy"
@@ -35088,6 +35118,7 @@ ATL-LA-48,STOP-ATL,STOP-LA,48,10,air-substitution,I20,STOP-ATL;STOP-LA,C.3
             &exceptions_path,
             "\
 route,decision,exception_type,rationale,evidence_status,artifact,replacement_candidate,next_selector_action
+I95,keep,fixture-score-backbone,Fixture route kept by explicit score exception so the selector can test SLA priority ahead of score-only T1 rows,heuristic,fixture,,keep in fixture selector
 ",
         )
         .expect("write exceptions");
