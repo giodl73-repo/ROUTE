@@ -46,6 +46,7 @@ Everything else attaches to those layers:
 ```text
 raw network geometry
   -> national segment identity
+  -> T1/T2 segment candidates from selector analysis
   -> bundles as service/corridor objects
   -> stitch groups for continuity claims
   -> tier optimizer columns
@@ -79,6 +80,7 @@ surface and name the next artifact that will attach identity.
 | Artifact | Architectural role |
 | --- | --- |
 | `docs/national-segment-identity-spec.md` | Defines segment, bundle, stitch, alias, and state-scope grammar. |
+| `docs/tier-segment-stitching-spec.md` | Defines the T1/T2 rule that selector outputs nominate service needs, graph edges become segment candidates, and only validated ordered members become bundles. |
 | `data/national-segment-registry.csv` | Current machine-readable identity registry. |
 | `data/national-segment-bundles.csv` | Current machine-readable service/corridor bundle registry derived from segment identity. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |

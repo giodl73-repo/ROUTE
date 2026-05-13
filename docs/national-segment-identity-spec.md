@@ -178,6 +178,11 @@ segment identity. The registry is the surface downstream optimizers, renderers,
 incident overlays, and game systems should join against before trusting route
 labels.
 
+`route tier-segment-candidates --gate` decomposes T1/T2 selector outputs into
+graph edge-level segment candidates before any route label can be promoted into
+a stitched bundle. This is the pre-registry analysis surface for national and
+regional service lines.
+
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor
 bundle. Downstream service lines, Beck renderers, game overlays, incidents,

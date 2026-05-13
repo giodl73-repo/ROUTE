@@ -1642,6 +1642,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit segment-level T1/T2 bundle candidates from selector outputs and the highway graph
+    TierSegmentCandidates {
+        /// T1 line selector CSV
+        #[arg(long, default_value = "data/t1-line-selector.csv", value_name = "FILE")]
+        t1_selector: PathBuf,
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        t2_service_selection: PathBuf,
+        /// Output segment candidate CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if selected T1/T2 services do not decompose into graph segments
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 pressure witnesses that can roll lower-tier gaps back upward
     LowerTierPressureWitnesses {
         /// Tier score table CSV
@@ -6447,6 +6472,40 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 bundle overlay gate: PASS");
+            }
+        }
+
+        Commands::TierSegmentCandidates {
+            t1_selector,
+            t2_service_selection,
+            output,
+            gate,
+        } => {
+            println!("route tier-segment-candidates");
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let graph = load_graph(&manifest)?;
+            let t1_rows = load_t1_line_selector(&t1_selector)
+                .with_context(|| format!("loading {}", t1_selector.display()))?;
+            let t2_rows = load_t2_service_selection(&t2_service_selection)
+                .with_context(|| format!("loading {}", t2_service_selection.display()))?;
+            let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows);
+            write_tier_segment_candidates(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_segment_candidate_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier segment candidate gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier segment candidate gate failed");
+                }
+                println!();
+                println!("Tier segment candidate gate: PASS");
             }
         }
 
@@ -11871,6 +11930,29 @@ struct T2BundleOverlayRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct TierSegmentCandidateRow {
+    tier: String,
+    source_selector: String,
+    region_id: String,
+    route: String,
+    edge_id: u64,
+    edge_sequence: usize,
+    national_segment_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    member_role: String,
+    state: String,
+    length_miles: f64,
+    aadt: String,
+    lane_count: String,
+    route_aliases: String,
+    selector_basis: String,
+    candidate_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct TierTableScoreRow {
     tier: String,
@@ -14880,6 +14962,249 @@ fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Vec<String> {
             ));
         }
     }
+    failures
+}
+
+fn tier_segment_candidate_rows(
+    graph: &route_network::HighwayGraph,
+    t1_rows: &[T1LineSelectorInputRow],
+    t2_rows: &[T2ServiceSelectionRow],
+) -> Vec<TierSegmentCandidateRow> {
+    let mut service_rows = Vec::<(&str, &str, String, String, String, String)>::new();
+    for row in t1_rows.iter().filter(|row| row.selected) {
+        service_rows.push((
+            "T1",
+            "t1-line-selector",
+            "national".to_string(),
+            row.route.clone(),
+            row.selected_stops.clone(),
+            "selected T1 SLA promise route; decompose into graph segment members before bundle stitching"
+                .to_string(),
+        ));
+    }
+    for row in t2_rows.iter().filter(|row| {
+        matches!(
+            row.selection_action.as_str(),
+            "keep-service-column" | "parent-region-review"
+        )
+    }) {
+        service_rows.push((
+            "T2",
+            "t2-service-selection",
+            row.region_id.clone(),
+            row.route.clone(),
+            row.parent_trunks.clone(),
+            format!(
+                "{}; {}; {}",
+                row.beck_service_class, row.qualification_basis, row.selection_basis
+            ),
+        ));
+    }
+
+    let mut rows = Vec::new();
+    for (tier, source_selector, region_id, route, selector_basis, action_basis) in service_rows {
+        let route_key = normalise_designation(&route);
+        let segment_bundle_id = tier_candidate_bundle_id(tier, &region_id, &route_key);
+        let stitch_group_id = tier_candidate_stitch_group_id(tier, &region_id, &route_key);
+        let mut edges = graph.route_edges(&route_key).to_vec();
+        edges.sort_by_key(|edge_idx| graph.graph[*edge_idx].id);
+        let edge_count = edges.len();
+        for (edge_sequence, edge_idx) in edges.into_iter().enumerate() {
+            let edge = &graph.graph[edge_idx];
+            rows.push(TierSegmentCandidateRow {
+                tier: tier.to_string(),
+                source_selector: source_selector.to_string(),
+                region_id: region_id.clone(),
+                route: route_key.clone(),
+                edge_id: edge.id,
+                edge_sequence: edge_sequence + 1,
+                national_segment_id: tier_candidate_segment_id(edge),
+                segment_bundle_id: segment_bundle_id.clone(),
+                stitch_group_id: stitch_group_id.clone(),
+                member_role: if edge_count > 1 {
+                    "stitched-member".to_string()
+                } else {
+                    "single-member-candidate".to_string()
+                },
+                state: edge.state.clone(),
+                length_miles: rounded_score(edge.length_miles),
+                aadt: edge
+                    .aadt
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "unknown".to_string()),
+                lane_count: edge
+                    .lane_count
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "unknown".to_string()),
+                route_aliases: tier_candidate_aliases(tier, &region_id, &route_key),
+                selector_basis: selector_basis.clone(),
+                candidate_action: action_basis.clone(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            });
+        }
+    }
+    rows.sort_by(|a, b| {
+        a.tier
+            .cmp(&b.tier)
+            .then_with(|| a.region_id.cmp(&b.region_id))
+            .then_with(|| a.route.cmp(&b.route))
+            .then_with(|| a.edge_sequence.cmp(&b.edge_sequence))
+            .then_with(|| a.edge_id.cmp(&b.edge_id))
+    });
+    rows
+}
+
+fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> String {
+    let first = edge.geometry.0.first().copied();
+    let last = edge.geometry.0.last().copied();
+    let geometry_key = match (first, last) {
+        (Some(first), Some(last)) => {
+            format!("{:.5},{:.5}->{:.5},{:.5}", first.x, first.y, last.x, last.y)
+        }
+        _ => "missing-geometry".to_string(),
+    };
+    format!(
+        "US.HWYSEG.{:016X}",
+        stable_segment_hash(&format!(
+            "edge|{}|{}|{}|{:.3}",
+            edge.route_id, edge.state, geometry_key, edge.length_miles
+        ))
+    )
+}
+
+fn tier_candidate_bundle_id(tier: &str, region_id: &str, route: &str) -> String {
+    format!(
+        "US.HWYBUNDLE.{:016X}",
+        stable_segment_hash(&format!("candidate-bundle|{tier}|{region_id}|{route}"))
+    )
+}
+
+fn tier_candidate_stitch_group_id(tier: &str, region_id: &str, route: &str) -> String {
+    format!(
+        "US.HWYSTITCH.{:016X}",
+        stable_segment_hash(&format!("candidate-stitch|{tier}|{region_id}|{route}"))
+    )
+}
+
+fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str) -> String {
+    [
+        format!("current-tier:{tier}"),
+        format!("current-zone:{region_id}"),
+        format!("route:{route}"),
+        format!("route-label:{route}"),
+        "layer:segment-candidate".to_string(),
+    ]
+    .join(";")
+}
+
+fn write_tier_segment_candidates(path: &Path, rows: &[TierSegmentCandidateRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_segment_candidate_summary(output: &Path, rows: &[TierSegmentCandidateRow]) {
+    let mut by_tier = std::collections::BTreeMap::<&str, usize>::new();
+    let mut bundles = std::collections::BTreeSet::<&str>::new();
+    for row in rows {
+        *by_tier.entry(row.tier.as_str()).or_default() += 1;
+        bundles.insert(row.segment_bundle_id.as_str());
+    }
+    println!(
+        "  wrote {} segment candidate rows across {} bundle candidates to {}",
+        rows.len(),
+        bundles.len(),
+        output.display()
+    );
+    for (tier, count) in by_tier {
+        println!("  {tier}: {count}");
+    }
+}
+
+fn tier_segment_candidate_gate_failures(
+    rows: &[TierSegmentCandidateRow],
+    t1_rows: &[T1LineSelectorInputRow],
+    t2_rows: &[T2ServiceSelectionRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no tier segment candidate rows emitted".to_string());
+        return failures;
+    }
+    let mut seen_segments = std::collections::BTreeSet::<String>::new();
+    let mut rows_by_service = std::collections::BTreeMap::<(String, String), usize>::new();
+    for row in rows {
+        if row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.national_segment_id.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.route_aliases.trim().is_empty()
+            || row.candidate_action.trim().is_empty()
+        {
+            failures.push(format!(
+                "{}:{} has incomplete segment candidate fields",
+                row.tier, row.route
+            ));
+        }
+        if !row.national_segment_id.starts_with("US.HWYSEG.") {
+            failures.push(format!("{} is not a segment id", row.national_segment_id));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!("{} is not a bundle id", row.segment_bundle_id));
+        }
+        if !row.stitch_group_id.starts_with("US.HWYSTITCH.") {
+            failures.push(format!("{} is not a stitch id", row.stitch_group_id));
+        }
+        if !seen_segments.insert(format!(
+            "{}|{}|{}",
+            row.segment_bundle_id, row.edge_sequence, row.national_segment_id
+        )) {
+            failures.push(format!(
+                "{} repeats segment {} at sequence {}",
+                row.segment_bundle_id, row.national_segment_id, row.edge_sequence
+            ));
+        }
+        *rows_by_service
+            .entry((row.tier.clone(), row.route.clone()))
+            .or_default() += 1;
+    }
+
+    for row in t1_rows.iter().filter(|row| row.selected) {
+        let key = ("T1".to_string(), normalise_designation(&row.route));
+        if !rows_by_service.contains_key(&key) {
+            failures.push(format!(
+                "selected T1 {} has no segment candidates",
+                row.route
+            ));
+        }
+    }
+    for row in t2_rows.iter().filter(|row| {
+        matches!(
+            row.selection_action.as_str(),
+            "keep-service-column" | "parent-region-review"
+        )
+    }) {
+        let key = ("T2".to_string(), normalise_designation(&row.route));
+        if !rows_by_service.contains_key(&key) {
+            failures.push(format!(
+                "T2 service {} has no segment candidates",
+                row.route
+            ));
+        }
+    }
+
     failures
 }
 
@@ -18147,6 +18472,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-service-selection",
                 "route t2-service-selection --gate",
                 "data/t2-service-selection.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "tier-segment-candidates",
+                "route tier-segment-candidates --gate",
+                "data/tier-segment-candidates.csv",
                 "pass",
                 0,
                 "",
@@ -23794,7 +24127,8 @@ mod tests {
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
-        tier_region_gate_failures, write_tier_artifacts_to, AtriBottleneckRow,
+        tier_region_gate_failures, tier_segment_candidate_gate_failures,
+        tier_segment_candidate_rows, write_tier_artifacts_to, AtriBottleneckRow,
         EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, ScoreAllRow,
@@ -25995,6 +26329,88 @@ mod tests {
         assert_eq!(rows[0].binding_status, "bundle-bound");
         assert_eq!(rows[1].binding_status, "bundle-binding-pending");
         assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn tier_segment_candidates_decompose_selected_services_into_edges() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 0.0 },
+            is_interchange: true,
+        });
+        let c = graph.graph.add_node(HighwayNode {
+            id: 3,
+            coord: coord! { x: 2.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let e1 = graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 10,
+                route_id: "I80".to_string(),
+                state: "NE".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 1.0, y: 0.0 },
+                ]),
+                length_miles: 50.0,
+                lane_count: Some(4),
+                aadt: Some(40_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        let e2 = graph.graph.add_edge(
+            b,
+            c,
+            HighwayEdge {
+                id: 11,
+                route_id: "I80".to_string(),
+                state: "IA".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 1.0, y: 0.0 },
+                    coord! { x: 2.0, y: 0.0 },
+                ]),
+                length_miles: 60.0,
+                lane_count: Some(4),
+                aadt: Some(45_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.route_index.insert("I80".to_string(), vec![e2, e1]);
+
+        let t1_rows = vec![T1LineSelectorInputRow {
+            route: "I-80".to_string(),
+            selected: true,
+            selected_stops: "STOP-OMAHA;STOP-DESMOINES".to_string(),
+        }];
+        let t2_rows = Vec::new();
+        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows);
+        let failures = tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].edge_id, 10);
+        assert_eq!(rows[1].edge_id, 11);
+        assert_ne!(rows[0].national_segment_id, rows[1].national_segment_id);
+        assert_eq!(rows[0].segment_bundle_id, rows[1].segment_bundle_id);
+        assert_eq!(rows[0].member_role, "stitched-member");
     }
 
     #[test]

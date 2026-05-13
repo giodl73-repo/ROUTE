@@ -62,6 +62,7 @@ Milepost 10 is done when:
 | 26 | Add national segment bundles | ✅ done | `route national-segment-bundles --gate` emits `data/national-segment-bundles.csv`, making bundles the default service/corridor join surface for renderers, overlays, incidents, promotion, and games |
 | 27 | Gate bundle architecture adoption | ✅ done | `route bundle-architecture --gate` emits `data/bundle-architecture.csv`, proving each Rust crate has a bundle-facing role and API entrypoint |
 | 28 | Add bundle registry and T2 overlay binding | ✅ done | `route t2-bundle-overlays --gate` emits `data/game/t2-bundle-overlays.csv`, using `route_network::BundleRegistry` to bind game/ops levers to bundles or mark pending bundle identity |
+| 29 | Pivot T1/T2 bundles to segment-level stitching | 🔄 partial | `docs/tier-segment-stitching-spec.md` and `route tier-segment-candidates --gate` make T1/T2 selectors decompose into graph edge members before bundle promotion |
 
 ## Post-Review Repair Slice
 
