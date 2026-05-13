@@ -5,13 +5,20 @@ Date: 2026-05-12
 ## Purpose
 
 Route designations are labels, not identities. `I-275`, `I-295`, or `I-610`
-can refer to different physical corridors in different parts of the country,
-and a corridor can change tier, service name, or promoted role without becoming
-a different physical segment.
+can refer to different physical corridors in different parts of the country.
+A corridor can also change tier, zone assignment, route label, service name, or
+promotion status without becoming a different physical segment.
 
 This spec defines the identity grammar used by optimizer artifacts, renderers,
-and game overlays so route rows can be joined, promoted, renamed, bundled, and
-stitched without relying on route label alone.
+incident overlays, and game systems so rows can be joined, promoted, renamed,
+bundled, and stitched without relying on route label alone.
+
+## Core Rule
+
+Stable identity must not encode mutable classification.
+
+Do not put tier, current zone, route label, renderer layer, or promotion status
+inside `national_segment_id`. Those are attributes and aliases. They may change.
 
 ## Identity Fields
 
@@ -19,81 +26,135 @@ Every route-segment surface should separate these concepts:
 
 | Field | Meaning |
 | --- | --- |
-| `national_segment_id` | Stable identity for a physical corridor segment. This should survive tier promotion, label changes, and renderer treatment changes. |
-| `segment_bundle_id` | Stable identity for a corridor/service made from one or more ordered segment members. A bundle may contain one segment today and many later. |
-| `stitch_group_id` | Join key for rows that describe the same physical segment across board layers, gap ledgers, stop placement, geometry, incidents, and game overlays. |
-| `segment_aliases` | Semicolon-separated labels that may change over time: old route labels, new promotion names, local names, board layers, and source labels. |
-| `state_scope` | Sorted semicolon-separated state or state-like jurisdiction codes touched by validated stop/geometry evidence. Multi-state segments stay plural. |
+| `national_segment_id` | Opaque stable identity for a physical corridor segment. This survives tier promotion, zone reassignment, label changes, and renderer treatment changes. |
+| `current_zone_id` | Current optimizer/map zone assignment, such as `t3-southeast`. Mutable. |
+| `current_tier` | Current service tier, such as `T1`, `T2`, `T3`, or `T4`. Mutable. |
+| `route_label` | Current displayed route label, such as `I65` or `US2`. Mutable and not globally unique. |
+| `segment_bundle_id` | Stable identity for a corridor/service made from one or more ordered segment members. |
+| `stitch_group_id` | Continuity group used to test whether segment rows may be stitched into one service, geometry line, detour, or promotion candidate. |
+| `segment_aliases` | Semicolon-separated labels attached to the segment: route labels, old/new labels, zone assignments, promotion labels, and source labels. |
+| `bundle_aliases` | Semicolon-separated labels attached to the bundle/service rather than only one member segment. |
+| `evidence_state_scope` | Sorted state/jurisdiction codes supported by stop, source, or observation evidence. |
+| `geometry_state_scope` | Sorted state/jurisdiction codes supported by validated geometry. |
+| `state_scope` | Preferred published state scope. Use `geometry_state_scope` when present; otherwise use `evidence_state_scope`. |
 
 ## ID Grammar
 
-IDs are dot-delimited and hierarchical, following the same spirit as GEOID-style
-prefix testing:
+IDs are dot-delimited and hierarchical for prefix testing, but the stable token
+after the type prefix is opaque:
 
 ```text
-US.HWYSEG.<zone_or_region>.<segment_code>
-US.HWYBUNDLE.<zone_or_region>.<bundle_code>
-US.HWYSEG.<zone_or_region>.<segment_code>.STITCH
+US.HWYSEG.<stable_segment_token>
+US.HWYBUNDLE.<stable_bundle_token>
+US.HWYSTITCH.<stable_stitch_token>
 ```
 
 Examples:
 
 ```text
-US.HWYSEG.T3SOUTHEAST.I65
-US.HWYBUNDLE.T3SOUTHEAST.I65
-US.HWYSEG.T3SOUTHEAST.I65.STITCH
+US.HWYSEG.8C9A0A46F5A5D5A2
+US.HWYBUNDLE.8C9A0A46F5A5D5A2
+US.HWYSTITCH.8C9A0A46F5A5D5A2
 ```
 
 The prefix supports coarse tests:
 
 - `US.*` means national United States surface.
 - `US.HWYSEG.*` means physical route segment.
-- `US.HWYBUNDLE.*` means a service/corridor bundle.
-- `US.HWYSEG.T3SOUTHEAST.*` means a segment currently attached to the
-  Southeast T3 zone surface.
+- `US.HWYBUNDLE.*` means corridor/service bundle.
+- `US.HWYSTITCH.*` means continuity/stitching group.
 
-## Aliases And Promotion
+Zone and tier tests must use `current_zone_id` and `current_tier`, not the
+stable id string.
 
-Aliases are not identity. They are labels attached to the identity.
+## Alias Rules
 
-Allowed alias examples:
+Aliases are labels, not identity. They must use a namespace prefix.
+
+Allowed alias namespaces:
 
 ```text
-route:I65
-zone-route:t3-southeast:I65
-old-route:US66
-new-route:I40
-promotion:T3-to-T2-candidate
-service-name:South-Central-Relay
+route:<normalized-route-label>
+route-label:<normalized-route-label>
+old-route:<normalized-route-label>
+new-route:<normalized-route-label>
+current-zone:<zone-id>
+former-zone:<zone-id>
+current-tier:<tier>
+former-tier:<tier>
+promotion:<promotion-label>
+service-name:<service-label>
+source:<source-artifact-or-system>
+layer:<board-or-render-layer>
+zone-route:<zone-id>:<normalized-route-label>
 ```
 
-When a corridor is promoted from T3 to T2, the optimizer should keep the same
-`national_segment_id` when the physical segment is unchanged and add promotion
-or service aliases. If promotion changes the physical extent, create or update
-a `segment_bundle_id` whose ordered members point at the physical segment ids.
+Route labels are normalized without punctuation for comparison: `I-65` and
+`I65` both normalize to `I65`. If an alias changes meaning over time, preserve
+the old alias and add a new one rather than rewriting history.
+
+## Promotion
+
+When a corridor is promoted from one tier to another, keep the same
+`national_segment_id` if the physical segment is unchanged. Update
+`current_tier`, add `former-tier:<old-tier>`, and add a `promotion:*` alias.
+
+If promotion changes the physical extent, create or update a bundle whose
+ordered members point at the stable physical segment ids. The bundle receives
+the service/promotion aliases; member segments keep their physical identities.
 
 ## Bundles
 
-A bundle is an ordered service/corridor made from one or more segment ids.
+A bundle is an ordered corridor/service made from one or more segment ids.
+Bundles are normative, not optional.
 
-Bundle rows should eventually carry:
+Bundle rows carry:
 
 | Field | Meaning |
 | --- | --- |
-| `segment_bundle_id` | Bundle identity. |
+| `segment_bundle_id` | Stable bundle identity. |
 | `member_segment_ids` | Ordered semicolon-separated member segment ids. |
 | `bundle_role` | `single-segment`, `stitched-corridor`, `promoted-service`, or `detour-service`. |
-| `bundle_aliases` | Old/new service names, route labels, and promotion labels. |
+| `bundle_aliases` | Old/new service names, route labels, and promotion labels attached to the bundle. |
 | `state_scope` | Union of member segment state scopes. |
 
-Single-segment bundles are valid. They give us a stable place to grow when a
-future corridor is made by stitching multiple segments together.
+Bundle gates:
+
+- Every member id must exist in the segment registry.
+- Member order is meaningful and must be preserved.
+- `single-segment` bundles must have exactly one member and that member must be
+  the row's `national_segment_id`.
+- `stitched-corridor`, `promoted-service`, and `detour-service` bundles must
+  have at least two members once they leave review.
+- A bundle may overlap another bundle, but overlap must be explicit through
+  shared member ids, not duplicated segment ids.
+- Bundle `state_scope` must equal the ordered union of member scopes.
+
+## Stitch Groups
+
+A stitch group is a continuity claim. It answers whether rows can be connected
+for service, geometry, detour, or promotion review.
+
+For an atomic segment, `stitch_group_id` may be one-to-one with the segment.
+For a multi-segment corridor, the bundle owns the continuity claim and should
+use a stitch group shared by its member rows or recorded on the bundle row.
+
+Stitch gates:
+
+- Stitch ids use the `US.HWYSTITCH.*` prefix.
+- A row must not rely on route label alone to join a stitch group.
+- A multi-segment stitch must name ordered member segment ids.
 
 ## Stop And State Scope
 
-`state_scope` must come from evidence-bearing stops or geometry, not from route
-number guesses. A route with no validated in-zone stops may have a blank
-`state_scope` and must remain in review until stop/geometry evidence fills it.
+`evidence_state_scope` comes from evidence-bearing stops, sources, or observed
+events. `geometry_state_scope` comes from validated geometry.
+
+`state_scope` is a convenience field:
+
+1. Use `geometry_state_scope` when present.
+2. Otherwise use `evidence_state_scope`.
+3. Leave blank when neither exists, and keep the row in review.
 
 Multi-state examples:
 
@@ -105,12 +166,11 @@ TX;MX
 
 ## Current Implementation
 
-`route t3-zone-render-board --gate` emits the segment identity, bundle, stitch,
-and alias fields for T3 zone board rows.
+`route t3-zone-render-board --gate` emits stable segment identity, bundle,
+stitch, and alias fields for T3 zone board rows.
 
 `route t3-zone-stop-placement --gate` carries those fields forward and adds
-zone-bounded `state_scope` from selected stop chains. This is the first guard
-against duplicate route labels being treated as the same physical corridor.
+zone-bounded evidence scope from selected stop chains.
 
 `route national-segment-registry --gate` merges segment-bearing artifacts into
 `data/national-segment-registry.csv`, producing one auditable row per stable
