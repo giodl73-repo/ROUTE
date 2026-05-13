@@ -2,7 +2,7 @@
 wave: terminal-contact-source-acquisition-spine
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - citation-auditor
@@ -27,15 +27,15 @@ artifacts without adding live-fetch side effects.
 
 ## Deliverables
 
-- [ ] Add terminal-contact proof source registry artifact.
-- [ ] Gate route/district/source metadata completeness.
-- [ ] Reject registry rows that cite terminal seed data as contact proof.
-- [ ] Keep missing source rows as blockers.
+- [x] Add terminal-contact proof source registry artifact.
+- [x] Gate route/district/source metadata completeness.
+- [x] Reject registry rows that cite terminal seed data as contact proof.
+- [x] Keep missing source rows as blockers.
 
 ## Expected Gates
 
 - `route t4-terminal-contact-proof-artifact-contract --gate`
-- terminal-contact source registry gate if added
+- `route t4-terminal-contact-proof-source-registry --gate`
 - `route t4-terminal-contact-source-plan --gate`
 - `cargo test -p route`
 

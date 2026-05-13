@@ -42,16 +42,17 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 41,t4-terminal-contact-source-catalog,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-catalog.csv,8,held-known,8,Great Lakes terminal district source families remain source-needed,held
 42,t4-terminal-contact-proof-docket,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-proof-docket.csv,33,held-known,33,Great Lakes route contact proof tasks remain source-needed,held
 43,t4-terminal-contact-proof-artifact-contract,route t4-terminal-contact-proof-artifact-contract --gate,data/t4-terminal-contact-proof-artifact-contract.csv,1,pass,0,,pass
-44,t4-terminal-columbus-proof-intake,route t4-terminal-columbus-proof-intake --gate,data/t4-terminal-columbus-proof-intake.csv,8,held-known,8,Columbus South proof intake rows remain source-needed,held
-45,t4-terminal-columbus-source-access,route t4-terminal-columbus-source-access --gate,data/t4-terminal-columbus-source-access.csv,8,held-known,8,Columbus South source access requires manual or cached proof artifacts,held
-46,t4-terminal-columbus-proof-attempts,route t4-terminal-columbus-proof-attempts --gate,data/t4-terminal-columbus-proof-attempts.csv,8,held-known,8,Columbus South route proof attempts are blocked without non-seed proof artifacts,held
-47,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
-48,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
-49,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
-50,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
-51,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
-52,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
-53,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
-54,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
-55,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
-56,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass
+44,t4-terminal-contact-proof-source-registry,route t4-terminal-contact-proof-source-registry --gate,data/t4-terminal-contact-proof-source-registry.csv,33,held-known,33,Great Lakes terminal contact proof source registry rows remain source-needed until manual or cached proof artifacts are attached,held
+45,t4-terminal-columbus-proof-intake,route t4-terminal-columbus-proof-intake --gate,data/t4-terminal-columbus-proof-intake.csv,8,held-known,8,Columbus South proof intake rows remain source-needed,held
+46,t4-terminal-columbus-source-access,route t4-terminal-columbus-source-access --gate,data/t4-terminal-columbus-source-access.csv,8,held-known,8,Columbus South source access requires manual or cached proof artifacts,held
+47,t4-terminal-columbus-proof-attempts,route t4-terminal-columbus-proof-attempts --gate,data/t4-terminal-columbus-proof-attempts.csv,8,held-known,8,Columbus South route proof attempts are blocked without non-seed proof artifacts,held
+48,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
+49,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
+50,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
+51,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
+52,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
+53,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
+54,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
+55,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
+56,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
+57,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass
