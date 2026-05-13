@@ -88,6 +88,13 @@ No GDAL. No Python. No PROJ. CRS handling is explicit: NHS shapefiles ship in EP
 
 ## §4. Data Model
 
+**Architecture update (2026-05-12):** the stable identity for physical route
+segments is `national_segment_id`, not `route_id` or route label. `route_id`
+remains a source/display attribute. Segment-bearing optimizer, map, simulation,
+and game artifacts should join through `national_segment_id`,
+`segment_bundle_id`, or `stitch_group_id` as defined in
+`docs/route-architecture.md` and `docs/national-segment-identity-spec.md`.
+
 ### 4.1 Raw inputs
 
 | Source | Format | Key fields | How fetched | Version / citation |
@@ -122,6 +129,7 @@ pub struct HighwayNode {
 
 pub struct HighwayEdge {
     pub id: u64,
+    pub national_segment_id: Option<String>, // stable ROUTE identity; route_id is a label/source field
     pub route_id: String,           // e.g. "I80", "I95"
     pub state: String,
     pub geometry: LineString<f64>,

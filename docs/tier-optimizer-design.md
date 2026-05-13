@@ -6,10 +6,16 @@ Build one principled optimizer for tier lines, stops, contacts, and schematic la
 The optimizer should replace the current pattern of selecting routes first and then
 repairing stops/map geometry by hand.
 
+The optimizer's decision object is a segment or segment bundle, not a route
+label. `route` remains useful display/input shorthand, but selected columns,
+repair witnesses, map rows, game hooks, and promotion dockets should join
+through the national segment identity grammar in
+`docs/route-architecture.md` and `docs/national-segment-identity-spec.md`.
+
 The desired outcome is:
 
 ```text
-SLA promises -> tier lines -> stop set -> contact validity -> schematic layout -> T2/T3 attachments
+SLA promises -> segment/bundle columns -> tier lines -> stop set -> contact validity -> schematic layout -> T2/T3 attachments
 ```
 
 with feedback loops when a later constraint proves an earlier choice infeasible.
@@ -78,7 +84,7 @@ route id -> selected/rejected
 to:
 
 ```text
-region workload -> candidate route/stop columns -> selected regional treatment
+region workload -> candidate segment/bundle/stop columns -> selected regional treatment
 ```
 
 The bisection analogy is useful but not literal. ROUTE regions do not need equal

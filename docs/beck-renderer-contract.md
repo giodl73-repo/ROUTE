@@ -14,19 +14,27 @@ generation. The map should eventually consume selected route, stop, contact,
 and service-column artifacts directly instead of relying on hand-authored line
 chains.
 
+The renderer must treat segment identity as core topology input. Route labels
+are display labels only; topology joins should use `national_segment_id`,
+`segment_bundle_id`, or `stitch_group_id` from `data/national-segment-registry.csv`
+and the architecture contract in `docs/route-architecture.md`.
+
 ## Source Order
 
 The Beck renderer must prefer generated optimizer artifacts in this order:
 
-1. `data/t1-line-selector.csv`
-2. `data/t1-stop-selector.csv`
-3. `data/t1-topology-repairs.csv`
-4. `data/t1-beck-alignment.csv`
-5. `data/t2-regionalizer.csv`
-6. `data/t2-service-selection.csv`
-7. `data/t1-feedback-docket.csv`
-8. `data/optimizer-map-hooks.csv`
-9. hand-authored Beck fixtures, only as compatibility fallbacks
+1. `data/national-segment-registry.csv`
+2. `data/t1-line-selector.csv`
+3. `data/t1-stop-selector.csv`
+4. `data/t1-topology-repairs.csv`
+5. `data/t1-beck-alignment.csv`
+6. `data/t2-regionalizer.csv`
+7. `data/t2-service-selection.csv`
+8. `data/t3-zone-render-board.csv`
+9. `data/t3-zone-stop-placement.csv`
+10. `data/t1-feedback-docket.csv`
+11. `data/optimizer-map-hooks.csv`
+12. hand-authored Beck fixtures, only as compatibility fallbacks
 
 If a hand-authored fixture disagrees with an optimizer artifact, the renderer
 must emit a diagnostic row rather than silently choosing the fixture.

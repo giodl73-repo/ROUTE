@@ -12,6 +12,11 @@ needed to resolve it.
 This document owns the common schema vocabulary for T1/T2/T3/T4 route, stop,
 service, and repair artifacts.
 
+Column artifacts are not allowed to treat a route label as stable identity once
+they describe a physical segment or service. New segment-bearing columns should
+carry `national_segment_id` or `segment_bundle_id`, or point to
+`data/national-segment-registry.csv` as the identity join surface.
+
 ## Column Types
 
 | Column type | Meaning | Current examples |
@@ -34,6 +39,7 @@ equivalent:
 | Field | Meaning |
 |---|---|
 | `tier` | T1, T2, T3, or T4 scope |
+| `national_segment_id` or `segment_bundle_id` | Stable segment or bundle identity when the row describes a physical route/service |
 | `column_id` or stable natural key | Stable identifier for diffing and references |
 | `candidate_type` | Promise pair, route, stop, service, repair, or manifest |
 | `graph_kind` | Primal stop graph, dual route graph, path graph, or none |

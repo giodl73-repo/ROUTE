@@ -83,6 +83,9 @@ The current all-tier manifest includes:
 - T2 service selection;
 - lower-tier pressure witnesses;
 - T3/T4 pressure intake;
+- T3 zone render board;
+- T3 zone stop placement;
+- national segment registry;
 - T2 bubble-up review;
 - T1 feedback docket.
 
@@ -103,6 +106,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 |---|---|
 | Promise-pair selection | `data/t1-sla-candidate-pairs.csv` |
 | Route/stop/service schema | `docs/route-stop-column-schema.md` |
+| Segment identity and bundle joins | `docs/route-architecture.md`, `docs/national-segment-identity-spec.md`, and `data/national-segment-registry.csv` |
 | Beck topology truth | `docs/beck-renderer-contract.md` plus map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |
 | T3/T4 access doctrine | `docs/t3-t4-access-optimization.md` |

@@ -62,15 +62,21 @@ The important lesson: the concept is ahead of the implementation, but the implem
 
 The Rust implementation should keep the following ownership boundaries.
 
+The core architectural invariant is now segment identity: route labels, tier
+names, map ids, and zone assignments are presentation or classification fields,
+not primary keys. Segment-bearing artifacts should join through
+`national_segment_id`, `segment_bundle_id`, or `stitch_group_id` as defined in
+`docs/route-architecture.md` and `docs/national-segment-identity-spec.md`.
+
 | Crate | Owns | Should not own |
 |---|---|---|
 | `route-data` | Fetching, parsing, manifests, source-specific records | Scoring policy |
-| `route-network` | Graph construction, joins, corridor attributes, coverage, flow, centrality, investment primitives | CLI presentation |
-| `route-score` | Dimensions, scoring anchors, ledgers, calibration statistics | Data fetching or graph mutation |
-| `route-map` | Geographic and schematic rendering | Corridor scoring |
-| `route-sim` | Traffic assignment, incidents, relay, SLA, OD simulation | File-system orchestration |
+| `route-network` | Graph construction, joins, stable segment identity, geometry state scope, corridor attributes, coverage, flow, centrality, investment primitives | CLI presentation |
+| `route-score` | Dimensions, scoring anchors, ledgers, calibration statistics over segments and bundles | Data fetching or graph mutation |
+| `route-map` | Geographic and schematic rendering from selected segments, bundles, stops, and stitch groups | Corridor scoring or topology invention from route labels |
+| `route-sim` | Traffic assignment, incidents, relay, SLA, OD simulation attached to segments or bundles | File-system orchestration |
 | `route-report` | Corpus/report generation | Analysis algorithms |
-| `route-cli` | Command parsing, orchestration, terminal output | Business logic that cannot be unit-tested elsewhere |
+| `route-cli` | Command parsing, orchestration, terminal output, artifact gates during migration | Business logic or identity policy that cannot be unit-tested elsewhere |
 
 The desired direction is to keep moving logic out of `route-cli` and into library crates. The CLI should become a thin conductor.
 

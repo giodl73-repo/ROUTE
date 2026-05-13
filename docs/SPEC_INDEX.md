@@ -5,6 +5,7 @@ Start here when deciding which document owns a claim.
 | Document | Owns | Use when |
 |---|---|---|
 | `docs/SYSTEM_PLAN.md` | Living roadmap, Milepost phases, roles, truth labels, forward plan | You need the current operating plan |
+| `docs/route-architecture.md` | Core ROUTE architecture invariant: stable segment identity and bundles are join keys; route labels are mutable presentation attributes | You need to decide where segment identity belongs or whether an artifact can use route labels as keys |
 | `docs/DIMENSIONS.md` | Current 16-dimension registry, evidence path, and truth label | You need the canonical rubric dimension list |
 | `docs/STANDARDS_EVALUATION.md` | Standards proof obligations, pressure-test gates, and T1/T1 evaluation framing | You need to know whether a tier standard has earned its place |
 | `specs/2026-05-10-tier-node-service-standard.md` | Route-tier and node-class service standard for deciding which routes/stops deserve national schematic prominence | You need to decide whether a route is a T1 trunk, T2 connector, T3 feeder, or T4 local spur |
