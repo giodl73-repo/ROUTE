@@ -2,7 +2,7 @@
 wave: constraint-ledger-blocker-burndown
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - optimization-methodologist
@@ -29,10 +29,37 @@ holds so game overlays target valid bundle identities and visible evidence holds
 
 ## Deliverables
 
-- [ ] Audit every T2 game bundle-binding blocker.
-- [ ] Repair stale bundle ids where the registry already has the accepted bundle.
-- [ ] Carry unresolved game/publication holds with named next artifacts.
-- [ ] Regenerate game/source artifacts, ledger, budget, and manifests.
+- [x] Audit every T2 game bundle-binding blocker.
+- [x] Repair stale bundle ids where the registry already has the accepted bundle.
+- [x] Carry unresolved game/publication holds with named next artifacts.
+- [x] Regenerate game/source artifacts, ledger, budget, and manifests.
+
+## Results
+
+- The audit found no stale bundle ids: game overlays already resolve through
+  current `data/national-segment-bundles.csv` identities.
+- `data/game/t2-bundle-overlays.csv` now separates 15 unresolved service-class
+  rows as `service-class-held-known` rather than treating them as missing overlay
+  rows.
+- One row remains `bundle-bound-review` (`I37`) because the bundle is present but
+  still has stop-chain validation work in `data/national-segment-bundles.csv`.
+- Three scenario hooks remain explicit `game_ops_publication_readiness` holds;
+  no new game scenario was created.
+- Review notes are recorded in
+  `waves/2026-05-13-constraint-ledger-blocker-burndown/panels/pulse-04-game-bundle-holds.md`.
+
+## Gate Results
+
+- `cargo test -p route`: pass
+- `route game t2-overlays --gate`: pass
+- `route game t2-hooks --gate`: pass
+- `route t2-bundle-overlays --gate`: pass
+- `route optimizer-constraint-ledger --gate`: pass
+- `route optimizer-constraint-budget --gate`: pass
+- `route tier-optimize --all-tiers --gate`: pass
+- `route optimizer-manifest --gate`: pass
+- `route release-manifest --gate`: pass
+- `scripts/check-mileposts.ps1 -SkipTests`: pass
 
 ## Expected Gates
 

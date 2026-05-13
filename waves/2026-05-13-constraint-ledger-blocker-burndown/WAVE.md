@@ -77,7 +77,7 @@ should follow specific T4 zone assignments or T2 game holds.
 | 01 - I-84 T1 hard blocker decision | done | I-84 kept as explicit national-relay exception; hard blockers now 0 |
 | 02 - T4 zone-assignment queue | done | 63 zone-assignment gaps converted to explicit zone-scoped terminal evidence holds; zone-assignment blockers now 0 |
 | 03 - T4 terminal evidence holds | done | 69 zone-scoped terminal evidence holds now name terminal districts and source actions |
-| 04 - T2 game and bundle-binding holds | planned | service-overlay/bundle binding repair |
+| 04 - T2 game and bundle-binding holds | done | 15 service-class holds carried as held-known; 1 bundle validation hold remains |
 | 05 - Beck and publication blocker cleanup | planned | map/publication claim holds |
 | 06 - Wave close | planned | close after blocker counts and gates agree |
 

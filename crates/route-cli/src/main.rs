@@ -17789,6 +17789,11 @@ fn t2_bundle_overlay_rows(
                 service.beck_service_class.clone()
             };
             let (binding_status, next_artifact, validation_status) = match (bundle, overlay) {
+                (Some(_), _) if service_class == "unclassified" => (
+                    "service-class-held-known",
+                    "data/game/t2-service-overlays.csv",
+                    "review",
+                ),
                 (Some(bundle), Some(_))
                     if bundle
                         .validation_statuses
@@ -17931,6 +17936,7 @@ fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Vec<String> {
                 | "bundle-bound-review"
                 | "bundle-binding-pending"
                 | "service-class-overlay-pending"
+                | "service-class-held-known"
         ) {
             failures.push(format!(
                 "{} has unknown binding status {}",
@@ -19457,6 +19463,7 @@ fn optimizer_constraint_ledger_rows(
     {
         let repair_action = match row.binding_status.as_str() {
             "service-class-overlay-pending" => "add-service-class-overlay",
+            "service-class-held-known" => "author-service-class-before-game-use",
             "bundle-bound-review" => "resolve-bundle-validation",
             "bundle-binding-pending" => "bind-route-to-segment-bundle",
             _ => "review-game-overlay-binding",
