@@ -47,6 +47,7 @@ carry `national_segment_id` or point to `data/national-segment-registry.csv`.
 | Game/ops overlay column | Scenario, incident, upgrade, restitch, and pavement-payment hooks bound to bundle ids | `data/game/t2-bundle-overlays.csv` |
 | Repair witness | Structured infeasibility or repair action produced by a later gate | `data/t1-topology-repairs.csv`, `data/t1-feedback-docket.csv` |
 | Debt budget column | Payment/capital debt attached to a selected bundle without blocking identity | `data/tier-pavement-debt-budget.csv` |
+| Constraint ledger row | Normalized blocker, claim hold, budget debt, soft penalty, or review action affecting a bundle, segment, stop, pair, region, map, or game hook | `data/optimizer-constraint-ledger.csv` |
 | Manifest row | Run-level certificate tying commands to artifacts and gate status | `data/tier-optimizer-runs.csv` |
 
 Future T2/T3/T4 artifacts should reuse these categories rather than inventing
@@ -70,6 +71,13 @@ equivalent:
 | `required_artifact` or `next_artifact` | Next artifact needed for proof or repair |
 | `evidence_status` | Accepted, heuristic, source-needed, policy-action, or held |
 | `validation_status` | Pass, review, held, or fail |
+
+When a column carries blockers, debt, or penalties from any source family, it
+should also expose the normalized summary fields from
+`docs/optimizer-constraint-ledger-spec.md`: `hard_blocker_count`,
+`claim_blocker_count`, `constraint_debt_cost_m`,
+`constraint_penalty_score`, `top_constraint_classes`, and
+`constraint_ledger_artifact`.
 
 Older artifacts may not yet include every field. New artifacts should.
 
@@ -134,6 +142,8 @@ Required fields:
 - `budget_cost`
 - `pavement_debt_cost_m`, `pavement_debt_class`, and `pavement_debt_basis` when
   the candidate carries pavement evidence or repair debt
+- generalized constraint summary fields when the normalized constraint ledger is
+  available
 - `reason` or `repair_basis`
 - `validation_status`
 

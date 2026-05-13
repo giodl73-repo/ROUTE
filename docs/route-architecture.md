@@ -83,6 +83,7 @@ surface and name the next artifact that will attach identity.
 | `docs/national-segment-identity-spec.md` | Defines segment, bundle, stitch, alias, and state-scope grammar. |
 | `docs/tier-segment-stitching-spec.md` | Defines the T1/T2 rule that selector outputs nominate service needs, graph edges become segment candidates, and only validated ordered members become bundles. |
 | `docs/tier-pavement-standards.md` | Defines the pavement/ride-quality floor that candidate and bundle members must satisfy before SLA, freight, transit, upgrade, or publication claims pass. |
+| `docs/optimizer-constraint-ledger-spec.md` | Defines the normalized blocker, claim-hold, debt, penalty, and repair-action row contract that all optimizer constraints must use. |
 | `data/national-segment-registry.csv` | Current machine-readable identity registry. |
 | `data/national-segment-bundles.csv` | Current machine-readable service/corridor bundle registry derived from segment identity. |
 | `data/tier-segment-candidates.csv` | T1/T2 selector output decomposed into graph-edge bundle members before route labels can become services. |
@@ -91,6 +92,7 @@ surface and name the next artifact that will attach identity.
 | `data/tier-pavement-debt-budget.csv` | Optimizer-facing pavement payment ledger that prices evidence and repair debt as bundle budget penalties. |
 | `data/tier-pavement-acquisition-plan.csv` | State-level source acquisition plan for pavement debt that must feed back into the member debt ledger. |
 | `data/tier-pavement-acquisition-docket.csv` | Runnable source-acquisition task list for refreshing pavement evidence and rerunning pavement debt gates. |
+| `data/optimizer-constraint-ledger.csv` | Planned normalized optimizer constraint ledger joining source-specific blockers, claim holds, debt, penalties, and repair actions back to bundle/member identity. |
 | `data/source-fetch-policy.csv` | Gateable source-fetch cache policy proving scoped refreshes merge, full refreshes replace only after validation, and failed live snapshots preserve prior cache. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |
 | `data/t3-zone-stop-placement.csv` | First stop-placement artifact carrying stable segment identity and evidence state scope. |

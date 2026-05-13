@@ -236,6 +236,12 @@ The optimizer uses lexicographic constraint ordering. A lower-numbered class can
 force changes to a higher-numbered class; a higher-numbered class cannot silently
 override a lower-numbered class.
 
+The normalized row contract for blockers, claim holds, budget debt, soft
+penalties, and repair actions lives in
+`docs/optimizer-constraint-ledger-spec.md`. This section owns the conceptual
+order used by the optimizer loop; the ledger spec owns how each source-specific
+constraint becomes auditable data before selection.
+
 | Order | Constraint class | Meaning | Can force |
 |---|---|---|---|
 | 0 | Evidence admissibility | Do not promote incomplete, unbuilt, or source-gated corridors without an explicit exception row | Reject/demote route candidates |
@@ -326,7 +332,8 @@ total_value =
   + stop_spacing_improvement
   - route_budget_cost
   - stop_budget_cost
-  - pavement_debt_budget_cost
+  - constraint_debt_cost_m
+  - constraint_penalty_score
   - duplicate_service_penalty
   - unbuilt_or_source_gap_penalty
   - schematic_complexity_penalty
@@ -341,6 +348,11 @@ the service relationship from maps, games, incidents, or later upgrade planning.
 Candidate and T2 service rows must expose that cost directly so downstream
 regionalization, Beck diagnostics, and game overlays do not have to rediscover
 the debt ledger by route label.
+
+That pavement budget is the first implemented slice of the broader optimizer
+constraint ledger. As additional classes come online, selectors should consume
+`constraint_debt_cost_m` and `constraint_penalty_score` from the normalized
+ledger aggregate rather than hard-coding source-specific debt fields.
 
 ## Stop Generation Rules
 
@@ -379,6 +391,8 @@ data/tier-candidate-columns.csv
 data/t1-stop-selector.csv
 data/t1-topology-repairs.csv
 data/tier-infeasibility-witnesses.csv
+data/optimizer-constraint-ledger.csv
+data/optimizer-constraint-budget.csv
 ```
 
 Near-term CLI:
@@ -389,6 +403,8 @@ route tier-optimize --all-tiers --gate
 route tier-regions --tier T2 --gate
 route t1-stop-selector --gate
 route t1-topology-repairs --gate
+route optimizer-constraint-ledger --gate
+route optimizer-constraint-budget --gate
 ```
 
 The first implementation should not try to be a perfect mathematical solver.
