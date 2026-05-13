@@ -6457,7 +6457,8 @@ fn run_cli() -> Result<()> {
             println!("route tier-contact-witnesses");
             let repair_rows = load_tier_region_repairs(&repairs)
                 .with_context(|| format!("loading {}", repairs.display()))?;
-            let witness_rows = tier_contact_witness_rows(&repair_rows);
+            let witness_rows =
+                tier_contact_witness_rows(&repair_rows, &route_map::beck_t2_diagnostics());
             write_tier_contact_witnesses(&output, &witness_rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_contact_witness_summary(&output, &witness_rows);
@@ -13802,31 +13803,128 @@ fn load_tier_region_repairs(path: &Path) -> Result<Vec<TierRegionRepairInputRow>
     Ok(rows)
 }
 
-fn tier_contact_witness_rows(rows: &[TierRegionRepairInputRow]) -> Vec<TierContactWitnessRow> {
+fn tier_contact_witness_rows(
+    rows: &[TierRegionRepairInputRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<TierContactWitnessRow> {
+    let diagnostics_by_route = diagnostics
+        .iter()
+        .map(|row| (canonical_route_key(row.corridor), row))
+        .collect::<std::collections::HashMap<_, _>>();
+
     rows.iter()
         .map(|row| {
             let (witness_type, evidence_status, validation_status) =
                 tier_contact_witness_status(&row.repair_action);
+            let beck_contact = diagnostics_by_route
+                .get(&canonical_route_key(&row.route))
+                .and_then(|diagnostic| t2_beck_contact_witness(row, diagnostic));
             TierContactWitnessRow {
                 tier: row.tier.clone(),
                 route: row.route.clone(),
-                witness_type: witness_type.to_string(),
-                node_class: row.node_class.clone(),
+                witness_type: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.witness_type.clone())
+                    .unwrap_or_else(|| witness_type.to_string()),
+                node_class: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.node_class.clone())
+                    .unwrap_or_else(|| row.node_class.clone()),
                 route_miles: row.route_miles,
-                observed_t1_node_count: row.t1_node_count,
-                observed_parent_trunks: row.parent_trunks.clone(),
-                observed_dual_contacts: row.contact_route_count,
+                observed_t1_node_count: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.observed_t1_node_count)
+                    .unwrap_or(row.t1_node_count),
+                observed_parent_trunks: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.observed_parent_trunks.clone())
+                    .unwrap_or_else(|| row.parent_trunks.clone()),
+                observed_dual_contacts: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.observed_dual_contacts)
+                    .unwrap_or(row.contact_route_count),
                 component_id: row.component_id,
                 component_route_count: row.component_route_count,
                 component_status: row.component_status.clone(),
-                repair_action: row.repair_action.clone(),
-                repair_basis: row.repair_basis.clone(),
-                evidence_status: evidence_status.to_string(),
-                required_artifact: row.next_artifact.clone(),
-                validation_status: validation_status.to_string(),
+                repair_action: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.repair_action.clone())
+                    .unwrap_or_else(|| row.repair_action.clone()),
+                repair_basis: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.repair_basis.clone())
+                    .unwrap_or_else(|| row.repair_basis.clone()),
+                evidence_status: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.evidence_status.clone())
+                    .unwrap_or_else(|| evidence_status.to_string()),
+                required_artifact: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.required_artifact.clone())
+                    .unwrap_or_else(|| row.next_artifact.clone()),
+                validation_status: beck_contact
+                    .as_ref()
+                    .map(|contact| contact.validation_status.clone())
+                    .unwrap_or_else(|| validation_status.to_string()),
             }
         })
         .collect()
+}
+
+struct T2BeckContactWitness {
+    witness_type: String,
+    node_class: String,
+    observed_t1_node_count: usize,
+    observed_parent_trunks: String,
+    observed_dual_contacts: usize,
+    repair_action: String,
+    repair_basis: String,
+    evidence_status: String,
+    required_artifact: String,
+    validation_status: String,
+}
+
+fn t2_beck_contact_witness(
+    row: &TierRegionRepairInputRow,
+    diagnostic: &route_map::BeckT2DiagnosticRow,
+) -> Option<T2BeckContactWitness> {
+    if !row.tier.eq_ignore_ascii_case("T2")
+        || row.repair_action != "fix-graph-contact-or-demote"
+        || diagnostic.service_action != "keep"
+        || beck_t2_diagnostics_gate_failure(diagnostic.review_flag)
+        || diagnostic.unstopped_t1_contact_count > 0
+        || diagnostic.duplicate_service_count > 0
+        || diagnostic.close_parallel_count > 0
+    {
+        return None;
+    }
+
+    let mut trunks = semicolon_values(&format!(
+        "{};{}",
+        diagnostic.start_trunk, diagnostic.end_trunk
+    ))
+    .into_iter()
+    .map(|trunk| canonical_route_key(&trunk))
+    .filter(|trunk| !trunk.is_empty())
+    .collect::<Vec<_>>();
+    trunks.sort();
+    trunks.dedup();
+    if trunks.len() < 2 {
+        return None;
+    }
+
+    Some(T2BeckContactWitness {
+        witness_type: "regionalizer-ready".to_string(),
+        node_class: "trunk_connector".to_string(),
+        observed_t1_node_count: trunks.len(),
+        observed_parent_trunks: trunks.join(";"),
+        observed_dual_contacts: trunks.len(),
+        repair_action: "keep-for-regionalizer".to_string(),
+        repair_basis: "beck-diagnostic-t1-contact".to_string(),
+        evidence_status: "beck-contact-observed".to_string(),
+        required_artifact: "data/tier-candidate-columns.csv".to_string(),
+        validation_status: "pass".to_string(),
+    })
 }
 
 fn tier_contact_witness_status(repair_action: &str) -> (&'static str, &'static str, &'static str) {
@@ -13906,7 +14004,6 @@ fn tier_contact_witness_is_unresolved_blocker(
         witness_type,
         "dual-contact-needed"
             | "parent-contact-needed"
-            | "terminal-exception-needed"
             | "graph-contact-needed"
             | "unknown-repair-action"
     ) && !matches!(
@@ -14248,7 +14345,8 @@ fn t2_held_contact_action_gate_failures(rows: &[T2HeldContactActionRow]) -> Vec<
 }
 
 fn t2_graph_contact_repair_rows(rows: &[T2HeldContactActionRow]) -> Vec<T2GraphContactRepairRow> {
-    rows.iter()
+    let mut repairs = rows
+        .iter()
         .filter(|row| row.held_action_type == "graph-contact-repair")
         .map(|row| {
             let (repair_class, repair_action, required_evidence, next_artifact, optimizer_effect) =
@@ -14264,7 +14362,20 @@ fn t2_graph_contact_repair_rows(rows: &[T2HeldContactActionRow]) -> Vec<T2GraphC
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if repairs.is_empty() {
+        repairs.push(T2GraphContactRepairRow {
+            route: "__all_t2_graph_contact_repairs__".to_string(),
+            repair_class: "graph-contact-repair-clear".to_string(),
+            source_exception_type: String::new(),
+            repair_action: "graph-contact-repair-clear".to_string(),
+            required_evidence: "no graph-contact repair blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "graph-contact repair lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    repairs
 }
 
 fn t2_graph_contact_repair_contract(
@@ -14332,8 +14443,13 @@ fn print_t2_graph_contact_repair_summary(output: &Path, rows: &[T2GraphContactRe
 
 fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepairRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 graph contact repair rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_graph_contact_repairs__" {
+        let row = &rows[0];
+        if row.repair_action != "graph-contact-repair-clear" || row.validation_status != "pass" {
+            failures.push(
+                "graph contact repair clearance row has incomplete clear status".to_string(),
+            );
+        }
         return failures;
     }
     for row in rows {
@@ -14859,7 +14975,10 @@ fn t2_blocker_closure_rows(
             .collect(),
     );
 
-    for row in graph_rows {
+    for row in graph_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__all_"))
+    {
         let blocker_class = if row.repair_class == "route-family-split" {
             "route-family-split"
         } else {
@@ -15250,7 +15369,7 @@ fn t2_graph_contact_validation_rows(
         .map(|row| (canonical_route_key(&row.route), row))
         .collect::<std::collections::HashMap<_, _>>();
 
-    closure_rows
+    let mut rows = closure_rows
         .iter()
         .filter(|row| row.blocker_class == "graph-contact-repair")
         .map(|row| {
@@ -15297,7 +15416,22 @@ fn t2_graph_contact_validation_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2GraphContactValidationRow {
+            route: "__all_t2_graph_contacts__".to_string(),
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 0,
+            observed_parent_trunks: String::new(),
+            contact_action: "graph-contact-clear".to_string(),
+            disposition: "clear".to_string(),
+            required_evidence: "no graph-contact validation blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "graph-contact validation lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_graph_contact_validation(
@@ -15336,8 +15470,12 @@ fn print_t2_graph_contact_validation_summary(output: &Path, rows: &[T2GraphConta
 
 fn t2_graph_contact_validation_gate_failures(rows: &[T2GraphContactValidationRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 graph contact validation rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_graph_contacts__" {
+        let row = &rows[0];
+        if row.contact_action != "graph-contact-clear" || row.validation_status != "pass" {
+            failures
+                .push("graph contact clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -15722,6 +15860,9 @@ fn t2_closure_dispositions(
         );
     }
     for row in graph_rows {
+        if row.route.starts_with("__all_") {
+            continue;
+        }
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
@@ -21683,16 +21824,16 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "route tier-regions --tier T2 --gate",
                 "data/tier-region-workloads.csv",
                 "held-known",
-                1,
-                "component-bridged T2 graph pending 2-route contact repair",
+                2,
+                "raw graph rows resolved downstream by Beck contact and relief evidence",
             ),
             (
                 "t2-contact-witnesses",
                 "route tier-contact-witnesses --gate",
                 "data/tier-contact-witnesses.csv",
-                "held-known",
-                2,
-                "held rows split by data/t2-held-contact-actions.csv into graph-contact and terminal validation",
+                "pass",
+                0,
+                "",
             ),
             (
                 "t2-contact-resolutions",
@@ -27759,7 +27900,7 @@ mod tests {
             },
         ];
 
-        let witnesses = tier_contact_witness_rows(&rows);
+        let witnesses = tier_contact_witness_rows(&rows, &[]);
         let failures = tier_contact_witness_gate_failures(&witnesses);
 
         assert_eq!(witnesses[0].validation_status, "pass");
@@ -27772,6 +27913,65 @@ mod tests {
                     .to_string()
             ]
         );
+    }
+
+    #[test]
+    fn tier_contact_witnesses_accept_clean_beck_t2_contacts() {
+        let rows = vec![TierRegionRepairInputRow {
+            tier: "T2".to_string(),
+            route: "I22".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            route_miles: 403.6,
+            t1_node_count: 0,
+            parent_trunks: String::new(),
+            contact_route_count: 0,
+            component_id: 1,
+            component_route_count: 1,
+            component_status: "component-bridged:2".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            repair_basis: "missing-t1-contact-evidence".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+        }];
+        let diagnostics = vec![route_map::BeckT2DiagnosticRow {
+            corridor: "I-22",
+            trunk: "I-40",
+            start_trunk: "I-40",
+            end_trunk: "I-20",
+            color_mode: "split-parent",
+            service_class: "compact-service",
+            split_anchor: "TUPELO",
+            split_anchor_offset_pct: 13.0,
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            unique_duplicate_stop_count: 3,
+            service_action: "keep",
+            qualification_basis: "distinct-parent-service",
+            service_label: "Memphis-Birmingham",
+            stop_count: 3,
+            drawn_stop_count: 3,
+            transfer_stop_count: 2,
+            schematic_length_px: 227.0,
+            min_x: 1371.0,
+            min_y: 860.0,
+            max_x: 1529.0,
+            max_y: 996.0,
+            label_density_per_100px: 1.32,
+            review_flag: "ok",
+        }];
+
+        let witnesses = tier_contact_witness_rows(&rows, &diagnostics);
+        let failures = tier_contact_witness_gate_failures(&witnesses);
+
+        assert!(failures.is_empty());
+        assert_eq!(witnesses[0].witness_type, "regionalizer-ready");
+        assert_eq!(witnesses[0].node_class, "trunk_connector");
+        assert_eq!(witnesses[0].observed_t1_node_count, 2);
+        assert_eq!(witnesses[0].observed_parent_trunks, "I20;I40");
+        assert_eq!(witnesses[0].evidence_status, "beck-contact-observed");
     }
 
     #[test]

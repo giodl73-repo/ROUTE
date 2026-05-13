@@ -3,7 +3,7 @@ I110,parent-region-review,relief_loop,keep-with-parent-region-review,data/tier-c
 I15,regionalizer-ready,trunk_connector,keep-for-regionalizer,data/tier-candidate-columns.csv,,,accept-contact-witness,selected-regionalizer-contact,data/tier-candidate-columns.csv,pass
 I195,regionalizer-ready,trunk_connector,keep-for-regionalizer,data/tier-candidate-columns.csv,missing_graph_geometry,missing_graph_data,accept-contact-witness,selected-regionalizer-contact,data/tier-candidate-columns.csv,pass
 I205,parent-region-review,relief_loop,keep-with-parent-region-review,data/tier-candidate-columns.csv,missing_graph_geometry,missing_graph_data,move-to-candidate-review,relief-loop-shares-parent-service-context,data/tier-candidate-columns.csv,pass
-I22,graph-contact-needed,missing_graph_data,fix-graph-contact-or-demote,data/tier-contact-witnesses.csv,,,hold-for-graph-contact-repair,missing-t1-contact-evidence,data/tier-contact-witnesses.csv,review
+I22,regionalizer-ready,trunk_connector,keep-for-regionalizer,data/tier-candidate-columns.csv,,,accept-contact-witness,selected-regionalizer-contact,data/tier-candidate-columns.csv,pass
 I220,regionalizer-ready,trunk_connector,keep-for-regionalizer,data/tier-candidate-columns.csv,demote,heuristic,accept-contact-witness,selected-regionalizer-contact,data/tier-candidate-columns.csv,pass
 I225,parent-region-review,relief_loop,keep-with-parent-region-review,data/tier-candidate-columns.csv,demote,heuristic,move-to-candidate-review,relief-loop-shares-parent-service-context,data/tier-candidate-columns.csv,pass
 I24,regionalizer-ready,trunk_connector,keep-for-regionalizer,data/tier-candidate-columns.csv,,,accept-contact-witness,selected-regionalizer-contact,data/tier-candidate-columns.csv,pass

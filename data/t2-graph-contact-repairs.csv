@@ -1,2 +1,2 @@
 route,repair_class,source_exception_type,repair_action,required_evidence,next_artifact,optimizer_effect,validation_status
-I22,graph-contact-repair,,repair-route-geometry-or-demote,prove at least one T1/T2 graph contact or demotion basis,data/tier-contact-witnesses.csv,blocked until graph contact evidence exists,review
+__all_t2_graph_contact_repairs__,graph-contact-repair-clear,,graph-contact-repair-clear,no graph-contact repair blockers remain,data/tier-candidate-columns.csv,graph-contact repair lane is clear,pass

@@ -3,7 +3,7 @@ T2,I110,parent-region-review,relief_loop,79.07759663395173,15,I10,9,0,39,compone
 T2,I15,regionalizer-ready,trunk_connector,2882.0498515577588,8,I70;I84;I90,15,0,39,component-bridged:2,keep-for-regionalizer,touches-multiple-t1-trunks,accepted,data/tier-candidate-columns.csv,pass
 T2,I195,regionalizer-ready,trunk_connector,183.9437239656403,14,I64;I95,10,0,39,component-bridged:2,keep-for-regionalizer,touches-multiple-t1-trunks,accepted,data/tier-candidate-columns.csv,pass
 T2,I205,parent-region-review,relief_loop,101.2996956423661,7,I5,3,0,39,component-bridged:2,keep-with-parent-region-review,relief-loop-shares-parent-service-context,review,data/tier-candidate-columns.csv,review
-T2,I22,graph-contact-needed,missing_graph_data,403.626182125411,0,,0,1,1,component-bridged:2,fix-graph-contact-or-demote,missing-t1-contact-evidence,source-needed,data/tier-contact-witnesses.csv,review
+T2,I22,regionalizer-ready,trunk_connector,403.626182125411,2,I20;I40,2,1,1,component-bridged:2,keep-for-regionalizer,beck-diagnostic-t1-contact,beck-contact-observed,data/tier-candidate-columns.csv,pass
 T2,I220,regionalizer-ready,trunk_connector,58.889200974782334,12,I20;I55,9,0,39,component-bridged:2,keep-for-regionalizer,touches-multiple-t1-trunks,accepted,data/tier-candidate-columns.csv,pass
 T2,I225,parent-region-review,relief_loop,22.247843668413957,2,I70,9,0,39,component-bridged:2,keep-with-parent-region-review,relief-loop-shares-parent-service-context,review,data/tier-candidate-columns.csv,review
 T2,I24,regionalizer-ready,trunk_connector,634.6814060642255,6,I40;I69;I75,10,0,39,component-bridged:2,keep-for-regionalizer,touches-multiple-t1-trunks,accepted,data/tier-candidate-columns.csv,pass

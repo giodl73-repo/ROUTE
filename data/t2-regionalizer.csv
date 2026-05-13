@@ -3,6 +3,7 @@ T2,component-0,0,I110,I10,79.07759663395173,review,review-treatment,review,hold-
 T2,component-0,0,I15,I70;I84;I90,2882.0498515577588,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I195,I64;I95,183.9437239656403,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I205,I5,101.2996956423661,review,review-treatment,review,hold-for-parent-region-review,review
+T2,component-1,1,I22,I20;I40,403.626182125411,selected,selected-treatment,beck-contact-observed,include-in-regional-treatment,pass
 T2,component-0,0,I220,I20;I55,58.889200974782334,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I225,I70,22.247843668413957,review,review-treatment,review,hold-for-parent-region-review,review
 T2,component-0,0,I24,I40;I69;I75,634.6814060642255,selected,selected-treatment,accepted,include-in-regional-treatment,pass

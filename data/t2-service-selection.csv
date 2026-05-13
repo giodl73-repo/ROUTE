@@ -3,6 +3,7 @@ T2,component-0,I110,I10,review,review-treatment,,,,,,0,,0,,0,,,,source-needed,mi
 T2,component-0,I15,I70;I84;I90,selected,selected-treatment,I-15,connector,split-parent,I-5,I-70,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass
 T2,component-0,I195,I64;I95,selected,selected-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I205,I5,review,review-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
+T2,component-1,I22,I20;I40,selected,selected-treatment,I-22,compact-service,split-parent,I-40,I-20,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass
 T2,component-0,I220,I20;I55,selected,selected-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I225,I70,review,review-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I24,I40;I69;I75,selected,selected-treatment,I-24,connector,split-parent,I-40,I-75,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass

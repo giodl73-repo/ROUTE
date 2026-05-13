@@ -1,3 +1,2 @@
 route,held_action_type,source_resolution_action,exception_type,required_evidence,next_artifact,optimizer_effect,validation_status
-I22,graph-contact-repair,hold-for-graph-contact-repair,,repair route geometry or split route family before tier decision,data/tier-contact-witnesses.csv,blocked from T2 regionalizer until contact evidence exists,review
 I285,relief-evidence-review,hold-for-relief-evidence-or-demotion,metro_beltway_relief,source-backed bottleneck or resilience relief evidence plus T1/T2 contact,data/t2-relief-evidence-docket.csv,retain as relief service only with evidence; otherwise demote,review
