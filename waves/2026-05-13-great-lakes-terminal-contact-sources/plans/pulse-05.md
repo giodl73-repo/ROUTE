@@ -2,7 +2,7 @@
 wave: great-lakes-terminal-contact-sources
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - optimization-methodologist
@@ -19,11 +19,11 @@ residual source holds, blocker counts, manifests, and gates.
 
 ## Deliverables
 
-- [ ] Write `waves/2026-05-13-great-lakes-terminal-contact-sources/CLOSE.md`.
-- [ ] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
-- [ ] Summarize source-needed rows by terminal district and source family.
-- [ ] Update docs indexes if new artifacts were created.
-- [ ] Run final gates and commit.
+- [x] Write `waves/2026-05-13-great-lakes-terminal-contact-sources/CLOSE.md`.
+- [x] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
+- [x] Summarize source-needed rows by terminal district and source family.
+- [x] Update docs indexes if new artifacts were created.
+- [x] Run final gates and commit.
 
 ## Expected Gates
 

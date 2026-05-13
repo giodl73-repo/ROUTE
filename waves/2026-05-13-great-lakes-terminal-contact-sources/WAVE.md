@@ -1,7 +1,7 @@
 ---
 wave: great-lakes-terminal-contact-sources
 date_open: 2026-05-13
-status: active
+status: done
 source: t4-terminal-contact-evidence-closeout
 ---
 
@@ -63,7 +63,7 @@ fetchers only after the policy and cache contract are explicit.
 | 02 - District source catalog | done | `data/t4-terminal-contact-source-catalog.csv`; eight terminal districts held as public terminal-contact proof/source-needed families |
 | 03 - Route contact proof docket | done | `data/t4-terminal-contact-proof-docket.csv`; 33 route-level proof tasks held source-needed with attachment requirement |
 | 04 - Queue and manifest propagation | done | optimizer/release manifests register source plan, catalog, and proof docket as held-public; ledger remains 142 rows with 117 claim blockers |
-| 05 - Wave close | planned | reconcile counts, residual holds, and gates |
+| 05 - Wave close | done | `CLOSE.md`; wave marked done after final gates |
 
 ## Done Criteria
 
