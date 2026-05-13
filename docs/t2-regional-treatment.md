@@ -96,6 +96,9 @@ route-level rollup when candidate bundle ids have not materialized yet. The
 regionalizer and service-selection rows carry `pavement_debt_cost_m`,
 `pavement_debt_class`, and `pavement_debt_basis` so T2 alternatives can be
 compared with capital/payment debt visible.
+`data/game/t2-bundle-overlays.csv` carries the same fields into game and
+operations hooks, which lets a scenario offer a pavement payment or source
+acquisition project without pretending the route disappeared.
 
 `data/t2-service-diagnostic-queue.csv` owns that next handoff. It is emitted for
 bundle-ready rows that need `data/beck-t2-diagnostics.csv` before they can

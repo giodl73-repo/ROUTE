@@ -13124,6 +13124,9 @@ struct T2BundleOverlayRow {
     upgrade_lever: String,
     restitch_lever: String,
     release_gate: String,
+    pavement_debt_cost_m: f64,
+    pavement_debt_class: String,
+    pavement_debt_basis: String,
     source_artifacts: String,
     binding_status: String,
     next_artifact: String,
@@ -17381,6 +17384,9 @@ fn t2_bundle_overlay_rows(
                 release_gate: overlay
                     .map(|row| row.release_gate.clone())
                     .unwrap_or_default(),
+                pavement_debt_cost_m: service.pavement_debt_cost_m,
+                pavement_debt_class: service.pavement_debt_class.clone(),
+                pavement_debt_basis: service.pavement_debt_basis.clone(),
                 source_artifacts:
                     "data/t2-service-selection.csv;data/national-segment-bundles.csv;data/game/t2-service-overlays.csv"
                         .to_string(),
@@ -17485,6 +17491,18 @@ fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Vec<String> {
         }
         if row.binding_status == "bundle-bound" && row.validation_status != "pass" {
             failures.push(format!("{} bound bundle did not pass", row.route));
+        }
+        if row.pavement_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative pavement debt cost", row.route));
+        }
+        if row.pavement_debt_cost_m > 0.0
+            && (row.pavement_debt_class.trim().is_empty()
+                || row.pavement_debt_basis.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has pavement debt cost without debt class and basis",
+                row.route
+            ));
         }
         if !matches!(row.validation_status.as_str(), "pass" | "review") {
             failures.push(format!(
@@ -31350,9 +31368,9 @@ mod tests {
                 close_parallel_corridors: String::new(),
                 unstopped_t1_contact_count: 0,
                 unstopped_t1_contacts: String::new(),
-                pavement_debt_cost_m: 0.0,
-                pavement_debt_class: "none".to_string(),
-                pavement_debt_basis: "no pavement debt row joined".to_string(),
+                pavement_debt_cost_m: 12.5,
+                pavement_debt_class: "repair-debt".to_string(),
+                pavement_debt_basis: "fixture repair payment pressure".to_string(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
                 selection_action: "keep-service-column".to_string(),
@@ -31422,6 +31440,8 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I15");
         assert_eq!(rows[0].binding_status, "bundle-bound");
+        assert_eq!(rows[0].pavement_debt_cost_m, 12.5);
+        assert_eq!(rows[0].pavement_debt_class, "repair-debt");
         assert_eq!(rows[1].binding_status, "bundle-binding-pending");
         assert!(failures.is_empty());
     }
