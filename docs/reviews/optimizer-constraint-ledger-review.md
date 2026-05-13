@@ -19,7 +19,8 @@ Roles used:
 
 ## Verdict
 
-Pass as optimizer doctrine, implementation hold.
+Pass as implemented optimizer doctrine for migrated blocker families; hold
+future families until they join the same ledger and budget surface.
 
 The spec correctly makes constraints first-class optimizer data instead of
 allowing pavement, topology, Beck, source, stop, capacity, and game constraints
@@ -83,8 +84,9 @@ Implemented:
 
 Still required:
 
-- later renderer/game/source-row families to consume the same budget summary
-  when they make new claim, upgrade, incident, or publication decisions
+- future renderer, game, source, capacity, resilience, and asset-condition
+  families to consume the same budget summary when they make new claim,
+  upgrade, incident, publication, or payment decisions
 
 ## Decision
 
@@ -104,3 +106,13 @@ claim-blocking ledger rows and roll up through the same budget surface. T2 game
 scenario hooks, T2 bundle-bound overlays, and source-fetch policy rows now also
 enter the normalized ledger and budget surface. Treat future renderer, game, and
 source artifacts as incomplete until they join the same schema.
+
+## Closeout Addendum
+
+Pulse 07 closes the initial implementation wave. The normalized ledger now
+contains 143 rows and the budget rollup contains 138 rows. The implemented
+families include pavement debt, T1 topology/promise blockers, T2 duplicate
+service review, T3/T4 access gaps, Beck diagnostics, source acquisition guards,
+T2 scenario hooks, and T2 bundle-bound overlays. The acceptance condition is not
+zero blockers; it is visible blockers with named claims, repair actions, and
+next artifacts.

@@ -20,7 +20,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-11 | Stops Bend the Map | Beck geometry shifted to stop-first rules: stops own bends, transfers, intersections, labels, and spacing. | done |
 | 2026-05-12 | Promise Horizon | Tiering became a promise-horizon system: T1 48/36h, T2 24/12h, T3 6h, T4 1h. | done |
 | 2026-05-12 | Optimizer Got a Constitution | SLA portfolio, Beck contract, T2/T3/T4 doctrine, manifest, and role reviews became optimizer doctrine. | done |
-| 2026-05-13 | Constraint Ledger Spine | Normalize every blocker/debt/diagnostic source into the optimizer ledger and budget selectors consume. | active |
+| 2026-05-13 | Constraint Ledger Spine | Normalize every blocker/debt/diagnostic source into the optimizer ledger and budget selectors consume. | done |
+
+## Next Active Wave
+
+No wave is currently active. Create or select the next wave before running the
+next pulse.
 
 ## Operating Rules
 

@@ -36,3 +36,4 @@ cargo run -q -p route -- significant-moments --gate
 | No Twin Thin Lines | Duplicate T2 service is a policy problem, not a drawing problem. |
 | Reality, But Legible | Schematic maps preserve real topology while enforcing map grammar. |
 | The Optimizer Got a Constitution | The optimizer doctrine stack now owns how lines, stops, maps, tiers, and held blockers are selected and audited. |
+| The Ledger Became the Spine | Selector, renderer, source-readiness, and game/publication blockers now share one normalized constraint ledger and budget surface. |

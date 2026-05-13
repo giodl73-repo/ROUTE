@@ -160,7 +160,7 @@ Examples of source ledgers:
 | Source acquisition policy | `data/source-fetch-policy.csv`, evidence-window ledgers, source health ledgers |
 | Game and operations hooks | `data/game/t2-bundle-overlays.csv`, `data/game/t2-scenario-hooks.csv`, scenario hook ledgers |
 
-Future CLI:
+Implemented CLI:
 
 ```text
 route optimizer-constraint-ledger --gate

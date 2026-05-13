@@ -1,7 +1,7 @@
 ---
 wave: constraint-ledger-spine
 date_open: 2026-05-13
-status: active
+status: done
 source: optimizer-constraint-ledger-spec
 ---
 
@@ -41,8 +41,8 @@ or renderer treats it as resolved.
 | 03 - Constraint ledger and budget commands | done | commits `838e64d`, `49c9988`, `317b501`, `b74fd4c` |
 | 04 - Selector adoption across T1/T2/T3/T4 | done | commits `9f455e1`, `b37a8b8`, `943b25d`, `955b36a` |
 | 05 - Beck diagnostics enter the ledger | done | commit `487eec2` |
-| 06 - Game/source rows enter the ledger | done | this pulse |
-| 07 - Wave close and doctrine cleanup | planned | close after pulse 06 gates |
+| 06 - Game/source rows enter the ledger | done | commit `2c7e783` |
+| 07 - Wave close and doctrine cleanup | done | this closeout pulse |
 
 ## Done Criteria
 
