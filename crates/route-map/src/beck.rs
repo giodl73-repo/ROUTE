@@ -4738,9 +4738,9 @@ mod tests {
         assert!(svg.contains("Charlotte"));
         assert!(svg.contains("NODE CLASSES"));
         let t2_routes = [
-            "US287", "I-85", "I-25", "I-15", "US95", "I-65", "I-495", "I-405", "I-285",
-            "I-59", "I-24", "I-30", "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6",
-            "US70", "US90", "I-22", "I-29", "US80", "US83", "I-37",
+            "US287", "I-85", "I-25", "I-15", "US95", "I-65", "I-495", "I-405", "I-285", "I-59",
+            "I-24", "I-30", "I-49", "I-81", "I-44", "I-77", "I-76", "US30", "US6", "US70", "US90",
+            "I-22", "I-29", "US80", "US83", "I-37",
         ];
         for route in t2_routes {
             assert!(svg.contains(&format!("data-corridor=\"{route}\"")));
@@ -4842,8 +4842,8 @@ mod tests {
         assert_eq!(
             corridors_for("transfer-spine"),
             vec![
-                "I-25", "I-285", "I-405", "I-49", "I-495", "I-65", "I-81", "US30", "US6",
-                "US70", "US80"
+                "I-25", "I-285", "I-405", "I-49", "I-495", "I-65", "I-81", "US30", "US6", "US70",
+                "US80"
             ]
         );
         assert_eq!(corridors_for("connector").len(), 9);

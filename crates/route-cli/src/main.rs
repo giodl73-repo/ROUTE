@@ -1805,6 +1805,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit review work for T2 services that run too close to another Beck T2 line
+    T2ParallelServiceQueue {
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        service_selection: PathBuf,
+        /// Output T2 parallel service queue CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-parallel-service-queue.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if parallel-service rows lack a decision contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Bind T2 game/ops service overlays to national segment bundles where available
     T2BundleOverlays {
         /// T2 service selection CSV
@@ -6944,6 +6966,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T2 service diagnostic queue gate: PASS");
+            }
+        }
+
+        Commands::T2ParallelServiceQueue {
+            service_selection,
+            output,
+            gate,
+        } => {
+            println!("route t2-parallel-service-queue");
+            let service_rows = load_t2_service_selection(&service_selection)
+                .with_context(|| format!("loading {}", service_selection.display()))?;
+            let rows = t2_parallel_service_queue_rows(&service_rows);
+            write_t2_parallel_service_queue(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_parallel_service_queue_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_parallel_service_queue_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 parallel service queue gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 parallel service queue gate failed");
+                }
+                println!();
+                println!("T2 parallel service queue gate: PASS");
             }
         }
 
@@ -12980,6 +13030,23 @@ struct T2ServiceDiagnosticQueueRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2ParallelServiceQueueRow {
+    route: String,
+    region_id: String,
+    beck_corridor: String,
+    service_class: String,
+    close_parallel_count: usize,
+    close_parallel_corridors: String,
+    selection_action: String,
+    selection_basis: String,
+    parallel_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BundleRepairQueueRow {
     route: String,
     segment_bundle_id: String,
@@ -16425,6 +16492,131 @@ fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnosticQueueRow
         if row.validation_status != "review" {
             failures.push(format!(
                 "{} diagnostic queue row must remain review",
+                row.route
+            ));
+        }
+    }
+    failures
+}
+
+fn t2_parallel_service_queue_rows(
+    service_rows: &[T2ServiceSelectionRow],
+) -> Vec<T2ParallelServiceQueueRow> {
+    let mut rows = service_rows
+        .iter()
+        .filter(|row| {
+            row.selection_action == "split-parallel-service" || row.close_parallel_count > 0
+        })
+        .map(|row| T2ParallelServiceQueueRow {
+            route: row.route.clone(),
+            region_id: row.region_id.clone(),
+            beck_corridor: row.beck_corridor.clone(),
+            service_class: row.beck_service_class.clone(),
+            close_parallel_count: row.close_parallel_count,
+            close_parallel_corridors: row.close_parallel_corridors.clone(),
+            selection_action: row.selection_action.clone(),
+            selection_basis: row.selection_basis.clone(),
+            parallel_action: "review-spacing-or-split-service-before-promotion".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "docs/t2-regional-treatment.md".to_string(),
+            optimizer_effect:
+                "keeps close-parallel T2 line visible but below automatic keep/promotion"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    if rows.is_empty() {
+        rows.push(T2ParallelServiceQueueRow {
+            route: "__all_t2_parallel_services__".to_string(),
+            region_id: String::new(),
+            beck_corridor: String::new(),
+            service_class: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            selection_action: "clear".to_string(),
+            selection_basis: "no-close-parallel-t2-services".to_string(),
+            parallel_action: "no-parallel-service-work-needed".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
+            optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
+}
+
+fn write_t2_parallel_service_queue(path: &Path, rows: &[T2ParallelServiceQueueRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_parallel_service_queue_summary(output: &Path, rows: &[T2ParallelServiceQueueRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.validation_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} parallel service queue rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_parallel_service_queue_gate_failures(rows: &[T2ParallelServiceQueueRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no T2 parallel service queue rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() == 1 && rows[0].route == "__all_t2_parallel_services__" {
+        if rows[0].validation_status != "pass" {
+            failures.push("parallel service clearance row must pass".to_string());
+        }
+        return failures;
+    }
+    for row in rows {
+        if row.route.trim().is_empty() {
+            failures.push("parallel service row missing route".to_string());
+        }
+        if row.region_id.trim().is_empty() {
+            failures.push(format!("{} missing region_id", row.route));
+        }
+        if row.beck_corridor.trim().is_empty() {
+            failures.push(format!("{} missing beck_corridor", row.route));
+        }
+        if row.close_parallel_count == 0 || row.close_parallel_corridors.trim().is_empty() {
+            failures.push(format!("{} missing close-parallel evidence", row.route));
+        }
+        if row.selection_action != "split-parallel-service" {
+            failures.push(format!(
+                "{} unexpected selection_action {}",
+                row.route, row.selection_action
+            ));
+        }
+        if row.parallel_action.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!("{} missing parallel action artifacts", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} parallel service row must remain review",
                 row.route
             ));
         }
@@ -21464,6 +21656,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t2-service-diagnostic-queue",
                 "route t2-service-diagnostic-queue --gate",
                 "data/t2-service-diagnostic-queue.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "t2-parallel-service-queue",
+                "route t2-parallel-service-queue --gate",
+                "data/t2-parallel-service-queue.csv",
                 "pass",
                 0,
                 "",
@@ -27206,6 +27406,7 @@ mod tests {
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
+        t2_parallel_service_queue_gate_failures, t2_parallel_service_queue_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
@@ -28487,6 +28688,46 @@ mod tests {
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I285");
         assert_eq!(rows[0].diagnostic_status, "beck-diagnostic-missing");
         assert_eq!(rows[0].next_artifact, "data/beck-t2-diagnostics.csv");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_parallel_service_queue_names_close_parallel_review_rows() {
+        let service_rows = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "component-1".to_string(),
+            route: "I59".to_string(),
+            parent_trunks: "I20".to_string(),
+            column_decision: "review".to_string(),
+            treatment_status: "review-treatment".to_string(),
+            beck_corridor: "I-59".to_string(),
+            beck_service_class: "connector".to_string(),
+            beck_color_mode: "split-parent".to_string(),
+            beck_start_trunk: "I-10".to_string(),
+            beck_end_trunk: "I-75".to_string(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 1,
+            close_parallel_corridors: "I-65".to_string(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: "keep".to_string(),
+            qualification_basis: "distinct-parent-service".to_string(),
+            selection_action: "split-parallel-service".to_string(),
+            selection_basis: "close-parallel-beck-service".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_parallel_service_queue_rows(&service_rows);
+        let failures = t2_parallel_service_queue_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I59");
+        assert_eq!(rows[0].close_parallel_corridors, "I-65");
+        assert_eq!(
+            rows[0].parallel_action,
+            "review-spacing-or-split-service-before-promotion"
+        );
         assert!(failures.is_empty());
     }
 

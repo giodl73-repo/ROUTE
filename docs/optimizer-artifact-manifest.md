@@ -85,6 +85,7 @@ The current all-tier manifest includes:
 - T2 regionalizer;
 - T2 service selection;
 - T2 service diagnostic queue;
+- T2 parallel service queue;
 - T1/T2 segment candidates;
 - T1/T2 pavement docket;
 - T1/T2 pavement source-gap rollup;

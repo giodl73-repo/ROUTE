@@ -33,6 +33,7 @@ Current T2 treatment consumes:
 | `data/t2-regionalizer.csv` | First-pass regional treatment rows |
 | `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, and parent-trunk lineage |
 | `data/t2-service-diagnostic-queue.csv` | Bundle-ready service rows still missing Beck/service diagnostics before map or game binding |
+| `data/t2-parallel-service-queue.csv` | Close-parallel Beck service rows that need spacing, split, merge, or promotion review |
 | `data/t2-contact-resolutions.csv` | Contact resolution and demotion decisions |
 | `data/t2-blocker-closure.csv` | Consolidated held blocker dispositions joined to bundle identity/status |
 | `data/t2-bundle-repair-queue.csv` | Bundle-blocked candidate-review rows and the exact registry/stop repair needed before T2 re-entry |
@@ -145,6 +146,12 @@ Duplicate service should resolve to one of:
 
 Same-color loops, close parallel duplicates, and unseparated branch pairs should
 never be solved by drawing harder. They need a service decision.
+
+`data/t2-parallel-service-queue.csv` turns those close-parallel cases into an
+explicit review surface. A route may remain visible while it has a distinct
+service basis, but it cannot become an automatic keep or upward promotion until
+the queue records whether to space it, split it, merge it, or keep it as a
+documented parallel service.
 
 ## Relief Loops
 
