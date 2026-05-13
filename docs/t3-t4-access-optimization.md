@@ -230,6 +230,10 @@ Current implementation status:
   attempt per Columbus South row. The current pilot emits eight blocked attempts:
   no row is source-backed, and every attempt carries the live-fetch/source-access
   blocker forward.
+- `data/tier-optimizer-runs.csv` and `data/release-manifest.csv` register the
+  Columbus South intake, source-access, and proof-attempt artifacts as held
+  optimizer ledgers. This keeps the blocked pilot visible without adding scenario
+  readiness rows.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows

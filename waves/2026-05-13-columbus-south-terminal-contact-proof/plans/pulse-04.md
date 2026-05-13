@@ -2,7 +2,7 @@
 wave: columbus-south-terminal-contact-proof
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - optimization-methodologist
@@ -28,11 +28,11 @@ held claims.
 
 ## Deliverables
 
-- [ ] Regenerate affected contact/proof/scenario artifacts.
-- [ ] Keep source-needed rows held and visible.
-- [ ] Promote only rows with traceable non-seed contact proof and selected
+- [x] Regenerate affected contact/proof/scenario artifacts.
+- [x] Keep source-needed rows held and visible.
+- [x] Promote only rows with traceable non-seed contact proof and selected
   attachment.
-- [ ] Update optimizer and release manifests for new artifacts/status changes.
+- [x] Update optimizer and release manifests for new artifacts/status changes.
 
 ## Expected Gates
 
