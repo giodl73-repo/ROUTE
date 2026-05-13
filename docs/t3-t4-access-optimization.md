@@ -219,6 +219,9 @@ Current implementation status:
   higher-tier attachment requirement, source family, proof blocker, and scenario
   hold. All tasks remain `source-needed` until a traceable contact proof artifact
   exists.
+- `data/t4-terminal-columbus-proof-intake.csv` filters the Columbus South pilot
+  slice from the Great Lakes proof docket. It carries exactly eight source-needed
+  route tasks into the proof pilot and rejects non-Columbus rows.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows

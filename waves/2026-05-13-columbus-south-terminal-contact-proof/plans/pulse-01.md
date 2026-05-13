@@ -2,7 +2,7 @@
 wave: columbus-south-terminal-contact-proof
 pulse: 01
 date: 2026-05-13
-status: planned
+status: done
 depends_on: []
 governing_roles:
   - citation-auditor
@@ -27,15 +27,15 @@ Lakes proof docket.
 
 ## Deliverables
 
-- [ ] Add a Columbus South proof-intake artifact or command output.
-- [ ] Gate exactly eight Columbus South source-needed proof tasks.
-- [ ] Reject non-Columbus rows in the pilot intake.
-- [ ] Preserve source-needed/review status until a proof source exists.
+- [x] Add a Columbus South proof-intake artifact or command output.
+- [x] Gate exactly eight Columbus South source-needed proof tasks.
+- [x] Reject non-Columbus rows in the pilot intake.
+- [x] Preserve source-needed/review status until a proof source exists.
 
 ## Expected Gates
 
 - `route t4-terminal-contact-source-plan --gate`
-- Columbus intake gate if added
+- `route t4-terminal-columbus-proof-intake --gate`
 - `cargo test -p route`
 
 ## Non-Goals

@@ -2249,6 +2249,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit Columbus South terminal-contact proof intake from Great Lakes proof docket
+    T4TerminalColumbusProofIntake {
+        /// Great Lakes route contact proof docket CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-proof-docket.csv",
+            value_name = "FILE"
+        )]
+        proof_docket: PathBuf,
+        /// Output Columbus South terminal-contact proof intake CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-columbus-proof-intake.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if Columbus intake rows are incomplete or include non-Columbus tasks
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 access gaps from held route and terminal access columns
     #[command(name = "t3-t4-access-gaps")]
     T3T4AccessGaps {
@@ -7715,6 +7737,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal contact source plan gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalColumbusProofIntake {
+            proof_docket,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-columbus-proof-intake");
+            let proof_rows = load_t4_terminal_contact_proof_docket(&proof_docket)
+                .with_context(|| format!("loading {}", proof_docket.display()))?;
+            let rows = t4_terminal_columbus_proof_intake_rows(&proof_rows);
+            write_t4_terminal_columbus_proof_intake(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_columbus_proof_intake_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_columbus_proof_intake_gate_failures(&rows, &proof_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal Columbus proof intake gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal Columbus proof intake gate failed");
+                }
+                println!();
+                println!("T4 terminal Columbus proof intake gate: PASS");
             }
         }
 
@@ -14020,6 +14070,24 @@ struct T4TerminalContactProofDocketRow {
     proof_status: String,
     proof_blocker: String,
     scenario_effect: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalColumbusProofIntakeRow {
+    intake_id: String,
+    task_id: String,
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district: String,
+    source_family: String,
+    required_proof_field: String,
+    selected_higher_tier_attachment_requirement: String,
+    contact_proof_source_artifact: String,
+    proof_status: String,
+    proof_blocker: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -23123,6 +23191,199 @@ fn t4_terminal_contact_proof_docket_gate_failures(
     failures
 }
 
+fn load_t4_terminal_contact_proof_docket(
+    path: &Path,
+) -> Result<Vec<T4TerminalContactProofDocketRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t4_terminal_columbus_proof_intake_rows(
+    proof_rows: &[T4TerminalContactProofDocketRow],
+) -> Vec<T4TerminalColumbusProofIntakeRow> {
+    let mut rows = proof_rows
+        .iter()
+        .filter(|row| {
+            row.terminal_district == "Columbus South" && row.proof_status == "source-needed"
+        })
+        .map(|row| T4TerminalColumbusProofIntakeRow {
+            intake_id: format!("T4COLUMBUS-{}", stable_id_fragment(&row.queue_id)),
+            task_id: row.task_id.clone(),
+            queue_id: row.queue_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district: row.terminal_district.clone(),
+            source_family: row.source_family.clone(),
+            required_proof_field: row.required_proof_field.clone(),
+            selected_higher_tier_attachment_requirement: row
+                .selected_higher_tier_attachment_requirement
+                .clone(),
+            contact_proof_source_artifact: row.contact_proof_source_artifact.clone(),
+            proof_status: row.proof_status.clone(),
+            proof_blocker: row.proof_blocker.clone(),
+            next_artifact:
+                "waves/2026-05-13-columbus-south-terminal-contact-proof/plans/pulse-02.md"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.route
+            .cmp(&b.route)
+            .then_with(|| a.queue_id.cmp(&b.queue_id))
+    });
+    rows
+}
+
+fn write_t4_terminal_columbus_proof_intake(
+    path: &Path,
+    rows: &[T4TerminalColumbusProofIntakeRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_columbus_proof_intake_summary(
+    output: &Path,
+    rows: &[T4TerminalColumbusProofIntakeRow],
+) {
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_status.entry(row.proof_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} Columbus South proof intake rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t4_terminal_columbus_proof_intake_gate_failures(
+    rows: &[T4TerminalColumbusProofIntakeRow],
+    proof_rows: &[T4TerminalContactProofDocketRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_ids = proof_rows
+        .iter()
+        .filter(|row| {
+            row.terminal_district == "Columbus South" && row.proof_status == "source-needed"
+        })
+        .map(|row| row.queue_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    if rows.is_empty() {
+        failures.push("no Columbus South proof intake rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() != expected_ids.len() {
+        failures.push(format!(
+            "Columbus proof intake has {} rows but expected {} source-needed rows",
+            rows.len(),
+            expected_ids.len()
+        ));
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.intake_id.trim().is_empty()
+            || row.task_id.trim().is_empty()
+            || row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.terminal_district.trim().is_empty()
+            || row.source_family.trim().is_empty()
+            || row.required_proof_field.trim().is_empty()
+            || row
+                .selected_higher_tier_attachment_requirement
+                .trim()
+                .is_empty()
+            || row.proof_status.trim().is_empty()
+            || row.proof_blocker.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete intake fields", row.intake_id));
+        }
+        if !seen.insert(row.queue_id.clone()) {
+            failures.push(format!(
+                "{} appears more than once in Columbus proof intake",
+                row.queue_id
+            ));
+        }
+        if row.terminal_district != "Columbus South" {
+            failures.push(format!(
+                "{} is not a Columbus South proof task",
+                row.queue_id
+            ));
+        }
+        if row.zone_id != "t3-great-lakes" {
+            failures.push(format!("{} is not a Great Lakes proof task", row.queue_id));
+        }
+        if !expected_ids.contains(row.queue_id.as_str()) {
+            failures.push(format!(
+                "{} does not appear in the Columbus South source-needed proof docket",
+                row.queue_id
+            ));
+        }
+        if row.required_proof_field != "route-to-terminal contact statement" {
+            failures.push(format!(
+                "{} has invalid proof field {}",
+                row.queue_id, row.required_proof_field
+            ));
+        }
+        if !row
+            .selected_higher_tier_attachment_requirement
+            .contains("selected higher-tier attachment")
+        {
+            failures.push(format!(
+                "{} lacks higher-tier attachment requirement",
+                row.queue_id
+            ));
+        }
+        if row.contact_proof_source_artifact != "source-needed"
+            || row.proof_status != "source-needed"
+            || row.validation_status != "review"
+        {
+            failures.push(format!(
+                "{} intake row must remain source-needed/review until proof exists",
+                row.queue_id
+            ));
+        }
+    }
+
+    for expected_id in expected_ids {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} is missing from Columbus proof intake"
+            ));
+        }
+    }
+
+    failures
+}
+
 fn t4_terminal_scenario_readiness_rows(
     contact_rows: &[T4TerminalContactEvidenceRow],
 ) -> Vec<T4TerminalScenarioReadinessRow> {
@@ -31802,6 +32063,7 @@ mod tests {
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
+        t4_terminal_columbus_proof_intake_gate_failures, t4_terminal_columbus_proof_intake_rows,
         t4_terminal_contact_evidence_gate_failures, t4_terminal_contact_evidence_rows,
         t4_terminal_contact_proof_docket_gate_failures, t4_terminal_contact_proof_docket_rows,
         t4_terminal_contact_source_catalog_gate_failures, t4_terminal_contact_source_catalog_rows,
@@ -31832,13 +32094,13 @@ mod tests {
         T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
-        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T4TerminalAccessColumnRow, T4TerminalColumbusProofIntakeRow, T4TerminalContactEvidenceRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactSourceCatalogRow,
+        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -34587,6 +34849,128 @@ mod tests {
             failures
                 .iter()
                 .any(|failure| failure.contains("source-backed proof task lacks proof artifact")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn t4_terminal_columbus_proof_intake_filters_exact_source_needed_slice() {
+        let proof_rows = vec![
+            T4TerminalContactProofDocketRow {
+                task_id: "T4PROOF-I271".to_string(),
+                queue_id: "T4CONTACT-T3GREATLAKES-I271".to_string(),
+                route: "I-271".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                terminal_district: "Columbus South".to_string(),
+                source_family: "public-terminal-contact-proof".to_string(),
+                required_proof_field: "route-to-terminal contact statement".to_string(),
+                selected_higher_tier_attachment_requirement:
+                    "must name selected higher-tier attachment or remain source-needed".to_string(),
+                contact_proof_source_artifact: "source-needed".to_string(),
+                proof_status: "source-needed".to_string(),
+                proof_blocker:
+                    "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                        .to_string(),
+                scenario_effect:
+                    "no scenario-readiness until contact proof source and attachment are accepted"
+                        .to_string(),
+                next_artifact:
+                    "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-04.md"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalContactProofDocketRow {
+                task_id: "T4PROOF-US22".to_string(),
+                queue_id: "T4CONTACT-T3GREATLAKES-US22".to_string(),
+                route: "US22".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                terminal_district: "Columbus South".to_string(),
+                source_family: "public-terminal-contact-proof".to_string(),
+                required_proof_field: "route-to-terminal contact statement".to_string(),
+                selected_higher_tier_attachment_requirement:
+                    "must name selected higher-tier attachment or remain source-needed".to_string(),
+                contact_proof_source_artifact: "source-needed".to_string(),
+                proof_status: "source-needed".to_string(),
+                proof_blocker:
+                    "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                        .to_string(),
+                scenario_effect:
+                    "no scenario-readiness until contact proof source and attachment are accepted"
+                        .to_string(),
+                next_artifact:
+                    "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-04.md"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalContactProofDocketRow {
+                task_id: "T4PROOF-I294".to_string(),
+                queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
+                route: "I-294".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                terminal_district: "Chicago Intermodal Complex".to_string(),
+                source_family: "public-terminal-contact-proof".to_string(),
+                required_proof_field: "route-to-terminal contact statement".to_string(),
+                selected_higher_tier_attachment_requirement:
+                    "must name selected higher-tier attachment or remain source-needed".to_string(),
+                contact_proof_source_artifact: "source-needed".to_string(),
+                proof_status: "source-needed".to_string(),
+                proof_blocker:
+                    "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                        .to_string(),
+                scenario_effect:
+                    "no scenario-readiness until contact proof source and attachment are accepted"
+                        .to_string(),
+                next_artifact:
+                    "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-04.md"
+                        .to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t4_terminal_columbus_proof_intake_rows(&proof_rows);
+        let failures = t4_terminal_columbus_proof_intake_gate_failures(&rows, &proof_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows
+            .iter()
+            .all(|row| row.terminal_district == "Columbus South"
+                && row.proof_status == "source-needed"
+                && row.validation_status == "review"));
+        assert!(rows.iter().any(|row| row.route == "I-271"));
+        assert!(rows.iter().any(|row| row.route == "US22"));
+    }
+
+    #[test]
+    fn t4_terminal_columbus_proof_intake_rejects_non_columbus_rows() {
+        let bad_row = T4TerminalColumbusProofIntakeRow {
+            intake_id: "T4COLUMBUS-BAD".to_string(),
+            task_id: "T4PROOF-I294".to_string(),
+            queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
+            route: "I-294".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district: "Chicago Intermodal Complex".to_string(),
+            source_family: "public-terminal-contact-proof".to_string(),
+            required_proof_field: "route-to-terminal contact statement".to_string(),
+            selected_higher_tier_attachment_requirement:
+                "must name selected higher-tier attachment or remain source-needed".to_string(),
+            contact_proof_source_artifact: "source-needed".to_string(),
+            proof_status: "source-needed".to_string(),
+            proof_blocker:
+                "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                    .to_string(),
+            next_artifact:
+                "waves/2026-05-13-columbus-south-terminal-contact-proof/plans/pulse-02.md"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        };
+
+        let failures = t4_terminal_columbus_proof_intake_gate_failures(&[bad_row], &[]);
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("not a Columbus South proof task")),
             "{failures:?}"
         );
     }
