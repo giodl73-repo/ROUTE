@@ -68,7 +68,7 @@ The full gate is the one that counts for closeout.
 2. Run `route release-manifest --gate` and confirm `data/release-manifest.csv` lists any new public artifact.
 3. Confirm `docs/SPEC_INDEX.md` names the ownership home for any new claim.
 4. Confirm any source-fetch artifact appears in `data/source-fetch-policy.csv`.
-5. Confirm any optimizer/bundle artifact appears in `data/tier-optimizer-runs.csv` or the release manifest.
+5. Confirm any optimizer/bundle artifact appears in `data/tier-optimizer-runs.csv`; `route release-manifest --gate` checks that manifest's artifacts exist.
 6. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
 7. Run `git diff --check`.
 8. Write or update the Milepost closeout.

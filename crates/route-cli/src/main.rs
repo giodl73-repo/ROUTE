@@ -11435,16 +11435,47 @@ fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
             failures.push(format!("missing release manifest row for {required}"));
         }
     }
+    if seen_paths.contains("data/tier-optimizer-runs.csv") {
+        failures.extend(release_manifest_optimizer_bundle_failures());
+    }
     failures
 }
 
 fn release_manifest_artifact_exists(path: &str) -> bool {
-    let direct = std::path::Path::new(path);
-    direct.exists()
-        || std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+    release_manifest_artifact_path(path).exists()
+}
+
+fn release_manifest_artifact_path(path: &str) -> PathBuf {
+    let direct = std::path::PathBuf::from(path);
+    if direct.exists() || direct.is_absolute() {
+        direct
+    } else {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .join(path)
-            .exists()
+    }
+}
+
+fn release_manifest_optimizer_bundle_failures() -> Vec<String> {
+    let manifest_path = release_manifest_artifact_path("data/tier-optimizer-runs.csv");
+    let rows = match load_tier_optimizer_runs(&manifest_path) {
+        Ok(rows) => rows,
+        Err(error) => {
+            return vec![format!(
+                "data/tier-optimizer-runs.csv could not be loaded for release coverage: {error}"
+            )];
+        }
+    };
+    rows.iter()
+        .filter(|row| matches!(row.gate_status.as_str(), "pass" | "held-known"))
+        .filter(|row| !release_manifest_artifact_exists(&row.artifact))
+        .map(|row| {
+            format!(
+                "{} optimizer artifact is missing from release coverage bundle",
+                row.artifact
+            )
+        })
+        .collect()
 }
 
 fn significant_moment_row_failure(row: &SignificantMomentRow) -> Option<String> {
