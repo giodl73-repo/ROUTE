@@ -338,6 +338,9 @@ Pavement debt is carried as a budget penalty from
 `data/tier-pavement-debt-budget.csv`: it can make one otherwise valid bundle
 more expensive than another, but it does not erase the bundle identity or hide
 the service relationship from maps, games, incidents, or later upgrade planning.
+Candidate and T2 service rows must expose that cost directly so downstream
+regionalization, Beck diagnostics, and game overlays do not have to rediscover
+the debt ledger by route label.
 
 ## Stop Generation Rules
 

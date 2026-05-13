@@ -131,6 +131,8 @@ Required fields:
 - `sla_pairs` or promise lineage when applicable
 - `selected_stops` or stop obligations when applicable
 - `budget_cost`
+- `pavement_debt_cost_m`, `pavement_debt_class`, and `pavement_debt_basis` when
+  the candidate carries pavement evidence or repair debt
 - `reason` or `repair_basis`
 - `validation_status`
 
@@ -175,6 +177,7 @@ Required fields:
 - `treatment_status`
 - contact or diagnostic evidence
 - duplicate/parallel service diagnostics
+- pavement debt cost/class/basis copied from the candidate or regionalizer row
 - `selection_action`
 - `selection_basis`
 - `validation_status`

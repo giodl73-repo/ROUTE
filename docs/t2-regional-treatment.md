@@ -29,9 +29,9 @@ Current T2 treatment consumes:
 
 | Artifact | Use |
 |---|---|
-| `data/tier-candidate-columns.csv` | Route-service candidate columns and repair lineage |
-| `data/t2-regionalizer.csv` | First-pass regional treatment rows |
-| `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, and parent-trunk lineage |
+| `data/tier-candidate-columns.csv` | Route-service candidate columns, repair lineage, and joined pavement debt budget penalties |
+| `data/t2-regionalizer.csv` | First-pass regional treatment rows with pavement debt carried forward from candidate columns |
+| `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, parent-trunk lineage, and pavement debt context for map/game consumers |
 | `data/t2-service-diagnostic-queue.csv` | Bundle-ready service rows still missing Beck/service diagnostics before map or game binding |
 | `data/t2-parallel-service-queue.csv` | Close-parallel Beck service rows that need spacing, split, merge, or promotion review |
 | `data/t2-contact-resolutions.csv` | Contact resolution and demotion decisions |
@@ -89,6 +89,13 @@ receive a map/game treatment. Segment candidate generation keeps those rows
 bundle-addressable so the registry, pavement docket, game overlays, and future
 diagnostic work can refer to the same `segment_bundle_id` without treating the
 route as selected T2 service prematurely.
+
+Pavement debt does not block this service identity. `data/tier-candidate-columns.csv`
+joins `data/tier-pavement-debt-budget.csv` by bundle id when available and by a
+route-level rollup when candidate bundle ids have not materialized yet. The
+regionalizer and service-selection rows carry `pavement_debt_cost_m`,
+`pavement_debt_class`, and `pavement_debt_basis` so T2 alternatives can be
+compared with capital/payment debt visible.
 
 `data/t2-service-diagnostic-queue.csv` owns that next handoff. It is emitted for
 bundle-ready rows that need `data/beck-t2-diagnostics.csv` before they can

@@ -1761,6 +1761,13 @@ enum Commands {
             value_name = "FILE"
         )]
         blocker_closure: PathBuf,
+        /// Pavement debt budget CSV with optimizer cost penalties
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-debt-budget.csv",
+            value_name = "FILE"
+        )]
+        pavement_debt_budget: PathBuf,
         /// Output candidate column CSV
         #[arg(
             long,
@@ -6924,6 +6931,7 @@ fn run_cli() -> Result<()> {
             contact_closure,
             endpoint_closure,
             blocker_closure,
+            pavement_debt_budget,
             output,
             gate,
         } => {
@@ -6940,6 +6948,8 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", endpoint_closure.display()))?;
             let blocker_rows = load_t2_blocker_closure(&blocker_closure)
                 .with_context(|| format!("loading {}", blocker_closure.display()))?;
+            let pavement_debt_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
+                .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
             let dispositions = t2_closure_dispositions(
                 &route_family_rows,
                 &graph_rows,
@@ -6947,7 +6957,9 @@ fn run_cli() -> Result<()> {
                 &endpoint_rows,
                 &blocker_rows,
             );
-            let column_rows = tier_candidate_column_rows(&witness_rows, &dispositions);
+            let pavement_debt_index = pavement_debt_budget_index(&pavement_debt_rows);
+            let column_rows =
+                tier_candidate_column_rows(&witness_rows, &dispositions, &pavement_debt_index);
             write_tier_candidate_columns(&output, &column_rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_candidate_column_summary(&output, &column_rows);
@@ -13030,6 +13042,10 @@ struct TierCandidateColumnRow {
     segment_bundle_id: String,
     bundle_status: String,
     bundle_action: String,
+    pavement_debt_cost_m: f64,
+    pavement_debt_class: String,
+    pavement_debt_basis: String,
+    pavement_debt_artifact: String,
     column_decision: String,
     evidence_status: String,
     required_artifact: String,
@@ -13047,6 +13063,9 @@ struct T2RegionalizerRow {
     column_decision: String,
     treatment_status: String,
     evidence_status: String,
+    pavement_debt_cost_m: f64,
+    pavement_debt_class: String,
+    pavement_debt_basis: String,
     regionalizer_action: String,
     validation_status: String,
 }
@@ -13070,6 +13089,9 @@ struct T2ServiceSelectionRow {
     close_parallel_corridors: String,
     unstopped_t1_contact_count: usize,
     unstopped_t1_contacts: String,
+    pavement_debt_cost_m: f64,
+    pavement_debt_class: String,
+    pavement_debt_basis: String,
     beck_service_action: String,
     qualification_basis: String,
     selection_action: String,
@@ -16183,11 +16205,21 @@ fn t2_closure_bundle_posture(
 fn tier_candidate_column_rows(
     rows: &[TierContactWitnessInputRow],
     dispositions: &std::collections::HashMap<String, T2ClosureDisposition>,
+    pavement_debt_index: &PavementDebtBudgetIndex,
 ) -> Vec<TierCandidateColumnRow> {
     rows.iter()
         .map(|row| {
             let closure = dispositions.get(&canonical_route_key(&row.route));
             let column_decision = tier_candidate_column_decision(row, closure);
+            let segment_bundle_id = closure
+                .map(|closure| closure.segment_bundle_id.clone())
+                .unwrap_or_default();
+            let (
+                pavement_debt_cost_m,
+                pavement_debt_class,
+                pavement_debt_basis,
+                pavement_debt_artifact,
+            ) = pavement_debt_for_candidate(&row.route, &segment_bundle_id, pavement_debt_index);
             TierCandidateColumnRow {
                 tier: row.tier.clone(),
                 route: row.route.clone(),
@@ -16208,15 +16240,17 @@ fn tier_candidate_column_rows(
                     .filter(|closure| closure.disposition == "candidate-review")
                     .map(|closure| closure.basis.clone())
                     .unwrap_or_else(|| row.repair_basis.clone()),
-                segment_bundle_id: closure
-                    .map(|closure| closure.segment_bundle_id.clone())
-                    .unwrap_or_default(),
+                segment_bundle_id,
                 bundle_status: closure
                     .map(|closure| closure.bundle_status.clone())
                     .unwrap_or_default(),
                 bundle_action: closure
                     .map(|closure| closure.bundle_action.clone())
                     .unwrap_or_default(),
+                pavement_debt_cost_m,
+                pavement_debt_class,
+                pavement_debt_basis,
+                pavement_debt_artifact,
                 column_decision: column_decision.to_string(),
                 evidence_status: tier_candidate_column_evidence_status(row, closure),
                 required_artifact: tier_candidate_column_required_artifact(row, closure),
@@ -16340,6 +16374,19 @@ fn tier_candidate_column_gate_failures(rows: &[TierCandidateColumnRow]) -> Vec<S
         if row.column_decision == "selected" && !row.validation_status.eq_ignore_ascii_case("pass")
         {
             failures.push(format!("{} selected without passing validation", row.route));
+        }
+        if row.pavement_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative pavement debt cost", row.route));
+        }
+        if row.pavement_debt_cost_m > 0.0
+            && (row.pavement_debt_class.trim().is_empty()
+                || row.pavement_debt_artifact.trim().is_empty()
+                || row.pavement_debt_basis.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has pavement debt cost without debt class, basis, and artifact",
+                row.route
+            ));
         }
     }
     failures
@@ -16574,6 +16621,9 @@ fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRo
                 column_decision: row.column_decision.clone(),
                 treatment_status: treatment_status.to_string(),
                 evidence_status: row.evidence_status.clone(),
+                pavement_debt_cost_m: row.pavement_debt_cost_m,
+                pavement_debt_class: row.pavement_debt_class.clone(),
+                pavement_debt_basis: row.pavement_debt_basis.clone(),
                 regionalizer_action: if row.column_decision == "selected" {
                     "include-in-regional-treatment"
                 } else {
@@ -16703,6 +16753,9 @@ fn t2_service_selection_rows(
                 unstopped_t1_contacts: diagnostic
                     .map(|diag| diag.unstopped_t1_contacts.clone())
                     .unwrap_or_default(),
+                pavement_debt_cost_m: row.pavement_debt_cost_m,
+                pavement_debt_class: row.pavement_debt_class.clone(),
+                pavement_debt_basis: row.pavement_debt_basis.clone(),
                 beck_service_action: diagnostic
                     .map(|diag| diag.service_action.to_string())
                     .unwrap_or_default(),
@@ -18285,6 +18338,19 @@ fn load_tier_pavement_source_gaps(path: &Path) -> Result<Vec<TierPavementSourceG
 const PAVEMENT_EVIDENCE_COST_PER_MEMBER_M: f64 = 0.05;
 const PAVEMENT_REPAIR_COST_PER_MEMBER_M: f64 = 2.50;
 
+#[derive(Debug, Clone, Default)]
+struct PavementDebtBudgetIndex {
+    by_bundle: std::collections::HashMap<String, TierPavementDebtBudgetRow>,
+    by_route: std::collections::HashMap<String, TierPavementDebtBudgetRollup>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct TierPavementDebtBudgetRollup {
+    total_debt_cost_m: f64,
+    debt_classes: std::collections::BTreeSet<String>,
+    affected_bundles: std::collections::BTreeSet<String>,
+}
+
 fn tier_pavement_debt_budget_rows(
     gap_rows: &[TierPavementSourceGapRow],
 ) -> Vec<TierPavementDebtBudgetRow> {
@@ -18360,6 +18426,72 @@ fn write_tier_pavement_debt_budget(path: &Path, rows: &[TierPavementDebtBudgetRo
     }
     writer.flush()?;
     Ok(())
+}
+
+fn load_tier_pavement_debt_budget(path: &Path) -> Result<Vec<TierPavementDebtBudgetRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
+    let mut index = PavementDebtBudgetIndex::default();
+    for row in rows {
+        index
+            .by_bundle
+            .insert(row.segment_bundle_id.clone(), row.clone());
+        let route_rollup = index
+            .by_route
+            .entry(canonical_route_key(&row.route))
+            .or_default();
+        route_rollup.total_debt_cost_m =
+            round_cost_m(route_rollup.total_debt_cost_m + row.total_debt_cost_m);
+        route_rollup.debt_classes.insert(row.debt_class.clone());
+        route_rollup
+            .affected_bundles
+            .insert(row.segment_bundle_id.clone());
+    }
+    index
+}
+
+fn pavement_debt_for_candidate(
+    route: &str,
+    segment_bundle_id: &str,
+    index: &PavementDebtBudgetIndex,
+) -> (f64, String, String, String) {
+    if let Some(row) = index.by_bundle.get(segment_bundle_id) {
+        return (
+            row.total_debt_cost_m,
+            row.debt_class.clone(),
+            row.budget_basis.clone(),
+            "data/tier-pavement-debt-budget.csv".to_string(),
+        );
+    }
+
+    if let Some(rollup) = index.by_route.get(&canonical_route_key(route)) {
+        return (
+            rollup.total_debt_cost_m,
+            join_string_set(&rollup.debt_classes),
+            format!(
+                "route-level pavement debt rollup across {} bundle(s) pending candidate bundle materialization",
+                rollup.affected_bundles.len()
+            ),
+            "data/tier-pavement-debt-budget.csv".to_string(),
+        );
+    }
+
+    (
+        0.0,
+        "none".to_string(),
+        "no pavement debt row joined".to_string(),
+        String::new(),
+    )
 }
 
 fn print_tier_pavement_debt_budget_summary(
@@ -28203,7 +28335,7 @@ mod tests {
         parse_stop_candidates, parse_t1_diamond_validation, parse_t1_evidence_windows,
         parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
         parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        parse_throughput_proof_matrix, pavement_standard_gate_failures,
+        parse_throughput_proof_matrix, pavement_debt_budget_index, pavement_standard_gate_failures,
         planned_standard_inventory_missing, pressure_scenario_gate_failures,
         pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
         pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
@@ -28260,22 +28392,21 @@ mod tests {
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
-        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
-        ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementDebtBudgetIndex,
+        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleRepairQueueRow,
+        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow, T2GraphContactRepairRow,
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow,
-        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -29402,7 +29533,11 @@ mod tests {
             },
         ];
 
-        let columns = tier_candidate_column_rows(&rows, &std::collections::HashMap::new());
+        let columns = tier_candidate_column_rows(
+            &rows,
+            &std::collections::HashMap::new(),
+            &PavementDebtBudgetIndex::default(),
+        );
         let failures = tier_candidate_column_gate_failures(&columns);
 
         assert_eq!(columns[0].column_decision, "selected");
@@ -29457,11 +29592,33 @@ mod tests {
             validation_status: "review".to_string(),
         }];
         let dispositions = t2_closure_dispositions(&[], &graph_rows, &[], &[], &blocker_rows);
+        let pavement_debt_rows = vec![TierPavementDebtBudgetRow {
+            tier: "T2".to_string(),
+            route: "I30".to_string(),
+            region_id: "component-1".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I30".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I30".to_string(),
+            debt_class: "repair-debt".to_string(),
+            blocked_member_count: 2,
+            affected_states: "TX".to_string(),
+            evidence_debt_units: 0,
+            repair_debt_units: 2,
+            estimated_evidence_cost_m: 0.0,
+            estimated_repair_cost_m: 5.0,
+            total_debt_cost_m: 5.0,
+            budget_basis: "fixture pavement repair debt".to_string(),
+            optimizer_penalty: "subtract 5.00 budget-cost units".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let pavement_debt_index = pavement_debt_budget_index(&pavement_debt_rows);
 
-        let columns = tier_candidate_column_rows(&rows, &dispositions);
+        let columns = tier_candidate_column_rows(&rows, &dispositions, &pavement_debt_index);
 
         assert_eq!(columns[0].column_decision, "review");
         assert_eq!(columns[0].bundle_status, "bundle-ready");
+        assert_eq!(columns[0].pavement_debt_cost_m, 5.0);
+        assert_eq!(columns[0].pavement_debt_class, "repair-debt");
         assert_eq!(columns[0].evidence_status, "closure-accepted-bundle-ready");
         assert_eq!(
             columns[0].required_artifact,
@@ -29519,7 +29676,8 @@ mod tests {
         }];
         let dispositions = t2_closure_dispositions(&[], &[], &contact_rows, &[], &blocker_rows);
 
-        let columns = tier_candidate_column_rows(&rows, &dispositions);
+        let columns =
+            tier_candidate_column_rows(&rows, &dispositions, &PavementDebtBudgetIndex::default());
 
         assert_eq!(columns[0].column_decision, "blocked");
         assert_eq!(columns[0].bundle_status, "bundle-missing");
@@ -29549,6 +29707,10 @@ mod tests {
             segment_bundle_id: String::new(),
             bundle_status: "bundle-missing".to_string(),
             bundle_action: "resolve route family or add segment bundle".to_string(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
+            pavement_debt_artifact: String::new(),
             column_decision: "blocked".to_string(),
             evidence_status: "closure-bundle-pending".to_string(),
             required_artifact: "data/t2-blocker-closure.csv".to_string(),
@@ -29606,6 +29768,10 @@ mod tests {
             segment_bundle_id: "US.HWYBUNDLE.I285".to_string(),
             bundle_status: "bundle-ready".to_string(),
             bundle_action: "use bundle as service join surface".to_string(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
+            pavement_debt_artifact: String::new(),
             column_decision: "review".to_string(),
             evidence_status: "closure-accepted-bundle-ready".to_string(),
             required_artifact: "data/t2-contact-closure.csv".to_string(),
@@ -29642,6 +29808,9 @@ mod tests {
             close_parallel_corridors: String::new(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -29700,6 +29869,9 @@ mod tests {
             close_parallel_corridors: String::new(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -29754,6 +29926,9 @@ mod tests {
             close_parallel_corridors: String::new(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -29808,6 +29983,9 @@ mod tests {
             close_parallel_corridors: "I-65".to_string(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: "keep".to_string(),
             qualification_basis: "distinct-parent-service".to_string(),
             selection_action: "split-parallel-service".to_string(),
@@ -30836,6 +31014,9 @@ mod tests {
             close_parallel_corridors: String::new(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "closure-review-needs-beck-diagnostic".to_string(),
@@ -31005,6 +31186,10 @@ mod tests {
                 segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
                 bundle_status: "bundle-ready".to_string(),
                 bundle_action: "use bundle as service join surface".to_string(),
+                pavement_debt_cost_m: 5.85,
+                pavement_debt_class: "evidence-debt".to_string(),
+                pavement_debt_basis: "fixture pavement debt".to_string(),
+                pavement_debt_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
                 column_decision: "selected".to_string(),
                 evidence_status: "accepted".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -31030,6 +31215,10 @@ mod tests {
                 segment_bundle_id: "US.HWYBUNDLE.I29".to_string(),
                 bundle_status: "bundle-ready".to_string(),
                 bundle_action: "use bundle as service join surface".to_string(),
+                pavement_debt_cost_m: 0.0,
+                pavement_debt_class: "none".to_string(),
+                pavement_debt_basis: "no pavement debt row joined".to_string(),
+                pavement_debt_artifact: String::new(),
                 column_decision: "review".to_string(),
                 evidence_status: "review".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -31042,6 +31231,7 @@ mod tests {
 
         assert_eq!(regionalizer.len(), 2);
         assert_eq!(regionalizer[0].treatment_status, "selected-treatment");
+        assert_eq!(regionalizer[0].pavement_debt_cost_m, 5.85);
         assert_eq!(regionalizer[1].treatment_status, "review-treatment");
         assert!(failures.is_empty());
     }
@@ -31059,6 +31249,9 @@ mod tests {
                 column_decision: "selected".to_string(),
                 treatment_status: "selected-treatment".to_string(),
                 evidence_status: "accepted".to_string(),
+                pavement_debt_cost_m: 0.0,
+                pavement_debt_class: "none".to_string(),
+                pavement_debt_basis: "no pavement debt row joined".to_string(),
                 regionalizer_action: "include-in-regional-treatment".to_string(),
                 validation_status: "pass".to_string(),
             },
@@ -31072,6 +31265,9 @@ mod tests {
                 column_decision: "review".to_string(),
                 treatment_status: "review-treatment".to_string(),
                 evidence_status: "review".to_string(),
+                pavement_debt_cost_m: 5.85,
+                pavement_debt_class: "evidence-debt".to_string(),
+                pavement_debt_basis: "fixture pavement debt".to_string(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -31085,6 +31281,9 @@ mod tests {
                 column_decision: "review".to_string(),
                 treatment_status: "review-treatment".to_string(),
                 evidence_status: "closure-accepted".to_string(),
+                pavement_debt_cost_m: 0.0,
+                pavement_debt_class: "none".to_string(),
+                pavement_debt_basis: "no pavement debt row joined".to_string(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -31115,6 +31314,9 @@ mod tests {
             column_decision: "selected".to_string(),
             treatment_status: "selected-treatment".to_string(),
             evidence_status: "accepted".to_string(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             regionalizer_action: "include-in-regional-treatment".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -31148,6 +31350,9 @@ mod tests {
                 close_parallel_corridors: String::new(),
                 unstopped_t1_contact_count: 0,
                 unstopped_t1_contacts: String::new(),
+                pavement_debt_cost_m: 0.0,
+                pavement_debt_class: "none".to_string(),
+                pavement_debt_basis: "no pavement debt row joined".to_string(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
                 selection_action: "keep-service-column".to_string(),
@@ -31172,6 +31377,9 @@ mod tests {
                 close_parallel_corridors: String::new(),
                 unstopped_t1_contact_count: 0,
                 unstopped_t1_contacts: String::new(),
+                pavement_debt_cost_m: 0.0,
+                pavement_debt_class: "none".to_string(),
+                pavement_debt_basis: "no pavement debt row joined".to_string(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
                 selection_action: "parent-region-review".to_string(),
@@ -31384,6 +31592,9 @@ mod tests {
             close_parallel_corridors: String::new(),
             unstopped_t1_contact_count: 0,
             unstopped_t1_contacts: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
             selection_action: "source-needed".to_string(),
@@ -31875,6 +32086,10 @@ mod tests {
             segment_bundle_id: String::new(),
             bundle_status: String::new(),
             bundle_action: String::new(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
+            pavement_debt_artifact: String::new(),
             column_decision: "demote".to_string(),
             evidence_status: "policy-action".to_string(),
             required_artifact: "data/tier-table.csv".to_string(),
