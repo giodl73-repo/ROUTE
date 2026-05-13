@@ -25,6 +25,12 @@ For just the structured release metadata gate:
 cargo run -q -p route -- release-manifest --gate
 ```
 
+For just the source-fetch cache policy gate:
+
+```powershell
+cargo run -q -p route -- source-fetch-policy --gate
+```
+
 For a faster documentation-only check while iterating:
 
 ```powershell
@@ -55,6 +61,7 @@ The full gate is the one that counts for closeout.
 1. Run `scripts/check-mileposts.ps1`.
 2. Run `route release-manifest --gate` and confirm `data/release-manifest.csv` lists any new public artifact.
 3. Confirm `docs/SPEC_INDEX.md` names the ownership home for any new claim.
-4. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
-5. Run `git diff --check`.
-6. Write or update the Milepost closeout.
+4. Confirm any source-fetch artifact appears in `data/source-fetch-policy.csv`.
+5. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
+6. Run `git diff --check`.
+7. Write or update the Milepost closeout.
