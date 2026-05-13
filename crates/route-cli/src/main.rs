@@ -771,6 +771,33 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit runnable pavement source acquisition tasks from the state plan
+    TierPavementAcquisitionDocket {
+        /// Path to pavement acquisition plan CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-acquisition-plan.csv",
+            value_name = "FILE"
+        )]
+        acquisition_plan: PathBuf,
+        /// Output pavement acquisition docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-acquisition-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Show only one priority band, e.g. A, B, or C
+        #[arg(long)]
+        priority: Option<String>,
+        /// Print runnable commands in execution order
+        #[arg(long)]
+        script: bool,
+        /// Fail if acquisition tasks lack command/verification contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -5130,6 +5157,41 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement acquisition plan gate: PASS");
+            }
+        }
+
+        Commands::TierPavementAcquisitionDocket {
+            acquisition_plan,
+            output,
+            priority,
+            script,
+            gate,
+        } => {
+            println!("route tier-pavement-acquisition-docket");
+            let plan_rows = load_tier_pavement_acquisition_plan(&acquisition_plan)
+                .with_context(|| format!("loading {}", acquisition_plan.display()))?;
+            let rows = tier_pavement_acquisition_docket_rows(&plan_rows);
+            write_tier_pavement_acquisition_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_acquisition_docket_summary(
+                &output,
+                &rows,
+                priority.as_deref(),
+                script,
+            );
+
+            if gate {
+                let failures = tier_pavement_acquisition_docket_gate_failures(&rows, &plan_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement acquisition docket gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement acquisition docket gate failed");
+                }
+                println!();
+                println!("Tier pavement acquisition docket gate: PASS");
             }
         }
 
@@ -12383,6 +12445,22 @@ struct TierPavementAcquisitionPlanRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementAcquisitionDocketRow {
+    task_id: String,
+    state: String,
+    source_priority: String,
+    affected_routes: String,
+    affected_bundles: String,
+    blocked_member_count: usize,
+    fetch_command: String,
+    rebuild_command: String,
+    verify_command: String,
+    source_contract: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Deserialize)]
 struct TierTableScoreRow {
     tier: String,
@@ -16382,6 +16460,184 @@ fn tier_pavement_acquisition_plan_gate_failures(
     failures
 }
 
+fn load_tier_pavement_acquisition_plan(path: &Path) -> Result<Vec<TierPavementAcquisitionPlanRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_acquisition_docket_rows(
+    plan_rows: &[TierPavementAcquisitionPlanRow],
+) -> Vec<TierPavementAcquisitionDocketRow> {
+    let mut rows = plan_rows
+        .iter()
+        .map(|row| {
+            let task_id = format!(
+                "PAVEMENT-{}-{}",
+                row.source_priority,
+                row.state.to_ascii_uppercase()
+            );
+            TierPavementAcquisitionDocketRow {
+                task_id,
+                state: row.state.clone(),
+                source_priority: row.source_priority.clone(),
+                affected_routes: row.affected_routes.clone(),
+                affected_bundles: row.affected_bundles.clone(),
+                blocked_member_count: row.blocked_member_count,
+                fetch_command: format!("route fetch-hpms --states {}", row.state),
+                rebuild_command: "route build".to_string(),
+                verify_command:
+                    "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                        .to_string(),
+                source_contract: row.required_fields.clone(),
+                next_artifact: row.next_artifact.clone(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        acquisition_priority_rank(&a.source_priority)
+            .cmp(&acquisition_priority_rank(&b.source_priority))
+            .then_with(|| b.blocked_member_count.cmp(&a.blocked_member_count))
+            .then_with(|| a.state.cmp(&b.state))
+    });
+    rows
+}
+
+fn acquisition_priority_rank(priority: &str) -> u8 {
+    match priority {
+        "A" => 0,
+        "B" => 1,
+        "C" => 2,
+        _ => 3,
+    }
+}
+
+fn write_tier_pavement_acquisition_docket(
+    path: &Path,
+    rows: &[TierPavementAcquisitionDocketRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_acquisition_docket_summary(
+    output: &Path,
+    rows: &[TierPavementAcquisitionDocketRow],
+    priority: Option<&str>,
+    script: bool,
+) {
+    let filtered = rows
+        .iter()
+        .filter(|row| {
+            priority
+                .map(|priority| row.source_priority.eq_ignore_ascii_case(priority))
+                .unwrap_or(true)
+        })
+        .collect::<Vec<_>>();
+    let mut by_priority = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_priority.entry(row.source_priority.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} pavement acquisition docket rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  rows shown: {} / {}", filtered.len(), rows.len());
+    for (priority, count) in by_priority {
+        println!("  priority {priority}: {count}");
+    }
+
+    if script {
+        println!();
+        for row in filtered {
+            println!("# {} {} {}", row.task_id, row.state, row.affected_routes);
+            println!("{}", row.fetch_command);
+            println!("{}", row.rebuild_command);
+            println!("{}", row.verify_command);
+            println!();
+        }
+    }
+}
+
+fn tier_pavement_acquisition_docket_gate_failures(
+    rows: &[TierPavementAcquisitionDocketRow],
+    plan_rows: &[TierPavementAcquisitionPlanRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !plan_rows.is_empty() && rows.len() != plan_rows.len() {
+        failures.push(format!(
+            "acquisition docket rows {} do not match plan rows {}",
+            rows.len(),
+            plan_rows.len()
+        ));
+    }
+    for row in rows {
+        if row.task_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_priority.trim().is_empty()
+            || row.affected_routes.trim().is_empty()
+            || row.affected_bundles.trim().is_empty()
+            || row.fetch_command.trim().is_empty()
+            || row.rebuild_command.trim().is_empty()
+            || row.verify_command.trim().is_empty()
+            || row.source_contract.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete acquisition docket row",
+                row.task_id
+            ));
+        }
+        if !row.fetch_command.starts_with("route fetch-hpms --states ") {
+            failures.push(format!("{} has invalid fetch command", row.task_id));
+        }
+        if row.rebuild_command != "route build" {
+            failures.push(format!("{} has invalid rebuild command", row.task_id));
+        }
+        if !row
+            .verify_command
+            .contains("route tier-pavement-docket --gate")
+            || !row
+                .verify_command
+                .contains("route tier-pavement-source-gaps --gate")
+        {
+            failures.push(format!("{} has invalid verify command", row.task_id));
+        }
+        if !matches!(row.source_priority.as_str(), "A" | "B" | "C") {
+            failures.push(format!(
+                "{} has invalid source priority {}",
+                row.task_id, row.source_priority
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.task_id, row.validation_status
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -19815,6 +20071,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-pavement-acquisition-plan",
                 "route tier-pavement-acquisition-plan --gate",
                 "data/tier-pavement-acquisition-plan.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "tier-pavement-acquisition-docket",
+                "route tier-pavement-acquisition-docket --gate",
+                "data/tier-pavement-acquisition-docket.csv",
                 "pass",
                 0,
                 "",
@@ -25462,6 +25726,7 @@ mod tests {
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
         tier_connectivity_gate_failures_with_exceptions, tier_contact_witness_gate_failures,
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
+        tier_pavement_acquisition_docket_gate_failures, tier_pavement_acquisition_docket_rows,
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_route_state_scope, tier_pavement_source_gap_gate_failures,
@@ -25479,9 +25744,9 @@ mod tests {
         T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionPlanRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDocketRow, TierPavementSourceGapRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -28120,6 +28385,39 @@ mod tests {
         assert_eq!(ia.bundle_count, 2);
         assert_eq!(ia.blocked_member_count, 45);
         assert_eq!(ia.source_priority, "B");
+    }
+
+    #[test]
+    fn tier_pavement_acquisition_docket_emits_runnable_state_tasks() {
+        let plan_rows = vec![TierPavementAcquisitionPlanRow {
+            state: "TX".to_string(),
+            tier: "T2".to_string(),
+            source_family: "HPMS IRI plus state pavement condition feed".to_string(),
+            route_count: 2,
+            affected_routes: "US80;US90".to_string(),
+            bundle_count: 2,
+            affected_bundles: "US.HWYBUNDLE.US80;US.HWYBUNDLE.US90".to_string(),
+            blocked_member_count: 62,
+            source_priority: "A".to_string(),
+            acquisition_action: "refresh HPMS/state pavement feed".to_string(),
+            required_fields: "route id; IRI; observation year".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            optimizer_effect: "populate member pavement evidence".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows: Vec<TierPavementAcquisitionDocketRow> =
+            tier_pavement_acquisition_docket_rows(&plan_rows);
+        let failures = tier_pavement_acquisition_docket_gate_failures(&rows, &plan_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].task_id, "PAVEMENT-A-TX");
+        assert_eq!(rows[0].fetch_command, "route fetch-hpms --states TX");
+        assert_eq!(rows[0].rebuild_command, "route build");
+        assert!(rows[0]
+            .verify_command
+            .contains("route tier-pavement-docket --gate"));
     }
 
     #[test]

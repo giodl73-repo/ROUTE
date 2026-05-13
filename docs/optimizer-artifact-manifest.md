@@ -85,6 +85,7 @@ The current all-tier manifest includes:
 - T1/T2 pavement docket;
 - T1/T2 pavement source-gap rollup;
 - T1/T2 pavement acquisition plan;
+- T1/T2 pavement acquisition docket;
 - T2 bundle overlays;
 - lower-tier pressure witnesses;
 - T3/T4 pressure intake;
@@ -114,7 +115,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 | Promise-pair selection | `data/t1-sla-candidate-pairs.csv` |
 | Route/stop/service schema | `docs/route-stop-column-schema.md` |
 | Segment identity and bundle joins | `docs/route-architecture.md`, `docs/national-segment-identity-spec.md`, `docs/tier-segment-stitching-spec.md`, `data/tier-segment-candidates.csv`, `data/national-segment-registry.csv`, `data/national-segment-bundles.csv`, and `data/bundle-architecture.csv` |
-| Pavement and ride-quality floors | `docs/tier-pavement-standards.md`, `data/tier-pavement-standards.csv`, `data/tier-pavement-docket.csv`, `data/tier-pavement-source-gaps.csv`, and `data/tier-pavement-acquisition-plan.csv` |
+| Pavement and ride-quality floors | `docs/tier-pavement-standards.md`, `data/tier-pavement-standards.csv`, `data/tier-pavement-docket.csv`, `data/tier-pavement-source-gaps.csv`, `data/tier-pavement-acquisition-plan.csv`, and `data/tier-pavement-acquisition-docket.csv` |
 | Beck topology truth | `docs/beck-renderer-contract.md` plus map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |
 | T3/T4 access doctrine | `docs/t3-t4-access-optimization.md` |

@@ -67,6 +67,7 @@ Milepost 10 is done when:
 | 31 | Feed T1/T2 segment members into bundle registry | ✅ done | `route national-segment-registry --gate` now consumes `data/tier-segment-candidates.csv` and `data/tier-pavement-docket.csv`; T1/T2 bundle readiness now depends on member pavement readiness |
 | 32 | Roll pavement blockers up to bundle source actions | ✅ done | `route tier-pavement-source-gaps --gate` emits `data/tier-pavement-source-gaps.csv`, aggregating 512 blocked T2 member rows into 8 bundle-level source actions |
 | 33 | Convert pavement source gaps into state acquisition tasks | ✅ done | `route tier-pavement-acquisition-plan --gate` emits `data/tier-pavement-acquisition-plan.csv`, grouping the 8 bundle gaps into 26 state-level HPMS/DOT pavement source tasks |
+| 34 | Emit runnable pavement acquisition docket | ✅ done | `route tier-pavement-acquisition-docket --gate --priority A --script` emits `data/tier-pavement-acquisition-docket.csv`, giving fetch/rebuild/verify commands for priority state source tasks |
 
 ## Post-Review Repair Slice
 

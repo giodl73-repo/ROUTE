@@ -197,6 +197,11 @@ T1/T2 bundles whose only registry blocker is pavement evidence.
 state-level HPMS/DOT pavement source tasks. It is an acquisition planner, not a
 readiness proof; member readiness still closes through `data/tier-pavement-docket.csv`.
 
+`route tier-pavement-acquisition-docket --gate` converts acquisition-plan rows
+into runnable fetch/rebuild/verify commands. The docket may be filtered by
+priority and printed as a script, but it still does not promote readiness by
+itself.
+
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor
 bundle. Downstream service lines, Beck renderers, game overlays, incidents,

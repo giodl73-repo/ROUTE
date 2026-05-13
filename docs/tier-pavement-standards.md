@@ -84,3 +84,8 @@ state-level acquisition tasks. Because route-inferred state scope may cover more
 than the exact missing member edges, state rows use conservative ceiling
 allocation for blocked-member coverage. The exact closure check remains the
 member-level pavement docket.
+
+`data/tier-pavement-acquisition-docket.csv` turns the state plan into runnable
+tasks. Each row names the `route fetch-hpms --states <STATE>` command, the graph
+rebuild command, and the pavement verification commands that must be rerun
+before a bundle can leave review.
