@@ -6,6 +6,11 @@ data/significant-moments.csv,history_ledger,M10,release_candidate,public,cargo r
 docs/significant-moments.md,history_docs,M10,release_candidate,public,manual review,Guide for adding significant-moment flairs
 docs/source-fetch-cache-policy.md,source_policy,M10,release_candidate,public,manual review,Policy requiring scoped fetches to merge and failed fetches to preserve prior cache
 data/source-fetch-policy.csv,source_policy,M10,release_candidate,public,cargo run -q -p route -- source-fetch-policy --gate,Gateable fetch cache preservation policy ledger
+docs/optimizer-artifact-manifest.md,optimizer_docs,M10,release_candidate,public,manual review,Optimizer manifest contract explaining gate statuses held-known blockers and proof ownership
+data/tier-optimizer-runs.csv,optimizer_manifest,M10,release_candidate,public,cargo run -q -p route -- optimizer-manifest --gate,Recursive tier optimizer run manifest proving optimizer artifacts remain wired into the bundle
+data/bundle-architecture.csv,bundle_architecture,M10,release_candidate,public,cargo run -q -p route -- bundle-architecture --gate,Crate-level bundle adoption ledger proving bundle-facing API ownership
+data/national-segment-registry.csv,bundle_registry,M10,release_candidate,public,cargo run -q -p route -- national-segment-registry --gate,Segment-member identity registry for bundle membership aliases state scope and readiness actions
+data/national-segment-bundles.csv,bundle_registry,M10,release_candidate,public,cargo run -q -p route -- national-segment-bundles --gate,Service and corridor bundle registry derived from segment identity
 docs/SYSTEM_PLAN.md,roadmap,M0,release_candidate,public,manual review,Milepost operating model
 docs/DIMENSIONS.md,scoring_docs,M1,release_candidate,public,cargo test --workspace,Dimension registry checked by tests
 data/scores-all.csv,score_ledger,M1,release_candidate,public,cargo run -q -p route -- score-all,Current v1.4 score ledger

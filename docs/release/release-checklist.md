@@ -31,6 +31,12 @@ For just the source-fetch cache policy gate:
 cargo run -q -p route -- source-fetch-policy --gate
 ```
 
+For just the optimizer manifest gate:
+
+```powershell
+cargo run -q -p route -- optimizer-manifest --gate
+```
+
 For a faster documentation-only check while iterating:
 
 ```powershell
@@ -62,6 +68,7 @@ The full gate is the one that counts for closeout.
 2. Run `route release-manifest --gate` and confirm `data/release-manifest.csv` lists any new public artifact.
 3. Confirm `docs/SPEC_INDEX.md` names the ownership home for any new claim.
 4. Confirm any source-fetch artifact appears in `data/source-fetch-policy.csv`.
-5. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
-6. Run `git diff --check`.
-7. Write or update the Milepost closeout.
+5. Confirm any optimizer/bundle artifact appears in `data/tier-optimizer-runs.csv` or the release manifest.
+6. Confirm every held claim appears in a closeout, docket, or Blueprint ledger.
+7. Run `git diff --check`.
+8. Write or update the Milepost closeout.

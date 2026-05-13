@@ -11428,6 +11428,8 @@ fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec<String> {
         "docs/SPEC_INDEX.md",
         "data/source-fetch-policy.csv",
         "docs/source-fetch-cache-policy.md",
+        "docs/optimizer-artifact-manifest.md",
+        "data/tier-optimizer-runs.csv",
     ] {
         if !seen_paths.contains(required) {
             failures.push(format!("missing release manifest row for {required}"));
