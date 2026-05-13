@@ -1,7 +1,7 @@
 ---
 wave: constraint-ledger-blocker-burndown
 date_open: 2026-05-13
-status: active
+status: done
 source: optimizer-constraint-budget
 ---
 
@@ -79,7 +79,7 @@ should follow specific T4 zone assignments or T2 game holds.
 | 03 - T4 terminal evidence holds | done | 69 zone-scoped terminal evidence holds now name terminal districts and source actions |
 | 04 - T2 game and bundle-binding holds | done | 15 service-class holds carried as held-known; 1 bundle validation hold remains |
 | 05 - Beck and publication blocker cleanup | done | T1 overlap-review made held-known; T2 Beck blockers audited by class |
-| 06 - Wave close | planned | close after blocker counts and gates agree |
+| 06 - Wave close | done | closeout reconciles 142 ledger rows, 137 budget rows, 0 hard blockers, and 117 claim blockers |
 
 ## Done Criteria
 

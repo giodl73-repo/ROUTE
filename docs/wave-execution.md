@@ -63,7 +63,7 @@ Current backfill coverage:
 | `2026-05-12-promise-horizon` | T1 promise selector, design review, METIS stop/topology gates. |
 | `2026-05-12-optimizer-got-a-constitution` | Optimizer doctrine, T2/T3/T4 closure, bundles, manifests, source policy. |
 | `2026-05-13-constraint-ledger-spine` | Closed wave: constraint ledger/budget migration across all blocker families. |
-| `2026-05-13-constraint-ledger-blocker-burndown` | Active wave: turn normalized constraint-budget blockers into explicit decisions. |
+| `2026-05-13-constraint-ledger-blocker-burndown` | Closed wave: turned normalized constraint-budget blockers into explicit decisions and residual held-known backlogs. |
 
-The next planned pulse is `Constraint Ledger Blocker Burn-Down` pulse 01:
-resolve or deliberately carry the I-84 T1 promise hard blocker.
+No wave is currently active. Plan the next wave from the residual closeout
+backlog before running `/route-pulse` again.
