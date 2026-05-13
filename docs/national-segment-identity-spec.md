@@ -200,7 +200,8 @@ readiness proof; member readiness still closes through `data/tier-pavement-docke
 `route tier-pavement-acquisition-docket --gate` converts acquisition-plan rows
 into runnable fetch/rebuild/verify commands. The docket may be filtered by
 priority and printed as a script, but it still does not promote readiness by
-itself.
+itself. The rebuild command is `route build --all-roads` because T2 pavement
+evidence depends on US-route graph members as well as Interstate members.
 
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor

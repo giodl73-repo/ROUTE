@@ -65,9 +65,9 @@ Milepost 10 is done when:
 | 29 | Pivot T1/T2 bundles to segment-level stitching | 🔄 partial | `docs/tier-segment-stitching-spec.md` and `route tier-segment-candidates --gate` make T1/T2 selectors decompose into graph edge members before bundle promotion |
 | 30 | Join T1/T2 segment candidates to pavement standards | ✅ done | `route tier-pavement-docket --gate` emits `data/tier-pavement-docket.csv`, marking each selected member as pavement-pass, repair-required, or source-needed before SLA/transit readiness |
 | 31 | Feed T1/T2 segment members into bundle registry | ✅ done | `route national-segment-registry --gate` now consumes `data/tier-segment-candidates.csv` and `data/tier-pavement-docket.csv`; T1/T2 bundle readiness now depends on member pavement readiness |
-| 32 | Roll pavement blockers up to bundle source actions | ✅ done | `route tier-pavement-source-gaps --gate` emits `data/tier-pavement-source-gaps.csv`, aggregating 512 blocked T2 member rows into 8 bundle-level source actions |
-| 33 | Convert pavement source gaps into state acquisition tasks | ✅ done | `route tier-pavement-acquisition-plan --gate` emits `data/tier-pavement-acquisition-plan.csv`, grouping the 8 bundle gaps into 26 state-level HPMS/DOT pavement source tasks |
-| 34 | Emit runnable pavement acquisition docket | ✅ done | `route tier-pavement-acquisition-docket --gate --priority A --script` emits `data/tier-pavement-acquisition-docket.csv`, giving fetch/rebuild/verify commands for priority state source tasks |
+| 32 | Roll pavement blockers up to bundle source actions | ✅ done | `route tier-pavement-source-gaps --gate` emits `data/tier-pavement-source-gaps.csv`, aggregating 411 blocked T2 member rows into 6 bundle-level source actions after the TX HPMS refresh |
+| 33 | Convert pavement source gaps into state acquisition tasks | ✅ done | `route tier-pavement-acquisition-plan --gate` emits `data/tier-pavement-acquisition-plan.csv`, grouping the 6 bundle gaps into 23 state-level HPMS/DOT pavement source tasks |
+| 34 | Emit runnable pavement acquisition docket | ✅ done | `route tier-pavement-acquisition-docket --gate --priority A --script` emits `data/tier-pavement-acquisition-docket.csv`, giving fetch/`route build --all-roads`/verify commands for priority state source tasks |
 
 ## Post-Review Repair Slice
 

@@ -88,4 +88,7 @@ member-level pavement docket.
 `data/tier-pavement-acquisition-docket.csv` turns the state plan into runnable
 tasks. Each row names the `route fetch-hpms --states <STATE>` command, the graph
 rebuild command, and the pavement verification commands that must be rerun
-before a bundle can leave review.
+before a bundle can leave review. State-scoped HPMS fetches merge the refreshed
+state rows into `data/cache/hpms_2018.csv` instead of replacing the national
+cache, and docket rebuilds use `route build --all-roads` so T2 US-route members
+receive pavement evidence before bundle review.

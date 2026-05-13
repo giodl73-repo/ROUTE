@@ -2920,50 +2920,53 @@ fn run_cli() -> Result<()> {
 
             if let Some(state_filter) = states {
                 // Fetch only specified states
-                let filter: Vec<&str> = state_filter.split(',').map(str::trim).collect();
-                let mut all: Vec<route_data::HpmsRecord> = Vec::new();
+                let filter = state_filter
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(|value| value.to_ascii_uppercase())
+                    .collect::<std::collections::BTreeSet<_>>();
+                let mut fetched: Vec<route_data::HpmsRecord> = Vec::new();
                 for (abbr, name) in route_data::STATE_CODES {
-                    if filter.iter().any(|f| f.eq_ignore_ascii_case(abbr)) {
+                    if filter.contains(*abbr) {
                         print!("  [hpms] {abbr}… ");
                         match route_data::hpms_fetch::fetch_state_hpms(abbr, name) {
                             Ok(recs) => {
                                 println!("{} segments", recs.len());
-                                all.extend(recs);
+                                let state_out = out
+                                    .parent()
+                                    .unwrap_or(std::path::Path::new("."))
+                                    .join(format!("hpms_{}.csv", abbr.to_ascii_lowercase()));
+                                write_hpms_records(&state_out, &recs)?;
+                                fetched.extend(recs);
                             }
                             Err(e) => println!("FAILED — {e}"),
                         }
                     }
                 }
-                if all.is_empty() {
+                if fetched.is_empty() {
                     anyhow::bail!(
                         "HPMS fetch returned zero records; preserving existing cache at {}",
                         out.display()
                     );
                 }
-                // Write subset CSV
-                let mut wtr = csv::Writer::from_path(&out)?;
-                wtr.write_record([
-                    "STATE",
-                    "ROUTE_ID",
-                    "AADT",
-                    "PCT_TRUCK",
-                    "LANE_COUNT",
-                    "IRI",
-                    "SPEED_LIMIT",
-                ])?;
-                for r in &all {
-                    wtr.write_record(&[
-                        r.state.clone(),
-                        r.route_id.clone(),
-                        r.aadt.map(|v| v.to_string()).unwrap_or_default(),
-                        r.pct_truck.map(|v| format!("{v:.4}")).unwrap_or_default(),
-                        r.lane_count.map(|v| v.to_string()).unwrap_or_default(),
-                        r.iri.map(|v| format!("{v:.1}")).unwrap_or_default(),
-                        String::new(), // speed_limit placeholder
-                    ])?;
+                let existing = if out.exists() {
+                    route_data::hpms::read_hpms_csv(&out)?
+                } else {
+                    Vec::new()
+                };
+                let merged = merge_hpms_state_records(existing, fetched, &filter);
+                write_hpms_records(&out, &merged)?;
+                println!("  merged {} records into {}", merged.len(), out.display());
+                for state in &filter {
+                    println!(
+                        "  state cache: {}",
+                        out.parent()
+                            .unwrap_or(std::path::Path::new("."))
+                            .join(format!("hpms_{}.csv", state.to_ascii_lowercase()))
+                            .display()
+                    );
                 }
-                wtr.flush()?;
-                println!("  wrote {} records", all.len());
             } else {
                 route_data::fetch_all_hpms(&out)?;
             }
@@ -10673,6 +10676,70 @@ fn map_atlas_artifact_path(path: &str) -> PathBuf {
     }
 }
 
+fn merge_hpms_state_records(
+    mut existing: Vec<route_data::HpmsRecord>,
+    fetched: Vec<route_data::HpmsRecord>,
+    states: &std::collections::BTreeSet<String>,
+) -> Vec<route_data::HpmsRecord> {
+    existing.retain(|row| !states.contains(&row.state.to_ascii_uppercase()));
+    existing.extend(fetched);
+    existing.sort_by(|a, b| {
+        a.state
+            .cmp(&b.state)
+            .then_with(|| a.route_id.cmp(&b.route_id))
+            .then_with(|| a.aadt.cmp(&b.aadt))
+    });
+    existing
+}
+
+fn write_hpms_records(path: &Path, records: &[route_data::HpmsRecord]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    writer.write_record([
+        "STATE",
+        "ROUTE_ID",
+        "AADT",
+        "PCT_TRUCK",
+        "LANE_COUNT",
+        "IRI",
+        "SPEED_LIMIT",
+    ])?;
+    for record in records {
+        writer.write_record(&[
+            record.state.clone(),
+            record.route_id.clone(),
+            record
+                .aadt
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+            record
+                .pct_truck
+                .map(|value| format!("{value:.4}"))
+                .unwrap_or_default(),
+            record
+                .lane_count
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+            record
+                .iri
+                .map(|value| format!("{value:.1}"))
+                .unwrap_or_default(),
+            record
+                .speed_limit
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+        ])?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 struct ScenarioEdgeCandidate {
     edge_id: u64,
@@ -16491,7 +16558,7 @@ fn tier_pavement_acquisition_docket_rows(
                 affected_bundles: row.affected_bundles.clone(),
                 blocked_member_count: row.blocked_member_count,
                 fetch_command: format!("route fetch-hpms --states {}", row.state),
-                rebuild_command: "route build".to_string(),
+                rebuild_command: "route build --all-roads".to_string(),
                 verify_command:
                     "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
                         .to_string(),
@@ -16610,7 +16677,7 @@ fn tier_pavement_acquisition_docket_gate_failures(
         if !row.fetch_command.starts_with("route fetch-hpms --states ") {
             failures.push(format!("{} has invalid fetch command", row.task_id));
         }
-        if row.rebuild_command != "route build" {
+        if row.rebuild_command != "route build --all-roads" {
             failures.push(format!("{} has invalid rebuild command", row.task_id));
         }
         if !row
@@ -25673,7 +25740,7 @@ mod tests {
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, national_segment_bundle_gate_failures,
+        map_atlas_gate_failures, merge_hpms_state_records, national_segment_bundle_gate_failures,
         national_segment_bundle_rows, national_segment_registry_gate_failures,
         national_segment_registry_rows, normalized_iri_m_per_km, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
@@ -28414,10 +28481,59 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].task_id, "PAVEMENT-A-TX");
         assert_eq!(rows[0].fetch_command, "route fetch-hpms --states TX");
-        assert_eq!(rows[0].rebuild_command, "route build");
+        assert_eq!(rows[0].rebuild_command, "route build --all-roads");
         assert!(rows[0]
             .verify_command
             .contains("route tier-pavement-docket --gate"));
+    }
+
+    #[test]
+    fn hpms_state_fetch_merge_replaces_only_requested_states() {
+        let mut states = std::collections::BTreeSet::new();
+        states.insert("TX".to_string());
+
+        let existing = vec![
+            route_data::HpmsRecord {
+                state: "IA".to_string(),
+                route_id: "US30".to_string(),
+                aadt: Some(1000),
+                pct_truck: Some(0.12),
+                lane_count: Some(4),
+                iri: Some(70.0),
+                speed_limit: Some(65),
+            },
+            route_data::HpmsRecord {
+                state: "TX".to_string(),
+                route_id: "US80".to_string(),
+                aadt: Some(2000),
+                pct_truck: Some(0.18),
+                lane_count: Some(2),
+                iri: None,
+                speed_limit: Some(55),
+            },
+        ];
+        let fetched = vec![route_data::HpmsRecord {
+            state: "TX".to_string(),
+            route_id: "US80".to_string(),
+            aadt: Some(3000),
+            pct_truck: Some(0.2),
+            lane_count: Some(4),
+            iri: Some(55.0),
+            speed_limit: Some(70),
+        }];
+
+        let merged = merge_hpms_state_records(existing, fetched, &states);
+
+        assert_eq!(merged.len(), 2);
+        assert!(merged
+            .iter()
+            .any(|row| row.state == "IA" && row.route_id == "US30"));
+        assert!(merged
+            .iter()
+            .any(|row| row.state == "TX" && row.route_id == "US80" && row.aadt == Some(3000)));
+        assert!(!merged
+            .iter()
+            .any(|row| row.state == "TX" && row.route_id == "US80" && row.aadt == Some(2000)));
     }
 
     #[test]
