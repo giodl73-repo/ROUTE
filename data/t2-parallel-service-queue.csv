@@ -1,2 +1,2 @@
 route,region_id,beck_corridor,service_class,close_parallel_count,close_parallel_corridors,selection_action,selection_basis,parallel_action,required_artifact,next_artifact,optimizer_effect,validation_status
-I59,component-1,I-59,connector,1,I-65,split-parallel-service,close-parallel-beck-service,review-spacing-or-split-service-before-promotion,data/t2-service-selection.csv,docs/t2-regional-treatment.md,keeps close-parallel T2 line visible but below automatic keep/promotion,review
+__all_t2_parallel_services__,,,,0,,clear,no-close-parallel-t2-services,no-parallel-service-work-needed,data/t2-service-selection.csv,data/game/t2-bundle-overlays.csv,all T2 service rows clear close-parallel review,pass

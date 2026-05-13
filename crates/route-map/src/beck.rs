@@ -3391,6 +3391,7 @@ fn close_parallel_corridors(
     all_lines
         .iter()
         .filter(|other| other.corridor != line.corridor)
+        .filter(|other| !line_shares_stop(line, other))
         .filter(|other| {
             let other_points = other.routed_waypoints();
             points.windows(2).any(|a| {
@@ -3401,6 +3402,12 @@ fn close_parallel_corridors(
         })
         .map(|other| other.corridor)
         .collect()
+}
+
+fn line_shares_stop(line: &T2LineSegment, other: &T2LineSegment) -> bool {
+    line.stop_ids
+        .iter()
+        .any(|stop_id| other.stop_ids.contains(stop_id))
 }
 
 fn duplicate_service_corridors(
@@ -4801,6 +4808,16 @@ mod tests {
         assert_eq!(us6.unique_duplicate_stop_count, 7);
         assert_eq!(us6.service_action, "keep");
         assert_eq!(us6.qualification_basis, "distinct-parent-service");
+    }
+
+    #[test]
+    fn beck_t2_close_parallel_ignores_shared_transfer_stops() {
+        let rows = beck_t2_diagnostics();
+        let i59 = rows.iter().find(|row| row.corridor == "I-59").unwrap();
+        let i65 = rows.iter().find(|row| row.corridor == "I-65").unwrap();
+
+        assert_eq!(i59.close_parallel_corridors, "");
+        assert_eq!(i65.close_parallel_corridors, "");
     }
 
     #[test]

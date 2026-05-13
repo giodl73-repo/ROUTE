@@ -11,7 +11,7 @@ US95,I-84,I-84,I-90,split-parent,compact-service,LEWISTON,18,0,,0,,0,,3,keep,dis
 I-22,I-40,I-40,I-20,split-parent,compact-service,TUPELO,13,0,,0,,0,,3,keep,distinct-parent-service,Memphis-Birmingham,3,3,2,227,1371,860,1529,996,1.32,ok
 I-15,I-5,I-5,I-70,split-parent,connector,ST_GEORGE,2,0,,0,,0,,7,keep,distinct-parent-service,Inland West,7,7,3,535,339,508,555,927,1.31,ok
 I-29,I-80,I-80,I-35,split-parent,connector,SIOUX_FALLS,17,0,,0,,0,,6,keep,distinct-parent-service,Upper Missouri,6,6,4,502,1068,214,1248,475,1.20,ok
-I-59,I-10,I-10,I-75,split-parent,connector,BHM_APPROACH,13,0,,1,I-65,0,,5,keep,distinct-parent-service,Birmingham Spur,5,5,1,448,1361,873,1618,1194,1.11,ok
+I-59,I-10,I-10,I-75,split-parent,connector,BHM_APPROACH,13,0,,0,,0,,5,keep,distinct-parent-service,Birmingham Spur,5,5,1,448,1361,873,1618,1194,1.11,ok
 US287,I-35,I-35,I-70,split-parent,connector,AMA,5,0,,0,,0,,7,keep,distinct-parent-service,Front Range,7,7,3,640,761,570,1080,1031,1.09,ok
 I-37,I-10,I-10,I-10,single-parent,compact-service,,0,0,,0,,0,,2,keep,distinct-parent-service,Corpus Christi,2,2,2,198,960,1208,1129,1279,1.01,ok
 I-85,I-20,I-20,I-95,split-parent,connector,CLT,6,0,,0,,0,,5,keep,distinct-parent-service,Charlotte Crescent,5,5,3,535,1678,720,2107,976,0.94,ok
@@ -20,7 +20,7 @@ I-77,I-40,I-40,I-80,split-parent,connector,PITTSBURGH,21,0,,0,,0,,5,keep,distinc
 I-30,I-35,I-35,I-40,split-parent,connector,TEXARKANA,13,0,,0,,0,,4,keep,distinct-parent-service,Arkansas Link,4,4,4,497,1048,860,1371,1089,0.81,ok
 I-24,I-40,I-40,I-75,split-parent,connector,NASHVILLE,0,0,,0,,0,,3,keep,distinct-parent-service,Nashville,3,3,3,445,1371,742,1726,860,0.67,ok
 I-81,I-40,I-40,I-95,split-parent,transfer-spine,WYTHEVILLE,22,0,,0,,0,,6,keep,distinct-parent-service,Knoxville-New York,6,6,5,651,1726,515,2228,795,0.92,transfer-complexity-review
-I-65,I-10,I-10,I-75,split-parent,transfer-spine,NASHVILLE,15,0,,1,I-59,0,,5,keep,distinct-parent-service,Birmingham,5,5,5,624,1464,603,1647,1133,0.80,transfer-complexity-review
+I-65,I-10,I-10,I-75,split-parent,transfer-spine,NASHVILLE,15,0,,0,,0,,5,keep,distinct-parent-service,Birmingham,5,5,5,624,1464,603,1647,1133,0.80,transfer-complexity-review
 US80,I-35,I-35,I-20,split-parent,transfer-spine,LITTLE_ROCK,0,0,,0,,0,,8,keep,distinct-parent-service,Old South,8,8,7,1164,906,794,1678,1031,0.69,transfer-complexity-review
 US70,I-10,I-10,I-40,split-parent,transfer-spine,FORT_SMITH,3,0,,0,,0,,9,keep,distinct-parent-service,Mid-South,9,9,6,1361,540,795,1726,1006,0.66,transfer-complexity-review
 US6,I-70,I-70,I-80,split-parent,transfer-spine,OMAHA,7,0,,0,,0,,7,keep,distinct-parent-service,Central Plains,7,7,5,1083,553,419,1501,544,0.65,transfer-complexity-review
