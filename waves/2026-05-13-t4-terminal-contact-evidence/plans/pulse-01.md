@@ -32,9 +32,16 @@ proof decisions for the 69 `terminal_access_evidence_gap` rows.
 - [ ] Add a terminal contact evidence artifact or schema extension.
 - [ ] Gate required fields: route, zone, terminal district, contact basis,
   evidence status, selected higher-tier attachment, decision, next artifact.
+- [ ] Separate terminal-district seed source fields from route-to-terminal
+  contact-proof source fields so `data/intermodal_terminals.csv` cannot be
+  mistaken for contact evidence.
+- [ ] Enumerate allowed decision states and legal status transitions for
+  source-needed, source-backed, demotion/local-only, held-known, and
+  scenario-ready rows.
 - [ ] Regenerate affected T4/access-gap/ledger artifacts if producer logic
   changes.
-- [ ] Add tests for source-needed versus scenario-ready terminal contact rows.
+- [ ] Add tests for source-needed versus scenario-ready terminal contact rows,
+  including a proximity-only row that must stay held.
 
 ## Expected Gates
 

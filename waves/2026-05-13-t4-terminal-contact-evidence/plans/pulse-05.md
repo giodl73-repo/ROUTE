@@ -30,6 +30,8 @@ budget, optimizer manifest, and release manifest.
 
 - [ ] Regenerate all affected optimizer artifacts.
 - [ ] Update manifest/release rows if a new queue artifact is introduced.
+- [ ] Preserve the contact queue as a visible source artifact in optimizer and
+  release manifests before any scenario candidate is treated as release-facing.
 - [ ] Confirm blocker counts by class and tier.
 - [ ] Document residual source-needed terminal backlog.
 

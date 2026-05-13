@@ -62,6 +62,14 @@ Great Lakes contact sample before any scenario work. A scenario can only follow
 after a pulse identifies at least one route-level terminal contact with source
 status and a selected higher-tier attachment.
 
+## Plan Review Decision
+
+Wave-local `.roles` review found no blocking objection to starting Pulse 01.
+The review tightened the first-pulse contract: terminal district seeds must stay
+separate from route-to-terminal contact proof, allowed decision states must be
+enumerated and gated, and proximity-only rows must remain held rather than
+scenario-ready.
+
 ## Pulse Status
 
 | Pulse | Status | Evidence |

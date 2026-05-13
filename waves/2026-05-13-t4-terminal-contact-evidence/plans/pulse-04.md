@@ -30,6 +30,8 @@ docket while keeping source-needed rows out of scenario and publication claims.
 
 - [ ] Create a terminal scenario-readiness docket or equivalent queue.
 - [ ] Name scenario candidate(s) only for source-backed terminal contact rows.
+- [ ] Require scenario-ready rows to carry contact proof source, operational
+  contact basis, selected higher-tier attachment, and freight/access rationale.
 - [ ] Keep source-needed rows release-held.
 - [ ] Update review notes for any scenario candidate.
 
