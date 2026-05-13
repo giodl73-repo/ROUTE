@@ -39,7 +39,7 @@ decision. Missing or inaccessible sources remain blockers, not gate failures.
 |---|---|---|
 | 01 - Proof artifact contract | done | `data/t4-terminal-contact-proof-artifact-contract.csv`; gate requires non-seed manual/cache proof fields |
 | 02 - Source registry intake | done | `data/t4-terminal-contact-proof-source-registry.csv`; 33 source-needed rows, seed proof rejected |
-| 03 - District proof import | planned | run one district through cached/manual proof import |
+| 03 - District proof import | done | `data/t4-terminal-contact-district-proof-import.csv`; largest unresolved district remains source-needed |
 | 04 - Evidence propagation | planned | propagate accepted/rejected proof decisions without laundering holds |
 | 05 - Wave close | planned | reconcile promotions, blockers, manifests, and gates |
 

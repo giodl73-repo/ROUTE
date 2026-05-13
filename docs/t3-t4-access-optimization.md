@@ -227,6 +227,10 @@ Current implementation status:
 - `data/t4-terminal-contact-proof-source-registry.csv` is the manual/cache proof
   registry intake surface. It keeps Great Lakes rows `source-needed` until a
   manual citation or cached source artifact satisfies the proof contract.
+- `data/t4-terminal-contact-district-proof-import.csv` selects the largest
+  unresolved terminal district from the registry and classifies its route proof
+  decisions. Without registered proof artifacts, the selected district remains
+  `source-needed`.
 - `data/t4-terminal-columbus-proof-intake.csv` filters the Columbus South pilot
   slice from the Great Lakes proof docket. It carries exactly eight source-needed
   route tasks into the proof pilot and rejects non-Columbus rows.
