@@ -208,6 +208,15 @@ Required fields:
 T2 service columns must distinguish parent-trunk lineage from visual color.
 Color follows service lineage; it does not create service lineage.
 
+T3/T4 lower-tier route and access columns carry the same normalized constraint
+summary fields as T1/T2 selectors: `constraint_adjusted_score`,
+`hard_blocker_count`, `claim_blocker_count`, `constraint_debt_cost_m`,
+`lifecycle_debt_cost_m`, `constraint_penalty_score`,
+`top_constraint_classes`, and `constraint_ledger_artifact`. `data/t3-t4-access-gaps.csv`
+inherits those fields from the held T3 route or T4 terminal access row so access
+triage can keep debt, blocker, and claim pressure attached to the lower-tier
+route.
+
 ## Repair Witnesses
 
 Repair witnesses answer: what later constraint failed, and what can fix it?

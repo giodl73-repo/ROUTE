@@ -2120,6 +2120,13 @@ enum Commands {
             value_name = "FILE"
         )]
         intake: PathBuf,
+        /// Optimizer constraint budget CSV with generalized blocker/debt rollups
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        constraint_budget: PathBuf,
         /// Output T3 zone route columns CSV
         #[arg(
             long,
@@ -2142,6 +2149,13 @@ enum Commands {
             value_name = "FILE"
         )]
         intake: PathBuf,
+        /// Optimizer constraint budget CSV with generalized blocker/debt rollups
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        constraint_budget: PathBuf,
         /// Output T4 terminal/local access column CSV
         #[arg(
             long,
@@ -7425,6 +7439,7 @@ fn run_cli() -> Result<()> {
         Commands::T3ZoneRouteColumns {
             obligations,
             intake,
+            constraint_budget,
             output,
             gate,
         } => {
@@ -7433,7 +7448,12 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", obligations.display()))?;
             let intake_rows = load_t3_t4_pressure_intake(&intake)
                 .with_context(|| format!("loading {}", intake.display()))?;
-            let rows = t3_zone_route_column_rows(&obligation_rows, &intake_rows);
+            let constraint_budget_rows = load_optimizer_constraint_budget(&constraint_budget)
+                .with_context(|| format!("loading {}", constraint_budget.display()))?;
+            let constraint_budget_index =
+                optimizer_constraint_budget_index(&constraint_budget_rows);
+            let rows =
+                t3_zone_route_column_rows(&obligation_rows, &intake_rows, &constraint_budget_index);
             write_t3_zone_route_columns(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_t3_zone_route_column_summary(&output, &rows);
@@ -7455,13 +7475,18 @@ fn run_cli() -> Result<()> {
 
         Commands::T4TerminalAccessColumns {
             intake,
+            constraint_budget,
             output,
             gate,
         } => {
             println!("route t4-terminal-access-columns");
             let intake_rows = load_t3_t4_pressure_intake(&intake)
                 .with_context(|| format!("loading {}", intake.display()))?;
-            let rows = t4_terminal_access_column_rows(&intake_rows);
+            let constraint_budget_rows = load_optimizer_constraint_budget(&constraint_budget)
+                .with_context(|| format!("loading {}", constraint_budget.display()))?;
+            let constraint_budget_index =
+                optimizer_constraint_budget_index(&constraint_budget_rows);
+            let rows = t4_terminal_access_column_rows(&intake_rows, &constraint_budget_index);
             write_t4_terminal_access_columns(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_t4_terminal_access_column_summary(&output, &rows);
@@ -13622,6 +13647,14 @@ struct T3ZoneRouteColumnRow {
     route: String,
     current_tier: String,
     current_score: f64,
+    constraint_adjusted_score: f64,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     promise_horizon_hours: u8,
     column_decision: String,
     zone_role: String,
@@ -13639,6 +13672,14 @@ struct T4TerminalAccessColumnRow {
     route: String,
     zone_id: String,
     current_score: f64,
+    constraint_adjusted_score: f64,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     access_class: String,
     terminal_obligation: String,
     promise_horizon_hours: u8,
@@ -13659,6 +13700,14 @@ struct T3T4AccessGapRow {
     route: String,
     zone_id: String,
     current_score: f64,
+    constraint_adjusted_score: f64,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     promise_horizon_hours: u8,
     gap_class: String,
     gap_reason: String,
@@ -20790,6 +20839,7 @@ fn load_t3_zone_access_obligations(path: &Path) -> Result<Vec<T3ZoneAccessObliga
 fn t3_zone_route_column_rows(
     obligations: &[T3ZoneAccessObligationRow],
     intake_rows: &[T3T4PressureIntakeRow],
+    constraint_budget_index: &OptimizerConstraintBudgetIndex,
 ) -> Vec<T3ZoneRouteColumnRow> {
     let intake_by_route = intake_rows
         .iter()
@@ -20804,6 +20854,16 @@ fn t3_zone_route_column_rows(
                 .map(|row| row.current_tier.clone())
                 .unwrap_or_else(|| "unknown".to_string());
             let current_score = intake.map(|row| row.current_score).unwrap_or(0.0);
+            let (
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
+            ) = constraint_budget_for_candidate(&route, "", constraint_budget_index);
+            let constraint_adjusted_score = current_score - constraint_penalty_score;
             let (
                 column_decision,
                 zone_role,
@@ -20821,6 +20881,14 @@ fn t3_zone_route_column_rows(
                 route,
                 current_tier,
                 current_score,
+                constraint_adjusted_score,
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
                 promise_horizon_hours: obligation.promise_horizon_hours,
                 column_decision: column_decision.to_string(),
                 zone_role: zone_role.to_string(),
@@ -21007,6 +21075,37 @@ fn t3_zone_route_column_gate_failures(
                 row.zone_id, row.route
             ));
         }
+        if row.constraint_debt_cost_m < 0.0 {
+            failures.push(format!(
+                "{} {} has negative constraint debt cost",
+                row.zone_id, row.route
+            ));
+        }
+        if row.lifecycle_debt_cost_m < 0.0 {
+            failures.push(format!(
+                "{} {} has negative lifecycle debt cost",
+                row.zone_id, row.route
+            ));
+        }
+        if row.constraint_penalty_score < 0.0 {
+            failures.push(format!(
+                "{} {} has negative constraint penalty",
+                row.zone_id, row.route
+            ));
+        }
+        if (row.hard_blocker_count > 0
+            || row.claim_blocker_count > 0
+            || row.constraint_debt_cost_m > 0.0
+            || row.lifecycle_debt_cost_m > 0.0
+            || row.constraint_penalty_score > 0.0)
+            && (row.top_constraint_classes.trim().is_empty()
+                || row.constraint_ledger_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} {} has constraint pressure without class summary and ledger artifact",
+                row.zone_id, row.route
+            ));
+        }
         if !matches!(row.validation_status.as_str(), "pass" | "review") {
             failures.push(format!(
                 "{} {} has invalid validation status {}",
@@ -21040,6 +21139,7 @@ fn t3_zone_route_column_gate_failures(
 
 fn t4_terminal_access_column_rows(
     intake_rows: &[T3T4PressureIntakeRow],
+    constraint_budget_index: &OptimizerConstraintBudgetIndex,
 ) -> Vec<T4TerminalAccessColumnRow> {
     let mut rows = intake_rows
         .iter()
@@ -21059,10 +21159,27 @@ fn t4_terminal_access_column_rows(
                 effect,
                 status,
             ) = t4_terminal_access_decision(row, &zone_id);
+            let (
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
+            ) = constraint_budget_for_candidate(&row.route, "", constraint_budget_index);
             T4TerminalAccessColumnRow {
                 route: row.route.clone(),
                 zone_id,
                 current_score: row.current_score,
+                constraint_adjusted_score: row.current_score - constraint_penalty_score,
+                hard_blocker_count,
+                claim_blocker_count,
+                constraint_debt_cost_m,
+                lifecycle_debt_cost_m,
+                constraint_penalty_score,
+                top_constraint_classes,
+                constraint_ledger_artifact,
                 access_class: access_class.to_string(),
                 terminal_obligation: obligation.to_string(),
                 promise_horizon_hours: 1,
@@ -21211,6 +21328,28 @@ fn t4_terminal_access_column_gate_failures(rows: &[T4TerminalAccessColumnRow]) -
                 row.route
             ));
         }
+        if row.constraint_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative constraint debt cost", row.route));
+        }
+        if row.lifecycle_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative lifecycle debt cost", row.route));
+        }
+        if row.constraint_penalty_score < 0.0 {
+            failures.push(format!("{} has negative constraint penalty", row.route));
+        }
+        if (row.hard_blocker_count > 0
+            || row.claim_blocker_count > 0
+            || row.constraint_debt_cost_m > 0.0
+            || row.lifecycle_debt_cost_m > 0.0
+            || row.constraint_penalty_score > 0.0)
+            && (row.top_constraint_classes.trim().is_empty()
+                || row.constraint_ledger_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has constraint pressure without class summary and ledger artifact",
+                row.route
+            ));
+        }
         if !matches!(row.validation_status.as_str(), "pass" | "review") {
             failures.push(format!(
                 "{} has invalid validation status {}",
@@ -21272,6 +21411,14 @@ fn t3_t4_access_gap_rows(
             route: row.route.clone(),
             zone_id: row.zone_id.clone(),
             current_score: row.current_score,
+            constraint_adjusted_score: row.constraint_adjusted_score,
+            hard_blocker_count: row.hard_blocker_count,
+            claim_blocker_count: row.claim_blocker_count,
+            constraint_debt_cost_m: row.constraint_debt_cost_m,
+            lifecycle_debt_cost_m: row.lifecycle_debt_cost_m,
+            constraint_penalty_score: row.constraint_penalty_score,
+            top_constraint_classes: row.top_constraint_classes.clone(),
+            constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
             promise_horizon_hours: row.promise_horizon_hours,
             gap_class: gap_class.to_string(),
             gap_reason: row.selection_basis.clone(),
@@ -21310,6 +21457,14 @@ fn t3_t4_access_gap_rows(
             route: row.route.clone(),
             zone_id: row.zone_id.clone(),
             current_score: row.current_score,
+            constraint_adjusted_score: row.constraint_adjusted_score,
+            hard_blocker_count: row.hard_blocker_count,
+            claim_blocker_count: row.claim_blocker_count,
+            constraint_debt_cost_m: row.constraint_debt_cost_m,
+            lifecycle_debt_cost_m: row.lifecycle_debt_cost_m,
+            constraint_penalty_score: row.constraint_penalty_score,
+            top_constraint_classes: row.top_constraint_classes.clone(),
+            constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
             promise_horizon_hours: row.promise_horizon_hours,
             gap_class: gap_class.to_string(),
             gap_reason: row.selection_basis.clone(),
@@ -31596,7 +31751,11 @@ mod tests {
             },
         ];
 
-        let rows = t3_zone_route_column_rows(&obligations, &intake);
+        let rows = t3_zone_route_column_rows(
+            &obligations,
+            &intake,
+            &OptimizerConstraintBudgetIndex::default(),
+        );
         let failures = t3_zone_route_column_gate_failures(&rows, &obligations);
         let i25 = rows.iter().find(|row| row.route == "I25").unwrap();
         let i135 = rows.iter().find(|row| row.route == "I-135").unwrap();
@@ -31643,7 +31802,8 @@ mod tests {
             },
         ];
 
-        let rows = t4_terminal_access_column_rows(&intake);
+        let rows =
+            t4_terminal_access_column_rows(&intake, &OptimizerConstraintBudgetIndex::default());
         let failures = t4_terminal_access_column_gate_failures(&rows);
         let us90z = rows.iter().find(|row| row.route == "US90Z").unwrap();
         let us7 = rows.iter().find(|row| row.route == "US7").unwrap();
@@ -31663,6 +31823,14 @@ mod tests {
             route: "US90Z".to_string(),
             current_tier: "T4".to_string(),
             current_score: 29.9,
+            constraint_adjusted_score: 29.9,
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             promise_horizon_hours: 6,
             column_decision: "review".to_string(),
             zone_role: "below-threshold-feeder-candidate".to_string(),
@@ -31682,6 +31850,14 @@ mod tests {
                 route: "US90Z".to_string(),
                 zone_id: "t3-southeast".to_string(),
                 current_score: 29.9,
+                constraint_adjusted_score: 29.9,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 access_class: "terminal-upgrade-candidate".to_string(),
                 terminal_obligation:
                     "prove one-hour terminal, port, yard, warehouse, or local freight access"
@@ -31706,6 +31882,14 @@ mod tests {
                 route: "US7".to_string(),
                 zone_id: "zone-assignment-needed".to_string(),
                 current_score: 25.7,
+                constraint_adjusted_score: 25.7,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 access_class: "unassigned-local-access".to_string(),
                 terminal_obligation: "assign local route to a T3 zone or terminal district"
                     .to_string(),
@@ -31746,6 +31930,14 @@ mod tests {
                 route: "I65".to_string(),
                 current_tier: "T2".to_string(),
                 current_score: 64.9,
+                constraint_adjusted_score: 64.9,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 promise_horizon_hours: 6,
                 column_decision: "selected".to_string(),
                 zone_role: "regional-feeder".to_string(),
@@ -31765,6 +31957,14 @@ mod tests {
                 route: "US90Z".to_string(),
                 current_tier: "T4".to_string(),
                 current_score: 29.9,
+                constraint_adjusted_score: 29.9,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 promise_horizon_hours: 6,
                 column_decision: "review".to_string(),
                 zone_role: "below-threshold-feeder-candidate".to_string(),
@@ -31786,6 +31986,14 @@ mod tests {
             route: "US90Z".to_string(),
             zone_id: "t3-southeast".to_string(),
             current_score: 29.9,
+            constraint_adjusted_score: 29.9,
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             promise_horizon_hours: 6,
             gap_class: "below-threshold-feeder".to_string(),
             gap_reason: "candidate is below T3 threshold for a 6h feeder obligation".to_string(),
@@ -31836,6 +32044,14 @@ mod tests {
                 route: "I65".to_string(),
                 current_tier: "T2".to_string(),
                 current_score: 64.9,
+                constraint_adjusted_score: 64.9,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 promise_horizon_hours: 6,
                 column_decision: "selected".to_string(),
                 zone_role: "regional-feeder".to_string(),
@@ -31855,6 +32071,14 @@ mod tests {
                 route: "US90Z".to_string(),
                 current_tier: "T4".to_string(),
                 current_score: 29.9,
+                constraint_adjusted_score: 29.9,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 0.0,
+                top_constraint_classes: "none".to_string(),
+                constraint_ledger_artifact: String::new(),
                 promise_horizon_hours: 6,
                 column_decision: "review".to_string(),
                 zone_role: "below-threshold-feeder-candidate".to_string(),
@@ -31876,6 +32100,14 @@ mod tests {
             route: "US90Z".to_string(),
             zone_id: "t3-southeast".to_string(),
             current_score: 29.9,
+            constraint_adjusted_score: 29.9,
+            hard_blocker_count: 0,
+            claim_blocker_count: 0,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 0.0,
+            top_constraint_classes: "none".to_string(),
+            constraint_ledger_artifact: String::new(),
             promise_horizon_hours: 6,
             gap_class: "below-threshold-feeder".to_string(),
             gap_reason: "candidate is below T3 threshold for a 6h feeder obligation".to_string(),

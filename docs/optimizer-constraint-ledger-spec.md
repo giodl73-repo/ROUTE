@@ -224,14 +224,16 @@ their next artifact.
    `segment_bundle_id`, candidate id, tier, and region. The first implemented
    rollup emits selector-facing route and bundle rows with blocker counts,
    debt, penalties, top classes, blocked claims, and next artifacts.
-4. Update T1/T2 selectors to consume the aggregate constraint budget instead of
-   pavement-only columns. The first T1/T2 migrations now carry generalized
-   constraint fields through the T1 line selector, T2 candidate columns, T2
-   regionalizer rows, and T2 service selection rows while preserving
+4. Update T1/T2/T3/T4 selectors to consume the aggregate constraint budget
+   instead of pavement-only columns. The first selector migrations now carry
+   generalized constraint fields through the T1 line selector, T2 candidate
+   columns, T2 regionalizer rows, T2 service selection rows, T3 zone route
+   columns, T4 terminal access columns, and T3/T4 access gaps while preserving
    pavement-specific compatibility fields where downstream tools still expect
    them.
-5. Expand T3/T4 selectors to emit their access and attachment blockers into the
-   same ledger.
+5. Expand T3/T4 access and attachment blockers into the same ledger so the
+   lower-tier budget fields become populated by current-run access evidence,
+   not only by any prior budget row.
 6. Add manifest rows so the all-tier optimizer bundle proves the ledger and
    aggregate budget were generated for the same run.
 

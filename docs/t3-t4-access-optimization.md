@@ -184,11 +184,14 @@ Current implementation status:
 - `data/t3-zone-access-obligations.csv` groups pressure rows into five T3 zone
   map obligations: 6h regional feeder access and 24h upgrade review.
 - `data/t3-zone-route-columns.csv` selects route-level T3 feeder columns from
-  the obligation table and holds upward/below-threshold rows for review.
+  the obligation table, carries normalized constraint-budget summaries, and
+  holds upward/below-threshold rows for review.
 - `data/t4-terminal-access-columns.csv` classifies T4 local pressure into
-  terminal-review and zone-assignment-needed rows with 1h access obligations.
+  terminal-review and zone-assignment-needed rows with 1h access obligations
+  and normalized constraint-budget summaries.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
-  below-threshold feeder, terminal-evidence, and zone-assignment gap classes.
+  below-threshold feeder, terminal-evidence, and zone-assignment gap classes,
+  inheriting constraint pressure from the held selector row.
 - `data/t3-zone-map-diagnostics.csv` joins selected T3 route columns, access
   gaps, and map atlas ids into zone-map readiness decisions.
 - `data/t3-zone-render-board.csv` turns map diagnostics into renderer/game board
