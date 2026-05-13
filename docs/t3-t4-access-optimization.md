@@ -213,6 +213,12 @@ Current implementation status:
   catalog names the public terminal-contact proof family, required fields,
   source-fetch/cache blocker, and next docket without classifying individual
   route contacts.
+- `data/t4-terminal-contact-proof-docket.csv` is the route-level proof task
+  ledger for the 33 Great Lakes contact rows. Each task names the route,
+  terminal district, required route-to-terminal contact proof field, selected
+  higher-tier attachment requirement, source family, proof blocker, and scenario
+  hold. All tasks remain `source-needed` until a traceable contact proof artifact
+  exists.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows

@@ -2,7 +2,7 @@
 wave: great-lakes-terminal-contact-sources
 pulse: 03
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-02]
 governing_roles:
   - traffic-engineer
@@ -27,11 +27,11 @@ contact rows.
 
 ## Deliverables
 
-- [ ] Emit route-level proof docket rows for all 33 Great Lakes rows.
-- [ ] Each task names route, terminal district, proof field, source family,
+- [x] Emit route-level proof docket rows for all 33 Great Lakes rows.
+- [x] Each task names route, terminal district, proof field, source family,
   selected higher-tier attachment requirement, and next artifact.
-- [ ] Preserve all rows as source-needed unless proof is traceable.
-- [ ] Add tests for one source-needed row per Great Lakes contact row.
+- [x] Preserve all rows as source-needed unless proof is traceable.
+- [x] Add tests for one source-needed row per Great Lakes contact row.
 
 ## Expected Gates
 
