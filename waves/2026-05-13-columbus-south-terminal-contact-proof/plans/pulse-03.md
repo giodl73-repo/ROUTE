@@ -2,7 +2,7 @@
 wave: columbus-south-terminal-contact-proof
 pulse: 03
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-02]
 governing_roles:
   - traffic-engineer
@@ -27,17 +27,17 @@ proof tasks.
 
 ## Deliverables
 
-- [ ] Add proof-attempt rows for I-271, I-279, I-471, US22, US224, US250, US35,
+- [x] Add proof-attempt rows for I-271, I-279, I-471, US22, US224, US250, US35,
   and US74.
-- [ ] Each attempt names source artifact or blocker, capture status, contact
+- [x] Each attempt names source artifact or blocker, capture status, contact
   statement status, and selected higher-tier attachment status.
-- [ ] Classify each attempt as accepted, source-needed, blocked, or rejected.
-- [ ] Add tests or gates that prevent source-backed status without a non-seed
+- [x] Classify each attempt as accepted, source-needed, blocked, or rejected.
+- [x] Add tests or gates that prevent source-backed status without a non-seed
   proof artifact.
 
 ## Expected Gates
 
-- Columbus proof-attempt gate if added
+- `route t4-terminal-columbus-proof-attempts --gate`
 - `route t4-terminal-contact-source-plan --gate`
 - `route t4-terminal-contact-evidence --gate`
 - `cargo test -p route`

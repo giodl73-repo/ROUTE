@@ -226,6 +226,10 @@ Current implementation status:
   source-access contract. It keeps all eight rows `source-needed`, names the
   source metadata required for proof, and records live terminal-contact fetch as
   unsupported until a policy-compliant fetch command exists.
+- `data/t4-terminal-columbus-proof-attempts.csv` records one route-level proof
+  attempt per Columbus South row. The current pilot emits eight blocked attempts:
+  no row is source-backed, and every attempt carries the live-fetch/source-access
+  blocker forward.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows
