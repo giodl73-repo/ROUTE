@@ -72,12 +72,12 @@ defined in `docs/route-architecture.md` and
 
 | Crate | Owns | Should not own |
 |---|---|---|
-| `route-data` | Fetching, parsing, manifests, source-specific records | Scoring policy |
+| `route-data` | Fetching, parsing, manifests, source-specific records before bundle identity is assigned | Scoring policy or optimizer identity |
 | `route-network` | Graph construction, joins, bundle membership, stable segment identity, geometry state scope, corridor attributes, coverage, flow, centrality, investment primitives | CLI presentation |
-| `route-score` | Dimensions, scoring anchors, ledgers, calibration statistics over bundles and their member segments | Data fetching or graph mutation |
-| `route-map` | Geographic and schematic rendering from selected bundles, member segments, stops, and stitch groups | Corridor scoring or topology invention from route labels |
-| `route-sim` | Traffic assignment, incidents, relay, SLA, OD simulation attached primarily to bundles and secondarily to member segments | File-system orchestration |
-| `route-report` | Corpus/report generation | Analysis algorithms |
+| `route-score` | `score_bundle`, dimensions, scoring anchors, ledgers, calibration statistics over bundles and their member segments | Data fetching or graph mutation |
+| `route-map` | `build_bundle_svg`, geographic and schematic rendering from selected bundles, member segments, stops, and stitch groups | Corridor scoring or topology invention from route labels |
+| `route-sim` | `BundleIncidentSpec`, traffic assignment, incidents, relay, SLA, OD simulation attached primarily to bundles and secondarily to member segments | File-system orchestration |
+| `route-report` | `write_bundle_corpus_entry` and corpus/report generation over bundle identities | Analysis algorithms |
 | `route-cli` | Command parsing, orchestration, terminal output, artifact gates during migration | Business logic or identity policy that cannot be unit-tested elsewhere |
 
 The desired direction is to keep moving logic out of `route-cli` and into library crates. The CLI should become a thin conductor.

@@ -98,10 +98,12 @@ That is acceptable as an implementation slice, but the architecture target is:
 
 | Crate | Identity responsibility |
 | --- | --- |
-| `route-network` | Own segment ids, geometry state scope, and graph-to-segment mapping. |
-| `route-score` | Score segments and bundles without treating route labels as identity. |
-| `route-map` | Consume selected segments, bundles, stops, and stitch groups; never infer topology from labels. |
-| `route-sim` | Attach incidents, detours, and SLA outcomes to segment or bundle ids. |
+| `route-data` | Parse raw source records only; downstream code converts source rows into bundle members after identity is known. |
+| `route-network` | Own `SegmentBundleMember`, `SegmentBundle`, `BundleStatus`, bundle rollups, segment ids, geometry state scope, and graph-to-segment mapping. |
+| `route-score` | Score bundles through `score_bundle`; keep `score_corridor` as the member/corridor compatibility layer. |
+| `route-map` | Render bundle-aware products through `build_bundle_svg`; never infer topology from route labels. |
+| `route-sim` | Attach incidents, detours, and SLA outcomes through `BundleIncidentSpec` or bundle ids. |
+| `route-report` | Publish bundle-aware corpus entries through `write_bundle_corpus_entry`. |
 | `route-cli` | Orchestrate commands and gate artifacts, not own identity policy long-term. |
 
 ## Migration Contract

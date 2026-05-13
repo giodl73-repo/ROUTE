@@ -9,6 +9,7 @@
 ///   - Weather: capacity drops based on weather type (snow → -30%, rain → -10%)
 ///   - Bridge failure: structural closure of specific bridge segments
 use petgraph::graph::EdgeIndex;
+use route_network::SegmentBundle;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -24,6 +25,23 @@ pub struct IncidentSpec {
     pub duration_hours: f64,
     /// Annual frequency of this incident type (for economic cost calculation)
     pub annual_occurrences: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BundleIncidentSpec {
+    pub segment_bundle_id: String,
+    pub route_labels: Vec<String>,
+    pub incident: IncidentSpec,
+}
+
+impl BundleIncidentSpec {
+    pub fn new(bundle: &SegmentBundle, incident: IncidentSpec) -> Self {
+        Self {
+            segment_bundle_id: bundle.segment_bundle_id.clone(),
+            route_labels: bundle.route_labels.clone(),
+            incident,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,6 +120,14 @@ pub fn apply_incident(
     (modified, snapshot)
 }
 
+pub fn apply_bundle_incident(
+    base_capacities: &HashMap<EdgeIndex, f64>,
+    incident: &BundleIncidentSpec,
+    edge_id_to_index: &HashMap<u64, EdgeIndex>,
+) -> (HashMap<EdgeIndex, f64>, HashMap<EdgeIndex, f64>) {
+    apply_incident(base_capacities, &incident.incident, edge_id_to_index)
+}
+
 /// Restore capacities after an incident.
 pub fn restore_incident(
     modified: &mut HashMap<EdgeIndex, f64>,
@@ -114,7 +140,10 @@ pub fn restore_incident(
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_incident, restore_incident, IncidentSpec, IncidentType, WeatherType};
+    use super::{
+        apply_bundle_incident, apply_incident, restore_incident, BundleIncidentSpec, IncidentSpec,
+        IncidentType, WeatherType,
+    };
     use petgraph::graph::EdgeIndex;
     use std::collections::HashMap;
 
@@ -191,5 +220,47 @@ mod tests {
 
         assert_eq!(modified, capacities);
         assert!(snapshot.is_empty());
+    }
+
+    #[test]
+    fn bundle_incident_preserves_bundle_identity_while_applying_capacity() {
+        let edge = EdgeIndex::new(0);
+        let capacities = HashMap::from([(edge, 4_000.0)]);
+        let edge_ids = HashMap::from([(77, edge)]);
+        let bundle = route_network::SegmentBundle {
+            segment_bundle_id: "US.HWYBUNDLE.I80".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: vec!["US.HWYSEG.I80".to_string()],
+            stitch_group_ids: vec!["US.HWYSTITCH.I80".to_string()],
+            current_tiers: vec!["T1".to_string()],
+            current_zone_ids: vec!["national".to_string()],
+            route_labels: vec!["I80".to_string()],
+            state_scope: vec!["IA".to_string()],
+            evidence_state_scope: vec!["IA".to_string()],
+            geometry_state_scope: Vec::new(),
+            bundle_aliases: vec!["route:I80".to_string()],
+            source_artifacts: vec!["fixture".to_string()],
+            registry_actions: vec!["eligible-for-geometry-layout".to_string()],
+            validation_statuses: vec!["pass".to_string()],
+            bundle_status: route_network::BundleStatus::BundleReady,
+        };
+        let incident = BundleIncidentSpec::new(
+            &bundle,
+            IncidentSpec {
+                name: "bundle lane closure".to_string(),
+                affected_edges: vec![77],
+                incident_type: IncidentType::LaneClosure {
+                    remaining_fraction: 0.5,
+                },
+                duration_hours: 2.0,
+                annual_occurrences: 1.0,
+            },
+        );
+
+        let (modified, _) = apply_bundle_incident(&capacities, &incident, &edge_ids);
+
+        assert_eq!(incident.segment_bundle_id, "US.HWYBUNDLE.I80");
+        assert_eq!(incident.route_labels, ["I80"]);
+        assert_eq!(modified[&edge], 2_000.0);
     }
 }

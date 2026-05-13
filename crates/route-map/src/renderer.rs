@@ -1,6 +1,6 @@
 use crate::projection::{AlbersUS, ViewTransform};
 use anyhow::{Context, Result};
-use route_network::{Corridor, HighwayGraph, T1_BACKBONE_ROUTES};
+use route_network::{Corridor, HighwayGraph, SegmentBundle, T1_BACKBONE_ROUTES};
 use route_score::DimensionScores;
 use std::path::Path;
 
@@ -158,6 +158,51 @@ pub fn build_svg(
     Ok(s)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BundleRenderIdentity {
+    pub segment_bundle_id: String,
+    pub label: String,
+    pub member_count: usize,
+}
+
+pub fn bundle_render_identity(bundle: &SegmentBundle) -> BundleRenderIdentity {
+    BundleRenderIdentity {
+        segment_bundle_id: bundle.segment_bundle_id.clone(),
+        label: bundle
+            .route_labels
+            .first()
+            .cloned()
+            .unwrap_or_else(|| bundle.segment_bundle_id.clone()),
+        member_count: bundle.member_segment_ids.len(),
+    }
+}
+
+/// Bundle-first rendering entrypoint.
+///
+/// The current geographic renderer still needs a `Corridor` for edge geometry,
+/// but callers should carry the `SegmentBundle` beside it so map products can
+/// retain the service/corridor identity instead of only a route label.
+pub fn build_bundle_svg(
+    bundle: &SegmentBundle,
+    corridor: &Corridor,
+    graph: &HighwayGraph,
+    scores: Option<&DimensionScores>,
+    color_by: Option<&str>,
+) -> Result<String> {
+    let identity = bundle_render_identity(bundle);
+    let mut svg = build_svg(corridor, graph, scores, color_by)?;
+    let comment = format!(
+        "\n<!-- segment_bundle_id={} label={} member_count={} -->\n",
+        identity.segment_bundle_id, identity.label, identity.member_count
+    );
+    if let Some(index) = svg.rfind("</svg>") {
+        svg.insert_str(index, &comment);
+    } else {
+        svg.push_str(&comment);
+    }
+    Ok(svg)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,6 +271,33 @@ mod tests {
 
         assert!(svg.contains("/160"));
         assert!(!svg.contains("/120"));
+    }
+
+    #[test]
+    fn bundle_svg_carries_bundle_identity_comment() {
+        let (g, corridor) = tiny_graph();
+        let bundle = SegmentBundle {
+            segment_bundle_id: "US.HWYBUNDLE.I80".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: vec!["US.HWYSEG.I80".to_string()],
+            stitch_group_ids: vec!["US.HWYSTITCH.I80".to_string()],
+            current_tiers: vec!["T1".to_string()],
+            current_zone_ids: vec!["national".to_string()],
+            route_labels: vec!["I80".to_string()],
+            state_scope: vec!["NE".to_string()],
+            evidence_state_scope: vec!["NE".to_string()],
+            geometry_state_scope: Vec::new(),
+            bundle_aliases: vec!["route:I80".to_string()],
+            source_artifacts: vec!["fixture".to_string()],
+            registry_actions: vec!["eligible-for-geometry-layout".to_string()],
+            validation_statuses: vec!["pass".to_string()],
+            bundle_status: route_network::BundleStatus::BundleReady,
+        };
+
+        let svg = build_bundle_svg(&bundle, &corridor, &g, None, None).expect("bundle svg");
+
+        assert!(svg.contains("segment_bundle_id=US.HWYBUNDLE.I80"));
+        assert!(svg.contains("member_count=1"));
     }
 }
 

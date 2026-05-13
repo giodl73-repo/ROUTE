@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use route_network::Corridor;
-use route_score::DimensionScores;
+use route_network::{Corridor, SegmentBundle};
+use route_score::{BundleScores, DimensionScores};
 use std::path::Path;
 
 #[derive(Debug, Clone)]
@@ -45,6 +45,61 @@ pub fn write_corpus_entry_with_provenance(
     }
     std::fs::write(output_path, content)
         .with_context(|| format!("writing {}", output_path.display()))
+}
+
+pub fn write_bundle_corpus_entry(
+    bundle: &SegmentBundle,
+    corridor: &Corridor,
+    scores: &BundleScores,
+    output_path: &Path,
+) -> Result<()> {
+    write_bundle_corpus_entry_with_provenance(
+        bundle,
+        corridor,
+        scores,
+        output_path,
+        &CorpusProvenance::default(),
+    )
+}
+
+pub fn write_bundle_corpus_entry_with_provenance(
+    bundle: &SegmentBundle,
+    corridor: &Corridor,
+    scores: &BundleScores,
+    output_path: &Path,
+    provenance: &CorpusProvenance,
+) -> Result<()> {
+    let content = format_bundle_corpus_entry(bundle, corridor, scores, provenance);
+    if let Some(parent) = output_path.parent() {
+        std::fs::create_dir_all(parent).context("creating corpus directory")?;
+    }
+    std::fs::write(output_path, content)
+        .with_context(|| format!("writing {}", output_path.display()))
+}
+
+fn format_bundle_corpus_entry(
+    bundle: &SegmentBundle,
+    corridor: &Corridor,
+    scores: &BundleScores,
+    provenance: &CorpusProvenance,
+) -> String {
+    let mut content = format_corpus_entry(corridor, &scores.scores, provenance);
+    let insertion = format!(
+        "bundle:\n  segment_bundle_id: \"{}\"\n  bundle_role: \"{}\"\n  member_count: {}\n  member_segment_ids: [{}]\n",
+        bundle.segment_bundle_id,
+        bundle.bundle_role,
+        bundle.member_segment_ids.len(),
+        bundle
+            .member_segment_ids
+            .iter()
+            .map(|id| format!("\"{id}\""))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    if let Some(index) = content.find("corridor:\n") {
+        content.insert_str(index, &insertion);
+    }
+    content
 }
 
 fn format_corpus_entry(
@@ -352,6 +407,41 @@ mod tests {
         unsafe {
             std::env::remove_var("ROUTE_DATE");
         }
+    }
+
+    #[test]
+    fn bundle_corpus_entry_includes_bundle_frontmatter() {
+        let corridor = corridor();
+        let bundle = SegmentBundle {
+            segment_bundle_id: "US.HWYBUNDLE.I80".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: vec!["US.HWYSEG.I80".to_string()],
+            stitch_group_ids: vec!["US.HWYSTITCH.I80".to_string()],
+            current_tiers: vec!["T1".to_string()],
+            current_zone_ids: vec!["national".to_string()],
+            route_labels: vec!["I80".to_string()],
+            state_scope: vec!["IA".to_string()],
+            evidence_state_scope: vec!["IA".to_string()],
+            geometry_state_scope: Vec::new(),
+            bundle_aliases: vec!["route:I80".to_string()],
+            source_artifacts: vec!["fixture".to_string()],
+            registry_actions: vec!["eligible-for-geometry-layout".to_string()],
+            validation_statuses: vec!["pass".to_string()],
+            bundle_status: route_network::BundleStatus::BundleReady,
+        };
+        let scores = route_score::score_bundle(
+            &bundle,
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+
+        let md =
+            format_bundle_corpus_entry(&bundle, &corridor, &scores, &CorpusProvenance::default());
+
+        assert!(md.contains("bundle:\n"));
+        assert!(md.contains("segment_bundle_id: \"US.HWYBUNDLE.I80\""));
+        assert!(md.contains("member_segment_ids: [\"US.HWYSEG.I80\"]"));
+        assert!(md.contains("corridor:\n"));
     }
 
     #[test]

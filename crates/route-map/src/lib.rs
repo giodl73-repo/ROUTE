@@ -2,7 +2,9 @@ pub mod basemap;
 pub mod projection;
 pub mod renderer;
 
-pub use renderer::{build_svg, svg_to_png};
+pub use renderer::{
+    build_bundle_svg, build_svg, bundle_render_identity, svg_to_png, BundleRenderIdentity,
+};
 
 pub mod megamap;
 pub use megamap::{

@@ -27,7 +27,9 @@ pub use hub::{
     compute_network_summary, load_hubs, proposed_hubs, run_hub_outage_sensitivity, t1_diamond_hubs,
     HubOutageConfig, HubOutageResult, HubOutageSummary, HubStaffing, NetworkSummary, RelayHub,
 };
-pub use incident::{apply_incident, restore_incident, IncidentSpec};
+pub use incident::{
+    apply_bundle_incident, apply_incident, restore_incident, BundleIncidentSpec, IncidentSpec,
+};
 pub use metrics::{corridor_pti, freight_cost_delta, network_throughput, SimMetrics};
 pub use od::{
     analyze_ev_charging, analyze_ev_rest_outage, apply_interventions, apply_seasonal, atl_chi,

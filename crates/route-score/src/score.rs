@@ -1,5 +1,5 @@
 use crate::config::ScoringConfig;
-use route_network::CorridorAttributes;
+use route_network::{CorridorAttributes, SegmentBundle};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dimension {
@@ -181,6 +181,21 @@ impl DimensionScores {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct BundleScores {
+    pub segment_bundle_id: String,
+    pub bundle_role: String,
+    pub member_count: usize,
+    pub route_labels: Vec<String>,
+    pub scores: DimensionScores,
+}
+
+impl BundleScores {
+    pub fn total(&self) -> f64 {
+        self.scores.total()
+    }
+}
+
 /// Score a corridor against all 16 dimensions using the provided config.
 pub fn score_corridor(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> DimensionScores {
     DimensionScores {
@@ -201,6 +216,25 @@ pub fn score_corridor(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> Dimens
         d2: score_d2(attrs, cfg),
         d3: score_d3(attrs, cfg),
         rubric_version: cfg.meta.rubric_version.clone(),
+    }
+}
+
+/// Score a service/corridor bundle.
+///
+/// This is the bundle-first API new optimizer, map, sim, and report code should
+/// use. `score_corridor` remains as the member/corridor compatibility layer
+/// while attributes are still aggregated outside the bundle registry.
+pub fn score_bundle(
+    bundle: &SegmentBundle,
+    attrs: &CorridorAttributes,
+    cfg: &ScoringConfig,
+) -> BundleScores {
+    BundleScores {
+        segment_bundle_id: bundle.segment_bundle_id.clone(),
+        bundle_role: bundle.bundle_role.clone(),
+        member_count: bundle.member_segment_ids.len(),
+        route_labels: bundle.route_labels.clone(),
+        scores: score_corridor(attrs, cfg),
     }
 }
 
@@ -1113,5 +1147,33 @@ mod tests {
         assert!(!scores.a4.estimated);
         assert!(!scores.b4.estimated);
         assert!(!scores.c4.estimated);
+    }
+
+    #[test]
+    fn score_bundle_preserves_bundle_identity_around_dimension_scores() {
+        let bundle = route_network::SegmentBundle {
+            segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: vec!["US.HWYSEG.TEST".to_string()],
+            stitch_group_ids: vec!["US.HWYSTITCH.TEST".to_string()],
+            current_tiers: vec!["T1".to_string()],
+            current_zone_ids: vec!["national".to_string()],
+            route_labels: vec!["I80".to_string()],
+            state_scope: vec!["IA".to_string()],
+            evidence_state_scope: vec!["IA".to_string()],
+            geometry_state_scope: Vec::new(),
+            bundle_aliases: vec!["route:I80".to_string()],
+            source_artifacts: vec!["fixture".to_string()],
+            registry_actions: vec!["eligible-for-geometry-layout".to_string()],
+            validation_statuses: vec!["pass".to_string()],
+            bundle_status: route_network::BundleStatus::BundleReady,
+        };
+
+        let scored = score_bundle(&bundle, &CorridorAttributes::default(), &cfg());
+
+        assert_eq!(scored.segment_bundle_id, "US.HWYBUNDLE.TEST");
+        assert_eq!(scored.member_count, 1);
+        assert_eq!(scored.route_labels, ["I80"]);
+        assert_eq!(scored.scores.rubric_version, cfg().meta.rubric_version);
     }
 }
