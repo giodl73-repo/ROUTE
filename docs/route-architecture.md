@@ -90,6 +90,7 @@ surface and name the next artifact that will attach identity.
 | `data/tier-pavement-source-gaps.csv` | Bundle-level action docket for pavement source/repair blockers holding T1/T2 bundles in review. |
 | `data/tier-pavement-acquisition-plan.csv` | State-level source acquisition plan for pavement blockers that must feed back into member readiness. |
 | `data/tier-pavement-acquisition-docket.csv` | Runnable source-acquisition task list for refreshing pavement evidence and rerunning bundle readiness gates. |
+| `data/source-fetch-policy.csv` | Gateable source-fetch cache policy proving scoped refreshes merge, full refreshes replace only after validation, and failed live snapshots preserve prior cache. |
 | `data/t3-zone-render-board.csv` | First renderer-facing artifact carrying stable segment identity. |
 | `data/t3-zone-stop-placement.csv` | First stop-placement artifact carrying stable segment identity and evidence state scope. |
 | `data/tier-optimizer-runs.csv` | Run certificate proving identity and bundle artifacts participate in the optimizer bundle. |

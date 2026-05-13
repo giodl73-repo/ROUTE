@@ -492,6 +492,20 @@ enum Commands {
         output: Option<PathBuf>,
     },
 
+    /// Emit and gate source-fetch cache preservation policy coverage
+    SourceFetchPolicy {
+        /// Output policy ledger CSV
+        #[arg(
+            long,
+            default_value = "data/source-fetch-policy.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if any fetch family lacks a cache-preservation contract
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show tier standards for a given tier
     Standards {
         /// Tier to show (1, 2, 3, or 4)
@@ -4451,6 +4465,28 @@ fn run_cli() -> Result<()> {
             println!(
                 "  Run `route score <corridor>` after this to see D1 update (manual join needed)."
             );
+        }
+
+        Commands::SourceFetchPolicy { output, gate } => {
+            println!("route source-fetch-policy");
+            let rows = source_fetch_policy_rows();
+            write_source_fetch_policy(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_source_fetch_policy_summary(&output, &rows);
+
+            if gate {
+                let failures = source_fetch_policy_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("source fetch policy gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("source fetch policy gate failed");
+                }
+                println!();
+                println!("source fetch policy gate: PASS");
+            }
         }
 
         Commands::Coverage {
@@ -12827,6 +12863,19 @@ struct TierOptimizerRunRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct SourceFetchPolicyRow {
+    fetch_family: String,
+    commands: String,
+    cache_targets: String,
+    mutation_mode: String,
+    preservation_contract: String,
+    implementation_guard: String,
+    validation_floor: String,
+    policy_doc: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 struct OptimizerMapHookRow {
     hook_id: String,
@@ -19985,6 +20034,177 @@ fn t1_feedback_docket_gate_failures(rows: &[T1FeedbackDocketRow]) -> Vec<String>
     failures
 }
 
+fn source_fetch_policy_rows() -> Vec<SourceFetchPolicyRow> {
+    vec![
+        source_fetch_policy_row(
+            "manifest-downloads",
+            "route fetch [--force]",
+            "data/cache/<manifest filename>",
+            "full-replace-after-validation",
+            "skip existing files unless --force; write new payload only after HTTP success",
+            "route_data::fetch::atomic_write_bytes",
+            "HTTP success and complete byte write before replace",
+        ),
+        source_fetch_policy_row(
+            "hpms-national",
+            "route fetch-hpms",
+            "data/cache/hpms_2018.csv",
+            "full-replace-after-validation",
+            "preserve prior national cache if all-state fetch returns zero rows",
+            "temp CSV plus replace_with_temp",
+            "non-empty HPMS record set",
+        ),
+        source_fetch_policy_row(
+            "hpms-state-scope",
+            "route fetch-hpms --states <STATE[,STATE]>",
+            "data/cache/hpms_2018.csv;data/cache/hpms_<state>.csv",
+            "scoped-merge",
+            "replace fetched state rows and preserve all non-requested state rows",
+            "merge_hpms_state_records plus temp CSV replace",
+            "at least one fetched HPMS row",
+        ),
+        source_fetch_policy_row(
+            "acs-county",
+            "route fetch-acs;route fetch-acs-income",
+            "data/cache/acs_county_pop_2022.csv;data/cache/acs_county_income_2022.csv",
+            "full-replace-after-validation",
+            "preserve prior ACS cache on HTTP, parse, or write failure",
+            "temp CSV plus replace_with_temp",
+            "Census JSON parses before CSV replace",
+        ),
+        source_fetch_policy_row(
+            "fema-corridor",
+            "route fetch-fema;route fetch-fema-d1",
+            "data/cache/fema_sfha_counts.csv;data/cache/fema_sfha_tile_counts.csv",
+            "full-replace-after-validation",
+            "preserve prior FEMA cache until query loop and CSV write finish",
+            "temp CSV plus replace_with_temp/replace_with_atomic_write",
+            "CSV rows flushed after query loop",
+        ),
+        source_fetch_policy_row(
+            "t1-live-event-snapshots",
+            "route t1-fetch-iowa511;route t1-fetch-tdot-smartway;route t1-fetch-mdot-midrive;route t1-fetch-indot-trafficwise",
+            "data/cache/*events.json;data/cache/*incidents.json",
+            "live-snapshot-preserve",
+            "latest snapshot path may advance, but failed fetches preserve the last usable snapshot",
+            "atomic_write_text after ArcGIS/GraphQL validation where available",
+            "HTTP success and source error envelope check where available",
+        ),
+    ]
+}
+
+fn source_fetch_policy_row(
+    fetch_family: &str,
+    commands: &str,
+    cache_targets: &str,
+    mutation_mode: &str,
+    preservation_contract: &str,
+    implementation_guard: &str,
+    validation_floor: &str,
+) -> SourceFetchPolicyRow {
+    SourceFetchPolicyRow {
+        fetch_family: fetch_family.to_string(),
+        commands: commands.to_string(),
+        cache_targets: cache_targets.to_string(),
+        mutation_mode: mutation_mode.to_string(),
+        preservation_contract: preservation_contract.to_string(),
+        implementation_guard: implementation_guard.to_string(),
+        validation_floor: validation_floor.to_string(),
+        policy_doc: "docs/source-fetch-cache-policy.md".to_string(),
+        validation_status: "pass".to_string(),
+    }
+}
+
+fn write_source_fetch_policy(path: &Path, rows: &[SourceFetchPolicyRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_source_fetch_policy_summary(output: &Path, rows: &[SourceFetchPolicyRow]) {
+    let mut modes = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *modes.entry(row.mutation_mode.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} source fetch policy rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (mode, count) in modes {
+        println!("  {mode}: {count}");
+    }
+}
+
+fn source_fetch_policy_gate_failures(rows: &[SourceFetchPolicyRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("source fetch policy emitted no rows".to_string());
+        return failures;
+    }
+    let allowed_modes = [
+        "scoped-merge",
+        "full-replace-after-validation",
+        "live-snapshot-preserve",
+    ];
+    let mut families = std::collections::BTreeSet::new();
+    for row in rows {
+        if !families.insert(row.fetch_family.as_str()) {
+            failures.push(format!("duplicate fetch family {}", row.fetch_family));
+        }
+        if row.fetch_family.trim().is_empty()
+            || row.commands.trim().is_empty()
+            || row.cache_targets.trim().is_empty()
+            || row.mutation_mode.trim().is_empty()
+            || row.preservation_contract.trim().is_empty()
+            || row.implementation_guard.trim().is_empty()
+            || row.validation_floor.trim().is_empty()
+            || row.policy_doc.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has empty policy fields", row.fetch_family));
+        }
+        if !allowed_modes.contains(&row.mutation_mode.as_str()) {
+            failures.push(format!(
+                "{} has unsupported mutation mode {}",
+                row.fetch_family, row.mutation_mode
+            ));
+        }
+        if row.validation_status != "pass" {
+            failures.push(format!("{} is not policy-valid", row.fetch_family));
+        }
+        if !row.policy_doc.ends_with("source-fetch-cache-policy.md") {
+            failures.push(format!(
+                "{} does not reference policy doc",
+                row.fetch_family
+            ));
+        }
+    }
+    for required in [
+        "manifest-downloads",
+        "hpms-national",
+        "hpms-state-scope",
+        "acs-county",
+        "fema-corridor",
+        "t1-live-event-snapshots",
+    ] {
+        if !families.contains(required) {
+            failures.push(format!("missing source fetch family {required}"));
+        }
+    }
+    failures
+}
+
 fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> {
     let stages = if all_tiers {
         vec![
@@ -20184,6 +20404,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-pavement-acquisition-docket",
                 "route tier-pavement-acquisition-docket --gate",
                 "data/tier-pavement-acquisition-docket.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "source-fetch-policy",
+                "route source-fetch-policy --gate",
+                "data/source-fetch-policy.csv",
                 "pass",
                 0,
                 "",
@@ -25795,6 +26023,7 @@ mod tests {
         pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
         pressure_standard_coverage_failures, rounded_score, scenario_edge_candidates,
         significant_moment_gate_failures, significant_moment_row_failure,
+        source_fetch_policy_gate_failures, source_fetch_policy_rows,
         standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
         standards_inventory_gate_failures, standards_inventory_row_has_contract,
         standards_pressure_gate_failures, stop_candidate_gate_failures, stop_coverage_for_routes,
@@ -25840,7 +26069,7 @@ mod tests {
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
-        ScoreAllRow, ScoreSignalRow, StopCandidateRow, T1DesignReviewCsvRow,
+        ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
         T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow,
         T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
@@ -28572,6 +28801,26 @@ mod tests {
         assert!(!merged
             .iter()
             .any(|row| row.state == "TX" && row.route_id == "US80" && row.aadt == Some(2000)));
+    }
+
+    #[test]
+    fn source_fetch_policy_covers_scoped_full_and_live_fetch_modes() {
+        let rows: Vec<SourceFetchPolicyRow> = source_fetch_policy_rows();
+        let failures = source_fetch_policy_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows.iter().any(
+            |row| row.fetch_family == "hpms-state-scope" && row.mutation_mode == "scoped-merge"
+        ));
+        assert!(rows
+            .iter()
+            .any(|row| row.mutation_mode == "full-replace-after-validation"));
+        assert!(rows
+            .iter()
+            .any(|row| row.mutation_mode == "live-snapshot-preserve"));
+        assert!(rows
+            .iter()
+            .all(|row| row.policy_doc == "docs/source-fetch-cache-policy.md"));
     }
 
     #[test]
