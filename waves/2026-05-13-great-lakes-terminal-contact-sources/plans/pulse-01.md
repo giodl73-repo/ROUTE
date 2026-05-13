@@ -2,7 +2,7 @@
 wave: great-lakes-terminal-contact-sources
 pulse: 01
 date: 2026-05-13
-status: planned
+status: done
 depends_on: []
 governing_roles:
   - citation-auditor
@@ -27,11 +27,11 @@ Create the Great Lakes terminal-contact source plan contract and gate.
 
 ## Deliverables
 
-- [ ] Add `data/t4-terminal-contact-source-plan.csv` or equivalent.
-- [ ] Gate required fields: route, zone, terminal district, source family,
+- [x] Add `data/t4-terminal-contact-source-plan.csv` or equivalent.
+- [x] Gate required fields: route, zone, terminal district, source family,
   required proof fields, acquisition status, proof blocker, and next artifact.
-- [ ] Enforce seed-source versus contact-proof-source separation.
-- [ ] Add tests for complete source-needed rows and invalid seed-as-proof rows.
+- [x] Enforce seed-source versus contact-proof-source separation.
+- [x] Add tests for complete source-needed rows and invalid seed-as-proof rows.
 
 ## Expected Gates
 

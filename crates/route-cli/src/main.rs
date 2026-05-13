@@ -2213,6 +2213,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit Great Lakes terminal-contact source acquisition plan
+    T4TerminalContactSourcePlan {
+        /// T4 terminal contact evidence queue CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-evidence.csv",
+            value_name = "FILE"
+        )]
+        contact_evidence: PathBuf,
+        /// Output T4 terminal contact source plan CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-contact-source-plan.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if source-plan rows are incomplete or confuse seed sources with proof
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T3/T4 access gaps from held route and terminal access columns
     #[command(name = "t3-t4-access-gaps")]
     T3T4AccessGaps {
@@ -7631,6 +7653,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal scenario readiness gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalContactSourcePlan {
+            contact_evidence,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-contact-source-plan");
+            let contact_rows = load_t4_terminal_contact_evidence(&contact_evidence)
+                .with_context(|| format!("loading {}", contact_evidence.display()))?;
+            let rows = t4_terminal_contact_source_plan_rows(&contact_rows);
+            write_t4_terminal_contact_source_plan(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_contact_source_plan_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_contact_source_plan_gate_failures(&rows, &contact_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal contact source plan gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal contact source plan gate failed");
+                }
+                println!();
+                println!("T4 terminal contact source plan gate: PASS");
             }
         }
 
@@ -13886,6 +13936,23 @@ struct T4TerminalScenarioReadinessRow {
     scenario_artifact: String,
     source_evidence_status: String,
     release_status: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalContactSourcePlanRow {
+    plan_id: String,
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district: String,
+    terminal_district_seed_source: String,
+    contact_proof_source_family: String,
+    contact_proof_source_artifact: String,
+    required_proof_fields: String,
+    acquisition_status: String,
+    proof_blocker: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -22386,6 +22453,201 @@ fn load_t4_terminal_contact_evidence(path: &Path) -> Result<Vec<T4TerminalContac
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn t4_terminal_contact_source_plan_rows(
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<T4TerminalContactSourcePlanRow> {
+    let mut rows = contact_rows
+        .iter()
+        .filter(|row| row.zone_id == "t3-great-lakes" && row.decision == "source-needed")
+        .map(|row| T4TerminalContactSourcePlanRow {
+            plan_id: format!("T4SOURCEPLAN-{}", stable_id_fragment(&row.queue_id)),
+            queue_id: row.queue_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district: row.terminal_district_seed.clone(),
+            terminal_district_seed_source: row.terminal_district_seed_source.clone(),
+            contact_proof_source_family: "public-terminal-contact-proof".to_string(),
+            contact_proof_source_artifact: "source-needed".to_string(),
+            required_proof_fields:
+                "route; terminal district; route-to-terminal contact statement; source title; source url or cached artifact; capture date"
+                    .to_string(),
+            acquisition_status: "source-needed".to_string(),
+            proof_blocker:
+                "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                    .to_string(),
+            next_artifact:
+                "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-02.md"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+
+    rows.sort_by(|a, b| {
+        a.terminal_district
+            .cmp(&b.terminal_district)
+            .then_with(|| a.route.cmp(&b.route))
+            .then_with(|| a.queue_id.cmp(&b.queue_id))
+    });
+    rows
+}
+
+fn write_t4_terminal_contact_source_plan(
+    path: &Path,
+    rows: &[T4TerminalContactSourcePlanRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_contact_source_plan_summary(
+    output: &Path,
+    rows: &[T4TerminalContactSourcePlanRow],
+) {
+    let mut by_district = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_district
+            .entry(row.terminal_district.as_str())
+            .or_default() += 1;
+        *by_status
+            .entry(row.acquisition_status.as_str())
+            .or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal contact source plan rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (district, count) in by_district {
+        println!("  {district}: {count}");
+    }
+    for (status, count) in by_status {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t4_terminal_contact_source_plan_gate_failures(
+    rows: &[T4TerminalContactSourcePlanRow],
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_ids = contact_rows
+        .iter()
+        .filter(|row| row.zone_id == "t3-great-lakes" && row.decision == "source-needed")
+        .map(|row| row.queue_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    if rows.is_empty() {
+        failures.push("no Great Lakes terminal contact source plan rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() != expected_ids.len() {
+        failures.push(format!(
+            "source plan has {} rows but expected {} Great Lakes source-needed rows",
+            rows.len(),
+            expected_ids.len()
+        ));
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.plan_id.trim().is_empty()
+            || row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.terminal_district.trim().is_empty()
+            || row.terminal_district_seed_source.trim().is_empty()
+            || row.contact_proof_source_family.trim().is_empty()
+            || row.required_proof_fields.trim().is_empty()
+            || row.acquisition_status.trim().is_empty()
+            || row.proof_blocker.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete source plan fields", row.plan_id));
+        }
+        if !seen.insert(row.queue_id.clone()) {
+            failures.push(format!(
+                "{} appears more than once in source plan",
+                row.queue_id
+            ));
+        }
+        if row.zone_id != "t3-great-lakes" {
+            failures.push(format!("{} is not a Great Lakes row", row.queue_id));
+        }
+        if !expected_ids.contains(row.queue_id.as_str()) {
+            failures.push(format!(
+                "{} is not a Great Lakes source-needed contact row",
+                row.queue_id
+            ));
+        }
+        if row.contact_proof_source_artifact == row.terminal_district_seed_source {
+            failures.push(format!(
+                "{} uses terminal district seed source as contact proof",
+                row.queue_id
+            ));
+        }
+        if !matches!(
+            row.acquisition_status.as_str(),
+            "source-needed" | "source-backed" | "blocked"
+        ) {
+            failures.push(format!(
+                "{} has invalid acquisition status {}",
+                row.queue_id, row.acquisition_status
+            ));
+        }
+        if row.acquisition_status == "source-needed" {
+            if row.contact_proof_source_artifact != "source-needed"
+                || row.validation_status != "review"
+            {
+                failures.push(format!(
+                    "{} source-needed row must keep source-needed proof artifact and review status",
+                    row.queue_id
+                ));
+            }
+            if !row.proof_blocker.contains("seed is not") {
+                failures.push(format!(
+                    "{} source-needed row lacks seed/proof blocker",
+                    row.queue_id
+                ));
+            }
+        }
+        if row.acquisition_status == "source-backed"
+            && row.contact_proof_source_artifact == "source-needed"
+        {
+            failures.push(format!(
+                "{} source-backed row lacks contact proof artifact",
+                row.queue_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review" | "held") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.queue_id, row.validation_status
+            ));
+        }
+    }
+
+    for expected_id in expected_ids {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} is missing from source plan"));
+        }
+    }
+
+    failures
 }
 
 fn t4_terminal_scenario_readiness_rows(
@@ -31044,6 +31306,7 @@ mod tests {
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
         t4_terminal_contact_evidence_gate_failures, t4_terminal_contact_evidence_rows,
+        t4_terminal_contact_source_plan_gate_failures, t4_terminal_contact_source_plan_rows,
         t4_terminal_scenario_readiness_gate_failures, t4_terminal_scenario_readiness_rows,
         throughput_proof_gate_failures, throughput_proof_has_bounded_contract,
         tier_candidate_column_gate_failures, tier_candidate_column_rows,
@@ -31070,9 +31333,9 @@ mod tests {
         T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, T4TerminalScenarioReadinessRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        T4TerminalAccessColumnRow, T4TerminalContactEvidenceRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
         TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
         TierTableScoreRow,
@@ -33423,6 +33686,142 @@ mod tests {
                 .iter()
                 .any(|failure| failure.contains("proximity-only contact cannot be scenario-ready")),
             "{proximity_failures:?}"
+        );
+    }
+
+    #[test]
+    fn t4_terminal_contact_source_plan_covers_great_lakes_source_needed_rows() {
+        let contact_rows = vec![
+            T4TerminalContactEvidenceRow {
+                queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
+                route: "I-294".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                terminal_district_seed: "Chicago Intermodal Complex".to_string(),
+                terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+                contact_basis:
+                    "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+                        .to_string(),
+                contact_proof_source: String::new(),
+                evidence_status: "source-needed".to_string(),
+                selected_higher_tier_attachment: "source-needed".to_string(),
+                decision: "source-needed".to_string(),
+                next_artifact:
+                    "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md".to_string(),
+                source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+                source_column_decision: "terminal-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalContactEvidenceRow {
+                queue_id: "T4CONTACT-T3GREATLAKES-US22".to_string(),
+                route: "US22".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                terminal_district_seed: "Columbus South".to_string(),
+                terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+                contact_basis:
+                    "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+                        .to_string(),
+                contact_proof_source: String::new(),
+                evidence_status: "source-needed".to_string(),
+                selected_higher_tier_attachment: "source-needed".to_string(),
+                decision: "source-needed".to_string(),
+                next_artifact:
+                    "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md".to_string(),
+                source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+                source_column_decision: "terminal-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalContactEvidenceRow {
+                queue_id: "T4CONTACT-T3SOUTHEAST-US90Z".to_string(),
+                route: "US90Z".to_string(),
+                zone_id: "t3-southeast".to_string(),
+                terminal_district_seed: "New Orleans Gentilly".to_string(),
+                terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+                contact_basis:
+                    "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+                        .to_string(),
+                contact_proof_source: String::new(),
+                evidence_status: "source-needed".to_string(),
+                selected_higher_tier_attachment: "source-needed".to_string(),
+                decision: "source-needed".to_string(),
+                next_artifact:
+                    "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-03.md".to_string(),
+                source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+                source_column_decision: "terminal-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t4_terminal_contact_source_plan_rows(&contact_rows);
+        let failures = t4_terminal_contact_source_plan_gate_failures(&rows, &contact_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.zone_id == "t3-great-lakes"));
+        assert!(rows
+            .iter()
+            .all(|row| row.contact_proof_source_artifact == "source-needed"));
+        assert!(rows.iter().all(|row| row
+            .required_proof_fields
+            .contains("route-to-terminal contact statement")));
+        assert!(rows.iter().any(
+            |row| row.route == "I-294" && row.terminal_district == "Chicago Intermodal Complex"
+        ));
+        assert!(rows
+            .iter()
+            .any(|row| row.route == "US22" && row.terminal_district == "Columbus South"));
+    }
+
+    #[test]
+    fn t4_terminal_contact_source_plan_rejects_seed_source_as_contact_proof() {
+        let bad_row = T4TerminalContactSourcePlanRow {
+            plan_id: "T4SOURCEPLAN-BAD".to_string(),
+            queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
+            route: "I-294".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district: "Chicago Intermodal Complex".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_proof_source_family: "public-terminal-contact-proof".to_string(),
+            contact_proof_source_artifact: "data/intermodal_terminals.csv".to_string(),
+            required_proof_fields:
+                "route; terminal district; route-to-terminal contact statement; source title"
+                    .to_string(),
+            acquisition_status: "source-needed".to_string(),
+            proof_blocker:
+                "terminal district seed is not route-to-terminal contact proof; acquire separate source"
+                    .to_string(),
+            next_artifact:
+                "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-02.md"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        };
+        let contact_row = T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
+            route: "I-294".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Chicago Intermodal Complex".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis:
+                "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+                    .to_string(),
+            contact_proof_source: String::new(),
+            evidence_status: "source-needed".to_string(),
+            selected_higher_tier_attachment: "source-needed".to_string(),
+            decision: "source-needed".to_string(),
+            next_artifact:
+                "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md".to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "review".to_string(),
+        };
+
+        let failures = t4_terminal_contact_source_plan_gate_failures(&[bad_row], &[contact_row]);
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure
+                    .contains("uses terminal district seed source as contact proof")),
+            "{failures:?}"
         );
     }
 

@@ -202,6 +202,12 @@ Current implementation status:
   no source-backed contact exists, so no terminal row is scenario-ready or
   release-ready. Both the contact queue and scenario docket are held-public in
   `data/release-manifest.csv` until source proof exists.
+- `data/t4-terminal-contact-source-plan.csv` is the Great Lakes / Ohio Valley
+  source-acquisition contract for the 33 Great Lakes `source-needed` contact
+  rows. It assigns each held route to a candidate terminal district, requires a
+  separate public terminal-contact proof source, records the missing proof
+  fields, and keeps every row `source-needed`/`review` until a non-seed contact
+  proof artifact exists.
 - `data/t3-t4-access-gaps.csv` collects unresolved T3/T4 access pressure into
   below-threshold feeder and terminal-evidence gap classes, inheriting
   constraint pressure from the held selector row. Terminal-evidence gap rows
