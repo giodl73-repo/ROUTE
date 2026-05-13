@@ -21102,7 +21102,7 @@ fn optimizer_map_hook_rows() -> Vec<OptimizerMapHookRow> {
 }
 
 fn artifact_has_content(path: &str) -> bool {
-    std::fs::metadata(path)
+    std::fs::metadata(repo_relative_artifact_path(path))
         .map(|metadata| metadata.is_file() && metadata.len() > 0)
         .unwrap_or(false)
 }
@@ -21145,10 +21145,46 @@ fn optimizer_map_hook_gate_failures(rows: &[OptimizerMapHookRow]) -> Vec<String>
         return failures;
     }
     for row in rows {
+        if row.hook_id.trim().is_empty()
+            || row.optimizer_artifact.trim().is_empty()
+            || row.consumer_artifact.trim().is_empty()
+            || row.consumer_type.trim().is_empty()
+            || row.gate_command.trim().is_empty()
+            || row.link_basis.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete optimizer hook fields",
+                row.hook_id
+            ));
+        }
+        if !row.gate_command.starts_with("route ")
+            || !row
+                .gate_command
+                .split_whitespace()
+                .any(|part| part == "--gate")
+        {
+            failures.push(format!(
+                "{} has non-gate consumer command {}",
+                row.hook_id, row.gate_command
+            ));
+        }
+        if !artifact_has_content(&row.optimizer_artifact) {
+            failures.push(format!(
+                "{} optimizer artifact missing or empty",
+                row.hook_id
+            ));
+        }
+        if !artifact_has_content(&row.consumer_artifact) {
+            failures.push(format!(
+                "{} consumer artifact missing or empty",
+                row.hook_id
+            ));
+        }
         if row.validation_status != "pass" {
             failures.push(format!(
-                "{} missing optimizer or consumer artifact",
-                row.hook_id
+                "{} has non-pass validation status {}",
+                row.hook_id, row.validation_status
             ));
         }
     }
@@ -29352,11 +29388,13 @@ mod tests {
 
     #[test]
     fn optimizer_map_hook_gate_requires_pass_status() {
+        let optimizer_artifact = write_optimizer_manifest_fixture("hook-optimizer", 1);
+        let consumer_artifact = write_optimizer_manifest_fixture("hook-consumer", 1);
         let rows = vec![
             OptimizerMapHookRow {
                 hook_id: "ok-hook".to_string(),
-                optimizer_artifact: "data/a.csv".to_string(),
-                consumer_artifact: "maps/a.png".to_string(),
+                optimizer_artifact: optimizer_artifact.display().to_string(),
+                consumer_artifact: consumer_artifact.display().to_string(),
                 consumer_type: "map".to_string(),
                 gate_command: "route example --gate".to_string(),
                 link_basis: "test".to_string(),
@@ -29367,7 +29405,7 @@ mod tests {
                 optimizer_artifact: "data/b.csv".to_string(),
                 consumer_artifact: "maps/b.png".to_string(),
                 consumer_type: "map".to_string(),
-                gate_command: "route example --gate".to_string(),
+                gate_command: "manual check".to_string(),
                 link_basis: "test".to_string(),
                 validation_status: "missing-artifact".to_string(),
             },
@@ -29375,8 +29413,15 @@ mod tests {
 
         assert_eq!(
             optimizer_map_hook_gate_failures(&rows),
-            vec!["missing-hook missing optimizer or consumer artifact".to_string()]
+            vec![
+                "missing-hook has non-gate consumer command manual check".to_string(),
+                "missing-hook optimizer artifact missing or empty".to_string(),
+                "missing-hook consumer artifact missing or empty".to_string(),
+                "missing-hook has non-pass validation status missing-artifact".to_string(),
+            ]
         );
+        let _ = std::fs::remove_dir_all(optimizer_artifact.parent().expect("fixture parent"));
+        let _ = std::fs::remove_dir_all(consumer_artifact.parent().expect("fixture parent"));
     }
 
     #[test]
