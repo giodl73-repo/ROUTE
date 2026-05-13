@@ -40,7 +40,7 @@ lower-order ones.
 
 | Order | Constraint class | Meaning |
 |---|---|---|
-| 0 | `evidence_admissibility` | Source, completion, and exception status required before a candidate can be promoted as real. |
+| 0 | `evidence_admissibility` and `source_acquisition_*` sub-classes | Source, completion, fetch-cache, snapshot-history, and exception status required before a candidate can be promoted as real. |
 | 1 | `promise_portfolio` | T1/T2/T3/T4 promise horizons that force service coverage: 48/36h, 24/12h, 6h, and 1h. |
 | 2 | `identity_and_bundle` | Segment ids, bundle ids, stitch groups, aliases, and graph-member continuity. |
 | 3 | `route_budget` | Route, bundle, build-class, and capital program limits. |
@@ -54,7 +54,7 @@ lower-order ones.
 | 11 | `duplication_and_parallel_service` | Duplicate T2/T3 service, close parallel lines, loops, and redundant market behavior. |
 | 12 | `lower_tier_attachment` | T2/T3/T4 attachment to accepted higher-tier contacts and upward pressure witnesses. |
 | 13 | `schematic_geometry` and `beck_*` diagnostic sub-classes | Beck stop order, bends only at selected stops, map spacing, label pressure, transfer complexity, long connectors, and color lineage. |
-| 14 | `game_ops_publication_readiness` | Scenario hooks, incidents, upgrades, publication claims, and user-facing overlays. |
+| 14 | `game_ops_publication_readiness` and `game_ops_*` sub-classes | Scenario hooks, incidents, upgrades, bundle-bound overlays, publication claims, and user-facing overlays. |
 
 Orders 3 and 4 split the older generic budget class because ROUTE now treats
 routes and stops as separate scarce design resources. Order 8 generalizes the
@@ -157,7 +157,8 @@ Examples of source ledgers:
 | T2 service duplication | `data/t2-parallel-service-queue.csv`, `data/t2-service-selection.csv` |
 | Lower-tier access pressure | `data/t3-t4-access-gaps.csv`, `data/t1-feedback-docket.csv` |
 | Beck rendering | `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, `data/t3-zone-map-diagnostics.csv` |
-| Game and operations hooks | `data/game/t2-bundle-overlays.csv`, scenario hook ledgers |
+| Source acquisition policy | `data/source-fetch-policy.csv`, evidence-window ledgers, source health ledgers |
+| Game and operations hooks | `data/game/t2-bundle-overlays.csv`, `data/game/t2-scenario-hooks.csv`, scenario hook ledgers |
 
 Future CLI:
 
@@ -218,8 +219,9 @@ their next artifact.
    constraint classes in this spec.
 2. Add `route optimizer-constraint-ledger --gate` as a normalizer over current
    source ledgers. The implemented slices cover pavement debt, T1 topology
-   repairs, T2 parallel service review, T3/T4 access gaps, and Beck T1/T2
-   diagnostics; follow-on slices should add game/source rows.
+   repairs, T2 parallel service review, T3/T4 access gaps, Beck T1/T2
+   diagnostics, source fetch policy, T2 scenario hooks, and T2 bundle-bound game
+   overlays.
 3. Add `route optimizer-constraint-budget --gate` to roll up selected rows by
    `segment_bundle_id`, candidate id, tier, and region. The first implemented
    rollup emits selector-facing route and bundle rows with blocker counts,
@@ -231,9 +233,9 @@ their next artifact.
    columns, T4 terminal access columns, and T3/T4 access gaps while preserving
    pavement-specific compatibility fields where downstream tools still expect
    them.
-5. Expand remaining game and source blockers into the same ledger so every
-   publication, incident, upgrade, and evidence-fetch decision has the same
-   typed blocker/debt surface as selectors.
+5. Expand later game and source blocker families into the same ledger whenever
+   they are added so every publication, incident, upgrade, and evidence-fetch
+   decision has the same typed blocker/debt surface as selectors.
 6. Add manifest rows so the all-tier optimizer bundle proves the ledger and
    aggregate budget were generated for the same run.
 

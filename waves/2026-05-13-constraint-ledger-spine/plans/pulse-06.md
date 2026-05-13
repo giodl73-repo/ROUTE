@@ -2,7 +2,7 @@
 wave: constraint-ledger-spine
 pulse: 06
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-05]
 governing_roles:
   - optimization-methodologist
@@ -30,15 +30,22 @@ use the same blocker/debt/next-artifact contract as selectors.
 
 ## Deliverables
 
-- [ ] Extend `optimizer_constraint_ledger_rows` with game/source input rows.
-- [ ] Add typed constraint classes for source acquisition and game ops readiness
+- [x] Extend `optimizer_constraint_ledger_rows` with game/source input rows.
+- [x] Add typed constraint classes for source acquisition and game ops readiness
   without collapsing them into schematic geometry.
-- [ ] Regenerate ledger, budget, affected game/source artifacts, and optimizer
+- [x] Regenerate ledger, budget, affected game/source artifacts, and optimizer
   manifest.
-- [ ] Update `docs/optimizer-constraint-ledger-spec.md` and review notes so
+- [x] Update `docs/optimizer-constraint-ledger-spec.md` and review notes so
   game/source migration is no longer listed as fully future work.
-- [ ] Add or update tests that prove at least one game row and one source row
+- [x] Add or update tests that prove at least one game row and one source row
   normalize into the ledger.
+
+## Result
+
+`route optimizer-constraint-ledger --gate` now emits source acquisition
+contracts, the live snapshot source guard, T2 scenario evidence holds, and T2
+bundle overlay binding holds into the normalized ledger. The corresponding
+budget rollup now carries 138 selector-facing rows and 117 claim blockers.
 
 ## Expected Gates
 

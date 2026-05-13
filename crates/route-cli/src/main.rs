@@ -2487,6 +2487,27 @@ enum Commands {
             value_name = "FILE"
         )]
         t3_t4_access_gaps: PathBuf,
+        /// Source-fetch policy CSV
+        #[arg(
+            long,
+            default_value = "data/source-fetch-policy.csv",
+            value_name = "FILE"
+        )]
+        source_fetch_policy: PathBuf,
+        /// T2 game scenario hook CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-scenario-hooks.csv",
+            value_name = "FILE"
+        )]
+        t2_scenario_hooks: PathBuf,
+        /// T2 bundle-bound game overlay CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-bundle-overlays.csv",
+            value_name = "FILE"
+        )]
+        t2_bundle_overlays: PathBuf,
         /// Output normalized constraint ledger CSV
         #[arg(
             long,
@@ -7837,6 +7858,9 @@ fn run_cli() -> Result<()> {
             t1_topology_repairs,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
+            source_fetch_policy,
+            t2_scenario_hooks,
+            t2_bundle_overlays,
             output,
             details,
             gate,
@@ -7850,6 +7874,15 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
             let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
                 .with_context(|| format!("loading {}", t3_t4_access_gaps.display()))?;
+            let mut source_policy_rows = load_source_fetch_policy(&source_fetch_policy)
+                .with_context(|| format!("loading {}", source_fetch_policy.display()))?;
+            if source_policy_rows.is_empty() {
+                source_policy_rows = source_fetch_policy_rows();
+            }
+            let scenario_hook_rows = load_t2_scenario_hooks(&t2_scenario_hooks)
+                .with_context(|| format!("loading {}", t2_scenario_hooks.display()))?;
+            let bundle_overlay_rows = load_t2_bundle_overlays(&t2_bundle_overlays)
+                .with_context(|| format!("loading {}", t2_bundle_overlays.display()))?;
             let rows = optimizer_constraint_ledger_rows(
                 &pavement_rows,
                 &topology_rows,
@@ -7857,6 +7890,9 @@ fn run_cli() -> Result<()> {
                 &access_gap_rows,
                 &route_map::beck_t1_diagnostics(),
                 &route_map::beck_t2_diagnostics(),
+                &source_policy_rows,
+                &scenario_hook_rows,
+                &bundle_overlay_rows,
             );
             write_optimizer_constraint_ledger(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
@@ -13335,7 +13371,7 @@ struct GameT2ServiceOverlayRow {
     release_gate: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BundleOverlayRow {
     tier: String,
     region_id: String,
@@ -13356,6 +13392,15 @@ struct T2BundleOverlayRow {
     binding_status: String,
     next_artifact: String,
     validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct T2ScenarioHookRow {
+    scenario_id: String,
+    service_class: String,
+    t2_map_id: String,
+    player_decision: String,
+    evidence_hold: String,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -17692,6 +17737,30 @@ fn load_game_t2_service_overlays(path: &Path) -> Result<Vec<GameT2ServiceOverlay
     Ok(rows)
 }
 
+fn load_t2_bundle_overlays(path: &Path) -> Result<Vec<T2BundleOverlayRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_scenario_hooks(path: &Path) -> Result<Vec<T2ScenarioHookRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn t2_bundle_overlay_rows(
     service_rows: &[T2ServiceSelectionRow],
     bundle_rows: &[NationalSegmentBundleRow],
@@ -18875,8 +18944,106 @@ fn optimizer_constraint_ledger_rows(
     access_gap_rows: &[T3T4AccessGapRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
     beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
+    source_policy_rows: &[SourceFetchPolicyRow],
+    scenario_hook_rows: &[T2ScenarioHookRow],
+    bundle_overlay_rows: &[T2BundleOverlayRow],
 ) -> Vec<OptimizerConstraintLedgerRow> {
     let mut rows = Vec::new();
+
+    for row in source_policy_rows {
+        let snapshot_hold = row.mutation_mode == "live-snapshot-preserve";
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-SOURCE-{}", stable_id_fragment(&row.fetch_family)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "all".to_string(),
+            region_id: "source-acquisition".to_string(),
+            constraint_order: 0,
+            constraint_class: if snapshot_hold {
+                "source_acquisition_snapshot_guard".to_string()
+            } else {
+                "source_acquisition_contract".to_string()
+            },
+            behavior_type: if snapshot_hold {
+                "claim-blocker".to_string()
+            } else {
+                "review".to_string()
+            },
+            constraint_scope: "source".to_string(),
+            subject_id: row.fetch_family.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: String::new(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: String::new(),
+            source_artifact: "data/source-fetch-policy.csv".to_string(),
+            source_row_id: row.fetch_family.clone(),
+            standard_artifact: row.policy_doc.clone(),
+            evidence_status: if snapshot_hold {
+                "source-needed".to_string()
+            } else {
+                "accepted".to_string()
+            },
+            constraint_status: if snapshot_hold {
+                "review".to_string()
+            } else {
+                row.validation_status.clone()
+            },
+            observed_value: row.mutation_mode.clone(),
+            threshold_value: if snapshot_hold {
+                "archive-or-repeat-window".to_string()
+            } else {
+                row.mutation_mode.clone()
+            },
+            measurement_unit: "source_fetch_policy".to_string(),
+            blocks_claims: if snapshot_hold {
+                "evidence|publication".to_string()
+            } else {
+                String::new()
+            },
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("commands={}", row.commands.split(';').count()),
+            penalty_score: if snapshot_hold { 1.0 } else { 0.0 },
+            repair_action: if snapshot_hold {
+                "accumulate-repeat-window-or-archive-history".to_string()
+            } else {
+                "preserve-cache-contract".to_string()
+            },
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: if snapshot_hold {
+                "unknown".to_string()
+            } else {
+                "low".to_string()
+            },
+            exception_id: if snapshot_hold {
+                row.fetch_family.clone()
+            } else {
+                String::new()
+            },
+            exception_artifact: if snapshot_hold {
+                "data/source-fetch-policy.csv".to_string()
+            } else {
+                String::new()
+            },
+            next_artifact: if snapshot_hold {
+                "data/t1-evidence-windows.csv".to_string()
+            } else {
+                row.policy_doc.clone()
+            },
+            optimizer_effect: row.preservation_contract.clone(),
+            validation_status: if snapshot_hold {
+                "review".to_string()
+            } else {
+                row.validation_status.clone()
+            },
+        });
+    }
 
     for row in pavement_rows {
         let repair_debt = row.debt_class.contains("repair");
@@ -19234,6 +19401,121 @@ fn optimizer_constraint_ledger_rows(
             exception_artifact: "data/beck-t2-diagnostics.csv".to_string(),
             next_artifact: next_artifact.to_string(),
             optimizer_effect: row.qualification_basis.to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in scenario_hook_rows {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-GAMEHOOK-{}", stable_id_fragment(&row.scenario_id)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: "game-campaign".to_string(),
+            constraint_order: 14,
+            constraint_class: "game_ops_publication_readiness".to_string(),
+            behavior_type: "claim-blocker".to_string(),
+            constraint_scope: "game".to_string(),
+            subject_id: row.scenario_id.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: String::new(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: row.t2_map_id.clone(),
+            source_artifact: "data/game/t2-scenario-hooks.csv".to_string(),
+            source_row_id: row.scenario_id.clone(),
+            standard_artifact: "docs/game/interstate-tycoon-plan.md".to_string(),
+            evidence_status: "source-needed".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: row.evidence_hold.clone(),
+            threshold_value: "no-evidence-hold".to_string(),
+            measurement_unit: "game_evidence_hold".to_string(),
+            blocks_claims: "game|upgrade|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("service_class={}", row.service_class),
+            penalty_score: 1.0,
+            repair_action: "close-evidence-hold-before-publication".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: row.scenario_id.clone(),
+            exception_artifact: "data/game/t2-scenario-hooks.csv".to_string(),
+            next_artifact: "data/game/t2-scenario-hooks.csv".to_string(),
+            optimizer_effect: row.player_decision.clone(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in bundle_overlay_rows
+        .iter()
+        .filter(|row| row.validation_status != "pass" || row.binding_status != "bundle-bound")
+    {
+        let repair_action = match row.binding_status.as_str() {
+            "service-class-overlay-pending" => "add-service-class-overlay",
+            "bundle-bound-review" => "resolve-bundle-validation",
+            "bundle-binding-pending" => "bind-route-to-segment-bundle",
+            _ => "review-game-overlay-binding",
+        };
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!(
+                "CON-GAMEOVERLAY-{}",
+                stable_id_fragment(&format!("{}-{}", row.route, row.binding_status))
+            ),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: row.region_id.clone(),
+            constraint_order: 14,
+            constraint_class: "game_ops_bundle_binding".to_string(),
+            behavior_type: "claim-blocker".to_string(),
+            constraint_scope: if row.segment_bundle_id.trim().is_empty() {
+                "route".to_string()
+            } else {
+                "bundle".to_string()
+            },
+            subject_id: if row.segment_bundle_id.trim().is_empty() {
+                row.route.clone()
+            } else {
+                row.segment_bundle_id.clone()
+            },
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: row.map_id.clone(),
+            source_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
+            source_row_id: row.route.clone(),
+            standard_artifact: "docs/game/interstate-tycoon-plan.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: row.binding_status.clone(),
+            threshold_value: "bundle-bound".to_string(),
+            measurement_unit: "game_overlay_binding_status".to_string(),
+            blocks_claims: "game|incident|upgrade|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!(
+                "service_class={};bundle_status={}",
+                row.service_class, row.bundle_status
+            ),
+            penalty_score: 1.0,
+            repair_action: repair_action.to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: row.binding_status.clone(),
+            exception_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
+            next_artifact: row.next_artifact.clone(),
+            optimizer_effect: row.pavement_debt_basis.clone(),
             validation_status: "review".to_string(),
         });
     }
@@ -23840,6 +24122,18 @@ fn source_fetch_policy_rows() -> Vec<SourceFetchPolicyRow> {
             "HTTP success and source error envelope check where available",
         ),
     ]
+}
+
+fn load_source_fetch_policy(path: &Path) -> Result<Vec<SourceFetchPolicyRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
 }
 
 fn source_fetch_policy_row(
@@ -29995,13 +30289,13 @@ mod tests {
         pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
         release_manifest_gate_failures, rounded_score, scenario_edge_candidates,
         significant_moment_gate_failures, significant_moment_row_failure,
-        source_fetch_policy_gate_failures, source_fetch_policy_row_covers_command,
-        source_fetch_policy_rows, standards_blueprint_gate_failures,
-        standards_evidence_level_is_allowed, standards_inventory_gate_failures,
-        standards_inventory_row_has_contract, standards_pressure_gate_failures,
-        stop_candidate_gate_failures, stop_coverage_for_routes, stop_coverage_gate_failures,
-        stop_plan_for_route, stop_plan_gate_failures, summarize_t1_failure_events,
-        t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
+        source_fetch_policy_gate_failures, source_fetch_policy_row,
+        source_fetch_policy_row_covers_command, source_fetch_policy_rows,
+        standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
+        standards_inventory_gate_failures, standards_inventory_row_has_contract,
+        standards_pressure_gate_failures, stop_candidate_gate_failures, stop_coverage_for_routes,
+        stop_coverage_gate_failures, stop_plan_for_route, stop_plan_gate_failures,
+        summarize_t1_failure_events, t1_beck_alignment_gate_failures, t1_beck_alignment_rows,
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
@@ -30050,12 +30344,12 @@ mod tests {
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
         T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2BundleOverlayRow, T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow,
+        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
@@ -33860,6 +34154,43 @@ mod tests {
             label_density_per_100px: 1.18,
             review_flag: "dense-transfer-review",
         }];
+        let source_policy_rows = vec![source_fetch_policy_row(
+            "t1-live-event-snapshots",
+            "route t1-fetch-iowa511",
+            "data/cache/*events.json",
+            "live-snapshot-preserve",
+            "failed fetches preserve the last usable snapshot",
+            "atomic_write_text",
+            "HTTP success",
+        )];
+        let scenario_hook_rows = vec![T2ScenarioHookRow {
+            scenario_id: "atlanta-managed-lane-stress".to_string(),
+            service_class: "transfer-spine".to_string(),
+            t2_map_id: "beck-schematic-t2-only".to_string(),
+            player_decision: "choose whether to harden a T2 merge spine".to_string(),
+            evidence_hold: "managed-lane merge validation missing".to_string(),
+        }];
+        let bundle_overlay_rows = vec![T2BundleOverlayRow {
+            tier: "T2".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            service_class: "unclassified".to_string(),
+            map_id: String::new(),
+            scenario_hook: String::new(),
+            incident_lever: String::new(),
+            upgrade_lever: String::new(),
+            restitch_lever: String::new(),
+            release_gate: String::new(),
+            pavement_debt_cost_m: 35.0,
+            pavement_debt_class: "repair-debt".to_string(),
+            pavement_debt_basis: "route-level pavement debt rollup".to_string(),
+            source_artifacts: "data/t2-service-selection.csv".to_string(),
+            binding_status: "service-class-overlay-pending".to_string(),
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
 
         let rows = optimizer_constraint_ledger_rows(
             &pavement_rows,
@@ -33868,11 +34199,14 @@ mod tests {
             &access_gap_rows,
             &beck_t1_rows,
             &beck_t2_rows,
+            &source_policy_rows,
+            &scenario_hook_rows,
+            &bundle_overlay_rows,
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
         assert!(failures.is_empty(), "{failures:?}");
-        assert_eq!(rows.len(), 6);
+        assert_eq!(rows.len(), 9);
         assert!(rows
             .iter()
             .any(|row| row.constraint_class == "asset_condition_debt"
@@ -33899,6 +34233,18 @@ mod tests {
             .iter()
             .any(|row| row.constraint_class == "beck_label_density"
                 && row.source_artifact == "data/beck-t2-diagnostics.csv"));
+        assert!(rows.iter().any(
+            |row| row.constraint_class == "source_acquisition_snapshot_guard"
+                && row.source_artifact == "data/source-fetch-policy.csv"
+        ));
+        assert!(rows.iter().any(
+            |row| row.constraint_class == "game_ops_publication_readiness"
+                && row.source_artifact == "data/game/t2-scenario-hooks.csv"
+        ));
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "game_ops_bundle_binding"
+                && row.source_artifact == "data/game/t2-bundle-overlays.csv"));
     }
 
     #[test]

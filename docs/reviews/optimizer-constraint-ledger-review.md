@@ -83,8 +83,8 @@ Implemented:
 
 Still required:
 
-- renderer/game/source-row migration to consume the same budget summary when
-  they make claim, upgrade, incident, or publication decisions
+- later renderer/game/source-row families to consume the same budget summary
+  when they make new claim, upgrade, incident, or publication decisions
 
 ## Decision
 
@@ -100,6 +100,7 @@ alongside pavement compatibility fields. T3/T4 access gaps now enter the
 normalized ledger, and T3 zone route columns, T4 terminal access columns, and
 T3/T4 access gaps carry the resulting budget fields back through the lower-tier
 selector cycle. T1/T2 Beck diagnostics now normalize schematic review flags into
-claim-blocking ledger rows and roll up through the same budget surface. Do not
-treat the full constraint system as implemented until game rows and source rows
-also consume the shared schema.
+claim-blocking ledger rows and roll up through the same budget surface. T2 game
+scenario hooks, T2 bundle-bound overlays, and source-fetch policy rows now also
+enter the normalized ledger and budget surface. Treat future renderer, game, and
+source artifacts as incomplete until they join the same schema.

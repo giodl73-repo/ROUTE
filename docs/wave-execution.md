@@ -64,5 +64,5 @@ Current backfill coverage:
 | `2026-05-12-optimizer-got-a-constitution` | Optimizer doctrine, T2/T3/T4 closure, bundles, manifests, source policy. |
 | `2026-05-13-constraint-ledger-spine` | Active wave: constraint ledger/budget migration across all blocker families. |
 
-The next planned pulse remains `Constraint Ledger Spine` pulse 06: game/source
-migration into the same ledger.
+The next planned pulse is `Constraint Ledger Spine` pulse 07: close the wave
+after game/source migration.
