@@ -2,7 +2,7 @@
 wave: terminal-contact-source-acquisition-spine
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - optimization-methodologist
@@ -19,11 +19,11 @@ source blockers, manifests, and gates.
 
 ## Deliverables
 
-- [ ] Write `waves/2026-05-13-terminal-contact-source-acquisition-spine/CLOSE.md`.
-- [ ] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
-- [ ] Summarize accepted, source-needed, blocked, and rejected proof rows.
-- [ ] Name scenario-ready rows or explicitly record that none exist.
-- [ ] Run final gates and commit.
+- [x] Write `waves/2026-05-13-terminal-contact-source-acquisition-spine/CLOSE.md`.
+- [x] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
+- [x] Summarize accepted, source-needed, blocked, and rejected proof rows.
+- [x] Name scenario-ready rows or explicitly record that none exist.
+- [x] Run final gates and commit.
 
 ## Expected Gates
 

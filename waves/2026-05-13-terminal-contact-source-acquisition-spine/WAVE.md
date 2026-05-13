@@ -1,8 +1,9 @@
 ---
 wave: terminal-contact-source-acquisition-spine
 date_open: 2026-05-13
-status: active
+status: done
 source: waves/2026-05-13-columbus-south-terminal-contact-proof/CLOSE.md
+close: waves/2026-05-13-terminal-contact-source-acquisition-spine/CLOSE.md
 ---
 
 # Terminal Contact Source Acquisition Spine
@@ -41,7 +42,7 @@ decision. Missing or inaccessible sources remain blockers, not gate failures.
 | 02 - Source registry intake | done | `data/t4-terminal-contact-proof-source-registry.csv`; 33 source-needed rows, seed proof rejected |
 | 03 - District proof import | done | `data/t4-terminal-contact-district-proof-import.csv`; largest unresolved district remains source-needed |
 | 04 - Evidence propagation | done | no accepted proof rows; contact evidence and scenario readiness remain held |
-| 05 - Wave close | planned | reconcile promotions, blockers, manifests, and gates |
+| 05 - Wave close | done | `CLOSE.md`; no accepted proof rows, residual source-needed blockers preserved |
 
 ## Done Criteria
 
