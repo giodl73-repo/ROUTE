@@ -16658,6 +16658,8 @@ fn t2_service_diagnostic_queue_rows(
             if bundle_status != "bundle-ready" {
                 return None;
             }
+            let (diagnostic_status, service_diagnostic_action, next_artifact, optimizer_effect) =
+                t2_service_diagnostic_contract(row, bundle);
             Some(T2ServiceDiagnosticQueueRow {
                 route: row.route.clone(),
                 region_id: row.region_id.clone(),
@@ -16665,18 +16667,11 @@ fn t2_service_diagnostic_queue_rows(
                 bundle_status,
                 selection_action: row.selection_action.clone(),
                 selection_basis: row.selection_basis.clone(),
-                diagnostic_status: if row.beck_corridor.trim().is_empty() {
-                    "beck-diagnostic-missing".to_string()
-                } else {
-                    "beck-diagnostic-review".to_string()
-                },
-                service_diagnostic_action: "author-beck-t2-diagnostic-before-map-overlay"
-                    .to_string(),
+                diagnostic_status: diagnostic_status.to_string(),
+                service_diagnostic_action: service_diagnostic_action.to_string(),
                 required_artifact: "data/t2-service-selection.csv".to_string(),
-                next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
-                optimizer_effect:
-                    "holds bundle-ready T2 route below map/game service until Beck service class exists"
-                        .to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: optimizer_effect.to_string(),
                 validation_status: "review".to_string(),
             })
         })
@@ -16699,6 +16694,56 @@ fn t2_service_diagnostic_queue_rows(
         });
     }
     rows
+}
+
+fn t2_service_diagnostic_contract(
+    row: &T2ServiceSelectionRow,
+    bundle: Option<&NationalSegmentBundleRow>,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    if row.beck_corridor.trim().is_empty()
+        && bundle
+            .map(|bundle| {
+                semicolon_values(&bundle.state_scope).len() > 1
+                    && canonical_route_key(&row.route)
+                        .strip_prefix('I')
+                        .and_then(|number| number.parse::<u16>().ok())
+                        .map(|number| number >= 100)
+                        .unwrap_or_default()
+            })
+            .unwrap_or_default()
+    {
+        return (
+            "route-family-diagnostic-split-needed",
+            "split-numbered-route-family-before-beck-diagnostic",
+            "data/national-segment-bundles.csv",
+            "holds multi-state three-digit route label below national Beck map until represented segment family is split",
+        );
+    }
+
+    if row.beck_corridor.trim().is_empty() && row.treatment_status == "review-treatment" {
+        return (
+            "local-relief-map-review",
+            "hold-local-relief-below-national-beck-map",
+            "data/t3-t4-pressure-intake.csv",
+            "keeps review-treatment relief service below map/game overlay until local or zone role is explicit",
+        );
+    }
+
+    if row.beck_corridor.trim().is_empty() {
+        return (
+            "beck-diagnostic-missing",
+            "author-beck-t2-diagnostic-before-map-overlay",
+            "data/beck-t2-diagnostics.csv",
+            "holds bundle-ready T2 route below map/game service until Beck service class exists",
+        );
+    }
+
+    (
+        "beck-diagnostic-review",
+        "review-existing-beck-t2-diagnostic-before-overlay",
+        "data/beck-t2-diagnostics.csv",
+        "holds bundle-ready T2 route until Beck diagnostic review is resolved",
+    )
 }
 
 fn national_bundle_matches_route(bundle: &NationalSegmentBundleRow, route: &str) -> bool {
@@ -16778,7 +16823,13 @@ fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnosticQueueRow
                 row.route, row.bundle_status
             ));
         }
-        if row.diagnostic_status != "beck-diagnostic-missing" {
+        if !matches!(
+            row.diagnostic_status.as_str(),
+            "beck-diagnostic-missing"
+                | "beck-diagnostic-review"
+                | "route-family-diagnostic-split-needed"
+                | "local-relief-map-review"
+        ) {
             failures.push(format!(
                 "{} unexpected diagnostic_status {}",
                 row.route, row.diagnostic_status
@@ -29121,8 +29172,62 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].route, "I285");
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I285");
-        assert_eq!(rows[0].diagnostic_status, "beck-diagnostic-missing");
-        assert_eq!(rows[0].next_artifact, "data/beck-t2-diagnostics.csv");
+        assert_eq!(rows[0].diagnostic_status, "local-relief-map-review");
+        assert_eq!(rows[0].next_artifact, "data/t3-t4-pressure-intake.csv");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn t2_service_diagnostic_queue_splits_multistate_route_families() {
+        let service_rows = vec![T2ServiceSelectionRow {
+            tier: "T2".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I295".to_string(),
+            parent_trunks: "I64;I95".to_string(),
+            column_decision: "selected".to_string(),
+            treatment_status: "selected-treatment".to_string(),
+            beck_corridor: String::new(),
+            beck_service_class: String::new(),
+            beck_color_mode: String::new(),
+            beck_start_trunk: String::new(),
+            beck_end_trunk: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            beck_service_action: String::new(),
+            qualification_basis: String::new(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bundles = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            bundle_role: "stitched-service".to_string(),
+            member_segment_ids: "US.HWYSEG.I295".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I295".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-0".to_string(),
+            route_labels: "I295".to_string(),
+            state_scope: "FL;GA;ME".to_string(),
+            evidence_state_scope: "FL;GA;ME".to_string(),
+            geometry_state_scope: "FL;GA;ME".to_string(),
+            bundle_aliases: "route:I295;route-label:I295".to_string(),
+            source_artifacts: "fixture".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = t2_service_diagnostic_queue_rows(&service_rows, &bundles);
+        let failures = t2_service_diagnostic_queue_gate_failures(&rows);
+
+        assert_eq!(rows[0].diagnostic_status, "route-family-diagnostic-split-needed");
+        assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
         assert!(failures.is_empty());
     }
 
