@@ -53,7 +53,7 @@ lower-order ones.
 | 10 | `resilience_and_alternate_path` | Redundancy, cut vulnerability, detour quality, and recovery paths. |
 | 11 | `duplication_and_parallel_service` | Duplicate T2/T3 service, close parallel lines, loops, and redundant market behavior. |
 | 12 | `lower_tier_attachment` | T2/T3/T4 attachment to accepted higher-tier contacts and upward pressure witnesses. |
-| 13 | `schematic_geometry` | Beck stop order, bends only at selected stops, map spacing, label pressure, and color lineage. |
+| 13 | `schematic_geometry` and `beck_*` diagnostic sub-classes | Beck stop order, bends only at selected stops, map spacing, label pressure, transfer complexity, long connectors, and color lineage. |
 | 14 | `game_ops_publication_readiness` | Scenario hooks, incidents, upgrades, publication claims, and user-facing overlays. |
 
 Orders 3 and 4 split the older generic budget class because ROUTE now treats
@@ -156,7 +156,7 @@ Examples of source ledgers:
 | Topology repair | `data/t1-topology-repairs.csv`, T2 contact witnesses |
 | T2 service duplication | `data/t2-parallel-service-queue.csv`, `data/t2-service-selection.csv` |
 | Lower-tier access pressure | `data/t3-t4-access-gaps.csv`, `data/t1-feedback-docket.csv` |
-| Beck rendering | `data/beck-t1-diagnostics.csv`, `data/t3-zone-map-diagnostics.csv` |
+| Beck rendering | `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, `data/t3-zone-map-diagnostics.csv` |
 | Game and operations hooks | `data/game/t2-bundle-overlays.csv`, scenario hook ledgers |
 
 Future CLI:
@@ -218,8 +218,8 @@ their next artifact.
    constraint classes in this spec.
 2. Add `route optimizer-constraint-ledger --gate` as a normalizer over current
    source ledgers. The implemented slices cover pavement debt, T1 topology
-   repairs, T2 parallel service review, and T3/T4 access gaps; follow-on slices
-   should add Beck diagnostics and game/source rows.
+   repairs, T2 parallel service review, T3/T4 access gaps, and Beck T1/T2
+   diagnostics; follow-on slices should add game/source rows.
 3. Add `route optimizer-constraint-budget --gate` to roll up selected rows by
    `segment_bundle_id`, candidate id, tier, and region. The first implemented
    rollup emits selector-facing route and bundle rows with blocker counts,
@@ -231,9 +231,9 @@ their next artifact.
    columns, T4 terminal access columns, and T3/T4 access gaps while preserving
    pavement-specific compatibility fields where downstream tools still expect
    them.
-5. Expand remaining renderer, game, and source blockers into the same ledger so
-   every publication, incident, upgrade, and evidence-fetch decision has the
-   same typed blocker/debt surface as selectors.
+5. Expand remaining game and source blockers into the same ledger so every
+   publication, incident, upgrade, and evidence-fetch decision has the same
+   typed blocker/debt surface as selectors.
 6. Add manifest rows so the all-tier optimizer bundle proves the ledger and
    aggregate budget were generated for the same run.
 

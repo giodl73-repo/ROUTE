@@ -28,8 +28,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,13,pass,0,,pass
 28,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,28,pass,0,,pass
 29,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,28,pass,0,,pass
-30,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,100,pass,0,,pass
-31,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,100,pass,0,,pass
+30,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,118,pass,0,,pass
+31,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,114,pass,0,,pass
 32,source-fetch-policy,route source-fetch-policy --gate,data/source-fetch-policy.csv,6,pass,0,,pass
 33,t2-bundle-overlays,route t2-bundle-overlays --gate,data/game/t2-bundle-overlays.csv,40,pass,0,,pass
 34,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,87,pass,0,,pass

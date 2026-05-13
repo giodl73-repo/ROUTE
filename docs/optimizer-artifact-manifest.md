@@ -127,7 +127,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 | Optimizer constraints, debt, penalties, and repair actions | `docs/optimizer-constraint-ledger-spec.md`, `data/optimizer-constraint-ledger.csv`, and `data/optimizer-constraint-budget.csv` |
 | Pavement and ride-quality floors | `docs/tier-pavement-standards.md`, `data/tier-pavement-standards.csv`, `data/tier-pavement-docket.csv`, `data/tier-pavement-source-gaps.csv`, `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-acquisition-plan.csv`, and `data/tier-pavement-acquisition-docket.csv` |
 | Source fetch cache preservation | `docs/source-fetch-cache-policy.md` and `data/source-fetch-policy.csv` |
-| Beck topology truth | `docs/beck-renderer-contract.md` plus map diagnostics |
+| Beck topology truth | `docs/beck-renderer-contract.md`, `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, and zone map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |
 | T3/T4 access doctrine | `docs/t3-t4-access-optimization.md` |
 | Release/publication status | `data/release-manifest.csv` and release docs |

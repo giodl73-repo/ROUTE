@@ -7855,6 +7855,8 @@ fn run_cli() -> Result<()> {
                 &topology_rows,
                 &parallel_rows,
                 &access_gap_rows,
+                &route_map::beck_t1_diagnostics(),
+                &route_map::beck_t2_diagnostics(),
             );
             write_optimizer_constraint_ledger(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
@@ -18871,6 +18873,8 @@ fn optimizer_constraint_ledger_rows(
     topology_rows: &[T1TopologyRepairRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
+    beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
+    beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
 ) -> Vec<OptimizerConstraintLedgerRow> {
     let mut rows = Vec::new();
 
@@ -19134,6 +19138,106 @@ fn optimizer_constraint_ledger_rows(
         });
     }
 
+    for row in beck_t1_rows.iter().filter(|row| row.review_flag != "ok") {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-BECKT1-{}", stable_id_fragment(row.corridor)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T1".to_string(),
+            region_id: "national".to_string(),
+            constraint_order: 13,
+            constraint_class: "beck_schematic_geometry".to_string(),
+            behavior_type: "claim-blocker".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.corridor.to_string(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: normalise_designation(row.corridor),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic".to_string(),
+            source_artifact: "data/beck-t1-diagnostics.csv".to_string(),
+            source_row_id: row.corridor.to_string(),
+            standard_artifact: "docs/beck-renderer-contract.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: row.review_flag.to_string(),
+            threshold_value: "ok".to_string(),
+            measurement_unit: "beck_review_flag".to_string(),
+            blocks_claims: "map|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!(
+                "shared_segments={};shared_stops={}",
+                row.shared_segment_count, row.shared_stop_count
+            ),
+            penalty_score: 1.0 + row.shared_segment_count as f64,
+            repair_action: row.service_action.to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: row.review_flag.to_string(),
+            exception_artifact: "data/beck-t1-diagnostics.csv".to_string(),
+            next_artifact: "data/t1-design-policy-actions.csv".to_string(),
+            optimizer_effect: row.qualification_basis.to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
+    for row in beck_t2_rows.iter().filter(|row| row.review_flag != "ok") {
+        let (constraint_class, repair_action, next_artifact) =
+            beck_t2_constraint_mapping(row.review_flag);
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-BECKT2-{}", stable_id_fragment(row.corridor)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: String::new(),
+            constraint_order: 13,
+            constraint_class: constraint_class.to_string(),
+            behavior_type: "claim-blocker".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.corridor.to_string(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: normalise_designation(row.corridor),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            source_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+            source_row_id: row.corridor.to_string(),
+            standard_artifact: "docs/beck-renderer-contract.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: row.review_flag.to_string(),
+            threshold_value: "ok".to_string(),
+            measurement_unit: "beck_review_flag".to_string(),
+            blocks_claims: "map|promotion|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!(
+                "stops={};transfers={};label_density={:.2}",
+                row.stop_count, row.transfer_stop_count, row.label_density_per_100px
+            ),
+            penalty_score: beck_t2_constraint_penalty(row),
+            repair_action: repair_action.to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: row.review_flag.to_string(),
+            exception_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+            next_artifact: next_artifact.to_string(),
+            optimizer_effect: row.qualification_basis.to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+
     rows.sort_by(|left, right| {
         left.constraint_order
             .cmp(&right.constraint_order)
@@ -19247,6 +19351,66 @@ fn print_optimizer_constraint_ledger_summary(
                 row.subject_id
             );
         }
+    }
+}
+
+fn beck_t2_constraint_mapping(review_flag: &str) -> (&'static str, &'static str, &'static str) {
+    match review_flag {
+        "unstopped-t1-contact-review" => (
+            "beck_unstopped_contact",
+            "add-transfer-stop-or-realign-contact",
+            "data/beck-t2-diagnostics.csv",
+        ),
+        "parallel-spacing-review" => (
+            "beck_parallel_spacing",
+            "separate-merge-or-demote-parallel-service",
+            "data/t2-parallel-service-queue.csv",
+        ),
+        "split-anchor-review" => (
+            "beck_split_anchor",
+            "add-split-anchor-stop-or-use-single-parent-color",
+            "data/beck-t2-diagnostics.csv",
+        ),
+        "duplicate-service-review" => (
+            "beck_duplicate_service",
+            "merge-demote-or-prove-distinct-parent-service",
+            "data/t2-service-selection.csv",
+        ),
+        "dense-label-review" | "dense-transfer-review" => (
+            "beck_label_density",
+            "space-labels-stops-or-split-service",
+            "data/beck-t2-diagnostics.csv",
+        ),
+        "transfer-complexity-review" => (
+            "beck_transfer_complexity",
+            "simplify-transfer-spine-or-add-zone-map",
+            "data/beck-t2-diagnostics.csv",
+        ),
+        "long-connector-review" => (
+            "beck_long_connector",
+            "review-long-connector-treatment",
+            "data/beck-t2-diagnostics.csv",
+        ),
+        _ => (
+            "beck_schematic_review",
+            "review-beck-diagnostic",
+            "data/beck-t2-diagnostics.csv",
+        ),
+    }
+}
+
+fn beck_t2_constraint_penalty(row: &route_map::BeckT2DiagnosticRow) -> f64 {
+    match row.review_flag {
+        "unstopped-t1-contact-review" => row.unstopped_t1_contact_count.max(1) as f64,
+        "parallel-spacing-review" => row.close_parallel_count.max(1) as f64,
+        "duplicate-service-review" => row.duplicate_service_count.max(1) as f64,
+        "dense-label-review" | "dense-transfer-review" => {
+            (row.label_density_per_100px - 0.95).max(0.25)
+        }
+        "transfer-complexity-review" => 1.0 + row.transfer_stop_count.saturating_sub(4) as f64,
+        "long-connector-review" => 1.0,
+        "split-anchor-review" => 1.0,
+        _ => 1.0,
     }
 }
 
@@ -33650,17 +33814,65 @@ mod tests {
             upward_pressure_allowed: false,
             validation_status: "review".to_string(),
         }];
+        let beck_t1_rows = vec![route_map::BeckT1DiagnosticRow {
+            corridor: "I-40",
+            endpoint_start: "BARSTOW",
+            endpoint_end: "BEN",
+            endpoint_status: "qualified",
+            stop_count: 16,
+            drawn_stop_count: 16,
+            transfer_stop_count: 12,
+            shared_stop_count: 4,
+            shared_stop_corridors: "I-20;I-35;I-75;I-95".to_string(),
+            shared_segment_count: 1,
+            shared_segment_corridors: "I-95".to_string(),
+            service_action: "overlap-review",
+            qualification_basis: "shared-backbone-segment-needs-policy",
+            review_flag: "overlap-review",
+        }];
+        let beck_t2_rows = vec![route_map::BeckT2DiagnosticRow {
+            corridor: "I-25",
+            trunk: "I-90",
+            start_trunk: "I-90",
+            end_trunk: "I-40",
+            color_mode: "split-parent",
+            service_class: "transfer-spine",
+            split_anchor: "DEN",
+            split_anchor_offset_pct: 1.0,
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            unique_duplicate_stop_count: 0,
+            service_action: "keep",
+            qualification_basis: "distinct-parent-service",
+            service_label: "High Plains",
+            stop_count: 9,
+            drawn_stop_count: 9,
+            transfer_stop_count: 6,
+            schematic_length_px: 762.0,
+            min_x: 624.0,
+            min_y: 232.0,
+            max_x: 776.0,
+            max_y: 867.0,
+            label_density_per_100px: 1.18,
+            review_flag: "dense-transfer-review",
+        }];
 
         let rows = optimizer_constraint_ledger_rows(
             &pavement_rows,
             &topology_rows,
             &parallel_rows,
             &access_gap_rows,
+            &beck_t1_rows,
+            &beck_t2_rows,
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
         assert!(failures.is_empty(), "{failures:?}");
-        assert_eq!(rows.len(), 4);
+        assert_eq!(rows.len(), 6);
         assert!(rows
             .iter()
             .any(|row| row.constraint_class == "asset_condition_debt"
@@ -33679,6 +33891,14 @@ mod tests {
             .any(|row| row.constraint_class == "lower_tier_feeder_gap"
                 && row.behavior_type == "claim-blocker"
                 && row.source_artifact == "data/t3-t4-access-gaps.csv"));
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "beck_schematic_geometry"
+                && row.source_artifact == "data/beck-t1-diagnostics.csv"));
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "beck_label_density"
+                && row.source_artifact == "data/beck-t2-diagnostics.csv"));
     }
 
     #[test]
