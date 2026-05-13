@@ -1,8 +1,9 @@
 ---
 wave: columbus-south-terminal-contact-proof
 date_open: 2026-05-13
-status: active
+status: done
 source: waves/2026-05-13-great-lakes-terminal-contact-sources/CLOSE.md
+close: waves/2026-05-13-columbus-south-terminal-contact-proof/CLOSE.md
 ---
 
 # Columbus South Terminal Contact Proof
@@ -66,7 +67,7 @@ and has a gate matching `docs/source-fetch-cache-policy.md`.
 | 02 - Source access contract | done | `data/t4-terminal-columbus-source-access.csv`; live fetch unsupported, manual/cached source-needed blockers recorded |
 | 03 - Route proof attempt | done | `data/t4-terminal-columbus-proof-attempts.csv`; eight blocked attempts, no source-backed promotion |
 | 04 - Evidence and scenario propagation | done | Columbus artifacts registered in optimizer/release manifests as held; scenario readiness remains proof-gated |
-| 05 - Wave close | planned | reconcile proof decisions, blockers, manifests, and gates |
+| 05 - Wave close | done | `CLOSE.md`; final gates reconcile eight blocked source-needed rows and no scenario-ready rows |
 
 ## Done Criteria
 

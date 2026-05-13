@@ -2,7 +2,7 @@
 wave: columbus-south-terminal-contact-proof
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - optimization-methodologist
@@ -19,12 +19,12 @@ source-needed rows, blocker counts, manifests, and gates.
 
 ## Deliverables
 
-- [ ] Write `waves/2026-05-13-columbus-south-terminal-contact-proof/CLOSE.md`.
-- [ ] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
-- [ ] Summarize each Columbus route as source-backed, source-needed, blocked, or
+- [x] Write `waves/2026-05-13-columbus-south-terminal-contact-proof/CLOSE.md`.
+- [x] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
+- [x] Summarize each Columbus route as source-backed, source-needed, blocked, or
   rejected.
-- [ ] Name any scenario-ready rows or explicitly record that none exist.
-- [ ] Run final gates and commit.
+- [x] Name any scenario-ready rows or explicitly record that none exist.
+- [x] Run final gates and commit.
 
 ## Expected Gates
 
