@@ -193,6 +193,10 @@ pavement rows keep the owning bundle in review.
 bundle-level source or repair actions. This is the closure surface for
 T1/T2 bundles whose only registry blocker is pavement evidence.
 
+`route tier-pavement-acquisition-plan --gate` groups those bundle blockers into
+state-level HPMS/DOT pavement source tasks. It is an acquisition planner, not a
+readiness proof; member readiness still closes through `data/tier-pavement-docket.csv`.
+
 `route national-segment-bundles --gate` rolls the registry up to
 `data/national-segment-bundles.csv`, producing one row per service/corridor
 bundle. Downstream service lines, Beck renderers, game overlays, incidents,

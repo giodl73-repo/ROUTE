@@ -78,3 +78,9 @@ When selected graph members do not carry per-edge state codes, the source-gap
 command infers `affected_states` from the route geometry through the corridor
 aggregator. Edge ids remain the exact source handles; state scope is used to
 plan DOT/HPMS acquisition coverage.
+
+`data/tier-pavement-acquisition-plan.csv` converts bundle source gaps into
+state-level acquisition tasks. Because route-inferred state scope may cover more
+than the exact missing member edges, state rows use conservative ceiling
+allocation for blocked-member coverage. The exact closure check remains the
+member-level pavement docket.
