@@ -65,5 +65,7 @@ Current backfill coverage:
 | `2026-05-13-constraint-ledger-spine` | Closed wave: constraint ledger/budget migration across all blocker families. |
 | `2026-05-13-constraint-ledger-blocker-burndown` | Closed wave: turned normalized constraint-budget blockers into explicit decisions and residual held-known backlogs. |
 | `2026-05-13-t4-terminal-contact-evidence` | Closed wave: converted T4 terminal evidence holds into a source-needed contact queue and held scenario-readiness docket. |
+| `2026-05-13-great-lakes-terminal-contact-sources` | Active wave: turn the largest Great Lakes source-needed terminal-contact slice into a source-acquisition and proof docket. |
 
-No active wave is currently open.
+The next planned pulse is `Great Lakes Terminal Contact Sources` pulse 01:
+create the terminal-contact source plan contract and gate.
