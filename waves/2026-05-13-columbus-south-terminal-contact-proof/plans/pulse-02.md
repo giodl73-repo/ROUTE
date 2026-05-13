@@ -2,7 +2,7 @@
 wave: columbus-south-terminal-contact-proof
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - citation-auditor
@@ -26,17 +26,18 @@ Decide and gate the source-access path for Columbus South terminal-contact proof
 
 ## Deliverables
 
-- [ ] Add a Columbus source-access contract or extend the intake artifact.
-- [ ] Mark live fetch unsupported unless a safe cache command exists.
-- [ ] Name required source metadata: title, URL/cache path, capture date, route,
+- [x] Add a Columbus source-access contract or extend the intake artifact.
+- [x] Mark live fetch unsupported unless a safe cache command exists.
+- [x] Name required source metadata: title, URL/cache path, capture date, route,
   terminal district, and contact statement.
-- [ ] Record unsupported source access as blockers, not gate failures.
+- [x] Record unsupported source access as blockers, not gate failures.
 
 ## Expected Gates
 
 - `route source-fetch-policy --gate`
 - `route t4-terminal-contact-source-plan --gate`
-- Columbus intake/source-access gate if added
+- `route t4-terminal-columbus-proof-intake --gate`
+- `route t4-terminal-columbus-source-access --gate`
 - `cargo test -p route`
 
 ## Non-Goals

@@ -63,7 +63,7 @@ and has a gate matching `docs/source-fetch-cache-policy.md`.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Columbus proof intake | done | `data/t4-terminal-columbus-proof-intake.csv`; `route t4-terminal-columbus-proof-intake --gate`; eight rows held source-needed |
-| 02 - Source access contract | planned | decide cached/manual versus safe fetch path and gate source blockers |
+| 02 - Source access contract | done | `data/t4-terminal-columbus-source-access.csv`; live fetch unsupported, manual/cached source-needed blockers recorded |
 | 03 - Route proof attempt | planned | attach traceable source attempts or blockers to all eight routes |
 | 04 - Evidence and scenario propagation | planned | promote only source-backed rows; keep scenario docket held otherwise |
 | 05 - Wave close | planned | reconcile proof decisions, blockers, manifests, and gates |
