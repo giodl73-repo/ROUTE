@@ -1,9 +1,7 @@
 tier,region_id,route,parent_trunks,column_decision,treatment_status,beck_corridor,beck_service_class,beck_color_mode,beck_start_trunk,beck_end_trunk,duplicate_service_count,duplicate_service_corridors,close_parallel_count,close_parallel_corridors,unstopped_t1_contact_count,unstopped_t1_contacts,beck_service_action,qualification_basis,selection_action,selection_basis,validation_status
 T2,component-1,I15,I84;I90,selected,selected-treatment,I-15,connector,split-parent,I-5,I-70,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass
-T2,component-1,I285,,review,review-treatment,,,,,,0,,0,,0,,,,closure-review-needs-beck-diagnostic,closure-accepted-missing-beck-t2-diagnostic,review
 T2,component-1,I29,I35,review,review-treatment,I-29,connector,split-parent,I-80,I-35,0,,0,,0,,keep,distinct-parent-service,parent-region-review,regionalizer-review-treatment,review
 T2,component-1,I30,,review,review-treatment,I-30,connector,split-parent,I-35,I-40,0,,0,,0,,keep,distinct-parent-service,parent-region-review,regionalizer-review-treatment,review
-T2,component-1,I405,,review,review-treatment,,,,,,0,,0,,0,,,,closure-review-needs-beck-diagnostic,closure-accepted-missing-beck-t2-diagnostic,review
 T2,component-1,I44,,review,review-treatment,I-44,long-connector,split-parent,I-40,I-90,0,,0,,0,,keep,distinct-parent-service,parent-region-review,regionalizer-review-treatment,review
 T2,component-1,I59,I20,review,review-treatment,I-59,connector,split-parent,I-10,I-75,0,,0,,0,,keep,distinct-parent-service,parent-region-review,regionalizer-review-treatment,review
 T2,component-1,I76,I70;I80,selected,selected-treatment,I-76,connector,split-parent,I-80,I-95,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass

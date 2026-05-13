@@ -1716,6 +1716,13 @@ enum Commands {
             value_name = "FILE"
         )]
         endpoint_closure: PathBuf,
+        /// T2 blocker closure CSV with bundle posture
+        #[arg(
+            long,
+            default_value = "data/t2-blocker-closure.csv",
+            value_name = "FILE"
+        )]
+        blocker_closure: PathBuf,
         /// Output candidate column CSV
         #[arg(
             long,
@@ -6743,6 +6750,7 @@ fn run_cli() -> Result<()> {
             graph_contact_validation,
             contact_closure,
             endpoint_closure,
+            blocker_closure,
             output,
             gate,
         } => {
@@ -6757,11 +6765,14 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", contact_closure.display()))?;
             let endpoint_rows = load_t2_endpoint_closure(&endpoint_closure)
                 .with_context(|| format!("loading {}", endpoint_closure.display()))?;
+            let blocker_rows = load_t2_blocker_closure(&blocker_closure)
+                .with_context(|| format!("loading {}", blocker_closure.display()))?;
             let dispositions = t2_closure_dispositions(
                 &route_family_rows,
                 &graph_rows,
                 &contact_rows,
                 &endpoint_rows,
+                &blocker_rows,
             );
             let column_rows = tier_candidate_column_rows(&witness_rows, &dispositions);
             write_tier_candidate_columns(&output, &column_rows)
@@ -6939,6 +6950,7 @@ fn run_cli() -> Result<()> {
                 &graph_rows,
                 &contact_rows,
                 &endpoint_rows,
+                &[],
             );
             let rows = lower_tier_pressure_witness_rows(
                 &tier_rows,
@@ -12714,6 +12726,9 @@ struct T2ClosureDisposition {
     disposition: String,
     action: String,
     basis: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    bundle_action: String,
     source_artifact: String,
     next_artifact: String,
 }
@@ -12736,6 +12751,9 @@ struct TierCandidateColumnRow {
     witness_type: String,
     repair_action: String,
     repair_basis: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    bundle_action: String,
     column_decision: String,
     evidence_status: String,
     required_artifact: String,
@@ -15293,10 +15311,26 @@ fn t2_closure_dispositions(
     graph_rows: &[T2GraphContactValidationRow],
     contact_rows: &[T2ContactClosureRow],
     endpoint_rows: &[T2EndpointClosureRow],
+    blocker_rows: &[T2BlockerClosureRow],
 ) -> std::collections::HashMap<String, T2ClosureDisposition> {
     let mut dispositions = std::collections::HashMap::new();
+    let bundle_by_route = blocker_rows
+        .iter()
+        .map(|row| {
+            (
+                canonical_route_key(&row.route),
+                (
+                    row.segment_bundle_id.clone(),
+                    row.bundle_status.clone(),
+                    row.bundle_action.clone(),
+                ),
+            )
+        })
+        .collect::<std::collections::HashMap<_, _>>();
 
     for row in route_family_rows {
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
             T2ClosureDisposition {
@@ -15304,12 +15338,17 @@ fn t2_closure_dispositions(
                 disposition: row.disposition.clone(),
                 action: row.family_action.clone(),
                 basis: row.required_evidence.clone(),
+                segment_bundle_id,
+                bundle_status,
+                bundle_action,
                 source_artifact: "data/t2-route-family-splits.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
         );
     }
     for row in graph_rows {
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
             T2ClosureDisposition {
@@ -15317,12 +15356,17 @@ fn t2_closure_dispositions(
                 disposition: row.disposition.clone(),
                 action: row.contact_action.clone(),
                 basis: row.required_evidence.clone(),
+                segment_bundle_id,
+                bundle_status,
+                bundle_action,
                 source_artifact: "data/t2-graph-contact-validation.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
         );
     }
     for row in contact_rows {
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
             T2ClosureDisposition {
@@ -15330,12 +15374,17 @@ fn t2_closure_dispositions(
                 disposition: row.disposition.clone(),
                 action: row.contact_action.clone(),
                 basis: row.required_evidence.clone(),
+                segment_bundle_id,
+                bundle_status,
+                bundle_action,
                 source_artifact: "data/t2-contact-closure.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
         );
     }
     for row in endpoint_rows {
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
             T2ClosureDisposition {
@@ -15343,6 +15392,9 @@ fn t2_closure_dispositions(
                 disposition: row.disposition.clone(),
                 action: row.endpoint_action.clone(),
                 basis: row.required_evidence.clone(),
+                segment_bundle_id,
+                bundle_status,
+                bundle_action,
                 source_artifact: "data/t2-endpoint-closure.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
@@ -15350,6 +15402,22 @@ fn t2_closure_dispositions(
     }
 
     dispositions
+}
+
+fn t2_closure_bundle_posture(
+    bundle_by_route: &std::collections::HashMap<String, (String, String, String)>,
+    route: &str,
+) -> (String, String, String) {
+    bundle_by_route
+        .get(&canonical_route_key(route))
+        .cloned()
+        .unwrap_or_else(|| {
+            (
+                String::new(),
+                "bundle-unchecked".to_string(),
+                "join t2-blocker-closure to bundle registry".to_string(),
+            )
+        })
 }
 
 fn tier_candidate_column_rows(
@@ -15380,15 +15448,18 @@ fn tier_candidate_column_rows(
                     .filter(|closure| closure.disposition == "candidate-review")
                     .map(|closure| closure.basis.clone())
                     .unwrap_or_else(|| row.repair_basis.clone()),
+                segment_bundle_id: closure
+                    .map(|closure| closure.segment_bundle_id.clone())
+                    .unwrap_or_default(),
+                bundle_status: closure
+                    .map(|closure| closure.bundle_status.clone())
+                    .unwrap_or_default(),
+                bundle_action: closure
+                    .map(|closure| closure.bundle_action.clone())
+                    .unwrap_or_default(),
                 column_decision: column_decision.to_string(),
-                evidence_status: closure
-                    .filter(|closure| closure.disposition == "candidate-review")
-                    .map(|_| "closure-accepted".to_string())
-                    .unwrap_or_else(|| row.evidence_status.clone()),
-                required_artifact: closure
-                    .filter(|closure| closure.disposition == "candidate-review")
-                    .map(|closure| closure.source_artifact.clone())
-                    .unwrap_or_else(|| row.required_artifact.clone()),
+                evidence_status: tier_candidate_column_evidence_status(row, closure),
+                required_artifact: tier_candidate_column_required_artifact(row, closure),
                 validation_status: if column_decision == "selected" {
                     "pass"
                 } else {
@@ -15409,6 +15480,12 @@ fn tier_candidate_column_decision(
             .map(|closure| closure.disposition == "candidate-review")
             .unwrap_or_default()
     {
+        if closure
+            .map(|closure| closure.bundle_status.as_str() != "bundle-ready")
+            .unwrap_or_default()
+        {
+            return "blocked";
+        }
         return "review";
     }
     match row.witness_type.as_str() {
@@ -15416,6 +15493,42 @@ fn tier_candidate_column_decision(
         "parent-region-review" => "review",
         "tier-demotion-needed" => "demote",
         _ => "blocked",
+    }
+}
+
+fn tier_candidate_column_evidence_status(
+    row: &TierContactWitnessInputRow,
+    closure: Option<&T2ClosureDisposition>,
+) -> String {
+    match closure {
+        Some(closure)
+            if closure.disposition == "candidate-review"
+                && closure.bundle_status == "bundle-ready" =>
+        {
+            "closure-accepted-bundle-ready".to_string()
+        }
+        Some(closure) if closure.disposition == "candidate-review" => {
+            "closure-bundle-pending".to_string()
+        }
+        _ => row.evidence_status.clone(),
+    }
+}
+
+fn tier_candidate_column_required_artifact(
+    row: &TierContactWitnessInputRow,
+    closure: Option<&T2ClosureDisposition>,
+) -> String {
+    match closure {
+        Some(closure)
+            if closure.disposition == "candidate-review"
+                && closure.bundle_status != "bundle-ready" =>
+        {
+            "data/t2-blocker-closure.csv".to_string()
+        }
+        Some(closure) if closure.disposition == "candidate-review" => {
+            closure.source_artifact.clone()
+        }
+        _ => row.required_artifact.clone(),
     }
 }
 
@@ -26544,11 +26657,11 @@ mod tests {
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerMapHookRow, PavementStandardRow,
         ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
         T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2ContactClosureRow, T2ContactResolutionRow,
+        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
@@ -27560,16 +27673,89 @@ mod tests {
             optimizer_effect: "eligible for T2 candidate-column review".to_string(),
             validation_status: "review".to_string(),
         }];
-        let dispositions = t2_closure_dispositions(&[], &graph_rows, &[], &[]);
+        let blocker_rows = vec![T2BlockerClosureRow {
+            route: "I30".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I30".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            source_surface: "t2-graph-contact-repairs".to_string(),
+            blocker_class: "graph-contact-repair".to_string(),
+            blocker_action: "repair-route-geometry-or-demote".to_string(),
+            required_evidence: "prove contact".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "blocked until contact exists".to_string(),
+            closure_status: "open".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let dispositions = t2_closure_dispositions(&[], &graph_rows, &[], &[], &blocker_rows);
 
         let columns = tier_candidate_column_rows(&rows, &dispositions);
 
         assert_eq!(columns[0].column_decision, "review");
-        assert_eq!(columns[0].evidence_status, "closure-accepted");
+        assert_eq!(columns[0].bundle_status, "bundle-ready");
+        assert_eq!(columns[0].evidence_status, "closure-accepted-bundle-ready");
         assert_eq!(
             columns[0].required_artifact,
             "data/t2-graph-contact-validation.csv"
         );
+    }
+
+    #[test]
+    fn tier_candidate_columns_block_candidate_review_without_bundle() {
+        let rows = vec![TierContactWitnessInputRow {
+            tier: "T2".to_string(),
+            route: "I285".to_string(),
+            witness_type: "graph-contact-needed".to_string(),
+            node_class: "missing_graph_data".to_string(),
+            route_miles: 172.0,
+            observed_t1_node_count: 0,
+            observed_parent_trunks: String::new(),
+            observed_dual_contacts: 1,
+            component_id: 1,
+            component_route_count: 18,
+            component_status: "component-bridged:21".to_string(),
+            repair_action: "fix-graph-contact-or-demote".to_string(),
+            repair_basis: "missing-t1-contact-evidence".to_string(),
+            evidence_status: "source-needed".to_string(),
+            required_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let contact_rows = vec![T2ContactClosureRow {
+            route: "I285".to_string(),
+            blocker_class: "relief-contact-repair".to_string(),
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 1,
+            observed_parent_trunks: String::new(),
+            contact_action: "accept-observed-contact".to_string(),
+            disposition: "candidate-review".to_string(),
+            required_evidence: "observed T1/T2 contact".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "eligible for T2 candidate-column review".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let blocker_rows = vec![T2BlockerClosureRow {
+            route: "I285".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: "bundle-missing".to_string(),
+            bundle_action: "resolve route family or add segment bundle".to_string(),
+            source_surface: "t2-relief-evidence-docket".to_string(),
+            blocker_class: "relief-contact-repair".to_string(),
+            blocker_action: "source-observed-relief-review".to_string(),
+            required_evidence: "atri-bottleneck-route-match".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "retain relief review only after contact repair validates"
+                .to_string(),
+            closure_status: "evidence-observed".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let dispositions = t2_closure_dispositions(&[], &[], &contact_rows, &[], &blocker_rows);
+
+        let columns = tier_candidate_column_rows(&rows, &dispositions);
+
+        assert_eq!(columns[0].column_decision, "blocked");
+        assert_eq!(columns[0].bundle_status, "bundle-missing");
+        assert_eq!(columns[0].evidence_status, "closure-bundle-pending");
+        assert_eq!(columns[0].required_artifact, "data/t2-blocker-closure.csv");
     }
 
     #[test]
@@ -27595,7 +27781,7 @@ mod tests {
             optimizer_effect: "kept out of T2 until endpoint exception is upgraded".to_string(),
             validation_status: "review".to_string(),
         }];
-        let dispositions = t2_closure_dispositions(&[], &[], &[], &endpoint_rows);
+        let dispositions = t2_closure_dispositions(&[], &[], &[], &endpoint_rows, &[]);
 
         let rows = lower_tier_pressure_witness_rows(&tier_rows, &[], &[], &dispositions);
 
@@ -28746,6 +28932,9 @@ mod tests {
                 witness_type: "regionalizer-ready".to_string(),
                 repair_action: "keep-for-regionalizer".to_string(),
                 repair_basis: "touches-multiple-t1-trunks".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+                bundle_status: "bundle-ready".to_string(),
+                bundle_action: "use bundle as service join surface".to_string(),
                 column_decision: "selected".to_string(),
                 evidence_status: "accepted".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -28768,6 +28957,9 @@ mod tests {
                 witness_type: "parent-region-review".to_string(),
                 repair_action: "keep-with-parent-region-review".to_string(),
                 repair_basis: "relief-loop-shares-parent-service-context".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I29".to_string(),
+                bundle_status: "bundle-ready".to_string(),
+                bundle_action: "use bundle as service join surface".to_string(),
                 column_decision: "review".to_string(),
                 evidence_status: "review".to_string(),
                 required_artifact: "data/tier-candidate-columns.csv".to_string(),
@@ -29417,6 +29609,9 @@ mod tests {
             witness_type: "tier-demotion-needed".to_string(),
             repair_action: "demote-to-t3-t4".to_string(),
             repair_basis: "local-spur".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: String::new(),
+            bundle_action: String::new(),
             column_decision: "demote".to_string(),
             evidence_status: "policy-action".to_string(),
             required_artifact: "data/tier-table.csv".to_string(),

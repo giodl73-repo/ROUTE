@@ -68,6 +68,12 @@ This keeps three problems separate:
 The optimizer may demote, review, or split a route only after that bundle
 posture is explicit.
 
+Candidate-column closure is also bundle-gated. A row with accepted contact
+evidence can re-enter regionalizer review only when the associated blocker
+closure has a ready bundle. If the blocker closure says `bundle-missing`,
+`needs-stop-chain`, or `needs-terminal-stop`, the candidate remains blocked
+until the bundle registry catches up.
+
 ## Contact Rules
 
 A T2 route normally needs at least two valid system contacts:
