@@ -111,3 +111,9 @@ and alias fields for T3 zone board rows.
 `route t3-zone-stop-placement --gate` carries those fields forward and adds
 zone-bounded `state_scope` from selected stop chains. This is the first guard
 against duplicate route labels being treated as the same physical corridor.
+
+`route national-segment-registry --gate` merges segment-bearing artifacts into
+`data/national-segment-registry.csv`, producing one auditable row per stable
+segment identity. The registry is the surface downstream optimizers, renderers,
+incident overlays, and game systems should join against before trusting route
+labels.

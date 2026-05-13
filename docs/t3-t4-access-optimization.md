@@ -200,6 +200,9 @@ Current implementation status:
 - `docs/national-segment-identity-spec.md` defines the stable segment id,
   route-bundle, stitch-group, alias, and state-scope grammar used by the T3
   render-board and stop-placement outputs.
+- `data/national-segment-registry.csv` merges segment-bearing rows into one
+  auditable identity surface for downstream geometry, overlays, and promotion
+  review.
 - `data/t2-bubble-up-review.csv` sends 18 near-threshold T3 rows to T2 contact
   review instead of promoting them directly.
 - `data/map-atlas.csv` tracks five T3 zone maps.

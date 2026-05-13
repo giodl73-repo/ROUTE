@@ -1894,6 +1894,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit a national segment identity registry from segment-bearing optimizer artifacts
+    NationalSegmentRegistry {
+        /// T3 zone render board CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-render-board.csv",
+            value_name = "FILE"
+        )]
+        render_board: PathBuf,
+        /// T3 zone stop placement CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-stop-placement.csv",
+            value_name = "FILE"
+        )]
+        stop_placement: PathBuf,
+        /// Output national segment registry CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/national-segment-registry.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if segment identities are incomplete, unparseable, or detached from bundles
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 review rows created by lower-tier bubble-up pressure
     T2BubbleUpReview {
         /// T3/T4 pressure intake CSV
@@ -6622,6 +6651,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T3 zone stop placement gate: PASS");
+            }
+        }
+
+        Commands::NationalSegmentRegistry {
+            render_board,
+            stop_placement,
+            output,
+            gate,
+        } => {
+            println!("route national-segment-registry");
+            let board_rows = load_t3_zone_render_board(&render_board)
+                .with_context(|| format!("loading {}", render_board.display()))?;
+            let placement_rows = load_t3_zone_stop_placement(&stop_placement)
+                .with_context(|| format!("loading {}", stop_placement.display()))?;
+            let rows = national_segment_registry_rows(&board_rows, &placement_rows);
+            write_national_segment_registry(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_national_segment_registry_summary(&output, &rows);
+
+            if gate {
+                let failures = national_segment_registry_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("National segment registry gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("national segment registry gate failed");
+                }
+                println!();
+                println!("National segment registry gate: PASS");
             }
         }
 
@@ -11799,6 +11859,24 @@ struct T3ZoneStopPlacementRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct NationalSegmentRegistryRow {
+    national_segment_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    zone_id: String,
+    route: String,
+    state_scope: String,
+    segment_aliases: String,
+    board_layers: String,
+    source_artifacts: String,
+    stop_placement_status: String,
+    bundle_role: String,
+    member_segment_ids: String,
+    registry_action: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BubbleUpReviewRow {
     route: String,
     source_intake_class: String,
@@ -16538,6 +16616,295 @@ fn t3_zone_stop_placement_gate_failures(
     failures
 }
 
+fn load_t3_zone_stop_placement(path: &Path) -> Result<Vec<T3ZoneStopPlacementRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+#[derive(Default)]
+struct NationalSegmentRegistryBuilder {
+    national_segment_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    zone_id: String,
+    route: String,
+    state_scope: std::collections::BTreeSet<String>,
+    segment_aliases: std::collections::BTreeSet<String>,
+    board_layers: std::collections::BTreeSet<String>,
+    source_artifacts: std::collections::BTreeSet<String>,
+    stop_placement_status: std::collections::BTreeSet<String>,
+    validation_statuses: std::collections::BTreeSet<String>,
+}
+
+fn national_segment_registry_rows(
+    board_rows: &[T3ZoneRenderBoardRow],
+    placement_rows: &[T3ZoneStopPlacementRow],
+) -> Vec<NationalSegmentRegistryRow> {
+    let mut builders = std::collections::BTreeMap::<String, NationalSegmentRegistryBuilder>::new();
+
+    for row in board_rows {
+        let builder = builders
+            .entry(row.national_segment_id.clone())
+            .or_insert_with(|| NationalSegmentRegistryBuilder {
+                national_segment_id: row.national_segment_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                stitch_group_id: row.stitch_group_id.clone(),
+                zone_id: row.zone_id.clone(),
+                route: row.route.clone(),
+                ..Default::default()
+            });
+        merge_segment_identity(
+            builder,
+            &row.segment_bundle_id,
+            &row.stitch_group_id,
+            &row.zone_id,
+            &row.route,
+        );
+        builder.board_layers.insert(row.board_layer.clone());
+        insert_semicolon_values(&mut builder.source_artifacts, &row.source_artifact);
+        insert_semicolon_values(&mut builder.segment_aliases, &row.segment_aliases);
+        builder
+            .validation_statuses
+            .insert(row.validation_status.clone());
+    }
+
+    for row in placement_rows {
+        let builder = builders
+            .entry(row.national_segment_id.clone())
+            .or_insert_with(|| NationalSegmentRegistryBuilder {
+                national_segment_id: row.national_segment_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                stitch_group_id: row.stitch_group_id.clone(),
+                zone_id: row.zone_id.clone(),
+                route: row.route.clone(),
+                ..Default::default()
+            });
+        merge_segment_identity(
+            builder,
+            &row.segment_bundle_id,
+            &row.stitch_group_id,
+            &row.zone_id,
+            &row.route,
+        );
+        builder.board_layers.insert("stop-placement".to_string());
+        insert_semicolon_values(&mut builder.source_artifacts, &row.source_artifact);
+        insert_semicolon_values(&mut builder.segment_aliases, &row.segment_aliases);
+        insert_semicolon_values(&mut builder.state_scope, &row.state_scope);
+        builder
+            .stop_placement_status
+            .insert(row.placement_status.clone());
+        builder
+            .validation_statuses
+            .insert(row.validation_status.clone());
+    }
+
+    builders
+        .into_values()
+        .map(|builder| {
+            let validation_status = if builder
+                .validation_statuses
+                .iter()
+                .all(|status| status == "pass")
+            {
+                "pass"
+            } else {
+                "review"
+            };
+            let registry_action = national_segment_registry_action(
+                &builder.board_layers,
+                &builder.stop_placement_status,
+                &builder.state_scope,
+            );
+            NationalSegmentRegistryRow {
+                member_segment_ids: builder.national_segment_id.clone(),
+                bundle_role: "single-segment".to_string(),
+                national_segment_id: builder.national_segment_id,
+                segment_bundle_id: builder.segment_bundle_id,
+                stitch_group_id: builder.stitch_group_id,
+                zone_id: builder.zone_id,
+                route: builder.route,
+                state_scope: join_string_set(&builder.state_scope),
+                segment_aliases: join_string_set(&builder.segment_aliases),
+                board_layers: join_string_set(&builder.board_layers),
+                source_artifacts: join_string_set(&builder.source_artifacts),
+                stop_placement_status: join_string_set(&builder.stop_placement_status),
+                registry_action: registry_action.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect()
+}
+
+fn merge_segment_identity(
+    builder: &mut NationalSegmentRegistryBuilder,
+    segment_bundle_id: &str,
+    stitch_group_id: &str,
+    zone_id: &str,
+    route: &str,
+) {
+    if builder.segment_bundle_id.is_empty() {
+        builder.segment_bundle_id = segment_bundle_id.to_string();
+    }
+    if builder.stitch_group_id.is_empty() {
+        builder.stitch_group_id = stitch_group_id.to_string();
+    }
+    if builder.zone_id.is_empty() {
+        builder.zone_id = zone_id.to_string();
+    }
+    if builder.route.is_empty() {
+        builder.route = route.to_string();
+    }
+}
+
+fn insert_semicolon_values(target: &mut std::collections::BTreeSet<String>, value: &str) {
+    for item in value
+        .split(';')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+    {
+        target.insert(item.to_string());
+    }
+}
+
+fn join_string_set(values: &std::collections::BTreeSet<String>) -> String {
+    values.iter().cloned().collect::<Vec<_>>().join(";")
+}
+
+fn national_segment_registry_action(
+    board_layers: &std::collections::BTreeSet<String>,
+    stop_statuses: &std::collections::BTreeSet<String>,
+    state_scope: &std::collections::BTreeSet<String>,
+) -> &'static str {
+    if board_layers.contains("zone-summary") || board_layers.contains("unassigned-gap-backlog") {
+        return "track-zone-or-backlog-identity";
+    }
+    if stop_statuses.contains("ready-for-stop-layout") {
+        return "eligible-for-geometry-layout";
+    }
+    if state_scope.is_empty() {
+        return "author-zone-bounded-stop-chain";
+    }
+    "complete-terminal-stop-chain"
+}
+
+fn write_national_segment_registry(path: &Path, rows: &[NationalSegmentRegistryRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_national_segment_registry_summary(output: &Path, rows: &[NationalSegmentRegistryRow]) {
+    let mut by_action = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_action.entry(row.registry_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} national segment registry rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in by_action {
+        println!("  {action}: {count}");
+    }
+}
+
+fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no national segment registry rows emitted".to_string());
+        return failures;
+    }
+
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.national_segment_id.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.segment_aliases.trim().is_empty()
+            || row.board_layers.trim().is_empty()
+            || row.source_artifacts.trim().is_empty()
+            || row.bundle_role.trim().is_empty()
+            || row.member_segment_ids.trim().is_empty()
+            || row.registry_action.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete registry fields",
+                row.national_segment_id
+            ));
+        }
+        if !seen.insert(row.national_segment_id.clone()) {
+            failures.push(format!("{} is duplicated", row.national_segment_id));
+        }
+        if !row.national_segment_id.starts_with("US.HWYSEG.") {
+            failures.push(format!(
+                "{} is not a highway segment id",
+                row.national_segment_id
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!(
+                "{} has invalid bundle id {}",
+                row.national_segment_id, row.segment_bundle_id
+            ));
+        }
+        if !row.stitch_group_id.starts_with(&row.national_segment_id) {
+            failures.push(format!(
+                "{} has detached stitch group {}",
+                row.national_segment_id, row.stitch_group_id
+            ));
+        }
+        if row.bundle_role == "single-segment" && row.member_segment_ids != row.national_segment_id
+        {
+            failures.push(format!(
+                "{} single-segment bundle has mismatched members {}",
+                row.national_segment_id, row.member_segment_ids
+            ));
+        }
+        if row.board_layers.contains("selected-route")
+            && row.stop_placement_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} selected route missing stop placement status",
+                row.national_segment_id
+            ));
+        }
+        if row.stop_placement_status.contains("ready-for-stop-layout")
+            && row.state_scope.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} ready route missing state scope",
+                row.national_segment_id
+            ));
+        }
+        if !matches!(row.validation_status.as_str(), "pass" | "review") {
+            failures.push(format!(
+                "{} has invalid validation status {}",
+                row.national_segment_id, row.validation_status
+            ));
+        }
+    }
+
+    failures
+}
+
 fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
@@ -17162,6 +17529,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "t3-zone-stop-placement",
                 "route t3-zone-stop-placement --gate",
                 "data/t3-zone-stop-placement.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "national-segment-registry",
+                "route national-segment-registry --gate",
+                "data/national-segment-registry.csv",
                 "pass",
                 0,
                 "",
@@ -22445,7 +22820,8 @@ mod tests {
         filter_endpoint_exceptions, filter_stop_candidates, forum_docket_gate_failures,
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor, load_tier_routes,
         lower_tier_pressure_witness_gate_failures, lower_tier_pressure_witness_rows,
-        map_atlas_gate_failures, optimizer_manifest_gate_failures,
+        map_atlas_gate_failures, national_segment_registry_gate_failures,
+        national_segment_registry_rows, optimizer_manifest_gate_failures,
         optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
@@ -22503,9 +22879,9 @@ mod tests {
         T2HeldContactActionRow, T2ParentContactValidationRow, T2RegionalizerRow,
         T2ReliefEvidenceRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
         T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T4TerminalAccessColumnRow,
-        TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierRegionRepairInputRow, TierRegionWorkloadRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -24143,6 +24519,90 @@ mod tests {
         assert!(rows.iter().any(|row| row.route == "I22"
             && row.placement_status == "needs-stop-chain"
             && row.validation_status == "review"));
+        assert!(failures.is_empty());
+    }
+
+    #[test]
+    fn national_segment_registry_merges_layers_and_stop_scope() {
+        let board_rows = vec![
+            T3ZoneRenderBoardRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                map_id: "t3-southeast".to_string(),
+                map_path: "maps/t3-southeast.png".to_string(),
+                board_layer: "selected-route".to_string(),
+                route: "I65".to_string(),
+                national_segment_id: "US.HWYSEG.T3SOUTHEAST.I65".to_string(),
+                stitch_group_id: "US.HWYSEG.T3SOUTHEAST.I65.STITCH".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.T3SOUTHEAST.I65".to_string(),
+                segment_aliases:
+                    "zone:t3-southeast;layer:selected-route;route:I65;zone-route:t3-southeast:I65"
+                        .to_string(),
+                route_status: "selected".to_string(),
+                map_treatment: "render-as-zone-column".to_string(),
+                selected_route_count: 1,
+                access_gap_count: 0,
+                source_artifact: "data/t3-zone-route-columns.csv".to_string(),
+                render_action: "render selected T3 route column with stop placement constraints"
+                    .to_string(),
+                next_artifact: "maps/t3-zone".to_string(),
+                validation_status: "pass".to_string(),
+            },
+            T3ZoneRenderBoardRow {
+                zone_id: "t3-southeast".to_string(),
+                zone_name: "Southeast / Appalachia".to_string(),
+                map_id: "t3-southeast".to_string(),
+                map_path: "maps/t3-southeast.png".to_string(),
+                board_layer: "held-gap".to_string(),
+                route: "I65".to_string(),
+                national_segment_id: "US.HWYSEG.T3SOUTHEAST.I65".to_string(),
+                stitch_group_id: "US.HWYSEG.T3SOUTHEAST.I65.STITCH".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.T3SOUTHEAST.I65".to_string(),
+                segment_aliases: "zone:t3-southeast;layer:held-gap;route:I65".to_string(),
+                route_status: "terminal-evidence-needed".to_string(),
+                map_treatment: "render-gap-callout".to_string(),
+                selected_route_count: 1,
+                access_gap_count: 1,
+                source_artifact: "t4-terminal-access-columns".to_string(),
+                render_action: "prove-terminal-access-or-keep-local".to_string(),
+                next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let placement_rows = vec![T3ZoneStopPlacementRow {
+            zone_id: "t3-southeast".to_string(),
+            zone_name: "Southeast / Appalachia".to_string(),
+            route: "I65".to_string(),
+            national_segment_id: "US.HWYSEG.T3SOUTHEAST.I65".to_string(),
+            stitch_group_id: "US.HWYSEG.T3SOUTHEAST.I65.STITCH".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.T3SOUTHEAST.I65".to_string(),
+            segment_aliases:
+                "zone:t3-southeast;layer:selected-route;route:I65;zone-route:t3-southeast:I65"
+                    .to_string(),
+            state_scope: "AL;TN".to_string(),
+            stop_count: 2,
+            transfer_grade_stop_count: 2,
+            stop_chain: "STOP-BHM;STOP-NASH".to_string(),
+            stop_classes: "S2;S3".to_string(),
+            placement_status: "ready-for-stop-layout".to_string(),
+            placement_action: "place route on zone schematic using ordered stop chain".to_string(),
+            source_artifact: "data/t3-zone-render-board.csv; data/tier-stop-candidates.csv"
+                .to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = national_segment_registry_rows(&board_rows, &placement_rows);
+        let failures = national_segment_registry_gate_failures(&rows);
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].national_segment_id, "US.HWYSEG.T3SOUTHEAST.I65");
+        assert_eq!(rows[0].member_segment_ids, rows[0].national_segment_id);
+        assert!(rows[0].board_layers.contains("selected-route"));
+        assert!(rows[0].board_layers.contains("held-gap"));
+        assert!(rows[0].board_layers.contains("stop-placement"));
+        assert_eq!(rows[0].state_scope, "AL;TN");
+        assert_eq!(rows[0].registry_action, "eligible-for-geometry-layout");
         assert!(failures.is_empty());
     }
 
