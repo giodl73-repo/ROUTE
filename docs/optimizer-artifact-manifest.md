@@ -28,7 +28,7 @@ Each manifest row must include:
 |---|---|
 | `step` | Stable stage order for this bundle |
 | `optimizer_stage` | Short stable stage id |
-| `command` | Reproducible command that generates or verifies the artifact |
+| `command` | Reproducible `route ... --gate` command that generates or verifies the artifact |
 | `artifact` | Primary output artifact for the stage |
 | `row_count` | Parsed CSV record count or equivalent count, verified against the artifact by `route optimizer-manifest --gate` |
 | `gate_status` | `pass`, `held-known`, `review`, or `fail` |
@@ -63,7 +63,8 @@ A tier optimizer bundle passes only when:
 5. no row has `validation_status = missing-or-empty`;
 6. no committed bundle contains `gate_status = fail`;
 7. stage order is deterministic;
-8. each recorded `row_count` matches the current artifact on disk.
+8. each recorded `row_count` matches the current artifact on disk;
+9. every stage records a gateable `route ... --gate` command.
 
 The manifest should fail loudly if a new stage is added without an artifact
 contract.

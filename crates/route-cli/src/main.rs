@@ -20946,6 +20946,14 @@ fn optimizer_manifest_gate_failures(rows: &[TierOptimizerRunRow]) -> Vec<String>
         {
             failures.push(format!("step {} has empty manifest fields", row.step));
         }
+        if !row.command.starts_with("route ")
+            || !row.command.split_whitespace().any(|part| part == "--gate")
+        {
+            failures.push(format!(
+                "{} has non-gate optimizer command {}",
+                row.optimizer_stage, row.command
+            ));
+        }
         if row.row_count == 0 {
             failures.push(format!("{} has missing or empty artifact", row.artifact));
         }
@@ -29316,6 +29324,29 @@ mod tests {
                 .any(|failure| failure
                     .contains("row_count 3 does not match current artifact count 2"))
         );
+        let _ = std::fs::remove_dir_all(artifact.parent().expect("fixture parent"));
+    }
+
+    #[test]
+    fn optimizer_manifest_gate_requires_gateable_route_command() {
+        let artifact = write_optimizer_manifest_fixture("command-contract", 1);
+        let rows = vec![TierOptimizerRunRow {
+            step: 1,
+            optimizer_stage: "t1-stop-selector".to_string(),
+            command: "manual spreadsheet check".to_string(),
+            artifact: artifact.display().to_string(),
+            row_count: 1,
+            gate_status: "pass".to_string(),
+            blocker_count: 0,
+            blocker_summary: String::new(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let failures = optimizer_manifest_gate_failures(&rows);
+
+        assert!(failures.contains(
+            &"t1-stop-selector has non-gate optimizer command manual spreadsheet check".to_string()
+        ));
         let _ = std::fs::remove_dir_all(artifact.parent().expect("fixture parent"));
     }
 
