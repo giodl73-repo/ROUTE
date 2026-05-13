@@ -1,2 +1,2 @@
 route,blocker_class,observed_t1_node_count,observed_dual_contacts,observed_parent_trunks,contact_action,disposition,required_evidence,next_artifact,optimizer_effect,validation_status
-__all_t2_contact_closures__,contact-closure-clear,0,0,,contact-closure-clear,clear,no contact-closure blockers remain,data/tier-candidate-columns.csv,contact closure lane is clear,pass
+I285,relief-contact-repair,1,9,I40,accept-observed-contact,candidate-review,observed T1/T2 contact,data/tier-candidate-columns.csv,eligible for T2 candidate-column review,review

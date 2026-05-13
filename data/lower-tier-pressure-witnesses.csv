@@ -1,5 +1,4 @@
 route,current_tier,current_score,confidence,confidence_label,pressure_type,witness_action,target_tier,selection_basis,source_artifact,next_artifact,validation_status
-I285,T2,63.3,0.72,Medium,closure-demotion-pressure,upgrade-endpoint-exception-or-demote,T3/T4,terminal-worthy endpoint role and exception type,data/t2-endpoint-closure.csv,data/lower-tier-pressure-witnesses.csv,review
 I22,T2,53.5,0.72,Medium,closure-demotion-pressure,demote-unless-graph-contact-added,T3/T4,source-backed T1/T2 graph contact,data/t2-graph-contact-validation.csv,data/lower-tier-pressure-witnesses.csv,review
 I-57,T3,49.6,0.6,Low,regional-upgrade-pressure,evaluate-for-t2-upgrade-candidate,T2,score-within-five-points-of-t2-threshold,data/tier-table.csv,data/tier-contact-witnesses.csv,review
 I-19,T3,49.3,0.71,Medium,regional-upgrade-pressure,evaluate-for-t2-upgrade-candidate,T2,score-within-five-points-of-t2-threshold,data/tier-table.csv,data/tier-contact-witnesses.csv,review

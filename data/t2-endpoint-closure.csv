@@ -1,2 +1,2 @@
 route,endpoint_name,endpoint_role,exception_type,evidence_level,terminal_worthy,endpoint_action,disposition,required_evidence,next_artifact,optimizer_effect,validation_status
-I285,Atlanta loop,local_access_end,metro_beltway_relief,heuristic,false,upgrade-endpoint-exception-or-demote,lower-tier-pressure,terminal-worthy endpoint role and exception type,data/lower-tier-pressure-witnesses.csv,kept out of T2 until endpoint exception is upgraded,review
+__all_t2_endpoint_closures__,,,,,false,endpoint-closure-clear,clear,no endpoint-exception closure blockers remain,data/tier-candidate-columns.csv,endpoint closure lane is clear,pass

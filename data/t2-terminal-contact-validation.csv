@@ -1,2 +1,2 @@
 route,held_action_type,endpoint_name,endpoint_role,exception_type,terminal_worthy,observed_t1_node_count,observed_dual_contacts,terminal_action,required_evidence,next_artifact,optimizer_effect,validation_status
-I285,terminal-exception-review,Atlanta loop,local_access_end,metro_beltway_relief,false,1,9,prove-terminal-exception-or-demote,terminal-worthy endpoint exception under T2 endpoint standard,data/tier-node-exceptions.csv,blocked from T2 unless endpoint exception is upgraded or route demotes,review
+__all_t2_terminal_contacts__,terminal-contact-clear,,,,false,0,0,terminal-contact-clear,no terminal-contact validation blockers remain,data/tier-candidate-columns.csv,terminal-contact validation lane is clear,pass

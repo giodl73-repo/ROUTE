@@ -11,6 +11,7 @@ T2,component-0,0,I25,I10;I70;I90,2125.8241544628104,selected,selected-treatment,
 T2,component-0,0,I264,I64,95.3618769559362,review,review-treatment,review,hold-for-parent-region-review,review
 T2,component-0,0,I270,I55;I70,341.7794496022476,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I275,I40;I75,362.0709655436045,selected,selected-treatment,accepted,include-in-regional-treatment,pass
+T2,component-0,0,I285,I40,172.22132483226093,review,review-treatment,closure-accepted-bundle-ready,hold-for-parent-region-review,review
 T2,component-0,0,I29,I35;I70,1499.3473610974459,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I295,I64;I95,632.901937766097,selected,selected-treatment,accepted,include-in-regional-treatment,pass
 T2,component-0,0,I30,I20;I40;I45,755.3684247632106,selected,selected-treatment,accepted,include-in-regional-treatment,pass

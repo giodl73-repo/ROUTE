@@ -14023,12 +14023,28 @@ fn t2_contact_resolution_decision(
             "data/lower-tier-pressure-witnesses.csv",
             "pass",
         ),
-        "terminal-exception-needed" => (
-            "hold-for-terminal-exception",
-            "one-ended-feeder-needs-terminal-worthy-endpoint",
-            "data/tier-node-exceptions.csv",
-            "review",
-        ),
+        "terminal-exception-needed" => {
+            if exceptions.iter().any(|exception| {
+                exception
+                    .exception_type
+                    .trim()
+                    .eq_ignore_ascii_case("metro_beltway_relief")
+            }) {
+                (
+                    "hold-for-relief-evidence-or-demotion",
+                    "metro-beltway-relief-needs-source-backed-contact",
+                    "data/atri-bottlenecks.csv",
+                    "review",
+                )
+            } else {
+                (
+                    "hold-for-terminal-exception",
+                    "one-ended-feeder-needs-terminal-worthy-endpoint",
+                    "data/tier-node-exceptions.csv",
+                    "review",
+                )
+            }
+        }
         "graph-contact-needed" => (
             "hold-for-graph-contact-repair",
             "missing-t1-contact-evidence",
@@ -14624,7 +14640,7 @@ fn t2_terminal_contact_validation_rows(
         .map(|row| (canonical_route_key(&row.route), row))
         .collect::<std::collections::HashMap<_, _>>();
 
-    held_rows
+    let mut rows = held_rows
         .iter()
         .filter(|row| {
             matches!(
@@ -14692,7 +14708,25 @@ fn t2_terminal_contact_validation_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2TerminalContactValidationRow {
+            route: "__all_t2_terminal_contacts__".to_string(),
+            held_action_type: "terminal-contact-clear".to_string(),
+            endpoint_name: String::new(),
+            endpoint_role: String::new(),
+            exception_type: String::new(),
+            terminal_worthy: false,
+            observed_t1_node_count: 0,
+            observed_dual_contacts: 0,
+            terminal_action: "terminal-contact-clear".to_string(),
+            required_evidence: "no terminal-contact validation blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "terminal-contact validation lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_terminal_contact_validation(
@@ -14736,8 +14770,12 @@ fn t2_terminal_contact_validation_gate_failures(
     rows: &[T2TerminalContactValidationRow],
 ) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 terminal contact validation rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_terminal_contacts__" {
+        let row = &rows[0];
+        if row.terminal_action != "terminal-contact-clear" || row.validation_status != "pass" {
+            failures
+                .push("terminal contact clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -14895,7 +14933,10 @@ fn t2_blocker_closure_rows(
         });
     }
 
-    for row in terminal_rows {
+    for row in terminal_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__all_"))
+    {
         let blocker_class = match row.terminal_action.as_str() {
             "prove-terminal-contact-or-demote" => "terminal-contact-repair",
             "prove-terminal-exception-or-demote" => "endpoint-exception-upgrade",
@@ -15463,7 +15504,7 @@ fn t2_endpoint_closure_rows(
     closure_rows: &[T2BlockerClosureRow],
     exception_rows: &[EndpointExceptionRow],
 ) -> Vec<T2EndpointClosureRow> {
-    closure_rows
+    let mut rows = closure_rows
         .iter()
         .filter(|row| row.blocker_class == "endpoint-exception-upgrade")
         .map(|row| {
@@ -15515,7 +15556,24 @@ fn t2_endpoint_closure_rows(
                 validation_status: "review".to_string(),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        rows.push(T2EndpointClosureRow {
+            route: "__all_t2_endpoint_closures__".to_string(),
+            endpoint_name: String::new(),
+            endpoint_role: String::new(),
+            exception_type: String::new(),
+            evidence_level: String::new(),
+            terminal_worthy: false,
+            endpoint_action: "endpoint-closure-clear".to_string(),
+            disposition: "clear".to_string(),
+            required_evidence: "no endpoint-exception closure blockers remain".to_string(),
+            next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            optimizer_effect: "endpoint closure lane is clear".to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+    rows
 }
 
 fn write_t2_endpoint_closure(path: &Path, rows: &[T2EndpointClosureRow]) -> Result<()> {
@@ -15551,8 +15609,11 @@ fn print_t2_endpoint_closure_summary(output: &Path, rows: &[T2EndpointClosureRow
 
 fn t2_endpoint_closure_gate_failures(rows: &[T2EndpointClosureRow]) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no T2 endpoint closure rows emitted".to_string());
+    if rows.len() == 1 && rows[0].route == "__all_t2_endpoint_closures__" {
+        let row = &rows[0];
+        if row.endpoint_action != "endpoint-closure-clear" || row.validation_status != "pass" {
+            failures.push("endpoint closure clearance row has incomplete clear status".to_string());
+        }
         return failures;
     }
     for row in rows {
@@ -15700,6 +15761,9 @@ fn t2_closure_dispositions(
         );
     }
     for row in endpoint_rows {
+        if row.route.starts_with("__all_") {
+            continue;
+        }
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
@@ -27801,6 +27865,24 @@ mod tests {
                 required_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 validation_status: "review".to_string(),
             },
+            TierContactWitnessInputRow {
+                tier: "T2".to_string(),
+                route: "I285".to_string(),
+                witness_type: "terminal-exception-needed".to_string(),
+                node_class: "one_ended_feeder".to_string(),
+                route_miles: 172.2,
+                observed_t1_node_count: 1,
+                observed_parent_trunks: "I40".to_string(),
+                observed_dual_contacts: 9,
+                component_id: 0,
+                component_route_count: 39,
+                component_status: "component-bridged:2".to_string(),
+                repair_action: "terminal-exception-or-demote".to_string(),
+                repair_basis: "one-ended-feeder".to_string(),
+                evidence_status: "source-needed".to_string(),
+                required_artifact: "data/tier-node-exceptions.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
         ];
         let exceptions = vec![
             EndpointExceptionRow {
@@ -27823,6 +27905,16 @@ mod tests {
                 artifact: "data/corridor-designations.csv".to_string(),
                 next_step: "validate contact".to_string(),
             },
+            EndpointExceptionRow {
+                route: "I285".to_string(),
+                requested_tier: "T2".to_string(),
+                endpoint_name: "Atlanta loop".to_string(),
+                endpoint_role: "local_access_end".to_string(),
+                exception_type: "metro_beltway_relief".to_string(),
+                evidence_level: "heuristic".to_string(),
+                artifact: "data/atri-bottlenecks.csv".to_string(),
+                next_step: "validate relief".to_string(),
+            },
         ];
 
         let resolutions = t2_contact_resolution_rows(&rows, &exceptions);
@@ -27835,6 +27927,11 @@ mod tests {
             resolutions[1].resolution_action,
             "hold-for-terminal-contact-validation"
         );
+        assert_eq!(
+            resolutions[2].resolution_action,
+            "hold-for-relief-evidence-or-demotion"
+        );
+        assert_eq!(resolutions[2].next_artifact, "data/atri-bottlenecks.csv");
     }
 
     #[test]

@@ -11,6 +11,7 @@ T2,component-0,I25,I10;I70;I90,selected,selected-treatment,I-25,transfer-spine,s
 T2,component-0,I264,I64,review,review-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I270,I55;I70,selected,selected-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I275,I40;I75,selected,selected-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
+T2,component-0,I285,I40,review,review-treatment,I-285,transfer-spine,single-parent,I-20,I-20,0,,0,,0,,keep,distinct-parent-service,parent-region-review,regionalizer-review-treatment,review
 T2,component-0,I29,I35;I70,selected,selected-treatment,I-29,connector,split-parent,I-80,I-35,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass
 T2,component-0,I295,I64;I95,selected,selected-treatment,,,,,,0,,0,,0,,,,source-needed,missing-beck-t2-diagnostic,review
 T2,component-0,I30,I20;I40;I45,selected,selected-treatment,I-30,connector,split-parent,I-35,I-40,0,,0,,0,,keep,distinct-parent-service,keep-service-column,diagnostic-backed-distinct-service,pass
