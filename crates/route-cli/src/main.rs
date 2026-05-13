@@ -220,6 +220,13 @@ enum Commands {
             value_name = "FILE"
         )]
         score_exceptions: PathBuf,
+        /// Optimizer constraint budget CSV with generalized blocker/debt rollups
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        constraint_budget: PathBuf,
         /// Output selector CSV file
         #[arg(
             long,
@@ -292,6 +299,13 @@ enum Commands {
             value_name = "FILE"
         )]
         score_exceptions: PathBuf,
+        /// Optimizer constraint budget CSV with generalized blocker/debt rollups
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        constraint_budget: PathBuf,
         /// Output design review CSV file
         #[arg(
             long,
@@ -3943,6 +3957,7 @@ fn run_cli() -> Result<()> {
             stop_candidates,
             sla_pairs,
             score_exceptions,
+            constraint_budget,
             output,
             route_budget,
             city_budget,
@@ -3955,6 +3970,7 @@ fn run_cli() -> Result<()> {
                 &stop_candidates,
                 &sla_pairs,
                 &score_exceptions,
+                &constraint_budget,
                 route_budget,
                 city_budget,
                 stop_budget,
@@ -4050,6 +4066,7 @@ fn run_cli() -> Result<()> {
             stop_candidates,
             sla_pairs,
             score_exceptions,
+            constraint_budget,
             output,
             route_budget,
             city_budget,
@@ -4062,6 +4079,7 @@ fn run_cli() -> Result<()> {
                 &stop_candidates,
                 &sla_pairs,
                 &score_exceptions,
+                &constraint_budget,
                 route_budget,
                 city_budget,
                 stop_budget,
@@ -24918,12 +24936,20 @@ struct T1LineSelectorRow {
     route: String,
     tier: String,
     score: f64,
+    constraint_adjusted_score: f64,
     rank: usize,
     selected: bool,
     selected_stop_count: usize,
     top_city_stop_count: usize,
     sla_pair_count: usize,
     budget_cost: usize,
+    hard_blocker_count: usize,
+    claim_blocker_count: usize,
+    constraint_debt_cost_m: f64,
+    lifecycle_debt_cost_m: f64,
+    constraint_penalty_score: f64,
+    top_constraint_classes: String,
+    constraint_ledger_artifact: String,
     decision: &'static str,
     reason: &'static str,
     selected_stops: String,
@@ -25259,6 +25285,7 @@ fn t1_line_selector_rows(
     stop_candidates: &Path,
     sla_pairs: &Path,
     score_exceptions: &Path,
+    constraint_budget: &Path,
     route_budget: usize,
     city_budget: usize,
     stop_budget: usize,
@@ -25275,6 +25302,9 @@ fn t1_line_selector_rows(
         .with_context(|| format!("parsing {}", sla_pairs.display()))?;
     let score_exception_rows = load_t1_score_exceptions(score_exceptions)
         .with_context(|| format!("loading {}", score_exceptions.display()))?;
+    let constraint_budget_rows = load_optimizer_constraint_budget(constraint_budget)
+        .with_context(|| format!("loading {}", constraint_budget.display()))?;
+    let constraint_budget_index = optimizer_constraint_budget_index(&constraint_budget_rows);
     let demoted_score_routes = score_exception_rows
         .iter()
         .filter(|row| matches!(row.decision.trim(), "demote" | "replace"))
@@ -25315,10 +25345,17 @@ fn t1_line_selector_rows(
     tier_rows.sort_by(|a, b| {
         let a_route = normalise_designation(&a.route);
         let b_route = normalise_designation(&b.route);
+        let (_, _, _, _, a_penalty, _, _) =
+            constraint_budget_for_candidate(&a_route, "", &constraint_budget_index);
+        let (_, _, _, _, b_penalty, _, _) =
+            constraint_budget_for_candidate(&b_route, "", &constraint_budget_index);
+        let a_adjusted_score = a.score - a_penalty;
+        let b_adjusted_score = b.score - b_penalty;
         required_route_priority
             .get(&b_route)
             .unwrap_or(&0)
             .cmp(required_route_priority.get(&a_route).unwrap_or(&0))
+            .then_with(|| b_adjusted_score.total_cmp(&a_adjusted_score))
             .then_with(|| b.score.total_cmp(&a.score))
             .then_with(|| a_route.cmp(&b_route))
     });
@@ -25364,6 +25401,16 @@ fn t1_line_selector_rows(
         let sla_pair_count = route_sla_pairs.len();
         let is_t1 = row.tier.trim().eq_ignore_ascii_case("T1");
         let score_exception_demoted = sla_pair_count == 0 && demoted_score_routes.contains(&route);
+        let (
+            hard_blocker_count,
+            claim_blocker_count,
+            constraint_debt_cost_m,
+            lifecycle_debt_cost_m,
+            constraint_penalty_score,
+            top_constraint_classes,
+            constraint_ledger_artifact,
+        ) = constraint_budget_for_candidate(&route, "", &constraint_budget_index);
+        let constraint_adjusted_score = row.score - constraint_penalty_score;
         let has_budget =
             selected_routes < route_budget && route_stops.len() <= remaining_stop_budget;
         let selected = (sla_pair_count > 0 || (is_t1 && !score_exception_demoted)) && has_budget;
@@ -25405,12 +25452,20 @@ fn t1_line_selector_rows(
             route,
             tier: row.tier.clone(),
             score: row.score,
+            constraint_adjusted_score,
             rank: idx + 1,
             selected,
             selected_stop_count: route_stops.len(),
             top_city_stop_count: top_city_stops.len(),
             sla_pair_count,
             budget_cost: route_stops.len(),
+            hard_blocker_count,
+            claim_blocker_count,
+            constraint_debt_cost_m,
+            lifecycle_debt_cost_m,
+            constraint_penalty_score,
+            top_constraint_classes,
+            constraint_ledger_artifact,
             decision,
             reason,
             selected_stops: route_stops
@@ -25427,7 +25482,7 @@ fn t1_line_selector_rows(
 
 fn build_t1_line_selector_csv(rows: &[T1LineSelectorRow]) -> String {
     let mut csv = String::from(
-        "route,tier,score,rank,selected,selected_stop_count,top_city_stop_count,sla_pair_count,budget_cost,decision,reason,selected_stops,top_city_stops,sla_pairs\n",
+        "route,tier,score,constraint_adjusted_score,rank,selected,selected_stop_count,top_city_stop_count,sla_pair_count,budget_cost,hard_blocker_count,claim_blocker_count,constraint_debt_cost_m,lifecycle_debt_cost_m,constraint_penalty_score,top_constraint_classes,constraint_ledger_artifact,decision,reason,selected_stops,top_city_stops,sla_pairs\n",
     );
     for row in rows {
         push_csv_line(
@@ -25436,12 +25491,20 @@ fn build_t1_line_selector_csv(rows: &[T1LineSelectorRow]) -> String {
                 &row.route,
                 &row.tier,
                 &format!("{:.1}", row.score),
+                &format!("{:.1}", row.constraint_adjusted_score),
                 &row.rank.to_string(),
                 if row.selected { "true" } else { "false" },
                 &row.selected_stop_count.to_string(),
                 &row.top_city_stop_count.to_string(),
                 &row.sla_pair_count.to_string(),
                 &row.budget_cost.to_string(),
+                &row.hard_blocker_count.to_string(),
+                &row.claim_blocker_count.to_string(),
+                &format!("{:.2}", row.constraint_debt_cost_m),
+                &format!("{:.2}", row.lifecycle_debt_cost_m),
+                &format!("{:.2}", row.constraint_penalty_score),
+                &row.top_constraint_classes,
+                &row.constraint_ledger_artifact,
                 row.decision,
                 row.reason,
                 &row.selected_stops,
@@ -25503,6 +25566,42 @@ fn t1_line_selector_gate_failures(
             "{} is required by SLA pair(s) {} but was not selected",
             row.route, row.sla_pairs
         ));
+    }
+    for row in rows {
+        if row.constraint_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative constraint debt cost", row.route));
+        }
+        if row.lifecycle_debt_cost_m < 0.0 {
+            failures.push(format!("{} has negative lifecycle debt cost", row.route));
+        }
+        if row.constraint_penalty_score < 0.0 {
+            failures.push(format!("{} has negative constraint penalty", row.route));
+        }
+        if (row.hard_blocker_count > 0
+            || row.claim_blocker_count > 0
+            || row.constraint_debt_cost_m > 0.0
+            || row.lifecycle_debt_cost_m > 0.0
+            || row.constraint_penalty_score > 0.0)
+            && (row.top_constraint_classes.trim().is_empty()
+                || row.constraint_ledger_artifact.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} has constraint pressure without class summary and ledger artifact",
+                row.route
+            ));
+        }
+        if row.selected
+            && row.hard_blocker_count > 0
+            && !matches!(
+                row.reason,
+                "sla-required-budget-fit" | "score-ranked-budget-fit"
+            )
+        {
+            failures.push(format!(
+                "{} selected with hard blockers but without explicit selector reason",
+                row.route
+            ));
+        }
     }
     failures
 }
@@ -34041,6 +34140,7 @@ mod tests {
         let stops_path = dir.join("tier-stop-candidates.csv");
         let sla_path = dir.join("t1-sla-pairs.csv");
         let exceptions_path = dir.join("t1-score-exceptions.csv");
+        let constraint_budget_path = dir.join("optimizer-constraint-budget.csv");
         std::fs::write(
             &tier_path,
             "\
@@ -34082,6 +34182,7 @@ route,decision,exception_type,rationale,evidence_status,artifact,replacement_can
             &stops_path,
             &sla_path,
             &exceptions_path,
+            &constraint_budget_path,
             2,
             2,
             10,

@@ -225,9 +225,11 @@ their next artifact.
    rollup emits selector-facing route and bundle rows with blocker counts,
    debt, penalties, top classes, blocked claims, and next artifacts.
 4. Update T1/T2 selectors to consume the aggregate constraint budget instead of
-   pavement-only columns. The first T2 migration now carries generalized
-   constraint fields through candidate columns, regionalizer rows, and service
-   selection rows while preserving pavement-specific compatibility fields.
+   pavement-only columns. The first T1/T2 migrations now carry generalized
+   constraint fields through the T1 line selector, T2 candidate columns, T2
+   regionalizer rows, and T2 service selection rows while preserving
+   pavement-specific compatibility fields where downstream tools still expect
+   them.
 5. Expand T3/T4 selectors to emit their access and attachment blockers into the
    same ledger.
 6. Add manifest rows so the all-tier optimizer bundle proves the ledger and

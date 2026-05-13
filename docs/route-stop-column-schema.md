@@ -151,6 +151,14 @@ Required fields:
 - `reason` or `repair_basis`
 - `validation_status`
 
+`data/t1-line-selector.csv` now carries `constraint_adjusted_score`,
+`hard_blocker_count`, `claim_blocker_count`, `constraint_debt_cost_m`,
+`lifecycle_debt_cost_m`, `constraint_penalty_score`, `top_constraint_classes`,
+and `constraint_ledger_artifact` from `data/optimizer-constraint-budget.csv`.
+The raw SLA and route-budget decision remains visible; constraint pressure
+changes the comparison score and review surface rather than disappearing into a
+side ledger.
+
 T1 route columns are national spine candidates. T2 route columns are regional
 service candidates inside T1-bounded regions. T3/T4 route columns should be
 zone or local-access candidates rather than national overlays.

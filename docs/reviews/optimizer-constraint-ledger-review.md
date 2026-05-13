@@ -83,9 +83,10 @@ Implemented:
 
 Still required:
 
-- T1 selector migration to consume `data/optimizer-constraint-budget.csv`
 - lower-tier selector migration to consume the shared constraint budget after
   T3/T4 access rows enter the ledger
+- renderer/game/source-row migration to consume the same budget summary when
+  they make claim, upgrade, incident, or publication decisions
 
 ## Decision
 
@@ -93,9 +94,10 @@ Accept `docs/optimizer-constraint-ledger-spec.md` as the doctrine for optimizer
 constraint rows.
 
 Treat the first ledger and budget slices as implemented for pavement debt, T1
-topology repair, and T2 parallel-service rows. T2 candidate columns,
-regionalizer rows, and service-selection rows now carry the generalized
-constraint budget summary alongside pavement compatibility fields. Do not treat
-the full constraint system as implemented until T1/lower-tier selectors,
-lower-tier access, Beck diagnostics, and game/source rows also consume the
-shared schema.
+topology repair, and T2 parallel-service rows. The T1 line selector now carries
+constraint-adjusted score, blocker counts, debt, penalty, class summary, and
+ledger artifact fields. T2 candidate columns, regionalizer rows, and
+service-selection rows carry the same generalized constraint budget summary
+alongside pavement compatibility fields. Do not treat the full constraint
+system as implemented until lower-tier selectors, lower-tier access, Beck
+diagnostics, and game/source rows also consume the shared schema.

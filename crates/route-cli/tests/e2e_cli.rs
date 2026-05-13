@@ -101,7 +101,8 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "--gate",
     ]);
     let t1_selector = std::fs::read_to_string(&t1_selector_out).expect("read T1 selector CSV");
-    assert!(t1_selector.starts_with("route,tier,score,rank,selected"));
+    assert!(t1_selector.starts_with("route,tier,score,constraint_adjusted_score,rank,selected"));
+    assert!(t1_selector.contains("hard_blocker_count,claim_blocker_count"));
     assert!(t1_selector.contains("sla-required-budget-fit"));
     assert!(t1_selector.contains("NYC-LA-48"));
 
