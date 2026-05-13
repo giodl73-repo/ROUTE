@@ -1543,6 +1543,13 @@ enum Commands {
             value_name = "FILE"
         )]
         terminal_validation: PathBuf,
+        /// National segment bundle CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        bundles: PathBuf,
         /// Output blocker closure CSV
         #[arg(
             long,
@@ -6565,6 +6572,7 @@ fn run_cli() -> Result<()> {
             parent_validation,
             relief_evidence,
             terminal_validation,
+            bundles,
             output,
             gate,
         } => {
@@ -6577,8 +6585,15 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", relief_evidence.display()))?;
             let terminal_rows = load_t2_terminal_contact_validation(&terminal_validation)
                 .with_context(|| format!("loading {}", terminal_validation.display()))?;
-            let rows =
-                t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows);
+            let bundle_rows = load_national_segment_bundles(&bundles)
+                .with_context(|| format!("loading {}", bundles.display()))?;
+            let rows = t2_blocker_closure_rows(
+                &graph_rows,
+                &parent_rows,
+                &relief_rows,
+                &terminal_rows,
+                &bundle_rows,
+            );
             write_t2_blocker_closure(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_t2_blocker_closure_summary(&output, &rows);
@@ -12620,6 +12635,9 @@ struct T2TerminalContactValidationRow {
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T2BlockerClosureRow {
     route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    bundle_action: String,
     source_surface: String,
     blocker_class: String,
     blocker_action: String,
@@ -14509,8 +14527,15 @@ fn t2_blocker_closure_rows(
     parent_rows: &[T2ParentContactValidationRow],
     relief_rows: &[T2ReliefEvidenceRow],
     terminal_rows: &[T2TerminalContactValidationRow],
+    bundle_rows: &[NationalSegmentBundleRow],
 ) -> Vec<T2BlockerClosureRow> {
     let mut rows = Vec::new();
+    let registry = route_network::BundleRegistry::new(
+        bundle_rows
+            .iter()
+            .map(segment_bundle_from_national_row)
+            .collect(),
+    );
 
     for row in graph_rows {
         let blocker_class = if row.repair_class == "route-family-split" {
@@ -14518,8 +14543,13 @@ fn t2_blocker_closure_rows(
         } else {
             "graph-contact-repair"
         };
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_blocker_bundle_fields(&registry, &row.route);
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
+            segment_bundle_id,
+            bundle_status,
+            bundle_action,
             source_surface: "t2-graph-contact-repairs".to_string(),
             blocker_class: blocker_class.to_string(),
             blocker_action: row.repair_action.clone(),
@@ -14532,8 +14562,13 @@ fn t2_blocker_closure_rows(
     }
 
     for row in parent_rows {
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_blocker_bundle_fields(&registry, &row.route);
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
+            segment_bundle_id,
+            bundle_status,
+            bundle_action,
             source_surface: "t2-parent-contact-validation".to_string(),
             blocker_class: "parent-contact-repair".to_string(),
             blocker_action: row.validation_action.clone(),
@@ -14552,8 +14587,13 @@ fn t2_blocker_closure_rows(
             } else {
                 ("relief-evidence-gap", "open")
             };
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_blocker_bundle_fields(&registry, &row.route);
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
+            segment_bundle_id,
+            bundle_status,
+            bundle_action,
             source_surface: "t2-relief-evidence-docket".to_string(),
             blocker_class: blocker_class.to_string(),
             blocker_action: row.relief_action.clone(),
@@ -14572,8 +14612,13 @@ fn t2_blocker_closure_rows(
             "accept-terminal-contact" => "terminal-contact-accepted",
             _ => "terminal-review",
         };
+        let (segment_bundle_id, bundle_status, bundle_action) =
+            t2_blocker_bundle_fields(&registry, &row.route);
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
+            segment_bundle_id,
+            bundle_status,
+            bundle_action,
             source_surface: "t2-terminal-contact-validation".to_string(),
             blocker_class: blocker_class.to_string(),
             blocker_action: row.terminal_action.clone(),
@@ -14595,6 +14640,31 @@ fn t2_blocker_closure_rows(
             .then_with(|| a.route.cmp(&b.route))
     });
     rows
+}
+
+fn t2_blocker_bundle_fields(
+    registry: &route_network::BundleRegistry,
+    route: &str,
+) -> (String, String, String) {
+    registry
+        .by_route_label(route)
+        .first()
+        .map(|bundle| {
+            let (bundle_action, _) =
+                route_network::bundle_action(bundle.bundle_status, &bundle.registry_actions);
+            (
+                bundle.segment_bundle_id.clone(),
+                bundle.bundle_status.as_str().to_string(),
+                bundle_action.to_string(),
+            )
+        })
+        .unwrap_or_else(|| {
+            (
+                String::new(),
+                "bundle-missing".to_string(),
+                "resolve route family or add segment bundle".to_string(),
+            )
+        })
 }
 
 fn write_t2_blocker_closure(path: &Path, rows: &[T2BlockerClosureRow]) -> Result<()> {
@@ -14636,6 +14706,8 @@ fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> Vec<String>
     }
     for row in rows {
         if row.route.trim().is_empty()
+            || row.bundle_status.trim().is_empty()
+            || row.bundle_action.trim().is_empty()
             || row.source_surface.trim().is_empty()
             || row.blocker_class.trim().is_empty()
             || row.blocker_action.trim().is_empty()
@@ -14645,6 +14717,20 @@ fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> Vec<String>
             || row.closure_status.trim().is_empty()
         {
             failures.push(format!("{} has incomplete blocker closure", row.route));
+        }
+        if row.bundle_status == "bundle-missing"
+            && !matches!(
+                row.blocker_class.as_str(),
+                "route-family-split"
+                    | "relief-contact-repair"
+                    | "parent-contact-repair"
+                    | "endpoint-exception-upgrade"
+            )
+        {
+            failures.push(format!(
+                "{} blocker closure lacks bundle binding for {}",
+                row.route, row.blocker_class
+            ));
         }
     }
     failures
@@ -27070,7 +27156,8 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows = t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows);
+        let rows =
+            t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows, &[]);
         let failures = t2_blocker_closure_gate_failures(&rows);
         let classes = rows
             .iter()
@@ -27085,10 +27172,53 @@ mod tests {
     }
 
     #[test]
+    fn t2_blocker_closure_joins_bundle_registry() {
+        let graph_rows = vec![T2GraphContactRepairRow {
+            route: "I30".to_string(),
+            repair_class: "graph-contact-repair".to_string(),
+            source_exception_type: String::new(),
+            repair_action: "repair-route-geometry-or-demote".to_string(),
+            required_evidence: "prove contact".to_string(),
+            next_artifact: "data/tier-contact-witnesses.csv".to_string(),
+            optimizer_effect: "blocked until contact exists".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bundles = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I30".to_string(),
+            bundle_role: "single-segment".to_string(),
+            member_segment_ids: "US.HWYSEG.I30".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I30".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-1".to_string(),
+            route_labels: "I30".to_string(),
+            state_scope: "TX;AR".to_string(),
+            evidence_state_scope: "TX;AR".to_string(),
+            geometry_state_scope: String::new(),
+            bundle_aliases: "route:I30".to_string(),
+            source_artifacts: "fixture".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            bundle_action: "use bundle as service join surface".to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = t2_blocker_closure_rows(&graph_rows, &[], &[], &[], &bundles);
+        let failures = t2_blocker_closure_gate_failures(&rows);
+
+        assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I30");
+        assert_eq!(rows[0].bundle_status, "bundle-ready");
+        assert!(failures.is_empty());
+    }
+
+    #[test]
     fn t2_route_family_splits_use_exception_disposition() {
         let closure_rows = vec![
             T2BlockerClosureRow {
                 route: "I195".to_string(),
+                segment_bundle_id: String::new(),
+                bundle_status: "bundle-missing".to_string(),
+                bundle_action: "resolve route family or add segment bundle".to_string(),
                 source_surface: "t2-graph-contact-repairs".to_string(),
                 blocker_class: "route-family-split".to_string(),
                 blocker_action: "split-numbered-route-family-before-tier-decision".to_string(),
@@ -27100,6 +27230,9 @@ mod tests {
             },
             T2BlockerClosureRow {
                 route: "I205".to_string(),
+                segment_bundle_id: String::new(),
+                bundle_status: "bundle-missing".to_string(),
+                bundle_action: "resolve route family or add segment bundle".to_string(),
                 source_surface: "t2-graph-contact-repairs".to_string(),
                 blocker_class: "route-family-split".to_string(),
                 blocker_action: "split-numbered-route-family-before-tier-decision".to_string(),
@@ -27148,6 +27281,9 @@ mod tests {
         let closure_rows = vec![
             T2BlockerClosureRow {
                 route: "I30".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.TEST.I30".to_string(),
+                bundle_status: "bundle-ready".to_string(),
+                bundle_action: "use bundle as service join surface".to_string(),
                 source_surface: "t2-graph-contact-repairs".to_string(),
                 blocker_class: "graph-contact-repair".to_string(),
                 blocker_action: "repair-route-geometry-or-demote".to_string(),
@@ -27159,6 +27295,9 @@ mod tests {
             },
             T2BlockerClosureRow {
                 route: "I49".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.TEST.I49".to_string(),
+                bundle_status: "bundle-ready".to_string(),
+                bundle_action: "use bundle as service join surface".to_string(),
                 source_surface: "t2-graph-contact-repairs".to_string(),
                 blocker_class: "graph-contact-repair".to_string(),
                 blocker_action: "repair-route-geometry-or-demote".to_string(),
@@ -27223,6 +27362,9 @@ mod tests {
         let closure_rows = vec![
             T2BlockerClosureRow {
                 route: "I285".to_string(),
+                segment_bundle_id: String::new(),
+                bundle_status: "bundle-missing".to_string(),
+                bundle_action: "resolve route family or add segment bundle".to_string(),
                 source_surface: "t2-relief-evidence-docket".to_string(),
                 blocker_class: "relief-contact-repair".to_string(),
                 blocker_action: "source-observed-relief-review".to_string(),
@@ -27235,6 +27377,9 @@ mod tests {
             },
             T2BlockerClosureRow {
                 route: "I25".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.TEST.I25".to_string(),
+                bundle_status: "bundle-ready".to_string(),
+                bundle_action: "use bundle as service join surface".to_string(),
                 source_surface: "t2-terminal-contact-validation".to_string(),
                 blocker_class: "terminal-contact-repair".to_string(),
                 blocker_action: "prove-terminal-contact-or-demote".to_string(),
@@ -27298,6 +27443,9 @@ mod tests {
     fn t2_endpoint_closure_demotes_non_terminal_worthy_exceptions() {
         let closure_rows = vec![T2BlockerClosureRow {
             route: "I270".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.TEST.I270".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            bundle_action: "author zone-bounded stops before bundle geometry".to_string(),
             source_surface: "t2-terminal-contact-validation".to_string(),
             blocker_class: "endpoint-exception-upgrade".to_string(),
             blocker_action: "prove-terminal-exception-or-demote".to_string(),

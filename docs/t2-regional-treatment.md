@@ -33,7 +33,7 @@ Current T2 treatment consumes:
 | `data/t2-regionalizer.csv` | First-pass regional treatment rows |
 | `data/t2-service-selection.csv` | Service selection, Beck diagnostics, duplicate checks, and parent-trunk lineage |
 | `data/t2-contact-resolutions.csv` | Contact resolution and demotion decisions |
-| `data/t2-blocker-closure.csv` | Consolidated held blocker dispositions |
+| `data/t2-blocker-closure.csv` | Consolidated held blocker dispositions joined to bundle identity/status |
 | `data/t3-t4-pressure-intake.csv` | Lower-tier intake after T2 demotion or upgrade pressure |
 | `data/t1-feedback-docket.csv` | Conservative upward feedback from lower tiers to T1 |
 
@@ -51,6 +51,22 @@ that artifact exists.
 
 Review is not failure. Review is the mechanism that prevents the map from
 pretending the graph is cleaner than it is.
+
+## Bundle Closure
+
+T2 blocker closure rows must carry bundle posture. A held route is not fully
+diagnosed until `data/t2-blocker-closure.csv` records its `segment_bundle_id`
+when one exists, its `bundle_status`, and the bundle action from
+`data/national-segment-bundles.csv`.
+
+This keeps three problems separate:
+
+- contact proof missing even though a bundle is ready;
+- service geometry waiting on stop-chain or terminal-stop work;
+- route-family ambiguity where no bundle can be attached yet.
+
+The optimizer may demote, review, or split a route only after that bundle
+posture is explicit.
 
 ## Contact Rules
 
