@@ -231,6 +231,10 @@ Current implementation status:
   unresolved terminal district from the registry and classifies its route proof
   decisions. Without registered proof artifacts, the selected district remains
   `source-needed`.
+- Because the current district import has no accepted proof rows,
+  `data/t4-terminal-contact-evidence.csv` and
+  `data/t4-terminal-scenario-readiness.csv` remain held: no terminal-contact
+  scenario candidate may be created from source-needed import rows.
 - `data/t4-terminal-columbus-proof-intake.csv` filters the Columbus South pilot
   slice from the Great Lakes proof docket. It carries exactly eight source-needed
   route tasks into the proof pilot and rejects non-Columbus rows.

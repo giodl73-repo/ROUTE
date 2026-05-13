@@ -2,7 +2,7 @@
 wave: terminal-contact-source-acquisition-spine
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - optimization-methodologist
@@ -28,10 +28,10 @@ surfaces.
 
 ## Deliverables
 
-- [ ] Regenerate affected contact/proof/scenario artifacts.
-- [ ] Promote only accepted proof rows with traceable source artifacts.
-- [ ] Keep blocked/source-needed/rejected rows visible.
-- [ ] Update optimizer and release manifests.
+- [x] Regenerate affected contact/proof/scenario artifacts.
+- [x] Promote only accepted proof rows with traceable source artifacts.
+- [x] Keep blocked/source-needed/rejected rows visible.
+- [x] Update optimizer and release manifests.
 
 ## Expected Gates
 
