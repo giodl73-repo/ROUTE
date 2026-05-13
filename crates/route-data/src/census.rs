@@ -105,8 +105,9 @@ pub fn fetch_acs_population(output_path: &Path) -> Result<()> {
     let rows: Vec<Vec<serde_json::Value>> =
         serde_json::from_str(&text).context("parsing ACS JSON")?;
 
-    let mut wtr = csv::Writer::from_path(output_path)
-        .with_context(|| format!("creating {}", output_path.display()))?;
+    let tmp = crate::fetch::temp_path_for(output_path);
+    let mut wtr =
+        csv::Writer::from_path(&tmp).with_context(|| format!("creating {}", tmp.display()))?;
     wtr.write_record(["GEOID", "NAME", "POPULATION"])?;
 
     for row in rows.iter().skip(1) {
@@ -122,6 +123,8 @@ pub fn fetch_acs_population(output_path: &Path) -> Result<()> {
         wtr.write_record(&[geoid, name, pop.to_string()])?;
     }
     wtr.flush()?;
+    drop(wtr);
+    crate::fetch::replace_with_temp(&tmp, output_path)?;
     println!(
         "  wrote {} county population records",
         rows.len().saturating_sub(1)
@@ -201,8 +204,9 @@ pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
     let rows: Vec<Vec<serde_json::Value>> =
         serde_json::from_str(&text).context("parsing ACS income JSON")?;
 
-    let mut wtr = csv::Writer::from_path(output_path)
-        .with_context(|| format!("creating {}", output_path.display()))?;
+    let tmp = crate::fetch::temp_path_for(output_path);
+    let mut wtr =
+        csv::Writer::from_path(&tmp).with_context(|| format!("creating {}", tmp.display()))?;
     wtr.write_record(["GEOID", "NAME", "MEDIAN_HHI"])?;
 
     let mut written = 0usize;
@@ -224,6 +228,8 @@ pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
         written += 1;
     }
     wtr.flush()?;
+    drop(wtr);
+    crate::fetch::replace_with_temp(&tmp, output_path)?;
     println!("  wrote {written} county income records");
     Ok(())
 }

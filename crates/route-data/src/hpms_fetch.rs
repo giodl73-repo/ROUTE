@@ -196,8 +196,9 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
         );
     }
 
-    // Write to CSV
-    let mut wtr = csv::Writer::from_path(output_path)?;
+    // Write to CSV only after all fetch attempts complete, preserving the previous cache on failure.
+    let tmp = crate::fetch::temp_path_for(output_path);
+    let mut wtr = csv::Writer::from_path(&tmp)?;
     wtr.write_record([
         "STATE",
         "ROUTE_ID",
@@ -219,6 +220,8 @@ pub fn fetch_all_hpms(output_path: &std::path::Path) -> Result<()> {
         ])?;
     }
     wtr.flush()?;
+    drop(wtr);
+    crate::fetch::replace_with_temp(&tmp, output_path)?;
 
     println!(
         "  wrote {} HPMS records → {}",

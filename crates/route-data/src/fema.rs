@@ -195,9 +195,10 @@ pub fn fetch_all_sfha_counts(output_path: &Path) -> Result<Vec<FemaSfhaResult>> 
         results.push(r);
     }
 
-    // Write CSV
-    let mut wtr = csv::Writer::from_path(output_path)
-        .with_context(|| format!("creating {}", output_path.display()))?;
+    // Write CSV only after all fetch attempts complete, preserving the previous cache on failure.
+    let tmp = crate::fetch::temp_path_for(output_path);
+    let mut wtr =
+        csv::Writer::from_path(&tmp).with_context(|| format!("creating {}", tmp.display()))?;
     wtr.write_record(["corridor", "bbox", "sfha_count", "status"])?;
     for r in &results {
         wtr.write_record(&[
@@ -208,6 +209,8 @@ pub fn fetch_all_sfha_counts(output_path: &Path) -> Result<Vec<FemaSfhaResult>> 
         ])?;
     }
     wtr.flush()?;
+    drop(wtr);
+    crate::fetch::replace_with_temp(&tmp, output_path)?;
 
     Ok(results)
 }

@@ -4393,9 +4393,10 @@ fn run_cli() -> Result<()> {
                 std::thread::sleep(std::time::Duration::from_millis(800));
             }
 
-            // Write results
+            // Write results only after the fetch loop completes.
             let out = PathBuf::from("data/cache/fema_sfha_tile_counts.csv");
-            let mut wtr = csv::Writer::from_path(&out)?;
+            let tmp = temp_path_for_atomic_write(&out);
+            let mut wtr = csv::Writer::from_path(&tmp)?;
             wtr.write_record(["tile", "xmin", "ymin", "xmax", "ymax", "sfha_count"])?;
             for (i, (name, count)) in results.iter().enumerate() {
                 let t = &state_tiles[i];
@@ -4409,6 +4410,8 @@ fn run_cli() -> Result<()> {
                 ])?;
             }
             wtr.flush()?;
+            drop(wtr);
+            replace_with_atomic_write(&tmp, &out)?;
             println!("\n  Saved → {}", out.display());
             let total: u32 = results.iter().map(|(_, c)| c).sum();
             println!("  Total SFHA features across flood-exposed tiles: {total}");
@@ -10700,7 +10703,8 @@ fn write_hpms_records(path: &Path, records: &[route_data::HpmsRecord]) -> Result
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating {}", parent.display()))?;
     }
-    let mut writer = csv::Writer::from_path(path)?;
+    let tmp = temp_path_for_atomic_write(path);
+    let mut writer = csv::Writer::from_path(&tmp)?;
     writer.write_record([
         "STATE",
         "ROUTE_ID",
@@ -10737,6 +10741,40 @@ fn write_hpms_records(path: &Path, records: &[route_data::HpmsRecord]) -> Result
         ])?;
     }
     writer.flush()?;
+    drop(writer);
+    replace_with_atomic_write(&tmp, path)?;
+    Ok(())
+}
+
+fn atomic_write_text(path: &Path, text: impl AsRef<str>) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let tmp = temp_path_for_atomic_write(path);
+    std::fs::write(&tmp, text.as_ref()).with_context(|| format!("writing {}", tmp.display()))?;
+    replace_with_atomic_write(&tmp, path)
+}
+
+fn temp_path_for_atomic_write(path: &Path) -> PathBuf {
+    let mut file_name = path
+        .file_name()
+        .map(|value| value.to_os_string())
+        .unwrap_or_else(|| "route-cache".into());
+    file_name.push(format!(".{}.tmp", std::process::id()));
+    path.with_file_name(file_name)
+}
+
+fn replace_with_atomic_write(tmp: &Path, path: &Path) -> Result<()> {
+    if path.exists() {
+        std::fs::remove_file(path)
+            .with_context(|| format!("removing previous {}", path.display()))?;
+    }
+    std::fs::rename(tmp, path)
+        .with_context(|| format!("replacing {} with {}", path.display(), tmp.display()))?;
     Ok(())
 }
 
@@ -24657,7 +24695,7 @@ fn fetch_iowa511_events(output: &Path) -> Result<()> {
     let url = "https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/CARS511_Iowa_View/FeatureServer/0/query?f=json&where=1%3D1&outFields=ID,Route,StartTime,EndTime,IssueDate,IssueTime,headline,cause,Restrict_,Desc0&returnGeometry=true&outSR=4326";
     let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
     ensure_no_arcgis_error(&body)?;
-    std::fs::write(output, body)?;
+    atomic_write_text(output, body)?;
     Ok(())
 }
 
@@ -24671,7 +24709,7 @@ fn fetch_tdot_smartway_events(output: &Path, timeout_seconds: u64) -> Result<()>
         .build()?;
     let body = client.get(url).send()?.error_for_status()?.text()?;
     ensure_no_arcgis_error(&body)?;
-    std::fs::write(output, body)?;
+    atomic_write_text(output, body)?;
     Ok(())
 }
 
@@ -24681,7 +24719,7 @@ fn fetch_mdot_midrive_events(output: &Path) -> Result<()> {
     }
     let url = "https://mdotjboss.state.mi.us/MiDrive/incidents/AllForMap/";
     let body = reqwest::blocking::get(url)?.error_for_status()?.text()?;
-    std::fs::write(output, body)?;
+    atomic_write_text(output, body)?;
     Ok(())
 }
 
@@ -24742,7 +24780,7 @@ query MapFeatures($input: MapFeaturesArgs!) {
         .error_for_status()?
         .text()?;
     ensure_no_graphql_errors(&text)?;
-    std::fs::write(output, text)?;
+    atomic_write_text(output, text)?;
     Ok(())
 }
 

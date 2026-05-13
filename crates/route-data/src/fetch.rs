@@ -1,7 +1,7 @@
 use crate::manifest::Manifest;
 use anyhow::{Context, Result};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Download all manifest sources to the cache directory.
 /// Skips files already present unless `--force` is set.
@@ -67,8 +67,68 @@ fn download(url: &str, dest: &Path) -> Result<()> {
         .context("HTTP error response")?;
 
     let bytes = response.bytes().context("reading response body")?;
-    let mut file =
-        std::fs::File::create(dest).with_context(|| format!("creating {}", dest.display()))?;
-    file.write_all(&bytes).context("writing file")?;
+    atomic_write_bytes(dest, &bytes).with_context(|| format!("writing {}", dest.display()))?;
     Ok(())
+}
+
+pub fn atomic_write_bytes(dest: &Path, bytes: &[u8]) -> Result<()> {
+    if let Some(parent) = dest
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let tmp = temp_path_for(dest);
+    let mut file =
+        std::fs::File::create(&tmp).with_context(|| format!("creating {}", tmp.display()))?;
+    file.write_all(&bytes).context("writing file")?;
+    file.flush().context("flushing file")?;
+    drop(file);
+    replace_with_temp(&tmp, dest)
+}
+
+pub fn temp_path_for(dest: &Path) -> PathBuf {
+    let mut file_name = dest
+        .file_name()
+        .map(|value| value.to_os_string())
+        .unwrap_or_else(|| "download".into());
+    file_name.push(format!(".{}.tmp", std::process::id()));
+    dest.with_file_name(file_name)
+}
+
+pub fn replace_with_temp(tmp: &Path, dest: &Path) -> Result<()> {
+    if dest.exists() {
+        std::fs::remove_file(dest)
+            .with_context(|| format!("removing previous {}", dest.display()))?;
+    }
+    std::fs::rename(tmp, dest)
+        .with_context(|| format!("replacing {} with {}", dest.display(), tmp.display()))?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::atomic_write_bytes;
+
+    #[test]
+    fn atomic_write_replaces_existing_file_after_temp_write() {
+        let dir =
+            std::env::temp_dir().join(format!("route_fetch_atomic_write_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create temp test dir");
+        let path = dir.join("cache.csv");
+        std::fs::write(&path, "old cache").expect("seed cache");
+
+        atomic_write_bytes(&path, b"new cache").expect("atomic write");
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "new cache");
+        assert!(std::fs::read_dir(&dir).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .contains(".tmp")));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
