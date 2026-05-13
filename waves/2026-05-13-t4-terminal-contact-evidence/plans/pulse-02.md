@@ -2,7 +2,7 @@
 wave: t4-terminal-contact-evidence
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - freight-economist
@@ -29,19 +29,35 @@ scaling the decision rule to other zones.
 
 ## Deliverables
 
-- [ ] Classify all `t3-great-lakes` terminal rows.
-- [ ] Separate source-backed, source-needed, demotion/local-only, and held-known
+- [x] Classify all `t3-great-lakes` terminal rows.
+- [x] Separate source-backed, source-needed, demotion/local-only, and held-known
   decisions.
-- [ ] Name any scenario-ready candidate and next scenario artifact, if earned.
-- [ ] Regenerate affected T4/access-gap/ledger/budget artifacts.
+- [x] Name any scenario-ready candidate and next scenario artifact, if earned.
+- [x] Regenerate affected T4/access-gap/ledger/budget artifacts.
 
 ## Expected Gates
 
 - `route t4-terminal-access-columns --gate`
+- `route t4-terminal-contact-evidence --gate`
 - `route t3-t4-access-gaps --gate`
 - `route optimizer-constraint-ledger --gate`
 - `route optimizer-constraint-budget --gate`
 - `cargo test -p route`
+
+## Evidence
+
+- Classified all 33 `t3-great-lakes` rows in
+  `data/t4-terminal-contact-evidence.csv` with candidate terminal districts:
+  Chicago Intermodal Complex (4), Columbus South (8), Detroit Livernois (5),
+  Indianapolis Avon (3), Minneapolis Twin Cities (1), New York Fresh Pond (6),
+  Philadelphia Frankford (3), and St. Louis Gateway (3).
+- No row earned source-backed or scenario-ready status because no
+  route-to-terminal contact proof source exists yet; all 33 Great Lakes rows
+  remain `source-needed` claim blockers with Pulse 02 evidence recorded.
+- Gates passed: `cargo test -p route`, `route t4-terminal-access-columns
+  --gate`, `route t4-terminal-contact-evidence --gate`, `route
+  t3-t4-access-gaps --gate`, `route optimizer-constraint-ledger --gate`, and
+  `route optimizer-constraint-budget --gate`.
 
 ## Non-Goals
 

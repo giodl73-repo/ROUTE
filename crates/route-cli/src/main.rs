@@ -22042,9 +22042,9 @@ fn t4_terminal_contact_evidence_rows(
             ),
             route: row.route.clone(),
             zone_id: row.zone_id.clone(),
-            terminal_district_seed: terminal_district_seed(&row.terminal_obligation),
+            terminal_district_seed: terminal_district_seed_for_row(row),
             terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
-            contact_basis: "source-needed-route-to-terminal-contact".to_string(),
+            contact_basis: terminal_contact_basis_for_row(row),
             contact_proof_source: String::new(),
             evidence_status: "source-needed".to_string(),
             selected_higher_tier_attachment: "source-needed".to_string(),
@@ -22065,11 +22065,45 @@ fn t4_terminal_contact_evidence_rows(
     rows
 }
 
+fn terminal_district_seed_for_row(row: &T4TerminalAccessColumnRow) -> String {
+    if row.zone_id == "t3-great-lakes" {
+        great_lakes_terminal_seed_for_route(&row.route)
+            .unwrap_or_else(|| terminal_district_seed(&row.terminal_obligation))
+    } else {
+        terminal_district_seed(&row.terminal_obligation)
+    }
+}
+
 fn terminal_district_seed(terminal_obligation: &str) -> String {
     terminal_obligation
         .split_once(": ")
         .map(|(_, seed)| seed.to_string())
         .unwrap_or_else(|| terminal_obligation.to_string())
+}
+
+fn great_lakes_terminal_seed_for_route(route: &str) -> Option<String> {
+    let district = match canonical_route_key(route).as_str() {
+        "I115" | "I176" | "I294" | "US41" => "Chicago Intermodal Complex",
+        "I129" | "I465" | "US31" => "Indianapolis Avon",
+        "I180" | "I72" | "US42" => "St. Louis Gateway",
+        "I190" | "I390" | "I478" | "I691" | "I990" | "US7" => "New York Fresh Pond",
+        "I196" | "I496" | "I696" | "US10" | "US223" => "Detroit Livernois",
+        "I235" => "Minneapolis Twin Cities",
+        "I271" | "I471" | "US22" | "US35" | "US224" | "US250" | "US74" => "Columbus South",
+        "I276" | "I93" | "US15" => "Philadelphia Frankford",
+        "I279" => "Columbus South",
+        _ => return None,
+    };
+    Some(district.to_string())
+}
+
+fn terminal_contact_basis_for_row(row: &T4TerminalAccessColumnRow) -> String {
+    if row.zone_id == "t3-great-lakes" {
+        "candidate-terminal-district-assigned; route-to-terminal contact source still needed"
+            .to_string()
+    } else {
+        "source-needed-route-to-terminal-contact".to_string()
+    }
 }
 
 fn terminal_contact_next_artifact(zone_id: &str) -> String {
@@ -32872,6 +32906,83 @@ mod tests {
             rows[0].next_artifact,
             "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-03.md"
         );
+    }
+
+    #[test]
+    fn t4_terminal_contact_evidence_classifies_great_lakes_sample_districts() {
+        let terminal_rows = vec![
+            T4TerminalAccessColumnRow {
+                route: "I-294".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                current_score: 26.4,
+                constraint_adjusted_score: 25.4,
+                hard_blocker_count: 0,
+                claim_blocker_count: 1,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 1.0,
+                top_constraint_classes: "terminal_access_evidence_gap".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                access_class: "terminal-upgrade-candidate".to_string(),
+                terminal_obligation:
+                    "prove one-hour access to a Great Lakes / Ohio Valley terminal district: Chicago Intermodal Complex, Columbus South"
+                        .to_string(),
+                promise_horizon_hours: 1,
+                column_decision: "terminal-review".to_string(),
+                evidence_required:
+                    "district seed plus route-to-terminal contact proof from separate source"
+                        .to_string(),
+                map_treatment: "show-as-local-inset-candidate".to_string(),
+                selection_basis: "within five points of T3 threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+                optimizer_effect: "hold for contact proof".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T4TerminalAccessColumnRow {
+                route: "US22".to_string(),
+                zone_id: "t3-great-lakes".to_string(),
+                current_score: 29.7,
+                constraint_adjusted_score: 27.7,
+                hard_blocker_count: 0,
+                claim_blocker_count: 2,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 2.0,
+                top_constraint_classes: "lower_tier_feeder_gap;terminal_access_evidence_gap"
+                    .to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                access_class: "terminal-upgrade-candidate".to_string(),
+                terminal_obligation:
+                    "prove one-hour access to a Great Lakes / Ohio Valley terminal district: Chicago Intermodal Complex, Columbus South"
+                        .to_string(),
+                promise_horizon_hours: 1,
+                column_decision: "terminal-review".to_string(),
+                evidence_required:
+                    "district seed plus route-to-terminal contact proof from separate source"
+                        .to_string(),
+                map_treatment: "show-as-local-inset-candidate".to_string(),
+                selection_basis: "within five points of T3 threshold".to_string(),
+                source_artifact: "data/tier-table.csv".to_string(),
+                next_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+                optimizer_effect: "hold for contact proof".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t4_terminal_contact_evidence_rows(&terminal_rows);
+        let failures = t4_terminal_contact_evidence_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows.iter().all(|row| row.decision == "source-needed"));
+        assert!(rows.iter().any(|row| row.route == "I-294"
+            && row.terminal_district_seed == "Chicago Intermodal Complex"));
+        assert!(rows
+            .iter()
+            .any(|row| row.route == "US22" && row.terminal_district_seed == "Columbus South"));
+        assert!(rows.iter().all(|row| row
+            .contact_basis
+            .contains("route-to-terminal contact source still needed")));
     }
 
     #[test]

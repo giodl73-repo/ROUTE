@@ -75,7 +75,7 @@ scenario-ready.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Terminal contact evidence schema | done | `data/t4-terminal-contact-evidence.csv`; terminal-evidence gaps point to queue |
-| 02 - Great Lakes contact sample | planned | classify the 33-row largest zone sample |
+| 02 - Great Lakes contact sample | done | 33 Great Lakes rows assigned candidate districts; all remain source-needed |
 | 03 - Remaining zone contact pass | planned | classify Southeast, Mid-South, Mountain West, and Texas Border rows |
 | 04 - Scenario readiness docket | planned | separate scenario-ready rows from source holds |
 | 05 - Ledger and manifest propagation | planned | regenerate normalized ledger, budget, optimizer manifest, and release surface |
