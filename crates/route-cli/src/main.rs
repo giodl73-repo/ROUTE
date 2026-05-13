@@ -777,6 +777,30 @@ enum Commands {
         gate: bool,
     },
 
+    /// Price bundle-level pavement debt as optimizer budget penalties
+    TierPavementDebtBudget {
+        /// Path to pavement source-gap CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-gaps.csv",
+            value_name = "FILE"
+        )]
+        source_gaps: PathBuf,
+        /// Output pavement debt budget CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-debt-budget.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print per-bundle debt budget rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if debt rows lack cost and optimizer penalty contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Convert pavement source gaps into state-level acquisition tasks
     TierPavementAcquisitionPlan {
         /// Path to pavement source-gap CSV
@@ -5334,6 +5358,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement source-gap gate: PASS");
+            }
+        }
+
+        Commands::TierPavementDebtBudget {
+            source_gaps,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route tier-pavement-debt-budget");
+            let gap_rows = load_tier_pavement_source_gaps(&source_gaps)
+                .with_context(|| format!("loading {}", source_gaps.display()))?;
+            let rows = tier_pavement_debt_budget_rows(&gap_rows);
+            write_tier_pavement_debt_budget(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_debt_budget_summary(&output, &rows, details);
+
+            if gate {
+                let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement debt budget gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement debt budget gate failed");
+                }
+                println!();
+                println!("Tier pavement debt budget gate: PASS");
             }
         }
 
@@ -13171,6 +13224,27 @@ struct TierPavementSourceGapRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementDebtBudgetRow {
+    tier: String,
+    route: String,
+    region_id: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    debt_class: String,
+    blocked_member_count: usize,
+    affected_states: String,
+    evidence_debt_units: usize,
+    repair_debt_units: usize,
+    estimated_evidence_cost_m: f64,
+    estimated_repair_cost_m: f64,
+    total_debt_cost_m: f64,
+    budget_basis: String,
+    optimizer_penalty: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierPavementAcquisitionPlanRow {
     state: String,
     tier: String,
@@ -18208,6 +18282,199 @@ fn load_tier_pavement_source_gaps(path: &Path) -> Result<Vec<TierPavementSourceG
     Ok(rows)
 }
 
+const PAVEMENT_EVIDENCE_COST_PER_MEMBER_M: f64 = 0.05;
+const PAVEMENT_REPAIR_COST_PER_MEMBER_M: f64 = 2.50;
+
+fn tier_pavement_debt_budget_rows(
+    gap_rows: &[TierPavementSourceGapRow],
+) -> Vec<TierPavementDebtBudgetRow> {
+    gap_rows
+        .iter()
+        .map(|row| {
+            let needs_repair = row.blocker_statuses.contains("pavement-repair-required");
+            let needs_evidence = row.blocker_statuses.contains("pavement-source-needed");
+            let repair_debt_units = if needs_repair { row.blocker_count } else { 0 };
+            let evidence_debt_units = if needs_evidence { row.blocker_count } else { 0 };
+            let estimated_evidence_cost_m =
+                round_cost_m(evidence_debt_units as f64 * PAVEMENT_EVIDENCE_COST_PER_MEMBER_M);
+            let estimated_repair_cost_m =
+                round_cost_m(repair_debt_units as f64 * PAVEMENT_REPAIR_COST_PER_MEMBER_M);
+            let total_debt_cost_m =
+                round_cost_m(estimated_evidence_cost_m + estimated_repair_cost_m);
+            let debt_class = if needs_repair {
+                "repair-debt"
+            } else if needs_evidence {
+                "evidence-debt"
+            } else {
+                "classification-debt"
+            };
+            let next_artifact = if needs_repair {
+                "data/tier-pavement-docket.csv"
+            } else {
+                "data/tier-pavement-acquisition-plan.csv"
+            };
+            TierPavementDebtBudgetRow {
+                tier: row.tier.clone(),
+                route: row.route.clone(),
+                region_id: row.region_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                stitch_group_id: row.stitch_group_id.clone(),
+                debt_class: debt_class.to_string(),
+                blocked_member_count: row.blocker_count,
+                affected_states: row.affected_states.clone(),
+                evidence_debt_units,
+                repair_debt_units,
+                estimated_evidence_cost_m,
+                estimated_repair_cost_m,
+                total_debt_cost_m,
+                budget_basis: format!(
+                    "planning proxy: evidence ${:.2}M/member; repair ${:.2}M/member until HPMS/state DOT unit costs replace defaults",
+                    PAVEMENT_EVIDENCE_COST_PER_MEMBER_M, PAVEMENT_REPAIR_COST_PER_MEMBER_M
+                ),
+                optimizer_penalty: format!(
+                    "subtract {:.2} budget-cost units from {} service claim until pavement debt closes",
+                    total_debt_cost_m, row.segment_bundle_id
+                ),
+                next_artifact: next_artifact.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn round_cost_m(value: f64) -> f64 {
+    (value * 100.0).round() / 100.0
+}
+
+fn write_tier_pavement_debt_budget(path: &Path, rows: &[TierPavementDebtBudgetRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_debt_budget_summary(
+    output: &Path,
+    rows: &[TierPavementDebtBudgetRow],
+    details: bool,
+) {
+    let total_cost_m = rows.iter().map(|row| row.total_debt_cost_m).sum::<f64>();
+    let mut by_class = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_class.entry(row.debt_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} pavement debt budget rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  planning pavement debt: ${total_cost_m:.2}M");
+    for (debt_class, count) in by_class {
+        println!("  {debt_class}: {count}");
+    }
+
+    if details {
+        println!();
+        println!(
+            "{:<4} {:<8} {:<18} {:>7} {:>10} {}",
+            "Tier", "Route", "Debt", "Members", "Cost $M", "Bundle"
+        );
+        println!("{}", "-".repeat(104));
+        for row in rows {
+            println!(
+                "{:<4} {:<8} {:<18} {:>7} {:>10.2} {}",
+                row.tier,
+                row.route,
+                row.debt_class,
+                row.blocked_member_count,
+                row.total_debt_cost_m,
+                row.segment_bundle_id
+            );
+        }
+    }
+}
+
+fn tier_pavement_debt_budget_gate_failures(
+    rows: &[TierPavementDebtBudgetRow],
+    gap_rows: &[TierPavementSourceGapRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.len() != gap_rows.len() {
+        failures.push(format!(
+            "pavement debt budget rows {} do not match source-gap rows {}",
+            rows.len(),
+            gap_rows.len()
+        ));
+    }
+    let source_gap_bundles = gap_rows
+        .iter()
+        .map(|row| row.segment_bundle_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    for row in rows {
+        if row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.debt_class.trim().is_empty()
+            || row.budget_basis.trim().is_empty()
+            || row.optimizer_penalty.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete pavement debt budget row",
+                row.segment_bundle_id
+            ));
+        }
+        if !source_gap_bundles.contains(row.segment_bundle_id.as_str()) {
+            failures.push(format!(
+                "{} has no matching pavement source-gap row",
+                row.segment_bundle_id
+            ));
+        }
+        if row.blocked_member_count == 0 {
+            failures.push(format!(
+                "{} has zero blocked pavement debt members",
+                row.segment_bundle_id
+            ));
+        }
+        if row.evidence_debt_units + row.repair_debt_units == 0 {
+            failures.push(format!(
+                "{} lacks evidence or repair debt units",
+                row.segment_bundle_id
+            ));
+        }
+        if row.total_debt_cost_m <= 0.0 {
+            failures.push(format!(
+                "{} has non-positive pavement debt cost",
+                row.segment_bundle_id
+            ));
+        }
+        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
+            failures.push(format!("{} is not a bundle id", row.segment_bundle_id));
+        }
+        if !row.stitch_group_id.starts_with("US.HWYSTITCH.") {
+            failures.push(format!("{} is not a stitch id", row.stitch_group_id));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} must remain review until pavement debt closes",
+                row.segment_bundle_id
+            ));
+        }
+    }
+    failures
+}
+
 #[derive(Default)]
 struct TierPavementAcquisitionBuilder {
     state: String,
@@ -22239,6 +22506,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-pavement-source-gaps",
                 "route tier-pavement-source-gaps --gate",
                 "data/tier-pavement-source-gaps.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
+                "tier-pavement-debt-budget",
+                "route tier-pavement-debt-budget --gate",
+                "data/tier-pavement-debt-budget.csv",
                 "pass",
                 0,
                 "",
@@ -27978,6 +28253,7 @@ mod tests {
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_pavement_acquisition_docket_gate_failures, tier_pavement_acquisition_docket_rows,
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
+        tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_route_state_scope, tier_pavement_source_gap_gate_failures,
         tier_pavement_source_gap_rows, tier_region_gate_failures,
@@ -27996,8 +28272,9 @@ mod tests {
         T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
         T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
         TierCandidateColumnRow, TierContactWitnessInputRow, TierOptimizerRunRow,
-        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow,
         TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
@@ -31344,6 +31621,59 @@ mod tests {
             .source_action
             .contains("price pavement evidence debt"));
         assert_eq!(tier_pavement_route_state_scope(None, "US30"), "");
+    }
+
+    #[test]
+    fn tier_pavement_debt_budget_prices_source_and_repair_debt() {
+        let gap_rows = vec![
+            TierPavementSourceGapRow {
+                tier: "T2".to_string(),
+                route: "US30".to_string(),
+                region_id: "component-1".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+                stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+                member_count: 100,
+                blocker_count: 90,
+                blocker_statuses: "pavement-source-needed".to_string(),
+                affected_states: "IA;NE;WY".to_string(),
+                affected_edge_ids: "1;2;3".to_string(),
+                source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+                source_action: "price pavement evidence debt".to_string(),
+                next_artifact: "data/standards-l1-inventory.csv".to_string(),
+                optimizer_effect: "bundle remains service-addressable".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierPavementSourceGapRow {
+                tier: "T2".to_string(),
+                route: "I220".to_string(),
+                region_id: "component-1".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I220".to_string(),
+                member_count: 10,
+                blocker_count: 4,
+                blocker_statuses: "pavement-repair-required".to_string(),
+                affected_states: "TX".to_string(),
+                affected_edge_ids: "4;5;6;7".to_string(),
+                source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+                source_action: "price pavement repair debt".to_string(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                optimizer_effect: "bundle remains service-addressable".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows: Vec<TierPavementDebtBudgetRow> = tier_pavement_debt_budget_rows(&gap_rows);
+        let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].debt_class, "evidence-debt");
+        assert_eq!(rows[0].evidence_debt_units, 90);
+        assert_eq!(rows[0].total_debt_cost_m, 4.5);
+        assert_eq!(rows[1].debt_class, "repair-debt");
+        assert_eq!(rows[1].repair_debt_units, 4);
+        assert_eq!(rows[1].total_debt_cost_m, 10.0);
+        assert!(rows[1].optimizer_penalty.contains("budget-cost"));
     }
 
     #[test]

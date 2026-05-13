@@ -326,6 +326,7 @@ total_value =
   + stop_spacing_improvement
   - route_budget_cost
   - stop_budget_cost
+  - pavement_debt_budget_cost
   - duplicate_service_penalty
   - unbuilt_or_source_gap_penalty
   - schematic_complexity_penalty
@@ -333,6 +334,10 @@ total_value =
 
 T1 uses national SLA coverage as the dominant objective. T2 uses regional SLA,
 relief, and attachment value. T3/T4 use access coverage and local service value.
+Pavement debt is carried as a budget penalty from
+`data/tier-pavement-debt-budget.csv`: it can make one otherwise valid bundle
+more expensive than another, but it does not erase the bundle identity or hide
+the service relationship from maps, games, incidents, or later upgrade planning.
 
 ## Stop Generation Rules
 

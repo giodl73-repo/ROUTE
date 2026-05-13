@@ -89,6 +89,7 @@ The current all-tier manifest includes:
 - T1/T2 segment candidates;
 - T1/T2 pavement docket;
 - T1/T2 pavement source-gap rollup;
+- T1/T2 pavement debt budget;
 - T1/T2 pavement acquisition plan;
 - T1/T2 pavement acquisition docket;
 - T2 bundle overlays;
@@ -120,7 +121,7 @@ The manifest proves the bundle shape. It does not prove domain truth by itself.
 | Promise-pair selection | `data/t1-sla-candidate-pairs.csv` |
 | Route/stop/service schema | `docs/route-stop-column-schema.md` |
 | Segment identity and bundle joins | `docs/route-architecture.md`, `docs/national-segment-identity-spec.md`, `docs/tier-segment-stitching-spec.md`, `data/tier-segment-candidates.csv`, `data/national-segment-registry.csv`, `data/national-segment-bundles.csv`, and `data/bundle-architecture.csv` |
-| Pavement and ride-quality floors | `docs/tier-pavement-standards.md`, `data/tier-pavement-standards.csv`, `data/tier-pavement-docket.csv`, `data/tier-pavement-source-gaps.csv`, `data/tier-pavement-acquisition-plan.csv`, and `data/tier-pavement-acquisition-docket.csv` |
+| Pavement and ride-quality floors | `docs/tier-pavement-standards.md`, `data/tier-pavement-standards.csv`, `data/tier-pavement-docket.csv`, `data/tier-pavement-source-gaps.csv`, `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-acquisition-plan.csv`, and `data/tier-pavement-acquisition-docket.csv` |
 | Source fetch cache preservation | `docs/source-fetch-cache-policy.md` and `data/source-fetch-policy.csv` |
 | Beck topology truth | `docs/beck-renderer-contract.md` plus map diagnostics |
 | T2 service doctrine | `docs/t2-regional-treatment.md` |

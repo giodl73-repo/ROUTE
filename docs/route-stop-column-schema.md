@@ -45,6 +45,7 @@ carry `national_segment_id` or point to `data/national-segment-registry.csv`.
 | Stop column | Ordered stop or boundary proposal along a route | `data/t1-stop-selector.csv` |
 | Service column | Regional service treatment for a selected or reviewed route | `data/t2-service-selection.csv` |
 | Repair witness | Structured infeasibility or repair action produced by a later gate | `data/t1-topology-repairs.csv`, `data/t1-feedback-docket.csv` |
+| Debt budget column | Payment/capital debt attached to a selected bundle without blocking identity | `data/tier-pavement-debt-budget.csv` |
 | Manifest row | Run-level certificate tying commands to artifacts and gate status | `data/tier-optimizer-runs.csv` |
 
 Future T2/T3/T4 artifacts should reuse these categories rather than inventing

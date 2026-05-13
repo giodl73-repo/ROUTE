@@ -14,6 +14,9 @@ for each tier. The command contract is:
 route standards-pavement --gate
 route tier-pavement-docket --gate
 route tier-pavement-source-gaps --gate
+route tier-pavement-debt-budget --gate
+route tier-pavement-acquisition-plan --gate
+route tier-pavement-acquisition-docket --gate
 ```
 
 ## Rule
@@ -74,6 +77,13 @@ bundle. It records member count, blocked member count, blocker statuses, affecte
 edge ids, and the next source, repair, or payment action. T1/T2 bundles may stay
 `bundle-ready` as route/service identities, but pavement debt must be paid down
 before SLA, transit, upgrade, or publication claims can pass.
+
+`data/tier-pavement-debt-budget.csv` is the optimizer-facing payment ledger. It
+converts each bundle source-gap row into deterministic planning-cost units:
+evidence debt for missing pavement sources and repair debt for failing member
+segments. These are budget penalties, not identity blockers. The default unit
+costs are planning proxies until HPMS/state DOT repair quantities replace them,
+but the optimizer must still carry the debt before comparing service bundles.
 
 When selected graph members do not carry per-edge state codes, the source-gap
 command infers `affected_states` from the route geometry through the corridor

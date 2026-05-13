@@ -88,6 +88,7 @@ surface and name the next artifact that will attach identity.
 | `data/tier-segment-candidates.csv` | T1/T2 selector output decomposed into graph-edge bundle members before route labels can become services. |
 | `data/tier-pavement-docket.csv` | Segment-member pavement debt surface consumed by the registry without deciding whether the route bundle exists. |
 | `data/tier-pavement-source-gaps.csv` | Bundle-level action docket for pavement source/repair debt that must be paid before readiness claims pass. |
+| `data/tier-pavement-debt-budget.csv` | Optimizer-facing pavement payment ledger that prices evidence and repair debt as bundle budget penalties. |
 | `data/tier-pavement-acquisition-plan.csv` | State-level source acquisition plan for pavement debt that must feed back into the member debt ledger. |
 | `data/tier-pavement-acquisition-docket.csv` | Runnable source-acquisition task list for refreshing pavement evidence and rerunning pavement debt gates. |
 | `data/source-fetch-policy.csv` | Gateable source-fetch cache policy proving scoped refreshes merge, full refreshes replace only after validation, and failed live snapshots preserve prior cache. |
