@@ -2977,6 +2977,38 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit route-level review rows for T1 schematic-geometry claim blockers
+    T1SchematicGeometryClaimReview {
+        /// Optimizer claim review CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-claim-review.csv",
+            value_name = "FILE"
+        )]
+        claim_review: PathBuf,
+        /// T1 design review CSV
+        #[arg(long, default_value = "data/t1-design-review.csv", value_name = "FILE")]
+        design_review: PathBuf,
+        /// T1 design policy action CSV
+        #[arg(
+            long,
+            default_value = "data/t1-design-policy-actions.csv",
+            value_name = "FILE"
+        )]
+        policy_actions: PathBuf,
+        /// Output T1 schematic-geometry claim review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-schematic-geometry-claim-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if rows omit overlap-review routes or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9678,6 +9710,46 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T1SchematicGeometryClaimReview {
+            claim_review,
+            design_review,
+            policy_actions,
+            output,
+            gate,
+        } => {
+            println!("route t1-schematic-geometry-claim-review");
+            let claim_rows = load_optimizer_claim_review(&claim_review)
+                .with_context(|| format!("loading {}", claim_review.display()))?;
+            let design_rows = load_t1_design_review(&design_review)
+                .with_context(|| format!("loading {}", design_review.display()))?;
+            let policy_rows = load_t1_design_policy_actions(&policy_actions)
+                .with_context(|| format!("loading {}", policy_actions.display()))?;
+            let rows =
+                t1_schematic_geometry_claim_review_rows(&claim_rows, &design_rows, &policy_rows);
+            write_t1_schematic_geometry_claim_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_schematic_geometry_claim_review_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_schematic_geometry_claim_review_gate_failures(
+                    &rows,
+                    &claim_rows,
+                    &design_rows,
+                    &policy_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 schematic geometry claim review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 schematic geometry claim review gate failed");
+                }
+                println!();
+                println!("T1 schematic geometry claim review gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16148,6 +16220,29 @@ struct OptimizerClaimReviewRow {
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T1SchematicGeometryClaimReviewRow {
+    schematic_review_id: String,
+    claim_review_id: String,
+    route: String,
+    design_role: String,
+    design_status: String,
+    beck_review_flag: String,
+    overlap_corridors: String,
+    policy_action: String,
+    required_policy: String,
+    design_treatment: String,
+    gate_policy: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    review_decision: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -29208,6 +29303,236 @@ fn optimizer_claim_review_gate_failures(
     failures
 }
 
+fn load_optimizer_claim_review(path: &Path) -> Result<Vec<OptimizerClaimReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_schematic_geometry_claim_review_rows(
+    claim_rows: &[OptimizerClaimReviewRow],
+    design_rows: &[T1DesignReviewCsvRow],
+    policy_rows: &[T1DesignPolicyActionRow],
+) -> Vec<T1SchematicGeometryClaimReviewRow> {
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T1"
+            && row.blocker_family.contains("schematic_geometry")
+            && row.total_claim_blockers > 0
+    }) else {
+        return Vec::new();
+    };
+    let Some(policy_row) = policy_rows
+        .iter()
+        .find(|row| row.action == "resolve-shared-segment-map-policy")
+    else {
+        return Vec::new();
+    };
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(|route| route.trim().to_string())
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let mut rows = design_rows
+        .iter()
+        .filter(|row| expected_routes.contains(&row.route))
+        .filter(|row| {
+            row.selected
+                && row.design_status == "policy-review"
+                && row.next_design_action == "resolve-shared-segment-map-policy"
+                && row.beck_review_flag == "overlap-review"
+        })
+        .map(|row| T1SchematicGeometryClaimReviewRow {
+            schematic_review_id: format!("T1SCHEMATIC-{}", stable_id_fragment(&row.route)),
+            claim_review_id: claim_row.claim_review_id.clone(),
+            route: row.route.clone(),
+            design_role: row.design_role.clone(),
+            design_status: row.design_status.clone(),
+            beck_review_flag: row.beck_review_flag.clone(),
+            overlap_corridors: row.overlap_corridors.clone(),
+            policy_action: policy_row.action.clone(),
+            required_policy: policy_row.required_policy.clone(),
+            design_treatment: policy_row.design_treatment.clone(),
+            gate_policy: policy_row.gate_policy.clone(),
+            blocker_claims_before: claim_row.blocked_claims.clone(),
+            blocker_claims_after: claim_row.blocked_claims.clone(),
+            blocker_count_before: 2,
+            blocker_count_after: 2,
+            claim_blocker_delta: 0,
+            review_decision: "shared-segment-map-policy-required".to_string(),
+            next_artifact: "data/t1-shared-segment-map-policy.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t1_schematic_geometry_claim_review(
+    path: &Path,
+    rows: &[T1SchematicGeometryClaimReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_schematic_geometry_claim_review_summary(
+    output: &Path,
+    rows: &[T1SchematicGeometryClaimReviewRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T1 schematic-geometry claim review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t1_schematic_geometry_claim_review_gate_failures(
+    rows: &[T1SchematicGeometryClaimReviewRow],
+    claim_rows: &[OptimizerClaimReviewRow],
+    design_rows: &[T1DesignReviewCsvRow],
+    policy_rows: &[T1DesignPolicyActionRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T1"
+            && row.blocker_family.contains("schematic_geometry")
+            && row.total_claim_blockers > 0
+    }) else {
+        failures.push("missing T1 schematic geometry optimizer claim-review row".to_string());
+        return failures;
+    };
+    if !policy_rows
+        .iter()
+        .any(|row| row.action == "resolve-shared-segment-map-policy")
+    {
+        failures.push("missing resolve-shared-segment-map-policy action".to_string());
+    }
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(|route| route.trim().to_string())
+        .collect::<std::collections::BTreeSet<_>>();
+    let eligible_routes = design_rows
+        .iter()
+        .filter(|row| expected_routes.contains(&row.route))
+        .filter(|row| {
+            row.selected
+                && row.design_status == "policy-review"
+                && row.next_design_action == "resolve-shared-segment-map-policy"
+                && row.beck_review_flag == "overlap-review"
+        })
+        .map(|row| row.route.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if eligible_routes.len() != expected_routes.len() {
+        failures.push(format!(
+            "eligible T1 schematic routes = {}, expected {}",
+            eligible_routes.len(),
+            expected_routes.len()
+        ));
+    }
+    if rows.len() != expected_routes.len() {
+        failures.push(format!(
+            "T1 schematic review has {} rows but expected {}",
+            rows.len(),
+            expected_routes.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.schematic_review_id.trim().is_empty()
+            || row.claim_review_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.design_role.trim().is_empty()
+            || row.design_status.trim().is_empty()
+            || row.beck_review_flag.trim().is_empty()
+            || row.overlap_corridors.trim().is_empty()
+            || row.policy_action.trim().is_empty()
+            || row.required_policy.trim().is_empty()
+            || row.design_treatment.trim().is_empty()
+            || row.gate_policy.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete schematic review fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.route.clone()) {
+            failures.push(format!("{} appears more than once", row.route));
+        }
+        if !expected_routes.contains(&row.route) {
+            failures.push(format!(
+                "{} is not in the T1 schematic claim row",
+                row.route
+            ));
+        }
+        if row.claim_review_id != claim_row.claim_review_id
+            || row.policy_action != "resolve-shared-segment-map-policy"
+            || row.review_decision != "shared-segment-map-policy-required"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid schematic review state", row.route));
+        }
+        if row.blocker_claims_before != claim_row.blocked_claims
+            || row.blocker_claims_after != claim_row.blocked_claims
+            || row.blocker_count_before != 2
+            || row.blocker_count_after != 2
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} reduced schematic claim blockers", row.route));
+        }
+    }
+    for expected_route in expected_routes {
+        if !seen.contains(&expected_route) {
+            failures.push(format!(
+                "{expected_route} missing from T1 schematic claim review"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != claim_row.total_claim_blockers {
+        failures.push(format!(
+            "T1 schematic review preserves {total_after} blockers but claim row has {}",
+            claim_row.total_claim_blockers
+        ));
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -37233,6 +37558,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "P1 optimizer claim blockers remain held for source-specific review",
             ),
             (
+                "t1-schematic-geometry-claim-review",
+                "route t1-schematic-geometry-claim-review --gate",
+                "data/t1-schematic-geometry-claim-review.csv",
+                "held-known",
+                8,
+                "T1 shared schematic geometry blockers remain held pending map policy",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -43408,9 +43741,11 @@ mod tests {
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
-        t1_line_selector_rows, t1_sla_candidate_pair_gate_failures, t1_sla_candidate_pair_rows,
-        t1_stop_selector_gate_failures, t1_stop_selector_rows, t1_topology_repair_gate_failures,
-        t1_topology_repair_rows, t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
+        t1_line_selector_rows, t1_schematic_geometry_claim_review_gate_failures,
+        t1_schematic_geometry_claim_review_rows, t1_sla_candidate_pair_gate_failures,
+        t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
+        t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows,
         t2_bundle_overlay_gate_failures, t2_bundle_overlay_repair_delta_gate_failures,
         t2_bundle_overlay_repair_delta_rows, t2_bundle_overlay_repair_target_gate_failures,
@@ -43514,20 +43849,20 @@ mod tests {
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
-        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintBudgetIndex,
-        OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow, OptimizerMapHookRow,
-        OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex, PavementStandardRow,
-        ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
-        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
-        T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerClaimReviewRow,
+        OptimizerConstraintBudgetIndex, OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow,
+        OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
+        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
+        T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
+        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow,
+        T2BundleOverlayRow, T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -50749,6 +51084,94 @@ mod tests {
             rows[0].review_decision,
             "held-for-source-specific-claim-review"
         );
+    }
+
+    #[test]
+    fn t1_schematic_geometry_claim_review_preserves_shared_segment_blockers() {
+        let claim_rows = vec![OptimizerClaimReviewRow {
+            claim_review_id: "OCR-T1SCHEMATIC".to_string(),
+            backlog_id: "ORB-P1-claim-blocker-T1-BECKSCHEMATICGEOMETRYSCHEMATICGEOMETRY"
+                .to_string(),
+            priority_class: "P1-claim-blocker".to_string(),
+            blocker_family: "beck_schematic_geometry|schematic_geometry".to_string(),
+            tier: "T1".to_string(),
+            blocked_claims: "map;publication".to_string(),
+            subject_count: 2,
+            route_count: 2,
+            total_claim_blockers: 4,
+            representative_routes: "I40;I95".to_string(),
+            representative_subjects: "I40;I95".to_string(),
+            evidence_artifacts: "data/t1-design-policy-actions.csv".to_string(),
+            review_decision: "held-for-source-specific-claim-review".to_string(),
+            blocker_claims_before: "map;publication".to_string(),
+            blocker_claims_after: "map;publication".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/t1-design-policy-actions.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let design_rows = vec![
+            T1DesignReviewCsvRow {
+                route: "I40".to_string(),
+                selected: true,
+                design_role: "promise-spine".to_string(),
+                promise_count: 3,
+                selected_stop_count: 10,
+                top_city_stop_count: 2,
+                selector_reason: "sla-required-budget-fit".to_string(),
+                beck_action: "overlap-review".to_string(),
+                beck_review_flag: "overlap-review".to_string(),
+                overlap_corridors: "I-95".to_string(),
+                design_status: "policy-review".to_string(),
+                next_design_action: "resolve-shared-segment-map-policy".to_string(),
+            },
+            T1DesignReviewCsvRow {
+                route: "I95".to_string(),
+                selected: true,
+                design_role: "promise-spine".to_string(),
+                promise_count: 11,
+                selected_stop_count: 11,
+                top_city_stop_count: 5,
+                selector_reason: "sla-required-budget-fit".to_string(),
+                beck_action: "overlap-review".to_string(),
+                beck_review_flag: "overlap-review".to_string(),
+                overlap_corridors: "I-40".to_string(),
+                design_status: "policy-review".to_string(),
+                next_design_action: "resolve-shared-segment-map-policy".to_string(),
+            },
+        ];
+        let policy_rows = vec![T1DesignPolicyActionRow {
+            action: "resolve-shared-segment-map-policy".to_string(),
+            applies_to_status: "policy-review".to_string(),
+            definition: "Selected T1 route shares a Beck backbone segment".to_string(),
+            required_policy:
+                "Represent shared segment as interlined trunk service or split at transfer stops"
+                    .to_string(),
+            design_treatment: "Keep both routes selected while policy resolves treatment"
+                .to_string(),
+            gate_policy: "Policy review blocks final Beck replacement".to_string(),
+            next_selector_use: "Map engine consumes overlap corridors".to_string(),
+        }];
+
+        let rows = t1_schematic_geometry_claim_review_rows(&claim_rows, &design_rows, &policy_rows);
+        let failures = t1_schematic_geometry_claim_review_gate_failures(
+            &rows,
+            &claim_rows,
+            &design_rows,
+            &policy_rows,
+        );
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.blocker_count_after)
+                .sum::<usize>(),
+            4
+        );
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .all(|row| row.review_decision == "shared-segment-map-policy-required"));
     }
 
     #[test]

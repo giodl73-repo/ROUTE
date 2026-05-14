@@ -60,12 +60,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T4 Terminal Access Proof Source Capture | Record source-needed terminal-access proof capture placeholders before artifact attachment. | done |
 | 2026-05-14 | T4 Terminal Access Proof Artifact Attachment | Record source-needed terminal-access proof artifact-attachment placeholders before proof review. | done |
 | 2026-05-14 | Optimizer Claim Review | Docket residual P1 optimizer claim blockers by owning evidence artifact before blocker relief. | done |
+| 2026-05-14 | T1 Schematic Geometry Claim Review | Expand the largest optimizer claim-review family into route-level shared-segment map-policy rows. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should burn down
-`data/optimizer-claim-review.csv` family by family against owning evidence
-artifacts before blocker relief.
+No wave is active. Next optimizer work should author
+`data/t1-shared-segment-map-policy.csv` before any T1 schematic geometry
+blocker relief or final Beck replacement publication.
 
 ## Operating Rules
 
