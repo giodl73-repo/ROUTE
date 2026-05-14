@@ -63,12 +63,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T1 Schematic Geometry Claim Review | Expand the largest optimizer claim-review family into route-level shared-segment map-policy rows. | done |
 | 2026-05-14 | T1 Shared Segment Map Policy | Author pair-level shared-segment map policy rows before T1 schematic blocker relief. | done |
 | 2026-05-14 | T1 Shared Segment Policy Acceptance | Accept authored shared-segment map policy before schematic blocker relief replay. | done |
+| 2026-05-14 | T1 Schematic Geometry Blocker Relief | Replay accepted shared-segment policy into T1 schematic blocker relief rows. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should replay
-`data/t1-schematic-geometry-blocker-relief.csv` before any final Beck
-replacement publication.
+No wave is active. Next optimizer work should wire
+`data/t1-schematic-geometry-blocker-relief.csv` into
+`data/optimizer-constraint-ledger.csv` before final Beck replacement publication.
 
 ## Operating Rules
 

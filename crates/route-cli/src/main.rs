@@ -3053,6 +3053,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T1 schematic-geometry blocker relief rows from accepted shared-segment policy
+    T1SchematicGeometryBlockerRelief {
+        /// T1 shared-segment policy acceptance CSV
+        #[arg(
+            long,
+            default_value = "data/t1-shared-segment-policy-acceptance.csv",
+            value_name = "FILE"
+        )]
+        acceptance: PathBuf,
+        /// Output T1 schematic-geometry blocker relief CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-schematic-geometry-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if relief rows omit accepted policies or do not reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9851,6 +9873,35 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T1SchematicGeometryBlockerRelief {
+            acceptance,
+            output,
+            gate,
+        } => {
+            println!("route t1-schematic-geometry-blocker-relief");
+            let acceptance_rows = load_t1_shared_segment_policy_acceptance(&acceptance)
+                .with_context(|| format!("loading {}", acceptance.display()))?;
+            let rows = t1_schematic_geometry_blocker_relief_rows(&acceptance_rows);
+            write_t1_schematic_geometry_blocker_relief(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_schematic_geometry_blocker_relief_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t1_schematic_geometry_blocker_relief_gate_failures(&rows, &acceptance_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 schematic geometry blocker relief gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 schematic geometry blocker relief gate failed");
+                }
+                println!();
+                println!("T1 schematic geometry blocker relief gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16387,6 +16438,25 @@ struct T1SharedSegmentPolicyAcceptanceRow {
     blocker_count_before: usize,
     blocker_count_after: usize,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T1SchematicGeometryBlockerReliefRow {
+    relief_id: String,
+    acceptance_id: String,
+    policy_id: String,
+    route_pair: String,
+    affected_routes: String,
+    accepted_render_treatment: String,
+    relief_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    ledger_replay_status: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -30087,6 +30157,190 @@ fn t1_shared_segment_policy_acceptance_gate_failures(
     failures
 }
 
+fn load_t1_shared_segment_policy_acceptance(
+    path: &Path,
+) -> Result<Vec<T1SharedSegmentPolicyAcceptanceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_schematic_geometry_blocker_relief_rows(
+    acceptance_rows: &[T1SharedSegmentPolicyAcceptanceRow],
+) -> Vec<T1SchematicGeometryBlockerReliefRow> {
+    let mut rows = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_status == "accepted-policy-ready-for-relief-replay"
+                && row.publication_status_after == "held-pending-blocker-relief-replay"
+                && row.claim_blocker_delta == 0
+        })
+        .map(|row| T1SchematicGeometryBlockerReliefRow {
+            relief_id: format!(
+                "T1SCHEMATICRELIEF-{}",
+                stable_id_fragment(&row.acceptance_id)
+            ),
+            acceptance_id: row.acceptance_id.clone(),
+            policy_id: row.policy_id.clone(),
+            route_pair: row.route_pair.clone(),
+            affected_routes: row.affected_routes.clone(),
+            accepted_render_treatment: row.accepted_render_treatment.clone(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: 0,
+            claim_blocker_delta: -(row.blocker_count_after as isize),
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route_pair.cmp(&right.route_pair));
+    rows
+}
+
+fn write_t1_schematic_geometry_blocker_relief(
+    path: &Path,
+    rows: &[T1SchematicGeometryBlockerReliefRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_schematic_geometry_blocker_relief_summary(
+    output: &Path,
+    rows: &[T1SchematicGeometryBlockerReliefRow],
+) {
+    let before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T1 schematic-geometry blocker relief rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers before: {before}");
+    println!("  claim blockers after: {after}");
+}
+
+fn t1_schematic_geometry_blocker_relief_gate_failures(
+    rows: &[T1SchematicGeometryBlockerReliefRow],
+    acceptance_rows: &[T1SharedSegmentPolicyAcceptanceRow],
+) -> Vec<String> {
+    let expected = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_status == "accepted-policy-ready-for-relief-replay"
+                && row.publication_status_after == "held-pending-blocker-relief-replay"
+                && row.claim_blocker_delta == 0
+        })
+        .map(|row| row.acceptance_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_before = acceptance_rows
+        .iter()
+        .filter(|row| expected.contains(row.acceptance_id.as_str()))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures
+            .push("T1 schematic geometry blocker relief has no accepted policy rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T1 schematic geometry blocker relief has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.relief_id.trim().is_empty()
+            || row.acceptance_id.trim().is_empty()
+            || row.policy_id.trim().is_empty()
+            || row.route_pair.trim().is_empty()
+            || row.affected_routes.trim().is_empty()
+            || row.accepted_render_treatment.trim().is_empty()
+            || row.relief_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.ledger_replay_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete relief fields",
+                row.acceptance_id
+            ));
+        }
+        if !seen.insert(row.acceptance_id.clone()) {
+            failures.push(format!("{} appears more than once", row.acceptance_id));
+        }
+        if !expected.contains(row.acceptance_id.as_str()) {
+            failures.push(format!(
+                "{} is not an expected acceptance row",
+                row.acceptance_id
+            ));
+        }
+        if row.relief_decision != "relief-ready-for-constraint-ledger-replay"
+            || row.ledger_replay_status != "pending-optimizer-constraint-ledger-replay"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid relief state", row.acceptance_id));
+        }
+        if !row.blocker_claims_after.is_empty()
+            || row.blocker_count_after != 0
+            || row.claim_blocker_delta != -(row.blocker_count_before as isize)
+        {
+            failures.push(format!(
+                "{} did not reduce blockers to zero",
+                row.acceptance_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from blocker relief"));
+        }
+    }
+    let actual_before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let actual_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_before != expected_before || actual_after != 0 {
+        failures.push(format!(
+            "T1 schematic geometry relief before/after = {actual_before}/{actual_after}, expected {expected_before}/0"
+        ));
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -38136,6 +38390,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T1 shared segment policy is accepted but pending blocker relief replay",
             ),
             (
+                "t1-schematic-geometry-blocker-relief",
+                "route t1-schematic-geometry-blocker-relief --gate",
+                "data/t1-schematic-geometry-blocker-relief.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -44311,9 +44573,11 @@ mod tests {
         t1_failure_event_has_observation_contract, t1_failure_event_observation_gate_failures,
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
-        t1_line_selector_rows, t1_schematic_geometry_claim_review_gate_failures,
-        t1_schematic_geometry_claim_review_rows, t1_shared_segment_map_policy_gate_failures,
-        t1_shared_segment_map_policy_rows, t1_shared_segment_policy_acceptance_gate_failures,
+        t1_line_selector_rows, t1_schematic_geometry_blocker_relief_gate_failures,
+        t1_schematic_geometry_blocker_relief_rows,
+        t1_schematic_geometry_claim_review_gate_failures, t1_schematic_geometry_claim_review_rows,
+        t1_shared_segment_map_policy_gate_failures, t1_shared_segment_map_policy_rows,
+        t1_shared_segment_policy_acceptance_gate_failures,
         t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
@@ -44426,16 +44690,17 @@ mod tests {
         OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow,
-        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
-        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow,
+        T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
+        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
+        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -51850,6 +52115,46 @@ mod tests {
         assert_eq!(rows[0].blocker_count_before, 4);
         assert_eq!(rows[0].blocker_count_after, 4);
         assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn t1_schematic_geometry_blocker_relief_reduces_accepted_policy_blockers() {
+        let acceptance_rows = vec![T1SharedSegmentPolicyAcceptanceRow {
+            acceptance_id: "T1SHAREDACCEPT-T1SHAREDSEGI40I95".to_string(),
+            policy_id: "T1SHAREDSEG-I40I95".to_string(),
+            route_pair: "I40-I95".to_string(),
+            affected_routes: "I40;I95".to_string(),
+            map_policy_decision: "shared-segment-policy-authored-review".to_string(),
+            accepted_render_treatment:
+                "represent as interlined trunk service or split at selected transfer stops"
+                    .to_string(),
+            acceptance_status: "accepted-policy-ready-for-relief-replay".to_string(),
+            acceptance_basis:
+                "policy uses allowed interlined trunk or selected-transfer split treatment"
+                    .to_string(),
+            publication_status_before: "held-pending-policy-acceptance".to_string(),
+            publication_status_after: "held-pending-blocker-relief-replay".to_string(),
+            blocker_claims_before: "map;publication".to_string(),
+            blocker_claims_after: "map;publication".to_string(),
+            blocker_count_before: 4,
+            blocker_count_after: 4,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t1-schematic-geometry-blocker-relief.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t1_schematic_geometry_blocker_relief_rows(&acceptance_rows);
+        let failures = t1_schematic_geometry_blocker_relief_gate_failures(&rows, &acceptance_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].blocker_count_before, 4);
+        assert_eq!(rows[0].blocker_count_after, 0);
+        assert_eq!(rows[0].claim_blocker_delta, -4);
+        assert_eq!(
+            rows[0].ledger_replay_status,
+            "pending-optimizer-constraint-ledger-replay"
+        );
     }
 
     #[test]
