@@ -3167,6 +3167,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit state-scoped split plan rows for T2 stitched-member decisions
+    T2StitchedMemberSplitPlan {
+        /// T2 stitched-member decision docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-stitched-member-decision-docket.csv",
+            value_name = "FILE"
+        )]
+        decision_docket: PathBuf,
+        /// Tier segment candidates CSV
+        #[arg(
+            long,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        segment_candidates: PathBuf,
+        /// Output T2 stitched-member split plan CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-stitched-member-split-plan.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if split rows promote readiness or lose claim blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9329,6 +9358,36 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2StitchedMemberSplitPlan {
+            decision_docket,
+            segment_candidates,
+            output,
+            gate,
+        } => {
+            println!("route t2-stitched-member-split-plan");
+            let decision_rows = load_t2_stitched_member_decision_docket(&decision_docket)
+                .with_context(|| format!("loading {}", decision_docket.display()))?;
+            let candidate_rows = load_tier_segment_candidates(&segment_candidates)
+                .with_context(|| format!("loading {}", segment_candidates.display()))?;
+            let rows = t2_stitched_member_split_plan_rows(&decision_rows, &candidate_rows);
+            write_t2_stitched_member_split_plan(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_stitched_member_split_plan_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_stitched_member_split_plan_gate_failures(&rows, &decision_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 stitched member split plan gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 stitched member split plan gate failed");
+                }
+                println!("T2 stitched member split plan gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -15186,6 +15245,25 @@ struct T2StitchedMemberDecisionDocketRow {
     decision: String,
     decision_action: String,
     repair_instruction: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2StitchedMemberSplitPlanRow {
+    split_plan_id: String,
+    decision_docket_id: String,
+    route: String,
+    blocked_segment_bundle_id: String,
+    candidate_segment_bundle_id: String,
+    candidate_stitch_group_id: String,
+    state_scope: String,
+    candidate_member_count: usize,
+    candidate_length_miles: f64,
+    split_action: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -24401,6 +24479,218 @@ fn t2_stitched_member_decision_docket_gate_failures(
     failures
 }
 
+fn load_t2_stitched_member_decision_docket(
+    path: &Path,
+) -> Result<Vec<T2StitchedMemberDecisionDocketRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_stitched_member_split_plan_rows(
+    decision_rows: &[T2StitchedMemberDecisionDocketRow],
+    candidate_rows: &[TierSegmentCandidateRow],
+) -> Vec<T2StitchedMemberSplitPlanRow> {
+    let mut rows = Vec::new();
+    for decision in decision_rows
+        .iter()
+        .filter(|row| row.decision == "split" && row.validation_status == "review")
+    {
+        let route_key = canonical_route_key(&decision.route);
+        let mut by_bundle =
+            std::collections::BTreeMap::<String, Vec<&TierSegmentCandidateRow>>::new();
+        for candidate in candidate_rows.iter().filter(|row| {
+            canonical_route_key(&row.route) == route_key && row.member_role == "stitched-member"
+        }) {
+            by_bundle
+                .entry(candidate.segment_bundle_id.clone())
+                .or_default()
+                .push(candidate);
+        }
+
+        for (candidate_bundle_id, members) in by_bundle {
+            let state_scope = members
+                .iter()
+                .filter_map(|row| {
+                    let state = row.state.trim();
+                    if state.is_empty() {
+                        None
+                    } else {
+                        Some(state.to_string())
+                    }
+                })
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(";");
+            let stitch_group_ids = members
+                .iter()
+                .map(|row| row.stitch_group_id.clone())
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(";");
+            let length_miles =
+                (members.iter().map(|row| row.length_miles).sum::<f64>() * 10.0).round() / 10.0;
+            rows.push(T2StitchedMemberSplitPlanRow {
+                split_plan_id: format!(
+                    "T2STITCHEDSPLIT-{}-{}",
+                    stable_id_fragment(&decision.decision_docket_id),
+                    stable_id_fragment(&candidate_bundle_id)
+                ),
+                decision_docket_id: decision.decision_docket_id.clone(),
+                route: decision.route.clone(),
+                blocked_segment_bundle_id: decision.segment_bundle_id.clone(),
+                candidate_segment_bundle_id: candidate_bundle_id,
+                candidate_stitch_group_id: stitch_group_ids,
+                state_scope,
+                candidate_member_count: members.len(),
+                candidate_length_miles: length_miles,
+                split_action: "review-state-scoped-candidate-before-membership-mutation"
+                    .to_string(),
+                blocked_claims_before: decision.blocked_claims_after.clone(),
+                blocked_claims_after: decision.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            });
+        }
+    }
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.state_scope.cmp(&right.state_scope))
+            .then(
+                left.candidate_segment_bundle_id
+                    .cmp(&right.candidate_segment_bundle_id),
+            )
+    });
+    rows
+}
+
+fn write_t2_stitched_member_split_plan(
+    path: &Path,
+    rows: &[T2StitchedMemberSplitPlanRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_stitched_member_split_plan_summary(
+    output: &Path,
+    rows: &[T2StitchedMemberSplitPlanRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.route.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 stitched member split plan rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (route, count) in counts {
+        println!("  {route}: {count}");
+    }
+}
+
+fn t2_stitched_member_split_plan_gate_failures(
+    rows: &[T2StitchedMemberSplitPlanRow],
+    decision_rows: &[T2StitchedMemberDecisionDocketRow],
+) -> Vec<String> {
+    let split_decisions = decision_rows
+        .iter()
+        .filter(|row| row.decision == "split" && row.validation_status == "review")
+        .collect::<Vec<_>>();
+    let expected = split_decisions
+        .iter()
+        .map(|row| row.decision_docket_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut counts_by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    let mut failures = Vec::new();
+    if split_decisions.is_empty() {
+        failures.push("stitched member split plan has no split decisions".to_string());
+    }
+    if rows.is_empty() {
+        failures.push("stitched member split plan has no rows".to_string());
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        *counts_by_decision
+            .entry(row.decision_docket_id.as_str())
+            .or_default() += 1;
+        if row.split_plan_id.trim().is_empty()
+            || row.decision_docket_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.blocked_segment_bundle_id.trim().is_empty()
+            || row.candidate_segment_bundle_id.trim().is_empty()
+            || row.candidate_stitch_group_id.trim().is_empty()
+            || row.state_scope.trim().is_empty()
+            || row.split_action.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete split plan fields", row.route));
+        }
+        if !seen.insert(row.split_plan_id.clone()) {
+            failures.push(format!("{} appears more than once", row.split_plan_id));
+        }
+        if !expected.contains(row.decision_docket_id.as_str()) {
+            failures.push(format!(
+                "{} is not a split decision docket row",
+                row.decision_docket_id
+            ));
+        }
+        if row.candidate_member_count == 0 || row.candidate_length_miles <= 0.0 {
+            failures.push(format!(
+                "{} {} has no usable candidate members",
+                row.route, row.candidate_segment_bundle_id
+            ));
+        }
+        if row.validation_status != "review"
+            || row.split_action.contains("pass")
+            || row.split_action.contains("bound")
+        {
+            failures.push(format!("{} split plan promoted readiness", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for decision in split_decisions {
+        let actual = counts_by_decision
+            .get(decision.decision_docket_id.as_str())
+            .copied()
+            .unwrap_or_default();
+        if actual != decision.candidate_bundle_count {
+            failures.push(format!(
+                "{} has {} split rows but expected {} candidate bundles",
+                decision.route, actual, decision.candidate_bundle_count
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -31782,6 +32072,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Stitched-member scope findings become split merge or expand repair decisions",
             ),
             (
+                "t2-stitched-member-split-plan",
+                "route t2-stitched-member-split-plan --gate",
+                "data/t2-stitched-member-split-plan.csv",
+                "held-known",
+                2,
+                "Stitched-member split decisions become state-scoped candidate bundle review rows",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -37695,7 +37993,8 @@ mod tests {
         t2_stitched_member_candidate_scope_review_rows,
         t2_stitched_member_decision_docket_gate_failures, t2_stitched_member_decision_docket_rows,
         t2_stitched_member_registry_handoff_gate_failures,
-        t2_stitched_member_registry_handoff_rows, t2_terminal_contact_validation_gate_failures,
+        t2_stitched_member_registry_handoff_rows, t2_stitched_member_split_plan_gate_failures,
+        t2_stitched_member_split_plan_rows, t2_terminal_contact_validation_gate_failures,
         t2_terminal_contact_validation_rows, t3_national_segment_id, t3_segment_aliases,
         t3_segment_bundle_id, t3_stitch_group_id, t3_t4_access_gap_gate_failures,
         t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
@@ -37746,19 +38045,20 @@ mod tests {
         T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
         T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberRegistryHandoffRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T2StitchedMemberDecisionDocketRow, T2StitchedMemberRegistryHandoffRow,
+        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -43371,6 +43671,81 @@ mod tests {
             rows[0].blocked_claims_after,
             "game;incident;publication;upgrade"
         );
+    }
+
+    #[test]
+    fn t2_stitched_member_split_plan_keeps_candidates_as_review() {
+        let decision_rows = vec![T2StitchedMemberDecisionDocketRow {
+            decision_docket_id: "T2STITCHEDDECISION-I295".to_string(),
+            scope_review_id: "T2STITCHEDSCOPE-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            candidate_bundle_count: 2,
+            candidate_state_scope: "FL;VA".to_string(),
+            decision: "split".to_string(),
+            decision_action: "split-route-family-scope-before-member-expansion".to_string(),
+            repair_instruction: "choose the state-scoped bundle ids".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/tier-segment-candidates.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let candidate_rows = vec![
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-0".to_string(),
+                route: "I295".to_string(),
+                edge_id: 1,
+                edge_sequence: 1,
+                national_segment_id: "US.HWYSEG.1".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.FL".to_string(),
+                stitch_group_id: "US.HWYSTITCH.FL".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "FL".to_string(),
+                length_miles: 4.0,
+                aadt: "1000".to_string(),
+                lane_count: "4".to_string(),
+                route_aliases: "I95".to_string(),
+                selector_basis: "route-family-scope:FL".to_string(),
+                candidate_action: "missing-beck-t2-diagnostic".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-0".to_string(),
+                route: "I295".to_string(),
+                edge_id: 2,
+                edge_sequence: 2,
+                national_segment_id: "US.HWYSEG.2".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.VA".to_string(),
+                stitch_group_id: "US.HWYSTITCH.VA".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "VA".to_string(),
+                length_miles: 3.0,
+                aadt: "1000".to_string(),
+                lane_count: "4".to_string(),
+                route_aliases: "I95".to_string(),
+                selector_basis: "route-family-scope:VA".to_string(),
+                candidate_action: "missing-beck-t2-diagnostic".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_stitched_member_split_plan_rows(&decision_rows, &candidate_rows);
+        let failures = t2_stitched_member_split_plan_gate_failures(&rows, &decision_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.validation_status == "review"));
+        assert!(rows.iter().all(|row| row.blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .all(|row| row.blocked_claims_after == "game;incident;publication;upgrade"));
     }
 
     #[test]

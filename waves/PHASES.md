@@ -37,6 +37,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 Stitched Member Registry Handoff | Bind stitched-member readiness blockers to registry/candidate evidence before bundle membership repair. | done |
 | 2026-05-13 | T2 Stitched Member Candidate Scope Review | Separate route-level stitched candidate evidence from blocked bundle ids before membership repair. | done |
 | 2026-05-13 | T2 Stitched Member Decision Docket | Turn stitched candidate scope findings into split, merge, or expand decisions before membership repair. | done |
+| 2026-05-13 | T2 Stitched Member Split Plan | Convert split decisions into state-scoped candidate bundle choices before membership mutation. | done |
 
 ## Next Active Wave
 
