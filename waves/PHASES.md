@@ -72,11 +72,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Beck Transfer Complexity Ledger Replay | Wire accepted transfer-complexity relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Review | Expand residual T3 lower-tier feeder-gap blockers into route-level review rows before policy or relief. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Policy | Author feeder-gap policy rows before acceptance, relief, or ledger replay. | done |
+| 2026-05-14 | T3 Lower-Tier Feeder Gap Policy Acceptance | Accept feeder-gap policy rows before blocker relief or ledger replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should accept the T3 lower-tier
-feeder-gap policy before any feeder blocker relief or ledger replay.
+No wave is active. Next optimizer work should draft T3 lower-tier feeder-gap
+blocker relief before any feeder ledger replay.
 
 ## Operating Rules
 
