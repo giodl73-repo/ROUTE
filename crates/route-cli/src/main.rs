@@ -2191,6 +2191,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Review T4 terminal-access evidence blockers without accepting seed-only proof
+    T4TerminalAccessEvidenceReview {
+        /// T4 terminal contact evidence queue CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-evidence.csv",
+            value_name = "FILE"
+        )]
+        contact_evidence: PathBuf,
+        /// Output T4 terminal-access evidence review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-access-evidence-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if source-needed rows are promoted or blockers are reduced
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit scenario-readiness docket from source-backed T4 terminal contact rows
     T4TerminalScenarioReadiness {
         /// T4 terminal contact evidence queue CSV
@@ -8538,6 +8560,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal contact evidence gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalAccessEvidenceReview {
+            contact_evidence,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-access-evidence-review");
+            let contact_rows = load_t4_terminal_contact_evidence(&contact_evidence)
+                .with_context(|| format!("loading {}", contact_evidence.display()))?;
+            let rows = t4_terminal_access_evidence_review_rows(&contact_rows);
+            write_t4_terminal_access_evidence_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_access_evidence_review_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t4_terminal_access_evidence_review_gate_failures(&rows, &contact_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal access evidence review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal access evidence review gate failed");
+                }
+                println!();
+                println!("T4 terminal access evidence review gate: PASS");
             }
         }
 
@@ -16462,6 +16513,25 @@ struct T4TerminalContactEvidenceRow {
     next_artifact: String,
     source_column_artifact: String,
     source_column_decision: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalAccessEvidenceReviewRow {
+    review_id: String,
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district_seed: String,
+    terminal_district_seed_source: String,
+    evidence_status_before: String,
+    review_decision: String,
+    review_reason: String,
+    source_action: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -30466,6 +30536,151 @@ fn t4_terminal_contact_evidence_gate_failures(
     failures
 }
 
+fn t4_terminal_access_evidence_review_rows(
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<T4TerminalAccessEvidenceReviewRow> {
+    let mut rows = contact_rows
+        .iter()
+        .map(|row| T4TerminalAccessEvidenceReviewRow {
+            review_id: format!("T4ACCESSREVIEW-{}", stable_id_fragment(&row.queue_id)),
+            queue_id: row.queue_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district_seed: row.terminal_district_seed.clone(),
+            terminal_district_seed_source: row.terminal_district_seed_source.clone(),
+            evidence_status_before: row.evidence_status.clone(),
+            review_decision: "held-source-needed".to_string(),
+            review_reason:
+                "terminal district seed assignment is not contact proof; non-seed source artifact still required"
+                    .to_string(),
+            source_action: "route-to-terminal-access-proof-acquisition".to_string(),
+            blocker_claims_before: "map;publication;upgrade".to_string(),
+            blocker_claims_after: "map;publication;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: row.next_artifact.clone(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t4_terminal_access_evidence_review(
+    path: &Path,
+    rows: &[T4TerminalAccessEvidenceReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_access_evidence_review_summary(
+    output: &Path,
+    rows: &[T4TerminalAccessEvidenceReviewRow],
+) {
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+        *by_decision.entry(row.review_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal access evidence review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+    for (decision, count) in by_decision {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t4_terminal_access_evidence_review_gate_failures(
+    rows: &[T4TerminalAccessEvidenceReviewRow],
+    contact_rows: &[T4TerminalContactEvidenceRow],
+) -> Vec<String> {
+    let expected = contact_rows
+        .iter()
+        .map(|row| row.queue_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("terminal contact evidence queue is empty".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "terminal access evidence review has {} rows but expected {} contact rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.review_id.trim().is_empty()
+            || row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.terminal_district_seed.trim().is_empty()
+            || row.terminal_district_seed_source.trim().is_empty()
+            || row.evidence_status_before.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.review_reason.trim().is_empty()
+            || row.source_action.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete review fields", row.queue_id));
+        }
+        if !seen.insert(row.queue_id.clone()) {
+            failures.push(format!("{} appears more than once", row.queue_id));
+        }
+        if !expected.contains(row.queue_id.as_str()) {
+            failures.push(format!(
+                "{} is not from terminal contact evidence",
+                row.queue_id
+            ));
+        }
+        if row.review_decision != "held-source-needed"
+            || row.source_action != "route-to-terminal-access-proof-acquisition"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} promoted terminal evidence", row.queue_id));
+        }
+        if row.blocker_claims_before != "map;publication;upgrade"
+            || row.blocker_claims_after != "map;publication;upgrade"
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve blockers", row.queue_id));
+        }
+        if row.evidence_status_before != "source-needed" {
+            failures.push(format!(
+                "{} review is only allowed for source-needed evidence",
+                row.queue_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from terminal access review"));
+        }
+    }
+    failures
+}
+
 fn load_t4_terminal_contact_evidence(path: &Path) -> Result<Vec<T4TerminalContactEvidenceRow>> {
     if !path.exists() {
         return Ok(Vec::new());
@@ -35414,6 +35629,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "pass",
                 0,
                 "",
+            ),
+            (
+                "t4-terminal-access-evidence-review",
+                "route t4-terminal-access-evidence-review --gate",
+                "data/t4-terminal-access-evidence-review.csv",
+                "held-known",
+                69,
+                "T4 terminal-access evidence blockers remain source-needed until non-seed proof exists",
             ),
             (
                 "t4-terminal-contact-source-plan",
@@ -41307,6 +41530,7 @@ mod tests {
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
+        t4_terminal_access_evidence_review_gate_failures, t4_terminal_access_evidence_review_rows,
         t4_terminal_columbus_proof_attempt_gate_failures, t4_terminal_columbus_proof_attempt_rows,
         t4_terminal_columbus_proof_intake_gate_failures, t4_terminal_columbus_proof_intake_rows,
         t4_terminal_columbus_source_access_gate_failures, t4_terminal_columbus_source_access_rows,
@@ -43714,6 +43938,38 @@ mod tests {
                 .any(|failure| failure.contains("proximity-only contact cannot be scenario-ready")),
             "{proximity_failures:?}"
         );
+    }
+
+    #[test]
+    fn t4_terminal_access_evidence_review_preserves_source_needed_blockers() {
+        let contact_rows = vec![T4TerminalContactEvidenceRow {
+            queue_id: "T4CONTACT-T3GREATLAKES-US10".to_string(),
+            route: "US10".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Minneapolis Twin Cities".to_string(),
+            terminal_district_seed_source: "data/intermodal_terminals.csv".to_string(),
+            contact_basis: "source-needed-route-to-terminal-contact".to_string(),
+            contact_proof_source: String::new(),
+            evidence_status: "source-needed".to_string(),
+            selected_higher_tier_attachment: "source-needed".to_string(),
+            decision: "source-needed".to_string(),
+            next_artifact: "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-02.md"
+                .to_string(),
+            source_column_artifact: "data/t4-terminal-access-columns.csv".to_string(),
+            source_column_decision: "terminal-review".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t4_terminal_access_evidence_review_rows(&contact_rows);
+        let failures = t4_terminal_access_evidence_review_gate_failures(&rows, &contact_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].review_decision, "held-source-needed");
+        assert_eq!(rows[0].blocker_claims_before, "map;publication;upgrade");
+        assert_eq!(rows[0].blocker_claims_after, "map;publication;upgrade");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].validation_status, "review");
     }
 
     #[test]
