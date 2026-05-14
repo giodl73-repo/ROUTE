@@ -3074,6 +3074,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit policy rows for T2 Beck label-density blockers
+    T2BeckLabelDensityPolicy {
+        /// T2 Beck label-density review CSV
+        #[arg(
+            long,
+            default_value = "data/t2-beck-label-density-review.csv",
+            value_name = "FILE"
+        )]
+        label_review: PathBuf,
+        /// Output T2 Beck label-density policy CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-beck-label-density-policy.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if policy rows omit reviewed routes or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit policy rows for T2 Beck transfer-complexity blockers
     T2BeckTransferComplexityPolicy {
         /// T2 Beck transfer-complexity review CSV
@@ -10137,6 +10159,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BeckLabelDensityPolicy {
+            label_review,
+            output,
+            gate,
+        } => {
+            println!("route t2-beck-label-density-policy");
+            let review_rows = load_t2_beck_label_density_review(&label_review)
+                .with_context(|| format!("loading {}", label_review.display()))?;
+            let rows = t2_beck_label_density_policy_rows(&review_rows);
+            write_t2_beck_label_density_policy(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_beck_label_density_policy_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_beck_label_density_policy_gate_failures(&rows, &review_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 Beck label density policy gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 Beck label density policy gate failed");
+                }
+                println!();
+                println!("T2 Beck label density policy gate: PASS");
+            }
+        }
+
         Commands::T2BeckTransferComplexityPolicy {
             transfer_review,
             output,
@@ -16971,6 +17021,29 @@ struct T2BeckLabelDensityReviewRow {
     review_flag: String,
     density_basis: String,
     review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BeckLabelDensityPolicyRow {
+    policy_id: String,
+    label_review_id: String,
+    route: String,
+    trunk_pair: String,
+    service_class: String,
+    label_density_per_100px: f64,
+    density_band: String,
+    policy_basis: String,
+    label_policy_decision: String,
+    render_treatment: String,
+    promotion_treatment: String,
+    publication_status: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
     blocker_count_before: usize,
@@ -31166,6 +31239,192 @@ fn t2_beck_label_density_review_gate_failures(
     failures
 }
 
+fn load_t2_beck_label_density_review(path: &Path) -> Result<Vec<T2BeckLabelDensityReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_label_density_band(label_density_per_100px: f64) -> &'static str {
+    if label_density_per_100px >= 1.25 {
+        "severe-label-density"
+    } else if label_density_per_100px >= 1.10 {
+        "high-label-density"
+    } else {
+        "moderate-label-density"
+    }
+}
+
+fn t2_beck_label_density_policy_rows(
+    review_rows: &[T2BeckLabelDensityReviewRow],
+) -> Vec<T2BeckLabelDensityPolicyRow> {
+    let mut rows = review_rows
+        .iter()
+        .filter(|row| {
+            row.review_decision == "label-density-policy-required"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T2BeckLabelDensityPolicyRow {
+            policy_id: format!("T2LABELPOLICY-{}", stable_id_fragment(&row.route)),
+            label_review_id: row.label_review_id.clone(),
+            route: row.route.clone(),
+            trunk_pair: format!("{}-{}", row.start_trunk, row.end_trunk),
+            service_class: row.service_class.clone(),
+            label_density_per_100px: row.label_density_per_100px,
+            density_band: t2_label_density_band(row.label_density_per_100px).to_string(),
+            policy_basis: row.density_basis.clone(),
+            label_policy_decision: "label-density-policy-authored-review".to_string(),
+            render_treatment:
+                "compress labels to trunk interfaces and preserve intermediate stops as unlabeled service beads"
+                    .to_string(),
+            promotion_treatment:
+                "hold map promotion until accepted label-density simplification is replayed"
+                    .to_string(),
+            publication_status: "held-pending-policy-acceptance".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: row.blocker_count_after,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-beck-label-density-policy-acceptance.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_beck_label_density_policy(
+    path: &Path,
+    rows: &[T2BeckLabelDensityPolicyRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_beck_label_density_policy_summary(output: &Path, rows: &[T2BeckLabelDensityPolicyRow]) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 Beck label-density policy rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t2_beck_label_density_policy_gate_failures(
+    rows: &[T2BeckLabelDensityPolicyRow],
+    review_rows: &[T2BeckLabelDensityReviewRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_routes = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "label-density-policy-required")
+        .map(|row| row.route.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_blockers = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "label-density-policy-required")
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if expected_routes.is_empty() {
+        failures.push("T2 label-density policy has no review routes".to_string());
+    }
+    if rows.len() != expected_routes.len() {
+        failures.push(format!(
+            "T2 label-density policy has {} rows but expected {} routes",
+            rows.len(),
+            expected_routes.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.policy_id.trim().is_empty()
+            || row.label_review_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.trunk_pair.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.density_band.trim().is_empty()
+            || row.policy_basis.trim().is_empty()
+            || row.label_policy_decision.trim().is_empty()
+            || row.render_treatment.trim().is_empty()
+            || row.promotion_treatment.trim().is_empty()
+            || row.publication_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete label-density policy fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.route.clone()) {
+            failures.push(format!("{} appears more than once", row.route));
+        }
+        if !expected_routes.contains(&row.route) {
+            failures.push(format!(
+                "{} is not in the T2 label-density review rows",
+                row.route
+            ));
+        }
+        if row.label_policy_decision != "label-density-policy-authored-review"
+            || row.publication_status != "held-pending-policy-acceptance"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid label policy state", row.route));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after
+            || row.blocker_count_before != row.blocker_count_after
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} reduced label policy blockers", row.route));
+        }
+        if row.next_artifact != "data/t2-beck-label-density-policy-acceptance.csv" {
+            failures.push(format!("{} points at wrong next artifact", row.route));
+        }
+    }
+    for expected_route in expected_routes {
+        if !seen.contains(&expected_route) {
+            failures.push(format!(
+                "{expected_route} missing from T2 label-density policy"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != expected_blockers {
+        failures.push(format!(
+            "T2 label-density policy preserves {total_after} blockers but review rows have {expected_blockers}"
+        ));
+    }
+    failures
+}
+
 fn t2_transfer_complexity_band(transfer_stop_count: usize) -> &'static str {
     if transfer_stop_count >= 7 {
         "severe-transfer-complexity"
@@ -41119,6 +41378,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 Beck label-density blockers remain held pending label policy",
             ),
             (
+                "t2-beck-label-density-policy",
+                "route t2-beck-label-density-policy --gate",
+                "data/t2-beck-label-density-policy.csv",
+                "held-known",
+                5,
+                "T2 Beck label-density policy rows preserve blockers pending acceptance",
+            ),
+            (
                 "t2-beck-transfer-complexity-policy",
                 "route t2-beck-transfer-complexity-policy --gate",
                 "data/t2-beck-transfer-complexity-policy.csv",
@@ -47358,6 +47625,7 @@ mod tests {
         t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_beck_label_density_policy_gate_failures, t2_beck_label_density_policy_rows,
         t2_beck_label_density_review_gate_failures, t2_beck_label_density_review_rows,
         t2_beck_transfer_complexity_blocker_relief_gate_failures,
         t2_beck_transfer_complexity_blocker_relief_rows,
@@ -47481,7 +47749,7 @@ mod tests {
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
         T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
+        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow, T2BeckLabelDensityReviewRow,
         T2BeckTransferComplexityBlockerReliefRow, T2BeckTransferComplexityPolicyAcceptanceRow,
         T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
         T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
@@ -55225,6 +55493,74 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.review_decision == "label-density-policy-required"));
+    }
+
+    #[test]
+    fn t2_beck_label_density_policy_preserves_blockers() {
+        let review_rows = vec![
+            T2BeckLabelDensityReviewRow {
+                label_review_id: "T2BECKLABEL-I405".to_string(),
+                claim_review_id: "OCR-T2LABEL".to_string(),
+                route: "I405".to_string(),
+                trunk: "I5".to_string(),
+                start_trunk: "I5".to_string(),
+                end_trunk: "I10".to_string(),
+                service_class: "transfer-spine".to_string(),
+                service_label: "LA Basin Relief".to_string(),
+                stop_count: 5,
+                transfer_stop_count: 5,
+                label_density_per_100px: 1.29,
+                review_flag: "dense-transfer-review".to_string(),
+                density_basis: "label_density_per_100px=1.29;stops=5;transfers=5".to_string(),
+                review_decision: "label-density-policy-required".to_string(),
+                blocker_claims_before: "map;promotion;publication".to_string(),
+                blocker_claims_after: "map;promotion;publication".to_string(),
+                blocker_count_before: 1,
+                blocker_count_after: 1,
+                claim_blocker_delta: 0,
+                next_artifact: "data/t2-beck-label-density-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T2BeckLabelDensityReviewRow {
+                label_review_id: "T2BECKLABEL-I49".to_string(),
+                claim_review_id: "OCR-T2LABEL".to_string(),
+                route: "I49".to_string(),
+                trunk: "I20".to_string(),
+                start_trunk: "I20".to_string(),
+                end_trunk: "I35".to_string(),
+                service_class: "transfer-spine".to_string(),
+                service_label: "Ozarks".to_string(),
+                stop_count: 5,
+                transfer_stop_count: 5,
+                label_density_per_100px: 1.01,
+                review_flag: "dense-transfer-review".to_string(),
+                density_basis: "label_density_per_100px=1.01;stops=5;transfers=5".to_string(),
+                review_decision: "label-density-policy-required".to_string(),
+                blocker_claims_before: "map;promotion;publication".to_string(),
+                blocker_claims_after: "map;promotion;publication".to_string(),
+                blocker_count_before: 1,
+                blocker_count_after: 1,
+                claim_blocker_delta: 0,
+                next_artifact: "data/t2-beck-label-density-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_beck_label_density_policy_rows(&review_rows);
+        let failures = t2_beck_label_density_policy_gate_failures(&rows, &review_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .any(|row| row.density_band == "severe-label-density"));
+        assert!(rows
+            .iter()
+            .any(|row| row.density_band == "moderate-label-density"));
+        assert!(rows
+            .iter()
+            .all(|row| row.publication_status == "held-pending-policy-acceptance"));
     }
 
     #[test]
