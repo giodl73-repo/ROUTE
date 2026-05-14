@@ -2754,6 +2754,31 @@ enum Commands {
         gate: bool,
     },
 
+    /// Group remaining constraint-budget blockers into next optimizer wave families
+    OptimizerResidualBlockerBacklog {
+        /// Optimizer constraint budget CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        budget: PathBuf,
+        /// Output residual blocker backlog CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/optimizer-residual-blocker-backlog.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print backlog rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if backlog rows reduce blockers or omit residual budget rows
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9163,6 +9188,36 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("optimizer constraint budget gate: PASS");
+            }
+        }
+
+        Commands::OptimizerResidualBlockerBacklog {
+            budget,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route optimizer-residual-blocker-backlog");
+            let budget_rows = load_optimizer_constraint_budget(&budget)
+                .with_context(|| format!("loading {}", budget.display()))?;
+            let rows = optimizer_residual_blocker_backlog_rows(&budget_rows);
+            write_optimizer_residual_blocker_backlog(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_optimizer_residual_blocker_backlog_summary(&output, &rows, details);
+
+            if gate {
+                let failures =
+                    optimizer_residual_blocker_backlog_gate_failures(&rows, &budget_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer residual blocker backlog gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer residual blocker backlog gate failed");
+                }
+                println!();
+                println!("optimizer residual blocker backlog gate: PASS");
             }
         }
 
@@ -15593,6 +15648,28 @@ struct OptimizerConstraintBudgetRow {
     blocking_claims: String,
     next_artifacts: String,
     constraint_ledger_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct OptimizerResidualBlockerBacklogRow {
+    backlog_id: String,
+    priority_class: String,
+    blocker_family: String,
+    tier: String,
+    blocked_claims: String,
+    subject_count: usize,
+    route_count: usize,
+    total_hard_blockers: usize,
+    total_claim_blockers: usize,
+    total_budget_debt_count: usize,
+    total_constraint_debt_cost_m: f64,
+    total_constraint_penalty_score: f64,
+    representative_routes: String,
+    representative_subjects: String,
+    next_artifacts: String,
+    backlog_decision: String,
+    next_wave: String,
     validation_status: String,
 }
 
@@ -28023,6 +28100,309 @@ fn optimizer_constraint_budget_gate_failures(
     failures
 }
 
+#[derive(Debug, Clone, Default)]
+struct ResidualBacklogBuilder {
+    priority_class: String,
+    blocker_family: String,
+    tier: String,
+    blocked_claims: std::collections::BTreeSet<String>,
+    subject_ids: std::collections::BTreeSet<String>,
+    routes: std::collections::BTreeSet<String>,
+    total_hard_blockers: usize,
+    total_claim_blockers: usize,
+    total_budget_debt_count: usize,
+    total_constraint_debt_cost_m: f64,
+    total_constraint_penalty_score: f64,
+    next_artifacts: std::collections::BTreeSet<String>,
+    next_wave: String,
+}
+
+fn optimizer_residual_blocker_backlog_rows(
+    budget_rows: &[OptimizerConstraintBudgetRow],
+) -> Vec<OptimizerResidualBlockerBacklogRow> {
+    let mut builders = std::collections::BTreeMap::<String, ResidualBacklogBuilder>::new();
+    for row in budget_rows
+        .iter()
+        .filter(|row| row.validation_status != "pass")
+    {
+        let (priority_class, blocker_family, next_wave) = optimizer_backlog_family(row);
+        let key = format!("{priority_class}|{blocker_family}|{}", row.tier);
+        let builder = builders
+            .entry(key)
+            .or_insert_with(|| ResidualBacklogBuilder {
+                priority_class,
+                blocker_family,
+                tier: row.tier.clone(),
+                next_wave,
+                ..Default::default()
+            });
+        builder.subject_ids.insert(row.subject_id.clone());
+        if !row.route.trim().is_empty() {
+            builder.routes.insert(row.route.clone());
+        }
+        builder.total_hard_blockers += row.hard_blocker_count;
+        builder.total_claim_blockers += row.claim_blocker_count;
+        builder.total_budget_debt_count += row.budget_debt_count;
+        builder.total_constraint_debt_cost_m =
+            round_cost_m(builder.total_constraint_debt_cost_m + row.constraint_debt_cost_m);
+        builder.total_constraint_penalty_score =
+            round_cost_m(builder.total_constraint_penalty_score + row.constraint_penalty_score);
+        for claim in row.blocking_claims.split(';').map(str::trim) {
+            if !claim.is_empty() {
+                builder.blocked_claims.insert(claim.to_string());
+            }
+        }
+        for artifact in row.next_artifacts.split(['|', ';']).map(str::trim) {
+            if !artifact.is_empty() {
+                builder.next_artifacts.insert(artifact.to_string());
+            }
+        }
+    }
+
+    let mut rows = builders
+        .into_values()
+        .map(|builder| {
+            let subject_count = builder.subject_ids.len();
+            let route_count = builder.routes.len();
+            OptimizerResidualBlockerBacklogRow {
+                backlog_id: format!(
+                    "ORB-{}-{}-{}",
+                    builder.priority_class,
+                    builder.tier,
+                    stable_id_fragment(&builder.blocker_family)
+                ),
+                priority_class: builder.priority_class,
+                blocker_family: builder.blocker_family,
+                tier: builder.tier,
+                blocked_claims: join_string_set(&builder.blocked_claims),
+                subject_count,
+                route_count,
+                total_hard_blockers: builder.total_hard_blockers,
+                total_claim_blockers: builder.total_claim_blockers,
+                total_budget_debt_count: builder.total_budget_debt_count,
+                total_constraint_debt_cost_m: builder.total_constraint_debt_cost_m,
+                total_constraint_penalty_score: builder.total_constraint_penalty_score,
+                representative_routes: join_limited_set(&builder.routes, 12),
+                representative_subjects: join_limited_set(&builder.subject_ids, 12),
+                next_artifacts: join_string_set(&builder.next_artifacts),
+                backlog_decision: "triage-only-no-blocker-relief".to_string(),
+                next_wave: builder.next_wave,
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.priority_class
+            .cmp(&right.priority_class)
+            .then_with(|| right.total_hard_blockers.cmp(&left.total_hard_blockers))
+            .then_with(|| right.total_claim_blockers.cmp(&left.total_claim_blockers))
+            .then_with(|| {
+                right
+                    .total_constraint_penalty_score
+                    .partial_cmp(&left.total_constraint_penalty_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| left.blocker_family.cmp(&right.blocker_family))
+    });
+    rows
+}
+
+fn optimizer_backlog_family(row: &OptimizerConstraintBudgetRow) -> (String, String, String) {
+    let classes = row.top_constraint_classes.as_str();
+    if row.hard_blocker_count > 0 {
+        return (
+            "P0-hard-blocker".to_string(),
+            classes.to_string(),
+            "hard-blocker-resolution".to_string(),
+        );
+    }
+    if classes.contains("game_ops_bundle_binding") {
+        return (
+            "P1-game-claim".to_string(),
+            "game_ops_bundle_binding".to_string(),
+            "game-ops-blocker-evidence-review".to_string(),
+        );
+    }
+    if classes.contains("terminal_access_evidence_gap") {
+        return (
+            "P1-terminal-evidence".to_string(),
+            "terminal_access_evidence_gap".to_string(),
+            "terminal-access-evidence-review".to_string(),
+        );
+    }
+    if classes.contains("asset_condition_debt") {
+        return (
+            "P2-asset-debt".to_string(),
+            "asset_condition_debt".to_string(),
+            "asset-condition-debt-repair".to_string(),
+        );
+    }
+    if classes.contains("terminal_contact") || classes.contains("source") {
+        return (
+            "P2-source-evidence".to_string(),
+            classes.to_string(),
+            "source-evidence-acquisition".to_string(),
+        );
+    }
+    if row.claim_blocker_count > 0 {
+        return (
+            "P1-claim-blocker".to_string(),
+            classes.to_string(),
+            "optimizer-claim-review".to_string(),
+        );
+    }
+    (
+        "P3-review-debt".to_string(),
+        classes.to_string(),
+        "optimizer-review-docket".to_string(),
+    )
+}
+
+fn join_limited_set(values: &std::collections::BTreeSet<String>, limit: usize) -> String {
+    values
+        .iter()
+        .take(limit)
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
+fn write_optimizer_residual_blocker_backlog(
+    path: &Path,
+    rows: &[OptimizerResidualBlockerBacklogRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_optimizer_residual_blocker_backlog_summary(
+    output: &Path,
+    rows: &[OptimizerResidualBlockerBacklogRow],
+    details: bool,
+) {
+    let hard = rows
+        .iter()
+        .map(|row| row.total_hard_blockers)
+        .sum::<usize>();
+    let claim = rows
+        .iter()
+        .map(|row| row.total_claim_blockers)
+        .sum::<usize>();
+    let debt = rows
+        .iter()
+        .map(|row| row.total_budget_debt_count)
+        .sum::<usize>();
+    println!(
+        "  wrote {} optimizer residual backlog rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  hard blockers: {hard}");
+    println!("  claim blockers: {claim}");
+    println!("  budget debt rows: {debt}");
+    if details {
+        println!();
+        println!(
+            "{:<18} {:<4} {:>5} {:>5} {:>5} {}",
+            "Priority", "Tier", "Hard", "Claim", "Debt", "Family"
+        );
+        println!("{}", "-".repeat(100));
+        for row in rows {
+            println!(
+                "{:<18} {:<4} {:>5} {:>5} {:>5} {}",
+                row.priority_class,
+                row.tier,
+                row.total_hard_blockers,
+                row.total_claim_blockers,
+                row.total_budget_debt_count,
+                row.blocker_family
+            );
+        }
+    }
+}
+
+fn optimizer_residual_blocker_backlog_gate_failures(
+    rows: &[OptimizerResidualBlockerBacklogRow],
+    budget_rows: &[OptimizerConstraintBudgetRow],
+) -> Vec<String> {
+    let residual_rows = budget_rows
+        .iter()
+        .filter(|row| row.validation_status != "pass")
+        .collect::<Vec<_>>();
+    let mut failures = Vec::new();
+    if residual_rows.is_empty() {
+        failures.push("constraint budget has no residual blocker rows".to_string());
+    }
+    if rows.is_empty() {
+        failures.push("residual blocker backlog emitted no rows".to_string());
+        return failures;
+    }
+    let expected_hard = residual_rows
+        .iter()
+        .map(|row| row.hard_blocker_count)
+        .sum::<usize>();
+    let expected_claim = residual_rows
+        .iter()
+        .map(|row| row.claim_blocker_count)
+        .sum::<usize>();
+    let expected_debt = residual_rows
+        .iter()
+        .map(|row| row.budget_debt_count)
+        .sum::<usize>();
+    let actual_hard = rows
+        .iter()
+        .map(|row| row.total_hard_blockers)
+        .sum::<usize>();
+    let actual_claim = rows
+        .iter()
+        .map(|row| row.total_claim_blockers)
+        .sum::<usize>();
+    let actual_debt = rows
+        .iter()
+        .map(|row| row.total_budget_debt_count)
+        .sum::<usize>();
+    if (actual_hard, actual_claim, actual_debt) != (expected_hard, expected_claim, expected_debt) {
+        failures.push(format!(
+            "backlog totals hard/claim/debt = {actual_hard}/{actual_claim}/{actual_debt}, expected {expected_hard}/{expected_claim}/{expected_debt}"
+        ));
+    }
+    let mut ids = std::collections::BTreeSet::<&str>::new();
+    for row in rows {
+        if !ids.insert(row.backlog_id.as_str()) {
+            failures.push(format!("duplicate backlog id {}", row.backlog_id));
+        }
+        if row.backlog_id.trim().is_empty()
+            || row.priority_class.trim().is_empty()
+            || row.blocker_family.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.representative_subjects.trim().is_empty()
+            || row.next_artifacts.trim().is_empty()
+            || row.backlog_decision.trim().is_empty()
+            || row.next_wave.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete backlog fields", row.backlog_id));
+        }
+        if row.backlog_decision != "triage-only-no-blocker-relief"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} promotes residual blockers", row.backlog_id));
+        }
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -34740,6 +35120,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "optimizer-residual-blocker-backlog",
+                "route optimizer-residual-blocker-backlog --gate",
+                "data/optimizer-residual-blocker-backlog.csv",
+                "held-known",
+                117,
+                "Residual constraint-budget blockers are grouped into next optimizer wave families",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -40825,7 +41213,8 @@ mod tests {
         normalized_iri_m_per_km, optimizer_constraint_budget_gate_failures,
         optimizer_constraint_budget_rows, optimizer_constraint_ledger_gate_failures,
         optimizer_constraint_ledger_rows, optimizer_manifest_gate_failures,
-        optimizer_map_hook_gate_failures, parse_blueprint_cost_ranges,
+        optimizer_map_hook_gate_failures, optimizer_residual_blocker_backlog_gate_failures,
+        optimizer_residual_blocker_backlog_rows, parse_blueprint_cost_ranges,
         parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
         parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
         parse_mdot_midrive_events, parse_pressure_scenarios, parse_release_manifest,
@@ -47732,6 +48121,79 @@ mod tests {
         assert_eq!(route_row.hard_blocker_count, 1);
         assert_eq!(route_row.validation_status, "blocked");
         assert_eq!(route_row.constraint_penalty_score, 1.0);
+    }
+
+    #[test]
+    fn optimizer_residual_blocker_backlog_groups_without_relief() {
+        let budget_rows = vec![
+            OptimizerConstraintBudgetRow {
+                budget_id: "CB-T2-BUNDLE-A".to_string(),
+                optimizer_run_id: "tier-optimizer-current".to_string(),
+                tier: "T2".to_string(),
+                region_id: "component-0".to_string(),
+                subject_scope: "bundle".to_string(),
+                subject_id: "US.HWYBUNDLE.A".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.A".to_string(),
+                route: "I205".to_string(),
+                ledger_row_count: 1,
+                hard_blocker_count: 0,
+                claim_blocker_count: 1,
+                review_count: 1,
+                budget_debt_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 1.0,
+                top_constraint_classes: "game_ops_bundle_binding".to_string(),
+                blocking_claims: "game;incident;publication;upgrade".to_string(),
+                next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            OptimizerConstraintBudgetRow {
+                budget_id: "CB-T2-BUNDLE-B".to_string(),
+                optimizer_run_id: "tier-optimizer-current".to_string(),
+                tier: "T2".to_string(),
+                region_id: "component-0".to_string(),
+                subject_scope: "bundle".to_string(),
+                subject_id: "US.HWYBUNDLE.B".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.B".to_string(),
+                route: "US30".to_string(),
+                ledger_row_count: 1,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                review_count: 1,
+                budget_debt_count: 1,
+                constraint_debt_cost_m: 5.85,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 5.85,
+                top_constraint_classes: "asset_condition_debt".to_string(),
+                blocking_claims: "publication;sla;transit;upgrade".to_string(),
+                next_artifacts: "data/tier-pavement-acquisition-plan.csv".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = optimizer_residual_blocker_backlog_rows(&budget_rows);
+        let failures = optimizer_residual_blocker_backlog_gate_failures(&rows, &budget_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.total_claim_blockers)
+                .sum::<usize>(),
+            1
+        );
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.total_budget_debt_count)
+                .sum::<usize>(),
+            1
+        );
+        assert!(rows
+            .iter()
+            .all(|row| row.backlog_decision == "triage-only-no-blocker-relief"));
     }
 
     #[test]

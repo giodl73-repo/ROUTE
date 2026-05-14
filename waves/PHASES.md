@@ -50,11 +50,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Overlay P1 Structural Readiness Review | Decide the P1 structural-readiness overlay actions before lower-priority optimizer work. | done |
 | 2026-05-14 | T2 Overlay P2 Service Overlay Review | Decide P2 service-overlay diagnostic actions before local-zone optimizer work. | done |
 | 2026-05-14 | T2 Overlay P3 Local Zone Overlay Review | Decide P3 local-zone overlay actions before returning to broad optimizer work. | done |
+| 2026-05-14 | Optimizer Residual Blocker Backlog | Re-rank remaining constraint-budget blockers after overlay priority review produced no relief. | done |
 
 ## Next Active Wave
 
-No wave is currently active. The T2 overlay optimizer action docket has now
-been priority-reviewed through P1, P2, and P3 without blocker relief.
+No wave is currently active. The largest residual blocker family is T4
+terminal-access evidence with 69 claim blockers in
+`data/optimizer-residual-blocker-backlog.csv`.
 
 ## Operating Rules
 
