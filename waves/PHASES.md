@@ -38,6 +38,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 Stitched Member Candidate Scope Review | Separate route-level stitched candidate evidence from blocked bundle ids before membership repair. | done |
 | 2026-05-13 | T2 Stitched Member Decision Docket | Turn stitched candidate scope findings into split, merge, or expand decisions before membership repair. | done |
 | 2026-05-13 | T2 Stitched Member Split Plan | Convert split decisions into state-scoped candidate bundle choices before membership mutation. | done |
+| 2026-05-13 | T2 Stitched Member Selection Docket | Classify state-scoped stitched-member candidate bundles before registry mutation. | done |
 
 ## Next Active Wave
 
