@@ -79,12 +79,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Beck Label Density Policy | Author label-density policy rows before acceptance, relief, or ledger replay. | done |
 | 2026-05-14 | T2 Beck Label Density Policy Acceptance | Accept label-density policy rows before blocker relief or ledger replay. | done |
 | 2026-05-14 | T2 Beck Label Density Blocker Relief | Replay accepted label-density policy into blocker relief rows before ledger replay. | done |
+| 2026-05-14 | T2 Beck Label Density Ledger Replay | Wire accepted label-density relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should wire accepted T2 Beck
-label-density relief into the optimizer constraint ledger, budget, and residual
-backlog.
+No wave is active. Next optimizer work should resume residual blocker burn-down
+from the largest remaining claim-blocker families.
 
 ## Operating Rules
 
