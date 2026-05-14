@@ -2854,6 +2854,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t1_topology_repairs: PathBuf,
+        /// T1 schematic geometry blocker relief CSV
+        #[arg(
+            long,
+            default_value = "data/t1-schematic-geometry-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        t1_schematic_geometry_blocker_relief: PathBuf,
         /// T2 parallel service queue CSV
         #[arg(
             long,
@@ -9632,6 +9639,7 @@ fn run_cli() -> Result<()> {
         Commands::OptimizerConstraintLedger {
             pavement_debt_budget,
             t1_topology_repairs,
+            t1_schematic_geometry_blocker_relief,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
             source_fetch_policy,
@@ -9646,6 +9654,11 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
             let topology_rows = load_t1_topology_repairs(&t1_topology_repairs)
                 .with_context(|| format!("loading {}", t1_topology_repairs.display()))?;
+            let schematic_relief_rows =
+                load_t1_schematic_geometry_blocker_relief(&t1_schematic_geometry_blocker_relief)
+                    .with_context(|| {
+                        format!("loading {}", t1_schematic_geometry_blocker_relief.display())
+                    })?;
             let parallel_rows = load_t2_parallel_service_queue(&t2_parallel_service_queue)
                 .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
             let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
@@ -9662,6 +9675,7 @@ fn run_cli() -> Result<()> {
             let rows = optimizer_constraint_ledger_rows(
                 &pavement_rows,
                 &topology_rows,
+                &schematic_relief_rows,
                 &parallel_rows,
                 &access_gap_rows,
                 &route_map::beck_t1_diagnostics(),
@@ -22782,6 +22796,35 @@ fn load_t1_topology_repairs(path: &Path) -> Result<Vec<T1TopologyRepairRow>> {
     Ok(rows)
 }
 
+fn load_t1_schematic_geometry_blocker_relief(
+    path: &Path,
+) -> Result<Vec<T1SchematicGeometryBlockerReliefRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_schematic_relief_route_set(
+    rows: &[T1SchematicGeometryBlockerReliefRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+                && row.blocker_count_after == 0
+                && row.claim_blocker_delta < 0
+        })
+        .flat_map(|row| row.affected_routes.split(';'))
+        .filter(|route| !route.trim().is_empty())
+        .map(route_display_key)
+        .collect()
+}
+
 fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQueueRow>> {
     if !path.exists() {
         return Ok(Vec::new());
@@ -22797,6 +22840,7 @@ fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQu
 fn optimizer_constraint_ledger_rows(
     pavement_rows: &[TierPavementDebtBudgetRow],
     topology_rows: &[T1TopologyRepairRow],
+    schematic_relief_rows: &[T1SchematicGeometryBlockerReliefRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
@@ -22806,6 +22850,7 @@ fn optimizer_constraint_ledger_rows(
     bundle_overlay_rows: &[T2BundleOverlayRow],
 ) -> Vec<OptimizerConstraintLedgerRow> {
     let mut rows = Vec::new();
+    let relieved_t1_schematic_routes = t1_schematic_relief_route_set(schematic_relief_rows);
 
     for row in source_policy_rows {
         let snapshot_hold = row.mutation_mode == "live-snapshot-preserve";
@@ -22971,7 +23016,10 @@ fn optimizer_constraint_ledger_rows(
         });
     }
 
-    for row in topology_rows {
+    for row in topology_rows
+        .iter()
+        .filter(|row| !relieved_t1_schematic_routes.contains(&route_display_key(&row.route)))
+    {
         let (constraint_order, constraint_class, behavior_type, constraint_status, blocks_claims) =
             t1_topology_constraint_mapping(row);
         rows.push(OptimizerConstraintLedgerRow {
@@ -23162,7 +23210,10 @@ fn optimizer_constraint_ledger_rows(
         });
     }
 
-    for row in beck_t1_rows.iter().filter(|row| row.review_flag != "ok") {
+    for row in beck_t1_rows.iter().filter(|row| {
+        row.review_flag != "ok"
+            && !relieved_t1_schematic_routes.contains(&route_display_key(row.corridor))
+    }) {
         rows.push(OptimizerConstraintLedgerRow {
             constraint_id: format!("CON-BECKT1-{}", stable_id_fragment(row.corridor)),
             optimizer_run_id: "tier-optimizer-current".to_string(),
@@ -23208,6 +23259,58 @@ fn optimizer_constraint_ledger_rows(
             next_artifact: "data/t1-design-policy-actions.csv".to_string(),
             optimizer_effect: row.qualification_basis.to_string(),
             validation_status: "review".to_string(),
+        });
+    }
+
+    for row in schematic_relief_rows.iter().filter(|row| {
+        row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+            && row.blocker_count_after == 0
+            && row.claim_blocker_delta < 0
+    }) {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T1SCHEMRELIEF-{}", stable_id_fragment(&row.route_pair)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T1".to_string(),
+            region_id: "national".to_string(),
+            constraint_order: 13,
+            constraint_class: "schematic_geometry_relief".to_string(),
+            behavior_type: "review".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.route_pair.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.affected_routes.clone(),
+            stop_id: String::new(),
+            pair_id: row.route_pair.clone(),
+            map_id: "beck-schematic".to_string(),
+            source_artifact: "data/t1-schematic-geometry-blocker-relief.csv".to_string(),
+            source_row_id: row.relief_id.clone(),
+            standard_artifact: "docs/beck-renderer-contract.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "pass".to_string(),
+            observed_value: row.relief_decision.clone(),
+            threshold_value: "relief-ready-for-constraint-ledger-replay".to_string(),
+            measurement_unit: "relief_decision".to_string(),
+            blocks_claims: String::new(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("claim_blocker_delta={}", row.claim_blocker_delta),
+            penalty_score: 0.0,
+            repair_action: "constraint-ledger-replay-applied".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "low".to_string(),
+            exception_id: row.acceptance_id.clone(),
+            exception_artifact: "data/t1-shared-segment-policy-acceptance.csv".to_string(),
+            next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
+            optimizer_effect:
+                "accepted shared-segment policy removes T1 schematic map publication blockers"
+                    .to_string(),
+            validation_status: "pass".to_string(),
         });
     }
 
@@ -44690,17 +44793,17 @@ mod tests {
         OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow,
-        T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
+        T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
+        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -51627,6 +51730,7 @@ mod tests {
         let rows = optimizer_constraint_ledger_rows(
             &pavement_rows,
             &topology_rows,
+            &[],
             &parallel_rows,
             &access_gap_rows,
             &beck_t1_rows,
@@ -51677,6 +51781,82 @@ mod tests {
             .iter()
             .any(|row| row.constraint_class == "game_ops_bundle_binding"
                 && row.source_artifact == "data/game/t2-bundle-overlays.csv"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_replays_t1_schematic_relief() {
+        let topology_rows = vec![T1TopologyRepairRow {
+            route: "I40".to_string(),
+            selected: true,
+            design_role: "promise-spine".to_string(),
+            design_status: "policy-review".to_string(),
+            beck_review_flag: "overlap-review".to_string(),
+            overlap_corridors: "I-95".to_string(),
+            repair_type: "shared-backbone-policy".to_string(),
+            repair_basis: "selected-t1-route-shares-beck-segment".to_string(),
+            next_artifact: "data/t1-design-policy-actions.csv".to_string(),
+            next_action: "resolve-shared-segment-map-policy".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let relief_rows = vec![T1SchematicGeometryBlockerReliefRow {
+            relief_id: "T1SCHEMATICRELIEF-I40I95".to_string(),
+            acceptance_id: "T1SHAREDACCEPT-I40I95".to_string(),
+            policy_id: "T1SHAREDSEG-I40I95".to_string(),
+            route_pair: "I40-I95".to_string(),
+            affected_routes: "I40;I95".to_string(),
+            accepted_render_treatment:
+                "represent as interlined trunk service or split at selected transfer stops"
+                    .to_string(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: "map;publication".to_string(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: 4,
+            blocker_count_after: 0,
+            claim_blocker_delta: -4,
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let beck_t1_rows = vec![route_map::BeckT1DiagnosticRow {
+            corridor: "I-40",
+            endpoint_start: "BARSTOW",
+            endpoint_end: "BEN",
+            endpoint_status: "qualified",
+            stop_count: 16,
+            drawn_stop_count: 16,
+            transfer_stop_count: 12,
+            shared_stop_count: 4,
+            shared_stop_corridors: "I-20;I-35;I-75;I-95".to_string(),
+            shared_segment_count: 1,
+            shared_segment_corridors: "I-95".to_string(),
+            service_action: "overlap-review",
+            qualification_basis: "shared-backbone-segment-needs-policy",
+            review_flag: "overlap-review",
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &topology_rows,
+            &relief_rows,
+            &[],
+            &[],
+            &beck_t1_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "schematic_geometry_relief"
+                && row.constraint_status == "pass"));
+        assert!(!rows
+            .iter()
+            .any(|row| row.constraint_class == "schematic_geometry"
+                || row.constraint_class == "beck_schematic_geometry"));
     }
 
     #[test]
