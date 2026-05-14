@@ -3415,6 +3415,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit optimizer action rows for residual T2 overlay repair deltas
+    T2OverlayOptimizerActionDocket {
+        /// T2 bundle-overlay repair delta CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-delta.csv",
+            value_name = "FILE"
+        )]
+        repair_delta: PathBuf,
+        /// Output T2 overlay optimizer action docket CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-overlay-optimizer-action-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if action rows reduce blockers or promote claims
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -9833,6 +9855,33 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2OverlayOptimizerActionDocket {
+            repair_delta,
+            output,
+            gate,
+        } => {
+            println!("route t2-overlay-optimizer-action-docket");
+            let delta_rows = load_t2_bundle_overlay_repair_delta(&repair_delta)
+                .with_context(|| format!("loading {}", repair_delta.display()))?;
+            let rows = t2_overlay_optimizer_action_docket_rows(&delta_rows);
+            write_t2_overlay_optimizer_action_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_overlay_optimizer_action_docket_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_overlay_optimizer_action_docket_gate_failures(&rows, &delta_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 overlay optimizer action docket gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 overlay optimizer action docket gate failed");
+                }
+                println!("T2 overlay optimizer action docket gate: PASS");
+            }
+        }
+
         Commands::OptimizerMapHooks { output, gate } => {
             println!("route optimizer-map-hooks");
             let rows = optimizer_map_hook_rows();
@@ -15840,6 +15889,25 @@ struct T2BundleOverlayRepairDeltaRow {
     service_action: String,
     readiness_disposition: String,
     replay_decision: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2OverlayOptimizerActionDocketRow {
+    action_id: String,
+    delta_id: String,
+    route: String,
+    segment_bundle_id: String,
+    replay_decision: String,
+    service_action: String,
+    readiness_disposition: String,
+    optimizer_action: String,
+    priority_class: String,
+    action_status: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -26778,6 +26846,165 @@ fn t2_bundle_overlay_repair_delta_gate_failures(
     failures
 }
 
+fn t2_overlay_optimizer_action_docket_rows(
+    delta_rows: &[T2BundleOverlayRepairDeltaRow],
+) -> Vec<T2OverlayOptimizerActionDocketRow> {
+    let mut rows = delta_rows
+        .iter()
+        .map(|delta| {
+            let optimizer_action =
+                if delta.service_action == "hold-local-relief-below-national-game-overlay" {
+                    "local-zone-overlay-review"
+                } else if delta.readiness_disposition == "repair-needed" {
+                    "bundle-readiness-repair-review"
+                } else if delta.service_action == "repair-service-overlay-before-game-ops-binding" {
+                    "service-overlay-diagnostic-review"
+                } else if delta.previous_decision == "repair-needed" {
+                    "bundle-repair-replay-review"
+                } else {
+                    "optimizer-held-replay-review"
+                };
+            let priority_class = match optimizer_action {
+                "bundle-readiness-repair-review" => "P1-structural-readiness",
+                "service-overlay-diagnostic-review" => "P2-service-overlay",
+                "local-zone-overlay-review" => "P3-local-zone-overlay",
+                _ => "P4-held-replay",
+            };
+            T2OverlayOptimizerActionDocketRow {
+                action_id: format!("T2OVERLAYACTION-{}", stable_id_fragment(&delta.delta_id)),
+                delta_id: delta.delta_id.clone(),
+                route: delta.route.clone(),
+                segment_bundle_id: delta.segment_bundle_id.clone(),
+                replay_decision: delta.replay_decision.clone(),
+                service_action: delta.service_action.clone(),
+                readiness_disposition: delta.readiness_disposition.clone(),
+                optimizer_action: optimizer_action.to_string(),
+                priority_class: priority_class.to_string(),
+                action_status: "optimizer-held-known".to_string(),
+                blocked_claims_before: delta.blocked_claims_after.clone(),
+                blocked_claims_after: delta.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: delta.next_artifact.clone(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.priority_class
+            .cmp(&right.priority_class)
+            .then(left.route.cmp(&right.route))
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_overlay_optimizer_action_docket(
+    path: &Path,
+    rows: &[T2OverlayOptimizerActionDocketRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_overlay_optimizer_action_docket_summary(
+    output: &Path,
+    rows: &[T2OverlayOptimizerActionDocketRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.optimizer_action.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 overlay optimizer action rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (action, count) in counts {
+        println!("  {action}: {count}");
+    }
+}
+
+fn t2_overlay_optimizer_action_docket_gate_failures(
+    rows: &[T2OverlayOptimizerActionDocketRow],
+    delta_rows: &[T2BundleOverlayRepairDeltaRow],
+) -> Vec<String> {
+    let expected = delta_rows
+        .iter()
+        .map(|row| row.delta_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "optimizer action docket has {} rows but expected {} delta rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.action_id.trim().is_empty()
+            || row.delta_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.replay_decision.trim().is_empty()
+            || row.service_action.trim().is_empty()
+            || row.readiness_disposition.trim().is_empty()
+            || row.optimizer_action.trim().is_empty()
+            || row.priority_class.trim().is_empty()
+            || row.action_status.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete optimizer action fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.delta_id.clone()) {
+            failures.push(format!("{} appears more than once", row.delta_id));
+        }
+        if !expected.contains(row.delta_id.as_str()) {
+            failures.push(format!("{} is not a repair-delta row", row.delta_id));
+        }
+        if row.replay_decision == "bound"
+            || row.action_status != "optimizer-held-known"
+            || row.validation_status != "review"
+        {
+            failures.push(format!(
+                "{} promoted optimizer action prematurely",
+                row.route
+            ));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} missing from optimizer action docket"
+            ));
+        }
+    }
+    failures
+}
+
 #[derive(Debug, Clone, Default)]
 struct OptimizerConstraintBudgetIndex {
     by_bundle: std::collections::HashMap<String, OptimizerConstraintBudgetRow>,
@@ -34071,6 +34298,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 overlay repair replay preserves residual held and repair-needed blockers",
             ),
             (
+                "t2-overlay-optimizer-action-docket",
+                "route t2-overlay-optimizer-action-docket --gate",
+                "data/t2-overlay-optimizer-action-docket.csv",
+                "held-known",
+                15,
+                "Residual T2 overlay repair deltas are routed to optimizer action families",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -39964,6 +40199,7 @@ mod tests {
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_local_zone_overlay_handoff_gate_failures, t2_local_zone_overlay_handoff_rows,
         t2_national_bundle_readiness_audit_gate_failures, t2_national_bundle_readiness_audit_rows,
+        t2_overlay_optimizer_action_docket_gate_failures, t2_overlay_optimizer_action_docket_rows,
         t2_parallel_service_queue_gate_failures, t2_parallel_service_queue_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
@@ -46088,6 +46324,40 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].replay_decision, "held");
+        assert_eq!(rows[0].blocker_delta, 0);
+        assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
+    }
+
+    #[test]
+    fn t2_overlay_optimizer_action_docket_routes_delta_without_promotion() {
+        let delta_rows = vec![T2BundleOverlayRepairDeltaRow {
+            delta_id: "T2OVERLAYDELTA-1".to_string(),
+            decision_id: "T2GAMEOPSDECISION-1".to_string(),
+            route: "I195".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.HELD".to_string(),
+            previous_decision: "held".to_string(),
+            target_status: "held".to_string(),
+            service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
+            readiness_disposition: "no-readiness-disposition-required".to_string(),
+            replay_decision: "held".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_overlay_optimizer_action_docket_rows(&delta_rows);
+        let failures = t2_overlay_optimizer_action_docket_gate_failures(&rows, &delta_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].optimizer_action,
+            "service-overlay-diagnostic-review"
+        );
+        assert_eq!(rows[0].priority_class, "P2-service-overlay");
+        assert_eq!(rows[0].action_status, "optimizer-held-known");
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }

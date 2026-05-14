@@ -46,6 +46,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Stitched Member Proof Source Capture | Record source-capture placeholders before any proof acceptance or membership edit. | done |
 | 2026-05-14 | T2 Stitched Member Proof Artifact Attachment | Record artifact-attachment placeholders before proof review or membership edit. | done |
 | 2026-05-14 | T2 Stitched Member Proof Review Docket | Review artifact-attachment placeholders before candidate disposition or membership edit. | done |
+| 2026-05-14 | T2 Overlay Optimizer Action Docket | Route residual T2 overlay repair deltas back into optimizer action families. | done |
 
 ## Next Active Wave
 
