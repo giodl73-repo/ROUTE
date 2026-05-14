@@ -3148,6 +3148,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 Beck transfer-complexity blocker relief rows from accepted policy
+    T2BeckTransferComplexityBlockerRelief {
+        /// T2 Beck transfer-complexity policy acceptance CSV
+        #[arg(
+            long,
+            default_value = "data/t2-beck-transfer-complexity-policy-acceptance.csv",
+            value_name = "FILE"
+        )]
+        acceptance: PathBuf,
+        /// Output T2 Beck transfer-complexity blocker relief CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-beck-transfer-complexity-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if relief rows omit accepted policies or do not reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -10075,6 +10097,37 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BeckTransferComplexityBlockerRelief {
+            acceptance,
+            output,
+            gate,
+        } => {
+            println!("route t2-beck-transfer-complexity-blocker-relief");
+            let acceptance_rows = load_t2_beck_transfer_complexity_policy_acceptance(&acceptance)
+                .with_context(|| format!("loading {}", acceptance.display()))?;
+            let rows = t2_beck_transfer_complexity_blocker_relief_rows(&acceptance_rows);
+            write_t2_beck_transfer_complexity_blocker_relief(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_beck_transfer_complexity_blocker_relief_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_beck_transfer_complexity_blocker_relief_gate_failures(
+                    &rows,
+                    &acceptance_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 Beck transfer complexity blocker relief gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 Beck transfer complexity blocker relief gate failed");
+                }
+                println!();
+                println!("T2 Beck transfer complexity blocker relief gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16636,6 +16689,25 @@ struct T2BeckTransferComplexityPolicyAcceptanceRow {
     blocker_count_before: usize,
     blocker_count_after: usize,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BeckTransferComplexityBlockerReliefRow {
+    relief_id: String,
+    acceptance_id: String,
+    policy_id: String,
+    route: String,
+    complexity_band: String,
+    accepted_render_treatment: String,
+    relief_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    ledger_replay_status: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -30672,6 +30744,187 @@ fn t2_beck_transfer_complexity_policy_acceptance_gate_failures(
     failures
 }
 
+fn load_t2_beck_transfer_complexity_policy_acceptance(
+    path: &Path,
+) -> Result<Vec<T2BeckTransferComplexityPolicyAcceptanceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_beck_transfer_complexity_blocker_relief_rows(
+    acceptance_rows: &[T2BeckTransferComplexityPolicyAcceptanceRow],
+) -> Vec<T2BeckTransferComplexityBlockerReliefRow> {
+    let mut rows = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "transfer-simplification-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T2BeckTransferComplexityBlockerReliefRow {
+            relief_id: format!("T2TRANSFERRELIEF-{}", stable_id_fragment(&row.route)),
+            acceptance_id: row.acceptance_id.clone(),
+            policy_id: row.policy_id.clone(),
+            route: row.route.clone(),
+            complexity_band: row.complexity_band.clone(),
+            accepted_render_treatment: row.accepted_render_treatment.clone(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: 0,
+            claim_blocker_delta: -(row.blocker_count_after as isize),
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_beck_transfer_complexity_blocker_relief(
+    path: &Path,
+    rows: &[T2BeckTransferComplexityBlockerReliefRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_beck_transfer_complexity_blocker_relief_summary(
+    output: &Path,
+    rows: &[T2BeckTransferComplexityBlockerReliefRow],
+) {
+    let before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 Beck transfer-complexity blocker relief rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers before: {before}");
+    println!("  claim blockers after: {after}");
+}
+
+fn t2_beck_transfer_complexity_blocker_relief_gate_failures(
+    rows: &[T2BeckTransferComplexityBlockerReliefRow],
+    acceptance_rows: &[T2BeckTransferComplexityPolicyAcceptanceRow],
+) -> Vec<String> {
+    let expected = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "transfer-simplification-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| row.acceptance_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_before = acceptance_rows
+        .iter()
+        .filter(|row| expected.contains(row.acceptance_id.as_str()))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures
+            .push("T2 transfer-complexity blocker relief has no accepted policy rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 transfer-complexity blocker relief has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.relief_id.trim().is_empty()
+            || row.acceptance_id.trim().is_empty()
+            || row.policy_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.complexity_band.trim().is_empty()
+            || row.accepted_render_treatment.trim().is_empty()
+            || row.relief_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.ledger_replay_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete relief fields",
+                row.acceptance_id
+            ));
+        }
+        if !seen.insert(row.acceptance_id.clone()) {
+            failures.push(format!("{} appears more than once", row.acceptance_id));
+        }
+        if !expected.contains(row.acceptance_id.as_str()) {
+            failures.push(format!(
+                "{} is not an expected acceptance row",
+                row.acceptance_id
+            ));
+        }
+        if row.relief_decision != "relief-ready-for-constraint-ledger-replay"
+            || row.ledger_replay_status != "pending-optimizer-constraint-ledger-replay"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid relief state", row.acceptance_id));
+        }
+        if !row.blocker_claims_after.is_empty()
+            || row.blocker_count_after != 0
+            || row.claim_blocker_delta != -(row.blocker_count_before as isize)
+        {
+            failures.push(format!(
+                "{} did not reduce blockers to zero",
+                row.acceptance_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from blocker relief"));
+        }
+    }
+    let actual_before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let actual_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_before != expected_before || actual_after != 0 {
+        failures.push(format!(
+            "T2 transfer-complexity relief before/after = {actual_before}/{actual_after}, expected {expected_before}/0"
+        ));
+    }
+    failures
+}
+
 #[derive(Default)]
 struct T1SharedSegmentPolicyBuilder {
     routes: std::collections::BTreeSet<String>,
@@ -39333,6 +39586,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 Beck transfer-complexity policy is accepted but pending blocker relief replay",
             ),
             (
+                "t2-beck-transfer-complexity-blocker-relief",
+                "route t2-beck-transfer-complexity-blocker-relief --gate",
+                "data/t2-beck-transfer-complexity-blocker-relief.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -45516,6 +45777,8 @@ mod tests {
         t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_beck_transfer_complexity_blocker_relief_gate_failures,
+        t2_beck_transfer_complexity_blocker_relief_rows,
         t2_beck_transfer_complexity_policy_acceptance_gate_failures,
         t2_beck_transfer_complexity_policy_acceptance_rows,
         t2_beck_transfer_complexity_policy_gate_failures, t2_beck_transfer_complexity_policy_rows,
@@ -45632,15 +45895,16 @@ mod tests {
         T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
         T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
         T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
-        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
-        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
+        T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
+        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
+        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -53239,6 +53503,41 @@ mod tests {
         assert_eq!(
             rows[0].next_artifact,
             "data/t2-beck-transfer-complexity-blocker-relief.csv"
+        );
+    }
+
+    #[test]
+    fn t2_beck_transfer_complexity_blocker_relief_reduces_accepted_blockers() {
+        let acceptance_rows = vec![T2BeckTransferComplexityPolicyAcceptanceRow {
+            acceptance_id: "T2TRANSFERACCEPT-US80".to_string(),
+            policy_id: "T2TRANSFERPOLICY-US80".to_string(),
+            route: "US80".to_string(),
+            complexity_band: "severe-transfer-complexity".to_string(),
+            accepted_render_treatment: "compress transfer emphasis to trunk interfaces".to_string(),
+            accepted_promotion_treatment:
+                "hold map promotion until accepted transfer simplification is replayed".to_string(),
+            acceptance_decision: "transfer-simplification-policy-accepted".to_string(),
+            blocker_claims_before: "map;promotion;publication".to_string(),
+            blocker_claims_after: "map;promotion;publication".to_string(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-beck-transfer-complexity-blocker-relief.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_beck_transfer_complexity_blocker_relief_rows(&acceptance_rows);
+        let failures =
+            t2_beck_transfer_complexity_blocker_relief_gate_failures(&rows, &acceptance_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].blocker_count_before, 1);
+        assert_eq!(rows[0].blocker_count_after, 0);
+        assert_eq!(rows[0].claim_blocker_delta, -1);
+        assert_eq!(
+            rows[0].ledger_replay_status,
+            "pending-optimizer-constraint-ledger-replay"
         );
     }
 
