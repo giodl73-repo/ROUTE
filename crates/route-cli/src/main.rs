@@ -3022,6 +3022,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit replay decisions for T2 bundle-readiness repair evidence
+    T2BundleReadinessReplayDecisions {
+        /// T2 bundle readiness repair evidence CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-readiness-repair-evidence.csv",
+            value_name = "FILE"
+        )]
+        evidence: PathBuf,
+        /// T2 bundle overlay repair delta CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-delta.csv",
+            value_name = "FILE"
+        )]
+        repair_delta: PathBuf,
+        /// Output T2 bundle readiness replay decisions CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-readiness-replay-decisions.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if evidence replay rows promote readiness or lose blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9022,6 +9051,40 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BundleReadinessReplayDecisions {
+            evidence,
+            repair_delta,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-readiness-replay-decisions");
+            let evidence_rows = load_t2_bundle_readiness_repair_evidence(&evidence)
+                .with_context(|| format!("loading {}", evidence.display()))?;
+            let delta_rows = load_t2_bundle_overlay_repair_delta(&repair_delta)
+                .with_context(|| format!("loading {}", repair_delta.display()))?;
+            let rows = t2_bundle_readiness_replay_decision_rows(&evidence_rows, &delta_rows);
+            write_t2_bundle_readiness_replay_decisions(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_readiness_replay_decision_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_readiness_replay_decision_gate_failures(
+                    &rows,
+                    &evidence_rows,
+                    &delta_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle readiness replay decision gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 bundle readiness replay decision gate failed");
+                }
+                println!("T2 bundle readiness replay decision gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -14786,6 +14849,25 @@ struct T2BundleReadinessRepairEvidenceRow {
     evidence_decision: String,
     next_artifact: String,
     blocks_claims: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleReadinessReplayDecisionRow {
+    replay_id: String,
+    evidence_id: String,
+    delta_id: String,
+    route: String,
+    segment_bundle_id: String,
+    readiness_class: String,
+    evidence_status: String,
+    delta_replay_decision: String,
+    replay_decision: String,
+    replay_action: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -23025,6 +23107,205 @@ fn t2_bundle_readiness_repair_evidence_gate_failures(
     failures
 }
 
+fn load_t2_bundle_readiness_repair_evidence(
+    path: &Path,
+) -> Result<Vec<T2BundleReadinessRepairEvidenceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_t2_bundle_overlay_repair_delta(path: &Path) -> Result<Vec<T2BundleOverlayRepairDeltaRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_readiness_replay_decision_rows(
+    evidence_rows: &[T2BundleReadinessRepairEvidenceRow],
+    delta_rows: &[T2BundleOverlayRepairDeltaRow],
+) -> Vec<T2BundleReadinessReplayDecisionRow> {
+    let deltas_by_bundle = delta_rows
+        .iter()
+        .map(|row| (row.segment_bundle_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = evidence_rows
+        .iter()
+        .filter_map(|evidence| {
+            let delta = deltas_by_bundle.get(evidence.segment_bundle_id.as_str())?;
+            let replay_action = match delta.replay_decision.as_str() {
+                "repair-needed" => "rerun-after-structural-artifact-update",
+                "held" => "keep-held-until-repair-delta-mutates",
+                other => {
+                    if other.trim().is_empty() {
+                        "keep-held-until-repair-delta-mutates"
+                    } else {
+                        "manual-readiness-replay-review"
+                    }
+                }
+            };
+            Some(T2BundleReadinessReplayDecisionRow {
+                replay_id: format!(
+                    "T2BUNDLEREADINESSREPLAY-{}",
+                    stable_id_fragment(&evidence.evidence_id)
+                ),
+                evidence_id: evidence.evidence_id.clone(),
+                delta_id: delta.delta_id.clone(),
+                route: evidence.route.clone(),
+                segment_bundle_id: evidence.segment_bundle_id.clone(),
+                readiness_class: evidence.readiness_class.clone(),
+                evidence_status: evidence.evidence_status.clone(),
+                delta_replay_decision: delta.replay_decision.clone(),
+                replay_decision: "held-for-bundle-replay".to_string(),
+                replay_action: replay_action.to_string(),
+                blocked_claims_before: evidence.blocks_claims.clone(),
+                blocked_claims_after: delta.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: delta.next_artifact.clone(),
+                validation_status: "review".to_string(),
+            })
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.readiness_class
+            .cmp(&right.readiness_class)
+            .then(left.route.cmp(&right.route))
+    });
+    rows
+}
+
+fn write_t2_bundle_readiness_replay_decisions(
+    path: &Path,
+    rows: &[T2BundleReadinessReplayDecisionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_readiness_replay_decision_summary(
+    output: &Path,
+    rows: &[T2BundleReadinessReplayDecisionRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.replay_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle readiness replay decision rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_bundle_readiness_replay_decision_gate_failures(
+    rows: &[T2BundleReadinessReplayDecisionRow],
+    evidence_rows: &[T2BundleReadinessRepairEvidenceRow],
+    delta_rows: &[T2BundleOverlayRepairDeltaRow],
+) -> Vec<String> {
+    let expected = evidence_rows
+        .iter()
+        .map(|row| row.evidence_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let delta_bundles = delta_rows
+        .iter()
+        .map(|row| row.segment_bundle_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "readiness replay decisions has {} rows but expected {} evidence rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for evidence in evidence_rows {
+        if !delta_bundles.contains(evidence.segment_bundle_id.as_str()) {
+            failures.push(format!(
+                "{} evidence row has no repair delta row",
+                evidence.route
+            ));
+        }
+    }
+    for row in rows {
+        if row.replay_id.trim().is_empty()
+            || row.evidence_id.trim().is_empty()
+            || row.delta_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.readiness_class.trim().is_empty()
+            || row.evidence_status.trim().is_empty()
+            || row.delta_replay_decision.trim().is_empty()
+            || row.replay_decision.trim().is_empty()
+            || row.replay_action.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete replay decision fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.evidence_id.clone()) {
+            failures.push(format!("{} appears more than once", row.evidence_id));
+        }
+        if !expected.contains(row.evidence_id.as_str()) {
+            failures.push(format!(
+                "{} is not a readiness evidence row",
+                row.evidence_id
+            ));
+        }
+        if row.replay_decision == "bound" || row.delta_replay_decision == "bound" {
+            failures.push(format!("{} readiness replay promoted a claim", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!("{} replay decision must remain review", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} missing from readiness replay decisions"
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -30366,6 +30647,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Readiness repair tasks are probed against downstream evidence before replay",
             ),
             (
+                "t2-bundle-readiness-replay-decisions",
+                "route t2-bundle-readiness-replay-decisions --gate",
+                "data/t2-bundle-readiness-replay-decisions.csv",
+                "held-known",
+                4,
+                "Readiness evidence probes become explicit replay decisions without claim promotion",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -36254,7 +36543,9 @@ mod tests {
         t2_bundle_readiness_disposition_gate_failures, t2_bundle_readiness_disposition_rows,
         t2_bundle_readiness_repair_docket_gate_failures, t2_bundle_readiness_repair_docket_rows,
         t2_bundle_readiness_repair_evidence_gate_failures,
-        t2_bundle_readiness_repair_evidence_rows, t2_bundle_repair_queue_gate_failures,
+        t2_bundle_readiness_repair_evidence_rows,
+        t2_bundle_readiness_replay_decision_gate_failures,
+        t2_bundle_readiness_replay_decision_rows, t2_bundle_repair_queue_gate_failures,
         t2_bundle_repair_queue_rows, t2_closure_dispositions, t2_contact_closure_gate_failures,
         t2_contact_closure_rows, t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
@@ -36314,15 +36605,15 @@ mod tests {
         PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow, ScoreSignalRow,
         SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRow,
-        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow, T2BundleRepairQueueRow,
-        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow,
+        T2BundleOverlayRow, T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
@@ -41635,6 +41926,54 @@ mod tests {
         assert_eq!(rows[0].evidence_status, "candidate-evidence-found");
         assert_eq!(rows[0].evidence_decision, "held-for-readiness-replay");
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
+    }
+
+    #[test]
+    fn t2_bundle_readiness_replay_decisions_preserve_candidate_probe_blockers() {
+        let evidence_rows = vec![T2BundleReadinessRepairEvidenceRow {
+            evidence_id: "T2BUNDLEREADINESSEVIDENCE-I295".to_string(),
+            repair_id: "T2BUNDLEREADINESSREPAIR-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            readiness_class: "stitched-member".to_string(),
+            evidence_artifact: "data/tier-segment-candidates.csv".to_string(),
+            evidence_status: "candidate-evidence-found".to_string(),
+            evidence_row_count: 1,
+            evidence_summary: "1 segment candidate rows match route I295".to_string(),
+            evidence_decision: "held-for-readiness-replay".to_string(),
+            next_artifact: "data/t2-bundle-overlay-repair-delta.csv".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let delta_rows = vec![T2BundleOverlayRepairDeltaRow {
+            delta_id: "T2OVERLAYDELTA-I295".to_string(),
+            decision_id: "T2GAMEOPSDECISION-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            previous_decision: "held".to_string(),
+            target_status: "repair-needed".to_string(),
+            service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
+            readiness_disposition: "repair-needed".to_string(),
+            replay_decision: "held".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_bundle_readiness_replay_decision_rows(&evidence_rows, &delta_rows);
+        let failures =
+            t2_bundle_readiness_replay_decision_gate_failures(&rows, &evidence_rows, &delta_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].replay_decision, "held-for-bundle-replay");
+        assert_eq!(
+            rows[0].blocked_claims_after,
+            "game;incident;publication;upgrade"
+        );
+        assert_eq!(rows[0].blocker_delta, 0);
     }
 
     #[test]

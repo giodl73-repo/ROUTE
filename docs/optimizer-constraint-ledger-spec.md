@@ -158,7 +158,7 @@ Examples of source ledgers:
 | Lower-tier access pressure | `data/t3-t4-access-gaps.csv`, `data/t1-feedback-docket.csv` |
 | Beck rendering | `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, `data/t3-zone-map-diagnostics.csv` |
 | Source acquisition policy | `data/source-fetch-policy.csv`, evidence-window ledgers, source health ledgers |
-| Game and operations hooks | `data/game/t2-bundle-overlays.csv`, `data/game/t2-scenario-hooks.csv`, scenario hook ledgers |
+| Game and operations hooks | `data/game/t2-bundle-overlays.csv`, `data/game/t2-scenario-hooks.csv`, `data/t2-bundle-readiness-replay-decisions.csv`, scenario hook ledgers |
 
 Implemented CLI:
 
