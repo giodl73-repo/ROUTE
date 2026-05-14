@@ -84,11 +84,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Beck Long Connector Policy | Author long-connector policy rows before acceptance, relief, or ledger replay. | done |
 | 2026-05-14 | T2 Beck Long Connector Policy Acceptance | Accept long-connector policy rows before blocker relief or ledger replay. | done |
 | 2026-05-14 | T2 Beck Long Connector Blocker Relief | Replay accepted long-connector policy into blocker relief rows before ledger replay. | done |
+| 2026-05-14 | T2 Beck Long Connector Ledger Replay | Wire accepted long-connector relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should wire T2 Beck long-connector
-relief into the optimizer constraint ledger, budget, and residual backlog.
+No wave is active. Next optimizer work should resume residual blocker burn-down
+from the remaining T4 terminal-access, game/ops, source, and debt families.
 
 ## Operating Rules
 

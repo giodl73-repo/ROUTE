@@ -2875,6 +2875,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_beck_label_density_blocker_relief: PathBuf,
+        /// T2 Beck long-connector blocker relief CSV
+        #[arg(
+            long,
+            default_value = "data/t2-beck-long-connector-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        t2_beck_long_connector_blocker_relief: PathBuf,
         /// T3 lower-tier feeder-gap blocker relief CSV
         #[arg(
             long,
@@ -10022,6 +10029,7 @@ fn run_cli() -> Result<()> {
             t1_schematic_geometry_blocker_relief,
             t2_beck_transfer_complexity_blocker_relief,
             t2_beck_label_density_blocker_relief,
+            t2_beck_long_connector_blocker_relief,
             t3_lower_tier_feeder_gap_blocker_relief,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
@@ -10056,6 +10064,14 @@ fn run_cli() -> Result<()> {
                     .with_context(|| {
                         format!("loading {}", t2_beck_label_density_blocker_relief.display())
                     })?;
+            let t2_long_relief_rows =
+                load_t2_beck_long_connector_blocker_relief(&t2_beck_long_connector_blocker_relief)
+                    .with_context(|| {
+                        format!(
+                            "loading {}",
+                            t2_beck_long_connector_blocker_relief.display()
+                        )
+                    })?;
             let t3_feeder_relief_rows = load_t3_lower_tier_feeder_gap_blocker_relief(
                 &t3_lower_tier_feeder_gap_blocker_relief,
             )
@@ -10084,6 +10100,7 @@ fn run_cli() -> Result<()> {
                 &schematic_relief_rows,
                 &t2_transfer_relief_rows,
                 &t2_label_relief_rows,
+                &t2_long_relief_rows,
                 &t3_feeder_relief_rows,
                 &parallel_rows,
                 &access_gap_rows,
@@ -24100,6 +24117,33 @@ fn t2_label_density_relief_route_set(
         .collect()
 }
 
+fn load_t2_beck_long_connector_blocker_relief(
+    path: &Path,
+) -> Result<Vec<T2BeckLongConnectorBlockerReliefRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_long_connector_relief_route_set(
+    rows: &[T2BeckLongConnectorBlockerReliefRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+                && row.blocker_count_after == 0
+                && row.claim_blocker_delta < 0
+        })
+        .map(|row| route_display_key(&row.route))
+        .collect()
+}
+
 fn load_t3_lower_tier_feeder_gap_blocker_relief(
     path: &Path,
 ) -> Result<Vec<T3LowerTierFeederGapBlockerReliefRow>> {
@@ -24145,6 +24189,7 @@ fn optimizer_constraint_ledger_rows(
     schematic_relief_rows: &[T1SchematicGeometryBlockerReliefRow],
     t2_transfer_relief_rows: &[T2BeckTransferComplexityBlockerReliefRow],
     t2_label_relief_rows: &[T2BeckLabelDensityBlockerReliefRow],
+    t2_long_relief_rows: &[T2BeckLongConnectorBlockerReliefRow],
     t3_feeder_relief_rows: &[T3LowerTierFeederGapBlockerReliefRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
@@ -24158,6 +24203,7 @@ fn optimizer_constraint_ledger_rows(
     let relieved_t1_schematic_routes = t1_schematic_relief_route_set(schematic_relief_rows);
     let relieved_t2_transfer_routes = t2_transfer_relief_route_set(t2_transfer_relief_rows);
     let relieved_t2_label_routes = t2_label_density_relief_route_set(t2_label_relief_rows);
+    let relieved_t2_long_routes = t2_long_connector_relief_route_set(t2_long_relief_rows);
     let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
 
     for row in source_policy_rows {
@@ -24686,6 +24732,8 @@ fn optimizer_constraint_ledger_rows(
                 row.review_flag,
                 "dense-label-review" | "dense-transfer-review"
             ) && relieved_t2_label_routes.contains(&route_display_key(row.corridor)))
+            && !(row.review_flag == "long-connector-review"
+                && relieved_t2_long_routes.contains(&route_display_key(row.corridor)))
     }) {
         let (constraint_class, repair_action, next_artifact) =
             beck_t2_constraint_mapping(row.review_flag);
@@ -24837,6 +24885,58 @@ fn optimizer_constraint_ledger_rows(
             next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
             optimizer_effect:
                 "accepted label-density policy removes T2 Beck map promotion publication blockers"
+                    .to_string(),
+            validation_status: "pass".to_string(),
+        });
+    }
+
+    for row in t2_long_relief_rows.iter().filter(|row| {
+        row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+            && row.blocker_count_after == 0
+            && row.claim_blocker_delta < 0
+    }) {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T2LONGRELIEF-{}", stable_id_fragment(&row.route)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: String::new(),
+            constraint_order: 13,
+            constraint_class: "beck_long_connector_relief".to_string(),
+            behavior_type: "review".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.route.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            source_artifact: "data/t2-beck-long-connector-blocker-relief.csv".to_string(),
+            source_row_id: row.relief_id.clone(),
+            standard_artifact: "docs/beck-renderer-contract.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "pass".to_string(),
+            observed_value: row.relief_decision.clone(),
+            threshold_value: "relief-ready-for-constraint-ledger-replay".to_string(),
+            measurement_unit: "relief_decision".to_string(),
+            blocks_claims: String::new(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("claim_blocker_delta={}", row.claim_blocker_delta),
+            penalty_score: 0.0,
+            repair_action: "constraint-ledger-replay-applied".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "low".to_string(),
+            exception_id: row.acceptance_id.clone(),
+            exception_artifact: "data/t2-beck-long-connector-policy-acceptance.csv".to_string(),
+            next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
+            optimizer_effect:
+                "accepted long-connector policy removes T2 Beck map promotion publication blockers"
                     .to_string(),
             validation_status: "pass".to_string(),
         });
@@ -49445,18 +49545,18 @@ mod tests {
         T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
         T2BeckLabelDensityBlockerReliefRow, T2BeckLabelDensityPolicyAcceptanceRow,
         T2BeckLabelDensityPolicyRow, T2BeckLabelDensityReviewRow,
-        T2BeckLongConnectorPolicyAcceptanceRow, T2BeckLongConnectorPolicyRow,
-        T2BeckLongConnectorReviewRow, T2BeckTransferComplexityBlockerReliefRow,
-        T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
-        T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2BeckLongConnectorBlockerReliefRow, T2BeckLongConnectorPolicyAcceptanceRow,
+        T2BeckLongConnectorPolicyRow, T2BeckLongConnectorReviewRow,
+        T2BeckTransferComplexityBlockerReliefRow, T2BeckTransferComplexityPolicyAcceptanceRow,
+        T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -56389,6 +56489,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &parallel_rows,
             &access_gap_rows,
             &beck_t1_rows,
@@ -56501,6 +56602,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t1_rows,
             &[],
             &[],
@@ -56577,6 +56679,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -56661,6 +56764,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -56676,6 +56780,86 @@ mod tests {
         assert!(!rows
             .iter()
             .any(|row| row.constraint_class == "beck_label_density"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_replays_t2_long_connector_relief() {
+        let relief_rows = vec![T2BeckLongConnectorBlockerReliefRow {
+            relief_id: "T2LONGRELIEF-US83".to_string(),
+            acceptance_id: "T2LONGACCEPT-US83".to_string(),
+            policy_id: "T2LONGPOLICY-US83".to_string(),
+            route: "US83".to_string(),
+            connector_band: "severe-long-connector".to_string(),
+            accepted_render_treatment:
+                "preserve connector service but require trunk-interface labeling and explicit local-service beads"
+                    .to_string(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: "map;promotion;publication".to_string(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: 1,
+            blocker_count_after: 0,
+            claim_blocker_delta: -1,
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let beck_t2_rows = vec![route_map::BeckT2DiagnosticRow {
+            corridor: "US83",
+            trunk: "I-90",
+            start_trunk: "I-90",
+            end_trunk: "I-10",
+            color_mode: "split-parent",
+            service_class: "long-connector",
+            split_anchor: "ODESSA",
+            split_anchor_offset_pct: 21.0,
+            unstopped_t1_contact_count: 0,
+            unstopped_t1_contacts: String::new(),
+            close_parallel_count: 0,
+            close_parallel_corridors: String::new(),
+            duplicate_service_count: 0,
+            duplicate_service_corridors: String::new(),
+            unique_duplicate_stop_count: 5,
+            service_action: "keep",
+            qualification_basis: "long-connector-service",
+            service_label: "Plains Connector",
+            stop_count: 5,
+            drawn_stop_count: 5,
+            transfer_stop_count: 1,
+            schematic_length_px: 1446.0,
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 1.0,
+            max_y: 1.0,
+            label_density_per_100px: 0.35,
+            review_flag: "long-connector-review",
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &relief_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &beck_t2_rows,
+            &[],
+            &[],
+            &[],
+        );
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "beck_long_connector_relief"
+                && row.constraint_status == "pass"));
+        assert!(!rows
+            .iter()
+            .any(|row| row.constraint_class == "beck_long_connector"));
     }
 
     #[test]
@@ -56723,6 +56907,7 @@ mod tests {
         }];
 
         let rows = optimizer_constraint_ledger_rows(
+            &[],
             &[],
             &[],
             &[],

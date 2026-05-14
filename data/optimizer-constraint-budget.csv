@@ -41,7 +41,7 @@ CB-T2-GAME-HOUSTONPORTSURGE,tier-optimizer-current,T2,game-campaign,game,houston
 CB-T2-ROUTE-I25,tier-optimizer-current,T2,,route,I25,,I25,1,0,0,0,0,0.0,0.0,0.0,beck_label_density_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-I285,tier-optimizer-current,T2,,route,I285,,I285,1,0,0,0,0,0.0,0.0,0.0,beck_label_density_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-I405,tier-optimizer-current,T2,,route,I405,,I405,1,0,0,0,0,0.0,0.0,0.0,beck_label_density_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
-CB-T2-ROUTE-I44,tier-optimizer-current,T2,,route,I44,,I44,1,0,1,1,0,0.0,0.0,1.0,beck_long_connector,map;promotion;publication,data/beck-t2-diagnostics.csv,data/optimizer-constraint-ledger.csv,review
+CB-T2-ROUTE-I44,tier-optimizer-current,T2,,route,I44,,I44,1,0,0,0,0,0.0,0.0,0.0,beck_long_connector_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-I49,tier-optimizer-current,T2,,route,I49,,I49,1,0,0,0,0,0.0,0.0,0.0,beck_label_density_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-I495,tier-optimizer-current,T2,,route,I495,,I495,1,0,0,0,0,0.0,0.0,0.0,beck_label_density_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-I65,tier-optimizer-current,T2,,route,I65,,I65,1,0,0,0,0,0.0,0.0,0.0,beck_transfer_complexity_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
@@ -50,8 +50,8 @@ CB-T2-ROUTE-US30,tier-optimizer-current,T2,,route,US30,,US30,1,0,0,0,0,0.0,0.0,0
 CB-T2-ROUTE-US6,tier-optimizer-current,T2,,route,US6,,US6,1,0,0,0,0,0.0,0.0,0.0,beck_transfer_complexity_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-US70,tier-optimizer-current,T2,,route,US70,,US70,1,0,0,0,0,0.0,0.0,0.0,beck_transfer_complexity_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-US80,tier-optimizer-current,T2,,route,US80,,US80,1,0,0,0,0,0.0,0.0,0.0,beck_transfer_complexity_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
-CB-T2-ROUTE-US83,tier-optimizer-current,T2,,route,US83,,US83,1,0,1,1,0,0.0,0.0,1.0,beck_long_connector,map;promotion;publication,data/beck-t2-diagnostics.csv,data/optimizer-constraint-ledger.csv,review
-CB-T2-ROUTE-US90,tier-optimizer-current,T2,,route,US90,,US90,1,0,1,1,0,0.0,0.0,1.0,beck_long_connector,map;promotion;publication,data/beck-t2-diagnostics.csv,data/optimizer-constraint-ledger.csv,review
+CB-T2-ROUTE-US83,tier-optimizer-current,T2,,route,US83,,US83,1,0,0,0,0,0.0,0.0,0.0,beck_long_connector_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
+CB-T2-ROUTE-US90,tier-optimizer-current,T2,,route,US90,,US90,1,0,0,0,0,0.0,0.0,0.0,beck_long_connector_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T2-ROUTE-ALLT2PARALLELSERVICES,tier-optimizer-current,T2,,route,__all_t2_parallel_services__,,__all_t2_parallel_services__,1,0,0,0,0,0.0,0.0,0.0,duplication_and_parallel_service,,data/game/t2-bundle-overlays.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T3-ROUTE-I180,tier-optimizer-current,T3,t3-great-lakes,route,I-180,,I-180,1,0,0,0,0,0.0,0.0,0.0,lower_tier_feeder_gap_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
 CB-T3-ROUTE-US22,tier-optimizer-current,T3,t3-great-lakes,route,US22,,US22,1,0,0,0,0,0.0,0.0,0.0,lower_tier_feeder_gap_relief,,data/optimizer-constraint-budget.csv,data/optimizer-constraint-ledger.csv,pass
