@@ -59,12 +59,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T4 Terminal Access Proof Intake | Define manual or cached terminal-access proof artifact intake requirements before source capture. | done |
 | 2026-05-14 | T4 Terminal Access Proof Source Capture | Record source-needed terminal-access proof capture placeholders before artifact attachment. | done |
 | 2026-05-14 | T4 Terminal Access Proof Artifact Attachment | Record source-needed terminal-access proof artifact-attachment placeholders before proof review. | done |
+| 2026-05-14 | Optimizer Claim Review | Docket residual P1 optimizer claim blockers by owning evidence artifact before blocker relief. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review attached terminal-access
-proof artifacts only after non-seed manual/cached evidence is actually attached;
-otherwise return to residual optimizer backlog triage.
+No wave is active. Next optimizer work should burn down
+`data/optimizer-claim-review.csv` family by family against owning evidence
+artifacts before blocker relief.
 
 ## Operating Rules
 

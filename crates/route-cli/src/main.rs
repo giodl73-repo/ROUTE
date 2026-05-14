@@ -2955,6 +2955,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit review docket for P1 residual optimizer claim blockers
+    OptimizerClaimReview {
+        /// Optimizer residual blocker backlog CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-residual-blocker-backlog.csv",
+            value_name = "FILE"
+        )]
+        backlog: PathBuf,
+        /// Output optimizer claim review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/optimizer-claim-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if review rows omit P1 claim blockers or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9628,6 +9650,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::OptimizerClaimReview {
+            backlog,
+            output,
+            gate,
+        } => {
+            println!("route optimizer-claim-review");
+            let backlog_rows = load_optimizer_residual_blocker_backlog(&backlog)
+                .with_context(|| format!("loading {}", backlog.display()))?;
+            let rows = optimizer_claim_review_rows(&backlog_rows);
+            write_optimizer_claim_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_optimizer_claim_review_summary(&output, &rows);
+
+            if gate {
+                let failures = optimizer_claim_review_gate_failures(&rows, &backlog_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("optimizer claim review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("optimizer claim review gate failed");
+                }
+                println!();
+                println!("optimizer claim review gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16077,6 +16127,28 @@ struct OptimizerResidualBlockerBacklogRow {
     next_artifacts: String,
     backlog_decision: String,
     next_wave: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct OptimizerClaimReviewRow {
+    claim_review_id: String,
+    backlog_id: String,
+    priority_class: String,
+    blocker_family: String,
+    tier: String,
+    blocked_claims: String,
+    subject_count: usize,
+    route_count: usize,
+    total_claim_blockers: usize,
+    representative_routes: String,
+    representative_subjects: String,
+    evidence_artifacts: String,
+    review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -28980,6 +29052,162 @@ fn optimizer_residual_blocker_backlog_gate_failures(
     failures
 }
 
+fn load_optimizer_residual_blocker_backlog(
+    path: &Path,
+) -> Result<Vec<OptimizerResidualBlockerBacklogRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn optimizer_claim_review_rows(
+    backlog_rows: &[OptimizerResidualBlockerBacklogRow],
+) -> Vec<OptimizerClaimReviewRow> {
+    let mut rows = backlog_rows
+        .iter()
+        .filter(|row| {
+            row.priority_class == "P1-claim-blocker"
+                && row.next_wave == "optimizer-claim-review"
+                && row.total_claim_blockers > 0
+        })
+        .map(|row| OptimizerClaimReviewRow {
+            claim_review_id: format!("OCR-{}", stable_id_fragment(&row.backlog_id)),
+            backlog_id: row.backlog_id.clone(),
+            priority_class: row.priority_class.clone(),
+            blocker_family: row.blocker_family.clone(),
+            tier: row.tier.clone(),
+            blocked_claims: row.blocked_claims.clone(),
+            subject_count: row.subject_count,
+            route_count: row.route_count,
+            total_claim_blockers: row.total_claim_blockers,
+            representative_routes: row.representative_routes.clone(),
+            representative_subjects: row.representative_subjects.clone(),
+            evidence_artifacts: row.next_artifacts.clone(),
+            review_decision: "held-for-source-specific-claim-review".to_string(),
+            blocker_claims_before: row.blocked_claims.clone(),
+            blocker_claims_after: row.blocked_claims.clone(),
+            claim_blocker_delta: 0,
+            next_artifact: row.next_artifacts.clone(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.tier
+            .cmp(&right.tier)
+            .then_with(|| left.blocker_family.cmp(&right.blocker_family))
+    });
+    rows
+}
+
+fn write_optimizer_claim_review(path: &Path, rows: &[OptimizerClaimReviewRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_optimizer_claim_review_summary(output: &Path, rows: &[OptimizerClaimReviewRow]) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.total_claim_blockers)
+        .sum::<usize>();
+    println!(
+        "  wrote {} optimizer claim review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn optimizer_claim_review_gate_failures(
+    rows: &[OptimizerClaimReviewRow],
+    backlog_rows: &[OptimizerResidualBlockerBacklogRow],
+) -> Vec<String> {
+    let expected = backlog_rows
+        .iter()
+        .filter(|row| {
+            row.priority_class == "P1-claim-blocker"
+                && row.next_wave == "optimizer-claim-review"
+                && row.total_claim_blockers > 0
+        })
+        .map(|row| row.backlog_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("optimizer claim review has no P1 claim-blocker backlog rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "optimizer claim review has {} rows but expected {} P1 claim-blocker rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.claim_review_id.trim().is_empty()
+            || row.backlog_id.trim().is_empty()
+            || row.priority_class.trim().is_empty()
+            || row.blocker_family.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.evidence_artifacts.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete claim-review fields",
+                row.backlog_id
+            ));
+        }
+        if !seen.insert(row.backlog_id.clone()) {
+            failures.push(format!("{} appears more than once", row.backlog_id));
+        }
+        if !expected.contains(row.backlog_id.as_str()) {
+            failures.push(format!(
+                "{} is not a P1 optimizer claim-review backlog row",
+                row.backlog_id
+            ));
+        }
+        if row.priority_class != "P1-claim-blocker"
+            || row.review_decision != "held-for-source-specific-claim-review"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has an invalid review state", row.backlog_id));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after || row.claim_blocker_delta != 0 {
+            failures.push(format!("{} reduced claim blockers", row.backlog_id));
+        }
+        if row.total_claim_blockers == 0 {
+            failures.push(format!("{} has no claim blockers", row.backlog_id));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from optimizer claim review"));
+        }
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -36997,6 +37225,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Residual constraint-budget blockers are grouped into next optimizer wave families",
             ),
             (
+                "optimizer-claim-review",
+                "route optimizer-claim-review --gate",
+                "data/optimizer-claim-review.csv",
+                "held-known",
+                31,
+                "P1 optimizer claim blockers remain held for source-specific review",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -43143,25 +43379,25 @@ mod tests {
         lower_tier_pressure_witness_rows, map_atlas_gate_failures, merge_hpms_state_records,
         national_segment_bundle_gate_failures, national_segment_bundle_rows,
         national_segment_registry_gate_failures, national_segment_registry_rows,
-        normalized_iri_m_per_km, optimizer_constraint_budget_gate_failures,
-        optimizer_constraint_budget_rows, optimizer_constraint_ledger_gate_failures,
-        optimizer_constraint_ledger_rows, optimizer_manifest_gate_failures,
-        optimizer_map_hook_gate_failures, optimizer_residual_blocker_backlog_gate_failures,
-        optimizer_residual_blocker_backlog_rows, parse_blueprint_cost_ranges,
-        parse_blueprint_evidence_map, parse_blueprint_packages, parse_endpoint_exceptions,
-        parse_forum_docket, parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
-        parse_mdot_midrive_events, parse_pressure_scenarios, parse_release_manifest,
-        parse_significant_moments, parse_standards_inventory, parse_standards_proof_ledger,
-        parse_stop_candidates, parse_t1_diamond_validation, parse_t1_evidence_windows,
-        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
-        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
-        parse_throughput_proof_matrix, pavement_debt_budget_index, pavement_standard_gate_failures,
-        planned_standard_inventory_missing, pressure_scenario_gate_failures,
-        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
-        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
-        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
-        release_manifest_gate_failures, rounded_score, scenario_edge_candidates,
-        significant_moment_gate_failures, significant_moment_row_failure,
+        normalized_iri_m_per_km, optimizer_claim_review_gate_failures, optimizer_claim_review_rows,
+        optimizer_constraint_budget_gate_failures, optimizer_constraint_budget_rows,
+        optimizer_constraint_ledger_gate_failures, optimizer_constraint_ledger_rows,
+        optimizer_manifest_gate_failures, optimizer_map_hook_gate_failures,
+        optimizer_residual_blocker_backlog_gate_failures, optimizer_residual_blocker_backlog_rows,
+        parse_blueprint_cost_ranges, parse_blueprint_evidence_map, parse_blueprint_packages,
+        parse_endpoint_exceptions, parse_forum_docket, parse_indot_trafficwise_events,
+        parse_iowa511_events, parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
+        parse_release_manifest, parse_significant_moments, parse_standards_inventory,
+        parse_standards_proof_ledger, parse_stop_candidates, parse_t1_diamond_validation,
+        parse_t1_evidence_windows, parse_t1_failure_events, parse_t1_failure_ledger,
+        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
+        parse_tdot_smartway_events, parse_throughput_proof_matrix, pavement_debt_budget_index,
+        pavement_standard_gate_failures, planned_standard_inventory_missing,
+        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
+        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
+        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
+        pressure_standard_coverage_failures, release_manifest_gate_failures, rounded_score,
+        scenario_edge_candidates, significant_moment_gate_failures, significant_moment_row_failure,
         source_fetch_policy_gate_failures, source_fetch_policy_row,
         source_fetch_policy_row_covers_command, source_fetch_policy_rows,
         standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
@@ -43280,17 +43516,18 @@ mod tests {
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintBudgetIndex,
         OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow, OptimizerMapHookRow,
-        PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow, ScoreSignalRow,
-        SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow,
-        T2BundleOverlayRow, T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex, PavementStandardRow,
+        ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow,
+        T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow,
+        T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
+        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
+        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -50452,6 +50689,66 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.backlog_decision == "triage-only-no-blocker-relief"));
+    }
+
+    #[test]
+    fn optimizer_claim_review_preserves_p1_claim_blockers() {
+        let backlog_rows = vec![
+            OptimizerResidualBlockerBacklogRow {
+                backlog_id: "ORB-P1-claim-blocker-T2-BECKTRANSFERCOMPLEXITY".to_string(),
+                priority_class: "P1-claim-blocker".to_string(),
+                blocker_family: "beck_transfer_complexity".to_string(),
+                tier: "T2".to_string(),
+                blocked_claims: "map;promotion;publication".to_string(),
+                subject_count: 6,
+                route_count: 6,
+                total_hard_blockers: 0,
+                total_claim_blockers: 6,
+                total_budget_debt_count: 0,
+                total_constraint_debt_cost_m: 0.0,
+                total_constraint_penalty_score: 15.0,
+                representative_routes: "I65;I81;US30".to_string(),
+                representative_subjects: "I65;I81;US30".to_string(),
+                next_artifacts: "data/beck-t2-diagnostics.csv".to_string(),
+                backlog_decision: "triage-only-no-blocker-relief".to_string(),
+                next_wave: "optimizer-claim-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+            OptimizerResidualBlockerBacklogRow {
+                backlog_id: "ORB-P1-game-claim-T2-GAMEOPSBUNDLEBINDING".to_string(),
+                priority_class: "P1-game-claim".to_string(),
+                blocker_family: "game_ops_bundle_binding".to_string(),
+                tier: "T2".to_string(),
+                blocked_claims: "game;incident;publication;upgrade".to_string(),
+                subject_count: 16,
+                route_count: 16,
+                total_hard_blockers: 0,
+                total_claim_blockers: 16,
+                total_budget_debt_count: 1,
+                total_constraint_debt_cost_m: 5.0,
+                total_constraint_penalty_score: 21.0,
+                representative_routes: "I110;I195".to_string(),
+                representative_subjects: "US.HWYBUNDLE.A".to_string(),
+                next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
+                backlog_decision: "triage-only-no-blocker-relief".to_string(),
+                next_wave: "game-ops-blocker-evidence-review".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = optimizer_claim_review_rows(&backlog_rows);
+        let failures = optimizer_claim_review_gate_failures(&rows, &backlog_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].priority_class, "P1-claim-blocker");
+        assert_eq!(rows[0].blocker_claims_before, "map;promotion;publication");
+        assert_eq!(rows[0].blocker_claims_after, "map;promotion;publication");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(
+            rows[0].review_decision,
+            "held-for-source-specific-claim-review"
+        );
     }
 
     #[test]
