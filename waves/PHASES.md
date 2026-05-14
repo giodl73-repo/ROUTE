@@ -65,12 +65,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T1 Shared Segment Policy Acceptance | Accept authored shared-segment map policy before schematic blocker relief replay. | done |
 | 2026-05-14 | T1 Schematic Geometry Blocker Relief | Replay accepted shared-segment policy into T1 schematic blocker relief rows. | done |
 | 2026-05-14 | T1 Schematic Geometry Ledger Replay | Wire accepted T1 schematic geometry relief into the optimizer constraint ledger, budget, and residual backlog. | done |
+| 2026-05-14 | T2 Beck Transfer Complexity Review | Expand residual T2 Beck transfer-complexity blockers into route-level review rows before policy or relief. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should resume residual blocker burn-down
-from the largest remaining claim-blocker families before final Beck replacement
-publication.
+No wave is active. Next optimizer work should author
+`data/t2-beck-transfer-complexity-policy.csv` before any T2 Beck blocker relief
+or final Beck replacement publication.
 
 ## Operating Rules
 

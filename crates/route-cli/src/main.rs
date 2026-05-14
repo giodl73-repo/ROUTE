@@ -3016,6 +3016,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit route-level review rows for T2 Beck transfer-complexity claim blockers
+    T2BeckTransferComplexityReview {
+        /// Optimizer claim review CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-claim-review.csv",
+            value_name = "FILE"
+        )]
+        claim_review: PathBuf,
+        /// Output T2 Beck transfer-complexity review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-beck-transfer-complexity-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if rows omit transfer-complexity routes or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit shared-segment map policy rows for T1 schematic geometry blockers
     T1SharedSegmentMapPolicy {
         /// T1 schematic-geometry claim review CSV
@@ -9830,6 +9852,39 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BeckTransferComplexityReview {
+            claim_review,
+            output,
+            gate,
+        } => {
+            println!("route t2-beck-transfer-complexity-review");
+            let claim_rows = load_optimizer_claim_review(&claim_review)
+                .with_context(|| format!("loading {}", claim_review.display()))?;
+            let diagnostic_rows = route_map::beck_t2_diagnostics();
+            let rows = t2_beck_transfer_complexity_review_rows(&claim_rows, &diagnostic_rows);
+            write_t2_beck_transfer_complexity_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_beck_transfer_complexity_review_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_beck_transfer_complexity_review_gate_failures(
+                    &rows,
+                    &claim_rows,
+                    &diagnostic_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 Beck transfer complexity review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 Beck transfer complexity review gate failed");
+                }
+                println!();
+                println!("T2 Beck transfer complexity review gate: PASS");
+            }
+        }
+
         Commands::T1SharedSegmentMapPolicy {
             schematic_review,
             output,
@@ -16409,6 +16464,32 @@ struct T1SchematicGeometryClaimReviewRow {
     blocker_count_after: usize,
     claim_blocker_delta: isize,
     review_decision: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BeckTransferComplexityReviewRow {
+    transfer_review_id: String,
+    claim_review_id: String,
+    route: String,
+    trunk: String,
+    start_trunk: String,
+    end_trunk: String,
+    service_class: String,
+    service_label: String,
+    stop_count: usize,
+    transfer_stop_count: usize,
+    unique_duplicate_stop_count: usize,
+    label_density_per_100px: f64,
+    review_flag: String,
+    complexity_basis: String,
+    review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -29864,6 +29945,213 @@ fn load_t1_schematic_geometry_claim_review(
     Ok(rows)
 }
 
+fn t2_beck_transfer_complexity_review_rows(
+    claim_rows: &[OptimizerClaimReviewRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<T2BeckTransferComplexityReviewRow> {
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "beck_transfer_complexity"
+            && row.total_claim_blockers > 0
+    }) else {
+        return Vec::new();
+    };
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(route_display_key)
+        .collect::<std::collections::BTreeSet<_>>();
+
+    let mut rows = diagnostics
+        .iter()
+        .filter(|row| {
+            row.review_flag == "transfer-complexity-review"
+                && expected_routes.contains(&route_display_key(row.corridor))
+        })
+        .map(|row| T2BeckTransferComplexityReviewRow {
+            transfer_review_id: format!("T2BECKTRANSFER-{}", stable_id_fragment(row.corridor)),
+            claim_review_id: claim_row.claim_review_id.clone(),
+            route: route_display_key(row.corridor),
+            trunk: route_display_key(row.trunk),
+            start_trunk: route_display_key(row.start_trunk),
+            end_trunk: route_display_key(row.end_trunk),
+            service_class: row.service_class.to_string(),
+            service_label: row.service_label.to_string(),
+            stop_count: row.stop_count,
+            transfer_stop_count: row.transfer_stop_count,
+            unique_duplicate_stop_count: row.unique_duplicate_stop_count,
+            label_density_per_100px: row.label_density_per_100px,
+            review_flag: row.review_flag.to_string(),
+            complexity_basis: format!(
+                "transfers={};stops={};service_class={}",
+                row.transfer_stop_count, row.stop_count, row.service_class
+            ),
+            review_decision: "transfer-complexity-policy-required".to_string(),
+            blocker_claims_before: claim_row.blocked_claims.clone(),
+            blocker_claims_after: claim_row.blocked_claims.clone(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-beck-transfer-complexity-policy.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_beck_transfer_complexity_review(
+    path: &Path,
+    rows: &[T2BeckTransferComplexityReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_beck_transfer_complexity_review_summary(
+    output: &Path,
+    rows: &[T2BeckTransferComplexityReviewRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 Beck transfer-complexity review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t2_beck_transfer_complexity_review_gate_failures(
+    rows: &[T2BeckTransferComplexityReviewRow],
+    claim_rows: &[OptimizerClaimReviewRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "beck_transfer_complexity"
+            && row.total_claim_blockers > 0
+    }) else {
+        failures.push("missing T2 Beck transfer-complexity optimizer claim-review row".to_string());
+        return failures;
+    };
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(route_display_key)
+        .collect::<std::collections::BTreeSet<_>>();
+    let eligible_routes = diagnostics
+        .iter()
+        .filter(|row| row.review_flag == "transfer-complexity-review")
+        .map(|row| route_display_key(row.corridor))
+        .filter(|route| expected_routes.contains(route))
+        .collect::<std::collections::BTreeSet<_>>();
+    if eligible_routes.len() != expected_routes.len() {
+        failures.push(format!(
+            "eligible T2 transfer-complexity routes = {}, expected {}",
+            eligible_routes.len(),
+            expected_routes.len()
+        ));
+    }
+    if rows.len() != expected_routes.len() {
+        failures.push(format!(
+            "T2 transfer-complexity review has {} rows but expected {}",
+            rows.len(),
+            expected_routes.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.transfer_review_id.trim().is_empty()
+            || row.claim_review_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.trunk.trim().is_empty()
+            || row.start_trunk.trim().is_empty()
+            || row.end_trunk.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.service_label.trim().is_empty()
+            || row.review_flag.trim().is_empty()
+            || row.complexity_basis.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete transfer-complexity review fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.route.clone()) {
+            failures.push(format!("{} appears more than once", row.route));
+        }
+        if !expected_routes.contains(&row.route) {
+            failures.push(format!(
+                "{} is not in the T2 transfer-complexity claim row",
+                row.route
+            ));
+        }
+        if row.claim_review_id != claim_row.claim_review_id
+            || row.review_flag != "transfer-complexity-review"
+            || row.review_decision != "transfer-complexity-policy-required"
+            || row.validation_status != "review"
+        {
+            failures.push(format!(
+                "{} has invalid transfer-complexity state",
+                row.route
+            ));
+        }
+        if row.blocker_claims_before != claim_row.blocked_claims
+            || row.blocker_claims_after != claim_row.blocked_claims
+            || row.blocker_count_before != 1
+            || row.blocker_count_after != 1
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!(
+                "{} reduced transfer-complexity claim blockers",
+                row.route
+            ));
+        }
+    }
+    for expected_route in expected_routes {
+        if !seen.contains(&expected_route) {
+            failures.push(format!(
+                "{expected_route} missing from T2 transfer-complexity review"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != claim_row.total_claim_blockers {
+        failures.push(format!(
+            "T2 transfer-complexity review preserves {total_after} blockers but claim row has {}",
+            claim_row.total_claim_blockers
+        ));
+    }
+    failures
+}
+
 #[derive(Default)]
 struct T1SharedSegmentPolicyBuilder {
     routes: std::collections::BTreeSet<String>,
@@ -38501,6 +38789,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "t2-beck-transfer-complexity-review",
+                "route t2-beck-transfer-complexity-review --gate",
+                "data/t2-beck-transfer-complexity-review.csv",
+                "held-known",
+                6,
+                "T2 Beck transfer-complexity blockers remain held pending transfer policy",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -44684,6 +44980,7 @@ mod tests {
         t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_beck_transfer_complexity_review_gate_failures, t2_beck_transfer_complexity_review_rows,
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows,
         t2_bundle_overlay_gate_failures, t2_bundle_overlay_repair_delta_gate_failures,
@@ -52190,6 +52487,103 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.review_decision == "shared-segment-map-policy-required"));
+    }
+
+    #[test]
+    fn t2_beck_transfer_complexity_review_preserves_blockers() {
+        let claim_rows = vec![OptimizerClaimReviewRow {
+            claim_review_id: "OCR-T2TRANSFER".to_string(),
+            backlog_id: "ORB-P1-claim-blocker-T2-BECKTRANSFERCOMPLEXITY".to_string(),
+            priority_class: "P1-claim-blocker".to_string(),
+            blocker_family: "beck_transfer_complexity".to_string(),
+            tier: "T2".to_string(),
+            blocked_claims: "map;promotion;publication".to_string(),
+            subject_count: 2,
+            route_count: 2,
+            total_claim_blockers: 2,
+            representative_routes: "I65;US30".to_string(),
+            representative_subjects: "I65;US30".to_string(),
+            evidence_artifacts: "data/beck-t2-diagnostics.csv".to_string(),
+            review_decision: "held-for-source-specific-claim-review".to_string(),
+            blocker_claims_before: "map;promotion;publication".to_string(),
+            blocker_claims_after: "map;promotion;publication".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let diagnostics = vec![
+            route_map::BeckT2DiagnosticRow {
+                corridor: "I-65",
+                trunk: "I-10",
+                start_trunk: "I-10",
+                end_trunk: "I-75",
+                color_mode: "split-parent",
+                service_class: "transfer-spine",
+                split_anchor: "NASHVILLE",
+                split_anchor_offset_pct: 15.0,
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                unique_duplicate_stop_count: 5,
+                service_action: "keep",
+                qualification_basis: "distinct-parent-service",
+                service_label: "Birmingham",
+                stop_count: 5,
+                drawn_stop_count: 5,
+                transfer_stop_count: 5,
+                schematic_length_px: 624.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                max_x: 1.0,
+                max_y: 1.0,
+                label_density_per_100px: 0.80,
+                review_flag: "transfer-complexity-review",
+            },
+            route_map::BeckT2DiagnosticRow {
+                corridor: "US30",
+                trunk: "I-70",
+                start_trunk: "I-70",
+                end_trunk: "I-80",
+                color_mode: "split-parent",
+                service_class: "transfer-spine",
+                split_anchor: "DSM",
+                split_anchor_offset_pct: 6.0,
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                unique_duplicate_stop_count: 9,
+                service_action: "keep",
+                qualification_basis: "distinct-parent-service",
+                service_label: "Lincoln Highway",
+                stop_count: 9,
+                drawn_stop_count: 9,
+                transfer_stop_count: 5,
+                schematic_length_px: 1764.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                max_x: 1.0,
+                max_y: 1.0,
+                label_density_per_100px: 0.51,
+                review_flag: "transfer-complexity-review",
+            },
+        ];
+
+        let rows = t2_beck_transfer_complexity_review_rows(&claim_rows, &diagnostics);
+        let failures =
+            t2_beck_transfer_complexity_review_gate_failures(&rows, &claim_rows, &diagnostics);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .all(|row| row.review_decision == "transfer-complexity-policy-required"));
     }
 
     #[test]
