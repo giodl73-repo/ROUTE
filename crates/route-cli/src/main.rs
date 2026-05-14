@@ -3012,6 +3012,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit scenario-level review rows for T2 game/ops publication blockers
+    T2GamePublicationEvidenceReview {
+        /// Optimizer claim review CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-claim-review.csv",
+            value_name = "FILE"
+        )]
+        claim_review: PathBuf,
+        /// T2 scenario hooks CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-scenario-hooks.csv",
+            value_name = "FILE"
+        )]
+        scenario_hooks: PathBuf,
+        /// Output T2 game publication evidence review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-game-publication-evidence-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if review rows omit scenario hooks or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit route-level review rows for T1 schematic-geometry claim blockers
     T1SchematicGeometryClaimReview {
         /// Optimizer claim review CSV
@@ -10216,6 +10245,41 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2GamePublicationEvidenceReview {
+            claim_review,
+            scenario_hooks,
+            output,
+            gate,
+        } => {
+            println!("route t2-game-publication-evidence-review");
+            let claim_rows = load_optimizer_claim_review(&claim_review)
+                .with_context(|| format!("loading {}", claim_review.display()))?;
+            let hook_rows = load_t2_scenario_hooks(&scenario_hooks)
+                .with_context(|| format!("loading {}", scenario_hooks.display()))?;
+            let rows = t2_game_publication_evidence_review_rows(&claim_rows, &hook_rows);
+            write_t2_game_publication_evidence_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_game_publication_evidence_review_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_game_publication_evidence_review_gate_failures(
+                    &rows,
+                    &claim_rows,
+                    &hook_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 game publication evidence review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 game publication evidence review gate failed");
+                }
+                println!();
+                println!("T2 game publication evidence review gate: PASS");
+            }
+        }
+
         Commands::T1SchematicGeometryClaimReview {
             claim_review,
             design_review,
@@ -17292,6 +17356,26 @@ struct OptimizerClaimReviewRow {
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2GamePublicationEvidenceReviewRow {
+    game_review_id: String,
+    claim_review_id: String,
+    scenario_id: String,
+    service_class: String,
+    t2_map_id: String,
+    player_decision: String,
+    evidence_hold: String,
+    review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    required_evidence: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -31209,6 +31293,195 @@ fn load_optimizer_claim_review(path: &Path) -> Result<Vec<OptimizerClaimReviewRo
     Ok(rows)
 }
 
+fn t2_game_publication_evidence_review_rows(
+    claim_rows: &[OptimizerClaimReviewRow],
+    hook_rows: &[T2ScenarioHookRow],
+) -> Vec<T2GamePublicationEvidenceReviewRow> {
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "game_ops_publication_readiness"
+            && row.total_claim_blockers > 0
+    }) else {
+        return Vec::new();
+    };
+    let expected_scenarios = claim_row
+        .representative_subjects
+        .split(';')
+        .filter(|scenario| !scenario.trim().is_empty())
+        .map(str::to_string)
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut rows = hook_rows
+        .iter()
+        .filter(|row| expected_scenarios.contains(row.scenario_id.as_str()))
+        .map(|row| T2GamePublicationEvidenceReviewRow {
+            game_review_id: format!("T2GAMEPUB-{}", stable_id_fragment(&row.scenario_id)),
+            claim_review_id: claim_row.claim_review_id.clone(),
+            scenario_id: row.scenario_id.clone(),
+            service_class: row.service_class.clone(),
+            t2_map_id: row.t2_map_id.clone(),
+            player_decision: row.player_decision.clone(),
+            evidence_hold: row.evidence_hold.clone(),
+            review_decision: "publication-evidence-policy-required".to_string(),
+            blocker_claims_before: claim_row.blocked_claims.clone(),
+            blocker_claims_after: claim_row.blocked_claims.clone(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            required_evidence: t2_game_publication_required_evidence(&row.evidence_hold)
+                .to_string(),
+            next_artifact: "data/t2-game-publication-evidence-policy.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.scenario_id.cmp(&right.scenario_id));
+    rows
+}
+
+fn t2_game_publication_required_evidence(evidence_hold: &str) -> &'static str {
+    let hold = evidence_hold.to_ascii_lowercase();
+    if hold.contains("port") || hold.contains("flood") {
+        "port-surge-demand-and-flood-closure-evidence"
+    } else if hold.contains("managed-lane") || hold.contains("spillback") {
+        "managed-lane-merge-and-spillback-validation"
+    } else {
+        "standards-proof-and-scenario-promotion-record"
+    }
+}
+
+fn write_t2_game_publication_evidence_review(
+    path: &Path,
+    rows: &[T2GamePublicationEvidenceReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_game_publication_evidence_review_summary(
+    output: &Path,
+    rows: &[T2GamePublicationEvidenceReviewRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 game publication evidence review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t2_game_publication_evidence_review_gate_failures(
+    rows: &[T2GamePublicationEvidenceReviewRow],
+    claim_rows: &[OptimizerClaimReviewRow],
+    hook_rows: &[T2ScenarioHookRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "game_ops_publication_readiness"
+            && row.total_claim_blockers > 0
+    }) else {
+        failures.push("missing T2 game publication optimizer claim-review row".to_string());
+        return failures;
+    };
+    let expected_scenarios = claim_row
+        .representative_subjects
+        .split(';')
+        .filter(|scenario| !scenario.trim().is_empty())
+        .map(str::to_string)
+        .collect::<std::collections::BTreeSet<_>>();
+    let eligible_scenarios = hook_rows
+        .iter()
+        .map(|row| row.scenario_id.clone())
+        .filter(|scenario| expected_scenarios.contains(scenario))
+        .collect::<std::collections::BTreeSet<_>>();
+    if eligible_scenarios.len() != expected_scenarios.len() {
+        failures.push(format!(
+            "eligible T2 game publication scenarios = {}, expected {}",
+            eligible_scenarios.len(),
+            expected_scenarios.len()
+        ));
+    }
+    if rows.len() != expected_scenarios.len() {
+        failures.push(format!(
+            "T2 game publication review has {} rows but expected {}",
+            rows.len(),
+            expected_scenarios.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.game_review_id.trim().is_empty()
+            || row.claim_review_id.trim().is_empty()
+            || row.scenario_id.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.t2_map_id.trim().is_empty()
+            || row.player_decision.trim().is_empty()
+            || row.evidence_hold.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete review fields", row.scenario_id));
+        }
+        if !seen.insert(row.scenario_id.clone()) {
+            failures.push(format!("{} appears more than once", row.scenario_id));
+        }
+        if !expected_scenarios.contains(&row.scenario_id) {
+            failures.push(format!(
+                "{} is not in the T2 game publication claim row",
+                row.scenario_id
+            ));
+        }
+        if row.claim_review_id != claim_row.claim_review_id
+            || row.review_decision != "publication-evidence-policy-required"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid review state", row.scenario_id));
+        }
+        if row.blocker_claims_before != claim_row.blocked_claims
+            || row.blocker_claims_after != claim_row.blocked_claims
+            || row.blocker_count_before != 1
+            || row.blocker_count_after != 1
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!(
+                "{} reduced game publication claim blockers",
+                row.scenario_id
+            ));
+        }
+        if row.next_artifact != "data/t2-game-publication-evidence-policy.csv" {
+            failures.push(format!("{} points at wrong next artifact", row.scenario_id));
+        }
+    }
+    for expected_scenario in expected_scenarios {
+        if !seen.contains(&expected_scenario) {
+            failures.push(format!(
+                "{expected_scenario} missing from T2 game publication review"
+            ));
+        }
+    }
+    failures
+}
+
 fn t1_schematic_geometry_claim_review_rows(
     claim_rows: &[OptimizerClaimReviewRow],
     design_rows: &[T1DesignReviewCsvRow],
@@ -43066,6 +43339,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "P1 optimizer claim blockers remain held for source-specific review",
             ),
             (
+                "t2-game-publication-evidence-review",
+                "route t2-game-publication-evidence-review --gate",
+                "data/t2-game-publication-evidence-review.csv",
+                "held-known",
+                3,
+                "T2 game publication readiness blockers remain held pending evidence policy",
+            ),
+            (
                 "t1-schematic-geometry-claim-review",
                 "route t1-schematic-geometry-claim-review --gate",
                 "data/t1-schematic-geometry-claim-review.csv",
@@ -49442,12 +49723,14 @@ mod tests {
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
         t2_game_ops_binding_decision_gate_failures, t2_game_ops_binding_decision_rows,
         t2_game_ops_binding_intake_gate_failures, t2_game_ops_binding_intake_rows,
-        t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
-        t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
-        t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
-        t2_local_zone_overlay_handoff_gate_failures, t2_local_zone_overlay_handoff_rows,
-        t2_national_bundle_readiness_audit_gate_failures, t2_national_bundle_readiness_audit_rows,
-        t2_overlay_optimizer_action_docket_gate_failures, t2_overlay_optimizer_action_docket_rows,
+        t2_game_publication_evidence_review_gate_failures,
+        t2_game_publication_evidence_review_rows, t2_graph_contact_repair_gate_failures,
+        t2_graph_contact_repair_rows, t2_graph_contact_validation_gate_failures,
+        t2_graph_contact_validation_rows, t2_held_contact_action_gate_failures,
+        t2_held_contact_action_rows, t2_local_zone_overlay_handoff_gate_failures,
+        t2_local_zone_overlay_handoff_rows, t2_national_bundle_readiness_audit_gate_failures,
+        t2_national_bundle_readiness_audit_rows, t2_overlay_optimizer_action_docket_gate_failures,
+        t2_overlay_optimizer_action_docket_rows,
         t2_overlay_p1_structural_readiness_review_gate_failures,
         t2_overlay_p1_structural_readiness_review_rows,
         t2_overlay_p2_service_overlay_review_gate_failures,
@@ -57177,6 +57460,61 @@ mod tests {
             rows[0].review_decision,
             "held-for-source-specific-claim-review"
         );
+    }
+
+    #[test]
+    fn t2_game_publication_evidence_review_preserves_scenario_blockers() {
+        let claim_rows = vec![OptimizerClaimReviewRow {
+            claim_review_id: "OCR-GAMEPUB".to_string(),
+            backlog_id: "ORB-P1-claim-blocker-T2-GAMEOPSPUBLICATIONREADINESS".to_string(),
+            priority_class: "P1-claim-blocker".to_string(),
+            blocker_family: "game_ops_publication_readiness".to_string(),
+            tier: "T2".to_string(),
+            blocked_claims: "game;publication;upgrade".to_string(),
+            subject_count: 2,
+            route_count: 0,
+            total_claim_blockers: 2,
+            representative_routes: String::new(),
+            representative_subjects: "atlanta-managed-lane-stress;houston-port-surge".to_string(),
+            evidence_artifacts: "data/game/t2-scenario-hooks.csv".to_string(),
+            review_decision: "held-for-source-specific-claim-review".to_string(),
+            blocker_claims_before: "game;publication;upgrade".to_string(),
+            blocker_claims_after: "game;publication;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/game/t2-scenario-hooks.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let hook_rows = vec![
+            T2ScenarioHookRow {
+                scenario_id: "atlanta-managed-lane-stress".to_string(),
+                service_class: "transfer-spine".to_string(),
+                t2_map_id: "beck-schematic-t2-only".to_string(),
+                player_decision: "choose whether to harden a throughput-sensitive T2 merge spine"
+                    .to_string(),
+                evidence_hold: "managed-lane merge and spillback validation missing".to_string(),
+            },
+            T2ScenarioHookRow {
+                scenario_id: "houston-port-surge".to_string(),
+                service_class: "long-connector".to_string(),
+                t2_map_id: "beck-schematic-t2-only".to_string(),
+                player_decision: "choose whether to restitch a long connector".to_string(),
+                evidence_hold: "port surge demand and flood closure evidence missing".to_string(),
+            },
+        ];
+
+        let rows = t2_game_publication_evidence_review_rows(&claim_rows, &hook_rows);
+        let failures =
+            t2_game_publication_evidence_review_gate_failures(&rows, &claim_rows, &hook_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .all(|row| row.review_decision == "publication-evidence-policy-required"));
+        assert!(rows
+            .iter()
+            .all(|row| row.next_artifact == "data/t2-game-publication-evidence-policy.csv"));
     }
 
     #[test]
