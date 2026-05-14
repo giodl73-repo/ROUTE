@@ -3459,6 +3459,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit P2 service-overlay review rows for T2 overlay optimizer actions
+    T2OverlayP2ServiceOverlayReview {
+        /// T2 overlay optimizer action docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-overlay-optimizer-action-docket.csv",
+            value_name = "FILE"
+        )]
+        action_docket: PathBuf,
+        /// Output T2 overlay P2 service-overlay review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-overlay-p2-service-overlay-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if P2 review rows reduce blockers or promote claims
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -9932,6 +9954,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2OverlayP2ServiceOverlayReview {
+            action_docket,
+            output,
+            gate,
+        } => {
+            println!("route t2-overlay-p2-service-overlay-review");
+            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
+                .with_context(|| format!("loading {}", action_docket.display()))?;
+            let rows = t2_overlay_p2_service_overlay_review_rows(&action_rows);
+            write_t2_overlay_p2_service_overlay_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_overlay_p2_service_overlay_review_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_overlay_p2_service_overlay_review_gate_failures(&rows, &action_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 overlay P2 service overlay review gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 overlay P2 service overlay review gate failed");
+                }
+                println!("T2 overlay P2 service overlay review gate: PASS");
+            }
+        }
+
         Commands::OptimizerMapHooks { output, gate } => {
             println!("route optimizer-map-hooks");
             let rows = optimizer_map_hook_rows();
@@ -15975,6 +16025,25 @@ struct T2OverlayP1StructuralReadinessReviewRow {
     priority_class: String,
     readiness_decision: String,
     readiness_reason: String,
+    downstream_action: String,
+    action_status: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2OverlayP2ServiceOverlayReviewRow {
+    p2_review_id: String,
+    action_id: String,
+    route: String,
+    segment_bundle_id: String,
+    optimizer_action: String,
+    priority_class: String,
+    service_overlay_decision: String,
+    service_overlay_reason: String,
     downstream_action: String,
     action_status: String,
     blocked_claims_before: String,
@@ -27236,6 +27305,146 @@ fn t2_overlay_p1_structural_readiness_review_gate_failures(
     failures
 }
 
+fn t2_overlay_p2_service_overlay_review_rows(
+    action_rows: &[T2OverlayOptimizerActionDocketRow],
+) -> Vec<T2OverlayP2ServiceOverlayReviewRow> {
+    let mut rows = action_rows
+        .iter()
+        .filter(|row| row.priority_class == "P2-service-overlay")
+        .map(|action| T2OverlayP2ServiceOverlayReviewRow {
+            p2_review_id: format!("T2OVERLAYP2-{}", stable_id_fragment(&action.action_id)),
+            action_id: action.action_id.clone(),
+            route: action.route.clone(),
+            segment_bundle_id: action.segment_bundle_id.clone(),
+            optimizer_action: action.optimizer_action.clone(),
+            priority_class: action.priority_class.clone(),
+            service_overlay_decision: "held-service-overlay-diagnostic-needed".to_string(),
+            service_overlay_reason:
+                "service overlay remains diagnostic-only; no sourced evidence supports blocker reduction"
+                    .to_string(),
+            downstream_action: "route-to-service-overlay-diagnostic-review".to_string(),
+            action_status: "optimizer-held-known".to_string(),
+            blocked_claims_before: action.blocked_claims_after.clone(),
+            blocked_claims_after: action.blocked_claims_after.clone(),
+            blocker_delta: 0,
+            next_artifact: action.next_artifact.clone(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_overlay_p2_service_overlay_review(
+    path: &Path,
+    rows: &[T2OverlayP2ServiceOverlayReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_overlay_p2_service_overlay_review_summary(
+    output: &Path,
+    rows: &[T2OverlayP2ServiceOverlayReviewRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts
+            .entry(row.service_overlay_decision.as_str())
+            .or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 overlay P2 service-overlay review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_overlay_p2_service_overlay_review_gate_failures(
+    rows: &[T2OverlayP2ServiceOverlayReviewRow],
+    action_rows: &[T2OverlayOptimizerActionDocketRow],
+) -> Vec<String> {
+    let expected = action_rows
+        .iter()
+        .filter(|row| row.priority_class == "P2-service-overlay")
+        .map(|row| row.action_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("P2 service-overlay review has no P2 optimizer actions".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "P2 service-overlay review has {} rows but expected {} P2 action rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.p2_review_id.trim().is_empty()
+            || row.action_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.optimizer_action.trim().is_empty()
+            || row.priority_class.trim().is_empty()
+            || row.service_overlay_decision.trim().is_empty()
+            || row.service_overlay_reason.trim().is_empty()
+            || row.downstream_action.trim().is_empty()
+            || row.action_status.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete P2 service fields", row.route));
+        }
+        if !seen.insert(row.action_id.clone()) {
+            failures.push(format!("{} appears more than once", row.action_id));
+        }
+        if !expected.contains(row.action_id.as_str()) {
+            failures.push(format!(
+                "{} is not a P2 optimizer action row",
+                row.action_id
+            ));
+        }
+        if row.priority_class != "P2-service-overlay"
+            || row.service_overlay_decision != "held-service-overlay-diagnostic-needed"
+            || row.downstream_action != "route-to-service-overlay-diagnostic-review"
+            || row.action_status != "optimizer-held-known"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} P2 service review promoted action", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from P2 service review"));
+        }
+    }
+    failures
+}
+
 #[derive(Debug, Clone, Default)]
 struct OptimizerConstraintBudgetIndex {
     by_bundle: std::collections::HashMap<String, OptimizerConstraintBudgetRow>,
@@ -34545,6 +34754,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "P1 structural-readiness overlay actions are reviewed before lower-priority optimizer work",
             ),
             (
+                "t2-overlay-p2-service-overlay-review",
+                "route t2-overlay-p2-service-overlay-review --gate",
+                "data/t2-overlay-p2-service-overlay-review.csv",
+                "held-known",
+                6,
+                "P2 service-overlay actions are held for diagnostic review before optimizer promotion",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -40440,7 +40657,9 @@ mod tests {
         t2_national_bundle_readiness_audit_gate_failures, t2_national_bundle_readiness_audit_rows,
         t2_overlay_optimizer_action_docket_gate_failures, t2_overlay_optimizer_action_docket_rows,
         t2_overlay_p1_structural_readiness_review_gate_failures,
-        t2_overlay_p1_structural_readiness_review_rows, t2_parallel_service_queue_gate_failures,
+        t2_overlay_p1_structural_readiness_review_rows,
+        t2_overlay_p2_service_overlay_review_gate_failures,
+        t2_overlay_p2_service_overlay_review_rows, t2_parallel_service_queue_gate_failures,
         t2_parallel_service_queue_rows, t2_parent_contact_validation_gate_failures,
         t2_parent_contact_validation_rows, t2_regionalizer_gate_failures, t2_regionalizer_rows,
         t2_relief_evidence_gate_failures, t2_relief_evidence_rows,
@@ -46631,6 +46850,45 @@ mod tests {
         assert_eq!(rows[0].priority_class, "P1-structural-readiness");
         assert_eq!(rows[0].action_status, "optimizer-held-known");
         assert_eq!(rows[0].readiness_decision, "held-stitched-proof-returned");
+        assert_eq!(rows[0].blocker_delta, 0);
+        assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
+    }
+
+    #[test]
+    fn t2_overlay_p2_service_overlay_review_keeps_actions_held() {
+        let action_rows = vec![T2OverlayOptimizerActionDocketRow {
+            action_id: "T2OVERLAYACTION-I195".to_string(),
+            delta_id: "T2OVERLAYDELTA-I195".to_string(),
+            route: "I195".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I195".to_string(),
+            replay_decision: "held".to_string(),
+            service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
+            readiness_disposition: "repair-needed".to_string(),
+            optimizer_action: "service-overlay-diagnostic-review".to_string(),
+            priority_class: "P2-service-overlay".to_string(),
+            action_status: "optimizer-held-known".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/t2-overlay-optimizer-action-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_overlay_p2_service_overlay_review_rows(&action_rows);
+        let failures = t2_overlay_p2_service_overlay_review_gate_failures(&rows, &action_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].priority_class, "P2-service-overlay");
+        assert_eq!(rows[0].action_status, "optimizer-held-known");
+        assert_eq!(
+            rows[0].service_overlay_decision,
+            "held-service-overlay-diagnostic-needed"
+        );
+        assert_eq!(
+            rows[0].downstream_action,
+            "route-to-service-overlay-diagnostic-review"
+        );
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
