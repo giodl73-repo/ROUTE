@@ -54,12 +54,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T4 Terminal Access Evidence Review | Decide the largest residual terminal-access evidence blocker family before lower-priority optimizer work. | done |
 | 2026-05-14 | T4 Terminal Access Proof Acquisition | Turn held terminal-access evidence review rows into proof acquisition tasks. | done |
 | 2026-05-14 | T4 Terminal Access Proof Artifacts | Turn source-needed terminal-access acquisition tasks into proof artifact attachment placeholders. | done |
+| 2026-05-14 | T4 Terminal Access Proof Review | Review unattached terminal-access proof artifact placeholders and return unresolved rows to optimizer hold. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review or acquire non-seed source
-artifacts for the 69 terminal-access proof artifact placeholders before any
-blocker relief.
+No wave is active. Next optimizer work should acquire or attach non-seed source
+artifacts for terminal-access proof rows before any blocker relief.
 
 ## Operating Rules
 
