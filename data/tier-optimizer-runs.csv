@@ -39,29 +39,30 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 38,t2-service-overlay-diagnostic-decisions,route t2-service-overlay-diagnostic-decisions --gate,data/t2-service-overlay-diagnostic-decisions.csv,7,held-known,7,Service-overlay T2 rows remain held behind explicit Beck diagnostic decisions,held
 39,t2-local-zone-overlay-handoff,route t2-local-zone-overlay-handoff --gate,data/t2-local-zone-overlay-handoff.csv,7,held-known,7,Local-zone T2 rows remain held below national game overlay through T3 zone handoff,held
 40,t2-bundle-readiness-disposition,route t2-bundle-readiness-disposition --gate,data/t2-bundle-readiness-disposition.csv,10,held-known,10,"T2 overlay rows needing stop-chain, stitched-member, or terminal-stop repair remain blocked",held
-41,t2-bundle-overlay-repair-delta,route t2-bundle-overlay-repair-delta --gate,data/t2-bundle-overlay-repair-delta.csv,15,held-known,15,T2 overlay repair replay preserves residual held and repair-needed blockers,held
-42,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,87,pass,0,,pass
-43,t3-t4-pressure-intake,route t3-t4-pressure-intake --gate,data/t3-t4-pressure-intake.csv,108,pass,0,,pass
-44,t3-zone-access-obligations,route t3-zone-access-obligations --gate,data/t3-zone-access-obligations.csv,10,pass,0,,pass
-45,t3-zone-route-columns,route t3-zone-route-columns --gate,data/t3-zone-route-columns.csv,43,pass,0,,pass
-46,t4-terminal-access-columns,route t4-terminal-access-columns --gate,data/t4-terminal-access-columns.csv,69,pass,0,,pass
-47,t4-terminal-contact-evidence,route t4-terminal-contact-evidence --gate,data/t4-terminal-contact-evidence.csv,69,pass,0,,pass
-48,t4-terminal-contact-source-plan,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-plan.csv,33,held-known,33,Great Lakes terminal contact source plan rows remain source-needed,held
-49,t4-terminal-contact-source-catalog,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-catalog.csv,8,held-known,8,Great Lakes terminal district source families remain source-needed,held
-50,t4-terminal-contact-proof-docket,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-proof-docket.csv,33,held-known,33,Great Lakes route contact proof tasks remain source-needed,held
-51,t4-terminal-contact-proof-artifact-contract,route t4-terminal-contact-proof-artifact-contract --gate,data/t4-terminal-contact-proof-artifact-contract.csv,1,pass,0,,pass
-52,t4-terminal-contact-proof-source-registry,route t4-terminal-contact-proof-source-registry --gate,data/t4-terminal-contact-proof-source-registry.csv,33,held-known,33,Great Lakes terminal contact proof source registry rows remain source-needed until manual or cached proof artifacts are attached,held
-53,t4-terminal-contact-district-proof-import,route t4-terminal-contact-district-proof-import --gate,data/t4-terminal-contact-district-proof-import.csv,8,held-known,8,Largest unresolved terminal district import remains source-needed without manual or cached proof artifacts,held
-54,t4-terminal-columbus-proof-intake,route t4-terminal-columbus-proof-intake --gate,data/t4-terminal-columbus-proof-intake.csv,8,held-known,8,Columbus South proof intake rows remain source-needed,held
-55,t4-terminal-columbus-source-access,route t4-terminal-columbus-source-access --gate,data/t4-terminal-columbus-source-access.csv,8,held-known,8,Columbus South source access requires manual or cached proof artifacts,held
-56,t4-terminal-columbus-proof-attempts,route t4-terminal-columbus-proof-attempts --gate,data/t4-terminal-columbus-proof-attempts.csv,8,held-known,8,Columbus South route proof attempts are blocked without non-seed proof artifacts,held
-57,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
-58,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
-59,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
-60,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
-61,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
-62,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
-63,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
-64,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
-65,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
-66,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass
+41,t2-bundle-readiness-repair-docket,route t2-bundle-readiness-repair-docket --gate,data/t2-bundle-readiness-repair-docket.csv,4,held-known,4,Repair-needed T2 bundle-readiness rows are explicit structural repair tasks,held
+42,t2-bundle-overlay-repair-delta,route t2-bundle-overlay-repair-delta --gate,data/t2-bundle-overlay-repair-delta.csv,15,held-known,15,T2 overlay repair replay preserves residual held and repair-needed blockers,held
+43,lower-tier-pressure-witnesses,route lower-tier-pressure-witnesses --gate,data/lower-tier-pressure-witnesses.csv,87,pass,0,,pass
+44,t3-t4-pressure-intake,route t3-t4-pressure-intake --gate,data/t3-t4-pressure-intake.csv,108,pass,0,,pass
+45,t3-zone-access-obligations,route t3-zone-access-obligations --gate,data/t3-zone-access-obligations.csv,10,pass,0,,pass
+46,t3-zone-route-columns,route t3-zone-route-columns --gate,data/t3-zone-route-columns.csv,43,pass,0,,pass
+47,t4-terminal-access-columns,route t4-terminal-access-columns --gate,data/t4-terminal-access-columns.csv,69,pass,0,,pass
+48,t4-terminal-contact-evidence,route t4-terminal-contact-evidence --gate,data/t4-terminal-contact-evidence.csv,69,pass,0,,pass
+49,t4-terminal-contact-source-plan,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-plan.csv,33,held-known,33,Great Lakes terminal contact source plan rows remain source-needed,held
+50,t4-terminal-contact-source-catalog,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-source-catalog.csv,8,held-known,8,Great Lakes terminal district source families remain source-needed,held
+51,t4-terminal-contact-proof-docket,route t4-terminal-contact-source-plan --gate,data/t4-terminal-contact-proof-docket.csv,33,held-known,33,Great Lakes route contact proof tasks remain source-needed,held
+52,t4-terminal-contact-proof-artifact-contract,route t4-terminal-contact-proof-artifact-contract --gate,data/t4-terminal-contact-proof-artifact-contract.csv,1,pass,0,,pass
+53,t4-terminal-contact-proof-source-registry,route t4-terminal-contact-proof-source-registry --gate,data/t4-terminal-contact-proof-source-registry.csv,33,held-known,33,Great Lakes terminal contact proof source registry rows remain source-needed until manual or cached proof artifacts are attached,held
+54,t4-terminal-contact-district-proof-import,route t4-terminal-contact-district-proof-import --gate,data/t4-terminal-contact-district-proof-import.csv,8,held-known,8,Largest unresolved terminal district import remains source-needed without manual or cached proof artifacts,held
+55,t4-terminal-columbus-proof-intake,route t4-terminal-columbus-proof-intake --gate,data/t4-terminal-columbus-proof-intake.csv,8,held-known,8,Columbus South proof intake rows remain source-needed,held
+56,t4-terminal-columbus-source-access,route t4-terminal-columbus-source-access --gate,data/t4-terminal-columbus-source-access.csv,8,held-known,8,Columbus South source access requires manual or cached proof artifacts,held
+57,t4-terminal-columbus-proof-attempts,route t4-terminal-columbus-proof-attempts --gate,data/t4-terminal-columbus-proof-attempts.csv,8,held-known,8,Columbus South route proof attempts are blocked without non-seed proof artifacts,held
+58,t4-terminal-scenario-readiness,route t4-terminal-scenario-readiness --gate,data/t4-terminal-scenario-readiness.csv,1,held-known,69,terminal contact rows remain source-needed; scenario docket is held empty,held
+59,t3-t4-access-gaps,route t3-t4-access-gaps --gate,data/t3-t4-access-gaps.csv,75,pass,0,,pass
+60,t3-zone-map-diagnostics,route t3-zone-map-diagnostics --gate,data/t3-zone-map-diagnostics.csv,5,pass,0,,pass
+61,t3-zone-render-board,route t3-zone-render-board --gate,data/t3-zone-render-board.csv,123,pass,0,,pass
+62,t3-zone-stop-placement,route t3-zone-stop-placement --gate,data/t3-zone-stop-placement.csv,20,pass,0,,pass
+63,national-segment-registry,route national-segment-registry --gate,data/national-segment-registry.csv,3992,pass,0,,pass
+64,national-segment-bundles,route national-segment-bundles --gate,data/national-segment-bundles.csv,134,pass,0,,pass
+65,bundle-architecture,route bundle-architecture --gate,data/bundle-architecture.csv,7,pass,0,,pass
+66,t2-bubble-up-review,route t2-bubble-up-review --gate,data/t2-bubble-up-review.csv,18,pass,0,,pass
+67,t1-feedback-docket,route t1-feedback-docket --gate,data/t1-feedback-docket.csv,61,pass,0,,pass
