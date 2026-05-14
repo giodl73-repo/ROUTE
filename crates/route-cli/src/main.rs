@@ -2868,6 +2868,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_beck_transfer_complexity_blocker_relief: PathBuf,
+        /// T3 lower-tier feeder-gap blocker relief CSV
+        #[arg(
+            long,
+            default_value = "data/t3-lower-tier-feeder-gap-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        t3_lower_tier_feeder_gap_blocker_relief: PathBuf,
         /// T2 parallel service queue CSV
         #[arg(
             long,
@@ -9831,6 +9838,7 @@ fn run_cli() -> Result<()> {
             t1_topology_repairs,
             t1_schematic_geometry_blocker_relief,
             t2_beck_transfer_complexity_blocker_relief,
+            t3_lower_tier_feeder_gap_blocker_relief,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
             source_fetch_policy,
@@ -9859,6 +9867,15 @@ fn run_cli() -> Result<()> {
                     t2_beck_transfer_complexity_blocker_relief.display()
                 )
             })?;
+            let t3_feeder_relief_rows = load_t3_lower_tier_feeder_gap_blocker_relief(
+                &t3_lower_tier_feeder_gap_blocker_relief,
+            )
+            .with_context(|| {
+                format!(
+                    "loading {}",
+                    t3_lower_tier_feeder_gap_blocker_relief.display()
+                )
+            })?;
             let parallel_rows = load_t2_parallel_service_queue(&t2_parallel_service_queue)
                 .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
             let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
@@ -9877,6 +9894,7 @@ fn run_cli() -> Result<()> {
                 &topology_rows,
                 &schematic_relief_rows,
                 &t2_transfer_relief_rows,
+                &t3_feeder_relief_rows,
                 &parallel_rows,
                 &access_gap_rows,
                 &route_map::beck_t1_diagnostics(),
@@ -23455,6 +23473,33 @@ fn t2_transfer_relief_route_set(
         .collect()
 }
 
+fn load_t3_lower_tier_feeder_gap_blocker_relief(
+    path: &Path,
+) -> Result<Vec<T3LowerTierFeederGapBlockerReliefRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_feeder_relief_route_set(
+    rows: &[T3LowerTierFeederGapBlockerReliefRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+                && row.blocker_count_after == 0
+                && row.claim_blocker_delta < 0
+        })
+        .map(|row| route_display_key(&row.route))
+        .collect()
+}
+
 fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQueueRow>> {
     if !path.exists() {
         return Ok(Vec::new());
@@ -23472,6 +23517,7 @@ fn optimizer_constraint_ledger_rows(
     topology_rows: &[T1TopologyRepairRow],
     schematic_relief_rows: &[T1SchematicGeometryBlockerReliefRow],
     t2_transfer_relief_rows: &[T2BeckTransferComplexityBlockerReliefRow],
+    t3_feeder_relief_rows: &[T3LowerTierFeederGapBlockerReliefRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
@@ -23483,6 +23529,7 @@ fn optimizer_constraint_ledger_rows(
     let mut rows = Vec::new();
     let relieved_t1_schematic_routes = t1_schematic_relief_route_set(schematic_relief_rows);
     let relieved_t2_transfer_routes = t2_transfer_relief_route_set(t2_transfer_relief_rows);
+    let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
 
     for row in source_policy_rows {
         let snapshot_hold = row.mutation_mode == "live-snapshot-preserve";
@@ -23773,7 +23820,11 @@ fn optimizer_constraint_ledger_rows(
         });
     }
 
-    for row in access_gap_rows {
+    for row in access_gap_rows.iter().filter(|row| {
+        !(row.gap_class == "below-threshold-feeder"
+            && row.promise_horizon_hours == 6
+            && relieved_t3_feeder_routes.contains(&route_display_key(&row.route)))
+    }) {
         let tier = if row.source_surface == "t4-terminal-access-columns"
             || row.promise_horizon_hours == 1
         {
@@ -23839,6 +23890,58 @@ fn optimizer_constraint_ledger_rows(
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.gap_reason.clone(),
             validation_status: row.validation_status.clone(),
+        });
+    }
+
+    for row in t3_feeder_relief_rows.iter().filter(|row| {
+        row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+            && row.blocker_count_after == 0
+            && row.claim_blocker_delta < 0
+    }) {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-T3FEEDERRELIEF-{}", stable_id_fragment(&row.route)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T3".to_string(),
+            region_id: row.zone_id.clone(),
+            constraint_order: 12,
+            constraint_class: "lower_tier_feeder_gap_relief".to_string(),
+            behavior_type: "review".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: row.route.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: row.route.clone(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: row.zone_id.clone(),
+            source_artifact: "data/t3-lower-tier-feeder-gap-blocker-relief.csv".to_string(),
+            source_row_id: row.relief_id.clone(),
+            standard_artifact: "docs/t3-t4-access-optimization.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "pass".to_string(),
+            observed_value: row.relief_decision.clone(),
+            threshold_value: "relief-ready-for-constraint-ledger-replay".to_string(),
+            measurement_unit: "relief_decision".to_string(),
+            blocks_claims: String::new(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("claim_blocker_delta={}", row.claim_blocker_delta),
+            penalty_score: 0.0,
+            repair_action: "constraint-ledger-replay-applied".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "low".to_string(),
+            exception_id: row.acceptance_id.clone(),
+            exception_artifact: "data/t3-lower-tier-feeder-gap-policy-acceptance.csv".to_string(),
+            next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
+            optimizer_effect:
+                "accepted lower-tier feeder policy removes T3 map publication upgrade blockers"
+                    .to_string(),
+            validation_status: "pass".to_string(),
         });
     }
 
@@ -47097,24 +47200,24 @@ mod tests {
         T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
         T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
         T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3LowerTierFeederGapPolicyAcceptanceRow,
-        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
-        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactRow,
-        T4TerminalAccessProofIntakeRow, T4TerminalAccessProofReviewRow,
-        T4TerminalAccessProofSourceCaptureRow, T4TerminalAccessSourceAccessRow,
-        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
-        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
-        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
-        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
-        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
-        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
+        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
+        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
+        T4TerminalAccessProofArtifactRow, T4TerminalAccessProofIntakeRow,
+        T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
+        T4TerminalAccessSourceAccessRow, T4TerminalColumbusProofAttemptRow,
+        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
+        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
+        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
+        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
+        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -54021,6 +54124,7 @@ mod tests {
             &topology_rows,
             &[],
             &[],
+            &[],
             &parallel_rows,
             &access_gap_rows,
             &beck_t1_rows,
@@ -54131,6 +54235,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t1_rows,
             &[],
             &[],
@@ -54210,6 +54315,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -54225,6 +54331,76 @@ mod tests {
         assert!(!rows
             .iter()
             .any(|row| row.constraint_class == "beck_transfer_complexity"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_replays_t3_feeder_relief() {
+        let relief_rows = vec![T3LowerTierFeederGapBlockerReliefRow {
+            relief_id: "T3FEEDERRELIEF-I135".to_string(),
+            acceptance_id: "T3FEEDERACCEPT-I135".to_string(),
+            policy_id: "T3FEEDERPOLICY-I135".to_string(),
+            route: "I-135".to_string(),
+            zone_id: "t3-mountain-west".to_string(),
+            score_band: "near-threshold-feeder".to_string(),
+            accepted_map_treatment: "keep route below T3 feeder promotion".to_string(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: "map;publication;upgrade".to_string(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: 1,
+            blocker_count_after: 0,
+            claim_blocker_delta: -1,
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let access_gap_rows = vec![T3T4AccessGapRow {
+            gap_id: "T3GAP-T3MOUNTAINWEST-I135".to_string(),
+            source_surface: "t3-zone-route-columns".to_string(),
+            route: "I-135".to_string(),
+            zone_id: "t3-mountain-west".to_string(),
+            current_score: 29.8,
+            constraint_adjusted_score: 27.8,
+            hard_blocker_count: 0,
+            claim_blocker_count: 1,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 1.0,
+            top_constraint_classes: "lower_tier_feeder_gap".to_string(),
+            constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            promise_horizon_hours: 6,
+            gap_class: "below-threshold-feeder".to_string(),
+            gap_reason: "candidate is below T3 threshold for a 6h feeder obligation".to_string(),
+            required_evidence: "score-or-terminal-evidence-required".to_string(),
+            repair_action: "prove-terminal-evidence-or-keep-t4".to_string(),
+            next_artifact: "data/t3-lower-tier-feeder-gap-policy.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &relief_rows,
+            &[],
+            &access_gap_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows
+            .iter()
+            .any(|row| row.constraint_class == "lower_tier_feeder_gap_relief"
+                && row.constraint_status == "pass"));
+        assert!(!rows
+            .iter()
+            .any(|row| row.constraint_class == "lower_tier_feeder_gap"));
     }
 
     #[test]
