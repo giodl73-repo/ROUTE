@@ -49,11 +49,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Overlay Optimizer Action Docket | Route residual T2 overlay repair deltas back into optimizer action families. | done |
 | 2026-05-14 | T2 Overlay P1 Structural Readiness Review | Decide the P1 structural-readiness overlay actions before lower-priority optimizer work. | done |
 | 2026-05-14 | T2 Overlay P2 Service Overlay Review | Decide P2 service-overlay diagnostic actions before local-zone optimizer work. | done |
+| 2026-05-14 | T2 Overlay P3 Local Zone Overlay Review | Decide P3 local-zone overlay actions before returning to broad optimizer work. | done |
 
 ## Next Active Wave
 
-No wave is currently active. The next optimizer burn-down slice should address
-the P3 local-zone overlay actions in `data/t2-overlay-optimizer-action-docket.csv`.
+No wave is currently active. The T2 overlay optimizer action docket has now
+been priority-reviewed through P1, P2, and P3 without blocker relief.
 
 ## Operating Rules
 

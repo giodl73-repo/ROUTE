@@ -93,6 +93,7 @@ data/t2-bundle-overlay-repair-delta.csv,game_ledger,M10,held,held_public,cargo r
 data/t2-overlay-optimizer-action-docket.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-overlay-optimizer-action-docket --gate,T2 overlay optimizer action docket routing residual blockers to action families
 data/t2-overlay-p1-structural-readiness-review.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-overlay-p1-structural-readiness-review --gate,T2 overlay P1 structural-readiness review preserving optimizer holds
 data/t2-overlay-p2-service-overlay-review.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-overlay-p2-service-overlay-review --gate,T2 overlay P2 service-overlay review preserving optimizer holds
+data/t2-overlay-p3-local-zone-overlay-review.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-overlay-p3-local-zone-overlay-review --gate,T2 overlay P3 local-zone overlay review preserving optimizer holds
 docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype
 specs/2026-05-06-interstate-2-design.md,spec,M6,release_candidate,public,manual review,Interstate 2.0 spec with Blueprint status caveat
 scripts/check-mileposts.ps1,release_gate,M7,release_candidate,public,powershell -ExecutionPolicy Bypass -File scripts/check-mileposts.ps1,Local release gate bundle
