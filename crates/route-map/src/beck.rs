@@ -4926,7 +4926,7 @@ mod tests {
         assert!(t2_lines.iter().all(|line| line.waypoints.len() >= 2));
         assert!(t2_lines.iter().all(|line| !line.service_label.is_empty()));
         assert!(t2_lines.iter().all(|line| !line.label_anchor.is_empty()));
-        assert_eq!(t2_lines.len(), 24);
+        assert_eq!(t2_lines.len(), 26);
         assert_eq!(t1_badges(&stops).len(), lines.len());
     }
 
