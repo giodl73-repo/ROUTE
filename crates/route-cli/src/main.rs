@@ -2899,6 +2899,42 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 local-zone overlay handoff decisions
+    T2LocalZoneOverlayHandoff {
+        /// T2 service-class repair docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-class-repair-docket.csv",
+            value_name = "FILE"
+        )]
+        service_docket: PathBuf,
+        /// T3 zone route columns CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-route-columns.csv",
+            value_name = "FILE"
+        )]
+        zone_route_columns: PathBuf,
+        /// T3 zone render board CSV
+        #[arg(
+            long,
+            default_value = "data/t3-zone-render-board.csv",
+            value_name = "FILE"
+        )]
+        zone_render_board: PathBuf,
+        /// Output T2 local-zone overlay handoff CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-local-zone-overlay-handoff.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if local-zone rows are missing handoff decisions or promoted
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit readiness disposition for T2 bundle-overlay rows needing bundle repair
     T2BundleReadinessDisposition {
         /// T2 bundle-overlay repair targets CSV
@@ -8787,6 +8823,40 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2LocalZoneOverlayHandoff {
+            service_docket,
+            zone_route_columns,
+            zone_render_board,
+            output,
+            gate,
+        } => {
+            println!("route t2-local-zone-overlay-handoff");
+            let docket_rows = load_t2_service_class_repair_docket(&service_docket)
+                .with_context(|| format!("loading {}", service_docket.display()))?;
+            let route_rows = load_t3_zone_route_columns(&zone_route_columns)
+                .with_context(|| format!("loading {}", zone_route_columns.display()))?;
+            let board_rows = load_t3_zone_render_board(&zone_render_board)
+                .with_context(|| format!("loading {}", zone_render_board.display()))?;
+            let rows = t2_local_zone_overlay_handoff_rows(&docket_rows, &route_rows, &board_rows);
+            write_t2_local_zone_overlay_handoff(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_local_zone_overlay_handoff_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_local_zone_overlay_handoff_gate_failures(&rows, &docket_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 local-zone overlay handoff gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 local-zone overlay handoff gate failed");
+                }
+                println!();
+                println!("T2 local-zone overlay handoff gate: PASS");
+            }
+        }
+
         Commands::T2BundleReadinessDisposition {
             targets,
             output,
@@ -14506,6 +14576,26 @@ struct T2ServiceOverlayDiagnosticDecisionRow {
     diagnostic_action: String,
     overlay_decision: String,
     decision_reason: String,
+    blocks_claims: String,
+    required_artifact: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2LocalZoneOverlayHandoffRow {
+    handoff_id: String,
+    docket_id: String,
+    target_id: String,
+    route: String,
+    segment_bundle_id: String,
+    zone_id: String,
+    zone_name: String,
+    zone_role: String,
+    column_decision: String,
+    map_treatment: String,
+    handoff_decision: String,
+    handoff_reason: String,
     blocks_claims: String,
     required_artifact: String,
     next_artifact: String,
@@ -21866,24 +21956,22 @@ fn t2_service_overlay_diagnostic_decision_rows(
             let blocks_claims = target
                 .map(|row| row.blocks_claims.clone())
                 .unwrap_or_else(|| "game;incident;publication;upgrade".to_string());
-            let (overlay_decision, decision_reason, required_artifact, next_artifact) = if row
-                .service_class
-                == "unclassified"
-            {
-                (
+            let (overlay_decision, decision_reason, required_artifact, next_artifact) =
+                if row.service_class == "unclassified" {
+                    (
                     "held",
                     "service class remains unclassified until Beck T2 diagnostic chooses a class",
                     "data/beck-t2-diagnostics.csv",
                     "data/t2-service-class-repair-docket.csv",
                 )
-            } else {
-                (
-                    "repair-needed",
-                    "service class exists but overlay binding still requires replay",
-                    "data/game/t2-service-overlays.csv",
-                    "data/t2-game-ops-binding-decisions.csv",
-                )
-            };
+                } else {
+                    (
+                        "repair-needed",
+                        "service class exists but overlay binding still requires replay",
+                        "data/game/t2-service-overlays.csv",
+                        "data/t2-game-ops-binding-decisions.csv",
+                    )
+                };
             T2ServiceOverlayDiagnosticDecisionRow {
                 decision_id: format!(
                     "T2SERVICEOVERLAYDIAG-{}",
@@ -22023,6 +22111,194 @@ fn t2_service_overlay_diagnostic_decision_gate_failures(
     for expected_id in expected {
         if !seen.contains(expected_id) {
             failures.push(format!("{expected_id} missing from diagnostic decisions"));
+        }
+    }
+    failures
+}
+
+fn t2_local_zone_overlay_handoff_rows(
+    docket_rows: &[T2ServiceClassRepairDocketRow],
+    route_rows: &[T3ZoneRouteColumnRow],
+    board_rows: &[T3ZoneRenderBoardRow],
+) -> Vec<T2LocalZoneOverlayHandoffRow> {
+    let selected_routes = route_rows
+        .iter()
+        .filter(|row| row.column_decision == "selected")
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let render_rows = board_rows
+        .iter()
+        .filter(|row| row.board_layer == "selected-route")
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = docket_rows
+        .iter()
+        .filter(|row| row.service_repair_class == "local-zone")
+        .map(|row| {
+            let route_key = canonical_route_key(&row.route);
+            let zone_route = selected_routes.get(&route_key);
+            let render_row = render_rows.get(&route_key);
+            let zone_id = zone_route
+                .map(|row| row.zone_id.clone())
+                .or_else(|| render_row.map(|row| row.zone_id.clone()))
+                .unwrap_or_else(|| "missing-zone".to_string());
+            let zone_name = zone_route
+                .map(|row| row.zone_name.clone())
+                .or_else(|| render_row.map(|row| row.zone_name.clone()))
+                .unwrap_or_else(|| "missing zone context".to_string());
+            let zone_role = zone_route
+                .map(|row| row.zone_role.clone())
+                .unwrap_or_else(|| "missing-zone-role".to_string());
+            let column_decision = zone_route
+                .map(|row| row.column_decision.clone())
+                .unwrap_or_else(|| "held".to_string());
+            let map_treatment = render_row
+                .map(|row| row.map_treatment.clone())
+                .or_else(|| zone_route.map(|row| row.map_treatment.clone()))
+                .unwrap_or_else(|| "missing-map-treatment".to_string());
+            let (handoff_decision, handoff_reason, required_artifact, next_artifact) =
+                if zone_route.is_some() && render_row.is_some() {
+                    (
+                        "held-local-zone",
+                        "local relief is represented as a T3 zone role and remains below national T2 game overlay",
+                        "data/t3-zone-render-board.csv",
+                        "data/t3-zone-stop-placement.csv",
+                    )
+                } else {
+                    (
+                        "held-missing-zone-context",
+                        "local relief lacks complete T3 zone role or map treatment context",
+                        "data/t3-zone-route-columns.csv",
+                        "data/t3-zone-render-board.csv",
+                    )
+                };
+            T2LocalZoneOverlayHandoffRow {
+                handoff_id: format!("T2LOCALZONE-{}", stable_id_fragment(&row.docket_id)),
+                docket_id: row.docket_id.clone(),
+                target_id: row.target_id.clone(),
+                route: row.route.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                zone_id,
+                zone_name,
+                zone_role,
+                column_decision,
+                map_treatment,
+                handoff_decision: handoff_decision.to_string(),
+                handoff_reason: handoff_reason.to_string(),
+                blocks_claims: "game;incident;publication;upgrade".to_string(),
+                required_artifact: required_artifact.to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.zone_id
+            .cmp(&right.zone_id)
+            .then(left.route.cmp(&right.route))
+    });
+    rows
+}
+
+fn write_t2_local_zone_overlay_handoff(
+    path: &Path,
+    rows: &[T2LocalZoneOverlayHandoffRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_local_zone_overlay_handoff_summary(
+    output: &Path,
+    rows: &[T2LocalZoneOverlayHandoffRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.handoff_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 local-zone overlay handoff rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_local_zone_overlay_handoff_gate_failures(
+    rows: &[T2LocalZoneOverlayHandoffRow],
+    docket_rows: &[T2ServiceClassRepairDocketRow],
+) -> Vec<String> {
+    let expected = docket_rows
+        .iter()
+        .filter(|row| row.service_repair_class == "local-zone")
+        .map(|row| row.docket_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "local-zone handoff has {} rows but expected {} local-zone repair rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.handoff_id.trim().is_empty()
+            || row.docket_id.trim().is_empty()
+            || row.target_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.zone_role.trim().is_empty()
+            || row.column_decision.trim().is_empty()
+            || row.map_treatment.trim().is_empty()
+            || row.handoff_decision.trim().is_empty()
+            || row.handoff_reason.trim().is_empty()
+            || row.blocks_claims.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete local-zone handoff fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.docket_id.clone()) {
+            failures.push(format!("{} appears more than once", row.docket_id));
+        }
+        if !expected.contains(row.docket_id.as_str()) {
+            failures.push(format!("{} is not a local-zone repair row", row.docket_id));
+        }
+        if !row.handoff_decision.starts_with("held") {
+            failures.push(format!("{} local-zone handoff was promoted", row.route));
+        }
+        if row.blocks_claims != "game;incident;publication;upgrade" {
+            failures.push(format!("{} does not preserve claim blockers", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} local-zone handoff must remain review",
+                row.route
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from local-zone handoff"));
         }
     }
     failures
@@ -29534,6 +29810,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Service-overlay T2 rows remain held behind explicit Beck diagnostic decisions",
             ),
             (
+                "t2-local-zone-overlay-handoff",
+                "route t2-local-zone-overlay-handoff --gate",
+                "data/t2-local-zone-overlay-handoff.csv",
+                "held-known",
+                7,
+                "Local-zone T2 rows remain held below national game overlay through T3 zone handoff",
+            ),
+            (
                 "t2-bundle-readiness-disposition",
                 "route t2-bundle-readiness-disposition --gate",
                 "data/t2-bundle-readiness-disposition.csv",
@@ -35437,6 +35721,7 @@ mod tests {
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
+        t2_local_zone_overlay_handoff_gate_failures, t2_local_zone_overlay_handoff_rows,
         t2_parallel_service_queue_gate_failures, t2_parallel_service_queue_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
@@ -40593,6 +40878,97 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].overlay_decision, "held");
         assert_eq!(rows[0].required_artifact, "data/beck-t2-diagnostics.csv");
+        assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
+    }
+
+    #[test]
+    fn t2_local_zone_overlay_handoff_keeps_zone_rows_held() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-I225".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-I225".to_string(),
+            subject_id: "US.HWYBUNDLE.I225".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I225".to_string(),
+            route: "I225".to_string(),
+            service_class: "unclassified".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            binding_status: "service-class-held-known".to_string(),
+            decision: "held".to_string(),
+            decision_reason: "service class overlay is missing or held".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let target_rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &[]);
+        let diagnostic_rows = vec![T2ServiceDiagnosticQueueRow {
+            route: "I225".to_string(),
+            region_id: "component-0".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I225".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            diagnostic_status: "local-relief-map-review".to_string(),
+            service_diagnostic_action: "local-relief-map-review".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+            optimizer_effect: "keeps local relief below T2 game overlay".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let docket_rows = t2_service_class_repair_docket_rows(&target_rows, &diagnostic_rows);
+        let route_rows = vec![T3ZoneRouteColumnRow {
+            zone_id: "t3-mountain-west".to_string(),
+            zone_name: "Mountain West / Interior Coverage".to_string(),
+            obligation_class: "regional-feeder-access".to_string(),
+            route: "I225".to_string(),
+            current_tier: "T2".to_string(),
+            current_score: 55.8,
+            constraint_adjusted_score: 54.8,
+            hard_blocker_count: 0,
+            claim_blocker_count: 1,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 1.0,
+            top_constraint_classes: "game_ops_bundle_binding".to_string(),
+            constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            promise_horizon_hours: 6,
+            column_decision: "selected".to_string(),
+            zone_role: "regional-feeder".to_string(),
+            contact_requirement: "higher-tier-or-regional-contact-required".to_string(),
+            map_treatment: "render-as-zone-column".to_string(),
+            selection_basis: "score meets T3 threshold and satisfies a 6h feeder obligation"
+                .to_string(),
+            source_obligation: "select T3 feeder/contact chain inside the zone".to_string(),
+            next_artifact: "data/t3-zone-map-diagnostics.csv".to_string(),
+            optimizer_effect: "feeds the T3 zone map and stop-column selector".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+        let board_rows = vec![T3ZoneRenderBoardRow {
+            zone_id: "t3-mountain-west".to_string(),
+            zone_name: "Mountain West / Interior Coverage".to_string(),
+            map_id: "t3-mountain-west".to_string(),
+            map_path: "maps/t3-mountain-west.png".to_string(),
+            board_layer: "selected-route".to_string(),
+            route: "I225".to_string(),
+            national_segment_id: "US.HWYSEG.I225".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I225".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I225".to_string(),
+            segment_aliases: "route:I225".to_string(),
+            route_status: "selected".to_string(),
+            map_treatment: "render-as-zone-column".to_string(),
+            selected_route_count: 4,
+            access_gap_count: 0,
+            source_artifact: "data/t3-zone-route-columns.csv".to_string(),
+            render_action: "render selected T3 route column".to_string(),
+            next_artifact: "maps/t3-zone".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = t2_local_zone_overlay_handoff_rows(&docket_rows, &route_rows, &board_rows);
+        let failures = t2_local_zone_overlay_handoff_gate_failures(&rows, &docket_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].handoff_decision, "held-local-zone");
+        assert_eq!(rows[0].zone_role, "regional-feeder");
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
 
