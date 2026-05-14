@@ -69,12 +69,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Beck Transfer Complexity Policy | Author transfer-complexity policy rows before acceptance or blocker relief. | done |
 | 2026-05-14 | T2 Beck Transfer Complexity Policy Acceptance | Accept transfer-complexity policy before blocker relief or ledger replay. | done |
 | 2026-05-14 | T2 Beck Transfer Complexity Blocker Relief | Replay accepted transfer-complexity policy into blocker relief rows before ledger replay. | done |
+| 2026-05-14 | T2 Beck Transfer Complexity Ledger Replay | Wire accepted transfer-complexity relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should wire
-`data/t2-beck-transfer-complexity-blocker-relief.csv` into
-`data/optimizer-constraint-ledger.csv` before final Beck replacement
+No wave is active. Next optimizer work should resume residual blocker burn-down
+from the largest remaining claim-blocker families before final Beck replacement
 publication.
 
 ## Operating Rules
