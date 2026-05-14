@@ -88,11 +88,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Game Publication Evidence Review | Expand residual T2 game publication readiness blockers into scenario-level evidence review rows. | done |
 | 2026-05-14 | T2 Game Publication Evidence Policy | Author game publication evidence policy rows before acceptance, relief, or ledger replay. | done |
 | 2026-05-14 | T2 Game Publication Evidence Policy Acceptance | Accept game publication evidence policy before blocker relief or ledger replay. | done |
+| 2026-05-14 | T2 Game Publication Evidence Blocker Relief | Replay accepted game publication evidence policy into blocker relief rows before ledger replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should author T2 game publication
-evidence blocker relief before any optimizer-ledger replay.
+No wave is active. Next optimizer work should wire T2 game publication evidence
+relief into the optimizer constraint ledger before map or scenario publication.
 
 ## Operating Rules
 
