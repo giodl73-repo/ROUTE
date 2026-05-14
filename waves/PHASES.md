@@ -75,12 +75,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Policy Acceptance | Accept feeder-gap policy rows before blocker relief or ledger replay. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Blocker Relief | Replay accepted feeder policy into blocker relief rows before ledger replay. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Ledger Replay | Wire accepted feeder relief into the optimizer constraint ledger, budget, and residual backlog. | done |
+| 2026-05-14 | T2 Beck Label Density Review | Expand residual T2 Beck label-density blockers into route-level review rows before policy or relief. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should resume residual blocker burn-down
-from the remaining P1 claim-blocker families before final Beck replacement
-publication.
+No wave is active. Next optimizer work should author the T2 Beck label-density
+policy before any label-density blocker relief or ledger replay.
 
 ## Operating Rules
 
