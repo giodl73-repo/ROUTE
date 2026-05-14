@@ -3081,6 +3081,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit route-level review rows for T2 Beck long-connector claim blockers
+    T2BeckLongConnectorReview {
+        /// Optimizer claim review CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-claim-review.csv",
+            value_name = "FILE"
+        )]
+        claim_review: PathBuf,
+        /// Output T2 Beck long-connector review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-beck-long-connector-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if rows omit long-connector routes or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit policy rows for T2 Beck label-density blockers
     T2BeckLabelDensityPolicy {
         /// T2 Beck label-density review CSV
@@ -10217,6 +10239,39 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BeckLongConnectorReview {
+            claim_review,
+            output,
+            gate,
+        } => {
+            println!("route t2-beck-long-connector-review");
+            let claim_rows = load_optimizer_claim_review(&claim_review)
+                .with_context(|| format!("loading {}", claim_review.display()))?;
+            let diagnostic_rows = route_map::beck_t2_diagnostics();
+            let rows = t2_beck_long_connector_review_rows(&claim_rows, &diagnostic_rows);
+            write_t2_beck_long_connector_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_beck_long_connector_review_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_beck_long_connector_review_gate_failures(
+                    &rows,
+                    &claim_rows,
+                    &diagnostic_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 Beck long connector review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 Beck long connector review gate failed");
+                }
+                println!();
+                println!("T2 Beck long connector review gate: PASS");
+            }
+        }
+
         Commands::T2BeckLabelDensityPolicy {
             label_review,
             output,
@@ -17136,6 +17191,33 @@ struct T2BeckLabelDensityReviewRow {
     label_density_per_100px: f64,
     review_flag: String,
     density_basis: String,
+    review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BeckLongConnectorReviewRow {
+    connector_review_id: String,
+    claim_review_id: String,
+    route: String,
+    trunk: String,
+    start_trunk: String,
+    end_trunk: String,
+    service_class: String,
+    service_label: String,
+    stop_count: usize,
+    transfer_stop_count: usize,
+    schematic_length_px: f64,
+    split_anchor: String,
+    split_anchor_offset_pct: f64,
+    review_flag: String,
+    connector_basis: String,
     review_decision: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
@@ -31489,6 +31571,214 @@ fn load_t2_beck_label_density_review(path: &Path) -> Result<Vec<T2BeckLabelDensi
     Ok(rows)
 }
 
+fn t2_beck_long_connector_review_rows(
+    claim_rows: &[OptimizerClaimReviewRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<T2BeckLongConnectorReviewRow> {
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "beck_long_connector"
+            && row.total_claim_blockers > 0
+    }) else {
+        return Vec::new();
+    };
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(route_display_key)
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut rows = diagnostics
+        .iter()
+        .filter(|row| {
+            row.review_flag == "long-connector-review"
+                && expected_routes.contains(&route_display_key(row.corridor))
+        })
+        .map(|row| T2BeckLongConnectorReviewRow {
+            connector_review_id: format!("T2BECKLONG-{}", stable_id_fragment(row.corridor)),
+            claim_review_id: claim_row.claim_review_id.clone(),
+            route: route_display_key(row.corridor),
+            trunk: route_display_key(row.trunk),
+            start_trunk: route_display_key(row.start_trunk),
+            end_trunk: route_display_key(row.end_trunk),
+            service_class: row.service_class.to_string(),
+            service_label: row.service_label.to_string(),
+            stop_count: row.stop_count,
+            transfer_stop_count: row.transfer_stop_count,
+            schematic_length_px: row.schematic_length_px,
+            split_anchor: row.split_anchor.to_string(),
+            split_anchor_offset_pct: row.split_anchor_offset_pct,
+            review_flag: row.review_flag.to_string(),
+            connector_basis: format!(
+                "schematic_length_px={:.0};stops={};split_anchor_offset_pct={:.0}",
+                row.schematic_length_px, row.stop_count, row.split_anchor_offset_pct
+            ),
+            review_decision: "long-connector-policy-required".to_string(),
+            blocker_claims_before: claim_row.blocked_claims.clone(),
+            blocker_claims_after: claim_row.blocked_claims.clone(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-beck-long-connector-policy.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_beck_long_connector_review(
+    path: &Path,
+    rows: &[T2BeckLongConnectorReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_beck_long_connector_review_summary(
+    output: &Path,
+    rows: &[T2BeckLongConnectorReviewRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 Beck long-connector review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t2_beck_long_connector_review_gate_failures(
+    rows: &[T2BeckLongConnectorReviewRow],
+    claim_rows: &[OptimizerClaimReviewRow],
+    diagnostics: &[route_map::BeckT2DiagnosticRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let Some(claim_row) = claim_rows.iter().find(|row| {
+        row.priority_class == "P1-claim-blocker"
+            && row.tier == "T2"
+            && row.blocker_family == "beck_long_connector"
+            && row.total_claim_blockers > 0
+    }) else {
+        failures.push("missing T2 Beck long-connector optimizer claim-review row".to_string());
+        return failures;
+    };
+    let expected_routes = claim_row
+        .representative_routes
+        .split(';')
+        .filter(|route| !route.trim().is_empty())
+        .map(route_display_key)
+        .collect::<std::collections::BTreeSet<_>>();
+    let eligible_routes = diagnostics
+        .iter()
+        .filter(|row| row.review_flag == "long-connector-review")
+        .map(|row| route_display_key(row.corridor))
+        .filter(|route| expected_routes.contains(route))
+        .collect::<std::collections::BTreeSet<_>>();
+    if eligible_routes.len() != expected_routes.len() {
+        failures.push(format!(
+            "eligible T2 long-connector routes = {}, expected {}",
+            eligible_routes.len(),
+            expected_routes.len()
+        ));
+    }
+    if rows.len() != expected_routes.len() {
+        failures.push(format!(
+            "T2 long-connector review has {} rows but expected {}",
+            rows.len(),
+            expected_routes.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.connector_review_id.trim().is_empty()
+            || row.claim_review_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.trunk.trim().is_empty()
+            || row.start_trunk.trim().is_empty()
+            || row.end_trunk.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.service_label.trim().is_empty()
+            || row.split_anchor.trim().is_empty()
+            || row.review_flag.trim().is_empty()
+            || row.connector_basis.trim().is_empty()
+            || row.review_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete long-connector review fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.route.clone()) {
+            failures.push(format!("{} appears more than once", row.route));
+        }
+        if !expected_routes.contains(&row.route) {
+            failures.push(format!(
+                "{} is not in the T2 long-connector claim row",
+                row.route
+            ));
+        }
+        if row.claim_review_id != claim_row.claim_review_id
+            || row.review_flag != "long-connector-review"
+            || row.review_decision != "long-connector-policy-required"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid long-connector state", row.route));
+        }
+        if row.blocker_claims_before != claim_row.blocked_claims
+            || row.blocker_claims_after != claim_row.blocked_claims
+            || row.blocker_count_before != 1
+            || row.blocker_count_after != 1
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!(
+                "{} reduced long-connector claim blockers",
+                row.route
+            ));
+        }
+        if row.next_artifact != "data/t2-beck-long-connector-policy.csv" {
+            failures.push(format!("{} points at wrong next artifact", row.route));
+        }
+    }
+    for expected_route in expected_routes {
+        if !seen.contains(&expected_route) {
+            failures.push(format!(
+                "{expected_route} missing from T2 long-connector review"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != claim_row.total_claim_blockers {
+        failures.push(format!(
+            "T2 long-connector review preserves {total_after} blockers but claim row has {}",
+            claim_row.total_claim_blockers
+        ));
+    }
+    failures
+}
+
 fn t2_label_density_band(label_density_per_100px: f64) -> &'static str {
     if label_density_per_100px >= 1.25 {
         "severe-label-density"
@@ -41968,6 +42258,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 Beck label-density blockers remain held pending label policy",
             ),
             (
+                "t2-beck-long-connector-review",
+                "route t2-beck-long-connector-review --gate",
+                "data/t2-beck-long-connector-review.csv",
+                "held-known",
+                3,
+                "T2 Beck long-connector blockers remain held pending connector policy",
+            ),
+            (
                 "t2-beck-label-density-policy",
                 "route t2-beck-label-density-policy --gate",
                 "data/t2-beck-label-density-policy.csv",
@@ -48236,7 +48534,8 @@ mod tests {
         t2_beck_label_density_policy_acceptance_gate_failures,
         t2_beck_label_density_policy_acceptance_rows, t2_beck_label_density_policy_gate_failures,
         t2_beck_label_density_policy_rows, t2_beck_label_density_review_gate_failures,
-        t2_beck_label_density_review_rows,
+        t2_beck_label_density_review_rows, t2_beck_long_connector_review_gate_failures,
+        t2_beck_long_connector_review_rows,
         t2_beck_transfer_complexity_blocker_relief_gate_failures,
         t2_beck_transfer_complexity_blocker_relief_rows,
         t2_beck_transfer_complexity_policy_acceptance_gate_failures,
@@ -56188,6 +56487,103 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.review_decision == "label-density-policy-required"));
+    }
+
+    #[test]
+    fn t2_beck_long_connector_review_preserves_blockers() {
+        let claim_rows = vec![OptimizerClaimReviewRow {
+            claim_review_id: "OCR-T2LONG".to_string(),
+            backlog_id: "ORB-P1-claim-blocker-T2-BECKLONGCONNECTOR".to_string(),
+            priority_class: "P1-claim-blocker".to_string(),
+            blocker_family: "beck_long_connector".to_string(),
+            tier: "T2".to_string(),
+            blocked_claims: "map;promotion;publication".to_string(),
+            subject_count: 2,
+            route_count: 2,
+            total_claim_blockers: 2,
+            representative_routes: "I44;US83".to_string(),
+            representative_subjects: "I44;US83".to_string(),
+            evidence_artifacts: "data/beck-t2-diagnostics.csv".to_string(),
+            review_decision: "held-for-source-specific-claim-review".to_string(),
+            blocker_claims_before: "map;promotion;publication".to_string(),
+            blocker_claims_after: "map;promotion;publication".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let diagnostics = vec![
+            route_map::BeckT2DiagnosticRow {
+                corridor: "I-44",
+                trunk: "I-40",
+                start_trunk: "I-40",
+                end_trunk: "I-90",
+                color_mode: "split-parent",
+                service_class: "long-connector",
+                split_anchor: "STL",
+                split_anchor_offset_pct: 6.0,
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                unique_duplicate_stop_count: 5,
+                service_action: "keep",
+                qualification_basis: "distinct-parent-service",
+                service_label: "St. Louis Link",
+                stop_count: 5,
+                drawn_stop_count: 5,
+                transfer_stop_count: 4,
+                schematic_length_px: 945.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                max_x: 1.0,
+                max_y: 1.0,
+                label_density_per_100px: 0.53,
+                review_flag: "long-connector-review",
+            },
+            route_map::BeckT2DiagnosticRow {
+                corridor: "US83",
+                trunk: "I-90",
+                start_trunk: "I-90",
+                end_trunk: "I-10",
+                color_mode: "split-parent",
+                service_class: "long-connector",
+                split_anchor: "RAPID_CITY",
+                split_anchor_offset_pct: 21.0,
+                unstopped_t1_contact_count: 0,
+                unstopped_t1_contacts: String::new(),
+                close_parallel_count: 0,
+                close_parallel_corridors: String::new(),
+                duplicate_service_count: 0,
+                duplicate_service_corridors: String::new(),
+                unique_duplicate_stop_count: 5,
+                service_action: "keep",
+                qualification_basis: "distinct-parent-service",
+                service_label: "Dakota Spine",
+                stop_count: 5,
+                drawn_stop_count: 5,
+                transfer_stop_count: 4,
+                schematic_length_px: 1446.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                max_x: 1.0,
+                max_y: 1.0,
+                label_density_per_100px: 0.35,
+                review_flag: "long-connector-review",
+            },
+        ];
+
+        let rows = t2_beck_long_connector_review_rows(&claim_rows, &diagnostics);
+        let failures =
+            t2_beck_long_connector_review_gate_failures(&rows, &claim_rows, &diagnostics);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert!(rows
+            .iter()
+            .all(|row| row.next_artifact == "data/t2-beck-long-connector-policy.csv"));
     }
 
     #[test]

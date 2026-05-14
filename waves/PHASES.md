@@ -80,11 +80,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Beck Label Density Policy Acceptance | Accept label-density policy rows before blocker relief or ledger replay. | done |
 | 2026-05-14 | T2 Beck Label Density Blocker Relief | Replay accepted label-density policy into blocker relief rows before ledger replay. | done |
 | 2026-05-14 | T2 Beck Label Density Ledger Replay | Wire accepted label-density relief into the optimizer constraint ledger, budget, and residual backlog. | done |
+| 2026-05-14 | T2 Beck Long Connector Review | Expand residual T2 Beck long-connector blockers into route-level review rows before policy or relief. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should resume residual blocker burn-down
-from the largest remaining claim-blocker families.
+No wave is active. Next optimizer work should author the T2 Beck long-connector
+policy before any long-connector blocker relief or ledger replay.
 
 ## Operating Rules
 
