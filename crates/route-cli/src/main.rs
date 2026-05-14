@@ -3250,6 +3250,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 Beck label-density blocker relief rows from accepted policy
+    T2BeckLabelDensityBlockerRelief {
+        /// T2 Beck label-density policy acceptance CSV
+        #[arg(
+            long,
+            default_value = "data/t2-beck-label-density-policy-acceptance.csv",
+            value_name = "FILE"
+        )]
+        acceptance: PathBuf,
+        /// Output T2 Beck label-density blocker relief CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-beck-label-density-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if relief rows omit accepted policies or do not reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit route-level review rows for T3 lower-tier feeder-gap claim blockers
     T3LowerTierFeederGapReview {
         /// Optimizer residual blocker backlog CSV
@@ -10415,6 +10437,35 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BeckLabelDensityBlockerRelief {
+            acceptance,
+            output,
+            gate,
+        } => {
+            println!("route t2-beck-label-density-blocker-relief");
+            let acceptance_rows = load_t2_beck_label_density_policy_acceptance(&acceptance)
+                .with_context(|| format!("loading {}", acceptance.display()))?;
+            let rows = t2_beck_label_density_blocker_relief_rows(&acceptance_rows);
+            write_t2_beck_label_density_blocker_relief(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_beck_label_density_blocker_relief_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_beck_label_density_blocker_relief_gate_failures(&rows, &acceptance_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 Beck label density blocker relief gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 Beck label density blocker relief gate failed");
+                }
+                println!();
+                println!("T2 Beck label density blocker relief gate: PASS");
+            }
+        }
+
         Commands::T3LowerTierFeederGapReview {
             backlog,
             access_gaps,
@@ -17118,6 +17169,25 @@ struct T2BeckLabelDensityPolicyAcceptanceRow {
     blocker_count_before: usize,
     blocker_count_after: usize,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BeckLabelDensityBlockerReliefRow {
+    relief_id: String,
+    acceptance_id: String,
+    policy_id: String,
+    route: String,
+    density_band: String,
+    accepted_render_treatment: String,
+    relief_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    ledger_replay_status: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -31666,6 +31736,186 @@ fn t2_beck_label_density_policy_acceptance_gate_failures(
     failures
 }
 
+fn load_t2_beck_label_density_policy_acceptance(
+    path: &Path,
+) -> Result<Vec<T2BeckLabelDensityPolicyAcceptanceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_beck_label_density_blocker_relief_rows(
+    acceptance_rows: &[T2BeckLabelDensityPolicyAcceptanceRow],
+) -> Vec<T2BeckLabelDensityBlockerReliefRow> {
+    let mut rows = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "label-density-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T2BeckLabelDensityBlockerReliefRow {
+            relief_id: format!("T2LABELRELIEF-{}", stable_id_fragment(&row.route)),
+            acceptance_id: row.acceptance_id.clone(),
+            policy_id: row.policy_id.clone(),
+            route: row.route.clone(),
+            density_band: row.density_band.clone(),
+            accepted_render_treatment: row.accepted_render_treatment.clone(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: 0,
+            claim_blocker_delta: -(row.blocker_count_after as isize),
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_beck_label_density_blocker_relief(
+    path: &Path,
+    rows: &[T2BeckLabelDensityBlockerReliefRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_beck_label_density_blocker_relief_summary(
+    output: &Path,
+    rows: &[T2BeckLabelDensityBlockerReliefRow],
+) {
+    let before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 Beck label-density blocker relief rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers before: {before}");
+    println!("  claim blockers after: {after}");
+}
+
+fn t2_beck_label_density_blocker_relief_gate_failures(
+    rows: &[T2BeckLabelDensityBlockerReliefRow],
+    acceptance_rows: &[T2BeckLabelDensityPolicyAcceptanceRow],
+) -> Vec<String> {
+    let expected = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "label-density-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| row.acceptance_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_before = acceptance_rows
+        .iter()
+        .filter(|row| expected.contains(row.acceptance_id.as_str()))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("T2 label-density blocker relief has no accepted policy rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 label-density blocker relief has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.relief_id.trim().is_empty()
+            || row.acceptance_id.trim().is_empty()
+            || row.policy_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.density_band.trim().is_empty()
+            || row.accepted_render_treatment.trim().is_empty()
+            || row.relief_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.ledger_replay_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete relief fields",
+                row.acceptance_id
+            ));
+        }
+        if !seen.insert(row.acceptance_id.clone()) {
+            failures.push(format!("{} appears more than once", row.acceptance_id));
+        }
+        if !expected.contains(row.acceptance_id.as_str()) {
+            failures.push(format!(
+                "{} is not an expected acceptance row",
+                row.acceptance_id
+            ));
+        }
+        if row.relief_decision != "relief-ready-for-constraint-ledger-replay"
+            || row.ledger_replay_status != "pending-optimizer-constraint-ledger-replay"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid relief state", row.acceptance_id));
+        }
+        if !row.blocker_claims_after.is_empty()
+            || row.blocker_count_after != 0
+            || row.claim_blocker_delta != -(row.blocker_count_before as isize)
+        {
+            failures.push(format!(
+                "{} did not reduce blockers to zero",
+                row.acceptance_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from blocker relief"));
+        }
+    }
+    let actual_before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let actual_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_before != expected_before || actual_after != 0 {
+        failures.push(format!(
+            "T2 label-density relief before/after = {actual_before}/{actual_after}, expected {expected_before}/0"
+        ));
+    }
+    failures
+}
+
 fn t2_transfer_complexity_band(transfer_stop_count: usize) -> &'static str {
     if transfer_stop_count >= 7 {
         "severe-transfer-complexity"
@@ -41635,6 +41885,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 Beck label-density policy is accepted but pending blocker relief replay",
             ),
             (
+                "t2-beck-label-density-blocker-relief",
+                "route t2-beck-label-density-blocker-relief --gate",
+                "data/t2-beck-label-density-blocker-relief.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "t2-beck-transfer-complexity-policy",
                 "route t2-beck-transfer-complexity-policy --gate",
                 "data/t2-beck-transfer-complexity-policy.csv",
@@ -47874,6 +48132,8 @@ mod tests {
         t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
+        t2_beck_label_density_blocker_relief_gate_failures,
+        t2_beck_label_density_blocker_relief_rows,
         t2_beck_label_density_policy_acceptance_gate_failures,
         t2_beck_label_density_policy_acceptance_rows, t2_beck_label_density_policy_gate_failures,
         t2_beck_label_density_policy_rows, t2_beck_label_density_review_gate_failures,
@@ -48000,7 +48260,8 @@ mod tests {
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
         T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow, T2BeckLabelDensityPolicyRow,
+        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
+        T2BeckLabelDensityPolicyAcceptanceRow, T2BeckLabelDensityPolicyRow,
         T2BeckLabelDensityReviewRow, T2BeckTransferComplexityBlockerReliefRow,
         T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
         T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
@@ -55926,6 +56187,43 @@ mod tests {
         assert_eq!(
             rows[0].next_artifact,
             "data/t2-beck-label-density-blocker-relief.csv"
+        );
+    }
+
+    #[test]
+    fn t2_beck_label_density_blocker_relief_reduces_accepted_blockers() {
+        let acceptance_rows = vec![T2BeckLabelDensityPolicyAcceptanceRow {
+            acceptance_id: "T2LABELACCEPT-I405".to_string(),
+            policy_id: "T2LABELPOLICY-I405".to_string(),
+            route: "I405".to_string(),
+            density_band: "severe-label-density".to_string(),
+            accepted_render_treatment:
+                "compress labels to trunk interfaces and preserve intermediate stops as unlabeled service beads"
+                    .to_string(),
+            accepted_promotion_treatment:
+                "hold map promotion until accepted label-density simplification is replayed"
+                    .to_string(),
+            acceptance_decision: "label-density-policy-accepted".to_string(),
+            blocker_claims_before: "map;promotion;publication".to_string(),
+            blocker_claims_after: "map;promotion;publication".to_string(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-beck-label-density-blocker-relief.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_beck_label_density_blocker_relief_rows(&acceptance_rows);
+        let failures = t2_beck_label_density_blocker_relief_gate_failures(&rows, &acceptance_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].blocker_count_before, 1);
+        assert_eq!(rows[0].blocker_count_after, 0);
+        assert_eq!(rows[0].claim_blocker_delta, -1);
+        assert_eq!(
+            rows[0].ledger_replay_status,
+            "pending-optimizer-constraint-ledger-replay"
         );
     }
 
