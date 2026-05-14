@@ -3240,6 +3240,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit source-acquisition targets for T2 stitched-member proof contracts
+    T2StitchedMemberEvidenceAcquisition {
+        /// T2 stitched-member evidence contract CSV
+        #[arg(
+            long,
+            default_value = "data/t2-stitched-member-evidence-contract.csv",
+            value_name = "FILE"
+        )]
+        evidence_contract: PathBuf,
+        /// Output T2 stitched-member evidence acquisition CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-stitched-member-evidence-acquisition.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if acquisition rows satisfy evidence or lose claim blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9488,6 +9510,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2StitchedMemberEvidenceAcquisition {
+            evidence_contract,
+            output,
+            gate,
+        } => {
+            println!("route t2-stitched-member-evidence-acquisition");
+            let contract_rows = load_t2_stitched_member_evidence_contract(&evidence_contract)
+                .with_context(|| format!("loading {}", evidence_contract.display()))?;
+            let rows = t2_stitched_member_evidence_acquisition_rows(&contract_rows);
+            write_t2_stitched_member_evidence_acquisition(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_stitched_member_evidence_acquisition_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_stitched_member_evidence_acquisition_gate_failures(&rows, &contract_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 stitched member evidence acquisition gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 stitched member evidence acquisition gate failed");
+                }
+                println!("T2 stitched member evidence acquisition gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -15402,6 +15452,24 @@ struct T2StitchedMemberEvidenceContractRow {
     required_scope_proof: String,
     required_source_proof: String,
     evidence_status: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2StitchedMemberEvidenceAcquisitionRow {
+    acquisition_docket_id: String,
+    evidence_contract_id: String,
+    route: String,
+    candidate_segment_bundle_id: String,
+    state_scope: String,
+    source_owner: String,
+    source_target: String,
+    acquisition_action: String,
+    acquisition_status: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -25158,6 +25226,191 @@ fn t2_stitched_member_evidence_contract_gate_failures(
     failures
 }
 
+fn load_t2_stitched_member_evidence_contract(
+    path: &Path,
+) -> Result<Vec<T2StitchedMemberEvidenceContractRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_stitched_member_evidence_acquisition_rows(
+    contract_rows: &[T2StitchedMemberEvidenceContractRow],
+) -> Vec<T2StitchedMemberEvidenceAcquisitionRow> {
+    let mut rows = contract_rows
+        .iter()
+        .filter(|row| row.evidence_status == "source-needed")
+        .map(|contract| {
+            let owner = if contract.state_scope.trim().is_empty() {
+                "state DOT".to_string()
+            } else {
+                format!("{} DOT", contract.state_scope)
+            };
+            T2StitchedMemberEvidenceAcquisitionRow {
+                acquisition_docket_id: format!(
+                    "T2STITCHEDACQUIRE-{}",
+                    stable_id_fragment(&contract.evidence_contract_id)
+                ),
+                evidence_contract_id: contract.evidence_contract_id.clone(),
+                route: contract.route.clone(),
+                candidate_segment_bundle_id: contract.candidate_segment_bundle_id.clone(),
+                state_scope: contract.state_scope.clone(),
+                source_owner: owner.clone(),
+                source_target: format!(
+                    "{} route log, GIS centerline, or official route description for {} {}",
+                    owner, contract.route, contract.state_scope
+                ),
+                acquisition_action:
+                    "manual-source-request-or-cache-official-route-geometry-before-decision"
+                        .to_string(),
+                acquisition_status: "source-needed".to_string(),
+                blocked_claims_before: contract.blocked_claims_after.clone(),
+                blocked_claims_after: contract.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.state_scope.cmp(&right.state_scope))
+            .then(
+                left.candidate_segment_bundle_id
+                    .cmp(&right.candidate_segment_bundle_id),
+            )
+    });
+    rows
+}
+
+fn write_t2_stitched_member_evidence_acquisition(
+    path: &Path,
+    rows: &[T2StitchedMemberEvidenceAcquisitionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_stitched_member_evidence_acquisition_summary(
+    output: &Path,
+    rows: &[T2StitchedMemberEvidenceAcquisitionRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.acquisition_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 stitched member evidence acquisition rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_stitched_member_evidence_acquisition_gate_failures(
+    rows: &[T2StitchedMemberEvidenceAcquisitionRow],
+    contract_rows: &[T2StitchedMemberEvidenceContractRow],
+) -> Vec<String> {
+    let expected = contract_rows
+        .iter()
+        .filter(|row| row.evidence_status == "source-needed")
+        .map(|row| row.evidence_contract_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push(
+            "stitched member evidence acquisition has no source-needed contracts".to_string(),
+        );
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "stitched member evidence acquisition has {} rows but expected {} contract rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.acquisition_docket_id.trim().is_empty()
+            || row.evidence_contract_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.candidate_segment_bundle_id.trim().is_empty()
+            || row.state_scope.trim().is_empty()
+            || row.source_owner.trim().is_empty()
+            || row.source_target.trim().is_empty()
+            || row.acquisition_action.trim().is_empty()
+            || row.acquisition_status.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete acquisition fields",
+                row.route, row.candidate_segment_bundle_id
+            ));
+        }
+        if !seen.insert(row.evidence_contract_id.clone()) {
+            failures.push(format!(
+                "{} appears more than once",
+                row.evidence_contract_id
+            ));
+        }
+        if !expected.contains(row.evidence_contract_id.as_str()) {
+            failures.push(format!(
+                "{} is not a source-needed evidence contract",
+                row.evidence_contract_id
+            ));
+        }
+        if row.acquisition_status != "source-needed" || row.validation_status != "review" {
+            failures.push(format!(
+                "{} acquisition docket satisfied evidence",
+                row.route
+            ));
+        }
+        if row.acquisition_action.contains("accepted")
+            || row.acquisition_action.contains("selected")
+            || row.acquisition_action.contains("rejected")
+            || row.acquisition_action.contains("pass")
+            || row.acquisition_action.contains("bound")
+        {
+            failures.push(format!(
+                "{} acquisition action promoted readiness",
+                row.route
+            ));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from evidence acquisition"));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -32563,6 +32816,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Stitched-member selection rows receive source-needed evidence contracts",
             ),
             (
+                "t2-stitched-member-evidence-acquisition",
+                "route t2-stitched-member-evidence-acquisition --gate",
+                "data/t2-stitched-member-evidence-acquisition.csv",
+                "held-known",
+                2,
+                "Stitched-member evidence contracts become source-needed acquisition targets",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -38475,6 +38736,8 @@ mod tests {
         t2_service_selection_rows, t2_stitched_member_candidate_scope_review_gate_failures,
         t2_stitched_member_candidate_scope_review_rows,
         t2_stitched_member_decision_docket_gate_failures, t2_stitched_member_decision_docket_rows,
+        t2_stitched_member_evidence_acquisition_gate_failures,
+        t2_stitched_member_evidence_acquisition_rows,
         t2_stitched_member_evidence_contract_gate_failures,
         t2_stitched_member_evidence_contract_rows,
         t2_stitched_member_registry_handoff_gate_failures,
@@ -38532,21 +38795,21 @@ mod tests {
         T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
         T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberDecisionDocketRow, T2StitchedMemberRegistryHandoffRow,
-        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
-        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
-        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
-        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
-        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
-        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceContractRow,
+        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
+        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
+        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
+        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
+        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
+        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -44299,6 +44562,45 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].evidence_status, "source-needed");
+        assert_eq!(rows[0].validation_status, "review");
+        assert_eq!(rows[0].blocker_delta, 0);
+        assert_eq!(
+            rows[0].blocked_claims_after,
+            "game;incident;publication;upgrade"
+        );
+    }
+
+    #[test]
+    fn t2_stitched_member_evidence_acquisition_keeps_rows_source_needed() {
+        let contract_rows = vec![T2StitchedMemberEvidenceContractRow {
+            evidence_contract_id: "T2STITCHEDEVIDENCE-I295-FL".to_string(),
+            selection_docket_id: "T2STITCHEDSELECT-I295-FL".to_string(),
+            route: "I295".to_string(),
+            candidate_segment_bundle_id: "US.HWYBUNDLE.FL".to_string(),
+            state_scope: "FL".to_string(),
+            required_continuity_proof:
+                "document continuous service relationship between candidate bundle and blocked stitched route"
+                    .to_string(),
+            required_scope_proof:
+                "document why the state-scoped candidate belongs in or outside the blocked service"
+                    .to_string(),
+            required_source_proof:
+                "cite authoritative route geometry or agency source before in-scope or rejected status"
+                    .to_string(),
+            evidence_status: "source-needed".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-registry.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_stitched_member_evidence_acquisition_rows(&contract_rows);
+        let failures = t2_stitched_member_evidence_acquisition_gate_failures(&rows, &contract_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].acquisition_status, "source-needed");
         assert_eq!(rows[0].validation_status, "review");
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(
