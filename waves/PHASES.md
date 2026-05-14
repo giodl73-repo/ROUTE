@@ -27,11 +27,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | Columbus South Terminal Contact Proof | Run the first route-to-terminal proof pilot on the largest Great Lakes district slice. | done |
 | 2026-05-13 | Terminal Contact Source Acquisition Spine | Build the manual/cached proof artifact loop that can promote terminal-contact rows without seed laundering. | done |
 | 2026-05-13 | T2 Game/Ops Binding Burn-Down | Turn T2 game/ops bundle-binding blockers into explicit bundle decisions before game or incident use. | done |
+| 2026-05-13 | T2 Bundle Overlay Repair Spine | Repair or explicitly preserve held T2 bundle-overlay blockers before game/ops claims can pass. | active |
 
 ## Next Active Wave
 
-No wave is currently active. Plan the next wave from the residual blocker
-backlog.
+`2026-05-13-t2-bundle-overlay-repair-spine` is active.
 
 ## Operating Rules
 
