@@ -33,6 +33,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 Bundle Readiness Repair Docket | Turn repair-needed bundle-readiness rows into explicit stop-chain, stitched-member, and terminal-stop repair tasks. | done |
 | 2026-05-13 | T2 Bundle Readiness Repair Evidence | Probe readiness repair tasks against downstream artifacts before any bundle-readiness replay can promote claims. | done |
 | 2026-05-13 | T2 Bundle Readiness Evidence Replay | Convert readiness evidence probes into explicit replay decisions without promoting unresolved game/ops claims. | done |
+| 2026-05-13 | T2 National Bundle Readiness Audit | Audit readiness replay decisions against national segment bundles before any structural replay can promote claims. | done |
 
 ## Next Active Wave
 

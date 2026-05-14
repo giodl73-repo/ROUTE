@@ -3051,6 +3051,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Audit T2 readiness replay decisions against national segment bundles
+    T2NationalBundleReadinessAudit {
+        /// T2 bundle readiness replay decisions CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-readiness-replay-decisions.csv",
+            value_name = "FILE"
+        )]
+        replay_decisions: PathBuf,
+        /// National segment bundles CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-bundles.csv",
+            value_name = "FILE"
+        )]
+        bundles: PathBuf,
+        /// Output T2 national bundle readiness audit CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-national-bundle-readiness-audit.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if audit rows promote readiness or lose claim blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9085,6 +9114,37 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2NationalBundleReadinessAudit {
+            replay_decisions,
+            bundles,
+            output,
+            gate,
+        } => {
+            println!("route t2-national-bundle-readiness-audit");
+            let replay_rows = load_t2_bundle_readiness_replay_decisions(&replay_decisions)
+                .with_context(|| format!("loading {}", replay_decisions.display()))?;
+            let bundle_rows = load_national_segment_bundles(&bundles)
+                .with_context(|| format!("loading {}", bundles.display()))?;
+            let rows = t2_national_bundle_readiness_audit_rows(&replay_rows, &bundle_rows);
+            write_t2_national_bundle_readiness_audit(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_national_bundle_readiness_audit_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_national_bundle_readiness_audit_gate_failures(&rows, &replay_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 national bundle readiness audit gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 national bundle readiness audit gate failed");
+                }
+                println!("T2 national bundle readiness audit gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -14864,6 +14924,26 @@ struct T2BundleReadinessReplayDecisionRow {
     delta_replay_decision: String,
     replay_decision: String,
     replay_action: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2NationalBundleReadinessAuditRow {
+    audit_id: String,
+    replay_id: String,
+    route: String,
+    segment_bundle_id: String,
+    readiness_class: String,
+    replay_decision: String,
+    bundle_status: String,
+    bundle_validation_status: String,
+    bundle_member_count: usize,
+    audit_decision: String,
+    audit_action: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -23306,6 +23386,207 @@ fn t2_bundle_readiness_replay_decision_gate_failures(
     failures
 }
 
+fn load_t2_bundle_readiness_replay_decisions(
+    path: &Path,
+) -> Result<Vec<T2BundleReadinessReplayDecisionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_national_bundle_readiness_audit_rows(
+    replay_rows: &[T2BundleReadinessReplayDecisionRow],
+    bundle_rows: &[NationalSegmentBundleRow],
+) -> Vec<T2NationalBundleReadinessAuditRow> {
+    let bundles_by_id = bundle_rows
+        .iter()
+        .map(|row| (row.segment_bundle_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = replay_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/national-segment-bundles.csv")
+        .map(|replay| {
+            let bundle = bundles_by_id.get(replay.segment_bundle_id.as_str());
+            let (bundle_status, bundle_validation_status, bundle_member_count, next_artifact) =
+                bundle
+                    .map(|row| {
+                        (
+                            row.bundle_status.clone(),
+                            row.validation_status.clone(),
+                            row.member_count,
+                            row.next_artifact.clone(),
+                        )
+                    })
+                    .unwrap_or_else(|| {
+                        (
+                            "missing-bundle-row".to_string(),
+                            "review".to_string(),
+                            0,
+                            "data/national-segment-registry.csv".to_string(),
+                        )
+                    });
+            let audit_action = match bundle_status.as_str() {
+                "needs-stop-chain" => "author-stop-chain-before-replay",
+                "needs-stitched-members" => "stitch-member-segments-before-replay",
+                "needs-terminal-stop" => "author-terminal-stop-before-replay",
+                "bundle-ready" => "manual-review-before-claim-promotion",
+                "missing-bundle-row" => "restore-bundle-row-before-replay",
+                _ => "manual-bundle-readiness-review",
+            };
+            T2NationalBundleReadinessAuditRow {
+                audit_id: format!(
+                    "T2NATIONALBUNDLEAUDIT-{}",
+                    stable_id_fragment(&replay.replay_id)
+                ),
+                replay_id: replay.replay_id.clone(),
+                route: replay.route.clone(),
+                segment_bundle_id: replay.segment_bundle_id.clone(),
+                readiness_class: replay.readiness_class.clone(),
+                replay_decision: replay.replay_decision.clone(),
+                bundle_status,
+                bundle_validation_status,
+                bundle_member_count,
+                audit_decision: "held-for-structural-bundle-repair".to_string(),
+                audit_action: audit_action.to_string(),
+                blocked_claims_before: replay.blocked_claims_after.clone(),
+                blocked_claims_after: replay.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact,
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.readiness_class
+            .cmp(&right.readiness_class)
+            .then(left.route.cmp(&right.route))
+    });
+    rows
+}
+
+fn write_t2_national_bundle_readiness_audit(
+    path: &Path,
+    rows: &[T2NationalBundleReadinessAuditRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_national_bundle_readiness_audit_summary(
+    output: &Path,
+    rows: &[T2NationalBundleReadinessAuditRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.bundle_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 national bundle readiness audit rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_national_bundle_readiness_audit_gate_failures(
+    rows: &[T2NationalBundleReadinessAuditRow],
+    replay_rows: &[T2BundleReadinessReplayDecisionRow],
+) -> Vec<String> {
+    let expected = replay_rows
+        .iter()
+        .filter(|row| row.next_artifact == "data/national-segment-bundles.csv")
+        .map(|row| row.replay_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "national bundle readiness audit has {} rows but expected {} replay rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.audit_id.trim().is_empty()
+            || row.replay_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.readiness_class.trim().is_empty()
+            || row.replay_decision.trim().is_empty()
+            || row.bundle_status.trim().is_empty()
+            || row.bundle_validation_status.trim().is_empty()
+            || row.audit_decision.trim().is_empty()
+            || row.audit_action.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete audit fields", row.route));
+        }
+        if !seen.insert(row.replay_id.clone()) {
+            failures.push(format!("{} appears more than once", row.replay_id));
+        }
+        if !expected.contains(row.replay_id.as_str()) {
+            failures.push(format!(
+                "{} is not a national-bundle replay row",
+                row.replay_id
+            ));
+        }
+        if row.audit_decision == "pass"
+            || row.audit_decision == "bound"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} audit promoted readiness", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+        if !matches!(
+            row.bundle_status.as_str(),
+            "needs-stop-chain"
+                | "needs-stitched-members"
+                | "needs-terminal-stop"
+                | "bundle-ready"
+                | "missing-bundle-row"
+                | "bundle-review"
+        ) {
+            failures.push(format!(
+                "{} has unsupported bundle status {}",
+                row.route, row.bundle_status
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from national bundle audit"));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -30655,6 +30936,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Readiness evidence probes become explicit replay decisions without claim promotion",
             ),
             (
+                "t2-national-bundle-readiness-audit",
+                "route t2-national-bundle-readiness-audit --gate",
+                "data/t2-national-bundle-readiness-audit.csv",
+                "held-known",
+                4,
+                "Readiness replay decisions are audited against national bundle structural status",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -36555,6 +36844,7 @@ mod tests {
         t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
         t2_local_zone_overlay_handoff_gate_failures, t2_local_zone_overlay_handoff_rows,
+        t2_national_bundle_readiness_audit_gate_failures, t2_national_bundle_readiness_audit_rows,
         t2_parallel_service_queue_gate_failures, t2_parallel_service_queue_rows,
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
@@ -36607,13 +36897,14 @@ mod tests {
         T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow,
         T2BundleOverlayRow, T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
-        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
@@ -41974,6 +42265,59 @@ mod tests {
             "game;incident;publication;upgrade"
         );
         assert_eq!(rows[0].blocker_delta, 0);
+    }
+
+    #[test]
+    fn t2_national_bundle_readiness_audit_stays_held_on_structural_status() {
+        let replay_rows = vec![T2BundleReadinessReplayDecisionRow {
+            replay_id: "T2BUNDLEREADINESSREPLAY-I295".to_string(),
+            evidence_id: "T2BUNDLEREADINESSEVIDENCE-I295".to_string(),
+            delta_id: "T2OVERLAYDELTA-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            readiness_class: "stitched-member".to_string(),
+            evidence_status: "candidate-evidence-found".to_string(),
+            delta_replay_decision: "held".to_string(),
+            replay_decision: "held-for-bundle-replay".to_string(),
+            replay_action: "keep-held-until-repair-delta-mutates".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let bundle_rows = vec![NationalSegmentBundleRow {
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            bundle_role: "stitched-service".to_string(),
+            member_segment_ids: "US.HWYSEG.I295".to_string(),
+            member_count: 1,
+            stitch_group_ids: "US.HWYSTITCH.I295".to_string(),
+            current_tiers: "T2".to_string(),
+            current_zone_ids: "component-0".to_string(),
+            route_labels: "I295".to_string(),
+            state_scope: "FL".to_string(),
+            evidence_state_scope: "FL".to_string(),
+            geometry_state_scope: "FL".to_string(),
+            bundle_aliases: "route:I295".to_string(),
+            source_artifacts: "data/tier-segment-candidates.csv".to_string(),
+            bundle_status: "needs-stitched-members".to_string(),
+            bundle_action: "add ordered member segments before promotion or stitched service"
+                .to_string(),
+            next_artifact: "data/national-segment-registry.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_national_bundle_readiness_audit_rows(&replay_rows, &bundle_rows);
+        let failures = t2_national_bundle_readiness_audit_gate_failures(&rows, &replay_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].audit_decision, "held-for-structural-bundle-repair");
+        assert_eq!(rows[0].bundle_status, "needs-stitched-members");
+        assert_eq!(
+            rows[0].blocked_claims_after,
+            "game;incident;publication;upgrade"
+        );
     }
 
     #[test]
