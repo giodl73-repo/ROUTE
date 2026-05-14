@@ -62,12 +62,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Optimizer Claim Review | Docket residual P1 optimizer claim blockers by owning evidence artifact before blocker relief. | done |
 | 2026-05-14 | T1 Schematic Geometry Claim Review | Expand the largest optimizer claim-review family into route-level shared-segment map-policy rows. | done |
 | 2026-05-14 | T1 Shared Segment Map Policy | Author pair-level shared-segment map policy rows before T1 schematic blocker relief. | done |
+| 2026-05-14 | T1 Shared Segment Policy Acceptance | Accept authored shared-segment map policy before schematic blocker relief replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review
-`data/t1-shared-segment-map-policy.csv` for acceptance before any T1 schematic
-geometry blocker relief or final Beck replacement publication.
+No wave is active. Next optimizer work should replay
+`data/t1-schematic-geometry-blocker-relief.csv` before any final Beck
+replacement publication.
 
 ## Operating Rules
 

@@ -3031,6 +3031,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit acceptance rows for authored T1 shared-segment map policy
+    T1SharedSegmentPolicyAcceptance {
+        /// T1 shared-segment map policy CSV
+        #[arg(
+            long,
+            default_value = "data/t1-shared-segment-map-policy.csv",
+            value_name = "FILE"
+        )]
+        policy: PathBuf,
+        /// Output T1 shared-segment policy acceptance CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-shared-segment-policy-acceptance.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if acceptance rows omit policies or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9800,6 +9822,35 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T1SharedSegmentPolicyAcceptance {
+            policy,
+            output,
+            gate,
+        } => {
+            println!("route t1-shared-segment-policy-acceptance");
+            let policy_rows = load_t1_shared_segment_map_policy(&policy)
+                .with_context(|| format!("loading {}", policy.display()))?;
+            let rows = t1_shared_segment_policy_acceptance_rows(&policy_rows);
+            write_t1_shared_segment_policy_acceptance(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_shared_segment_policy_acceptance_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t1_shared_segment_policy_acceptance_gate_failures(&rows, &policy_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 shared segment policy acceptance gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 shared segment policy acceptance gate failed");
+                }
+                println!();
+                println!("T1 shared segment policy acceptance gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16310,6 +16361,27 @@ struct T1SharedSegmentMapPolicyRow {
     render_treatment: String,
     selector_treatment: String,
     publication_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T1SharedSegmentPolicyAcceptanceRow {
+    acceptance_id: String,
+    policy_id: String,
+    route_pair: String,
+    affected_routes: String,
+    map_policy_decision: String,
+    accepted_render_treatment: String,
+    acceptance_status: String,
+    acceptance_basis: String,
+    publication_status_before: String,
+    publication_status_after: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
     blocker_count_before: usize,
@@ -29841,6 +29913,180 @@ fn t1_shared_segment_map_policy_gate_failures(
     failures
 }
 
+fn load_t1_shared_segment_map_policy(path: &Path) -> Result<Vec<T1SharedSegmentMapPolicyRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t1_shared_segment_policy_acceptance_rows(
+    policy_rows: &[T1SharedSegmentMapPolicyRow],
+) -> Vec<T1SharedSegmentPolicyAcceptanceRow> {
+    let mut rows = policy_rows
+        .iter()
+        .filter(|row| {
+            row.map_policy_decision == "shared-segment-policy-authored-review"
+                && row.publication_status == "held-pending-policy-acceptance"
+                && row.claim_blocker_delta == 0
+        })
+        .map(|row| T1SharedSegmentPolicyAcceptanceRow {
+            acceptance_id: format!("T1SHAREDACCEPT-{}", stable_id_fragment(&row.policy_id)),
+            policy_id: row.policy_id.clone(),
+            route_pair: row.route_pair.clone(),
+            affected_routes: row.affected_routes.clone(),
+            map_policy_decision: row.map_policy_decision.clone(),
+            accepted_render_treatment: row.render_treatment.clone(),
+            acceptance_status: "accepted-policy-ready-for-relief-replay".to_string(),
+            acceptance_basis:
+                "policy uses allowed interlined trunk or selected-transfer split treatment"
+                    .to_string(),
+            publication_status_before: row.publication_status.clone(),
+            publication_status_after: "held-pending-blocker-relief-replay".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: row.blocker_count_after,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t1-schematic-geometry-blocker-relief.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route_pair.cmp(&right.route_pair));
+    rows
+}
+
+fn write_t1_shared_segment_policy_acceptance(
+    path: &Path,
+    rows: &[T1SharedSegmentPolicyAcceptanceRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_shared_segment_policy_acceptance_summary(
+    output: &Path,
+    rows: &[T1SharedSegmentPolicyAcceptanceRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T1 shared-segment policy acceptance rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t1_shared_segment_policy_acceptance_gate_failures(
+    rows: &[T1SharedSegmentPolicyAcceptanceRow],
+    policy_rows: &[T1SharedSegmentMapPolicyRow],
+) -> Vec<String> {
+    let expected = policy_rows
+        .iter()
+        .filter(|row| {
+            row.map_policy_decision == "shared-segment-policy-authored-review"
+                && row.publication_status == "held-pending-policy-acceptance"
+                && row.claim_blocker_delta == 0
+        })
+        .map(|row| row.policy_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_blockers = policy_rows
+        .iter()
+        .filter(|row| expected.contains(row.policy_id.as_str()))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("T1 shared segment policy acceptance has no held policy rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T1 shared segment policy acceptance has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.acceptance_id.trim().is_empty()
+            || row.policy_id.trim().is_empty()
+            || row.route_pair.trim().is_empty()
+            || row.affected_routes.trim().is_empty()
+            || row.map_policy_decision.trim().is_empty()
+            || row.accepted_render_treatment.trim().is_empty()
+            || row.acceptance_status.trim().is_empty()
+            || row.acceptance_basis.trim().is_empty()
+            || row.publication_status_before.trim().is_empty()
+            || row.publication_status_after.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete acceptance fields",
+                row.policy_id
+            ));
+        }
+        if !seen.insert(row.policy_id.clone()) {
+            failures.push(format!("{} appears more than once", row.policy_id));
+        }
+        if !expected.contains(row.policy_id.as_str()) {
+            failures.push(format!("{} is not an expected policy row", row.policy_id));
+        }
+        if row.acceptance_status != "accepted-policy-ready-for-relief-replay"
+            || row.publication_status_before != "held-pending-policy-acceptance"
+            || row.publication_status_after != "held-pending-blocker-relief-replay"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid acceptance state", row.policy_id));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after
+            || row.blocker_count_before != row.blocker_count_after
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!(
+                "{} reduced blockers during acceptance",
+                row.policy_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from policy acceptance"));
+        }
+    }
+    let actual_blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_blockers != expected_blockers {
+        failures.push(format!(
+            "T1 shared segment policy acceptance preserves {actual_blockers} blockers but expected {expected_blockers}"
+        ));
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -37882,6 +38128,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T1 shared segment map policy is authored but pending acceptance",
             ),
             (
+                "t1-shared-segment-policy-acceptance",
+                "route t1-shared-segment-policy-acceptance --gate",
+                "data/t1-shared-segment-policy-acceptance.csv",
+                "held-known",
+                8,
+                "T1 shared segment policy is accepted but pending blocker relief replay",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -44059,7 +44313,8 @@ mod tests {
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
         t1_line_selector_rows, t1_schematic_geometry_claim_review_gate_failures,
         t1_schematic_geometry_claim_review_rows, t1_shared_segment_map_policy_gate_failures,
-        t1_shared_segment_map_policy_rows, t1_sla_candidate_pair_gate_failures,
+        t1_shared_segment_map_policy_rows, t1_shared_segment_policy_acceptance_gate_failures,
+        t1_shared_segment_policy_acceptance_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
@@ -44171,16 +44426,16 @@ mod tests {
         OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SchematicGeometryClaimReviewRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow, T1SlaCandidateUniverseRow,
+        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -51550,6 +51805,51 @@ mod tests {
         assert_eq!(rows[0].blocker_count_after, 4);
         assert_eq!(rows[0].claim_blocker_delta, 0);
         assert_eq!(rows[0].publication_status, "held-pending-policy-acceptance");
+    }
+
+    #[test]
+    fn t1_shared_segment_policy_acceptance_preserves_blockers_for_replay() {
+        let policy_rows = vec![T1SharedSegmentMapPolicyRow {
+            policy_id: "T1SHAREDSEG-I40I95".to_string(),
+            route_pair: "I40-I95".to_string(),
+            primary_route: "I40".to_string(),
+            overlap_route: "I95".to_string(),
+            affected_routes: "I40;I95".to_string(),
+            source_review_ids: "T1SCHEMATIC-I40;T1SCHEMATIC-I95".to_string(),
+            policy_basis: "Shared segment must be represented as interlined trunk service"
+                .to_string(),
+            map_policy_decision: "shared-segment-policy-authored-review".to_string(),
+            render_treatment:
+                "represent as interlined trunk service or split at selected transfer stops"
+                    .to_string(),
+            selector_treatment: "keep both selected promise-spine routes pending acceptance"
+                .to_string(),
+            publication_status: "held-pending-policy-acceptance".to_string(),
+            blocker_claims_before: "map;publication".to_string(),
+            blocker_claims_after: "map;publication".to_string(),
+            blocker_count_before: 4,
+            blocker_count_after: 4,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t1-shared-segment-policy-acceptance.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t1_shared_segment_policy_acceptance_rows(&policy_rows);
+        let failures = t1_shared_segment_policy_acceptance_gate_failures(&rows, &policy_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].acceptance_status,
+            "accepted-policy-ready-for-relief-replay"
+        );
+        assert_eq!(
+            rows[0].publication_status_after,
+            "held-pending-blocker-relief-replay"
+        );
+        assert_eq!(rows[0].blocker_count_before, 4);
+        assert_eq!(rows[0].blocker_count_after, 4);
+        assert_eq!(rows[0].claim_blocker_delta, 0);
     }
 
     #[test]
