@@ -2882,6 +2882,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t2_beck_long_connector_blocker_relief: PathBuf,
+        /// T2 game publication evidence blocker relief CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-publication-evidence-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        t2_game_publication_evidence_blocker_relief: PathBuf,
         /// T3 lower-tier feeder-gap blocker relief CSV
         #[arg(
             long,
@@ -10125,6 +10132,7 @@ fn run_cli() -> Result<()> {
             t2_beck_transfer_complexity_blocker_relief,
             t2_beck_label_density_blocker_relief,
             t2_beck_long_connector_blocker_relief,
+            t2_game_publication_evidence_blocker_relief,
             t3_lower_tier_feeder_gap_blocker_relief,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
@@ -10167,6 +10175,15 @@ fn run_cli() -> Result<()> {
                             t2_beck_long_connector_blocker_relief.display()
                         )
                     })?;
+            let t2_game_relief_rows = load_t2_game_publication_evidence_blocker_relief(
+                &t2_game_publication_evidence_blocker_relief,
+            )
+            .with_context(|| {
+                format!(
+                    "loading {}",
+                    t2_game_publication_evidence_blocker_relief.display()
+                )
+            })?;
             let t3_feeder_relief_rows = load_t3_lower_tier_feeder_gap_blocker_relief(
                 &t3_lower_tier_feeder_gap_blocker_relief,
             )
@@ -10196,6 +10213,7 @@ fn run_cli() -> Result<()> {
                 &t2_transfer_relief_rows,
                 &t2_label_relief_rows,
                 &t2_long_relief_rows,
+                &t2_game_relief_rows,
                 &t3_feeder_relief_rows,
                 &parallel_rows,
                 &access_gap_rows,
@@ -24445,6 +24463,33 @@ fn t2_long_connector_relief_route_set(
         .collect()
 }
 
+fn load_t2_game_publication_evidence_blocker_relief(
+    path: &Path,
+) -> Result<Vec<T2GamePublicationEvidenceBlockerReliefRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_game_publication_relief_scenario_set(
+    rows: &[T2GamePublicationEvidenceBlockerReliefRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+                && row.blocker_count_after == 0
+                && row.claim_blocker_delta < 0
+        })
+        .map(|row| row.scenario_id.clone())
+        .collect()
+}
+
 fn load_t3_lower_tier_feeder_gap_blocker_relief(
     path: &Path,
 ) -> Result<Vec<T3LowerTierFeederGapBlockerReliefRow>> {
@@ -24491,6 +24536,7 @@ fn optimizer_constraint_ledger_rows(
     t2_transfer_relief_rows: &[T2BeckTransferComplexityBlockerReliefRow],
     t2_label_relief_rows: &[T2BeckLabelDensityBlockerReliefRow],
     t2_long_relief_rows: &[T2BeckLongConnectorBlockerReliefRow],
+    t2_game_relief_rows: &[T2GamePublicationEvidenceBlockerReliefRow],
     t3_feeder_relief_rows: &[T3LowerTierFeederGapBlockerReliefRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
@@ -24505,6 +24551,7 @@ fn optimizer_constraint_ledger_rows(
     let relieved_t2_transfer_routes = t2_transfer_relief_route_set(t2_transfer_relief_rows);
     let relieved_t2_label_routes = t2_label_density_relief_route_set(t2_label_relief_rows);
     let relieved_t2_long_routes = t2_long_connector_relief_route_set(t2_long_relief_rows);
+    let relieved_t2_game_scenarios = t2_game_publication_relief_scenario_set(t2_game_relief_rows);
     let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
 
     for row in source_policy_rows {
@@ -25243,7 +25290,10 @@ fn optimizer_constraint_ledger_rows(
         });
     }
 
-    for row in scenario_hook_rows {
+    for row in scenario_hook_rows
+        .iter()
+        .filter(|row| !relieved_t2_game_scenarios.contains(&row.scenario_id))
+    {
         rows.push(OptimizerConstraintLedgerRow {
             constraint_id: format!("CON-GAMEHOOK-{}", stable_id_fragment(&row.scenario_id)),
             optimizer_run_id: "tier-optimizer-current".to_string(),
@@ -25286,6 +25336,59 @@ fn optimizer_constraint_ledger_rows(
             next_artifact: "data/game/t2-scenario-hooks.csv".to_string(),
             optimizer_effect: row.player_decision.clone(),
             validation_status: "review".to_string(),
+        });
+    }
+
+    for row in t2_game_relief_rows.iter().filter(|row| {
+        row.relief_decision == "relief-ready-for-constraint-ledger-replay"
+            && row.blocker_count_after == 0
+            && row.claim_blocker_delta < 0
+    }) {
+        rows.push(OptimizerConstraintLedgerRow {
+            constraint_id: format!("CON-GAMERELIEF-{}", stable_id_fragment(&row.scenario_id)),
+            optimizer_run_id: "tier-optimizer-current".to_string(),
+            tier: "T2".to_string(),
+            region_id: "game-campaign".to_string(),
+            constraint_order: 14,
+            constraint_class: "game_ops_publication_readiness_relief".to_string(),
+            behavior_type: "review".to_string(),
+            constraint_scope: "game".to_string(),
+            subject_id: row.scenario_id.clone(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: String::new(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            source_artifact: "data/t2-game-publication-evidence-blocker-relief.csv".to_string(),
+            source_row_id: row.relief_id.clone(),
+            standard_artifact: "docs/game/interstate-tycoon-plan.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "pass".to_string(),
+            observed_value: row.relief_decision.clone(),
+            threshold_value: "relief-ready-for-constraint-ledger-replay".to_string(),
+            measurement_unit: "relief_decision".to_string(),
+            blocks_claims: String::new(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: format!("claim_blocker_delta={}", row.claim_blocker_delta),
+            penalty_score: 0.0,
+            repair_action: "constraint-ledger-replay-applied".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "low".to_string(),
+            exception_id: row.acceptance_id.clone(),
+            exception_artifact: "data/t2-game-publication-evidence-policy-acceptance.csv"
+                .to_string(),
+            next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
+            optimizer_effect:
+                "accepted game publication evidence policy removes scenario publication blockers"
+                    .to_string(),
+            validation_status: "pass".to_string(),
         });
     }
 
@@ -50636,35 +50739,36 @@ mod tests {
         T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
         T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
         T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow,
-        T2GamePublicationEvidencePolicyAcceptanceRow, T2GamePublicationEvidencePolicyRow,
-        T2GamePublicationEvidenceReviewRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
-        T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
-        T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
-        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
-        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
-        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
-        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
-        T4TerminalAccessProofArtifactRow, T4TerminalAccessProofIntakeRow,
-        T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
-        T4TerminalAccessSourceAccessRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T2GamePublicationEvidenceBlockerReliefRow, T2GamePublicationEvidencePolicyAcceptanceRow,
+        T2GamePublicationEvidencePolicyRow, T2GamePublicationEvidenceReviewRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
+        T2StitchedMemberCandidateScopeReviewRow, T2StitchedMemberDecisionDocketRow,
+        T2StitchedMemberEvidenceAcquisitionRow, T2StitchedMemberEvidenceContractRow,
+        T2StitchedMemberProofArtifactAttachmentRow, T2StitchedMemberProofIntakeRow,
+        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
+        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow,
+        T3LowerTierFeederGapBlockerReliefRow, T3LowerTierFeederGapPolicyAcceptanceRow,
+        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
+        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactRow,
+        T4TerminalAccessProofIntakeRow, T4TerminalAccessProofReviewRow,
+        T4TerminalAccessProofSourceCaptureRow, T4TerminalAccessSourceAccessRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -57574,6 +57678,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &parallel_rows,
             &access_gap_rows,
             &beck_t1_rows,
@@ -57687,6 +57792,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t1_rows,
             &[],
             &[],
@@ -57763,6 +57869,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -57849,6 +57956,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -57929,6 +58037,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -57944,6 +58053,61 @@ mod tests {
         assert!(!rows
             .iter()
             .any(|row| row.constraint_class == "beck_long_connector"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_replays_t2_game_publication_relief() {
+        let relief_rows = vec![T2GamePublicationEvidenceBlockerReliefRow {
+            relief_id: "T2GAMERELIEF-HOUSTONPORTSURGE".to_string(),
+            acceptance_id: "T2GAMEACCEPT-HOUSTONPORTSURGE".to_string(),
+            policy_id: "T2GAMEPOLICY-HOUSTONPORTSURGE".to_string(),
+            scenario_id: "houston-port-surge".to_string(),
+            service_class: "long-connector".to_string(),
+            accepted_required_evidence: "port-surge-demand-and-flood-closure-evidence".to_string(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: "game;publication;upgrade".to_string(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: 1,
+            blocker_count_after: 0,
+            claim_blocker_delta: -1,
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let scenario_hook_rows = vec![T2ScenarioHookRow {
+            scenario_id: "houston-port-surge".to_string(),
+            service_class: "long-connector".to_string(),
+            t2_map_id: "beck-schematic-t2-only".to_string(),
+            player_decision: "choose whether to harden a port surge route".to_string(),
+            evidence_hold: "port surge demand and flood closure evidence missing".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &relief_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &scenario_hook_rows,
+            &[],
+        );
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows.iter().any(|row| row.constraint_class
+            == "game_ops_publication_readiness_relief"
+            && row.constraint_status == "pass"));
+        assert!(!rows
+            .iter()
+            .any(|row| row.constraint_class == "game_ops_publication_readiness"));
     }
 
     #[test]
@@ -57991,6 +58155,7 @@ mod tests {
         }];
 
         let rows = optimizer_constraint_ledger_rows(
+            &[],
             &[],
             &[],
             &[],
