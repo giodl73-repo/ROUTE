@@ -41,6 +41,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 Stitched Member Selection Docket | Classify state-scoped stitched-member candidate bundles before registry mutation. | done |
 | 2026-05-13 | T2 Stitched Member Evidence Contract | Define proof requirements for stitched-member selection decisions before candidate promotion. | done |
 | 2026-05-14 | T2 Stitched Member Evidence Acquisition | Turn source-needed stitched-member proof contracts into concrete acquisition targets. | done |
+| 2026-05-14 | T2 Stitched Member Source Access Policy | Classify stitched-member DOT source targets before evidence collection. | done |
 
 ## Next Active Wave
 
