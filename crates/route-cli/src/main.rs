@@ -3009,6 +3009,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit shared-segment map policy rows for T1 schematic geometry blockers
+    T1SharedSegmentMapPolicy {
+        /// T1 schematic-geometry claim review CSV
+        #[arg(
+            long,
+            default_value = "data/t1-schematic-geometry-claim-review.csv",
+            value_name = "FILE"
+        )]
+        schematic_review: PathBuf,
+        /// Output T1 shared-segment map policy CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t1-shared-segment-map-policy.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if policy rows omit route pairs or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -9750,6 +9772,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T1SharedSegmentMapPolicy {
+            schematic_review,
+            output,
+            gate,
+        } => {
+            println!("route t1-shared-segment-map-policy");
+            let schematic_rows = load_t1_schematic_geometry_claim_review(&schematic_review)
+                .with_context(|| format!("loading {}", schematic_review.display()))?;
+            let rows = t1_shared_segment_map_policy_rows(&schematic_rows);
+            write_t1_shared_segment_map_policy(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t1_shared_segment_map_policy_summary(&output, &rows);
+
+            if gate {
+                let failures = t1_shared_segment_map_policy_gate_failures(&rows, &schematic_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T1 shared segment map policy gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T1 shared segment map policy gate failed");
+                }
+                println!();
+                println!("T1 shared segment map policy gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16243,6 +16293,28 @@ struct T1SchematicGeometryClaimReviewRow {
     blocker_count_after: usize,
     claim_blocker_delta: isize,
     review_decision: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T1SharedSegmentMapPolicyRow {
+    policy_id: String,
+    route_pair: String,
+    primary_route: String,
+    overlap_route: String,
+    affected_routes: String,
+    source_review_ids: String,
+    policy_basis: String,
+    map_policy_decision: String,
+    render_treatment: String,
+    selector_treatment: String,
+    publication_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -29533,6 +29605,242 @@ fn t1_schematic_geometry_claim_review_gate_failures(
     failures
 }
 
+fn load_t1_schematic_geometry_claim_review(
+    path: &Path,
+) -> Result<Vec<T1SchematicGeometryClaimReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+#[derive(Default)]
+struct T1SharedSegmentPolicyBuilder {
+    routes: std::collections::BTreeSet<String>,
+    source_review_ids: std::collections::BTreeSet<String>,
+    blocker_claims: std::collections::BTreeSet<String>,
+    blocker_count: usize,
+    policy_basis: std::collections::BTreeSet<String>,
+    design_treatments: std::collections::BTreeSet<String>,
+}
+
+fn t1_shared_segment_map_policy_rows(
+    schematic_rows: &[T1SchematicGeometryClaimReviewRow],
+) -> Vec<T1SharedSegmentMapPolicyRow> {
+    let mut builders = std::collections::BTreeMap::<String, T1SharedSegmentPolicyBuilder>::new();
+    for row in schematic_rows.iter().filter(|row| {
+        row.policy_action == "resolve-shared-segment-map-policy"
+            && row.review_decision == "shared-segment-map-policy-required"
+            && row.claim_blocker_delta == 0
+    }) {
+        let pair = shared_segment_pair_id(&row.route, &row.overlap_corridors);
+        let builder = builders.entry(pair).or_default();
+        builder.routes.insert(row.route.clone());
+        builder
+            .routes
+            .insert(route_display_key(&row.overlap_corridors));
+        builder
+            .source_review_ids
+            .insert(row.schematic_review_id.clone());
+        builder
+            .blocker_claims
+            .insert(row.blocker_claims_after.clone());
+        builder.blocker_count += row.blocker_count_after;
+        builder.policy_basis.insert(row.required_policy.clone());
+        builder
+            .design_treatments
+            .insert(row.design_treatment.clone());
+    }
+
+    builders
+        .into_iter()
+        .map(|(route_pair, builder)| {
+            let affected_routes = builder.routes.iter().cloned().collect::<Vec<_>>();
+            let primary_route = affected_routes.first().cloned().unwrap_or_default();
+            let overlap_route = affected_routes.get(1).cloned().unwrap_or_default();
+            T1SharedSegmentMapPolicyRow {
+                policy_id: format!("T1SHAREDSEG-{}", stable_id_fragment(&route_pair)),
+                route_pair,
+                primary_route,
+                overlap_route,
+                affected_routes: affected_routes.join(";"),
+                source_review_ids: builder
+                    .source_review_ids
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                policy_basis: builder
+                    .policy_basis
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                map_policy_decision: "shared-segment-policy-authored-review".to_string(),
+                render_treatment:
+                    "represent as interlined trunk service or split at selected transfer stops"
+                        .to_string(),
+                selector_treatment: "keep both selected promise-spine routes pending acceptance"
+                    .to_string(),
+                publication_status: "held-pending-policy-acceptance".to_string(),
+                blocker_claims_before: builder
+                    .blocker_claims
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                blocker_claims_after: builder
+                    .blocker_claims
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                blocker_count_before: builder.blocker_count,
+                blocker_count_after: builder.blocker_count,
+                claim_blocker_delta: 0,
+                next_artifact: "data/t1-shared-segment-policy-acceptance.csv".to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn route_display_key(route: &str) -> String {
+    route.trim().replace('-', "")
+}
+
+fn shared_segment_pair_id(route: &str, overlap_route: &str) -> String {
+    let mut routes = [route_display_key(route), route_display_key(overlap_route)];
+    routes.sort();
+    routes.join("-")
+}
+
+fn write_t1_shared_segment_map_policy(
+    path: &Path,
+    rows: &[T1SharedSegmentMapPolicyRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t1_shared_segment_map_policy_summary(output: &Path, rows: &[T1SharedSegmentMapPolicyRow]) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T1 shared-segment map policy rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t1_shared_segment_map_policy_gate_failures(
+    rows: &[T1SharedSegmentMapPolicyRow],
+    schematic_rows: &[T1SchematicGeometryClaimReviewRow],
+) -> Vec<String> {
+    let expected_pairs = schematic_rows
+        .iter()
+        .filter(|row| row.policy_action == "resolve-shared-segment-map-policy")
+        .map(|row| shared_segment_pair_id(&row.route, &row.overlap_corridors))
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_blockers = schematic_rows
+        .iter()
+        .filter(|row| row.policy_action == "resolve-shared-segment-map-policy")
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected_pairs.is_empty() {
+        failures.push("T1 shared segment policy has no schematic review pairs".to_string());
+    }
+    if rows.len() != expected_pairs.len() {
+        failures.push(format!(
+            "T1 shared segment policy has {} rows but expected {} pairs",
+            rows.len(),
+            expected_pairs.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.policy_id.trim().is_empty()
+            || row.route_pair.trim().is_empty()
+            || row.primary_route.trim().is_empty()
+            || row.overlap_route.trim().is_empty()
+            || row.affected_routes.trim().is_empty()
+            || row.source_review_ids.trim().is_empty()
+            || row.policy_basis.trim().is_empty()
+            || row.map_policy_decision.trim().is_empty()
+            || row.render_treatment.trim().is_empty()
+            || row.selector_treatment.trim().is_empty()
+            || row.publication_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete policy fields", row.route_pair));
+        }
+        if !seen.insert(row.route_pair.clone()) {
+            failures.push(format!("{} appears more than once", row.route_pair));
+        }
+        if !expected_pairs.contains(&row.route_pair) {
+            failures.push(format!(
+                "{} is not an expected shared segment pair",
+                row.route_pair
+            ));
+        }
+        if row.map_policy_decision != "shared-segment-policy-authored-review"
+            || row.publication_status != "held-pending-policy-acceptance"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid policy state", row.route_pair));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after
+            || row.blocker_count_before != row.blocker_count_after
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!(
+                "{} reduced shared-segment blockers",
+                row.route_pair
+            ));
+        }
+    }
+    for expected_pair in expected_pairs {
+        if !seen.contains(&expected_pair) {
+            failures.push(format!(
+                "{expected_pair} missing from shared segment policy"
+            ));
+        }
+    }
+    let actual_blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_blockers != expected_blockers {
+        failures.push(format!(
+            "T1 shared segment policy preserves {actual_blockers} blockers but expected {expected_blockers}"
+        ));
+    }
+    failures
+}
+
 fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
@@ -37566,6 +37874,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T1 shared schematic geometry blockers remain held pending map policy",
             ),
             (
+                "t1-shared-segment-map-policy",
+                "route t1-shared-segment-map-policy --gate",
+                "data/t1-shared-segment-map-policy.csv",
+                "held-known",
+                8,
+                "T1 shared segment map policy is authored but pending acceptance",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -43742,7 +44058,8 @@ mod tests {
         t1_failure_evidence_gate_failures, t1_failure_row_has_evidence_contract,
         t1_feedback_docket_gate_failures, t1_feedback_docket_rows, t1_line_selector_gate_failures,
         t1_line_selector_rows, t1_schematic_geometry_claim_review_gate_failures,
-        t1_schematic_geometry_claim_review_rows, t1_sla_candidate_pair_gate_failures,
+        t1_schematic_geometry_claim_review_rows, t1_shared_segment_map_policy_gate_failures,
+        t1_shared_segment_map_policy_rows, t1_sla_candidate_pair_gate_failures,
         t1_sla_candidate_pair_rows, t1_stop_selector_gate_failures, t1_stop_selector_rows,
         t1_topology_repair_gate_failures, t1_topology_repair_rows,
         t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
@@ -43854,15 +44171,16 @@ mod tests {
         OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
         PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
         T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow,
-        T2BundleOverlayRow, T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T1SchematicGeometryClaimReviewRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
+        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
+        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -51172,6 +51490,66 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.review_decision == "shared-segment-map-policy-required"));
+    }
+
+    #[test]
+    fn t1_shared_segment_map_policy_pairs_routes_without_relief() {
+        let schematic_rows = vec![
+            T1SchematicGeometryClaimReviewRow {
+                schematic_review_id: "T1SCHEMATIC-I40".to_string(),
+                claim_review_id: "OCR-T1SCHEMATIC".to_string(),
+                route: "I40".to_string(),
+                design_role: "promise-spine".to_string(),
+                design_status: "policy-review".to_string(),
+                beck_review_flag: "overlap-review".to_string(),
+                overlap_corridors: "I-95".to_string(),
+                policy_action: "resolve-shared-segment-map-policy".to_string(),
+                required_policy: "Shared segment must be represented as interlined trunk service or split at selected transfer stops without deleting either real route".to_string(),
+                design_treatment: "Keep both routes selected while map policy resolves shared schematic treatment".to_string(),
+                gate_policy: "Policy review does not block release but must remain visible in design review".to_string(),
+                blocker_claims_before: "map;publication".to_string(),
+                blocker_claims_after: "map;publication".to_string(),
+                blocker_count_before: 2,
+                blocker_count_after: 2,
+                claim_blocker_delta: 0,
+                review_decision: "shared-segment-map-policy-required".to_string(),
+                next_artifact: "data/t1-shared-segment-map-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T1SchematicGeometryClaimReviewRow {
+                schematic_review_id: "T1SCHEMATIC-I95".to_string(),
+                claim_review_id: "OCR-T1SCHEMATIC".to_string(),
+                route: "I95".to_string(),
+                design_role: "promise-spine".to_string(),
+                design_status: "policy-review".to_string(),
+                beck_review_flag: "overlap-review".to_string(),
+                overlap_corridors: "I-40".to_string(),
+                policy_action: "resolve-shared-segment-map-policy".to_string(),
+                required_policy: "Shared segment must be represented as interlined trunk service or split at selected transfer stops without deleting either real route".to_string(),
+                design_treatment: "Keep both routes selected while map policy resolves shared schematic treatment".to_string(),
+                gate_policy: "Policy review does not block release but must remain visible in design review".to_string(),
+                blocker_claims_before: "map;publication".to_string(),
+                blocker_claims_after: "map;publication".to_string(),
+                blocker_count_before: 2,
+                blocker_count_after: 2,
+                claim_blocker_delta: 0,
+                review_decision: "shared-segment-map-policy-required".to_string(),
+                next_artifact: "data/t1-shared-segment-map-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t1_shared_segment_map_policy_rows(&schematic_rows);
+        let failures = t1_shared_segment_map_policy_gate_failures(&rows, &schematic_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route_pair, "I40-I95");
+        assert_eq!(rows[0].affected_routes, "I40;I95");
+        assert_eq!(rows[0].blocker_count_before, 4);
+        assert_eq!(rows[0].blocker_count_after, 4);
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].publication_status, "held-pending-policy-acceptance");
     }
 
     #[test]
