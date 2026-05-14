@@ -3328,6 +3328,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit artifact-attachment rows for T2 stitched-member source-capture rows
+    T2StitchedMemberProofArtifactAttachment {
+        /// T2 stitched-member proof source-capture CSV
+        #[arg(
+            long,
+            default_value = "data/t2-stitched-member-proof-source-capture.csv",
+            value_name = "FILE"
+        )]
+        source_capture: PathBuf,
+        /// Output T2 stitched-member proof artifact-attachment CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-stitched-member-proof-artifact-attachment.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if artifact-attachment rows attach or accept evidence
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9688,6 +9710,36 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2StitchedMemberProofArtifactAttachment {
+            source_capture,
+            output,
+            gate,
+        } => {
+            println!("route t2-stitched-member-proof-artifact-attachment");
+            let capture_rows = load_t2_stitched_member_proof_source_capture(&source_capture)
+                .with_context(|| format!("loading {}", source_capture.display()))?;
+            let rows = t2_stitched_member_proof_artifact_attachment_rows(&capture_rows);
+            write_t2_stitched_member_proof_artifact_attachment(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_stitched_member_proof_artifact_attachment_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_stitched_member_proof_artifact_attachment_gate_failures(
+                    &rows,
+                    &capture_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 stitched member proof artifact attachment gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 stitched member proof artifact attachment gate failed");
+                }
+                println!("T2 stitched member proof artifact attachment gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -15680,6 +15732,25 @@ struct T2StitchedMemberProofSourceCaptureRow {
     capture_status: String,
     evidence_acceptance_status: String,
     capture_blocker: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2StitchedMemberProofArtifactAttachmentRow {
+    artifact_attachment_id: String,
+    source_capture_id: String,
+    route: String,
+    candidate_segment_bundle_id: String,
+    state_scope: String,
+    source_artifact_reference: String,
+    attachment_status: String,
+    evidence_review_status: String,
+    proof_acceptance_status: String,
+    attachment_blocker: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -26129,6 +26200,174 @@ fn t2_stitched_member_proof_source_capture_gate_failures(
     failures
 }
 
+fn load_t2_stitched_member_proof_source_capture(
+    path: &Path,
+) -> Result<Vec<T2StitchedMemberProofSourceCaptureRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_stitched_member_proof_artifact_attachment_rows(
+    capture_rows: &[T2StitchedMemberProofSourceCaptureRow],
+) -> Vec<T2StitchedMemberProofArtifactAttachmentRow> {
+    let mut rows = capture_rows
+        .iter()
+        .filter(|row| row.source_artifact_reference == "source-needed")
+        .map(|capture| T2StitchedMemberProofArtifactAttachmentRow {
+            artifact_attachment_id: format!(
+                "T2STITCHEDATTACH-{}",
+                stable_id_fragment(&capture.source_capture_id)
+            ),
+            source_capture_id: capture.source_capture_id.clone(),
+            route: capture.route.clone(),
+            candidate_segment_bundle_id: capture.candidate_segment_bundle_id.clone(),
+            state_scope: capture.state_scope.clone(),
+            source_artifact_reference: "source-needed".to_string(),
+            attachment_status: "source-needed".to_string(),
+            evidence_review_status: "not-reviewed".to_string(),
+            proof_acceptance_status: "not-accepted".to_string(),
+            attachment_blocker:
+                "manual or cached DOT route-geometry artifact reference has not been attached"
+                    .to_string(),
+            blocked_claims_before: capture.blocked_claims_after.clone(),
+            blocked_claims_after: capture.blocked_claims_after.clone(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-registry.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.state_scope.cmp(&right.state_scope))
+            .then(
+                left.candidate_segment_bundle_id
+                    .cmp(&right.candidate_segment_bundle_id),
+            )
+    });
+    rows
+}
+
+fn write_t2_stitched_member_proof_artifact_attachment(
+    path: &Path,
+    rows: &[T2StitchedMemberProofArtifactAttachmentRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_stitched_member_proof_artifact_attachment_summary(
+    output: &Path,
+    rows: &[T2StitchedMemberProofArtifactAttachmentRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.attachment_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 stitched member proof artifact-attachment rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_stitched_member_proof_artifact_attachment_gate_failures(
+    rows: &[T2StitchedMemberProofArtifactAttachmentRow],
+    capture_rows: &[T2StitchedMemberProofSourceCaptureRow],
+) -> Vec<String> {
+    let expected = capture_rows
+        .iter()
+        .filter(|row| row.source_artifact_reference == "source-needed")
+        .map(|row| row.source_capture_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push(
+            "stitched member artifact attachment has no source-needed capture rows".to_string(),
+        );
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "stitched member artifact attachment has {} rows but expected {} capture rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.artifact_attachment_id.trim().is_empty()
+            || row.source_capture_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.candidate_segment_bundle_id.trim().is_empty()
+            || row.state_scope.trim().is_empty()
+            || row.source_artifact_reference.trim().is_empty()
+            || row.attachment_status.trim().is_empty()
+            || row.evidence_review_status.trim().is_empty()
+            || row.proof_acceptance_status.trim().is_empty()
+            || row.attachment_blocker.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete artifact-attachment fields",
+                row.route, row.candidate_segment_bundle_id
+            ));
+        }
+        if !seen.insert(row.source_capture_id.clone()) {
+            failures.push(format!("{} appears more than once", row.source_capture_id));
+        }
+        if !expected.contains(row.source_capture_id.as_str()) {
+            failures.push(format!(
+                "{} is not a source-needed source-capture row",
+                row.source_capture_id
+            ));
+        }
+        if row.source_artifact_reference != "source-needed"
+            || row.attachment_status != "source-needed"
+            || row.evidence_review_status != "not-reviewed"
+            || row.proof_acceptance_status != "not-accepted"
+            || row.validation_status != "review"
+        {
+            failures.push(format!(
+                "{} artifact attachment accepted evidence",
+                row.route
+            ));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from artifact attachment"));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -33566,6 +33805,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Stitched-member proof-intake rows receive source-capture placeholders",
             ),
             (
+                "t2-stitched-member-proof-artifact-attachment",
+                "route t2-stitched-member-proof-artifact-attachment --gate",
+                "data/t2-stitched-member-proof-artifact-attachment.csv",
+                "held-known",
+                2,
+                "Stitched-member source-capture rows receive artifact-attachment placeholders",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -39481,8 +39728,10 @@ mod tests {
         t2_stitched_member_evidence_acquisition_gate_failures,
         t2_stitched_member_evidence_acquisition_rows,
         t2_stitched_member_evidence_contract_gate_failures,
-        t2_stitched_member_evidence_contract_rows, t2_stitched_member_proof_intake_gate_failures,
-        t2_stitched_member_proof_intake_rows,
+        t2_stitched_member_evidence_contract_rows,
+        t2_stitched_member_proof_artifact_attachment_gate_failures,
+        t2_stitched_member_proof_artifact_attachment_rows,
+        t2_stitched_member_proof_intake_gate_failures, t2_stitched_member_proof_intake_rows,
         t2_stitched_member_proof_source_capture_gate_failures,
         t2_stitched_member_proof_source_capture_rows,
         t2_stitched_member_registry_handoff_gate_failures,
@@ -39544,21 +39793,21 @@ mod tests {
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofIntakeRow,
-        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
-        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
-        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
-        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
-        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
-        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
-        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
-        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
+        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
+        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
+        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
+        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
+        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
+        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
+        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
+        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -45472,6 +45721,42 @@ mod tests {
         assert_eq!(rows[0].source_artifact_reference, "source-needed");
         assert_eq!(rows[0].capture_status, "source-needed");
         assert_eq!(rows[0].evidence_acceptance_status, "not-reviewed");
+        assert_eq!(rows[0].validation_status, "review");
+        assert_eq!(rows[0].blocker_delta, 0);
+    }
+
+    #[test]
+    fn t2_stitched_member_proof_artifact_attachment_stays_unattached() {
+        let capture_rows = vec![T2StitchedMemberProofSourceCaptureRow {
+            source_capture_id: "T2STITCHEDSOURCE-I295-FL".to_string(),
+            proof_intake_id: "T2STITCHEDPROOF-I295-FL".to_string(),
+            route: "I295".to_string(),
+            candidate_segment_bundle_id: "US.HWYBUNDLE.FL".to_string(),
+            state_scope: "FL".to_string(),
+            source_artifact_reference: "source-needed".to_string(),
+            source_artifact_type: "manual-or-cached-route-geometry".to_string(),
+            capture_status: "source-needed".to_string(),
+            evidence_acceptance_status: "not-reviewed".to_string(),
+            capture_blocker:
+                "manual or cached DOT route-geometry source artifact has not been attached"
+                    .to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-registry.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_stitched_member_proof_artifact_attachment_rows(&capture_rows);
+        let failures =
+            t2_stitched_member_proof_artifact_attachment_gate_failures(&rows, &capture_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source_artifact_reference, "source-needed");
+        assert_eq!(rows[0].attachment_status, "source-needed");
+        assert_eq!(rows[0].evidence_review_status, "not-reviewed");
+        assert_eq!(rows[0].proof_acceptance_status, "not-accepted");
         assert_eq!(rows[0].validation_status, "review");
         assert_eq!(rows[0].blocker_delta, 0);
     }
