@@ -31,6 +31,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 Service Overlay Diagnostic Binding | Bind service-overlay repair rows to explicit Beck diagnostic decisions before service classes can pass. | done |
 | 2026-05-13 | T2 Local Zone Overlay Handoff | Bind local-zone repair rows to explicit T3 zone handoff decisions before national game overlay claims can pass. | done |
 | 2026-05-13 | T2 Bundle Readiness Repair Docket | Turn repair-needed bundle-readiness rows into explicit stop-chain, stitched-member, and terminal-stop repair tasks. | done |
+| 2026-05-13 | T2 Bundle Readiness Repair Evidence | Probe readiness repair tasks against downstream artifacts before any bundle-readiness replay can promote claims. | done |
 
 ## Next Active Wave
 

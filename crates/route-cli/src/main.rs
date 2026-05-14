@@ -2979,6 +2979,49 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit evidence probe for T2 bundle-readiness repair tasks
+    T2BundleReadinessRepairEvidence {
+        /// T2 bundle readiness repair docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-readiness-repair-docket.csv",
+            value_name = "FILE"
+        )]
+        repair_docket: PathBuf,
+        /// National segment registry CSV
+        #[arg(
+            long,
+            default_value = "data/national-segment-registry.csv",
+            value_name = "FILE"
+        )]
+        registry: PathBuf,
+        /// Tier segment candidates CSV
+        #[arg(
+            long,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        segment_candidates: PathBuf,
+        /// T2 service selection CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-selection.csv",
+            value_name = "FILE"
+        )]
+        service_selection: PathBuf,
+        /// Output T2 bundle readiness repair evidence CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-readiness-repair-evidence.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if repair tasks are missing evidence probe rows or promoted
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -8936,6 +8979,49 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BundleReadinessRepairEvidence {
+            repair_docket,
+            registry,
+            segment_candidates,
+            service_selection,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-readiness-repair-evidence");
+            let repair_rows = load_t2_bundle_readiness_repair_docket(&repair_docket)
+                .with_context(|| format!("loading {}", repair_docket.display()))?;
+            let registry_rows = load_national_segment_registry(&registry)
+                .with_context(|| format!("loading {}", registry.display()))?;
+            let candidate_rows = load_tier_segment_candidates(&segment_candidates)
+                .with_context(|| format!("loading {}", segment_candidates.display()))?;
+            let service_rows = load_t2_service_selection(&service_selection)
+                .with_context(|| format!("loading {}", service_selection.display()))?;
+            let rows = t2_bundle_readiness_repair_evidence_rows(
+                &repair_rows,
+                &registry_rows,
+                &candidate_rows,
+                &service_rows,
+            );
+            write_t2_bundle_readiness_repair_evidence(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_readiness_repair_evidence_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_bundle_readiness_repair_evidence_gate_failures(&rows, &repair_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle readiness repair evidence gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle readiness repair evidence gate failed");
+                }
+                println!();
+                println!("T2 bundle readiness repair evidence gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -14681,6 +14767,23 @@ struct T2BundleReadinessRepairDocketRow {
     repair_decision: String,
     repair_action: String,
     required_artifact: String,
+    next_artifact: String,
+    blocks_claims: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleReadinessRepairEvidenceRow {
+    evidence_id: String,
+    repair_id: String,
+    route: String,
+    segment_bundle_id: String,
+    readiness_class: String,
+    evidence_artifact: String,
+    evidence_status: String,
+    evidence_row_count: usize,
+    evidence_summary: String,
+    evidence_decision: String,
     next_artifact: String,
     blocks_claims: String,
     validation_status: String,
@@ -22720,6 +22823,208 @@ fn t2_bundle_readiness_repair_docket_gate_failures(
     failures
 }
 
+fn load_t2_bundle_readiness_repair_docket(
+    path: &Path,
+) -> Result<Vec<T2BundleReadinessRepairDocketRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_readiness_repair_evidence_rows(
+    repair_rows: &[T2BundleReadinessRepairDocketRow],
+    registry_rows: &[NationalSegmentRegistryRow],
+    candidate_rows: &[TierSegmentCandidateRow],
+    service_rows: &[T2ServiceSelectionRow],
+) -> Vec<T2BundleReadinessRepairEvidenceRow> {
+    let mut rows = repair_rows
+        .iter()
+        .map(|repair| {
+            let route_key = canonical_route_key(&repair.route);
+            let (artifact, count, summary) = match repair.readiness_class.as_str() {
+                "stop-chain" => {
+                    let matches = registry_rows
+                        .iter()
+                        .filter(|row| canonical_route_key(&row.route) == route_key)
+                        .count();
+                    (
+                        "data/national-segment-registry.csv",
+                        matches,
+                        format!("{matches} registry rows match route {}", repair.route),
+                    )
+                }
+                "stitched-member" => {
+                    let matches = candidate_rows
+                        .iter()
+                        .filter(|row| canonical_route_key(&row.route) == route_key)
+                        .count();
+                    (
+                        "data/tier-segment-candidates.csv",
+                        matches,
+                        format!(
+                            "{matches} segment candidate rows match route {}",
+                            repair.route
+                        ),
+                    )
+                }
+                "terminal-stop" => {
+                    let matches = service_rows
+                        .iter()
+                        .filter(|row| canonical_route_key(&row.route) == route_key)
+                        .count();
+                    (
+                        "data/t2-service-selection.csv",
+                        matches,
+                        format!(
+                            "{matches} service selection rows match route {}",
+                            repair.route
+                        ),
+                    )
+                }
+                _ => (
+                    repair.required_artifact.as_str(),
+                    0,
+                    format!("unsupported readiness class {}", repair.readiness_class),
+                ),
+            };
+            let evidence_status = if count > 0 {
+                "candidate-evidence-found"
+            } else {
+                "source-needed"
+            };
+            T2BundleReadinessRepairEvidenceRow {
+                evidence_id: format!(
+                    "T2BUNDLEREADINESSEVIDENCE-{}",
+                    stable_id_fragment(&repair.repair_id)
+                ),
+                repair_id: repair.repair_id.clone(),
+                route: repair.route.clone(),
+                segment_bundle_id: repair.segment_bundle_id.clone(),
+                readiness_class: repair.readiness_class.clone(),
+                evidence_artifact: artifact.to_string(),
+                evidence_status: evidence_status.to_string(),
+                evidence_row_count: count,
+                evidence_summary: summary,
+                evidence_decision: "held-for-readiness-replay".to_string(),
+                next_artifact: "data/t2-bundle-overlay-repair-delta.csv".to_string(),
+                blocks_claims: repair.blocks_claims.clone(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.readiness_class
+            .cmp(&right.readiness_class)
+            .then(left.route.cmp(&right.route))
+    });
+    rows
+}
+
+fn write_t2_bundle_readiness_repair_evidence(
+    path: &Path,
+    rows: &[T2BundleReadinessRepairEvidenceRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_readiness_repair_evidence_summary(
+    output: &Path,
+    rows: &[T2BundleReadinessRepairEvidenceRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.evidence_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle readiness repair evidence rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (status, count) in counts {
+        println!("  {status}: {count}");
+    }
+}
+
+fn t2_bundle_readiness_repair_evidence_gate_failures(
+    rows: &[T2BundleReadinessRepairEvidenceRow],
+    repair_rows: &[T2BundleReadinessRepairDocketRow],
+) -> Vec<String> {
+    let expected = repair_rows
+        .iter()
+        .map(|row| row.repair_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "readiness repair evidence has {} rows but expected {} repair tasks",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.evidence_id.trim().is_empty()
+            || row.repair_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.readiness_class.trim().is_empty()
+            || row.evidence_artifact.trim().is_empty()
+            || row.evidence_status.trim().is_empty()
+            || row.evidence_summary.trim().is_empty()
+            || row.evidence_decision.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.blocks_claims.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete repair evidence fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.repair_id.clone()) {
+            failures.push(format!("{} appears more than once", row.repair_id));
+        }
+        if !expected.contains(row.repair_id.as_str()) {
+            failures.push(format!("{} is not a readiness repair task", row.repair_id));
+        }
+        if row.evidence_decision != "held-for-readiness-replay" {
+            failures.push(format!("{} evidence probe promoted readiness", row.route));
+        }
+        if row.blocks_claims != "game;incident;publication;upgrade" {
+            failures.push(format!("{} does not preserve claim blockers", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!("{} repair evidence must remain review", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} missing from readiness repair evidence"
+            ));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -30053,6 +30358,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Repair-needed T2 bundle-readiness rows are explicit structural repair tasks",
             ),
             (
+                "t2-bundle-readiness-repair-evidence",
+                "route t2-bundle-readiness-repair-evidence --gate",
+                "data/t2-bundle-readiness-repair-evidence.csv",
+                "held-known",
+                4,
+                "Readiness repair tasks are probed against downstream evidence before replay",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -35940,9 +36253,10 @@ mod tests {
         t2_bundle_overlay_repair_target_rows, t2_bundle_overlay_rows,
         t2_bundle_readiness_disposition_gate_failures, t2_bundle_readiness_disposition_rows,
         t2_bundle_readiness_repair_docket_gate_failures, t2_bundle_readiness_repair_docket_rows,
-        t2_bundle_repair_queue_gate_failures, t2_bundle_repair_queue_rows, t2_closure_dispositions,
-        t2_contact_closure_gate_failures, t2_contact_closure_rows,
-        t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
+        t2_bundle_readiness_repair_evidence_gate_failures,
+        t2_bundle_readiness_repair_evidence_rows, t2_bundle_repair_queue_gate_failures,
+        t2_bundle_repair_queue_rows, t2_closure_dispositions, t2_contact_closure_gate_failures,
+        t2_contact_closure_rows, t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
         t2_game_ops_binding_decision_gate_failures, t2_game_ops_binding_decision_rows,
         t2_game_ops_binding_intake_gate_failures, t2_game_ops_binding_intake_rows,
@@ -36001,13 +36315,14 @@ mod tests {
         SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
         T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRow,
-        T2BundleReadinessDispositionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
-        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow, T2BundleRepairQueueRow,
+        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
@@ -41270,6 +41585,55 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].route, "I37");
         assert_eq!(rows[0].repair_decision, "repair-needed");
+        assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
+    }
+
+    #[test]
+    fn t2_bundle_readiness_repair_evidence_stays_held_after_candidate_probe() {
+        let repair_rows = vec![T2BundleReadinessRepairDocketRow {
+            repair_id: "T2BUNDLEREADINESSREPAIR-I295".to_string(),
+            disposition_id: "T2BUNDLEREADINESS-I295".to_string(),
+            target_id: "T2OVERLAYREPAIR-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            readiness_class: "stitched-member".to_string(),
+            repair_decision: "repair-needed".to_string(),
+            repair_action: "stitch-member-segments-before-bundle-pass".to_string(),
+            required_artifact: "data/tier-segment-candidates.csv".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let candidate_rows = vec![TierSegmentCandidateRow {
+            tier: "T2".to_string(),
+            source_selector: "t2-service-selection".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I295".to_string(),
+            edge_id: 1,
+            edge_sequence: 1,
+            national_segment_id: "US.HWYSEG.I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I295".to_string(),
+            member_role: "stitched-member".to_string(),
+            state: "NC".to_string(),
+            length_miles: 1.0,
+            aadt: "source-needed".to_string(),
+            lane_count: "source-needed".to_string(),
+            route_aliases: "route:I295".to_string(),
+            selector_basis: "test".to_string(),
+            candidate_action: "candidate".to_string(),
+            next_artifact: "data/national-segment-registry.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows =
+            t2_bundle_readiness_repair_evidence_rows(&repair_rows, &[], &candidate_rows, &[]);
+        let failures = t2_bundle_readiness_repair_evidence_gate_failures(&rows, &repair_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].evidence_status, "candidate-evidence-found");
+        assert_eq!(rows[0].evidence_decision, "held-for-readiness-replay");
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
 
