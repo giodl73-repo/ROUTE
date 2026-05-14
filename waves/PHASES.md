@@ -55,11 +55,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T4 Terminal Access Proof Acquisition | Turn held terminal-access evidence review rows into proof acquisition tasks. | done |
 | 2026-05-14 | T4 Terminal Access Proof Artifacts | Turn source-needed terminal-access acquisition tasks into proof artifact attachment placeholders. | done |
 | 2026-05-14 | T4 Terminal Access Proof Review | Review unattached terminal-access proof artifact placeholders and return unresolved rows to optimizer hold. | done |
+| 2026-05-14 | T4 Terminal Access Source Access | Classify source-access policy for unresolved terminal-access proof review rows before any proof attachment. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should acquire or attach non-seed source
-artifacts for terminal-access proof rows before any blocker relief.
+No wave is active. Next optimizer work should attach manual or cached non-seed
+terminal-access proof artifacts, or add a policy-compliant fetcher first.
 
 ## Operating Rules
 

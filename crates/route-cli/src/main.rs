@@ -2279,6 +2279,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit source-access policy rows for T4 terminal-access proof review holds
+    T4TerminalAccessSourceAccess {
+        /// T4 terminal-access proof review CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-access-proof-review.csv",
+            value_name = "FILE"
+        )]
+        proof_review: PathBuf,
+        /// Output T4 terminal-access source-access CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-access-source-access.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if policy rows enable live fetch or accept proof
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit scenario-readiness docket from source-backed T4 terminal contact rows
     T4TerminalScenarioReadiness {
         /// T4 terminal contact evidence queue CSV
@@ -8741,6 +8763,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal access proof review gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalAccessSourceAccess {
+            proof_review,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-access-source-access");
+            let review_rows = load_t4_terminal_access_proof_review(&proof_review)
+                .with_context(|| format!("loading {}", proof_review.display()))?;
+            let rows = t4_terminal_access_source_access_rows(&review_rows);
+            write_t4_terminal_access_source_access(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_access_source_access_summary(&output, &rows);
+
+            if gate {
+                let failures = t4_terminal_access_source_access_gate_failures(&rows, &review_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal access source access gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal access source access gate failed");
+                }
+                println!();
+                println!("T4 terminal access source access gate: PASS");
             }
         }
 
@@ -16776,6 +16826,30 @@ struct T4TerminalAccessProofReviewRow {
     proof_acceptance_status: String,
     optimization_return_status: String,
     review_reason: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalAccessSourceAccessRow {
+    source_access_id: String,
+    proof_review_id: String,
+    proof_artifact_id: String,
+    acquisition_id: String,
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    source_owner: String,
+    access_mode: String,
+    live_fetch_status: String,
+    required_source_metadata: String,
+    cache_policy_artifact: String,
+    source_access_blocker: String,
+    evidence_artifact: String,
+    proof_acceptance_status: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
@@ -31383,6 +31457,177 @@ fn t4_terminal_access_proof_review_gate_failures(
     failures
 }
 
+fn load_t4_terminal_access_proof_review(
+    path: &Path,
+) -> Result<Vec<T4TerminalAccessProofReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t4_terminal_access_source_access_rows(
+    review_rows: &[T4TerminalAccessProofReviewRow],
+) -> Vec<T4TerminalAccessSourceAccessRow> {
+    let mut rows = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "held-no-source-artifact")
+        .map(|row| T4TerminalAccessSourceAccessRow {
+            source_access_id: format!(
+                "T4ACCESSSOURCE-{}",
+                stable_id_fragment(&row.proof_review_id)
+            ),
+            proof_review_id: row.proof_review_id.clone(),
+            proof_artifact_id: row.proof_artifact_id.clone(),
+            acquisition_id: row.acquisition_id.clone(),
+            queue_id: row.queue_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            source_owner: "terminal operator, port authority, state DOT, or public terminal map".to_string(),
+            access_mode: "manual-or-cached-source-needed".to_string(),
+            live_fetch_status: "unsupported-no-safe-terminal-access-fetcher".to_string(),
+            required_source_metadata:
+                "source title; source url or cached artifact; capture date; route; terminal; connector; route-to-terminal contact statement"
+                    .to_string(),
+            cache_policy_artifact: "docs/source-fetch-cache-policy.md;data/source-fetch-policy.csv"
+                .to_string(),
+            source_access_blocker:
+                "no safe live terminal-access proof fetch command exists; use manual/cached non-seed proof artifact or add policy-compliant fetcher"
+                    .to_string(),
+            evidence_artifact: "source-needed".to_string(),
+            proof_acceptance_status: row.proof_acceptance_status.clone(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/t4-terminal-access-proof-artifacts.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t4_terminal_access_source_access(
+    path: &Path,
+    rows: &[T4TerminalAccessSourceAccessRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_access_source_access_summary(
+    output: &Path,
+    rows: &[T4TerminalAccessSourceAccessRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.access_mode.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal access source access rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (mode, count) in counts {
+        println!("  {mode}: {count}");
+    }
+}
+
+fn t4_terminal_access_source_access_gate_failures(
+    rows: &[T4TerminalAccessSourceAccessRow],
+    review_rows: &[T4TerminalAccessProofReviewRow],
+) -> Vec<String> {
+    let expected = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "held-no-source-artifact")
+        .map(|row| row.proof_review_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("terminal access source access has no held proof review rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "terminal access source access has {} rows but expected {} proof review rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.source_access_id.trim().is_empty()
+            || row.proof_review_id.trim().is_empty()
+            || row.proof_artifact_id.trim().is_empty()
+            || row.acquisition_id.trim().is_empty()
+            || row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.source_owner.trim().is_empty()
+            || row.access_mode.trim().is_empty()
+            || row.live_fetch_status.trim().is_empty()
+            || row.required_source_metadata.trim().is_empty()
+            || row.cache_policy_artifact.trim().is_empty()
+            || row.source_access_blocker.trim().is_empty()
+            || row.evidence_artifact.trim().is_empty()
+            || row.proof_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete source access fields",
+                row.queue_id
+            ));
+        }
+        if !seen.insert(row.proof_review_id.clone()) {
+            failures.push(format!("{} appears more than once", row.proof_review_id));
+        }
+        if !expected.contains(row.proof_review_id.as_str()) {
+            failures.push(format!(
+                "{} is not a held proof review row",
+                row.proof_review_id
+            ));
+        }
+        if row.access_mode != "manual-or-cached-source-needed"
+            || row.live_fetch_status != "unsupported-no-safe-terminal-access-fetcher"
+            || row.evidence_artifact != "source-needed"
+            || row.proof_acceptance_status != "not-accepted"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} source access enabled proof", row.route));
+        }
+        if row.blocker_claims_before != "map;publication;upgrade"
+            || row.blocker_claims_after != "map;publication;upgrade"
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from source access"));
+        }
+    }
+    failures
+}
+
 fn t4_terminal_contact_source_plan_rows(
     contact_rows: &[T4TerminalContactEvidenceRow],
 ) -> Vec<T4TerminalContactSourcePlanRow> {
@@ -36351,6 +36596,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "held-known",
                 69,
                 "T4 terminal-access proof review returns unattached artifacts to optimizer hold",
+            ),
+            (
+                "t4-terminal-access-source-access",
+                "route t4-terminal-access-source-access --gate",
+                "data/t4-terminal-access-source-access.csv",
+                "held-known",
+                69,
+                "T4 terminal-access source access policy requires manual or cached non-seed proof",
             ),
             (
                 "t4-terminal-contact-source-plan",
@@ -42248,7 +42501,8 @@ mod tests {
         t4_terminal_access_proof_acquisition_gate_failures,
         t4_terminal_access_proof_acquisition_rows, t4_terminal_access_proof_artifact_gate_failures,
         t4_terminal_access_proof_artifact_rows, t4_terminal_access_proof_review_gate_failures,
-        t4_terminal_access_proof_review_rows, t4_terminal_columbus_proof_attempt_gate_failures,
+        t4_terminal_access_proof_review_rows, t4_terminal_access_source_access_gate_failures,
+        t4_terminal_access_source_access_rows, t4_terminal_columbus_proof_attempt_gate_failures,
         t4_terminal_columbus_proof_attempt_rows, t4_terminal_columbus_proof_intake_gate_failures,
         t4_terminal_columbus_proof_intake_rows, t4_terminal_columbus_source_access_gate_failures,
         t4_terminal_columbus_source_access_rows,
@@ -42299,16 +42553,17 @@ mod tests {
         T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
         T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
         T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
-        T4TerminalAccessProofArtifactRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T4TerminalAccessProofArtifactRow, T4TerminalAccessProofReviewRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -44796,6 +45051,47 @@ mod tests {
             "return-to-optimizer-held-known"
         );
         assert_eq!(rows[0].next_artifact, "data/tier-optimizer-runs.csv");
+        assert_eq!(rows[0].blocker_claims_before, "map;publication;upgrade");
+        assert_eq!(rows[0].blocker_claims_after, "map;publication;upgrade");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn t4_terminal_access_source_access_blocks_live_fetch() {
+        let review_rows = vec![T4TerminalAccessProofReviewRow {
+            proof_review_id: "T4ACCESSREVIEWPROOF-US10".to_string(),
+            proof_artifact_id: "T4ACCESSARTIFACT-US10".to_string(),
+            acquisition_id: "T4ACCESSACQ-US10".to_string(),
+            review_id: "T4ACCESSREVIEW-US10".to_string(),
+            queue_id: "T4CONTACT-T3GREATLAKES-US10".to_string(),
+            route: "US10".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            source_artifact_reference: "source-needed".to_string(),
+            review_decision: "held-no-source-artifact".to_string(),
+            proof_acceptance_status: "not-accepted".to_string(),
+            optimization_return_status: "return-to-optimizer-held-known".to_string(),
+            review_reason:
+                "proof artifact remains source-needed; terminal-access proof cannot be accepted"
+                    .to_string(),
+            blocker_claims_before: "map;publication;upgrade".to_string(),
+            blocker_claims_after: "map;publication;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/tier-optimizer-runs.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t4_terminal_access_source_access_rows(&review_rows);
+        let failures = t4_terminal_access_source_access_gate_failures(&rows, &review_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].access_mode, "manual-or-cached-source-needed");
+        assert_eq!(
+            rows[0].live_fetch_status,
+            "unsupported-no-safe-terminal-access-fetcher"
+        );
+        assert_eq!(rows[0].evidence_artifact, "source-needed");
+        assert_eq!(rows[0].proof_acceptance_status, "not-accepted");
         assert_eq!(rows[0].blocker_claims_before, "map;publication;upgrade");
         assert_eq!(rows[0].blocker_claims_after, "map;publication;upgrade");
         assert_eq!(rows[0].claim_blocker_delta, 0);
