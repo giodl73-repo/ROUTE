@@ -52,11 +52,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Overlay P3 Local Zone Overlay Review | Decide P3 local-zone overlay actions before returning to broad optimizer work. | done |
 | 2026-05-14 | Optimizer Residual Blocker Backlog | Re-rank remaining constraint-budget blockers after overlay priority review produced no relief. | done |
 | 2026-05-14 | T4 Terminal Access Evidence Review | Decide the largest residual terminal-access evidence blocker family before lower-priority optimizer work. | done |
+| 2026-05-14 | T4 Terminal Access Proof Acquisition | Turn held terminal-access evidence review rows into proof acquisition tasks. | done |
 
 ## Next Active Wave
 
-No wave is currently active. T4 terminal-access evidence review preserved all
-69 source-needed blockers and routed them to proof acquisition.
+No wave is active. Next optimizer work should attach or acquire non-seed proof
+artifacts for the 69 terminal-access acquisition tasks before any blocker relief.
 
 ## Operating Rules
 
