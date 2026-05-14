@@ -58,11 +58,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T4 Terminal Access Source Access | Classify source-access policy for unresolved terminal-access proof review rows before any proof attachment. | done |
 | 2026-05-14 | T4 Terminal Access Proof Intake | Define manual or cached terminal-access proof artifact intake requirements before source capture. | done |
 | 2026-05-14 | T4 Terminal Access Proof Source Capture | Record source-needed terminal-access proof capture placeholders before artifact attachment. | done |
+| 2026-05-14 | T4 Terminal Access Proof Artifact Attachment | Record source-needed terminal-access proof artifact-attachment placeholders before proof review. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should attach manual/cached non-seed
-terminal-access proof artifacts before proof review or blocker relief.
+No wave is active. Next optimizer work should review attached terminal-access
+proof artifacts only after non-seed manual/cached evidence is actually attached;
+otherwise return to residual optimizer backlog triage.
 
 ## Operating Rules
 
