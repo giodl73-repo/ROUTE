@@ -2235,6 +2235,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit proof artifact placeholders for held T4 terminal-access acquisition tasks
+    T4TerminalAccessProofArtifacts {
+        /// T4 terminal-access proof acquisition CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-access-proof-acquisition.csv",
+            value_name = "FILE"
+        )]
+        proof_acquisition: PathBuf,
+        /// Output T4 terminal-access proof artifacts CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t4-terminal-access-proof-artifacts.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if artifact rows attach or accept proof
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit scenario-readiness docket from source-backed T4 terminal contact rows
     T4TerminalScenarioReadiness {
         /// T4 terminal contact evidence queue CSV
@@ -8640,6 +8662,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("T4 terminal access proof acquisition gate: PASS");
+            }
+        }
+
+        Commands::T4TerminalAccessProofArtifacts {
+            proof_acquisition,
+            output,
+            gate,
+        } => {
+            println!("route t4-terminal-access-proof-artifacts");
+            let acquisition_rows = load_t4_terminal_access_proof_acquisition(&proof_acquisition)
+                .with_context(|| format!("loading {}", proof_acquisition.display()))?;
+            let rows = t4_terminal_access_proof_artifact_rows(&acquisition_rows);
+            write_t4_terminal_access_proof_artifacts(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t4_terminal_access_proof_artifacts_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t4_terminal_access_proof_artifact_gate_failures(&rows, &acquisition_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T4 terminal access proof artifacts gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T4 terminal access proof artifacts gate failed");
+                }
+                println!();
+                println!("T4 terminal access proof artifacts gate: PASS");
             }
         }
 
@@ -16636,6 +16687,27 @@ struct T4TerminalAccessProofAcquisitionRow {
     blocker_claims_after: String,
     claim_blocker_delta: isize,
     proof_artifact_status: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalAccessProofArtifactRow {
+    proof_artifact_id: String,
+    acquisition_id: String,
+    review_id: String,
+    queue_id: String,
+    route: String,
+    zone_id: String,
+    terminal_district_seed: String,
+    required_proof: String,
+    source_artifact_reference: String,
+    attachment_status: String,
+    evidence_review_status: String,
+    proof_acceptance_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -30916,6 +30988,166 @@ fn t4_terminal_access_proof_acquisition_gate_failures(
     failures
 }
 
+fn load_t4_terminal_access_proof_acquisition(
+    path: &Path,
+) -> Result<Vec<T4TerminalAccessProofAcquisitionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t4_terminal_access_proof_artifact_rows(
+    acquisition_rows: &[T4TerminalAccessProofAcquisitionRow],
+) -> Vec<T4TerminalAccessProofArtifactRow> {
+    let mut rows = acquisition_rows
+        .iter()
+        .filter(|row| row.proof_artifact_status == "not-attached")
+        .map(|row| T4TerminalAccessProofArtifactRow {
+            proof_artifact_id: format!(
+                "T4ACCESSARTIFACT-{}",
+                stable_id_fragment(&row.acquisition_id)
+            ),
+            acquisition_id: row.acquisition_id.clone(),
+            review_id: row.review_id.clone(),
+            queue_id: row.queue_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            terminal_district_seed: row.terminal_district_seed.clone(),
+            required_proof: row.required_proof.clone(),
+            source_artifact_reference: "source-needed".to_string(),
+            attachment_status: "source-needed".to_string(),
+            evidence_review_status: "not-reviewed".to_string(),
+            proof_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/t4-terminal-access-proof-review.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t4_terminal_access_proof_artifacts(
+    path: &Path,
+    rows: &[T4TerminalAccessProofArtifactRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t4_terminal_access_proof_artifacts_summary(
+    output: &Path,
+    rows: &[T4TerminalAccessProofArtifactRow],
+) {
+    let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *by_zone.entry(row.zone_id.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T4 terminal access proof artifact rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (zone, count) in by_zone {
+        println!("  {zone}: {count}");
+    }
+}
+
+fn t4_terminal_access_proof_artifact_gate_failures(
+    rows: &[T4TerminalAccessProofArtifactRow],
+    acquisition_rows: &[T4TerminalAccessProofAcquisitionRow],
+) -> Vec<String> {
+    let expected = acquisition_rows
+        .iter()
+        .filter(|row| row.proof_artifact_status == "not-attached")
+        .map(|row| row.acquisition_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("terminal access proof acquisition has no not-attached rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "terminal access proof artifacts has {} rows but expected {} acquisition rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.proof_artifact_id.trim().is_empty()
+            || row.acquisition_id.trim().is_empty()
+            || row.review_id.trim().is_empty()
+            || row.queue_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.terminal_district_seed.trim().is_empty()
+            || row.required_proof.trim().is_empty()
+            || row.source_artifact_reference.trim().is_empty()
+            || row.attachment_status.trim().is_empty()
+            || row.evidence_review_status.trim().is_empty()
+            || row.proof_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete proof artifact fields",
+                row.queue_id
+            ));
+        }
+        if !seen.insert(row.acquisition_id.clone()) {
+            failures.push(format!("{} appears more than once", row.acquisition_id));
+        }
+        if !expected.contains(row.acquisition_id.as_str()) {
+            failures.push(format!(
+                "{} is not a not-attached acquisition row",
+                row.acquisition_id
+            ));
+        }
+        if row.source_artifact_reference != "source-needed"
+            || row.attachment_status != "source-needed"
+            || row.evidence_review_status != "not-reviewed"
+            || row.proof_acceptance_status != "not-accepted"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} accepted proof during attachment", row.queue_id));
+        }
+        if row.blocker_claims_before != "map;publication;upgrade"
+            || row.blocker_claims_after != "map;publication;upgrade"
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve blockers", row.queue_id));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from proof artifacts"));
+        }
+    }
+    failures
+}
+
 fn t4_terminal_contact_source_plan_rows(
     contact_rows: &[T4TerminalContactEvidenceRow],
 ) -> Vec<T4TerminalContactSourcePlanRow> {
@@ -35868,6 +36100,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "held-known",
                 69,
                 "T4 terminal-access proof acquisition tasks require non-seed contact evidence",
+            ),
+            (
+                "t4-terminal-access-proof-artifacts",
+                "route t4-terminal-access-proof-artifacts --gate",
+                "data/t4-terminal-access-proof-artifacts.csv",
+                "held-known",
+                69,
+                "T4 terminal-access proof artifacts remain unattached until non-seed source capture",
             ),
             (
                 "t4-terminal-contact-source-plan",
@@ -41763,10 +42003,11 @@ mod tests {
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
         t4_terminal_access_evidence_review_gate_failures, t4_terminal_access_evidence_review_rows,
         t4_terminal_access_proof_acquisition_gate_failures,
-        t4_terminal_access_proof_acquisition_rows,
-        t4_terminal_columbus_proof_attempt_gate_failures, t4_terminal_columbus_proof_attempt_rows,
-        t4_terminal_columbus_proof_intake_gate_failures, t4_terminal_columbus_proof_intake_rows,
-        t4_terminal_columbus_source_access_gate_failures, t4_terminal_columbus_source_access_rows,
+        t4_terminal_access_proof_acquisition_rows, t4_terminal_access_proof_artifact_gate_failures,
+        t4_terminal_access_proof_artifact_rows, t4_terminal_columbus_proof_attempt_gate_failures,
+        t4_terminal_columbus_proof_attempt_rows, t4_terminal_columbus_proof_intake_gate_failures,
+        t4_terminal_columbus_proof_intake_rows, t4_terminal_columbus_source_access_gate_failures,
+        t4_terminal_columbus_source_access_rows,
         t4_terminal_contact_district_proof_import_gate_failures,
         t4_terminal_contact_district_proof_import_rows, t4_terminal_contact_evidence_gate_failures,
         t4_terminal_contact_evidence_rows,
@@ -41813,16 +42054,17 @@ mod tests {
         T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
         T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
         T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -44233,6 +44475,42 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].acquisition_status, "source-needed");
         assert_eq!(rows[0].proof_artifact_status, "not-attached");
+        assert_eq!(rows[0].blocker_claims_before, "map;publication;upgrade");
+        assert_eq!(rows[0].blocker_claims_after, "map;publication;upgrade");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn t4_terminal_access_proof_artifacts_stay_unattached() {
+        let acquisition_rows = vec![T4TerminalAccessProofAcquisitionRow {
+            acquisition_id: "T4ACCESSACQ-US10".to_string(),
+            review_id: "T4ACCESSREVIEW-US10".to_string(),
+            queue_id: "T4CONTACT-T3GREATLAKES-US10".to_string(),
+            route: "US10".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            terminal_district_seed: "Minneapolis Twin Cities".to_string(),
+            required_proof:
+                "non-seed route-to-terminal contact source with route, terminal, connector, and date"
+                    .to_string(),
+            prohibited_seed_source: "data/intermodal_terminals.csv".to_string(),
+            acquisition_status: "source-needed".to_string(),
+            blocker_claims_before: "map;publication;upgrade".to_string(),
+            blocker_claims_after: "map;publication;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            proof_artifact_status: "not-attached".to_string(),
+            next_artifact: "data/t4-terminal-access-proof-artifacts.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t4_terminal_access_proof_artifact_rows(&acquisition_rows);
+        let failures = t4_terminal_access_proof_artifact_gate_failures(&rows, &acquisition_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source_artifact_reference, "source-needed");
+        assert_eq!(rows[0].attachment_status, "source-needed");
+        assert_eq!(rows[0].evidence_review_status, "not-reviewed");
+        assert_eq!(rows[0].proof_acceptance_status, "not-accepted");
         assert_eq!(rows[0].blocker_claims_before, "map;publication;upgrade");
         assert_eq!(rows[0].blocker_claims_after, "map;publication;upgrade");
         assert_eq!(rows[0].claim_blocker_delta, 0);

@@ -53,11 +53,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Optimizer Residual Blocker Backlog | Re-rank remaining constraint-budget blockers after overlay priority review produced no relief. | done |
 | 2026-05-14 | T4 Terminal Access Evidence Review | Decide the largest residual terminal-access evidence blocker family before lower-priority optimizer work. | done |
 | 2026-05-14 | T4 Terminal Access Proof Acquisition | Turn held terminal-access evidence review rows into proof acquisition tasks. | done |
+| 2026-05-14 | T4 Terminal Access Proof Artifacts | Turn source-needed terminal-access acquisition tasks into proof artifact attachment placeholders. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should attach or acquire non-seed proof
-artifacts for the 69 terminal-access acquisition tasks before any blocker relief.
+No wave is active. Next optimizer work should review or acquire non-seed source
+artifacts for the 69 terminal-access proof artifact placeholders before any
+blocker relief.
 
 ## Operating Rules
 
