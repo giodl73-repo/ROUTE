@@ -47,6 +47,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Stitched Member Proof Artifact Attachment | Record artifact-attachment placeholders before proof review or membership edit. | done |
 | 2026-05-14 | T2 Stitched Member Proof Review Docket | Review artifact-attachment placeholders before candidate disposition or membership edit. | done |
 | 2026-05-14 | T2 Overlay Optimizer Action Docket | Route residual T2 overlay repair deltas back into optimizer action families. | done |
+| 2026-05-14 | T2 Overlay P1 Structural Readiness Review | Decide the P1 structural-readiness overlay actions before lower-priority optimizer work. | done |
 
 ## Next Active Wave
 

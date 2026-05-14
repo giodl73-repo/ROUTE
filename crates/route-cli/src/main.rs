@@ -3437,6 +3437,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit P1 structural-readiness review rows for T2 overlay optimizer actions
+    T2OverlayP1StructuralReadinessReview {
+        /// T2 overlay optimizer action docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-overlay-optimizer-action-docket.csv",
+            value_name = "FILE"
+        )]
+        action_docket: PathBuf,
+        /// Output T2 overlay P1 structural-readiness review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-overlay-p1-structural-readiness-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if P1 review rows reduce blockers or promote claims
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -9882,6 +9904,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2OverlayP1StructuralReadinessReview {
+            action_docket,
+            output,
+            gate,
+        } => {
+            println!("route t2-overlay-p1-structural-readiness-review");
+            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
+                .with_context(|| format!("loading {}", action_docket.display()))?;
+            let rows = t2_overlay_p1_structural_readiness_review_rows(&action_rows);
+            write_t2_overlay_p1_structural_readiness_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_overlay_p1_structural_readiness_review_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_overlay_p1_structural_readiness_review_gate_failures(&rows, &action_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 overlay P1 structural readiness review gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 overlay P1 structural readiness review gate failed");
+                }
+                println!("T2 overlay P1 structural readiness review gate: PASS");
+            }
+        }
+
         Commands::OptimizerMapHooks { output, gate } => {
             println!("route optimizer-map-hooks");
             let rows = optimizer_map_hook_rows();
@@ -15907,6 +15957,25 @@ struct T2OverlayOptimizerActionDocketRow {
     readiness_disposition: String,
     optimizer_action: String,
     priority_class: String,
+    action_status: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2OverlayP1StructuralReadinessReviewRow {
+    p1_review_id: String,
+    action_id: String,
+    route: String,
+    segment_bundle_id: String,
+    optimizer_action: String,
+    priority_class: String,
+    readiness_decision: String,
+    readiness_reason: String,
+    downstream_action: String,
     action_status: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
@@ -27005,6 +27074,168 @@ fn t2_overlay_optimizer_action_docket_gate_failures(
     failures
 }
 
+fn load_t2_overlay_optimizer_action_docket(
+    path: &Path,
+) -> Result<Vec<T2OverlayOptimizerActionDocketRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_overlay_p1_structural_readiness_review_rows(
+    action_rows: &[T2OverlayOptimizerActionDocketRow],
+) -> Vec<T2OverlayP1StructuralReadinessReviewRow> {
+    let mut rows = action_rows
+        .iter()
+        .filter(|row| row.priority_class == "P1-structural-readiness")
+        .map(|action| {
+            let readiness_decision = if action.route == "I295" {
+                "held-stitched-proof-returned"
+            } else {
+                "held-readiness-repair-needed"
+            };
+            let downstream_action = if action.route == "I295" {
+                "do-not-advance-until-stitched-member-proof-exists"
+            } else {
+                "route-to-bundle-readiness-repair-review"
+            };
+            let readiness_reason = if action.route == "I295" {
+                "stitched-member proof review returned source-needed rows to optimizer held-known"
+            } else {
+                "bundle readiness remains repair-needed and requires structural repair review"
+            };
+            T2OverlayP1StructuralReadinessReviewRow {
+                p1_review_id: format!("T2OVERLAYP1-{}", stable_id_fragment(&action.action_id)),
+                action_id: action.action_id.clone(),
+                route: action.route.clone(),
+                segment_bundle_id: action.segment_bundle_id.clone(),
+                optimizer_action: action.optimizer_action.clone(),
+                priority_class: action.priority_class.clone(),
+                readiness_decision: readiness_decision.to_string(),
+                readiness_reason: readiness_reason.to_string(),
+                downstream_action: downstream_action.to_string(),
+                action_status: "optimizer-held-known".to_string(),
+                blocked_claims_before: action.blocked_claims_after.clone(),
+                blocked_claims_after: action.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: action.next_artifact.clone(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_overlay_p1_structural_readiness_review(
+    path: &Path,
+    rows: &[T2OverlayP1StructuralReadinessReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_overlay_p1_structural_readiness_review_summary(
+    output: &Path,
+    rows: &[T2OverlayP1StructuralReadinessReviewRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.readiness_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 overlay P1 structural-readiness review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_overlay_p1_structural_readiness_review_gate_failures(
+    rows: &[T2OverlayP1StructuralReadinessReviewRow],
+    action_rows: &[T2OverlayOptimizerActionDocketRow],
+) -> Vec<String> {
+    let expected = action_rows
+        .iter()
+        .filter(|row| row.priority_class == "P1-structural-readiness")
+        .map(|row| row.action_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("P1 structural-readiness review has no P1 optimizer actions".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "P1 structural-readiness review has {} rows but expected {} P1 action rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.p1_review_id.trim().is_empty()
+            || row.action_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.optimizer_action.trim().is_empty()
+            || row.priority_class.trim().is_empty()
+            || row.readiness_decision.trim().is_empty()
+            || row.readiness_reason.trim().is_empty()
+            || row.downstream_action.trim().is_empty()
+            || row.action_status.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete P1 readiness fields", row.route));
+        }
+        if !seen.insert(row.action_id.clone()) {
+            failures.push(format!("{} appears more than once", row.action_id));
+        }
+        if !expected.contains(row.action_id.as_str()) {
+            failures.push(format!(
+                "{} is not a P1 optimizer action row",
+                row.action_id
+            ));
+        }
+        if row.priority_class != "P1-structural-readiness"
+            || row.action_status != "optimizer-held-known"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} P1 readiness review promoted action", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from P1 readiness review"));
+        }
+    }
+    failures
+}
+
 #[derive(Debug, Clone, Default)]
 struct OptimizerConstraintBudgetIndex {
     by_bundle: std::collections::HashMap<String, OptimizerConstraintBudgetRow>,
@@ -34306,6 +34537,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Residual T2 overlay repair deltas are routed to optimizer action families",
             ),
             (
+                "t2-overlay-p1-structural-readiness-review",
+                "route t2-overlay-p1-structural-readiness-review --gate",
+                "data/t2-overlay-p1-structural-readiness-review.csv",
+                "held-known",
+                2,
+                "P1 structural-readiness overlay actions are reviewed before lower-priority optimizer work",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -40200,10 +40439,12 @@ mod tests {
         t2_local_zone_overlay_handoff_gate_failures, t2_local_zone_overlay_handoff_rows,
         t2_national_bundle_readiness_audit_gate_failures, t2_national_bundle_readiness_audit_rows,
         t2_overlay_optimizer_action_docket_gate_failures, t2_overlay_optimizer_action_docket_rows,
-        t2_parallel_service_queue_gate_failures, t2_parallel_service_queue_rows,
-        t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
-        t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
-        t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
+        t2_overlay_p1_structural_readiness_review_gate_failures,
+        t2_overlay_p1_structural_readiness_review_rows, t2_parallel_service_queue_gate_failures,
+        t2_parallel_service_queue_rows, t2_parent_contact_validation_gate_failures,
+        t2_parent_contact_validation_rows, t2_regionalizer_gate_failures, t2_regionalizer_rows,
+        t2_relief_evidence_gate_failures, t2_relief_evidence_rows,
+        t2_route_family_split_gate_failures, t2_route_family_split_rows,
         t2_service_class_repair_docket_gate_failures, t2_service_class_repair_docket_rows,
         t2_service_diagnostic_queue_gate_failures, t2_service_diagnostic_queue_rows,
         t2_service_overlay_diagnostic_decision_gate_failures,
@@ -40275,9 +40516,9 @@ mod tests {
         T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
         T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
         T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
+        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
+        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
         T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
         T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
         T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
@@ -46358,6 +46599,38 @@ mod tests {
         );
         assert_eq!(rows[0].priority_class, "P2-service-overlay");
         assert_eq!(rows[0].action_status, "optimizer-held-known");
+        assert_eq!(rows[0].blocker_delta, 0);
+        assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
+    }
+
+    #[test]
+    fn t2_overlay_p1_structural_readiness_review_keeps_actions_held() {
+        let action_rows = vec![T2OverlayOptimizerActionDocketRow {
+            action_id: "T2OVERLAYACTION-I295".to_string(),
+            delta_id: "T2OVERLAYDELTA-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            replay_decision: "held".to_string(),
+            service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
+            readiness_disposition: "repair-needed".to_string(),
+            optimizer_action: "bundle-readiness-repair-review".to_string(),
+            priority_class: "P1-structural-readiness".to_string(),
+            action_status: "optimizer-held-known".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_overlay_p1_structural_readiness_review_rows(&action_rows);
+        let failures = t2_overlay_p1_structural_readiness_review_gate_failures(&rows, &action_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].priority_class, "P1-structural-readiness");
+        assert_eq!(rows[0].action_status, "optimizer-held-known");
+        assert_eq!(rows[0].readiness_decision, "held-stitched-proof-returned");
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
