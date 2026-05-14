@@ -2863,6 +2863,42 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit diagnostic decisions for T2 service-overlay repair rows
+    T2ServiceOverlayDiagnosticDecisions {
+        /// T2 service-class repair docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-class-repair-docket.csv",
+            value_name = "FILE"
+        )]
+        service_docket: PathBuf,
+        /// T2 bundle-overlay repair targets CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-targets.csv",
+            value_name = "FILE"
+        )]
+        targets: PathBuf,
+        /// T2 service diagnostic queue CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-diagnostic-queue.csv",
+            value_name = "FILE"
+        )]
+        service_diagnostics: PathBuf,
+        /// Output T2 service overlay diagnostic decisions CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-service-overlay-diagnostic-decisions.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if service-overlay repair rows are not explicitly held or repaired
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit readiness disposition for T2 bundle-overlay rows needing bundle repair
     T2BundleReadinessDisposition {
         /// T2 bundle-overlay repair targets CSV
@@ -8712,6 +8748,45 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2ServiceOverlayDiagnosticDecisions {
+            service_docket,
+            targets,
+            service_diagnostics,
+            output,
+            gate,
+        } => {
+            println!("route t2-service-overlay-diagnostic-decisions");
+            let docket_rows = load_t2_service_class_repair_docket(&service_docket)
+                .with_context(|| format!("loading {}", service_docket.display()))?;
+            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
+                .with_context(|| format!("loading {}", targets.display()))?;
+            let diagnostic_rows = load_t2_service_diagnostic_queue(&service_diagnostics)
+                .with_context(|| format!("loading {}", service_diagnostics.display()))?;
+            let rows = t2_service_overlay_diagnostic_decision_rows(
+                &docket_rows,
+                &target_rows,
+                &diagnostic_rows,
+            );
+            write_t2_service_overlay_diagnostic_decisions(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_service_overlay_diagnostic_decision_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_service_overlay_diagnostic_decision_gate_failures(&rows, &docket_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 service overlay diagnostic decisions gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 service overlay diagnostic decisions gate failed");
+                }
+                println!();
+                println!("T2 service overlay diagnostic decisions gate: PASS");
+            }
+        }
+
         Commands::T2BundleReadinessDisposition {
             targets,
             output,
@@ -14415,6 +14490,25 @@ struct T2ServiceClassRepairDocketRow {
     required_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2ServiceOverlayDiagnosticDecisionRow {
+    decision_id: String,
+    docket_id: String,
+    target_id: String,
+    route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    current_service_class: String,
+    diagnostic_status: String,
+    diagnostic_action: String,
+    overlay_decision: String,
+    decision_reason: String,
+    blocks_claims: String,
+    required_artifact: String,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -21741,6 +21835,197 @@ fn load_t2_service_class_repair_docket(path: &Path) -> Result<Vec<T2ServiceClass
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn t2_service_overlay_diagnostic_decision_rows(
+    docket_rows: &[T2ServiceClassRepairDocketRow],
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+    diagnostic_rows: &[T2ServiceDiagnosticQueueRow],
+) -> Vec<T2ServiceOverlayDiagnosticDecisionRow> {
+    let targets = target_rows
+        .iter()
+        .map(|row| (row.target_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let diagnostics_by_route = diagnostic_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__"))
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = docket_rows
+        .iter()
+        .filter(|row| row.service_repair_class == "service-overlay")
+        .map(|row| {
+            let target = targets.get(row.target_id.as_str());
+            let diagnostic = diagnostics_by_route.get(&canonical_route_key(&row.route));
+            let diagnostic_status = diagnostic
+                .map(|row| row.diagnostic_status.clone())
+                .unwrap_or_else(|| "missing-beck-t2-diagnostic".to_string());
+            let diagnostic_action = diagnostic
+                .map(|row| row.service_diagnostic_action.clone())
+                .unwrap_or_else(|| "beck-diagnostic-missing".to_string());
+            let blocks_claims = target
+                .map(|row| row.blocks_claims.clone())
+                .unwrap_or_else(|| "game;incident;publication;upgrade".to_string());
+            let (overlay_decision, decision_reason, required_artifact, next_artifact) = if row
+                .service_class
+                == "unclassified"
+            {
+                (
+                    "held",
+                    "service class remains unclassified until Beck T2 diagnostic chooses a class",
+                    "data/beck-t2-diagnostics.csv",
+                    "data/t2-service-class-repair-docket.csv",
+                )
+            } else {
+                (
+                    "repair-needed",
+                    "service class exists but overlay binding still requires replay",
+                    "data/game/t2-service-overlays.csv",
+                    "data/t2-game-ops-binding-decisions.csv",
+                )
+            };
+            T2ServiceOverlayDiagnosticDecisionRow {
+                decision_id: format!(
+                    "T2SERVICEOVERLAYDIAG-{}",
+                    stable_id_fragment(&row.docket_id)
+                ),
+                docket_id: row.docket_id.clone(),
+                target_id: row.target_id.clone(),
+                route: row.route.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_status: row.bundle_status.clone(),
+                current_service_class: row.service_class.clone(),
+                diagnostic_status,
+                diagnostic_action,
+                overlay_decision: overlay_decision.to_string(),
+                decision_reason: decision_reason.to_string(),
+                blocks_claims,
+                required_artifact: required_artifact.to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_service_overlay_diagnostic_decisions(
+    path: &Path,
+    rows: &[T2ServiceOverlayDiagnosticDecisionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_service_overlay_diagnostic_decision_summary(
+    output: &Path,
+    rows: &[T2ServiceOverlayDiagnosticDecisionRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.overlay_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 service overlay diagnostic decision rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_service_overlay_diagnostic_decision_gate_failures(
+    rows: &[T2ServiceOverlayDiagnosticDecisionRow],
+    docket_rows: &[T2ServiceClassRepairDocketRow],
+) -> Vec<String> {
+    let expected = docket_rows
+        .iter()
+        .filter(|row| row.service_repair_class == "service-overlay")
+        .map(|row| row.docket_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "service overlay diagnostic decisions have {} rows but expected {} service-overlay repair rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.decision_id.trim().is_empty()
+            || row.docket_id.trim().is_empty()
+            || row.target_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.current_service_class.trim().is_empty()
+            || row.diagnostic_status.trim().is_empty()
+            || row.diagnostic_action.trim().is_empty()
+            || row.overlay_decision.trim().is_empty()
+            || row.decision_reason.trim().is_empty()
+            || row.blocks_claims.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete diagnostic fields", row.route));
+        }
+        if !seen.insert(row.docket_id.clone()) {
+            failures.push(format!("{} appears more than once", row.docket_id));
+        }
+        if !expected.contains(row.docket_id.as_str()) {
+            failures.push(format!(
+                "{} is not a service-overlay repair row",
+                row.docket_id
+            ));
+        }
+        if row.current_service_class == "unclassified" && row.overlay_decision != "held" {
+            failures.push(format!("{} promoted without a service class", row.route));
+        }
+        if row.overlay_decision == "bound" {
+            failures.push(format!(
+                "{} cannot bind from diagnostic decision surface",
+                row.route
+            ));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} diagnostic decision must remain review",
+                row.route
+            ));
+        }
+        if row.current_service_class == "unclassified"
+            && row.required_artifact != "data/beck-t2-diagnostics.csv"
+        {
+            failures.push(format!(
+                "{} unclassified row must point to Beck diagnostics",
+                row.route
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from diagnostic decisions"));
+        }
+    }
+    failures
 }
 
 fn t2_bundle_readiness_disposition_rows(
@@ -29241,6 +29526,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Service-class-held T2 overlay rows remain routed to Beck service or local-zone repair work",
             ),
             (
+                "t2-service-overlay-diagnostic-decisions",
+                "route t2-service-overlay-diagnostic-decisions --gate",
+                "data/t2-service-overlay-diagnostic-decisions.csv",
+                "held-known",
+                7,
+                "Service-overlay T2 rows remain held behind explicit Beck diagnostic decisions",
+            ),
+            (
                 "t2-bundle-readiness-disposition",
                 "route t2-bundle-readiness-disposition --gate",
                 "data/t2-bundle-readiness-disposition.csv",
@@ -35150,13 +35443,15 @@ mod tests {
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
         t2_service_class_repair_docket_gate_failures, t2_service_class_repair_docket_rows,
         t2_service_diagnostic_queue_gate_failures, t2_service_diagnostic_queue_rows,
-        t2_service_selection_gate_failures, t2_service_selection_rows,
-        t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
-        t3_national_segment_id, t3_segment_aliases, t3_segment_bundle_id, t3_stitch_group_id,
-        t3_t4_access_gap_gate_failures, t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures,
-        t3_t4_pressure_intake_rows, t3_zone_access_obligation_gate_failures,
-        t3_zone_access_obligation_rows, t3_zone_map_diagnostic_gate_failures,
-        t3_zone_map_diagnostic_rows, t3_zone_render_board_gate_failures, t3_zone_render_board_rows,
+        t2_service_overlay_diagnostic_decision_gate_failures,
+        t2_service_overlay_diagnostic_decision_rows, t2_service_selection_gate_failures,
+        t2_service_selection_rows, t2_terminal_contact_validation_gate_failures,
+        t2_terminal_contact_validation_rows, t3_national_segment_id, t3_segment_aliases,
+        t3_segment_bundle_id, t3_stitch_group_id, t3_t4_access_gap_gate_failures,
+        t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
+        t3_zone_access_obligation_gate_failures, t3_zone_access_obligation_rows,
+        t3_zone_map_diagnostic_gate_failures, t3_zone_map_diagnostic_rows,
+        t3_zone_render_board_gate_failures, t3_zone_render_board_rows,
         t3_zone_route_column_gate_failures, t3_zone_route_column_rows,
         t3_zone_stop_placement_gate_failures, t3_zone_stop_placement_rows,
         t4_terminal_access_column_gate_failures, t4_terminal_access_column_rows,
@@ -40250,6 +40545,55 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].service_repair_class, "local-zone");
         assert_eq!(rows[0].next_artifact, "data/t3-zone-render-board.csv");
+    }
+
+    #[test]
+    fn t2_service_overlay_diagnostic_decisions_hold_unclassified_rows() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-I195".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-I195".to_string(),
+            subject_id: "US.HWYBUNDLE.I195".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I195".to_string(),
+            route: "I195".to_string(),
+            service_class: "unclassified".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            binding_status: "service-class-held-known".to_string(),
+            decision: "held".to_string(),
+            decision_reason: "service class overlay is missing or held".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let target_rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &[]);
+        let diagnostic_rows = vec![T2ServiceDiagnosticQueueRow {
+            route: "I195".to_string(),
+            region_id: "component-1".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I195".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            diagnostic_status: "beck-diagnostic-missing".to_string(),
+            service_diagnostic_action: "beck-diagnostic-missing".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+            optimizer_effect: "keeps unclassified service overlay out of claim surfaces"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let docket_rows = t2_service_class_repair_docket_rows(&target_rows, &diagnostic_rows);
+
+        let rows = t2_service_overlay_diagnostic_decision_rows(
+            &docket_rows,
+            &target_rows,
+            &diagnostic_rows,
+        );
+        let failures = t2_service_overlay_diagnostic_decision_gate_failures(&rows, &docket_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].overlay_decision, "held");
+        assert_eq!(rows[0].required_artifact, "data/beck-t2-diagnostics.csv");
+        assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
 
     #[test]
