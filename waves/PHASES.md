@@ -73,11 +73,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Review | Expand residual T3 lower-tier feeder-gap blockers into route-level review rows before policy or relief. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Policy | Author feeder-gap policy rows before acceptance, relief, or ledger replay. | done |
 | 2026-05-14 | T3 Lower-Tier Feeder Gap Policy Acceptance | Accept feeder-gap policy rows before blocker relief or ledger replay. | done |
+| 2026-05-14 | T3 Lower-Tier Feeder Gap Blocker Relief | Replay accepted feeder policy into blocker relief rows before ledger replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should draft T3 lower-tier feeder-gap
-blocker relief before any feeder ledger replay.
+No wave is active. Next optimizer work should wire T3 lower-tier feeder-gap
+relief into the optimizer constraint ledger before claim-blocker counts can
+drop.
 
 ## Operating Rules
 
