@@ -2754,6 +2754,57 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
+    T2GameOpsBindingIntake {
+        /// Optimizer constraint budget CSV
+        #[arg(
+            long,
+            default_value = "data/optimizer-constraint-budget.csv",
+            value_name = "FILE"
+        )]
+        budget: PathBuf,
+        /// Output T2 game/ops binding intake CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-game-ops-binding-intake.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if intake rows do not represent T2 game/ops binding blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Emit T2 game/ops bundle-binding decision docket
+    T2GameOpsBindingDecisions {
+        /// T2 game/ops binding intake CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-ops-binding-intake.csv",
+            value_name = "FILE"
+        )]
+        intake: PathBuf,
+        /// T2 bundle overlays CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-bundle-overlays.csv",
+            value_name = "FILE"
+        )]
+        bundle_overlays: PathBuf,
+        /// Output T2 game/ops binding decisions CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-game-ops-binding-decisions.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if decision rows do not preserve residual blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -8417,6 +8468,65 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2GameOpsBindingIntake {
+            budget,
+            output,
+            gate,
+        } => {
+            println!("route t2-game-ops-binding-intake");
+            let budget_rows = load_optimizer_constraint_budget(&budget)
+                .with_context(|| format!("loading {}", budget.display()))?;
+            let rows = t2_game_ops_binding_intake_rows(&budget_rows);
+            write_t2_game_ops_binding_intake(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_game_ops_binding_intake_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_game_ops_binding_intake_gate_failures(&rows, &budget_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 game/ops binding intake gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 game/ops binding intake gate failed");
+                }
+                println!();
+                println!("T2 game/ops binding intake gate: PASS");
+            }
+        }
+
+        Commands::T2GameOpsBindingDecisions {
+            intake,
+            bundle_overlays,
+            output,
+            gate,
+        } => {
+            println!("route t2-game-ops-binding-decisions");
+            let intake_rows = load_t2_game_ops_binding_intake(&intake)
+                .with_context(|| format!("loading {}", intake.display()))?;
+            let overlay_rows = load_t2_bundle_overlays(&bundle_overlays)
+                .with_context(|| format!("loading {}", bundle_overlays.display()))?;
+            let rows = t2_game_ops_binding_decision_rows(&intake_rows, &overlay_rows);
+            write_t2_game_ops_binding_decisions(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_game_ops_binding_decision_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_game_ops_binding_decision_gate_failures(&rows, &intake_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 game/ops binding decisions gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 game/ops binding decisions gate failed");
+                }
+                println!();
+                println!("T2 game/ops binding decisions gate: PASS");
+            }
+        }
+
         Commands::OptimizerMapHooks { output, gate } => {
             println!("route optimizer-map-hooks");
             let rows = optimizer_map_hook_rows();
@@ -13978,6 +14088,40 @@ struct OptimizerConstraintBudgetRow {
     blocking_claims: String,
     next_artifacts: String,
     constraint_ledger_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2GameOpsBindingIntakeRow {
+    intake_id: String,
+    budget_id: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    route: String,
+    claim_blocker_count: usize,
+    blocked_claims: String,
+    top_constraint_classes: String,
+    next_artifacts: String,
+    constraint_ledger_artifact: String,
+    intake_status: String,
+    decision_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2GameOpsBindingDecisionRow {
+    decision_id: String,
+    intake_id: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    route: String,
+    service_class: String,
+    bundle_status: String,
+    binding_status: String,
+    decision: String,
+    decision_reason: String,
+    blocks_claims: String,
+    next_artifact: String,
     validation_status: String,
 }
 
@@ -20482,6 +20626,369 @@ fn load_optimizer_constraint_budget(path: &Path) -> Result<Vec<OptimizerConstrai
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn t2_game_ops_binding_intake_rows(
+    budget_rows: &[OptimizerConstraintBudgetRow],
+) -> Vec<T2GameOpsBindingIntakeRow> {
+    let mut rows = budget_rows
+        .iter()
+        .filter(|row| {
+            row.tier == "T2"
+                && semicolon_values(&row.top_constraint_classes)
+                    .iter()
+                    .any(|class| class == "game_ops_bundle_binding")
+        })
+        .map(|row| T2GameOpsBindingIntakeRow {
+            intake_id: format!("T2GAMEOPSINTAKE-{}", stable_id_fragment(&row.budget_id)),
+            budget_id: row.budget_id.clone(),
+            subject_id: row.subject_id.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            route: row.route.clone(),
+            claim_blocker_count: row.claim_blocker_count,
+            blocked_claims: row.blocking_claims.clone(),
+            top_constraint_classes: row.top_constraint_classes.clone(),
+            next_artifacts: row.next_artifacts.clone(),
+            constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
+            intake_status: "decision-needed".to_string(),
+            decision_artifact: "data/t2-game-ops-binding-decisions.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.subject_id.cmp(&right.subject_id))
+    });
+    rows
+}
+
+fn write_t2_game_ops_binding_intake(path: &Path, rows: &[T2GameOpsBindingIntakeRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_game_ops_binding_intake_summary(output: &Path, rows: &[T2GameOpsBindingIntakeRow]) {
+    println!(
+        "  wrote {} T2 game/ops binding intake rows to {}",
+        rows.len(),
+        output.display()
+    );
+}
+
+fn t2_game_ops_binding_intake_gate_failures(
+    rows: &[T2GameOpsBindingIntakeRow],
+    budget_rows: &[OptimizerConstraintBudgetRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = budget_rows
+        .iter()
+        .filter(|row| {
+            row.tier == "T2"
+                && semicolon_values(&row.top_constraint_classes)
+                    .iter()
+                    .any(|class| class == "game_ops_bundle_binding")
+        })
+        .map(|row| row.budget_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if rows.is_empty() {
+        failures.push("no T2 game/ops binding intake rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 game/ops binding intake has {} rows but expected {} budget blockers",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.intake_id.trim().is_empty()
+            || row.budget_id.trim().is_empty()
+            || row.subject_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.top_constraint_classes.trim().is_empty()
+            || row.next_artifacts.trim().is_empty()
+            || row.constraint_ledger_artifact.trim().is_empty()
+            || row.intake_status.trim().is_empty()
+            || row.decision_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete intake fields", row.intake_id));
+        }
+        if !seen.insert(row.budget_id.clone()) {
+            failures.push(format!("{} appears more than once", row.budget_id));
+        }
+        if !expected.contains(row.budget_id.as_str()) {
+            failures.push(format!(
+                "{} is not a T2 game/ops binding budget blocker",
+                row.budget_id
+            ));
+        }
+        if !semicolon_values(&row.top_constraint_classes)
+            .iter()
+            .any(|class| class == "game_ops_bundle_binding")
+        {
+            failures.push(format!(
+                "{} lacks game_ops_bundle_binding class",
+                row.budget_id
+            ));
+        }
+        if row.claim_blocker_count == 0 {
+            failures.push(format!("{} lacks claim blocker count", row.budget_id));
+        }
+        if row.intake_status != "decision-needed" || row.validation_status != "review" {
+            failures.push(format!("{} intake status is not review", row.budget_id));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} missing from T2 game/ops binding intake"
+            ));
+        }
+    }
+    failures
+}
+
+fn load_t2_game_ops_binding_intake(path: &Path) -> Result<Vec<T2GameOpsBindingIntakeRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_game_ops_binding_decision_rows(
+    intake_rows: &[T2GameOpsBindingIntakeRow],
+    overlay_rows: &[T2BundleOverlayRow],
+) -> Vec<T2GameOpsBindingDecisionRow> {
+    let overlays_by_subject = overlay_rows
+        .iter()
+        .map(|row| {
+            let key = if row.segment_bundle_id.trim().is_empty() {
+                row.route.clone()
+            } else {
+                row.segment_bundle_id.clone()
+            };
+            (key, row)
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = intake_rows
+        .iter()
+        .map(|row| {
+            let overlay = overlays_by_subject
+                .get(&row.subject_id)
+                .or_else(|| overlays_by_subject.get(&row.route));
+            let binding_status = overlay
+                .map(|overlay| overlay.binding_status.clone())
+                .unwrap_or_else(|| "bundle-binding-pending".to_string());
+            let service_class = overlay
+                .map(|overlay| overlay.service_class.clone())
+                .unwrap_or_else(|| "unclassified".to_string());
+            let bundle_status = overlay
+                .map(|overlay| overlay.bundle_status.clone())
+                .unwrap_or_else(|| "missing-bundle".to_string());
+            let overlay_validation_status = overlay
+                .map(|overlay| overlay.validation_status.as_str())
+                .unwrap_or("review");
+            let (decision, reason, next_artifact, validation_status) =
+                if binding_status == "bundle-bound" && overlay_validation_status == "pass" {
+                    (
+                        "bound",
+                        "bundle overlay is bound and passed validation",
+                        "data/game/t2-scenario-hooks.csv",
+                        "pass",
+                    )
+                } else {
+                    match binding_status.as_str() {
+                        "bundle-bound" | "bundle-bound-review" => (
+                            "repair-needed",
+                            "bundle id exists but bundle validation remains under review",
+                            "data/national-segment-bundles.csv",
+                            "review",
+                        ),
+                        "service-class-overlay-pending" | "service-class-held-known" => (
+                            "held",
+                            "service class overlay is missing or held",
+                            "data/game/t2-service-overlays.csv",
+                            "review",
+                        ),
+                        "bundle-binding-pending" => (
+                            "repair-needed",
+                            "route is not bound to a usable segment bundle",
+                            "data/national-segment-bundles.csv",
+                            "review",
+                        ),
+                        _ => (
+                            "held",
+                            "binding status requires manual review",
+                            "data/game/t2-bundle-overlays.csv",
+                            "review",
+                        ),
+                    }
+                };
+            T2GameOpsBindingDecisionRow {
+                decision_id: format!("T2GAMEOPSDECISION-{}", stable_id_fragment(&row.intake_id)),
+                intake_id: row.intake_id.clone(),
+                subject_id: row.subject_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                route: row.route.clone(),
+                service_class,
+                bundle_status,
+                binding_status,
+                decision: decision.to_string(),
+                decision_reason: reason.to_string(),
+                blocks_claims: if validation_status == "pass" {
+                    String::new()
+                } else {
+                    row.blocked_claims.clone()
+                },
+                next_artifact: next_artifact.to_string(),
+                validation_status: validation_status.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.subject_id.cmp(&right.subject_id))
+    });
+    rows
+}
+
+fn write_t2_game_ops_binding_decisions(
+    path: &Path,
+    rows: &[T2GameOpsBindingDecisionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_game_ops_binding_decision_summary(output: &Path, rows: &[T2GameOpsBindingDecisionRow]) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 game/ops binding decision rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_game_ops_binding_decision_gate_failures(
+    rows: &[T2GameOpsBindingDecisionRow],
+    intake_rows: &[T2GameOpsBindingIntakeRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = intake_rows
+        .iter()
+        .map(|row| row.intake_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if rows.is_empty() {
+        failures.push("no T2 game/ops binding decision rows emitted".to_string());
+        return failures;
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 game/ops binding decisions have {} rows but expected {} intake rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.decision_id.trim().is_empty()
+            || row.intake_id.trim().is_empty()
+            || row.subject_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.bundle_status.trim().is_empty()
+            || row.binding_status.trim().is_empty()
+            || row.decision.trim().is_empty()
+            || row.decision_reason.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete decision fields",
+                row.decision_id
+            ));
+        }
+        if !seen.insert(row.intake_id.clone()) {
+            failures.push(format!("{} appears more than once", row.intake_id));
+        }
+        if !expected.contains(row.intake_id.as_str()) {
+            failures.push(format!("{} does not appear in intake", row.intake_id));
+        }
+        if !matches!(
+            row.decision.as_str(),
+            "bound" | "repair-needed" | "demote" | "held"
+        ) {
+            failures.push(format!(
+                "{} has invalid decision {}",
+                row.route, row.decision
+            ));
+        }
+        if row.decision == "bound" {
+            if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.")
+                || row.service_class == "unclassified"
+                || row.binding_status != "bundle-bound"
+                || row.validation_status != "pass"
+                || !row.blocks_claims.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} bound decision lacks passing bundle binding",
+                    row.route
+                ));
+            }
+        } else if row.validation_status != "review" || row.blocks_claims.trim().is_empty() {
+            failures.push(format!(
+                "{} residual decision must remain review with blocked claims",
+                row.route
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "{expected_id} missing from T2 game/ops binding decisions"
+            ));
+        }
+    }
+    failures
 }
 
 #[derive(Debug, Clone, Default)]
@@ -27585,6 +28092,22 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "t2-game-ops-binding-intake",
+                "route t2-game-ops-binding-intake --gate",
+                "data/t2-game-ops-binding-intake.csv",
+                "held-known",
+                15,
+                "T2 game ops bundle binding blockers require explicit decisions before game or incident use",
+            ),
+            (
+                "t2-game-ops-binding-decisions",
+                "route t2-game-ops-binding-decisions --gate",
+                "data/t2-game-ops-binding-decisions.csv",
+                "held-known",
+                15,
+                "T2 game ops binding decisions preserve residual repair-needed and held blockers",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -33464,6 +33987,8 @@ mod tests {
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
+        t2_game_ops_binding_decision_gate_failures, t2_game_ops_binding_decision_rows,
+        t2_game_ops_binding_intake_gate_failures, t2_game_ops_binding_intake_rows,
         t2_graph_contact_repair_gate_failures, t2_graph_contact_repair_rows,
         t2_graph_contact_validation_gate_failures, t2_graph_contact_validation_rows,
         t2_held_contact_action_gate_failures, t2_held_contact_action_rows,
@@ -33510,12 +34035,13 @@ mod tests {
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
         LowerTierPressureWitnessRow, MapAtlasRow, NationalSegmentBundleRow,
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerConstraintBudgetIndex,
-        OptimizerConstraintLedgerRow, OptimizerMapHookRow, PavementDebtBudgetIndex,
-        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
-        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T1TopologyRepairRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRow, T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow,
-        T2EndpointClosureRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow, OptimizerMapHookRow,
+        PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow, ScoreSignalRow,
+        SourceFetchPolicyRow, StopCandidateRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
+        T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
+        T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRow, T2BundleRepairQueueRow,
+        T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
         T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
         T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
         T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
@@ -38369,6 +38895,115 @@ mod tests {
         assert_eq!(bundle_ids.len(), 2);
         assert!(rows[0].route_aliases.contains("route-family-scope:NJ"));
         assert!(rows[1].route_aliases.contains("route-family-scope:ME"));
+    }
+
+    #[test]
+    fn t2_game_ops_binding_intake_filters_constraint_budget() {
+        let budget_rows = vec![
+            OptimizerConstraintBudgetRow {
+                budget_id: "CB-T2-BUNDLE-1".to_string(),
+                optimizer_run_id: "tier-optimizer-current".to_string(),
+                tier: "T2".to_string(),
+                region_id: "component-0".to_string(),
+                subject_scope: "bundle".to_string(),
+                subject_id: "US.HWYBUNDLE.TEST".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+                route: "I225".to_string(),
+                ledger_row_count: 1,
+                hard_blocker_count: 0,
+                claim_blocker_count: 1,
+                review_count: 1,
+                budget_debt_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 1.0,
+                top_constraint_classes: "game_ops_bundle_binding".to_string(),
+                blocking_claims: "game;incident;publication;upgrade".to_string(),
+                next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            OptimizerConstraintBudgetRow {
+                budget_id: "CB-T3-OTHER".to_string(),
+                optimizer_run_id: "tier-optimizer-current".to_string(),
+                tier: "T3".to_string(),
+                region_id: "component-0".to_string(),
+                subject_scope: "route".to_string(),
+                subject_id: "US30".to_string(),
+                segment_bundle_id: String::new(),
+                route: "US30".to_string(),
+                ledger_row_count: 1,
+                hard_blocker_count: 0,
+                claim_blocker_count: 1,
+                review_count: 1,
+                budget_debt_count: 0,
+                constraint_debt_cost_m: 0.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 1.0,
+                top_constraint_classes: "terminal_access_evidence_gap".to_string(),
+                blocking_claims: "upgrade".to_string(),
+                next_artifacts: "data/t3-t4-access-gaps.csv".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_game_ops_binding_intake_rows(&budget_rows);
+        let failures = t2_game_ops_binding_intake_gate_failures(&rows, &budget_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].route, "I225");
+        assert_eq!(rows[0].intake_status, "decision-needed");
+    }
+
+    #[test]
+    fn t2_game_ops_binding_decisions_preserve_residual_blockers() {
+        let intake_rows = vec![T2GameOpsBindingIntakeRow {
+            intake_id: "T2GAMEOPSINTAKE-1".to_string(),
+            budget_id: "CB-T2-BUNDLE-1".to_string(),
+            subject_id: "US.HWYBUNDLE.TEST".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+            route: "I225".to_string(),
+            claim_blocker_count: 1,
+            blocked_claims: "game;incident;publication;upgrade".to_string(),
+            top_constraint_classes: "game_ops_bundle_binding".to_string(),
+            next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
+            constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            intake_status: "decision-needed".to_string(),
+            decision_artifact: "data/t2-game-ops-binding-decisions.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let overlay_rows = vec![T2BundleOverlayRow {
+            tier: "T2".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I225".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+            bundle_status: "review".to_string(),
+            service_class: "connector".to_string(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            scenario_hook: "T2 bridge between parent trunks".to_string(),
+            incident_lever: "reroute pressure".to_string(),
+            upgrade_lever: "upgrade".to_string(),
+            restitch_lever: "restitch".to_string(),
+            release_gate: "gate".to_string(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: String::new(),
+            pavement_debt_basis: String::new(),
+            source_artifacts: "data/t2-service-selection.csv".to_string(),
+            binding_status: "bundle-bound-review".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_game_ops_binding_decision_rows(&intake_rows, &overlay_rows);
+        let failures = t2_game_ops_binding_decision_gate_failures(&rows, &intake_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].decision, "repair-needed");
+        assert_eq!(rows[0].validation_status, "review");
+        assert!(rows[0].blocks_claims.contains("publication"));
     }
 
     #[test]

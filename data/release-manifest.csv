@@ -66,6 +66,8 @@ data/beck-t2-service-standards.csv,map_standard,M9,release_candidate,public,carg
 data/beck-t2-qualification-actions.csv,map_standard,M9,release_candidate,public,cargo run -q -p route -- beck-t2-qualification-actions --gate,T2 Beck qualification-action contract for duplicate-service review and map treatment
 data/game/t2-service-overlays.csv,game_ledger,M9,release_candidate,public,cargo run -q -p route -- game t2-overlays --gate,T2 service-class game overlay contract for incidents upgrades and restitching
 data/game/t2-scenario-hooks.csv,game_ledger,M9,release_candidate,public,cargo run -q -p route -- game t2-hooks --gate,T2 campaign scenario hooks for service-class incidents upgrades and evidence holds
+data/t2-game-ops-binding-intake.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-game-ops-binding-intake --gate,T2 game ops bundle binding blocker intake from optimizer constraint budget
+data/t2-game-ops-binding-decisions.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-game-ops-binding-decisions --gate,T2 game ops bundle binding decision docket preserving residual blockers
 docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype
 specs/2026-05-06-interstate-2-design.md,spec,M6,release_candidate,public,manual review,Interstate 2.0 spec with Blueprint status caveat
 scripts/check-mileposts.ps1,release_gate,M7,release_candidate,public,powershell -ExecutionPolicy Bypass -File scripts/check-mileposts.ps1,Local release gate bundle
