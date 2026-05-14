@@ -66,10 +66,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T1 Schematic Geometry Blocker Relief | Replay accepted shared-segment policy into T1 schematic blocker relief rows. | done |
 | 2026-05-14 | T1 Schematic Geometry Ledger Replay | Wire accepted T1 schematic geometry relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 | 2026-05-14 | T2 Beck Transfer Complexity Review | Expand residual T2 Beck transfer-complexity blockers into route-level review rows before policy or relief. | done |
+| 2026-05-14 | T2 Beck Transfer Complexity Policy | Author transfer-complexity policy rows before acceptance or blocker relief. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should author
+No wave is active. Next optimizer work should accept or reject
 `data/t2-beck-transfer-complexity-policy.csv` before any T2 Beck blocker relief
 or final Beck replacement publication.
 
