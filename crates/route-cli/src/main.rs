@@ -3206,6 +3206,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit policy rows for T3 lower-tier feeder-gap claim blockers
+    T3LowerTierFeederGapPolicy {
+        /// T3 lower-tier feeder-gap review CSV
+        #[arg(
+            long,
+            default_value = "data/t3-lower-tier-feeder-gap-review.csv",
+            value_name = "FILE"
+        )]
+        feeder_review: PathBuf,
+        /// Output T3 lower-tier feeder-gap policy CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t3-lower-tier-feeder-gap-policy.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if policy rows omit reviewed routes or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit T2 game/ops bundle-binding blocker intake from constraint budget
     T2GameOpsBindingIntake {
         /// Optimizer constraint budget CSV
@@ -10207,6 +10229,34 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T3LowerTierFeederGapPolicy {
+            feeder_review,
+            output,
+            gate,
+        } => {
+            println!("route t3-lower-tier-feeder-gap-policy");
+            let review_rows = load_t3_lower_tier_feeder_gap_review(&feeder_review)
+                .with_context(|| format!("loading {}", feeder_review.display()))?;
+            let rows = t3_lower_tier_feeder_gap_policy_rows(&review_rows);
+            write_t3_lower_tier_feeder_gap_policy(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t3_lower_tier_feeder_gap_policy_summary(&output, &rows);
+
+            if gate {
+                let failures = t3_lower_tier_feeder_gap_policy_gate_failures(&rows, &review_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T3 lower-tier feeder gap policy gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T3 lower-tier feeder gap policy gate failed");
+                }
+                println!();
+                println!("T3 lower-tier feeder gap policy gate: PASS");
+            }
+        }
+
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
@@ -16806,6 +16856,29 @@ struct T3LowerTierFeederGapReviewRow {
     required_evidence: String,
     repair_action: String,
     review_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T3LowerTierFeederGapPolicyRow {
+    policy_id: String,
+    feeder_review_id: String,
+    gap_id: String,
+    route: String,
+    zone_id: String,
+    score_band: String,
+    policy_basis: String,
+    feeder_policy_decision: String,
+    map_treatment: String,
+    evidence_treatment: String,
+    upgrade_treatment: String,
+    publication_status: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
     blocker_count_before: usize,
@@ -31308,6 +31381,198 @@ fn t3_lower_tier_feeder_gap_review_gate_failures(
     failures
 }
 
+fn load_t3_lower_tier_feeder_gap_review(path: &Path) -> Result<Vec<T3LowerTierFeederGapReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t3_feeder_score_band(current_score: f64) -> &'static str {
+    if current_score >= 29.0 {
+        "near-threshold-feeder"
+    } else if current_score >= 25.0 {
+        "low-threshold-feeder"
+    } else {
+        "out-of-band-feeder"
+    }
+}
+
+fn t3_lower_tier_feeder_gap_policy_rows(
+    review_rows: &[T3LowerTierFeederGapReviewRow],
+) -> Vec<T3LowerTierFeederGapPolicyRow> {
+    let mut rows = review_rows
+        .iter()
+        .filter(|row| {
+            row.review_decision == "lower-tier-feeder-policy-required"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T3LowerTierFeederGapPolicyRow {
+            policy_id: format!("T3FEEDERPOLICY-{}", stable_id_fragment(&row.route)),
+            feeder_review_id: row.feeder_review_id.clone(),
+            gap_id: row.gap_id.clone(),
+            route: row.route.clone(),
+            zone_id: row.zone_id.clone(),
+            score_band: t3_feeder_score_band(row.current_score).to_string(),
+            policy_basis: format!(
+                "{};required_evidence={};repair_action={}",
+                row.gap_reason, row.required_evidence, row.repair_action
+            ),
+            feeder_policy_decision: "lower-tier-feeder-policy-authored-review".to_string(),
+            map_treatment:
+                "keep route below T3 feeder promotion until accepted score or terminal evidence exists"
+                    .to_string(),
+            evidence_treatment:
+                "require score-threshold proof or terminal-access evidence before any claim relief"
+                    .to_string(),
+            upgrade_treatment:
+                "hold upgrade framing as T4 or evidence-needed unless policy acceptance authorizes T3 feeder treatment"
+                    .to_string(),
+            publication_status: "held-pending-policy-acceptance".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: row.blocker_count_after,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t3-lower-tier-feeder-gap-policy-acceptance.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t3_lower_tier_feeder_gap_policy(
+    path: &Path,
+    rows: &[T3LowerTierFeederGapPolicyRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t3_lower_tier_feeder_gap_policy_summary(
+    output: &Path,
+    rows: &[T3LowerTierFeederGapPolicyRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T3 lower-tier feeder-gap policy rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t3_lower_tier_feeder_gap_policy_gate_failures(
+    rows: &[T3LowerTierFeederGapPolicyRow],
+    review_rows: &[T3LowerTierFeederGapReviewRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_routes = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "lower-tier-feeder-policy-required")
+        .map(|row| row.route.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_blockers = review_rows
+        .iter()
+        .filter(|row| row.review_decision == "lower-tier-feeder-policy-required")
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if expected_routes.is_empty() {
+        failures.push("T3 lower-tier feeder policy has no review routes".to_string());
+    }
+    if rows.len() != expected_routes.len() {
+        failures.push(format!(
+            "T3 lower-tier feeder policy has {} rows but expected {} routes",
+            rows.len(),
+            expected_routes.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.policy_id.trim().is_empty()
+            || row.feeder_review_id.trim().is_empty()
+            || row.gap_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.zone_id.trim().is_empty()
+            || row.score_band.trim().is_empty()
+            || row.policy_basis.trim().is_empty()
+            || row.feeder_policy_decision.trim().is_empty()
+            || row.map_treatment.trim().is_empty()
+            || row.evidence_treatment.trim().is_empty()
+            || row.upgrade_treatment.trim().is_empty()
+            || row.publication_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete feeder policy fields", row.route));
+        }
+        if !seen.insert(row.route.clone()) {
+            failures.push(format!("{} appears more than once", row.route));
+        }
+        if !expected_routes.contains(&row.route) {
+            failures.push(format!(
+                "{} is not in the T3 lower-tier feeder review rows",
+                row.route
+            ));
+        }
+        if row.feeder_policy_decision != "lower-tier-feeder-policy-authored-review"
+            || row.publication_status != "held-pending-policy-acceptance"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid feeder policy state", row.route));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after
+            || row.blocker_count_before != row.blocker_count_after
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} reduced feeder policy blockers", row.route));
+        }
+        if row.next_artifact != "data/t3-lower-tier-feeder-gap-policy-acceptance.csv" {
+            failures.push(format!("{} points at wrong next artifact", row.route));
+        }
+    }
+    for expected_route in expected_routes {
+        if !seen.contains(&expected_route) {
+            failures.push(format!(
+                "{expected_route} missing from T3 lower-tier feeder policy"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != expected_blockers {
+        failures.push(format!(
+            "T3 lower-tier feeder policy preserves {total_after} blockers but review rows have {expected_blockers}"
+        ));
+    }
+    failures
+}
+
 #[derive(Default)]
 struct T1SharedSegmentPolicyBuilder {
     routes: std::collections::BTreeSet<String>,
@@ -39985,6 +40250,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T3 lower-tier feeder-gap blockers remain held pending feeder policy",
             ),
             (
+                "t3-lower-tier-feeder-gap-policy",
+                "route t3-lower-tier-feeder-gap-policy --gate",
+                "data/t3-lower-tier-feeder-gap-policy.csv",
+                "held-known",
+                6,
+                "T3 lower-tier feeder-gap policy rows preserve blockers pending acceptance",
+            ),
+            (
                 "source-fetch-policy",
                 "route source-fetch-policy --gate",
                 "data/source-fetch-policy.csv",
@@ -46231,7 +46504,8 @@ mod tests {
         t2_stitched_member_source_access_policy_gate_failures,
         t2_stitched_member_source_access_policy_rows, t2_stitched_member_split_plan_gate_failures,
         t2_stitched_member_split_plan_rows, t2_terminal_contact_validation_gate_failures,
-        t2_terminal_contact_validation_rows, t3_lower_tier_feeder_gap_review_gate_failures,
+        t2_terminal_contact_validation_rows, t3_lower_tier_feeder_gap_policy_gate_failures,
+        t3_lower_tier_feeder_gap_policy_rows, t3_lower_tier_feeder_gap_review_gate_failures,
         t3_lower_tier_feeder_gap_review_rows, t3_national_segment_id, t3_segment_aliases,
         t3_segment_bundle_id, t3_stitch_group_id, t3_t4_access_gap_gate_failures,
         t3_t4_access_gap_rows, t3_t4_pressure_intake_gate_failures, t3_t4_pressure_intake_rows,
@@ -46303,22 +46577,23 @@ mod tests {
         T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
         T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
         T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
-        T4TerminalAccessProofArtifactRow, T4TerminalAccessProofIntakeRow,
-        T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
-        T4TerminalAccessSourceAccessRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T2TerminalContactValidationRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
+        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactRow,
+        T4TerminalAccessProofIntakeRow, T4TerminalAccessProofReviewRow,
+        T4TerminalAccessProofSourceCaptureRow, T4TerminalAccessSourceAccessRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -54101,6 +54376,80 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.review_decision == "lower-tier-feeder-policy-required"));
+    }
+
+    #[test]
+    fn t3_lower_tier_feeder_gap_policy_preserves_blockers() {
+        let review_rows = vec![
+            T3LowerTierFeederGapReviewRow {
+                feeder_review_id: "T3FEEDERREVIEW-I135".to_string(),
+                backlog_id: "ORB-P1-claim-blocker-T3-LOWERTIERFEEDERGAP".to_string(),
+                gap_id: "T3GAP-T3MOUNTAINWEST-I135".to_string(),
+                route: "I-135".to_string(),
+                zone_id: "t3-mountain-west".to_string(),
+                current_score: 29.8,
+                constraint_adjusted_score: 27.8,
+                promise_horizon_hours: 6,
+                gap_class: "below-threshold-feeder".to_string(),
+                gap_reason: "candidate is below T3 threshold for a 6h feeder obligation"
+                    .to_string(),
+                required_evidence: "score-or-terminal-evidence-required".to_string(),
+                repair_action: "prove-terminal-evidence-or-keep-t4".to_string(),
+                review_decision: "lower-tier-feeder-policy-required".to_string(),
+                blocker_claims_before: "map;publication;upgrade".to_string(),
+                blocker_claims_after: "map;publication;upgrade".to_string(),
+                blocker_count_before: 1,
+                blocker_count_after: 1,
+                claim_blocker_delta: 0,
+                next_artifact: "data/t3-lower-tier-feeder-gap-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            T3LowerTierFeederGapReviewRow {
+                feeder_review_id: "T3FEEDERREVIEW-US281".to_string(),
+                backlog_id: "ORB-P1-claim-blocker-T3-LOWERTIERFEEDERGAP".to_string(),
+                gap_id: "T3GAP-T3TEXASBORDER-US281".to_string(),
+                route: "US281".to_string(),
+                zone_id: "t3-texas-border".to_string(),
+                current_score: 25.8,
+                constraint_adjusted_score: 23.8,
+                promise_horizon_hours: 6,
+                gap_class: "below-threshold-feeder".to_string(),
+                gap_reason: "candidate is below T3 threshold for a 6h feeder obligation"
+                    .to_string(),
+                required_evidence: "score-or-terminal-evidence-required".to_string(),
+                repair_action: "prove-terminal-evidence-or-keep-t4".to_string(),
+                review_decision: "lower-tier-feeder-policy-required".to_string(),
+                blocker_claims_before: "map;publication;upgrade".to_string(),
+                blocker_claims_after: "map;publication;upgrade".to_string(),
+                blocker_count_before: 1,
+                blocker_count_after: 1,
+                claim_blocker_delta: 0,
+                next_artifact: "data/t3-lower-tier-feeder-gap-policy.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t3_lower_tier_feeder_gap_policy_rows(&review_rows);
+        let failures = t3_lower_tier_feeder_gap_policy_gate_failures(&rows, &review_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert!(rows.iter().all(|row| row.claim_blocker_delta == 0));
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.blocker_count_after)
+                .sum::<usize>(),
+            2
+        );
+        assert!(rows
+            .iter()
+            .all(|row| row.publication_status == "held-pending-policy-acceptance"));
+        assert!(rows
+            .iter()
+            .any(|row| row.score_band == "near-threshold-feeder"));
+        assert!(rows
+            .iter()
+            .any(|row| row.score_band == "low-threshold-feeder"));
     }
 
     #[test]
