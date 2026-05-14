@@ -36,11 +36,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-13 | T2 National Bundle Readiness Audit | Audit readiness replay decisions against national segment bundles before any structural replay can promote claims. | done |
 | 2026-05-13 | T2 Stitched Member Registry Handoff | Bind stitched-member readiness blockers to registry/candidate evidence before bundle membership repair. | done |
 | 2026-05-13 | T2 Stitched Member Candidate Scope Review | Separate route-level stitched candidate evidence from blocked bundle ids before membership repair. | done |
+| 2026-05-13 | T2 Stitched Member Decision Docket | Turn stitched candidate scope findings into split, merge, or expand decisions before membership repair. | done |
 
 ## Next Active Wave
 
-No wave is currently active. Plan the next wave from the residual blocker
-backlog.
+No active wave.
 
 ## Operating Rules
 
