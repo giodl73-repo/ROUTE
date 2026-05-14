@@ -78,6 +78,7 @@ data/t2-bundle-readiness-repair-evidence.csv,game_ledger,M10,held,held_public,ca
 data/t2-bundle-readiness-replay-decisions.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-bundle-readiness-replay-decisions --gate,T2 bundle readiness replay decisions preserving game ops claim blockers
 data/t2-national-bundle-readiness-audit.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-national-bundle-readiness-audit --gate,T2 national bundle readiness audit preserving structural claim blockers
 data/t2-stitched-member-registry-handoff.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-stitched-member-registry-handoff --gate,T2 stitched-member registry handoff preserving structural claim blockers
+data/t2-stitched-member-candidate-scope-review.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-stitched-member-candidate-scope-review --gate,T2 stitched-member candidate scope review preserving structural claim blockers
 data/t2-bundle-overlay-repair-delta.csv,game_ledger,M10,held,held_public,cargo run -q -p route -- t2-bundle-overlay-repair-delta --gate,T2 bundle overlay repair replay preserving residual blocker claims
 docs/game/browser/des-moines-diamond.html,game_browser,M4,release_candidate,public,powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1,Static browser prototype
 specs/2026-05-06-interstate-2-design.md,spec,M6,release_candidate,public,manual review,Interstate 2.0 spec with Blueprint status caveat

@@ -3116,6 +3116,35 @@ enum Commands {
         gate: bool,
     },
 
+    /// Review stitched-member route candidate scope before bundle repair
+    T2StitchedMemberCandidateScopeReview {
+        /// T2 stitched-member registry handoff CSV
+        #[arg(
+            long,
+            default_value = "data/t2-stitched-member-registry-handoff.csv",
+            value_name = "FILE"
+        )]
+        handoff: PathBuf,
+        /// Tier segment candidates CSV
+        #[arg(
+            long,
+            default_value = "data/tier-segment-candidates.csv",
+            value_name = "FILE"
+        )]
+        segment_candidates: PathBuf,
+        /// Output T2 stitched-member candidate scope review CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-stitched-member-candidate-scope-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if scope review rows promote readiness or lose claim blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit blocker delta after T2 bundle-overlay repair dockets
     T2BundleOverlayRepairDelta {
         /// T2 game/ops binding decisions CSV
@@ -9219,6 +9248,38 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2StitchedMemberCandidateScopeReview {
+            handoff,
+            segment_candidates,
+            output,
+            gate,
+        } => {
+            println!("route t2-stitched-member-candidate-scope-review");
+            let handoff_rows = load_t2_stitched_member_registry_handoff(&handoff)
+                .with_context(|| format!("loading {}", handoff.display()))?;
+            let candidate_rows = load_tier_segment_candidates(&segment_candidates)
+                .with_context(|| format!("loading {}", segment_candidates.display()))?;
+            let rows =
+                t2_stitched_member_candidate_scope_review_rows(&handoff_rows, &candidate_rows);
+            write_t2_stitched_member_candidate_scope_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_stitched_member_candidate_scope_review_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_stitched_member_candidate_scope_review_gate_failures(&rows, &handoff_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 stitched member candidate scope review gate: FAIL");
+                    for failure in failures {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("t2 stitched member candidate scope review gate failed");
+                }
+                println!("T2 stitched member candidate scope review gate: PASS");
+            }
+        }
+
         Commands::T2BundleOverlayRepairDelta {
             decisions,
             targets,
@@ -15038,6 +15099,26 @@ struct T2StitchedMemberRegistryHandoffRow {
     required_member_min: usize,
     handoff_decision: String,
     handoff_action: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2StitchedMemberCandidateScopeReviewRow {
+    scope_review_id: String,
+    handoff_id: String,
+    route: String,
+    segment_bundle_id: String,
+    blocked_bundle_candidate_count: usize,
+    route_candidate_count: usize,
+    route_candidate_bundle_count: usize,
+    route_candidate_state_scope: String,
+    route_candidate_bundle_ids: String,
+    scope_decision: String,
+    scope_action: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -23881,6 +23962,198 @@ fn t2_stitched_member_registry_handoff_gate_failures(
     failures
 }
 
+fn load_t2_stitched_member_registry_handoff(
+    path: &Path,
+) -> Result<Vec<T2StitchedMemberRegistryHandoffRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_stitched_member_candidate_scope_review_rows(
+    handoff_rows: &[T2StitchedMemberRegistryHandoffRow],
+    candidate_rows: &[TierSegmentCandidateRow],
+) -> Vec<T2StitchedMemberCandidateScopeReviewRow> {
+    let mut rows = handoff_rows
+        .iter()
+        .map(|handoff| {
+            let route_key = canonical_route_key(&handoff.route);
+            let blocked_bundle_candidates = candidate_rows
+                .iter()
+                .filter(|row| {
+                    row.segment_bundle_id == handoff.segment_bundle_id
+                        && row.member_role == "stitched-member"
+                })
+                .collect::<Vec<_>>();
+            let route_candidates = candidate_rows
+                .iter()
+                .filter(|row| {
+                    canonical_route_key(&row.route) == route_key
+                        && row.member_role == "stitched-member"
+                })
+                .collect::<Vec<_>>();
+            let route_candidate_bundle_ids = route_candidates
+                .iter()
+                .map(|row| row.segment_bundle_id.clone())
+                .collect::<std::collections::BTreeSet<_>>();
+            let route_candidate_state_scope = route_candidates
+                .iter()
+                .filter_map(|row| {
+                    let state = row.state.trim();
+                    if state.is_empty() {
+                        None
+                    } else {
+                        Some(state.to_string())
+                    }
+                })
+                .collect::<std::collections::BTreeSet<_>>();
+            let scope_action = if route_candidate_bundle_ids.len() > 1 {
+                "review-route-family-state-scope-before-member-expansion"
+            } else {
+                "review-single-bundle-member-expansion-before-replay"
+            };
+            T2StitchedMemberCandidateScopeReviewRow {
+                scope_review_id: format!(
+                    "T2STITCHEDSCOPE-{}",
+                    stable_id_fragment(&handoff.handoff_id)
+                ),
+                handoff_id: handoff.handoff_id.clone(),
+                route: handoff.route.clone(),
+                segment_bundle_id: handoff.segment_bundle_id.clone(),
+                blocked_bundle_candidate_count: blocked_bundle_candidates.len(),
+                route_candidate_count: route_candidates.len(),
+                route_candidate_bundle_count: route_candidate_bundle_ids.len(),
+                route_candidate_state_scope: route_candidate_state_scope
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                route_candidate_bundle_ids: route_candidate_bundle_ids
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(";"),
+                scope_decision: "held-for-scope-review".to_string(),
+                scope_action: scope_action.to_string(),
+                blocked_claims_before: handoff.blocked_claims_after.clone(),
+                blocked_claims_after: handoff.blocked_claims_after.clone(),
+                blocker_delta: 0,
+                next_artifact: "data/tier-segment-candidates.csv".to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.route.cmp(&right.route));
+    rows
+}
+
+fn write_t2_stitched_member_candidate_scope_review(
+    path: &Path,
+    rows: &[T2StitchedMemberCandidateScopeReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_stitched_member_candidate_scope_review_summary(
+    output: &Path,
+    rows: &[T2StitchedMemberCandidateScopeReviewRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.scope_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 stitched member candidate scope review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_stitched_member_candidate_scope_review_gate_failures(
+    rows: &[T2StitchedMemberCandidateScopeReviewRow],
+    handoff_rows: &[T2StitchedMemberRegistryHandoffRow],
+) -> Vec<String> {
+    let expected = handoff_rows
+        .iter()
+        .map(|row| row.handoff_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "stitched member candidate scope review has {} rows but expected {} handoff rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.scope_review_id.trim().is_empty()
+            || row.handoff_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.route_candidate_state_scope.trim().is_empty()
+            || row.route_candidate_bundle_ids.trim().is_empty()
+            || row.scope_decision.trim().is_empty()
+            || row.scope_action.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete scope review fields", row.route));
+        }
+        if !seen.insert(row.handoff_id.clone()) {
+            failures.push(format!("{} appears more than once", row.handoff_id));
+        }
+        if !expected.contains(row.handoff_id.as_str()) {
+            failures.push(format!("{} is not a stitched handoff row", row.handoff_id));
+        }
+        if row.scope_decision == "pass"
+            || row.scope_decision == "bound"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} scope review promoted readiness", row.route));
+        }
+        if row.route_candidate_count == 0
+            || row.route_candidate_bundle_count == 0
+            || row.blocked_bundle_candidate_count == 0
+        {
+            failures.push(format!("{} lacks candidate evidence counts", row.route));
+        }
+        if row.blocked_claims_before != "game;incident;publication;upgrade"
+            || row.blocked_claims_after != "game;incident;publication;upgrade"
+            || row.blocker_delta != 0
+        {
+            failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from candidate scope review"));
+        }
+    }
+    failures
+}
+
 fn t2_bundle_overlay_repair_delta_rows(
     decision_rows: &[T2GameOpsBindingDecisionRow],
     target_rows: &[T2BundleOverlayRepairTargetRow],
@@ -31246,6 +31519,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "Stitched-member readiness blockers are bound to registry and candidate evidence",
             ),
             (
+                "t2-stitched-member-candidate-scope-review",
+                "route t2-stitched-member-candidate-scope-review --gate",
+                "data/t2-stitched-member-candidate-scope-review.csv",
+                "held-known",
+                2,
+                "Route-level stitched candidate evidence is scoped before bundle membership repair",
+            ),
+            (
                 "t2-bundle-overlay-repair-delta",
                 "route t2-bundle-overlay-repair-delta --gate",
                 "data/t2-bundle-overlay-repair-delta.csv",
@@ -37155,7 +37436,9 @@ mod tests {
         t2_service_diagnostic_queue_gate_failures, t2_service_diagnostic_queue_rows,
         t2_service_overlay_diagnostic_decision_gate_failures,
         t2_service_overlay_diagnostic_decision_rows, t2_service_selection_gate_failures,
-        t2_service_selection_rows, t2_stitched_member_registry_handoff_gate_failures,
+        t2_service_selection_rows, t2_stitched_member_candidate_scope_review_gate_failures,
+        t2_stitched_member_candidate_scope_review_rows,
+        t2_stitched_member_registry_handoff_gate_failures,
         t2_stitched_member_registry_handoff_rows, t2_terminal_contact_validation_gate_failures,
         t2_terminal_contact_validation_rows, t3_national_segment_id, t3_segment_aliases,
         t3_segment_bundle_id, t3_stitch_group_id, t3_t4_access_gap_gate_failures,
@@ -37206,8 +37489,8 @@ mod tests {
         T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
         T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
         T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2ServiceSelectionRow, T2StitchedMemberRegistryHandoffRow, T2TerminalContactValidationRow,
+        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
@@ -42714,6 +42997,85 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].handoff_decision, "held-for-member-expansion");
         assert_eq!(rows[0].current_registry_member_count, 1);
+        assert_eq!(
+            rows[0].blocked_claims_after,
+            "game;incident;publication;upgrade"
+        );
+    }
+
+    #[test]
+    fn t2_stitched_member_candidate_scope_review_does_not_promote_route_evidence() {
+        let handoff_rows = vec![T2StitchedMemberRegistryHandoffRow {
+            handoff_id: "T2STITCHEDREGISTRYHANDOFF-I295".to_string(),
+            audit_id: "T2NATIONALBUNDLEAUDIT-I295".to_string(),
+            route: "I295".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I295".to_string(),
+            current_registry_member_count: 1,
+            candidate_bundle_member_count: 1,
+            candidate_route_member_count: 2,
+            required_member_min: 2,
+            handoff_decision: "held-for-member-expansion".to_string(),
+            handoff_action: "expand-stitch-group-before-bundle-replay".to_string(),
+            blocked_claims_before: "game;incident;publication;upgrade".to_string(),
+            blocked_claims_after: "game;incident;publication;upgrade".to_string(),
+            blocker_delta: 0,
+            next_artifact: "data/tier-segment-candidates.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let candidate_rows = vec![
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-0".to_string(),
+                route: "I295".to_string(),
+                edge_id: 1,
+                edge_sequence: 1,
+                national_segment_id: "US.HWYSEG.I295A".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I295".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I295".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "FL".to_string(),
+                length_miles: 1.0,
+                aadt: "source-needed".to_string(),
+                lane_count: "source-needed".to_string(),
+                route_aliases: "route:I295".to_string(),
+                selector_basis: "test".to_string(),
+                candidate_action: "candidate".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierSegmentCandidateRow {
+                tier: "T2".to_string(),
+                source_selector: "t2-service-selection".to_string(),
+                region_id: "component-0".to_string(),
+                route: "I295".to_string(),
+                edge_id: 2,
+                edge_sequence: 2,
+                national_segment_id: "US.HWYSEG.I295B".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.I295OTHER".to_string(),
+                stitch_group_id: "US.HWYSTITCH.I295OTHER".to_string(),
+                member_role: "stitched-member".to_string(),
+                state: "SC".to_string(),
+                length_miles: 1.0,
+                aadt: "source-needed".to_string(),
+                lane_count: "source-needed".to_string(),
+                route_aliases: "route:I295".to_string(),
+                selector_basis: "test".to_string(),
+                candidate_action: "candidate".to_string(),
+                next_artifact: "data/national-segment-registry.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows = t2_stitched_member_candidate_scope_review_rows(&handoff_rows, &candidate_rows);
+        let failures =
+            t2_stitched_member_candidate_scope_review_gate_failures(&rows, &handoff_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].scope_decision, "held-for-scope-review");
+        assert_eq!(rows[0].route_candidate_bundle_count, 2);
         assert_eq!(
             rows[0].blocked_claims_after,
             "game;incident;publication;upgrade"
