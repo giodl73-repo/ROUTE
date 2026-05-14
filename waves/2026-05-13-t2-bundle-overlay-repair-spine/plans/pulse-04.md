@@ -2,7 +2,7 @@
 wave: t2-bundle-overlay-repair-spine
 pulse: 04
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-03]
 governing_roles:
   - optimization-methodologist
@@ -28,10 +28,10 @@ blocker delta without hiding residual holds.
 
 ## Deliverables
 
-- [ ] Regenerate T2 overlay/binding artifacts after repair disposition.
-- [ ] Add `data/t2-bundle-overlay-repair-delta.csv`.
-- [ ] Register repair artifacts in optimizer and release manifests.
-- [ ] Prove no non-pass row loses blocked claims.
+- [x] Regenerate T2 overlay/binding artifacts after repair disposition.
+- [x] Add `data/t2-bundle-overlay-repair-delta.csv`.
+- [x] Register repair artifacts in optimizer and release manifests.
+- [x] Prove no non-pass row loses blocked claims.
 
 ## Expected Gates
 

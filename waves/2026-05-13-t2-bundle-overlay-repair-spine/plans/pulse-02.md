@@ -2,7 +2,7 @@
 wave: t2-bundle-overlay-repair-spine
 pulse: 02
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-01]
 governing_roles:
   - optimization-methodologist
@@ -28,12 +28,12 @@ missing Beck/service metadata as a pass.
 
 ## Deliverables
 
-- [ ] Add `data/t2-service-class-repair-docket.csv`.
-- [ ] Split repair actions between Beck diagnostic authoring, service overlay
+- [x] Add `data/t2-service-class-repair-docket.csv`.
+- [x] Split repair actions between Beck diagnostic authoring, service overlay
   correction, local-zone handoff, and explicit hold.
-- [ ] Ensure any local-relief rows remain below national game overlay until a
+- [x] Ensure any local-relief rows remain below national game overlay until a
   local/zone role is explicit.
-- [ ] Add tests for service-class repair routing.
+- [x] Add tests for service-class repair routing.
 
 ## Expected Gates
 

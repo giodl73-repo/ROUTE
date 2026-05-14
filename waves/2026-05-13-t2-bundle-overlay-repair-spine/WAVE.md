@@ -38,11 +38,11 @@ local-zone treatment remain repair/demotion work rather than silent passes.
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - Repair target intake | planned | classify 15 held/repair-needed decisions by blocker type |
-| 02 - Service-class repair docket | planned | route service-class-held rows to Beck/service/local-zone actions |
-| 03 - Bundle readiness disposition | planned | decide stop-chain, stitched-member, terminal-stop, and I37 repair rows |
-| 04 - Overlay replay and blocker delta | planned | regenerate game/ops decisions and optimizer manifests |
-| 05 - Review and wave close | planned | role review, residual blocker accounting, final gates |
+| 01 - Repair target intake | done | `data/t2-bundle-overlay-repair-targets.csv`; 15 residual decisions classified |
+| 02 - Service-class repair docket | done | `data/t2-service-class-repair-docket.csv`; 7 local-zone, 7 service-overlay |
+| 03 - Bundle readiness disposition | done | `data/t2-bundle-readiness-disposition.csv`; 6 held, 4 repair-needed |
+| 04 - Overlay replay and blocker delta | done | `data/t2-bundle-overlay-repair-delta.csv`; 14 held, 1 repair-needed |
+| 05 - Review and wave close | done | `CLOSE.md`; role review and final gates |
 
 ## Done Criteria
 

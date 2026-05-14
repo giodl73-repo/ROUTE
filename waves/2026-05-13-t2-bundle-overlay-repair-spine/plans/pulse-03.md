@@ -2,7 +2,7 @@
 wave: t2-bundle-overlay-repair-spine
 pulse: 03
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-02]
 governing_roles:
   - optimization-methodologist
@@ -28,11 +28,11 @@ or `needs-terminal-stop`, including the I37 `bundle-bound-review` repair row.
 
 ## Deliverables
 
-- [ ] Add `data/t2-bundle-readiness-disposition.csv`.
-- [ ] Decide each readiness blocker as repair-needed, demote, held, or pass
+- [x] Add `data/t2-bundle-readiness-disposition.csv`.
+- [x] Decide each readiness blocker as repair-needed, demote, held, or pass
   candidate.
-- [ ] Keep I37 blocked unless its stop-chain need is resolved.
-- [ ] Add tests for readiness disposition and no premature pass.
+- [x] Keep I37 blocked unless its stop-chain need is resolved.
+- [x] Add tests for readiness disposition and no premature pass.
 
 ## Expected Gates
 

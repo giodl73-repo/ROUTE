@@ -2,7 +2,7 @@
 wave: t2-bundle-overlay-repair-spine
 pulse: 05
 date: 2026-05-13
-status: planned
+status: done
 depends_on: [pulse-04]
 governing_roles:
   - optimization-methodologist
@@ -20,11 +20,11 @@ counts, claim-status discipline, and final gates reconciled.
 
 ## Deliverables
 
-- [ ] Run role review and write findings to `waves/2026-05-13-t2-bundle-overlay-repair-spine/panels/`.
-- [ ] Write `waves/2026-05-13-t2-bundle-overlay-repair-spine/CLOSE.md`.
-- [ ] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
-- [ ] Summarize bound, repair-needed, demote, and held decisions after replay.
-- [ ] Run final gates and commit.
+- [x] Run role review and write findings to `waves/2026-05-13-t2-bundle-overlay-repair-spine/panels/`.
+- [x] Write `waves/2026-05-13-t2-bundle-overlay-repair-spine/CLOSE.md`.
+- [x] Update `waves/PHASES.md`, `WAVE.md`, and pulse statuses.
+- [x] Summarize bound, repair-needed, demote, and held decisions after replay.
+- [x] Run final gates and commit.
 
 ## Expected Gates
 

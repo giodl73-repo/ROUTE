@@ -2805,6 +2805,129 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit repair targets for residual T2 bundle-overlay blockers
+    T2BundleOverlayRepairTargets {
+        /// T2 game/ops binding decisions CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-ops-binding-decisions.csv",
+            value_name = "FILE"
+        )]
+        decisions: PathBuf,
+        /// T2 bundle overlays CSV
+        #[arg(
+            long,
+            default_value = "data/game/t2-bundle-overlays.csv",
+            value_name = "FILE"
+        )]
+        bundle_overlays: PathBuf,
+        /// Output T2 bundle-overlay repair targets CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-overlay-repair-targets.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if residual decisions lack repair targets or classifications
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Emit service-class repair docket for held T2 bundle-overlay rows
+    T2ServiceClassRepairDocket {
+        /// T2 bundle-overlay repair targets CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-targets.csv",
+            value_name = "FILE"
+        )]
+        targets: PathBuf,
+        /// T2 service diagnostic queue CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-diagnostic-queue.csv",
+            value_name = "FILE"
+        )]
+        service_diagnostics: PathBuf,
+        /// Output T2 service-class repair docket CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-service-class-repair-docket.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if service-class-held rows lack repair routing
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Emit readiness disposition for T2 bundle-overlay rows needing bundle repair
+    T2BundleReadinessDisposition {
+        /// T2 bundle-overlay repair targets CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-targets.csv",
+            value_name = "FILE"
+        )]
+        targets: PathBuf,
+        /// Output T2 bundle readiness disposition CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-readiness-disposition.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if bundle-readiness blockers are not explicitly disposed
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Emit blocker delta after T2 bundle-overlay repair dockets
+    T2BundleOverlayRepairDelta {
+        /// T2 game/ops binding decisions CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-ops-binding-decisions.csv",
+            value_name = "FILE"
+        )]
+        decisions: PathBuf,
+        /// T2 bundle-overlay repair targets CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-overlay-repair-targets.csv",
+            value_name = "FILE"
+        )]
+        targets: PathBuf,
+        /// T2 service-class repair docket CSV
+        #[arg(
+            long,
+            default_value = "data/t2-service-class-repair-docket.csv",
+            value_name = "FILE"
+        )]
+        service_docket: PathBuf,
+        /// T2 bundle readiness disposition CSV
+        #[arg(
+            long,
+            default_value = "data/t2-bundle-readiness-disposition.csv",
+            value_name = "FILE"
+        )]
+        readiness: PathBuf,
+        /// Output T2 bundle-overlay repair delta CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-bundle-overlay-repair-delta.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if residual blocker accounting loses held claims
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Link optimizer outputs to map atlas and game overlay consumers
     OptimizerMapHooks {
         /// Output optimizer map hook CSV
@@ -8527,6 +8650,138 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2BundleOverlayRepairTargets {
+            decisions,
+            bundle_overlays,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-overlay-repair-targets");
+            let decision_rows = load_t2_game_ops_binding_decisions(&decisions)
+                .with_context(|| format!("loading {}", decisions.display()))?;
+            let overlay_rows = load_t2_bundle_overlays(&bundle_overlays)
+                .with_context(|| format!("loading {}", bundle_overlays.display()))?;
+            let rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &overlay_rows);
+            write_t2_bundle_overlay_repair_targets(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_overlay_repair_target_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_overlay_repair_target_gate_failures(&rows, &decision_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle overlay repair targets gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle overlay repair targets gate failed");
+                }
+                println!();
+                println!("T2 bundle overlay repair targets gate: PASS");
+            }
+        }
+
+        Commands::T2ServiceClassRepairDocket {
+            targets,
+            service_diagnostics,
+            output,
+            gate,
+        } => {
+            println!("route t2-service-class-repair-docket");
+            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
+                .with_context(|| format!("loading {}", targets.display()))?;
+            let diagnostic_rows = load_t2_service_diagnostic_queue(&service_diagnostics)
+                .with_context(|| format!("loading {}", service_diagnostics.display()))?;
+            let rows = t2_service_class_repair_docket_rows(&target_rows, &diagnostic_rows);
+            write_t2_service_class_repair_docket(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_service_class_repair_docket_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_service_class_repair_docket_gate_failures(&rows, &target_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 service-class repair docket gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 service-class repair docket gate failed");
+                }
+                println!();
+                println!("T2 service-class repair docket gate: PASS");
+            }
+        }
+
+        Commands::T2BundleReadinessDisposition {
+            targets,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-readiness-disposition");
+            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
+                .with_context(|| format!("loading {}", targets.display()))?;
+            let rows = t2_bundle_readiness_disposition_rows(&target_rows);
+            write_t2_bundle_readiness_disposition(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_readiness_disposition_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_readiness_disposition_gate_failures(&rows, &target_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle readiness disposition gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle readiness disposition gate failed");
+                }
+                println!();
+                println!("T2 bundle readiness disposition gate: PASS");
+            }
+        }
+
+        Commands::T2BundleOverlayRepairDelta {
+            decisions,
+            targets,
+            service_docket,
+            readiness,
+            output,
+            gate,
+        } => {
+            println!("route t2-bundle-overlay-repair-delta");
+            let decision_rows = load_t2_game_ops_binding_decisions(&decisions)
+                .with_context(|| format!("loading {}", decisions.display()))?;
+            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
+                .with_context(|| format!("loading {}", targets.display()))?;
+            let service_rows = load_t2_service_class_repair_docket(&service_docket)
+                .with_context(|| format!("loading {}", service_docket.display()))?;
+            let readiness_rows = load_t2_bundle_readiness_disposition(&readiness)
+                .with_context(|| format!("loading {}", readiness.display()))?;
+            let rows = t2_bundle_overlay_repair_delta_rows(
+                &decision_rows,
+                &target_rows,
+                &service_rows,
+                &readiness_rows,
+            );
+            write_t2_bundle_overlay_repair_delta(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_bundle_overlay_repair_delta_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_bundle_overlay_repair_delta_gate_failures(&rows, &decision_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 bundle overlay repair delta gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 bundle overlay repair delta gate failed");
+                }
+                println!();
+                println!("T2 bundle overlay repair delta gate: PASS");
+            }
+        }
+
         Commands::OptimizerMapHooks { output, gate } => {
             println!("route optimizer-map-hooks");
             let rows = optimizer_map_hook_rows();
@@ -14121,6 +14376,79 @@ struct T2GameOpsBindingDecisionRow {
     decision: String,
     decision_reason: String,
     blocks_claims: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleOverlayRepairTargetRow {
+    target_id: String,
+    decision_id: String,
+    subject_id: String,
+    segment_bundle_id: String,
+    route: String,
+    decision: String,
+    binding_status: String,
+    bundle_status: String,
+    service_class: String,
+    pavement_debt_cost_m: f64,
+    pavement_debt_class: String,
+    blocks_claims: String,
+    repair_class: String,
+    repair_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    target_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2ServiceClassRepairDocketRow {
+    docket_id: String,
+    target_id: String,
+    route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    service_class: String,
+    service_repair_class: String,
+    service_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    optimizer_effect: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleReadinessDispositionRow {
+    disposition_id: String,
+    target_id: String,
+    route: String,
+    segment_bundle_id: String,
+    bundle_status: String,
+    service_class: String,
+    readiness_class: String,
+    disposition: String,
+    disposition_action: String,
+    required_artifact: String,
+    next_artifact: String,
+    blocks_claims: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2BundleOverlayRepairDeltaRow {
+    delta_id: String,
+    decision_id: String,
+    route: String,
+    segment_bundle_id: String,
+    previous_decision: String,
+    target_status: String,
+    service_action: String,
+    readiness_disposition: String,
+    replay_decision: String,
+    blocked_claims_before: String,
+    blocked_claims_after: String,
+    blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -20986,6 +21314,795 @@ fn t2_game_ops_binding_decision_gate_failures(
             failures.push(format!(
                 "{expected_id} missing from T2 game/ops binding decisions"
             ));
+        }
+    }
+    failures
+}
+
+fn load_t2_game_ops_binding_decisions(path: &Path) -> Result<Vec<T2GameOpsBindingDecisionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_overlay_repair_target_rows(
+    decision_rows: &[T2GameOpsBindingDecisionRow],
+    overlay_rows: &[T2BundleOverlayRow],
+) -> Vec<T2BundleOverlayRepairTargetRow> {
+    let overlays_by_bundle = overlay_rows
+        .iter()
+        .filter(|row| !row.segment_bundle_id.trim().is_empty())
+        .map(|row| (row.segment_bundle_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = decision_rows
+        .iter()
+        .filter(|row| row.decision != "bound")
+        .map(|row| {
+            let overlay = overlays_by_bundle.get(row.segment_bundle_id.as_str());
+            let pavement_debt_cost_m = overlay
+                .map(|overlay| overlay.pavement_debt_cost_m)
+                .unwrap_or(0.0);
+            let pavement_debt_class = overlay
+                .map(|overlay| overlay.pavement_debt_class.clone())
+                .unwrap_or_else(|| "none".to_string());
+            let (repair_class, repair_action, required_artifact, next_artifact) =
+                match row.bundle_status.as_str() {
+                    "needs-stop-chain" => (
+                        "stop-chain",
+                        "author-or-demote-stop-chain-before-bundle-pass",
+                        "data/national-segment-registry.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    "needs-stitched-members" => (
+                        "stitched-member",
+                        "stitch-member-segments-before-bundle-pass",
+                        "data/tier-segment-candidates.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    "needs-terminal-stop" => (
+                        "terminal-stop",
+                        "author-terminal-stop-before-bundle-pass",
+                        "data/t2-service-selection.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    _ if row.service_class == "unclassified" => (
+                        "service-class",
+                        "repair-service-class-before-game-overlay",
+                        "data/beck-t2-diagnostics.csv",
+                        "data/game/t2-service-overlays.csv",
+                    ),
+                    _ if pavement_debt_cost_m > 0.0 => (
+                        "pavement-debt",
+                        "preserve-pavement-debt-before-claim-promotion",
+                        "data/tier-pavement-debt-budget.csv",
+                        "data/tier-pavement-source-gaps.csv",
+                    ),
+                    _ => (
+                        "manual-review",
+                        "manual-overlay-review-before-claim-promotion",
+                        "data/game/t2-bundle-overlays.csv",
+                        "data/t2-bundle-overlay-repair-delta.csv",
+                    ),
+                };
+            let target_status = if row.decision == "repair-needed"
+                || matches!(
+                    repair_class,
+                    "stitched-member" | "terminal-stop" | "pavement-debt"
+                )
+                || (repair_class == "stop-chain" && row.service_class != "unclassified")
+            {
+                "repair-needed"
+            } else {
+                "held"
+            };
+            T2BundleOverlayRepairTargetRow {
+                target_id: format!("T2OVERLAYREPAIR-{}", stable_id_fragment(&row.decision_id)),
+                decision_id: row.decision_id.clone(),
+                subject_id: row.subject_id.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                route: row.route.clone(),
+                decision: row.decision.clone(),
+                binding_status: row.binding_status.clone(),
+                bundle_status: row.bundle_status.clone(),
+                service_class: row.service_class.clone(),
+                pavement_debt_cost_m,
+                pavement_debt_class,
+                blocks_claims: row.blocks_claims.clone(),
+                repair_class: repair_class.to_string(),
+                repair_action: repair_action.to_string(),
+                required_artifact: required_artifact.to_string(),
+                next_artifact: next_artifact.to_string(),
+                target_status: target_status.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_bundle_overlay_repair_targets(
+    path: &Path,
+    rows: &[T2BundleOverlayRepairTargetRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_overlay_repair_target_summary(
+    output: &Path,
+    rows: &[T2BundleOverlayRepairTargetRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.repair_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle overlay repair target rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (class, count) in counts {
+        println!("  {class}: {count}");
+    }
+}
+
+fn t2_bundle_overlay_repair_target_gate_failures(
+    rows: &[T2BundleOverlayRepairTargetRow],
+    decision_rows: &[T2GameOpsBindingDecisionRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = decision_rows
+        .iter()
+        .filter(|row| row.decision != "bound")
+        .map(|row| row.decision_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if rows.is_empty() {
+        failures.push("no T2 bundle overlay repair targets emitted".to_string());
+        return failures;
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 bundle overlay repair targets have {} rows but expected {} residual decisions",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.target_id.trim().is_empty()
+            || row.decision_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.blocks_claims.trim().is_empty()
+            || row.repair_class.trim().is_empty()
+            || row.repair_action.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.target_status.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete repair target fields", row.route));
+        }
+        if !seen.insert(row.decision_id.clone()) {
+            failures.push(format!("{} appears more than once", row.decision_id));
+        }
+        if !expected.contains(row.decision_id.as_str()) {
+            failures.push(format!(
+                "{} is not a residual game/ops binding decision",
+                row.decision_id
+            ));
+        }
+        if !matches!(
+            row.repair_class.as_str(),
+            "service-class"
+                | "stop-chain"
+                | "stitched-member"
+                | "terminal-stop"
+                | "pavement-debt"
+                | "local-zone"
+                | "manual-review"
+        ) {
+            failures.push(format!(
+                "{} has invalid repair class {}",
+                row.route, row.repair_class
+            ));
+        }
+        if !matches!(
+            row.target_status.as_str(),
+            "pass-candidate" | "repair-needed" | "demote" | "held"
+        ) {
+            failures.push(format!(
+                "{} has invalid target status {}",
+                row.route, row.target_status
+            ));
+        }
+        if row.target_status == "pass-candidate" {
+            failures.push(format!(
+                "{} cannot be a pass candidate in repair intake",
+                row.route
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from repair targets"));
+        }
+    }
+    failures
+}
+
+fn load_t2_bundle_overlay_repair_targets(
+    path: &Path,
+) -> Result<Vec<T2BundleOverlayRepairTargetRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_service_class_repair_docket_rows(
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+    diagnostic_rows: &[T2ServiceDiagnosticQueueRow],
+) -> Vec<T2ServiceClassRepairDocketRow> {
+    let diagnostics_by_route = diagnostic_rows
+        .iter()
+        .filter(|row| !row.route.starts_with("__"))
+        .map(|row| (canonical_route_key(&row.route), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = target_rows
+        .iter()
+        .filter(|row| row.service_class == "unclassified" || row.repair_class == "service-class")
+        .map(|row| {
+            let diagnostic = diagnostics_by_route.get(&canonical_route_key(&row.route));
+            let diagnostic_status = diagnostic
+                .map(|row| row.diagnostic_status.as_str())
+                .unwrap_or_default();
+            let (service_repair_class, service_action, required_artifact, next_artifact, effect) =
+                match diagnostic_status {
+                    "local-relief-map-review" => (
+                        "local-zone",
+                        "hold-local-relief-below-national-game-overlay",
+                        "data/t3-t4-pressure-intake.csv",
+                        "data/t3-zone-render-board.csv",
+                        "keeps local relief treatment out of national T2 game overlay until zone role is explicit",
+                    ),
+                    "missing-beck-t2-diagnostic" => (
+                        "beck-diagnostic",
+                        "author-beck-t2-diagnostic-before-service-class",
+                        "data/beck-t2-diagnostics.csv",
+                        "data/game/t2-service-overlays.csv",
+                        "keeps service-class-held row blocked until Beck diagnostic chooses a class",
+                    ),
+                    _ => (
+                        "service-overlay",
+                        "repair-service-overlay-before-game-ops-binding",
+                        "data/game/t2-service-overlays.csv",
+                        "data/t2-game-ops-binding-decisions.csv",
+                        "keeps service-class-held row blocked until overlay metadata is usable",
+                    ),
+                };
+            T2ServiceClassRepairDocketRow {
+                docket_id: format!("T2SERVICECLASSREPAIR-{}", stable_id_fragment(&row.target_id)),
+                target_id: row.target_id.clone(),
+                route: row.route.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_status: row.bundle_status.clone(),
+                service_class: row.service_class.clone(),
+                service_repair_class: service_repair_class.to_string(),
+                service_action: service_action.to_string(),
+                required_artifact: required_artifact.to_string(),
+                next_artifact: next_artifact.to_string(),
+                optimizer_effect: effect.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_service_class_repair_docket(
+    path: &Path,
+    rows: &[T2ServiceClassRepairDocketRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_service_class_repair_docket_summary(
+    output: &Path,
+    rows: &[T2ServiceClassRepairDocketRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.service_repair_class.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 service-class repair docket rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (class, count) in counts {
+        println!("  {class}: {count}");
+    }
+}
+
+fn t2_service_class_repair_docket_gate_failures(
+    rows: &[T2ServiceClassRepairDocketRow],
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+) -> Vec<String> {
+    let expected = target_rows
+        .iter()
+        .filter(|row| row.service_class == "unclassified" || row.repair_class == "service-class")
+        .map(|row| row.target_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "service-class repair docket has {} rows but expected {} service-class-held targets",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.docket_id.trim().is_empty()
+            || row.target_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.service_repair_class.trim().is_empty()
+            || row.service_action.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.optimizer_effect.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete service repair fields",
+                row.route
+            ));
+        }
+        if !seen.insert(row.target_id.clone()) {
+            failures.push(format!("{} appears more than once", row.target_id));
+        }
+        if !expected.contains(row.target_id.as_str()) {
+            failures.push(format!("{} is not a service-class target", row.target_id));
+        }
+        if !matches!(
+            row.service_repair_class.as_str(),
+            "beck-diagnostic" | "local-zone" | "service-overlay"
+        ) {
+            failures.push(format!(
+                "{} has invalid service repair class {}",
+                row.route, row.service_repair_class
+            ));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!("{} service repair must remain review", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from service repair docket"));
+        }
+    }
+    failures
+}
+
+fn load_t2_service_class_repair_docket(path: &Path) -> Result<Vec<T2ServiceClassRepairDocketRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_readiness_disposition_rows(
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+) -> Vec<T2BundleReadinessDispositionRow> {
+    let mut rows = target_rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.bundle_status.as_str(),
+                "needs-stop-chain" | "needs-stitched-members" | "needs-terminal-stop"
+            ) || row.binding_status == "bundle-bound-review"
+        })
+        .map(|row| {
+            let (readiness_class, disposition, action, required_artifact, next_artifact) =
+                match row.bundle_status.as_str() {
+                    "needs-stop-chain" if row.service_class == "unclassified" => (
+                        "stop-chain",
+                        "held",
+                        "repair-service-class-before-stop-chain-pass",
+                        "data/game/t2-service-overlays.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    "needs-stop-chain" => (
+                        "stop-chain",
+                        "repair-needed",
+                        "author-stop-chain-before-bundle-pass",
+                        "data/national-segment-registry.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    "needs-stitched-members" => (
+                        "stitched-member",
+                        "repair-needed",
+                        "stitch-member-segments-before-bundle-pass",
+                        "data/tier-segment-candidates.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    "needs-terminal-stop" => (
+                        "terminal-stop",
+                        "repair-needed",
+                        "author-terminal-stop-before-bundle-pass",
+                        "data/t2-service-selection.csv",
+                        "data/national-segment-bundles.csv",
+                    ),
+                    _ => (
+                        "manual-review",
+                        "held",
+                        "manual-bundle-readiness-review",
+                        "data/game/t2-bundle-overlays.csv",
+                        "data/t2-bundle-overlay-repair-delta.csv",
+                    ),
+                };
+            T2BundleReadinessDispositionRow {
+                disposition_id: format!("T2BUNDLEREADINESS-{}", stable_id_fragment(&row.target_id)),
+                target_id: row.target_id.clone(),
+                route: row.route.clone(),
+                segment_bundle_id: row.segment_bundle_id.clone(),
+                bundle_status: row.bundle_status.clone(),
+                service_class: row.service_class.clone(),
+                readiness_class: readiness_class.to_string(),
+                disposition: disposition.to_string(),
+                disposition_action: action.to_string(),
+                required_artifact: required_artifact.to_string(),
+                next_artifact: next_artifact.to_string(),
+                blocks_claims: row.blocks_claims.clone(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_bundle_readiness_disposition(
+    path: &Path,
+    rows: &[T2BundleReadinessDispositionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_readiness_disposition_summary(
+    output: &Path,
+    rows: &[T2BundleReadinessDispositionRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.disposition.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle readiness disposition rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (disposition, count) in counts {
+        println!("  {disposition}: {count}");
+    }
+}
+
+fn t2_bundle_readiness_disposition_gate_failures(
+    rows: &[T2BundleReadinessDispositionRow],
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+) -> Vec<String> {
+    let expected = target_rows
+        .iter()
+        .filter(|row| {
+            matches!(
+                row.bundle_status.as_str(),
+                "needs-stop-chain" | "needs-stitched-members" | "needs-terminal-stop"
+            ) || row.binding_status == "bundle-bound-review"
+        })
+        .map(|row| row.target_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "bundle readiness disposition has {} rows but expected {} readiness targets",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.disposition_id.trim().is_empty()
+            || row.target_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.readiness_class.trim().is_empty()
+            || row.disposition.trim().is_empty()
+            || row.disposition_action.trim().is_empty()
+            || row.required_artifact.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.blocks_claims.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete readiness fields", row.route));
+        }
+        if !seen.insert(row.target_id.clone()) {
+            failures.push(format!("{} appears more than once", row.target_id));
+        }
+        if !expected.contains(row.target_id.as_str()) {
+            failures.push(format!("{} is not a readiness target", row.target_id));
+        }
+        if !matches!(
+            row.disposition.as_str(),
+            "repair-needed" | "demote" | "held"
+        ) {
+            failures.push(format!(
+                "{} has invalid readiness disposition {}",
+                row.route, row.disposition
+            ));
+        }
+        if row.route == "I37" && row.disposition != "repair-needed" {
+            failures.push("I37 bundle-bound-review must remain repair-needed".to_string());
+        }
+        if row.validation_status != "review" {
+            failures.push(format!(
+                "{} readiness disposition must remain review",
+                row.route
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from readiness disposition"));
+        }
+    }
+    failures
+}
+
+fn load_t2_bundle_readiness_disposition(
+    path: &Path,
+) -> Result<Vec<T2BundleReadinessDispositionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_bundle_overlay_repair_delta_rows(
+    decision_rows: &[T2GameOpsBindingDecisionRow],
+    target_rows: &[T2BundleOverlayRepairTargetRow],
+    service_rows: &[T2ServiceClassRepairDocketRow],
+    readiness_rows: &[T2BundleReadinessDispositionRow],
+) -> Vec<T2BundleOverlayRepairDeltaRow> {
+    let targets = target_rows
+        .iter()
+        .map(|row| (row.decision_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let service_by_target = service_rows
+        .iter()
+        .map(|row| (row.target_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let readiness_by_target = readiness_rows
+        .iter()
+        .map(|row| (row.target_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut rows = decision_rows
+        .iter()
+        .filter(|row| row.decision != "bound")
+        .filter_map(|decision| {
+            let target = targets.get(decision.decision_id.as_str())?;
+            let service_action = service_by_target
+                .get(target.target_id.as_str())
+                .map(|row| row.service_action.clone())
+                .unwrap_or_else(|| "no-service-class-action-required".to_string());
+            let readiness = readiness_by_target
+                .get(target.target_id.as_str())
+                .map(|row| row.disposition.clone())
+                .unwrap_or_else(|| "no-readiness-disposition-required".to_string());
+            let next_artifact = readiness_by_target
+                .get(target.target_id.as_str())
+                .map(|row| row.next_artifact.clone())
+                .or_else(|| {
+                    service_by_target
+                        .get(target.target_id.as_str())
+                        .map(|row| row.next_artifact.clone())
+                })
+                .unwrap_or_else(|| target.next_artifact.clone());
+            Some(T2BundleOverlayRepairDeltaRow {
+                delta_id: format!(
+                    "T2OVERLAYDELTA-{}",
+                    stable_id_fragment(&decision.decision_id)
+                ),
+                decision_id: decision.decision_id.clone(),
+                route: decision.route.clone(),
+                segment_bundle_id: decision.segment_bundle_id.clone(),
+                previous_decision: decision.decision.clone(),
+                target_status: target.target_status.clone(),
+                service_action,
+                readiness_disposition: readiness,
+                replay_decision: decision.decision.clone(),
+                blocked_claims_before: decision.blocks_claims.clone(),
+                blocked_claims_after: decision.blocks_claims.clone(),
+                blocker_delta: 0,
+                next_artifact,
+                validation_status: "review".to_string(),
+            })
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_bundle_overlay_repair_delta(
+    path: &Path,
+    rows: &[T2BundleOverlayRepairDeltaRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_bundle_overlay_repair_delta_summary(
+    output: &Path,
+    rows: &[T2BundleOverlayRepairDeltaRow],
+) {
+    let mut counts = std::collections::BTreeMap::<&str, usize>::new();
+    for row in rows {
+        *counts.entry(row.replay_decision.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} T2 bundle overlay repair delta rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for (decision, count) in counts {
+        println!("  {decision}: {count}");
+    }
+}
+
+fn t2_bundle_overlay_repair_delta_gate_failures(
+    rows: &[T2BundleOverlayRepairDeltaRow],
+    decision_rows: &[T2GameOpsBindingDecisionRow],
+) -> Vec<String> {
+    let expected = decision_rows
+        .iter()
+        .filter(|row| row.decision != "bound")
+        .map(|row| row.decision_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut failures = Vec::new();
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "repair delta has {} rows but expected {} residual decisions",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.delta_id.trim().is_empty()
+            || row.decision_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.previous_decision.trim().is_empty()
+            || row.target_status.trim().is_empty()
+            || row.service_action.trim().is_empty()
+            || row.readiness_disposition.trim().is_empty()
+            || row.replay_decision.trim().is_empty()
+            || row.blocked_claims_before.trim().is_empty()
+            || row.blocked_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete delta fields", row.route));
+        }
+        if !seen.insert(row.decision_id.clone()) {
+            failures.push(format!("{} appears more than once", row.decision_id));
+        }
+        if !expected.contains(row.decision_id.as_str()) {
+            failures.push(format!("{} is not a residual decision", row.decision_id));
+        }
+        if row.replay_decision == "bound" {
+            failures.push(format!(
+                "{} replayed as bound without overlay pass mutation",
+                row.route
+            ));
+        }
+        if row.blocked_claims_before != row.blocked_claims_after || row.blocker_delta != 0 {
+            failures.push(format!("{} lost residual blocked claims", row.route));
+        }
+        if row.validation_status != "review" {
+            failures.push(format!("{} delta must remain review", row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from repair delta"));
         }
     }
     failures
@@ -28108,6 +29225,38 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 game ops binding decisions preserve residual repair-needed and held blockers",
             ),
             (
+                "t2-bundle-overlay-repair-targets",
+                "route t2-bundle-overlay-repair-targets --gate",
+                "data/t2-bundle-overlay-repair-targets.csv",
+                "held-known",
+                15,
+                "Residual T2 game ops binding decisions are classified into explicit repair targets",
+            ),
+            (
+                "t2-service-class-repair-docket",
+                "route t2-service-class-repair-docket --gate",
+                "data/t2-service-class-repair-docket.csv",
+                "held-known",
+                14,
+                "Service-class-held T2 overlay rows remain routed to Beck service or local-zone repair work",
+            ),
+            (
+                "t2-bundle-readiness-disposition",
+                "route t2-bundle-readiness-disposition --gate",
+                "data/t2-bundle-readiness-disposition.csv",
+                "held-known",
+                10,
+                "T2 overlay rows needing stop-chain, stitched-member, or terminal-stop repair remain blocked",
+            ),
+            (
+                "t2-bundle-overlay-repair-delta",
+                "route t2-bundle-overlay-repair-delta --gate",
+                "data/t2-bundle-overlay-repair-delta.csv",
+                "held-known",
+                15,
+                "T2 overlay repair replay preserves residual held and repair-needed blockers",
+            ),
+            (
                 "lower-tier-pressure-witnesses",
                 "route lower-tier-pressure-witnesses --gate",
                 "data/lower-tier-pressure-witnesses.csv",
@@ -33982,7 +35131,10 @@ mod tests {
         t1_stop_selector_gate_failures, t1_stop_selector_rows, t1_topology_repair_gate_failures,
         t1_topology_repair_rows, t2_blocker_closure_gate_failures, t2_blocker_closure_rows,
         t2_bubble_up_review_gate_failures, t2_bubble_up_review_rows,
-        t2_bundle_overlay_gate_failures, t2_bundle_overlay_rows,
+        t2_bundle_overlay_gate_failures, t2_bundle_overlay_repair_delta_gate_failures,
+        t2_bundle_overlay_repair_delta_rows, t2_bundle_overlay_repair_target_gate_failures,
+        t2_bundle_overlay_repair_target_rows, t2_bundle_overlay_rows,
+        t2_bundle_readiness_disposition_gate_failures, t2_bundle_readiness_disposition_rows,
         t2_bundle_repair_queue_gate_failures, t2_bundle_repair_queue_rows, t2_closure_dispositions,
         t2_contact_closure_gate_failures, t2_contact_closure_rows,
         t2_contact_resolution_gate_failures, t2_contact_resolution_rows,
@@ -33996,6 +35148,7 @@ mod tests {
         t2_parent_contact_validation_gate_failures, t2_parent_contact_validation_rows,
         t2_regionalizer_gate_failures, t2_regionalizer_rows, t2_relief_evidence_gate_failures,
         t2_relief_evidence_rows, t2_route_family_split_gate_failures, t2_route_family_split_rows,
+        t2_service_class_repair_docket_gate_failures, t2_service_class_repair_docket_rows,
         t2_service_diagnostic_queue_gate_failures, t2_service_diagnostic_queue_rows,
         t2_service_selection_gate_failures, t2_service_selection_rows,
         t2_terminal_contact_validation_gate_failures, t2_terminal_contact_validation_rows,
@@ -34041,11 +35194,12 @@ mod tests {
         T1SlaCandidateUniverseRow, T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
         T2BlockerClosureRow, T2BubbleUpReviewRow, T2BundleOverlayRow, T2BundleRepairQueueRow,
         T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingIntakeRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
-        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow, T2TerminalContactValidationRow,
-        T3T4AccessGapRow, T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
+        T2GraphContactValidationRow, T2HeldContactActionRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2TerminalContactValidationRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalColumbusProofAttemptRow,
         T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
@@ -39004,6 +40158,162 @@ mod tests {
         assert_eq!(rows[0].decision, "repair-needed");
         assert_eq!(rows[0].validation_status, "review");
         assert!(rows[0].blocks_claims.contains("publication"));
+    }
+
+    #[test]
+    fn t2_bundle_overlay_repair_targets_classify_residual_decisions() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-1".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-1".to_string(),
+            subject_id: "US.HWYBUNDLE.TEST".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+            route: "I37".to_string(),
+            service_class: "compact-service".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            binding_status: "bundle-bound-review".to_string(),
+            decision: "repair-needed".to_string(),
+            decision_reason: "bundle id exists but validation remains under review".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let overlay_rows = vec![T2BundleOverlayRow {
+            tier: "T2".to_string(),
+            region_id: "component-0".to_string(),
+            route: "I37".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.TEST".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            service_class: "compact-service".to_string(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            scenario_hook: "short local service".to_string(),
+            incident_lever: "localized disruption".to_string(),
+            upgrade_lever: "upgrade stop spacing".to_string(),
+            restitch_lever: "restitch inside local cluster".to_string(),
+            release_gate: "gate".to_string(),
+            pavement_debt_cost_m: 0.0,
+            pavement_debt_class: "none".to_string(),
+            pavement_debt_basis: "no pavement debt row joined".to_string(),
+            source_artifacts: "data/t2-service-selection.csv".to_string(),
+            binding_status: "bundle-bound-review".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &overlay_rows);
+        let failures = t2_bundle_overlay_repair_target_gate_failures(&rows, &decision_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].repair_class, "stop-chain");
+        assert_eq!(rows[0].target_status, "repair-needed");
+        assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
+    }
+
+    #[test]
+    fn t2_service_class_repair_docket_routes_local_zone_holds() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-2".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-2".to_string(),
+            subject_id: "US.HWYBUNDLE.LOCAL".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.LOCAL".to_string(),
+            route: "I225".to_string(),
+            service_class: "unclassified".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            binding_status: "service-class-held-known".to_string(),
+            decision: "held".to_string(),
+            decision_reason: "service class overlay is missing or held".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let target_rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &[]);
+        let diagnostic_rows = vec![T2ServiceDiagnosticQueueRow {
+            route: "I225".to_string(),
+            region_id: "component-0".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.LOCAL".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            selection_action: "source-needed".to_string(),
+            selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            diagnostic_status: "local-relief-map-review".to_string(),
+            service_diagnostic_action: "local-relief-map-review".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+            optimizer_effect: "keeps review-treatment relief service below map/game overlay"
+                .to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_service_class_repair_docket_rows(&target_rows, &diagnostic_rows);
+        let failures = t2_service_class_repair_docket_gate_failures(&rows, &target_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].service_repair_class, "local-zone");
+        assert_eq!(rows[0].next_artifact, "data/t3-zone-render-board.csv");
+    }
+
+    #[test]
+    fn t2_bundle_readiness_disposition_keeps_i37_blocked() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-I37".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-I37".to_string(),
+            subject_id: "US.HWYBUNDLE.I37".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I37".to_string(),
+            route: "I37".to_string(),
+            service_class: "compact-service".to_string(),
+            bundle_status: "needs-stop-chain".to_string(),
+            binding_status: "bundle-bound-review".to_string(),
+            decision: "repair-needed".to_string(),
+            decision_reason: "bundle id exists but validation remains under review".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let target_rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &[]);
+
+        let rows = t2_bundle_readiness_disposition_rows(&target_rows);
+        let failures = t2_bundle_readiness_disposition_gate_failures(&rows, &target_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].disposition, "repair-needed");
+        assert_eq!(rows[0].validation_status, "review");
+    }
+
+    #[test]
+    fn t2_bundle_overlay_repair_delta_preserves_claim_blocks() {
+        let decision_rows = vec![T2GameOpsBindingDecisionRow {
+            decision_id: "T2GAMEOPSDECISION-3".to_string(),
+            intake_id: "T2GAMEOPSINTAKE-3".to_string(),
+            subject_id: "US.HWYBUNDLE.HELD".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.HELD".to_string(),
+            route: "I195".to_string(),
+            service_class: "unclassified".to_string(),
+            bundle_status: "bundle-ready".to_string(),
+            binding_status: "service-class-held-known".to_string(),
+            decision: "held".to_string(),
+            decision_reason: "service class overlay is missing or held".to_string(),
+            blocks_claims: "game;incident;publication;upgrade".to_string(),
+            next_artifact: "data/game/t2-service-overlays.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let target_rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &[]);
+        let service_rows = t2_service_class_repair_docket_rows(&target_rows, &[]);
+        let readiness_rows = t2_bundle_readiness_disposition_rows(&target_rows);
+
+        let rows = t2_bundle_overlay_repair_delta_rows(
+            &decision_rows,
+            &target_rows,
+            &service_rows,
+            &readiness_rows,
+        );
+        let failures = t2_bundle_overlay_repair_delta_gate_failures(&rows, &decision_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].replay_decision, "held");
+        assert_eq!(rows[0].blocker_delta, 0);
+        assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
 
     #[test]

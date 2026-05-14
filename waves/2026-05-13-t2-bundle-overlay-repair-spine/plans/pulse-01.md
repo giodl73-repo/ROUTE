@@ -2,7 +2,7 @@
 wave: t2-bundle-overlay-repair-spine
 pulse: 01
 date: 2026-05-13
-status: planned
+status: done
 depends_on: []
 governing_roles:
   - optimization-methodologist
@@ -27,11 +27,11 @@ Create a gateable repair-target intake from the 15 residual rows in
 
 ## Deliverables
 
-- [ ] Add `data/t2-bundle-overlay-repair-targets.csv`.
-- [ ] Gate that all 15 held/repair-needed decisions are represented.
-- [ ] Classify targets into service-class, stop-chain, stitched-member,
+- [x] Add `data/t2-bundle-overlay-repair-targets.csv`.
+- [x] Gate that all 15 held/repair-needed decisions are represented.
+- [x] Classify targets into service-class, stop-chain, stitched-member,
   terminal-stop, pavement-debt, local-zone, or manual-review repair classes.
-- [ ] Add tests for the intake classifier.
+- [x] Add tests for the intake classifier.
 
 ## Expected Gates
 
