@@ -3041,6 +3041,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit policy rows for T2 game/ops publication evidence blockers
+    T2GamePublicationEvidencePolicy {
+        /// T2 game publication evidence review CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-publication-evidence-review.csv",
+            value_name = "FILE"
+        )]
+        review: PathBuf,
+        /// Output T2 game publication evidence policy CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-game-publication-evidence-policy.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if policy rows omit reviews or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit route-level review rows for T1 schematic-geometry claim blockers
     T1SchematicGeometryClaimReview {
         /// Optimizer claim review CSV
@@ -10280,6 +10302,35 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2GamePublicationEvidencePolicy {
+            review,
+            output,
+            gate,
+        } => {
+            println!("route t2-game-publication-evidence-policy");
+            let review_rows = load_t2_game_publication_evidence_review(&review)
+                .with_context(|| format!("loading {}", review.display()))?;
+            let rows = t2_game_publication_evidence_policy_rows(&review_rows);
+            write_t2_game_publication_evidence_policy(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_game_publication_evidence_policy_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    t2_game_publication_evidence_policy_gate_failures(&rows, &review_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 game publication evidence policy gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 game publication evidence policy gate failed");
+                }
+                println!();
+                println!("T2 game publication evidence policy gate: PASS");
+            }
+        }
+
         Commands::T1SchematicGeometryClaimReview {
             claim_review,
             design_review,
@@ -17376,6 +17427,27 @@ struct T2GamePublicationEvidenceReviewRow {
     blocker_count_after: usize,
     claim_blocker_delta: isize,
     required_evidence: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2GamePublicationEvidencePolicyRow {
+    policy_id: String,
+    game_review_id: String,
+    scenario_id: String,
+    service_class: String,
+    t2_map_id: String,
+    evidence_policy_basis: String,
+    required_evidence: String,
+    evidence_policy_decision: String,
+    policy_treatment: String,
+    publication_treatment: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -31482,6 +31554,191 @@ fn t2_game_publication_evidence_review_gate_failures(
     failures
 }
 
+fn load_t2_game_publication_evidence_review(
+    path: &Path,
+) -> Result<Vec<T2GamePublicationEvidenceReviewRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_game_publication_evidence_policy_rows(
+    review_rows: &[T2GamePublicationEvidenceReviewRow],
+) -> Vec<T2GamePublicationEvidencePolicyRow> {
+    let mut rows = review_rows
+        .iter()
+        .filter(|row| {
+            row.review_decision == "publication-evidence-policy-required"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T2GamePublicationEvidencePolicyRow {
+            policy_id: format!("T2GAMEPOLICY-{}", stable_id_fragment(&row.scenario_id)),
+            game_review_id: row.game_review_id.clone(),
+            scenario_id: row.scenario_id.clone(),
+            service_class: row.service_class.clone(),
+            t2_map_id: row.t2_map_id.clone(),
+            evidence_policy_basis: row.evidence_hold.clone(),
+            required_evidence: row.required_evidence.clone(),
+            evidence_policy_decision: "publication-evidence-policy-authored-review".to_string(),
+            policy_treatment: t2_game_publication_policy_treatment(&row.required_evidence)
+                .to_string(),
+            publication_treatment:
+                "hold game publication until accepted evidence policy is replayed".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: row.blocker_count_after,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-game-publication-evidence-policy-acceptance.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.scenario_id.cmp(&right.scenario_id));
+    rows
+}
+
+fn t2_game_publication_policy_treatment(required_evidence: &str) -> &'static str {
+    match required_evidence {
+        "port-surge-demand-and-flood-closure-evidence" => {
+            "require port surge demand evidence and flood closure source before scenario publication"
+        }
+        "managed-lane-merge-and-spillback-validation" => {
+            "require managed-lane merge and spillback validation before scenario publication"
+        }
+        _ => "require standards proof and scenario promotion record before scenario publication",
+    }
+}
+
+fn write_t2_game_publication_evidence_policy(
+    path: &Path,
+    rows: &[T2GamePublicationEvidencePolicyRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_game_publication_evidence_policy_summary(
+    output: &Path,
+    rows: &[T2GamePublicationEvidencePolicyRow],
+) {
+    let blockers = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 game publication evidence policy rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers preserved: {blockers}");
+}
+
+fn t2_game_publication_evidence_policy_gate_failures(
+    rows: &[T2GamePublicationEvidencePolicyRow],
+    review_rows: &[T2GamePublicationEvidenceReviewRow],
+) -> Vec<String> {
+    let expected = review_rows
+        .iter()
+        .filter(|row| {
+            row.review_decision == "publication-evidence-policy-required"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| row.scenario_id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_blockers = review_rows
+        .iter()
+        .filter(|row| expected.contains(&row.scenario_id))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push("T2 game publication evidence policy has no review rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 game publication evidence policy has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.policy_id.trim().is_empty()
+            || row.game_review_id.trim().is_empty()
+            || row.scenario_id.trim().is_empty()
+            || row.service_class.trim().is_empty()
+            || row.t2_map_id.trim().is_empty()
+            || row.evidence_policy_basis.trim().is_empty()
+            || row.required_evidence.trim().is_empty()
+            || row.evidence_policy_decision.trim().is_empty()
+            || row.policy_treatment.trim().is_empty()
+            || row.publication_treatment.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete policy fields", row.scenario_id));
+        }
+        if !seen.insert(row.scenario_id.clone()) {
+            failures.push(format!("{} appears more than once", row.scenario_id));
+        }
+        if !expected.contains(&row.scenario_id) {
+            failures.push(format!("{} is not in the review rows", row.scenario_id));
+        }
+        if row.evidence_policy_decision != "publication-evidence-policy-authored-review"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid policy state", row.scenario_id));
+        }
+        if row.blocker_claims_before != row.blocker_claims_after
+            || row.blocker_count_before != row.blocker_count_after
+            || row.claim_blocker_delta != 0
+        {
+            failures.push(format!("{} reduced policy blockers", row.scenario_id));
+        }
+        if row.next_artifact != "data/t2-game-publication-evidence-policy-acceptance.csv" {
+            failures.push(format!("{} points at wrong next artifact", row.scenario_id));
+        }
+    }
+    for expected_scenario in expected {
+        if !seen.contains(&expected_scenario) {
+            failures.push(format!(
+                "{expected_scenario} missing from T2 game publication evidence policy"
+            ));
+        }
+    }
+    let total_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if total_after != expected_blockers {
+        failures.push(format!(
+            "T2 game publication evidence policy preserves {total_after} blockers but review rows have {expected_blockers}"
+        ));
+    }
+    failures
+}
+
 fn t1_schematic_geometry_claim_review_rows(
     claim_rows: &[OptimizerClaimReviewRow],
     design_rows: &[T1DesignReviewCsvRow],
@@ -43347,6 +43604,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 game publication readiness blockers remain held pending evidence policy",
             ),
             (
+                "t2-game-publication-evidence-policy",
+                "route t2-game-publication-evidence-policy --gate",
+                "data/t2-game-publication-evidence-policy.csv",
+                "held-known",
+                3,
+                "T2 game publication evidence policy preserves blockers pending acceptance",
+            ),
+            (
                 "t1-schematic-geometry-claim-review",
                 "route t1-schematic-geometry-claim-review --gate",
                 "data/t1-schematic-geometry-claim-review.csv",
@@ -49723,6 +49988,8 @@ mod tests {
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
         t2_game_ops_binding_decision_gate_failures, t2_game_ops_binding_decision_rows,
         t2_game_ops_binding_intake_gate_failures, t2_game_ops_binding_intake_rows,
+        t2_game_publication_evidence_policy_gate_failures,
+        t2_game_publication_evidence_policy_rows,
         t2_game_publication_evidence_review_gate_failures,
         t2_game_publication_evidence_review_rows, t2_graph_contact_repair_gate_failures,
         t2_graph_contact_repair_rows, t2_graph_contact_validation_gate_failures,
@@ -49836,34 +50103,35 @@ mod tests {
         T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
         T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
         T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GraphContactRepairRow,
-        T2GraphContactValidationRow, T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow,
-        T2ParallelServiceQueueRow, T2ParentContactValidationRow, T2RegionalizerRow,
-        T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
-        T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
-        T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
-        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
-        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
-        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
-        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessProofAcquisitionRow,
-        T4TerminalAccessProofArtifactRow, T4TerminalAccessProofIntakeRow,
-        T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
-        T4TerminalAccessSourceAccessRow, T4TerminalColumbusProofAttemptRow,
-        T4TerminalColumbusProofIntakeRow, T4TerminalColumbusSourceAccessRow,
-        T4TerminalContactDistrictProofImportRow, T4TerminalContactEvidenceRow,
-        T4TerminalContactProofArtifactContractRow, T4TerminalContactProofDocketRow,
-        T4TerminalContactProofSourceRegistryRow, T4TerminalContactSourceCatalogRow,
-        T4TerminalContactSourcePlanRow, T4TerminalScenarioReadinessRow, TierCandidateColumnRow,
-        TierContactWitnessInputRow, TierOptimizerRunRow, TierPavementAcquisitionDocketRow,
-        TierPavementAcquisitionPlanRow, TierPavementDebtBudgetRow, TierPavementDocketRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GamePublicationEvidenceReviewRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
+        T2StitchedMemberCandidateScopeReviewRow, T2StitchedMemberDecisionDocketRow,
+        T2StitchedMemberEvidenceAcquisitionRow, T2StitchedMemberEvidenceContractRow,
+        T2StitchedMemberProofArtifactAttachmentRow, T2StitchedMemberProofIntakeRow,
+        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
+        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow,
+        T3LowerTierFeederGapBlockerReliefRow, T3LowerTierFeederGapPolicyAcceptanceRow,
+        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
+        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactRow,
+        T4TerminalAccessProofIntakeRow, T4TerminalAccessProofReviewRow,
+        T4TerminalAccessProofSourceCaptureRow, T4TerminalAccessSourceAccessRow,
+        T4TerminalColumbusProofAttemptRow, T4TerminalColumbusProofIntakeRow,
+        T4TerminalColumbusSourceAccessRow, T4TerminalContactDistrictProofImportRow,
+        T4TerminalContactEvidenceRow, T4TerminalContactProofArtifactContractRow,
+        T4TerminalContactProofDocketRow, T4TerminalContactProofSourceRegistryRow,
+        T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
+        T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
+        TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
+        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
+        TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -57515,6 +57783,43 @@ mod tests {
         assert!(rows
             .iter()
             .all(|row| row.next_artifact == "data/t2-game-publication-evidence-policy.csv"));
+    }
+
+    #[test]
+    fn t2_game_publication_evidence_policy_preserves_blockers() {
+        let review_rows = vec![T2GamePublicationEvidenceReviewRow {
+            game_review_id: "T2GAMEPUB-HOUSTONPORTSURGE".to_string(),
+            claim_review_id: "OCR-GAMEPUB".to_string(),
+            scenario_id: "houston-port-surge".to_string(),
+            service_class: "long-connector".to_string(),
+            t2_map_id: "beck-schematic-t2-only".to_string(),
+            player_decision: "choose whether to restitch a long connector".to_string(),
+            evidence_hold: "port surge demand and flood closure evidence missing".to_string(),
+            review_decision: "publication-evidence-policy-required".to_string(),
+            blocker_claims_before: "game;publication;upgrade".to_string(),
+            blocker_claims_after: "game;publication;upgrade".to_string(),
+            blocker_count_before: 1,
+            blocker_count_after: 1,
+            claim_blocker_delta: 0,
+            required_evidence: "port-surge-demand-and-flood-closure-evidence".to_string(),
+            next_artifact: "data/t2-game-publication-evidence-policy.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_game_publication_evidence_policy_rows(&review_rows);
+        let failures = t2_game_publication_evidence_policy_gate_failures(&rows, &review_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(
+            rows[0].evidence_policy_decision,
+            "publication-evidence-policy-authored-review"
+        );
+        assert_eq!(
+            rows[0].next_artifact,
+            "data/t2-game-publication-evidence-policy-acceptance.csv"
+        );
     }
 
     #[test]
