@@ -160,6 +160,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Fresh Pond Terminal Source Review | Check the current FHWA connector workbook for Fresh Pond and preserve the six held rows because it does not name terminal access routes. | done |
 | 2026-05-15 | TX I-220 Pavement Route-State Exclusion | Exclude the TX / I-220 pavement repair row using FHWA route-log state coverage and replay T2 asset-condition debt. | done |
 | 2026-05-15 | AL/NM I-110 Pavement Route-State Exclusion | Exclude the AL and NM I-110 pavement repair rows using FHWA route-log state coverage and replay T2 asset-condition debt. | done |
+| 2026-05-15 | Fresh Pond Truck Route Rejection | Reject the six remaining Fresh Pond held routes using NYC DOT truck-route evidence and replay T4 terminal-access debt. | done |
 
 ## Next Active Wave
 
@@ -167,22 +168,23 @@ No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
-and US90Z), and sixty contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 6. US2 pavement evidence replay
+and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,
+reducing T4 terminal-access upgrade blockers from 69 to 0. US2 pavement evidence replay
 reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
 US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, the
 TX I-220 route-state exclusion reduced it to 5 rows / $65.0M, and the AL/NM
 I-110 route-state exclusion reduced it to 3 rows / $55.0M, all repair debt.
 Remaining holds are non-publication claims: source snapshot
-`evidence`, T4 terminal-access `upgrade`, and T2 asset-condition
-`sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
+`evidence` and T2 asset-condition `sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
 ledgers. The terminal-contact positive proof docket now covers all 69 source-needed
 terminal-contact tasks across 23 districts; accepted proof can flow through the
 same registry/import path for any district, while unresolved rows remain held.
 Fresh Pond was checked against the current FHWA connector workbook after the
 New Orleans acceptance; because the workbook does not name Fresh Pond terminal
-access routes, it does not support accepted or rejected proof for the six
-remaining held rows.
+access routes, it could not support accepted or rejected proof. A later NYC DOT
+truck-route dataset pass rejected the six remaining Fresh Pond held routes
+against Fresh Pond Road, Metropolitan Avenue, Long Island Expressway, and
+Brooklyn Queens Expressway truck-route evidence.
 The T2 repair-debt path now has a governed route-state exclusion overlay for
 officially unsupported pavement route/state pairings; it has accepted rows for
 TX / I-220, AL / I-110, and NM / I-110 and is registered in the
