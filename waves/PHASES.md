@@ -92,6 +92,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Game Publication Evidence Ledger Replay | Wire accepted game publication evidence relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Review | Re-expand residual T2 game/ops bundle-binding blockers and bind each row to downstream evidence without relief. | done |
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Policy | Author policy rows for residual T2 game/ops bundle-binding evidence holds before acceptance or relief. | done |
+| 2026-05-14 | T2 Game/Ops Bundle Evidence Policy Acceptance | Accept T2 game/ops bundle evidence policy before blocker relief or ledger replay. | done |
 
 ## Next Active Wave
 
