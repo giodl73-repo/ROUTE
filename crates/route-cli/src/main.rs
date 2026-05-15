@@ -866,6 +866,30 @@ enum Commands {
         gate: bool,
     },
 
+    /// Classify pavement acquisition tasks before scoped HPMS/state fetches
+    TierPavementSourceAccess {
+        /// Path to pavement acquisition docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-acquisition-docket.csv",
+            value_name = "FILE"
+        )]
+        acquisition_docket: PathBuf,
+        /// Output pavement source-access policy CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-access.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Source priority band to classify
+        #[arg(long, default_value = "A")]
+        priority: String,
+        /// Fail if source-access policy rows lack scoped mutation contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -7469,6 +7493,36 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement acquisition docket gate: PASS");
+            }
+        }
+
+        Commands::TierPavementSourceAccess {
+            acquisition_docket,
+            output,
+            priority,
+            gate,
+        } => {
+            println!("route tier-pavement-source-access");
+            let docket_rows = load_tier_pavement_acquisition_docket(&acquisition_docket)
+                .with_context(|| format!("loading {}", acquisition_docket.display()))?;
+            let rows = tier_pavement_source_access_rows(&docket_rows, &priority);
+            write_tier_pavement_source_access(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_source_access_summary(&output, &rows, &priority);
+
+            if gate {
+                let failures =
+                    tier_pavement_source_access_gate_failures(&rows, &docket_rows, &priority);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement source access gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement source access gate failed");
+                }
+                println!();
+                println!("Tier pavement source access gate: PASS");
             }
         }
 
@@ -19043,6 +19097,25 @@ struct TierPavementAcquisitionDocketRow {
     rebuild_command: String,
     verify_command: String,
     source_contract: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementSourceAccessRow {
+    access_policy_id: String,
+    task_id: String,
+    state: String,
+    source_priority: String,
+    source_access_mode: String,
+    mutation_mode: String,
+    cache_targets: String,
+    fetch_command: String,
+    preflight_gate: String,
+    postfetch_gate: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -37910,6 +37983,133 @@ fn tier_pavement_acquisition_docket_gate_failures(
     failures
 }
 
+fn load_tier_pavement_acquisition_docket(
+    path: &Path,
+) -> Result<Vec<TierPavementAcquisitionDocketRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_source_access_rows(
+    docket_rows: &[TierPavementAcquisitionDocketRow],
+    priority: &str,
+) -> Vec<TierPavementSourceAccessRow> {
+    docket_rows
+        .iter()
+        .filter(|row| row.source_priority.eq_ignore_ascii_case(priority))
+        .map(|row| TierPavementSourceAccessRow {
+            access_policy_id: format!("PAVEMENTACCESS-{}", stable_id_fragment(&row.task_id)),
+            task_id: row.task_id.clone(),
+            state: row.state.clone(),
+            source_priority: row.source_priority.clone(),
+            source_access_mode: "hpms-scoped-fetch".to_string(),
+            mutation_mode: "scoped-cache-merge".to_string(),
+            cache_targets: format!(
+                "data/cache/hpms_2018.csv;data/cache/hpms_{}.csv",
+                row.state.to_ascii_lowercase()
+            ),
+            fetch_command: row.fetch_command.clone(),
+            preflight_gate: "route source-fetch-policy --gate".to_string(),
+            postfetch_gate: row.verify_command.clone(),
+            blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_source_access(
+    path: &Path,
+    rows: &[TierPavementSourceAccessRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_source_access_summary(
+    output: &Path,
+    rows: &[TierPavementSourceAccessRow],
+    priority: &str,
+) {
+    println!(
+        "  wrote {} priority-{priority} pavement source-access rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} -> {}",
+            row.task_id, row.state, row.source_access_mode, row.mutation_mode
+        );
+    }
+}
+
+fn tier_pavement_source_access_gate_failures(
+    rows: &[TierPavementSourceAccessRow],
+    docket_rows: &[TierPavementAcquisitionDocketRow],
+    priority: &str,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = docket_rows
+        .iter()
+        .filter(|row| row.source_priority.eq_ignore_ascii_case(priority))
+        .count();
+    if expected > 0 && rows.len() != expected {
+        failures.push(format!(
+            "source-access rows {} do not match priority-{priority} docket rows {expected}",
+            rows.len()
+        ));
+    }
+    for row in rows {
+        if row.access_policy_id.trim().is_empty()
+            || row.task_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_access_mode.trim().is_empty()
+            || row.mutation_mode.trim().is_empty()
+            || row.cache_targets.trim().is_empty()
+            || row.fetch_command.trim().is_empty()
+            || row.preflight_gate.trim().is_empty()
+            || row.postfetch_gate.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete source-access row", row.task_id));
+        }
+        if row.source_access_mode != "hpms-scoped-fetch" {
+            failures.push(format!("{} has invalid source access mode", row.task_id));
+        }
+        if row.mutation_mode != "scoped-cache-merge" {
+            failures.push(format!("{} has invalid mutation mode", row.task_id));
+        }
+        if !row.fetch_command.starts_with("route fetch-hpms --states ") {
+            failures.push(format!("{} has invalid fetch command", row.task_id));
+        }
+        if row.claim_blocker_delta != 0 || row.blocker_claims_after != row.blocker_claims_before {
+            failures.push(format!("{} reduces blockers before evidence", row.task_id));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -45353,6 +45553,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "tier-pavement-source-access",
+                "route tier-pavement-source-access --gate",
+                "data/tier-pavement-source-access.csv",
+                "held-known",
+                3,
+                "priority-A pavement fetches preserve asset-condition blockers until scoped evidence is rebuilt and reviewed",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -51927,7 +52135,8 @@ mod tests {
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
         tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
-        tier_pavement_route_state_scope, tier_pavement_source_gap_gate_failures,
+        tier_pavement_route_state_scope, tier_pavement_source_access_gate_failures,
+        tier_pavement_source_access_rows, tier_pavement_source_gap_gate_failures,
         tier_pavement_source_gap_rows, tier_region_gate_failures,
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
@@ -51980,9 +52189,9 @@ mod tests {
         T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceGapRow,
-        TierRegionRepairInputRow, TierRegionWorkloadRow, TierSegmentCandidateRow,
-        TierTableScoreRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceAccessRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -61459,6 +61668,55 @@ mod tests {
         assert!(rows[0]
             .verify_command
             .contains("route tier-pavement-docket --gate"));
+    }
+
+    #[test]
+    fn tier_pavement_source_access_preserves_blockers_for_priority_fetches() {
+        let docket_rows = vec![
+            TierPavementAcquisitionDocketRow {
+                task_id: "PAVEMENT-A-TX".to_string(),
+                state: "TX".to_string(),
+                source_priority: "A".to_string(),
+                affected_routes: "US80;US287".to_string(),
+                affected_bundles: "US.HWYBUNDLE.US80;US.HWYBUNDLE.US287".to_string(),
+                blocked_member_count: 49,
+                fetch_command: "route fetch-hpms --states TX".to_string(),
+                rebuild_command: "route build --all-roads".to_string(),
+                verify_command:
+                    "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                        .to_string(),
+                source_contract: "route id; IRI; observation year".to_string(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierPavementAcquisitionDocketRow {
+                task_id: "PAVEMENT-B-CO".to_string(),
+                state: "CO".to_string(),
+                source_priority: "B".to_string(),
+                affected_routes: "US6".to_string(),
+                affected_bundles: "US.HWYBUNDLE.US6".to_string(),
+                blocked_member_count: 12,
+                fetch_command: "route fetch-hpms --states CO".to_string(),
+                rebuild_command: "route build --all-roads".to_string(),
+                verify_command:
+                    "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                        .to_string(),
+                source_contract: "route id; IRI; observation year".to_string(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+
+        let rows: Vec<TierPavementSourceAccessRow> =
+            tier_pavement_source_access_rows(&docket_rows, "A");
+        let failures = tier_pavement_source_access_gate_failures(&rows, &docket_rows, "A");
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].state, "TX");
+        assert_eq!(rows[0].mutation_mode, "scoped-cache-merge");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].blocker_claims_before, rows[0].blocker_claims_after);
     }
 
     #[test]
