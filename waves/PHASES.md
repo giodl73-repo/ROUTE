@@ -149,6 +149,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Seattle Terminal Proof Rejection | Reject the Seattle BNSF pairing contradicted by Port of Seattle I-5/I-90 access evidence. | done |
 | 2026-05-15 | San Antonio Terminal Proof Rejection | Reject San Antonio Kirby pairings contradicted by Union Pacific I-35 access evidence. | done |
 | 2026-05-15 | US2 Pavement Evidence Replay | Replay HPMS-backed US2 pavement evidence and remove the smallest T2 asset-condition evidence-debt row. | done |
+| 2026-05-15 | US30 US6 Pavement Evidence Replay | Replay HPMS-backed pavement evidence and remove the remaining T2 asset-condition evidence-debt rows. | done |
 
 ## Next Active Wave
 
@@ -158,10 +159,12 @@ The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
 accepted, and thirty-three contradicted terminal-contact pairings are rejected, reducing
 T4 terminal-access upgrade blockers from 69 to 35. US2 pavement evidence replay
-reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M.
-Remaining holds are non-publication claims: source snapshot `evidence`, T4
-terminal-access `upgrade`, and T2 asset-condition `sla|transit|upgrade`. Do not
-add more placeholder-only source-needed map-proof ledgers.
+reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
+US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, all
+repair debt. Remaining holds are non-publication claims: source snapshot
+`evidence`, T4 terminal-access `upgrade`, and T2 asset-condition
+`sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
+ledgers.
 
 ## Operating Rules
 
