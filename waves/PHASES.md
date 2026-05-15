@@ -133,12 +133,14 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | T4 Terminal Access Proof Attachment Review Return | Review terminal-access proof artifact-attachment placeholders and return unresolved map blockers to optimizer hold. | done |
 | 2026-05-15 | T4 Terminal Access Proof Artifact Acquisition Targets | Turn held terminal-access attachment-review rows into non-seed proof acquisition/cache targets. | done |
 | 2026-05-15 | T4 Terminal Access Proof Artifact Source Access | Classify non-seed proof acquisition targets as manual or cached source-needed before capture. | done |
+| 2026-05-15 | Map Publication Scope Decision | Separate render-valid maps from full T1-T4 publication validity and stop placeholder-only map-proof churn. | done |
 
 ## Next Active Wave
 
-No wave is active. Next map-validity work should capture and attach non-seed T4
-terminal-access proof artifacts for the 69 source-access rows before
-terminal-access map publication blockers can be replayed.
+No wave is active. Next map-validity work must either attach accepted non-seed
+evidence, explicitly downgrade or exclude unresolved rows from the publication
+claim, or leave full T1-T4 map publication blocked. Do not add more
+placeholder-only source-needed map-proof ledgers.
 
 ## Operating Rules
 

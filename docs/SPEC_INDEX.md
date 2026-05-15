@@ -7,6 +7,8 @@ Start here when deciding which document owns a claim.
 | `docs/SYSTEM_PLAN.md` | Living roadmap, Milepost phases, roles, truth labels, forward plan | You need the current operating plan |
 | `waves/PHASES.md` | Active wave index and execution rail for pulse-driven ROUTE work | You need to know what "continue", "next pulse", or "active wave" should do |
 | `docs/wave-execution.md` | ROUTE wave/pulse operating contract and local `/route-XXX` skill map | You need to create, review, execute, or close wave/pulse work |
+| `docs/map-publication-scope.md` | Doctrine separating render-valid map artifacts from fully publication-valid T1-T4 map claims | You need to decide whether a map can be published as full T1-T4 or only as a held-claim work-in-progress surface |
+| `data/map-publication-scope-decision.csv` | Gate/status decision for current map publication scope | You need the current blocker-aware map publication status and next allowed action |
 | `waves/2026-05-13-constraint-ledger-spine/WAVE.md` | Closed execution card for the Constraint Ledger Spine wave, including done criteria and pulse evidence | You need to audit how constraint-ledger migration was scoped and closed |
 | `waves/2026-05-13-constraint-ledger-spine/CLOSE.md` | Closeout decision for the Constraint Ledger Spine wave, including residual holds and gate findings | You need the final doctrine handoff after ledger/budget migration |
 | `waves/2026-05-13-constraint-ledger-blocker-burndown/WAVE.md` | Closed execution card for burning down normalized constraint-budget blockers | You need the blocker-resolution wave, pulse order, and scenario/spec sequencing decision |
