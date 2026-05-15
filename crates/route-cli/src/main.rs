@@ -1354,6 +1354,27 @@ enum Commands {
         gate: bool,
     },
 
+    /// Classify source/cache access for accepted priority-A pavement funding artifacts
+    TierPavementFundingEvidenceAcceptedSourceAccess {
+        /// Path to accepted artifact acquisition CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-funding-evidence-accepted-artifact-acquisition.csv",
+            value_name = "FILE"
+        )]
+        accepted_artifact_acquisition: PathBuf,
+        /// Output accepted source access CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-funding-evidence-accepted-source-access.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if source-access rows accept evidence or allow relief
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -8672,6 +8693,43 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement funding evidence accepted artifact acquisition gate: PASS");
+            }
+        }
+
+        Commands::TierPavementFundingEvidenceAcceptedSourceAccess {
+            accepted_artifact_acquisition,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-funding-evidence-accepted-source-access");
+            let acquisition_rows =
+                load_tier_pavement_funding_evidence_accepted_artifact_acquisition(
+                    &accepted_artifact_acquisition,
+                )
+                .with_context(|| format!("loading {}", accepted_artifact_acquisition.display()))?;
+            let rows =
+                tier_pavement_funding_evidence_accepted_source_access_rows(&acquisition_rows);
+            write_tier_pavement_funding_evidence_accepted_source_access(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_funding_evidence_accepted_source_access_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_pavement_funding_evidence_accepted_source_access_gate_failures(
+                    &rows,
+                    &acquisition_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement funding evidence accepted source access gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!(
+                        "tier pavement funding evidence accepted source access gate failed"
+                    );
+                }
+                println!();
+                println!("Tier pavement funding evidence accepted source access gate: PASS");
             }
         }
 
@@ -20733,6 +20791,32 @@ struct TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow {
     blocked_claims: String,
     claim_blocker_delta: isize,
     acquisition_reason: String,
+    next_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementFundingEvidenceAcceptedSourceAccessRow {
+    accepted_source_access_id: String,
+    accepted_artifact_acquisition_id: String,
+    evidence_contract_id: String,
+    state: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    source_owner: String,
+    access_mode: String,
+    cache_status: String,
+    live_fetch_status: String,
+    required_source_metadata: String,
+    cache_policy_artifact: String,
+    source_access_blocker: String,
+    evidence_artifact: String,
+    accepted_evidence_status: String,
+    relief_eligibility: String,
+    blocked_claims: String,
+    claim_blocker_delta: isize,
     next_action: String,
     next_artifact: String,
     validation_status: String,
@@ -43515,6 +43599,209 @@ fn tier_pavement_funding_evidence_accepted_artifact_acquisition_gate_failures(
     failures
 }
 
+fn load_tier_pavement_funding_evidence_accepted_artifact_acquisition(
+    path: &Path,
+) -> Result<Vec<TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_funding_evidence_accepted_source_access_rows(
+    acquisition_rows: &[TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow],
+) -> Vec<TierPavementFundingEvidenceAcceptedSourceAccessRow> {
+    acquisition_rows
+        .iter()
+        .filter(|row| {
+            row.acquisition_status == "source-needed"
+                && row.cache_status == "not-cached"
+                && row.accepted_evidence_status == "not-accepted"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .map(|row| TierPavementFundingEvidenceAcceptedSourceAccessRow {
+            accepted_source_access_id: format!(
+                "PAVEMENTFUNDINGACCEPTEDACCESS-{}",
+                stable_id_fragment(&row.accepted_artifact_acquisition_id)
+            ),
+            accepted_artifact_acquisition_id: row.accepted_artifact_acquisition_id.clone(),
+            evidence_contract_id: row.evidence_contract_id.clone(),
+            state: row.state.clone(),
+            tier: row.tier.clone(),
+            route: row.route.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            source_owner: row.candidate_source_owner.clone(),
+            access_mode: "manual-or-cached-source-needed".to_string(),
+            cache_status: "not-cached".to_string(),
+            live_fetch_status: "unsupported-no-safe-funding-commitment-fetcher".to_string(),
+            required_source_metadata:
+                "source title; source url or cached artifact; capture date; issuing agency; committed amount; covered route and state"
+                    .to_string(),
+            cache_policy_artifact: "docs/source-fetch-cache-policy.md;data/source-fetch-policy.csv"
+                .to_string(),
+            source_access_blocker:
+                "accepted funding artifact is source-needed and not cached; live fetch is unsupported"
+                    .to_string(),
+            evidence_artifact: "source-needed".to_string(),
+            accepted_evidence_status: "not-accepted".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: row.blocked_claims.clone(),
+            claim_blocker_delta: 0,
+            next_action: "collect manual or cached accepted funding artifact before attachment and review"
+                .to_string(),
+            next_artifact: "data/tier-pavement-funding-evidence-accepted-source-access.csv"
+                .to_string(),
+            validation_status: "held".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_funding_evidence_accepted_source_access(
+    path: &Path,
+    rows: &[TierPavementFundingEvidenceAcceptedSourceAccessRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_funding_evidence_accepted_source_access_summary(
+    output: &Path,
+    rows: &[TierPavementFundingEvidenceAcceptedSourceAccessRow],
+) {
+    println!(
+        "  wrote {} pavement funding evidence accepted source-access rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} {}",
+            row.state, row.route, row.access_mode, row.evidence_artifact
+        );
+    }
+}
+
+fn tier_pavement_funding_evidence_accepted_source_access_gate_failures(
+    rows: &[TierPavementFundingEvidenceAcceptedSourceAccessRow],
+    acquisition_rows: &[TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = acquisition_rows
+        .iter()
+        .filter(|row| {
+            row.acquisition_status == "source-needed"
+                && row.cache_status == "not-cached"
+                && row.accepted_evidence_status == "not-accepted"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .map(|row| row.accepted_artifact_acquisition_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if expected.is_empty() {
+        failures.push(
+            "funding evidence accepted source access has no source-needed acquisitions".to_string(),
+        );
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "funding evidence accepted source access has {} rows but expected {} acquisition rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.accepted_source_access_id.trim().is_empty()
+            || row.accepted_artifact_acquisition_id.trim().is_empty()
+            || row.evidence_contract_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.source_owner.trim().is_empty()
+            || row.access_mode.trim().is_empty()
+            || row.cache_status.trim().is_empty()
+            || row.live_fetch_status.trim().is_empty()
+            || row.required_source_metadata.trim().is_empty()
+            || row.cache_policy_artifact.trim().is_empty()
+            || row.source_access_blocker.trim().is_empty()
+            || row.evidence_artifact.trim().is_empty()
+            || row.accepted_evidence_status.trim().is_empty()
+            || row.relief_eligibility.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete accepted source-access row",
+                row.state, row.route
+            ));
+        }
+        if !seen.insert(row.accepted_artifact_acquisition_id.clone()) {
+            failures.push(format!(
+                "{} appears more than once",
+                row.accepted_artifact_acquisition_id
+            ));
+        }
+        if !expected.contains(row.accepted_artifact_acquisition_id.as_str()) {
+            failures.push(format!(
+                "{} is not a source-needed accepted artifact acquisition row",
+                row.accepted_artifact_acquisition_id
+            ));
+        }
+        if row.access_mode != "manual-or-cached-source-needed"
+            || row.cache_status != "not-cached"
+            || row.live_fetch_status != "unsupported-no-safe-funding-commitment-fetcher"
+            || row.evidence_artifact != "source-needed"
+        {
+            failures.push(format!(
+                "{} {} source access enabled unsupported evidence",
+                row.state, row.route
+            ));
+        }
+        if row.accepted_evidence_status != "not-accepted"
+            || row.relief_eligibility != "not-eligible-for-relief"
+        {
+            failures.push(format!(
+                "{} {} accepts evidence or relief prematurely",
+                row.state, row.route
+            ));
+        }
+        if row.claim_blocker_delta != 0 {
+            failures.push(format!(
+                "{} {} changes blockers before relief",
+                row.state, row.route
+            ));
+        }
+        if row.validation_status != "held" {
+            failures.push(format!("{} {} is not held", row.state, row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "missing accepted source-access row for {expected_id}"
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -51126,6 +51413,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement funding evidence accepted artifact acquisition preserves source-needed cache targets",
             ),
             (
+                "tier-pavement-funding-evidence-accepted-source-access",
+                "route tier-pavement-funding-evidence-accepted-source-access --gate",
+                "data/tier-pavement-funding-evidence-accepted-source-access.csv",
+                "held-known",
+                3,
+                "priority-A pavement funding evidence accepted source access requires manual or cached accepted artifacts",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -57711,6 +58006,8 @@ mod tests {
         tier_pavement_funding_evidence_accepted_artifact_attachment_rows,
         tier_pavement_funding_evidence_accepted_attachment_review_gate_failures,
         tier_pavement_funding_evidence_accepted_attachment_review_rows,
+        tier_pavement_funding_evidence_accepted_source_access_gate_failures,
+        tier_pavement_funding_evidence_accepted_source_access_rows,
         tier_pavement_funding_evidence_acquisition_gate_failures,
         tier_pavement_funding_evidence_acquisition_rows,
         tier_pavement_funding_evidence_artifact_attachment_gate_failures,
@@ -57791,6 +58088,7 @@ mod tests {
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow,
         TierPavementDowngradeExclusionDecisionRow, TierPavementFundingCommitmentReviewRow,
+        TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow,
         TierPavementFundingEvidenceAcceptedArtifactAttachmentRow,
         TierPavementFundingEvidenceAcceptedAttachmentReviewRow,
         TierPavementFundingEvidenceAcquisitionRow,
@@ -68279,6 +68577,52 @@ mod tests {
             rows[0].candidate_source_owner,
             "TX DOT or accepted programming authority"
         );
+        assert_eq!(rows[0].accepted_evidence_status, "not-accepted");
+        assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn tier_pavement_funding_evidence_accepted_source_access_preserves_hold() {
+        let acquisition_rows = vec![TierPavementFundingEvidenceAcceptedArtifactAcquisitionRow {
+            accepted_artifact_acquisition_id: "PAVEMENTFUNDINGACCEPTEDACQUIRE-TX-I220".to_string(),
+            accepted_attachment_review_id: "PAVEMENTFUNDINGACCEPTEDREVIEW-TX-I220".to_string(),
+            evidence_contract_id: "PAVEMENTFUNDINGEVIDENCE-TX-I220".to_string(),
+            state: "TX".to_string(),
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            required_artifact_type: "accepted-full-cost-programming-or-dot-commitment".to_string(),
+            acquisition_status: "source-needed".to_string(),
+            cache_status: "not-cached".to_string(),
+            candidate_source_owner: "TX DOT or accepted programming authority".to_string(),
+            accepted_evidence_status: "not-accepted".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            acquisition_reason: "accepted funding artifact is not attached and cannot be reviewed"
+                .to_string(),
+            next_action: "acquire or cache accepted full-cost funding artifact".to_string(),
+            next_artifact: "data/tier-pavement-funding-evidence-accepted-artifact-acquisition.csv"
+                .to_string(),
+            validation_status: "held".to_string(),
+        }];
+
+        let rows = tier_pavement_funding_evidence_accepted_source_access_rows(&acquisition_rows);
+        let failures = tier_pavement_funding_evidence_accepted_source_access_gate_failures(
+            &rows,
+            &acquisition_rows,
+        );
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].access_mode, "manual-or-cached-source-needed");
+        assert_eq!(rows[0].cache_status, "not-cached");
+        assert_eq!(
+            rows[0].live_fetch_status,
+            "unsupported-no-safe-funding-commitment-fetcher"
+        );
+        assert_eq!(rows[0].evidence_artifact, "source-needed");
         assert_eq!(rows[0].accepted_evidence_status, "not-accepted");
         assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
         assert_eq!(rows[0].claim_blocker_delta, 0);
