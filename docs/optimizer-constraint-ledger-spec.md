@@ -157,7 +157,7 @@ Examples of source ledgers:
 | T2 service duplication | `data/t2-parallel-service-queue.csv`, `data/t2-service-selection.csv` |
 | Lower-tier access pressure | `data/t3-t4-access-gaps.csv`, `data/t1-feedback-docket.csv` |
 | Beck rendering | `data/beck-t1-diagnostics.csv`, `data/beck-t2-diagnostics.csv`, `data/t3-zone-map-diagnostics.csv` |
-| Map publication scope | `data/map-publication-scope-decision.csv`, `data/t4-terminal-access-map-exclusion.csv`, `data/source-snapshot-publication-exclusion.csv`, `docs/map-publication-scope.md` |
+| Map publication scope | `data/map-publication-scope-decision.csv`, `data/t4-terminal-access-map-exclusion.csv`, `data/source-snapshot-publication-exclusion.csv`, `data/t2-asset-condition-map-publication-exclusion.csv`, `docs/map-publication-scope.md` |
 | Source acquisition policy | `data/source-fetch-policy.csv`, evidence-window ledgers, source health ledgers, `data/t4-terminal-access-proof-artifact-attachment.csv`, `data/t4-terminal-access-proof-attachment-review.csv`, `data/t4-terminal-access-proof-artifact-acquisition-targets.csv`, `data/t4-terminal-access-proof-artifact-source-access.csv` |
 | Game and operations hooks | `data/game/t2-bundle-overlays.csv`, `data/game/t2-scenario-hooks.csv`, `data/t2-bundle-readiness-replay-decisions.csv`, scenario hook ledgers |
 

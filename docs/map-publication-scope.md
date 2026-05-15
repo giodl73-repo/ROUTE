@@ -36,6 +36,7 @@ relieved or explicitly excluded. The accepted exclusions are:
 ```text
 data/t4-terminal-access-map-exclusion.csv
 data/source-snapshot-publication-exclusion.csv
+data/t2-asset-condition-map-publication-exclusion.csv
 ```
 
 The terminal-access exclusion removes unresolved T4 terminal-access overlay rows
@@ -46,19 +47,21 @@ The source-snapshot exclusion removes the live snapshot guard from the current
 map `publication` claim only. It does not accept live-event evidence and still
 blocks `evidence` until repeat-window or archive-history proof exists.
 
-After that exclusion, the residual publication blockers are:
-
-- 9 T2 asset-condition debt rows that remain publication-relevant debt even
-  though they are budget debt rather than claim blockers.
+The T2 asset-condition exclusion removes pavement/source repair debt from the
+current map `publication` claim only. It does not fund repairs, accept missing
+pavement evidence, or clear `SLA`, `transit`, or `upgrade` obligations.
 
 The residual non-publication holds are:
 
 - 1 source snapshot guard blocking `evidence`.
 - 69 T4 terminal-access evidence gaps blocking `upgrade`.
+- 9 T2 asset-condition debt rows blocking `SLA`, `transit`, and `upgrade`.
 
-Structural map renders may be used as work-in-progress maps only when labeled as
-held-claim surfaces. They must not be described as fully publication-valid T1-T4
-maps until the blocker ledger says so.
+There are now no residual `publication` blockers in
+`data/optimizer-residual-blocker-backlog.csv`. Structural T1-T4 maps may be
+published as maps only when labeled as held-claim surfaces. They must not be
+described as evidence-valid, SLA-valid, transit-ready, upgrade-ready, or
+asset-condition repaired until the blocker ledger says so.
 
 ## Anti-Churn Rule
 
@@ -67,8 +70,9 @@ Do not create more `source-needed` placeholder ledgers for map publication.
 The next map-validity artifact must do one of these:
 
 1. Attach, review, accept, and replay real non-seed evidence.
-2. Explicitly downgrade or exclude unresolved rows from the publication claim.
-3. Keep the full T1-T4 map claim blocked.
+2. Explicitly downgrade or exclude unresolved non-publication claims from the
+   claim being made.
+3. Keep the affected non-publication claim blocked.
 
 `data/intermodal_terminals.csv` remains a seed only and cannot be used as
 terminal-access proof.

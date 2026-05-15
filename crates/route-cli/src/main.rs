@@ -3611,6 +3611,13 @@ enum Commands {
             value_name = "FILE"
         )]
         pavement_debt_budget: PathBuf,
+        /// T2 asset-condition map publication exclusion decision CSV
+        #[arg(
+            long,
+            default_value = "data/t2-asset-condition-map-publication-exclusion.csv",
+            value_name = "FILE"
+        )]
+        t2_asset_condition_map_publication_exclusion: PathBuf,
         /// T1 topology repair CSV
         #[arg(
             long,
@@ -12258,6 +12265,7 @@ fn run_cli() -> Result<()> {
 
         Commands::OptimizerConstraintLedger {
             pavement_debt_budget,
+            t2_asset_condition_map_publication_exclusion,
             t1_topology_repairs,
             t1_schematic_geometry_blocker_relief,
             t2_beck_transfer_complexity_blocker_relief,
@@ -12280,6 +12288,16 @@ fn run_cli() -> Result<()> {
             println!("route optimizer-constraint-ledger");
             let pavement_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
                 .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
+            let t2_asset_condition_map_publication_exclusion_rows =
+                load_t2_asset_condition_map_publication_exclusion(
+                    &t2_asset_condition_map_publication_exclusion,
+                )
+                .with_context(|| {
+                    format!(
+                        "loading {}",
+                        t2_asset_condition_map_publication_exclusion.display()
+                    )
+                })?;
             let topology_rows = load_t1_topology_repairs(&t1_topology_repairs)
                 .with_context(|| format!("loading {}", t1_topology_repairs.display()))?;
             let schematic_relief_rows =
@@ -12364,6 +12382,7 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t2_bundle_overlays.display()))?;
             let rows = optimizer_constraint_ledger_rows(
                 &pavement_rows,
+                &t2_asset_condition_map_publication_exclusion_rows,
                 &topology_rows,
                 &schematic_relief_rows,
                 &t2_transfer_relief_rows,
@@ -22587,6 +22606,24 @@ struct SourceFetchPolicyRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2AssetConditionMapPublicationExclusionRow {
+    decision_id: String,
+    decision_scope: String,
+    source_artifact: String,
+    affected_constraint_class: String,
+    affected_tier: String,
+    affected_claims_before: String,
+    excluded_claims: String,
+    preserved_claims_after: String,
+    affected_bundle_count: u32,
+    total_debt_cost_m: f64,
+    decision: String,
+    decision_basis: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct SourceSnapshotPublicationExclusionRow {
     decision_id: String,
     decision_scope: String,
@@ -27783,6 +27820,7 @@ fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQu
 
 fn optimizer_constraint_ledger_rows(
     pavement_rows: &[TierPavementDebtBudgetRow],
+    t2_asset_condition_map_publication_exclusion_rows: &[T2AssetConditionMapPublicationExclusionRow],
     topology_rows: &[T1TopologyRepairRow],
     schematic_relief_rows: &[T1SchematicGeometryBlockerReliefRow],
     t2_transfer_relief_rows: &[T2BeckTransferComplexityBlockerReliefRow],
@@ -27810,6 +27848,10 @@ fn optimizer_constraint_ledger_rows(
     let relieved_t2_game_ops_bundles =
         t2_game_ops_bundle_relief_bundle_set(t2_game_ops_bundle_relief_rows);
     let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
+    let t2_asset_condition_map_publication_exclusion =
+        accepted_t2_asset_condition_map_publication_exclusion(
+            t2_asset_condition_map_publication_exclusion_rows,
+        );
     let t4_terminal_access_map_exclusion =
         accepted_t4_terminal_access_map_exclusion(t4_terminal_access_map_exclusion_rows);
     let source_snapshot_publication_exclusion =
@@ -27940,6 +27982,8 @@ fn optimizer_constraint_ledger_rows(
 
     for row in pavement_rows {
         let repair_debt = row.debt_class.contains("repair");
+        let publication_excluded =
+            row.tier == "T2" && t2_asset_condition_map_publication_exclusion.is_some();
         rows.push(OptimizerConstraintLedgerRow {
             constraint_id: format!(
                 "CON-PAVEMENT-{}",
@@ -27972,7 +28016,14 @@ fn optimizer_constraint_ledger_rows(
             observed_value: row.blocked_member_count.to_string(),
             threshold_value: "0".to_string(),
             measurement_unit: "blocked_members".to_string(),
-            blocks_claims: "sla|transit|upgrade|publication".to_string(),
+            blocks_claims: if let Some(decision) = t2_asset_condition_map_publication_exclusion
+                .as_ref()
+                .filter(|_| publication_excluded)
+            {
+                decision.preserved_claims_after.clone()
+            } else {
+                "sla|transit|upgrade|publication".to_string()
+            },
             budget_cost_m: row.total_debt_cost_m,
             cost_category: if repair_debt {
                 "capital_repair".to_string()
@@ -27999,10 +28050,31 @@ fn optimizer_constraint_ledger_rows(
             owner_jurisdiction: row.affected_states.clone(),
             funding_program: "state_dot_hpms_or_nhpp".to_string(),
             delivery_risk: if repair_debt { "medium" } else { "unknown" }.to_string(),
-            exception_id: String::new(),
-            exception_artifact: String::new(),
+            exception_id: if let Some(decision) = t2_asset_condition_map_publication_exclusion
+                .as_ref()
+                .filter(|_| publication_excluded)
+            {
+                decision.decision_id.clone()
+            } else {
+                String::new()
+            },
+            exception_artifact: if publication_excluded {
+                "data/t2-asset-condition-map-publication-exclusion.csv".to_string()
+            } else {
+                String::new()
+            },
             next_artifact: row.next_artifact.clone(),
-            optimizer_effect: row.optimizer_penalty.clone(),
+            optimizer_effect: if let Some(decision) = t2_asset_condition_map_publication_exclusion
+                .as_ref()
+                .filter(|_| publication_excluded)
+            {
+                format!(
+                    "{}; publication excluded by {} while {} remains blocked",
+                    row.optimizer_penalty, decision.decision_id, decision.preserved_claims_after
+                )
+            } else {
+                row.optimizer_penalty.clone()
+            },
             validation_status: row.validation_status.clone(),
         });
     }
@@ -52508,6 +52580,33 @@ fn accepted_t4_terminal_access_map_exclusion(
     })
 }
 
+fn load_t2_asset_condition_map_publication_exclusion(
+    path: &Path,
+) -> Result<Vec<T2AssetConditionMapPublicationExclusionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn accepted_t2_asset_condition_map_publication_exclusion(
+    rows: &[T2AssetConditionMapPublicationExclusionRow],
+) -> Option<&T2AssetConditionMapPublicationExclusionRow> {
+    rows.iter().find(|row| {
+        row.decision == "exclude-asset-condition-debt-from-map-publication"
+            && row.validation_status == "accepted"
+            && row.affected_constraint_class == "asset_condition_debt"
+            && row.affected_tier == "T2"
+            && row.excluded_claims == "publication"
+            && row.preserved_claims_after == "sla|transit|upgrade"
+    })
+}
+
 fn t3_zone_map_diagnostic_rows(
     route_rows: &[T3ZoneRouteColumnRow],
     gap_rows: &[T3T4AccessGapRow],
@@ -61853,38 +61952,39 @@ mod tests {
         T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SchematicGeometryBlockerReliefRow,
         T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow,
         T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
-        T1StopSelectorInputRow, T1TopologyRepairRow, T2BeckLabelDensityBlockerReliefRow,
-        T2BeckLabelDensityPolicyAcceptanceRow, T2BeckLabelDensityPolicyRow,
-        T2BeckLabelDensityReviewRow, T2BeckLongConnectorBlockerReliefRow,
-        T2BeckLongConnectorPolicyAcceptanceRow, T2BeckLongConnectorPolicyRow,
-        T2BeckLongConnectorReviewRow, T2BeckTransferComplexityBlockerReliefRow,
-        T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
-        T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GameOpsBundleEvidenceBlockerReliefRow,
-        T2GameOpsBundleEvidencePolicyAcceptanceRow, T2GameOpsBundleEvidencePolicyRow,
-        T2GameOpsBundleEvidenceReviewRow, T2GamePublicationEvidenceBlockerReliefRow,
-        T2GamePublicationEvidencePolicyAcceptanceRow, T2GamePublicationEvidencePolicyRow,
-        T2GamePublicationEvidenceReviewRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
-        T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
-        T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
-        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
-        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
-        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
-        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessMapExclusionRow,
-        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactAcquisitionTargetRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2AssetConditionMapPublicationExclusionRow,
+        T2BeckLabelDensityBlockerReliefRow, T2BeckLabelDensityPolicyAcceptanceRow,
+        T2BeckLabelDensityPolicyRow, T2BeckLabelDensityReviewRow,
+        T2BeckLongConnectorBlockerReliefRow, T2BeckLongConnectorPolicyAcceptanceRow,
+        T2BeckLongConnectorPolicyRow, T2BeckLongConnectorReviewRow,
+        T2BeckTransferComplexityBlockerReliefRow, T2BeckTransferComplexityPolicyAcceptanceRow,
+        T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow,
+        T2GameOpsBundleEvidenceBlockerReliefRow, T2GameOpsBundleEvidencePolicyAcceptanceRow,
+        T2GameOpsBundleEvidencePolicyRow, T2GameOpsBundleEvidenceReviewRow,
+        T2GamePublicationEvidenceBlockerReliefRow, T2GamePublicationEvidencePolicyAcceptanceRow,
+        T2GamePublicationEvidencePolicyRow, T2GamePublicationEvidenceReviewRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
+        T2StitchedMemberCandidateScopeReviewRow, T2StitchedMemberDecisionDocketRow,
+        T2StitchedMemberEvidenceAcquisitionRow, T2StitchedMemberEvidenceContractRow,
+        T2StitchedMemberProofArtifactAttachmentRow, T2StitchedMemberProofIntakeRow,
+        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
+        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow,
+        T3LowerTierFeederGapBlockerReliefRow, T3LowerTierFeederGapPolicyAcceptanceRow,
+        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
+        T4TerminalAccessMapExclusionRow, T4TerminalAccessProofAcquisitionRow,
+        T4TerminalAccessProofArtifactAcquisitionTargetRow,
         T4TerminalAccessProofArtifactAttachmentRow, T4TerminalAccessProofArtifactRow,
         T4TerminalAccessProofAttachmentReviewRow, T4TerminalAccessProofIntakeRow,
         T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
@@ -69166,6 +69266,7 @@ mod tests {
 
         let rows = optimizer_constraint_ledger_rows(
             &pavement_rows,
+            &[],
             &topology_rows,
             &[],
             &[],
@@ -69281,6 +69382,7 @@ mod tests {
 
         let rows = optimizer_constraint_ledger_rows(
             &[],
+            &[],
             &topology_rows,
             &relief_rows,
             &[],
@@ -69368,6 +69470,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &relief_rows,
             &[],
             &[],
@@ -69449,6 +69552,7 @@ mod tests {
         }];
 
         let rows = optimizer_constraint_ledger_rows(
+            &[],
             &[],
             &[],
             &[],
@@ -69538,6 +69642,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &relief_rows,
             &[],
             &[],
@@ -69592,6 +69697,7 @@ mod tests {
         }];
 
         let rows = optimizer_constraint_ledger_rows(
+            &[],
             &[],
             &[],
             &[],
@@ -69664,6 +69770,7 @@ mod tests {
         }];
 
         let rows = optimizer_constraint_ledger_rows(
+            &[],
             &[],
             &[],
             &[],
@@ -69749,6 +69856,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &relief_rows,
             &[],
             &access_gap_rows,
@@ -69825,6 +69933,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &access_gap_rows,
             &exclusion_rows,
             &[],
@@ -69891,6 +70000,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &source_policy_rows,
             &exclusion_rows,
             &[],
@@ -69909,6 +70019,80 @@ mod tests {
         );
         assert_eq!(snapshot_row.exception_id, "SOURCE-SNAPSHOT-PUBEXCL-TEST");
         assert!(!snapshot_row.blocks_claims.contains("publication"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_applies_t2_asset_condition_map_publication_exclusion() {
+        let pavement_rows = vec![TierPavementDebtBudgetRow {
+            tier: "T2".to_string(),
+            route: "US30".to_string(),
+            region_id: "midwest".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.US30".to_string(),
+            stitch_group_id: "US.HWYSTITCH.US30".to_string(),
+            debt_class: "repair-debt".to_string(),
+            blocked_member_count: 2,
+            affected_states: "IA".to_string(),
+            evidence_debt_units: 0,
+            repair_debt_units: 2,
+            estimated_evidence_cost_m: 0.0,
+            estimated_repair_cost_m: 12.0,
+            total_debt_cost_m: 12.0,
+            budget_basis: "route-level pavement debt rollup".to_string(),
+            optimizer_penalty: "repair debt remains payable".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let exclusion_rows = vec![T2AssetConditionMapPublicationExclusionRow {
+            decision_id: "T2ASSET-PUBEXCL-TEST".to_string(),
+            decision_scope: "asset-condition-map-publication-scope".to_string(),
+            source_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
+            affected_constraint_class: "asset_condition_debt".to_string(),
+            affected_tier: "T2".to_string(),
+            affected_claims_before: "sla|transit|upgrade|publication".to_string(),
+            excluded_claims: "publication".to_string(),
+            preserved_claims_after: "sla|transit|upgrade".to_string(),
+            affected_bundle_count: 1,
+            total_debt_cost_m: 12.0,
+            decision: "exclude-asset-condition-debt-from-map-publication".to_string(),
+            decision_basis: "render map without claiming pavement repair completion".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "accepted".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &pavement_rows,
+            &exclusion_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+
+        let asset_row = rows
+            .iter()
+            .find(|row| row.constraint_class == "asset_condition_debt")
+            .expect("asset condition ledger row");
+
+        assert_eq!(asset_row.blocks_claims, "sla|transit|upgrade");
+        assert_eq!(
+            asset_row.exception_artifact,
+            "data/t2-asset-condition-map-publication-exclusion.csv"
+        );
+        assert_eq!(asset_row.exception_id, "T2ASSET-PUBEXCL-TEST");
+        assert!(!asset_row.blocks_claims.contains("publication"));
     }
 
     #[test]
