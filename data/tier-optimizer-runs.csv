@@ -30,7 +30,7 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 29,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,28,pass,0,,pass
 30,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,136,pass,0,,pass
 31,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,135,pass,0,,pass
-32,optimizer-residual-blocker-backlog,route optimizer-residual-blocker-backlog --gate,data/optimizer-residual-blocker-backlog.csv,4,held-known,117,Residual constraint-budget blockers are grouped into next optimizer wave families,held
+32,optimizer-residual-blocker-backlog,route optimizer-residual-blocker-backlog --gate,data/optimizer-residual-blocker-backlog.csv,3,held-known,117,Residual constraint-budget blockers are grouped into next optimizer wave families,held
 33,optimizer-claim-review,route optimizer-claim-review --gate,data/optimizer-claim-review.csv,6,held-known,31,P1 optimizer claim blockers remain held for source-specific review,held
 34,t2-game-publication-evidence-review,route t2-game-publication-evidence-review --gate,data/t2-game-publication-evidence-review.csv,3,held-known,3,T2 game publication readiness blockers remain held pending evidence policy,held
 35,t2-game-publication-evidence-policy,route t2-game-publication-evidence-policy --gate,data/t2-game-publication-evidence-policy.csv,3,held-known,3,T2 game publication evidence policy preserves blockers pending acceptance,held

@@ -96,12 +96,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Blocker Relief | Emit T2 game/ops bundle evidence relief rows before optimizer-ledger replay. | done |
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Ledger Replay | Wire accepted T2 game/ops bundle evidence relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 | 2026-05-14 | Map Selector Readiness Checkpoint | Confirm current T1 selector and map atlas gates after game/ops relief replay before more blocker burn-down or map publication. | done |
+| 2026-05-14 | Residual Backlog Classifier Hygiene | Remove zero-claim relieved game/ops rows from P1 backlog priority while preserving real asset debt. | done |
 
 ## Next Active Wave
 
 No wave is active. Next optimizer work should resume residual blocker burn-down
-from T4 terminal-access evidence using real non-seed proof attachments, or open
-an explicit publication checkpoint before refreshing map PNGs.
+from T4 terminal-access evidence using real non-seed proof attachments, or move
+to asset-condition debt acquisition if T4 proof remains source-blocked.
 
 ## Operating Rules
 

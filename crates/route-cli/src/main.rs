@@ -32421,14 +32421,14 @@ fn optimizer_backlog_family(row: &OptimizerConstraintBudgetRow) -> (String, Stri
             "hard-blocker-resolution".to_string(),
         );
     }
-    if classes.contains("game_ops_bundle_binding") {
+    if row.claim_blocker_count > 0 && classes.contains("game_ops_bundle_binding") {
         return (
             "P1-game-claim".to_string(),
             "game_ops_bundle_binding".to_string(),
             "game-ops-blocker-evidence-review".to_string(),
         );
     }
-    if classes.contains("terminal_access_evidence_gap") {
+    if row.claim_blocker_count > 0 && classes.contains("terminal_access_evidence_gap") {
         return (
             "P1-terminal-evidence".to_string(),
             "terminal_access_evidence_gap".to_string(),
@@ -32442,7 +32442,9 @@ fn optimizer_backlog_family(row: &OptimizerConstraintBudgetRow) -> (String, Stri
             "asset-condition-debt-repair".to_string(),
         );
     }
-    if classes.contains("terminal_contact") || classes.contains("source") {
+    if row.claim_blocker_count > 0
+        && (classes.contains("terminal_contact") || classes.contains("source"))
+    {
         return (
             "P2-source-evidence".to_string(),
             classes.to_string(),
@@ -59842,6 +59844,31 @@ mod tests {
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: "review".to_string(),
             },
+            OptimizerConstraintBudgetRow {
+                budget_id: "CB-T2-BUNDLE-C".to_string(),
+                optimizer_run_id: "tier-optimizer-current".to_string(),
+                tier: "T2".to_string(),
+                region_id: "component-0".to_string(),
+                subject_scope: "bundle".to_string(),
+                subject_id: "US.HWYBUNDLE.C".to_string(),
+                segment_bundle_id: "US.HWYBUNDLE.C".to_string(),
+                route: "I110".to_string(),
+                ledger_row_count: 2,
+                hard_blocker_count: 0,
+                claim_blocker_count: 0,
+                review_count: 1,
+                budget_debt_count: 1,
+                constraint_debt_cost_m: 5.0,
+                lifecycle_debt_cost_m: 0.0,
+                constraint_penalty_score: 5.0,
+                top_constraint_classes: "asset_condition_debt|game_ops_bundle_binding_relief"
+                    .to_string(),
+                blocking_claims: "publication;sla;transit;upgrade".to_string(),
+                next_artifacts:
+                    "data/optimizer-constraint-budget.csv;data/tier-pavement-docket.csv".to_string(),
+                constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
         ];
 
         let rows = optimizer_residual_blocker_backlog_rows(&budget_rows);
@@ -59849,6 +59876,12 @@ mod tests {
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows.iter()
+                .filter(|row| row.priority_class == "P1-game-claim")
+                .count(),
+            1
+        );
         assert_eq!(
             rows.iter()
                 .map(|row| row.total_claim_blockers)
@@ -59859,7 +59892,7 @@ mod tests {
             rows.iter()
                 .map(|row| row.total_budget_debt_count)
                 .sum::<usize>(),
-            1
+            2
         );
         assert!(rows
             .iter()
