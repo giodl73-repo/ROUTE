@@ -147,7 +147,7 @@ Examples of source ledgers:
 
 | Source family | Current or expected source |
 |---|---|
-| Pavement and ride quality | `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-repair-debt-review.csv`, `data/tier-pavement-repair-disposition.csv`, `data/tier-pavement-repair-funding-package.csv`, `data/tier-pavement-funding-commitment-review.csv`, `data/tier-pavement-downgrade-exclusion-decision.csv`, `data/tier-pavement-funding-evidence-contract.csv`, `data/tier-pavement-funding-evidence-source-capture.csv`, `data/tier-pavement-funding-evidence-artifact-attachment.csv`, `data/tier-pavement-funding-evidence-review-docket.csv`, `data/tier-pavement-funding-evidence-acquisition.csv` |
+| Pavement and ride quality | `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-repair-debt-review.csv`, `data/tier-pavement-repair-disposition.csv`, `data/tier-pavement-repair-funding-package.csv`, `data/tier-pavement-funding-commitment-review.csv`, `data/tier-pavement-downgrade-exclusion-decision.csv`, `data/tier-pavement-funding-evidence-contract.csv`, `data/tier-pavement-funding-evidence-source-capture.csv`, `data/tier-pavement-funding-evidence-artifact-attachment.csv`, `data/tier-pavement-funding-evidence-review-docket.csv`, `data/tier-pavement-funding-evidence-acquisition.csv`, `data/tier-pavement-funding-evidence-source-access.csv` |
 | Bridge, clearance, grade, and safety condition | National Bridge Inventory, HPMS, state DOT source ledgers, future condition dockets |
 | Capacity and reliability | NPMRDS/FPM, ATRI bottlenecks, HCM-derived capacity ledgers, future SLA reliability dockets |
 | Segment and bundle identity | `data/national-segment-registry.csv`, `data/national-segment-bundles.csv` |
