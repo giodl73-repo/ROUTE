@@ -167,6 +167,7 @@ Implemented CLI:
 route optimizer-constraint-ledger --gate
 route optimizer-constraint-budget --gate
 route map-publication-readiness --gate
+route map-publication-inventory --gate
 ```
 
 `optimizer-constraint-ledger` normalizes source rows into

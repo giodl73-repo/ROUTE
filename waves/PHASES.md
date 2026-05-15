@@ -139,11 +139,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | T2 Asset-Condition Map Publication Exclusion | Exclude T2 asset-condition debt from current map publication while preserving SLA, transit, upgrade, and repair holds. | done |
 | 2026-05-15 | Map Publication Readiness Certification | Certify current structural T1-T4 maps as publication-ready held-claim surfaces with zero publication blockers. | done |
 | 2026-05-15 | Map Publication Inventory Package | Package the 17 structural map artifacts into a release-facing inventory with held-claim labels. | done |
+| 2026-05-15 | Map Publication Inventory Gate | Make the structural map publication inventory gateable against atlas and readiness artifacts. | done |
 
 ## Next Active Wave
 
 No wave is active. Current T1-T4 structural maps have a gateable readiness
-artifact, a release-facing inventory, and no residual `publication` blockers.
+artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 Remaining holds are non-publication claims: source snapshot `evidence`, T4
 terminal-access `upgrade`, and T2 asset-condition `sla|transit|upgrade`. Do not
 add more placeholder-only source-needed map-proof ledgers.

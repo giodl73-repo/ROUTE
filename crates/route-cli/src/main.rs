@@ -178,6 +178,33 @@ enum Commands {
         gate: bool,
     },
 
+    /// Verify the release-facing structural map publication inventory
+    MapPublicationInventory {
+        /// Path to publication inventory CSV
+        #[arg(
+            long,
+            default_value = "data/map-publication-inventory.csv",
+            value_name = "FILE"
+        )]
+        inventory: PathBuf,
+        /// Path to map atlas manifest CSV
+        #[arg(long, default_value = "data/map-atlas.csv", value_name = "FILE")]
+        map_atlas: PathBuf,
+        /// Path to map publication readiness CSV
+        #[arg(
+            long,
+            default_value = "data/map-publication-readiness.csv",
+            value_name = "FILE"
+        )]
+        readiness: PathBuf,
+        /// Show inventory rows
+        #[arg(long)]
+        details: bool,
+        /// Fail if inventory drifts from atlas/readiness contracts
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Export T2-only Beck map diagnostics for clutter and service-line review
     BeckT2Diagnostics {
         /// Output CSV file
@@ -6605,6 +6632,40 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("map publication readiness gate: PASS");
+            }
+        }
+
+        Commands::MapPublicationInventory {
+            inventory,
+            map_atlas,
+            readiness,
+            details,
+            gate,
+        } => {
+            println!("route map-publication-inventory");
+            let inventory_rows = load_map_publication_inventory(&inventory)
+                .with_context(|| format!("loading {}", inventory.display()))?;
+            let atlas_rows = load_map_atlas(&map_atlas)
+                .with_context(|| format!("loading map atlas {}", map_atlas.display()))?;
+            let readiness_rows = load_map_publication_readiness(&readiness)
+                .with_context(|| format!("loading {}", readiness.display()))?;
+            print_map_publication_inventory_summary(&inventory, &inventory_rows, details);
+            if gate {
+                let failures = map_publication_inventory_gate_failures(
+                    &inventory_rows,
+                    &atlas_rows,
+                    &readiness_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("map publication inventory gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("map publication inventory gate failed");
+                }
+                println!();
+                println!("map publication inventory gate: PASS");
             }
         }
 
@@ -17584,7 +17645,7 @@ struct MapPublicationScopeDecisionRow {
     validation_status: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct MapPublicationReadinessRow {
     readiness_id: String,
     map_surface: String,
@@ -17600,6 +17661,22 @@ struct MapPublicationReadinessRow {
     scope_decision_artifact: String,
     backlog_artifact: String,
     readiness_decision: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct MapPublicationInventoryRow {
+    map_id: String,
+    map_path: String,
+    map_type: String,
+    publication_status: String,
+    render_gate_status: String,
+    readiness_artifact: String,
+    held_claims: String,
+    required_label: String,
+    allowed_use: String,
+    not_allowed_claims: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -17896,6 +17973,164 @@ fn map_publication_readiness_gate_failures(rows: &[MapPublicationReadinessRow]) 
             failures.push(format!("{} still holds publication", row.readiness_id));
         }
     }
+    failures
+}
+
+fn load_map_publication_readiness(path: &Path) -> Result<Vec<MapPublicationReadinessRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn load_map_publication_inventory(path: &Path) -> Result<Vec<MapPublicationInventoryRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn print_map_publication_inventory_summary(
+    path: &Path,
+    rows: &[MapPublicationInventoryRow],
+    details: bool,
+) {
+    let mut by_type = std::collections::BTreeMap::new();
+    for row in rows {
+        *by_type.entry(row.map_type.clone()).or_insert(0usize) += 1;
+    }
+    println!("  inventory: {}", path.display());
+    println!("  maps: {}", rows.len());
+    println!("  types: {}", format_count_map(&by_type));
+    if details {
+        for row in rows {
+            println!(
+                "  {} -> {} ({}) {}",
+                row.map_id, row.map_path, row.map_type, row.publication_status
+            );
+        }
+    }
+}
+
+fn map_publication_inventory_gate_failures(
+    inventory_rows: &[MapPublicationInventoryRow],
+    atlas_rows: &[MapAtlasRow],
+    readiness_rows: &[MapPublicationReadinessRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if inventory_rows.is_empty() {
+        failures.push("map publication inventory has no rows".to_string());
+    }
+    let Some(readiness) = readiness_rows.first() else {
+        failures.push("map publication readiness has no rows".to_string());
+        return failures;
+    };
+    if readiness.validation_status != "pass" {
+        failures.push(format!(
+            "map publication readiness is {}",
+            readiness.validation_status
+        ));
+    }
+    if readiness.publication_blocker_count != 0 {
+        failures.push(format!(
+            "map publication readiness has {} publication blockers",
+            readiness.publication_blocker_count
+        ));
+    }
+    if inventory_rows.len() != atlas_rows.len() {
+        failures.push(format!(
+            "inventory row count {} != atlas row count {}",
+            inventory_rows.len(),
+            atlas_rows.len()
+        ));
+    }
+
+    let atlas_by_id = atlas_rows
+        .iter()
+        .map(|row| (row.map_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut seen_ids = std::collections::BTreeSet::new();
+    let required_forbidden = [
+        "evidence-valid",
+        "sla-valid",
+        "transit-ready",
+        "upgrade-ready",
+        "asset-condition-repaired",
+    ];
+
+    for row in inventory_rows {
+        if !seen_ids.insert(row.map_id.as_str()) {
+            failures.push(format!("{} appears more than once", row.map_id));
+        }
+        let Some(atlas) = atlas_by_id.get(row.map_id.as_str()) else {
+            failures.push(format!("{} is not in map atlas", row.map_id));
+            continue;
+        };
+        if row.map_path != atlas.path {
+            failures.push(format!(
+                "{} path {} != atlas {}",
+                row.map_id, row.map_path, atlas.path
+            ));
+        }
+        if row.map_type != atlas.map_type {
+            failures.push(format!(
+                "{} type {} != atlas {}",
+                row.map_id, row.map_type, atlas.map_type
+            ));
+        }
+        if row.publication_status != "publication-ready-held-claims" {
+            failures.push(format!(
+                "{} publication status is {}",
+                row.map_id, row.publication_status
+            ));
+        }
+        if row.render_gate_status != "pass" || row.validation_status != "pass" {
+            failures.push(format!("{} inventory status is not pass", row.map_id));
+        }
+        if row.readiness_artifact != "data/map-publication-readiness.csv" {
+            failures.push(format!("{} points to wrong readiness artifact", row.map_id));
+        }
+        if split_claim_tokens(&row.held_claims)
+            .into_iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            != split_claim_tokens(&readiness.held_claims)
+                .into_iter()
+                .collect::<std::collections::BTreeSet<_>>()
+        {
+            failures.push(format!(
+                "{} held claims {} != readiness {}",
+                row.map_id, row.held_claims, readiness.held_claims
+            ));
+        }
+        if !row.required_label.contains("held") {
+            failures.push(format!(
+                "{} label does not identify held claims",
+                row.map_id
+            ));
+        }
+        for forbidden in required_forbidden {
+            if !split_claim_tokens(&row.not_allowed_claims)
+                .iter()
+                .any(|claim| *claim == forbidden)
+            {
+                failures.push(format!("{} does not forbid {}", row.map_id, forbidden));
+            }
+        }
+    }
+
+    for atlas in atlas_rows {
+        if !seen_ids.contains(atlas.map_id.as_str()) {
+            failures.push(format!(
+                "{} missing from publication inventory",
+                atlas.map_id
+            ));
+        }
+    }
+
     failures
 }
 
@@ -61997,11 +62232,11 @@ mod tests {
         forum_docket_row_failure, gap_type_slug, join_fema_d1_to_corridor,
         known_source_fetch_commands, load_tier_routes, lower_tier_pressure_witness_gate_failures,
         lower_tier_pressure_witness_rows, map_atlas_gate_failures,
-        map_publication_readiness_gate_failures, map_publication_readiness_rows,
-        merge_hpms_state_records, national_segment_bundle_gate_failures,
-        national_segment_bundle_rows, national_segment_registry_gate_failures,
-        national_segment_registry_rows, normalized_iri_m_per_km,
-        optimizer_claim_review_gate_failures, optimizer_claim_review_rows,
+        map_publication_inventory_gate_failures, map_publication_readiness_gate_failures,
+        map_publication_readiness_rows, merge_hpms_state_records,
+        national_segment_bundle_gate_failures, national_segment_bundle_rows,
+        national_segment_registry_gate_failures, national_segment_registry_rows,
+        normalized_iri_m_per_km, optimizer_claim_review_gate_failures, optimizer_claim_review_rows,
         optimizer_constraint_budget_gate_failures, optimizer_constraint_budget_rows,
         optimizer_constraint_ledger_gate_failures, optimizer_constraint_ledger_rows,
         optimizer_manifest_gate_failures, optimizer_map_hook_gate_failures,
@@ -62239,48 +62474,49 @@ mod tests {
         tier_pavement_unmatched_join_review_rows, tier_region_gate_failures,
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
-        LowerTierPressureWitnessRow, MapAtlasRow, MapPublicationScopeDecisionRow,
-        NationalSegmentBundleRow, NationalSegmentRegistryRow, NbiBridgeRecord,
-        OptimizerClaimReviewRow, OptimizerConstraintBudgetIndex, OptimizerConstraintBudgetRow,
-        OptimizerConstraintLedgerRow, OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow,
-        PavementDebtBudgetIndex, PavementStandardRow, ScoreAllRow, ScoreSignalRow,
-        SourceFetchPolicyRow, SourceSnapshotPublicationExclusionRow, StopCandidateRow,
-        T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
-        T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2AssetConditionMapPublicationExclusionRow, T2BeckLabelDensityBlockerReliefRow,
-        T2BeckLabelDensityPolicyAcceptanceRow, T2BeckLabelDensityPolicyRow,
-        T2BeckLabelDensityReviewRow, T2BeckLongConnectorBlockerReliefRow,
-        T2BeckLongConnectorPolicyAcceptanceRow, T2BeckLongConnectorPolicyRow,
-        T2BeckLongConnectorReviewRow, T2BeckTransferComplexityBlockerReliefRow,
-        T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
-        T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
-        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
-        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
-        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
-        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
-        T2GameOpsBindingIntakeRow, T2GameOpsBundleEvidenceBlockerReliefRow,
-        T2GameOpsBundleEvidencePolicyAcceptanceRow, T2GameOpsBundleEvidencePolicyRow,
-        T2GameOpsBundleEvidenceReviewRow, T2GamePublicationEvidenceBlockerReliefRow,
-        T2GamePublicationEvidencePolicyAcceptanceRow, T2GamePublicationEvidencePolicyRow,
-        T2GamePublicationEvidenceReviewRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
-        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
-        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
-        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
-        T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
-        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
-        T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
-        T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
-        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
-        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
-        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
-        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
-        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
-        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
-        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
-        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessMapExclusionRow,
-        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactAcquisitionTargetRow,
+        LowerTierPressureWitnessRow, MapAtlasRow, MapPublicationInventoryRow,
+        MapPublicationReadinessRow, MapPublicationScopeDecisionRow, NationalSegmentBundleRow,
+        NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerClaimReviewRow,
+        OptimizerConstraintBudgetIndex, OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow,
+        OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
+        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow,
+        SourceSnapshotPublicationExclusionRow, StopCandidateRow, T1DesignPolicyActionRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SchematicGeometryBlockerReliefRow,
+        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow,
+        T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2AssetConditionMapPublicationExclusionRow,
+        T2BeckLabelDensityBlockerReliefRow, T2BeckLabelDensityPolicyAcceptanceRow,
+        T2BeckLabelDensityPolicyRow, T2BeckLabelDensityReviewRow,
+        T2BeckLongConnectorBlockerReliefRow, T2BeckLongConnectorPolicyAcceptanceRow,
+        T2BeckLongConnectorPolicyRow, T2BeckLongConnectorReviewRow,
+        T2BeckTransferComplexityBlockerReliefRow, T2BeckTransferComplexityPolicyAcceptanceRow,
+        T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
+        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
+        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
+        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
+        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow,
+        T2GameOpsBundleEvidenceBlockerReliefRow, T2GameOpsBundleEvidencePolicyAcceptanceRow,
+        T2GameOpsBundleEvidencePolicyRow, T2GameOpsBundleEvidenceReviewRow,
+        T2GamePublicationEvidenceBlockerReliefRow, T2GamePublicationEvidencePolicyAcceptanceRow,
+        T2GamePublicationEvidencePolicyRow, T2GamePublicationEvidenceReviewRow,
+        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
+        T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
+        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
+        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
+        T2StitchedMemberCandidateScopeReviewRow, T2StitchedMemberDecisionDocketRow,
+        T2StitchedMemberEvidenceAcquisitionRow, T2StitchedMemberEvidenceContractRow,
+        T2StitchedMemberProofArtifactAttachmentRow, T2StitchedMemberProofIntakeRow,
+        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
+        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
+        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow,
+        T3LowerTierFeederGapBlockerReliefRow, T3LowerTierFeederGapPolicyAcceptanceRow,
+        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
+        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
+        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
+        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
+        T4TerminalAccessMapExclusionRow, T4TerminalAccessProofAcquisitionRow,
+        T4TerminalAccessProofArtifactAcquisitionTargetRow,
         T4TerminalAccessProofArtifactAttachmentRow, T4TerminalAccessProofArtifactRow,
         T4TerminalAccessProofAttachmentReviewRow, T4TerminalAccessProofIntakeRow,
         T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
@@ -75049,6 +75285,63 @@ missing,maps/does-not-exist.png,national,route map all,2400,1350,100,tier overvi
         assert_eq!(rows[0].validation_status, "pass");
         assert_eq!(rows[0].held_claims, "upgrade");
         assert!(map_publication_readiness_gate_failures(&rows).is_empty());
+    }
+
+    #[test]
+    fn map_publication_inventory_matches_atlas_and_readiness() {
+        let atlas_rows = vec![MapAtlasRow {
+            map_id: "national-tier".to_string(),
+            path: "maps/all-tiers.png".to_string(),
+            map_type: "national-tier".to_string(),
+            render_command: "route map all --output maps/all-tiers.png".to_string(),
+            expected_width: 2400,
+            expected_height: 1350,
+            min_bytes: 1,
+            tier_role: "T1/T2/T3/T4 national tier overview".to_string(),
+            game_use: "publication atlas".to_string(),
+        }];
+        let readiness_rows = vec![MapPublicationReadinessRow {
+            readiness_id: "MAPPUB-READY-T1T4-STRUCTURAL".to_string(),
+            map_surface: "T1-T4 structural maps".to_string(),
+            map_count: 1,
+            map_types: "national-tier".to_string(),
+            render_gate_status: "pass".to_string(),
+            scope_decision_status: "pass".to_string(),
+            publication_blocker_count: 0,
+            publication_blocker_families: String::new(),
+            held_claims: "evidence;sla;transit;upgrade".to_string(),
+            held_claim_family_count: 3,
+            budget_debt_count: 9,
+            scope_decision_artifact: "data/map-publication-scope-decision.csv".to_string(),
+            backlog_artifact: "data/optimizer-residual-blocker-backlog.csv".to_string(),
+            readiness_decision: "publish-structural-t1-t4-maps-with-held-claim-labels".to_string(),
+            next_artifact: "docs/map-publication-scope.md".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+        let inventory_rows = vec![MapPublicationInventoryRow {
+            map_id: "national-tier".to_string(),
+            map_path: "maps/all-tiers.png".to_string(),
+            map_type: "national-tier".to_string(),
+            publication_status: "publication-ready-held-claims".to_string(),
+            render_gate_status: "pass".to_string(),
+            readiness_artifact: "data/map-publication-readiness.csv".to_string(),
+            held_claims: "evidence;sla;transit;upgrade".to_string(),
+            required_label: "Structural T1-T4 map; evidence/SLA/transit/upgrade claims held"
+                .to_string(),
+            allowed_use: "public project overview and campaign atlas".to_string(),
+            not_allowed_claims:
+                "evidence-valid|sla-valid|transit-ready|upgrade-ready|asset-condition-repaired"
+                    .to_string(),
+            next_artifact: "docs/map-publication-scope.md".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        assert!(map_publication_inventory_gate_failures(
+            &inventory_rows,
+            &atlas_rows,
+            &readiness_rows
+        )
+        .is_empty());
     }
 
     #[test]
