@@ -162,6 +162,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | AL/NM I-110 Pavement Route-State Exclusion | Exclude the AL and NM I-110 pavement repair rows using FHWA route-log state coverage and replay T2 asset-condition debt. | done |
 | 2026-05-15 | Fresh Pond Truck Route Rejection | Reject the six remaining Fresh Pond held routes using NYC DOT truck-route evidence and replay T4 terminal-access debt. | done |
 | 2026-05-15 | LA I-110 Repair Funding Acceptance | Accept Louisiana DOTD STIP project H.010319 as full-cost repair funding for the LA I-110 pavement debt row. | done |
+| 2026-05-15 | Pavement Repair Downstream Cleanup | Replay downstream repair disposition and funding-review artifacts after LA I-110 funding acceptance. | done |
 
 ## Next Active Wave
 
@@ -195,7 +196,9 @@ optimizer/release manifests.
 The repair-debt path also has a governed full-cost repair-funding acceptance
 overlay; Louisiana DOTD STIP project H.010319 is accepted for LA / I-110 and
 removes that row from the priced optimizer debt while preserving unfunded LA
-I-220 and CA I-110 repair holds.
+I-220 and CA I-110 repair holds. Downstream repair disposition and funding
+review artifacts have been replayed so only LA I-220 remains in the priority-A
+repair funding package chain.
 
 ## Operating Rules
 
