@@ -153,6 +153,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Kansas St. Louis Terminal Proof Rejection | Reject Kansas City and St. Louis pairings contradicted by source-listed terminal access routes. | done |
 | 2026-05-15 | Denver LA Terminal Proof Rejection | Reject Denver and Los Angeles/Long Beach pairings contradicted by source-listed access routes. | done |
 | 2026-05-15 | Atlanta Philadelphia Terminal Proof Rejection | Reject Atlanta and Philadelphia pairings contradicted by source-listed terminal access routes. | done |
+| 2026-05-15 | FHWA Terminal Connector Proof Rejection | Reject Memphis, Salt Lake, Portland, Miami, and New Orleans pairings contradicted by FHWA connector listings. | done |
 
 ## Next Active Wave
 
@@ -160,8 +161,8 @@ No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
-accepted, and forty-eight contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 20. US2 pavement evidence replay
+accepted, and fifty-nine contradicted terminal-contact pairings are rejected, reducing
+T4 terminal-access upgrade blockers from 69 to 9. US2 pavement evidence replay
 reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
 US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, all
 repair debt. Remaining holds are non-publication claims: source snapshot
