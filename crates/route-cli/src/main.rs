@@ -1011,6 +1011,34 @@ enum Commands {
         gate: bool,
     },
 
+    /// Review priority-A pavement repair debt before any asset-condition relief replay
+    TierPavementRepairDebtReview {
+        /// Path to unmatched pavement join review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-unmatched-join-review.csv",
+            value_name = "FILE"
+        )]
+        unmatched_join_review: PathBuf,
+        /// Path to pavement debt budget CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-debt-budget.csv",
+            value_name = "FILE"
+        )]
+        pavement_debt_budget: PathBuf,
+        /// Output pavement repair debt review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-repair-debt-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if review rows accept evidence or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -7809,6 +7837,39 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement HPMS scope broadening gate: PASS");
+            }
+        }
+
+        Commands::TierPavementRepairDebtReview {
+            unmatched_join_review,
+            pavement_debt_budget,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-repair-debt-review");
+            let unmatched_join_rows =
+                load_tier_pavement_unmatched_join_review(&unmatched_join_review)
+                    .with_context(|| format!("loading {}", unmatched_join_review.display()))?;
+            let debt_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
+                .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
+            let rows = tier_pavement_repair_debt_review_rows(&unmatched_join_rows, &debt_rows);
+            write_tier_pavement_repair_debt_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_repair_debt_review_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    tier_pavement_repair_debt_review_gate_failures(&rows, &unmatched_join_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement repair debt review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement repair debt review gate failed");
+                }
+                println!();
+                println!("Tier pavement repair debt review gate: PASS");
             }
         }
 
@@ -19510,6 +19571,29 @@ struct TierPavementHpmsScopeBroadeningRow {
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementRepairDebtReviewRow {
+    repair_review_id: String,
+    state: String,
+    source_priority: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    stitch_group_id: String,
+    blocked_member_count: usize,
+    repair_debt_units: usize,
+    estimated_repair_cost_m: f64,
+    repair_debt_status: String,
+    repair_decision: String,
+    evidence_acceptance_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_action: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -39282,6 +39366,236 @@ fn tier_pavement_hpms_scope_broadening_gate_failures(
     failures
 }
 
+fn tier_pavement_repair_debt_review_rows(
+    unmatched_join_rows: &[TierPavementUnmatchedJoinReviewRow],
+    debt_rows: &[TierPavementDebtBudgetRow],
+) -> Vec<TierPavementRepairDebtReviewRow> {
+    let mut review_scope =
+        std::collections::BTreeMap::<String, (&TierPavementUnmatchedJoinReviewRow, usize)>::new();
+    for row in unmatched_join_rows {
+        if row.source_priority == "A"
+            && row.join_review_status == "repair-debt-not-source-join"
+            && row.repair_required_member_count > 0
+        {
+            review_scope.insert(row.state.clone(), (row, row.repair_required_member_count));
+        }
+    }
+
+    let mut consumed_by_state = std::collections::BTreeMap::<String, usize>::new();
+    let mut rows = Vec::new();
+    for debt in debt_rows
+        .iter()
+        .filter(|row| row.debt_class == "repair-debt" && row.validation_status == "review")
+    {
+        let matching_states = debt
+            .affected_states
+            .split(';')
+            .map(str::trim)
+            .filter_map(|state| {
+                review_scope
+                    .get(state)
+                    .map(|scope| (state.to_string(), *scope))
+            })
+            .collect::<Vec<_>>();
+        if matching_states.is_empty() {
+            continue;
+        }
+        for (state, (join_row, _)) in matching_states {
+            *consumed_by_state.entry(state.clone()).or_default() += debt.blocked_member_count;
+            rows.push(TierPavementRepairDebtReviewRow {
+                repair_review_id: format!(
+                    "PAVEMENTREPAIRREVIEW-{}-{}",
+                    stable_id_fragment(&state),
+                    stable_id_fragment(&debt.segment_bundle_id)
+                ),
+                state,
+                source_priority: join_row.source_priority.clone(),
+                tier: debt.tier.clone(),
+                route: debt.route.clone(),
+                segment_bundle_id: debt.segment_bundle_id.clone(),
+                stitch_group_id: debt.stitch_group_id.clone(),
+                blocked_member_count: debt.blocked_member_count,
+                repair_debt_units: debt.repair_debt_units,
+                estimated_repair_cost_m: debt.estimated_repair_cost_m,
+                repair_debt_status: "confirmed-repair-debt".to_string(),
+                repair_decision: "hold-claims-until-repair-funded-or-design-downgraded".to_string(),
+                evidence_acceptance_status: "not-accepted".to_string(),
+                blocker_claims_before: join_row.blocker_claims_before.clone(),
+                blocker_claims_after: join_row.blocker_claims_after.clone(),
+                claim_blocker_delta: 0,
+                next_action:
+                    "prepare repair funding, downgrade, or exclusion decision before relief replay"
+                        .to_string(),
+                next_artifact: "data/tier-pavement-repair-debt-review.csv".to_string(),
+                validation_status: "review".to_string(),
+            });
+        }
+    }
+
+    for (state, (join_row, expected_count)) in review_scope {
+        if consumed_by_state.get(&state).copied().unwrap_or_default() == 0 {
+            rows.push(TierPavementRepairDebtReviewRow {
+                repair_review_id: format!(
+                    "PAVEMENTREPAIRREVIEW-{}-MISSING",
+                    stable_id_fragment(&state)
+                ),
+                state,
+                source_priority: join_row.source_priority.clone(),
+                tier: "T2".to_string(),
+                route: join_row.repair_required_routes.clone(),
+                segment_bundle_id: "missing-debt-budget-row".to_string(),
+                stitch_group_id: "missing-debt-budget-row".to_string(),
+                blocked_member_count: expected_count,
+                repair_debt_units: expected_count,
+                estimated_repair_cost_m: 0.0,
+                repair_debt_status: "missing-debt-budget-row".to_string(),
+                repair_decision: "block-relief-until-debt-budget-row-exists".to_string(),
+                evidence_acceptance_status: "not-accepted".to_string(),
+                blocker_claims_before: join_row.blocker_claims_before.clone(),
+                blocker_claims_after: join_row.blocker_claims_after.clone(),
+                claim_blocker_delta: 0,
+                next_action: "regenerate tier-pavement-debt-budget before review".to_string(),
+                next_artifact: "data/tier-pavement-debt-budget.csv".to_string(),
+                validation_status: "blocked".to_string(),
+            });
+        }
+    }
+
+    rows
+}
+
+fn write_tier_pavement_repair_debt_review(
+    path: &Path,
+    rows: &[TierPavementRepairDebtReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_repair_debt_review_summary(
+    output: &Path,
+    rows: &[TierPavementRepairDebtReviewRow],
+) {
+    println!(
+        "  wrote {} pavement repair debt review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} members {} repair ${:.2}M",
+            row.state,
+            row.route,
+            row.repair_debt_status,
+            row.blocked_member_count,
+            row.estimated_repair_cost_m
+        );
+    }
+}
+
+fn tier_pavement_repair_debt_review_gate_failures(
+    rows: &[TierPavementRepairDebtReviewRow],
+    unmatched_join_rows: &[TierPavementUnmatchedJoinReviewRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected_by_state = unmatched_join_rows
+        .iter()
+        .filter(|row| {
+            row.source_priority == "A"
+                && row.join_review_status == "repair-debt-not-source-join"
+                && row.repair_required_member_count > 0
+        })
+        .map(|row| (row.state.clone(), row.repair_required_member_count))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    if !expected_by_state.is_empty() && rows.is_empty() {
+        failures.push("no priority-A pavement repair debt review rows emitted".to_string());
+        return failures;
+    }
+
+    let mut reviewed_by_state = std::collections::BTreeMap::<String, usize>::new();
+    for row in rows {
+        if row.repair_review_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_priority.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.stitch_group_id.trim().is_empty()
+            || row.repair_debt_status.trim().is_empty()
+            || row.repair_decision.trim().is_empty()
+            || row.evidence_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete repair review row",
+                row.state, row.route
+            ));
+        }
+        if !expected_by_state.contains_key(&row.state) {
+            failures.push(format!(
+                "{} is not in priority-A repair review scope",
+                row.state
+            ));
+        }
+        if row.repair_debt_status != "confirmed-repair-debt" {
+            failures.push(format!(
+                "{} {} has invalid repair debt status {}",
+                row.state, row.route, row.repair_debt_status
+            ));
+        }
+        if row.evidence_acceptance_status != "not-accepted" {
+            failures.push(format!(
+                "{} {} accepts evidence before relief",
+                row.state, row.route
+            ));
+        }
+        if row.claim_blocker_delta != 0 || row.blocker_claims_after != row.blocker_claims_before {
+            failures.push(format!(
+                "{} {} reduces blockers before relief",
+                row.state, row.route
+            ));
+        }
+        if row.repair_debt_units != row.blocked_member_count {
+            failures.push(format!(
+                "{} {} repair units do not match blocked members",
+                row.state, row.route
+            ));
+        }
+        if row.estimated_repair_cost_m <= 0.0 {
+            failures.push(format!(
+                "{} {} lacks positive repair cost",
+                row.state, row.route
+            ));
+        }
+        *reviewed_by_state.entry(row.state.clone()).or_default() += row.blocked_member_count;
+    }
+    for (state, expected) in expected_by_state {
+        let reviewed = reviewed_by_state.get(&state).copied().unwrap_or_default();
+        if reviewed != expected {
+            failures.push(format!(
+                "{} reviewed repair member count {} does not match unmatched join review {}",
+                state, reviewed, expected
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -46765,6 +47079,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "tier-pavement-repair-debt-review",
+                "route tier-pavement-repair-debt-review --gate",
+                "data/tier-pavement-repair-debt-review.csv",
+                "held-known",
+                3,
+                "priority-A pavement repair debt is confirmed but claims stay blocked until repair funding, downgrade, exclusion, or accepted relief replay",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -53341,7 +53663,8 @@ mod tests {
         tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_hpms_scope_broadening_gate_failures,
-        tier_pavement_hpms_scope_broadening_rows, tier_pavement_route_state_scope,
+        tier_pavement_hpms_scope_broadening_rows, tier_pavement_repair_debt_review_gate_failures,
+        tier_pavement_repair_debt_review_rows, tier_pavement_route_state_scope,
         tier_pavement_source_access_gate_failures, tier_pavement_source_access_rows,
         tier_pavement_source_fetch_attempt_gate_failures, tier_pavement_source_fetch_attempt_rows,
         tier_pavement_source_fetch_review_gate_failures, tier_pavement_source_fetch_review_rows,
@@ -63242,6 +63565,60 @@ mod tests {
             .broadened_fetch_command
             .contains("--functional-systems 1,2,3"));
         assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].evidence_acceptance_status, "not-accepted");
+    }
+
+    #[test]
+    fn tier_pavement_repair_debt_review_preserves_blockers() {
+        let unmatched_rows = vec![TierPavementUnmatchedJoinReviewRow {
+            join_review_id: "PAVEMENTJOINREVIEW-TX".to_string(),
+            state: "TX".to_string(),
+            source_priority: "A".to_string(),
+            cache_record_count: 208_285,
+            source_gap_member_count: 4,
+            source_needed_member_count: 0,
+            repair_required_member_count: 4,
+            source_needed_routes: String::new(),
+            repair_required_routes: "I220".to_string(),
+            hpms_records_for_source_needed_routes: 0,
+            hpms_source_route_coverage: "not-needed".to_string(),
+            join_review_status: "repair-debt-not-source-join".to_string(),
+            evidence_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_action: "route repair debt to funding review".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let debt_rows = vec![TierPavementDebtBudgetRow {
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            region_id: "component-0".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I220".to_string(),
+            debt_class: "repair-debt".to_string(),
+            blocked_member_count: 4,
+            affected_states: "TX".to_string(),
+            evidence_debt_units: 0,
+            repair_debt_units: 4,
+            estimated_evidence_cost_m: 0.0,
+            estimated_repair_cost_m: 10.0,
+            total_debt_cost_m: 10.0,
+            budget_basis: "planning proxy".to_string(),
+            optimizer_penalty: "subtract 10.00 budget-cost units".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = tier_pavement_repair_debt_review_rows(&unmatched_rows, &debt_rows);
+        let failures = tier_pavement_repair_debt_review_gate_failures(&rows, &unmatched_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].repair_debt_status, "confirmed-repair-debt");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].blocker_claims_after, rows[0].blocker_claims_before);
         assert_eq!(rows[0].evidence_acceptance_status, "not-accepted");
     }
 
