@@ -110,10 +110,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Funding Commitment Review | Review priority-A repair package rows for accepted funding commitments while preserving blockers. | done |
 | 2026-05-14 | Priority A Pavement Downgrade Exclusion Decision | Select no downgrade and no exclusion for unfunded priority-A repair rows while preserving blockers. | done |
 | 2026-05-14 | Priority A Pavement Funding Evidence Contract | Define accepted full-cost funding evidence requirements before any asset-condition relief replay. | done |
+| 2026-05-14 | Priority A Pavement Funding Evidence Source Capture | Record that no accepted priority-A pavement funding artifact is attached and preserve blockers before any relief replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should capture or attach accepted
+No wave is active. Next optimizer work should attach or review accepted
 priority-A pavement funding evidence before any asset-condition relief replay.
 
 ## Operating Rules
