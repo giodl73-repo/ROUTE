@@ -97,6 +97,14 @@ struct FeatureAttributes {
 /// Fetch HPMS data for one state and return a list of HpmsRecords.
 /// `state_name` is the URL-encoded name, e.g. "California", "New_Hampshire".
 pub fn fetch_state_hpms(state_abbr: &str, state_name: &str) -> Result<Vec<HpmsRecord>> {
+    fetch_state_hpms_with_systems(state_abbr, state_name, &[1])
+}
+
+pub fn fetch_state_hpms_with_systems(
+    state_abbr: &str,
+    state_name: &str,
+    functional_systems: &[u8],
+) -> Result<Vec<HpmsRecord>> {
     let url = BASE_URL.replace("{STATE}", state_name);
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
@@ -104,6 +112,24 @@ pub fn fetch_state_hpms(state_abbr: &str, state_name: &str) -> Result<Vec<HpmsRe
         .build()?;
     let mut all: Vec<HpmsRecord> = Vec::new();
     let mut offset = 0usize;
+    let systems = functional_systems
+        .iter()
+        .copied()
+        .filter(|system| *system > 0)
+        .collect::<std::collections::BTreeSet<_>>();
+    let where_clause = if systems.len() == 1 {
+        format!(
+            "f_system = {} AND aadt IS NOT NULL",
+            systems.iter().next().copied().unwrap_or(1)
+        )
+    } else {
+        let list = systems
+            .iter()
+            .map(u8::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("f_system IN ({list}) AND aadt IS NOT NULL")
+    };
 
     loop {
         let response = client
@@ -111,10 +137,10 @@ pub fn fetch_state_hpms(state_abbr: &str, state_name: &str) -> Result<Vec<HpmsRe
             .query(&[
                 // Simple filter: only records with AADT populated
                 // Route type filtering done in Rust after fetch
-                // f_system = 1 → Interstate principal arterials only (Phase 1)
+                // f_system = 1 -> Interstate principal arterials only (Phase 1)
                 // route_signing = 2/3/4 filters cause server 500s on this ArcGIS instance
-                // Phase 2: f_system <= 2 adds Other Freeways (US routes on controlled-access)
-                ("where", "f_system = 1 AND aadt IS NOT NULL"),
+                // Phase 2: explicit f_system lists can add US-route principal arterials.
+                ("where", where_clause.as_str()),
                 ("outFields", "route_number,route_signing,aadt,aadt_combination,iri,through_lanes,speed_limit,f_system"),
                 ("f", "json"),
                 ("resultRecordCount", "1000"),
@@ -301,5 +327,11 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn default_state_hpms_fetch_scope_remains_interstate_only() {
+        let default_systems = [1u8];
+        assert_eq!(default_systems, [1]);
     }
 }

@@ -84,6 +84,9 @@ enum Commands {
         /// Fetch only these states (comma-separated, e.g. CA,NV,UT)
         #[arg(long, value_name = "STATES")]
         states: Option<String>,
+        /// HPMS functional systems to fetch (default: 1; use 1,2,3 for broader principal-arterial scope)
+        #[arg(long, default_value = "1", value_name = "SYSTEMS")]
+        functional_systems: String,
     },
 
     /// Score one corridor against the 16-dimension pool
@@ -980,6 +983,30 @@ enum Commands {
         )]
         output: PathBuf,
         /// Fail if review rows accept evidence or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
+    /// Plan a broader HPMS functional-system fetch for unmatched priority-A US-route pavement members
+    TierPavementHpmsScopeBroadening {
+        /// Path to unmatched pavement join review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-unmatched-join-review.csv",
+            value_name = "FILE"
+        )]
+        unmatched_join_review: PathBuf,
+        /// Output HPMS scope broadening plan CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-hpms-scope-broadening.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// HPMS functional systems for broadened source acquisition
+        #[arg(long, default_value = "1,2,3", value_name = "SYSTEMS")]
+        functional_systems: String,
+        /// Fail if broadening rows do not preserve blockers
         #[arg(long)]
         gate: bool,
     },
@@ -5219,10 +5246,23 @@ fn run_cli() -> Result<()> {
             }
         }
 
-        Commands::FetchHpms { output, states } => {
+        Commands::FetchHpms {
+            output,
+            states,
+            functional_systems,
+        } => {
             let out = output.unwrap_or_else(|| PathBuf::from("data/cache/hpms_2018.csv"));
             println!("route fetch-hpms → {}", out.display());
             println!("  source: FHWA geo.dot.gov ArcGIS REST (2018 HPMS, no registration)");
+            let hpms_functional_systems = parse_hpms_functional_systems(&functional_systems)?;
+            println!(
+                "  functional systems: {}",
+                hpms_functional_systems
+                    .iter()
+                    .map(u8::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
 
             std::fs::create_dir_all(out.parent().unwrap_or(std::path::Path::new(".")))?;
 
@@ -5238,7 +5278,11 @@ fn run_cli() -> Result<()> {
                 for (abbr, name) in route_data::STATE_CODES {
                     if filter.contains(*abbr) {
                         print!("  [hpms] {abbr}… ");
-                        match route_data::hpms_fetch::fetch_state_hpms(abbr, name) {
+                        match route_data::hpms_fetch::fetch_state_hpms_with_systems(
+                            abbr,
+                            name,
+                            &hpms_functional_systems,
+                        ) {
                             Ok(recs) => {
                                 println!("{} segments", recs.len());
                                 let state_out = out
@@ -5276,6 +5320,11 @@ fn run_cli() -> Result<()> {
                     );
                 }
             } else {
+                if hpms_functional_systems != [1] {
+                    anyhow::bail!(
+                        "non-default HPMS functional-system scope requires --states for scoped cache mutation"
+                    );
+                }
                 route_data::fetch_all_hpms(&out)?;
             }
             println!("fetch-hpms complete. Run `route build` to join.");
@@ -7729,6 +7778,37 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement unmatched join review gate: PASS");
+            }
+        }
+
+        Commands::TierPavementHpmsScopeBroadening {
+            unmatched_join_review,
+            output,
+            functional_systems,
+            gate,
+        } => {
+            println!("route tier-pavement-hpms-scope-broadening");
+            let unmatched_join_rows =
+                load_tier_pavement_unmatched_join_review(&unmatched_join_review)
+                    .with_context(|| format!("loading {}", unmatched_join_review.display()))?;
+            let systems = parse_hpms_functional_systems(&functional_systems)?;
+            let rows = tier_pavement_hpms_scope_broadening_rows(&unmatched_join_rows, &systems);
+            write_tier_pavement_hpms_scope_broadening(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_hpms_scope_broadening_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_pavement_hpms_scope_broadening_gate_failures(&rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement HPMS scope broadening gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement HPMS scope broadening gate failed");
+                }
+                println!();
+                println!("Tier pavement HPMS scope broadening gate: PASS");
             }
         }
 
@@ -15823,6 +15903,30 @@ fn merge_hpms_state_records(
     existing
 }
 
+fn parse_hpms_functional_systems(value: &str) -> Result<Vec<u8>> {
+    let systems = value
+        .split(',')
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            part.parse::<u8>()
+                .with_context(|| format!("invalid HPMS functional system {part}"))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    if systems.is_empty() {
+        anyhow::bail!("at least one HPMS functional system is required");
+    }
+    let systems = systems
+        .into_iter()
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if systems.iter().any(|system| !(1..=7).contains(system)) {
+        anyhow::bail!("HPMS functional systems must be in 1..=7");
+    }
+    Ok(systems)
+}
+
 fn write_hpms_records(path: &Path, records: &[route_data::HpmsRecord]) -> Result<()> {
     if let Some(parent) = path
         .parent()
@@ -19385,6 +19489,27 @@ struct TierPavementUnmatchedJoinReviewRow {
     blocker_claims_after: String,
     claim_blocker_delta: isize,
     next_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementHpmsScopeBroadeningRow {
+    broadening_id: String,
+    state: String,
+    source_priority: String,
+    source_needed_routes: String,
+    source_needed_member_count: usize,
+    current_hpms_records_for_source_needed_routes: usize,
+    current_coverage_status: String,
+    broadened_functional_systems: String,
+    broadened_fetch_command: String,
+    preflight_gate: String,
+    postfetch_gate: String,
+    evidence_acceptance_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
     next_artifact: String,
     validation_status: String,
 }
@@ -38981,6 +39106,160 @@ fn tier_pavement_unmatched_join_review_gate_failures(
     failures
 }
 
+fn load_tier_pavement_unmatched_join_review(
+    path: &Path,
+) -> Result<Vec<TierPavementUnmatchedJoinReviewRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_hpms_scope_broadening_rows(
+    unmatched_join_rows: &[TierPavementUnmatchedJoinReviewRow],
+    functional_systems: &[u8],
+) -> Vec<TierPavementHpmsScopeBroadeningRow> {
+    let systems = functional_systems
+        .iter()
+        .map(u8::to_string)
+        .collect::<Vec<_>>()
+        .join(",");
+    unmatched_join_rows
+        .iter()
+        .filter(|row| row.source_needed_member_count > 0)
+        .map(|row| TierPavementHpmsScopeBroadeningRow {
+            broadening_id: format!("PAVEMENTHPMSBROADEN-{}", stable_id_fragment(&row.state)),
+            state: row.state.clone(),
+            source_priority: row.source_priority.clone(),
+            source_needed_routes: row.source_needed_routes.clone(),
+            source_needed_member_count: row.source_needed_member_count,
+            current_hpms_records_for_source_needed_routes: row.hpms_records_for_source_needed_routes,
+            current_coverage_status: row.hpms_source_route_coverage.clone(),
+            broadened_functional_systems: systems.clone(),
+            broadened_fetch_command: format!(
+                "route fetch-hpms --states {} --functional-systems {}",
+                row.state, systems
+            ),
+            preflight_gate: "route source-fetch-policy --gate".to_string(),
+            postfetch_gate:
+                "route build --all-roads && route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                    .to_string(),
+            evidence_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: row.blocker_claims_before.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/tier-pavement-source-fetch-attempt.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_hpms_scope_broadening(
+    path: &Path,
+    rows: &[TierPavementHpmsScopeBroadeningRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_hpms_scope_broadening_summary(
+    output: &Path,
+    rows: &[TierPavementHpmsScopeBroadeningRow],
+) {
+    println!(
+        "  wrote {} pavement HPMS scope-broadening rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} systems {} routes {} members {}",
+            row.state,
+            row.broadened_functional_systems,
+            row.source_needed_routes,
+            row.source_needed_member_count
+        );
+    }
+}
+
+fn tier_pavement_hpms_scope_broadening_gate_failures(
+    rows: &[TierPavementHpmsScopeBroadeningRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if rows.is_empty() {
+        failures.push("no HPMS scope-broadening rows emitted".to_string());
+        return failures;
+    }
+    for row in rows {
+        if row.broadening_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_priority.trim().is_empty()
+            || row.source_needed_routes.trim().is_empty()
+            || row.current_coverage_status.trim().is_empty()
+            || row.broadened_functional_systems.trim().is_empty()
+            || row.broadened_fetch_command.trim().is_empty()
+            || row.preflight_gate.trim().is_empty()
+            || row.postfetch_gate.trim().is_empty()
+            || row.evidence_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete HPMS broadening row", row.state));
+        }
+        if row.current_hpms_records_for_source_needed_routes != 0 {
+            failures.push(format!(
+                "{} already has HPMS records for source-needed routes",
+                row.state
+            ));
+        }
+        if !row
+            .broadened_functional_systems
+            .split(',')
+            .any(|system| system == "3")
+        {
+            failures.push(format!(
+                "{} broadened scope does not include principal arterial system 3",
+                row.state
+            ));
+        }
+        if !row
+            .broadened_fetch_command
+            .starts_with("route fetch-hpms --states ")
+            || !row.broadened_fetch_command.contains("--functional-systems")
+        {
+            failures.push(format!("{} has invalid broadened fetch command", row.state));
+        }
+        if row.evidence_acceptance_status != "not-accepted" {
+            failures.push(format!(
+                "{} accepts evidence before fetch review",
+                row.state
+            ));
+        }
+        if row.claim_blocker_delta != 0 || row.blocker_claims_after != row.blocker_claims_before {
+            failures.push(format!(
+                "{} reduces blockers before fetch review",
+                row.state
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -45996,10 +46275,10 @@ fn source_fetch_policy_rows() -> Vec<SourceFetchPolicyRow> {
         ),
         source_fetch_policy_row(
             "hpms-state-scope",
-            "route fetch-hpms --states <STATE[,STATE]>",
+            "route fetch-hpms --states <STATE[,STATE]>;route fetch-hpms --states <STATE[,STATE]> --functional-systems <SYSTEM[,SYSTEM]>",
             "data/cache/hpms_2018.csv;data/cache/hpms_<state>.csv",
             "scoped-merge",
-            "replace fetched state rows and preserve all non-requested state rows",
+            "replace fetched state rows for declared functional-system scope and preserve all non-requested state rows",
             "merge_hpms_state_records plus temp CSV replace",
             "at least one fetched HPMS row",
         ),
@@ -46454,6 +46733,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "held-known",
                 3,
                 "priority-A pavement unmatched-join review preserves blockers while source-needed US-route members lack HPMS route evidence",
+            ),
+            (
+                "tier-pavement-hpms-scope-broadening",
+                "route tier-pavement-hpms-scope-broadening --gate",
+                "data/tier-pavement-hpms-scope-broadening.csv",
+                "held-known",
+                3,
+                "priority-A HPMS scope-broadening plan preserves blockers before broader US-route cache mutation",
             ),
             (
                 "optimizer-constraint-ledger",
@@ -52864,19 +53151,20 @@ mod tests {
         optimizer_manifest_gate_failures, optimizer_map_hook_gate_failures,
         optimizer_residual_blocker_backlog_gate_failures, optimizer_residual_blocker_backlog_rows,
         parse_blueprint_cost_ranges, parse_blueprint_evidence_map, parse_blueprint_packages,
-        parse_endpoint_exceptions, parse_forum_docket, parse_indot_trafficwise_events,
-        parse_iowa511_events, parse_map_atlas, parse_mdot_midrive_events, parse_pressure_scenarios,
-        parse_release_manifest, parse_significant_moments, parse_standards_inventory,
-        parse_standards_proof_ledger, parse_stop_candidates, parse_t1_diamond_validation,
-        parse_t1_evidence_windows, parse_t1_failure_events, parse_t1_failure_ledger,
-        parse_t1_failure_source_plan, parse_t1_snapshot_plan, parse_t1_source_health,
-        parse_tdot_smartway_events, parse_throughput_proof_matrix, pavement_debt_budget_index,
-        pavement_standard_gate_failures, planned_standard_inventory_missing,
-        pressure_scenario_gate_failures, pressure_scenario_has_bounded_contract,
-        pressure_scenario_is_executable, pressure_scenario_missing_required_adversity,
-        pressure_scenario_readiness_gate_failures, pressure_scenario_unknown_standard_refs,
-        pressure_standard_coverage_failures, release_manifest_gate_failures, rounded_score,
-        scenario_edge_candidates, significant_moment_gate_failures, significant_moment_row_failure,
+        parse_endpoint_exceptions, parse_forum_docket, parse_hpms_functional_systems,
+        parse_indot_trafficwise_events, parse_iowa511_events, parse_map_atlas,
+        parse_mdot_midrive_events, parse_pressure_scenarios, parse_release_manifest,
+        parse_significant_moments, parse_standards_inventory, parse_standards_proof_ledger,
+        parse_stop_candidates, parse_t1_diamond_validation, parse_t1_evidence_windows,
+        parse_t1_failure_events, parse_t1_failure_ledger, parse_t1_failure_source_plan,
+        parse_t1_snapshot_plan, parse_t1_source_health, parse_tdot_smartway_events,
+        parse_throughput_proof_matrix, pavement_debt_budget_index, pavement_standard_gate_failures,
+        planned_standard_inventory_missing, pressure_scenario_gate_failures,
+        pressure_scenario_has_bounded_contract, pressure_scenario_is_executable,
+        pressure_scenario_missing_required_adversity, pressure_scenario_readiness_gate_failures,
+        pressure_scenario_unknown_standard_refs, pressure_standard_coverage_failures,
+        release_manifest_gate_failures, rounded_score, scenario_edge_candidates,
+        significant_moment_gate_failures, significant_moment_row_failure,
         source_fetch_policy_gate_failures, source_fetch_policy_row,
         source_fetch_policy_row_covers_command, source_fetch_policy_rows,
         standards_blueprint_gate_failures, standards_evidence_level_is_allowed,
@@ -53030,11 +53318,13 @@ mod tests {
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
         tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
-        tier_pavement_route_state_scope, tier_pavement_source_access_gate_failures,
-        tier_pavement_source_access_rows, tier_pavement_source_fetch_attempt_gate_failures,
-        tier_pavement_source_fetch_attempt_rows, tier_pavement_source_fetch_review_gate_failures,
-        tier_pavement_source_fetch_review_rows, tier_pavement_source_gap_gate_failures,
-        tier_pavement_source_gap_rows, tier_pavement_unmatched_join_review_gate_failures,
+        tier_pavement_hpms_scope_broadening_gate_failures,
+        tier_pavement_hpms_scope_broadening_rows, tier_pavement_route_state_scope,
+        tier_pavement_source_access_gate_failures, tier_pavement_source_access_rows,
+        tier_pavement_source_fetch_attempt_gate_failures, tier_pavement_source_fetch_attempt_rows,
+        tier_pavement_source_fetch_review_gate_failures, tier_pavement_source_fetch_review_rows,
+        tier_pavement_source_gap_gate_failures, tier_pavement_source_gap_rows,
+        tier_pavement_unmatched_join_review_gate_failures,
         tier_pavement_unmatched_join_review_rows, tier_region_gate_failures,
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
@@ -53087,10 +53377,11 @@ mod tests {
         T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceAccessRow,
-        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
-        TierPavementSourceGapRow, TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementHpmsScopeBroadeningRow,
+        TierPavementSourceAccessRow, TierPavementSourceFetchAttemptRow,
+        TierPavementSourceFetchReviewRow, TierPavementSourceGapRow,
+        TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -62895,6 +63186,44 @@ mod tests {
     }
 
     #[test]
+    fn tier_pavement_hpms_scope_broadening_preserves_blockers() {
+        let unmatched_rows = vec![TierPavementUnmatchedJoinReviewRow {
+            join_review_id: "PAVEMENTJOINREVIEW-TX".to_string(),
+            state: "TX".to_string(),
+            source_priority: "A".to_string(),
+            cache_record_count: 43_381,
+            source_gap_member_count: 2,
+            source_needed_member_count: 2,
+            repair_required_member_count: 0,
+            source_needed_routes: "US80;US287".to_string(),
+            repair_required_routes: String::new(),
+            hpms_records_for_source_needed_routes: 0,
+            hpms_source_route_coverage: "none".to_string(),
+            join_review_status: "hpms-scope-misses-source-needed-routes".to_string(),
+            evidence_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_action: "broaden HPMS scope".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows: Vec<TierPavementHpmsScopeBroadeningRow> =
+            tier_pavement_hpms_scope_broadening_rows(&unmatched_rows, &[1, 2, 3]);
+        let failures = tier_pavement_hpms_scope_broadening_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].broadened_functional_systems, "1,2,3");
+        assert!(rows[0]
+            .broadened_fetch_command
+            .contains("--functional-systems 1,2,3"));
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].evidence_acceptance_status, "not-accepted");
+    }
+
+    #[test]
     fn hpms_state_fetch_merge_replaces_only_requested_states() {
         let mut states = std::collections::BTreeSet::new();
         states.insert("TX".to_string());
@@ -62941,6 +63270,14 @@ mod tests {
         assert!(!merged
             .iter()
             .any(|row| row.state == "TX" && row.route_id == "US80" && row.aadt == Some(2000)));
+    }
+
+    #[test]
+    fn hpms_functional_system_parser_deduplicates_broadened_scope() {
+        let systems = parse_hpms_functional_systems("1,2,3,3").unwrap();
+        assert_eq!(systems, vec![1, 2, 3]);
+        assert!(parse_hpms_functional_systems("").is_err());
+        assert!(parse_hpms_functional_systems("8").is_err());
     }
 
     #[test]
