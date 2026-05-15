@@ -98,12 +98,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Map Selector Readiness Checkpoint | Confirm current T1 selector and map atlas gates after game/ops relief replay before more blocker burn-down or map publication. | done |
 | 2026-05-14 | Residual Backlog Classifier Hygiene | Remove zero-claim relieved game/ops rows from P1 backlog priority while preserving real asset debt. | done |
 | 2026-05-14 | Priority A Pavement Source Access | Classify priority-A pavement acquisition tasks before scoped HPMS/state fetches can mutate cache-backed inputs. | done |
+| 2026-05-14 | Priority A Pavement Fetch Attempt | Record scoped TX/LA/NM pavement fetch attempt outcomes without accepting evidence or reducing debt. | done |
 
 ## Next Active Wave
 
 No wave is active. Next optimizer work should resume residual blocker burn-down
-from T4 terminal-access evidence using real non-seed proof attachments, or run
-priority-A pavement source fetches under the scoped source-access policy.
+from T4 terminal-access evidence using real non-seed proof attachments, or
+review TX/LA priority-A pavement cache joins while repairing the empty NM fetch.
 
 ## Operating Rules
 

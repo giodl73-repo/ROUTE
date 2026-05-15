@@ -890,6 +890,27 @@ enum Commands {
         gate: bool,
     },
 
+    /// Summarize scoped pavement source-fetch cache results without accepting evidence
+    TierPavementSourceFetchAttempt {
+        /// Path to pavement source-access policy CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-access.csv",
+            value_name = "FILE"
+        )]
+        source_access: PathBuf,
+        /// Output pavement source-fetch attempt summary CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-fetch-attempt.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if fetch-attempt rows do not preserve blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -7523,6 +7544,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement source access gate: PASS");
+            }
+        }
+
+        Commands::TierPavementSourceFetchAttempt {
+            source_access,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-source-fetch-attempt");
+            let source_access_rows = load_tier_pavement_source_access(&source_access)
+                .with_context(|| format!("loading {}", source_access.display()))?;
+            let rows = tier_pavement_source_fetch_attempt_rows(&source_access_rows)?;
+            write_tier_pavement_source_fetch_attempt(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_source_fetch_attempt_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    tier_pavement_source_fetch_attempt_gate_failures(&rows, &source_access_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement source fetch attempt gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement source fetch attempt gate failed");
+                }
+                println!();
+                println!("Tier pavement source fetch attempt gate: PASS");
             }
         }
 
@@ -19113,6 +19163,25 @@ struct TierPavementSourceAccessRow {
     fetch_command: String,
     preflight_gate: String,
     postfetch_gate: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementSourceFetchAttemptRow {
+    fetch_attempt_id: String,
+    access_policy_id: String,
+    task_id: String,
+    state: String,
+    source_priority: String,
+    fetch_command: String,
+    cache_target: String,
+    cache_record_count: usize,
+    fetch_result_status: String,
+    evidence_acceptance_status: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
@@ -38110,6 +38179,143 @@ fn tier_pavement_source_access_gate_failures(
     failures
 }
 
+fn load_tier_pavement_source_access(path: &Path) -> Result<Vec<TierPavementSourceAccessRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_source_fetch_attempt_rows(
+    source_access_rows: &[TierPavementSourceAccessRow],
+) -> Result<Vec<TierPavementSourceFetchAttemptRow>> {
+    let mut rows = Vec::new();
+    for row in source_access_rows {
+        let cache_target = row
+            .cache_targets
+            .split(';')
+            .map(str::trim)
+            .find(|target| {
+                target.ends_with(&format!("hpms_{}.csv", row.state.to_ascii_lowercase()))
+            })
+            .unwrap_or("data/cache/hpms_2018.csv");
+        let cache_record_count = count_csv_records(Path::new(cache_target))?;
+        let fetch_result_status = if cache_record_count == 0 {
+            "fetch-failed-or-empty-cache"
+        } else {
+            "cache-populated-unreviewed"
+        };
+        rows.push(TierPavementSourceFetchAttemptRow {
+            fetch_attempt_id: format!("PAVEMENTFETCH-{}", stable_id_fragment(&row.task_id)),
+            access_policy_id: row.access_policy_id.clone(),
+            task_id: row.task_id.clone(),
+            state: row.state.clone(),
+            source_priority: row.source_priority.clone(),
+            fetch_command: row.fetch_command.clone(),
+            cache_target: cache_target.to_string(),
+            cache_record_count,
+            fetch_result_status: fetch_result_status.to_string(),
+            evidence_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: row.blocker_claims_before.clone(),
+            blocker_claims_after: row.blocker_claims_after.clone(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        });
+    }
+    Ok(rows)
+}
+
+fn count_csv_records(path: &Path) -> Result<usize> {
+    if !path.exists() {
+        return Ok(0);
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    Ok(reader.records().count())
+}
+
+fn write_tier_pavement_source_fetch_attempt(
+    path: &Path,
+    rows: &[TierPavementSourceFetchAttemptRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_source_fetch_attempt_summary(
+    output: &Path,
+    rows: &[TierPavementSourceFetchAttemptRow],
+) {
+    println!(
+        "  wrote {} pavement source-fetch attempt rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} records {}",
+            row.task_id, row.state, row.cache_record_count, row.fetch_result_status
+        );
+    }
+}
+
+fn tier_pavement_source_fetch_attempt_gate_failures(
+    rows: &[TierPavementSourceFetchAttemptRow],
+    source_access_rows: &[TierPavementSourceAccessRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !source_access_rows.is_empty() && rows.len() != source_access_rows.len() {
+        failures.push(format!(
+            "fetch attempt rows {} do not match source-access rows {}",
+            rows.len(),
+            source_access_rows.len()
+        ));
+    }
+    for row in rows {
+        if row.fetch_attempt_id.trim().is_empty()
+            || row.access_policy_id.trim().is_empty()
+            || row.task_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.fetch_command.trim().is_empty()
+            || row.cache_target.trim().is_empty()
+            || row.fetch_result_status.trim().is_empty()
+            || row.evidence_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete fetch-attempt row", row.task_id));
+        }
+        if row.evidence_acceptance_status != "not-accepted" {
+            failures.push(format!("{} accepts evidence before review", row.task_id));
+        }
+        if row.claim_blocker_delta != 0 || row.blocker_claims_after != row.blocker_claims_before {
+            failures.push(format!("{} reduces blockers before review", row.task_id));
+        }
+        if row.cache_record_count == 0 && row.fetch_result_status != "fetch-failed-or-empty-cache" {
+            failures.push(format!(
+                "{} has empty cache without failed status",
+                row.task_id
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -45561,6 +45767,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement fetches preserve asset-condition blockers until scoped evidence is rebuilt and reviewed",
             ),
             (
+                "tier-pavement-source-fetch-attempt",
+                "route tier-pavement-source-fetch-attempt --gate",
+                "data/tier-pavement-source-fetch-attempt.csv",
+                "held-known",
+                3,
+                "priority-A pavement fetch attempts preserve blockers until cache rows are rebuilt and reviewed",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -52136,7 +52350,8 @@ mod tests {
         tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_route_state_scope, tier_pavement_source_access_gate_failures,
-        tier_pavement_source_access_rows, tier_pavement_source_gap_gate_failures,
+        tier_pavement_source_access_rows, tier_pavement_source_fetch_attempt_gate_failures,
+        tier_pavement_source_fetch_attempt_rows, tier_pavement_source_gap_gate_failures,
         tier_pavement_source_gap_rows, tier_region_gate_failures,
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
@@ -52190,8 +52405,8 @@ mod tests {
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceAccessRow,
-        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementSourceFetchAttemptRow, TierPavementSourceGapRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -61717,6 +61932,40 @@ mod tests {
         assert_eq!(rows[0].mutation_mode, "scoped-cache-merge");
         assert_eq!(rows[0].claim_blocker_delta, 0);
         assert_eq!(rows[0].blocker_claims_before, rows[0].blocker_claims_after);
+    }
+
+    #[test]
+    fn tier_pavement_source_fetch_attempt_records_empty_cache_without_relief() {
+        let source_access_rows = vec![TierPavementSourceAccessRow {
+            access_policy_id: "PAVEMENTACCESS-PAVEMENTANM".to_string(),
+            task_id: "PAVEMENT-A-NM".to_string(),
+            state: "NM".to_string(),
+            source_priority: "A".to_string(),
+            source_access_mode: "hpms-scoped-fetch".to_string(),
+            mutation_mode: "scoped-cache-merge".to_string(),
+            cache_targets: "data/cache/hpms_2018.csv;data/cache/hpms_nonexistent_test_state.csv"
+                .to_string(),
+            fetch_command: "route fetch-hpms --states NM".to_string(),
+            preflight_gate: "route source-fetch-policy --gate".to_string(),
+            postfetch_gate:
+                "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                    .to_string(),
+            blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows: Vec<TierPavementSourceFetchAttemptRow> =
+            tier_pavement_source_fetch_attempt_rows(&source_access_rows).unwrap();
+        let failures = tier_pavement_source_fetch_attempt_gate_failures(&rows, &source_access_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].cache_record_count, 0);
+        assert_eq!(rows[0].fetch_result_status, "fetch-failed-or-empty-cache");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
     }
 
     #[test]
