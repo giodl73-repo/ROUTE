@@ -31,11 +31,18 @@ data/map-publication-scope-decision.csv
 ## Current Decision
 
 Full T1-T4 map publication is blocked until the optimizer blockers are actually
-relieved or explicitly excluded. As of this decision, the residual publication
-blockers are:
+relieved or explicitly excluded. The first accepted exclusion is:
 
-- 69 T4 terminal-access evidence gaps blocking `map`, `publication`, and
-  `upgrade` claims.
+```text
+data/t4-terminal-access-map-exclusion.csv
+```
+
+That exclusion removes unresolved T4 terminal-access overlay rows from current
+`map` and `publication` claims only. It does not accept terminal-access proof and
+does not clear `upgrade` or evidence work.
+
+After that exclusion, the residual publication blockers are:
+
 - 1 source snapshot guard blocking `evidence` and `publication` claims.
 - 9 T2 asset-condition debt rows that remain publication-relevant debt even
   though they are budget debt rather than claim blockers.

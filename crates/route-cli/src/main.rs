@@ -3681,6 +3681,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t3_t4_access_gaps: PathBuf,
+        /// T4 terminal-access map publication exclusion decision CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-access-map-exclusion.csv",
+            value_name = "FILE"
+        )]
+        t4_terminal_access_map_exclusion: PathBuf,
         /// Source-fetch policy CSV
         #[arg(
             long,
@@ -12254,6 +12261,7 @@ fn run_cli() -> Result<()> {
             t3_lower_tier_feeder_gap_blocker_relief,
             t2_parallel_service_queue,
             t3_t4_access_gaps,
+            t4_terminal_access_map_exclusion,
             source_fetch_policy,
             t2_scenario_hooks,
             t2_bundle_overlays,
@@ -12324,6 +12332,11 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
             let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
                 .with_context(|| format!("loading {}", t3_t4_access_gaps.display()))?;
+            let t4_terminal_access_map_exclusion_rows =
+                load_t4_terminal_access_map_exclusion(&t4_terminal_access_map_exclusion)
+                    .with_context(|| {
+                        format!("loading {}", t4_terminal_access_map_exclusion.display())
+                    })?;
             let mut source_policy_rows = load_source_fetch_policy(&source_fetch_policy)
                 .with_context(|| format!("loading {}", source_fetch_policy.display()))?;
             if source_policy_rows.is_empty() {
@@ -12345,6 +12358,7 @@ fn run_cli() -> Result<()> {
                 &t3_feeder_relief_rows,
                 &parallel_rows,
                 &access_gap_rows,
+                &t4_terminal_access_map_exclusion_rows,
                 &route_map::beck_t1_diagnostics(),
                 &route_map::beck_t2_diagnostics(),
                 &source_policy_rows,
@@ -22376,6 +22390,24 @@ struct T3T4AccessGapRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalAccessMapExclusionRow {
+    decision_id: String,
+    decision_scope: String,
+    source_artifact: String,
+    affected_constraint_class: String,
+    affected_gap_class: String,
+    affected_tier: String,
+    affected_claims_before: String,
+    excluded_claims: String,
+    preserved_claims_after: String,
+    affected_route_count: usize,
+    decision: String,
+    decision_basis: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T3ZoneMapDiagnosticRow {
     zone_id: String,
     zone_name: String,
@@ -27728,6 +27760,7 @@ fn optimizer_constraint_ledger_rows(
     t3_feeder_relief_rows: &[T3LowerTierFeederGapBlockerReliefRow],
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
+    t4_terminal_access_map_exclusion_rows: &[T4TerminalAccessMapExclusionRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
     beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
     source_policy_rows: &[SourceFetchPolicyRow],
@@ -27743,6 +27776,8 @@ fn optimizer_constraint_ledger_rows(
     let relieved_t2_game_ops_bundles =
         t2_game_ops_bundle_relief_bundle_set(t2_game_ops_bundle_relief_rows);
     let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
+    let t4_terminal_access_map_exclusion =
+        accepted_t4_terminal_access_map_exclusion(t4_terminal_access_map_exclusion_rows);
 
     for row in source_policy_rows {
         let snapshot_hold = row.mutation_mode == "live-snapshot-preserve";
@@ -28053,6 +28088,14 @@ fn optimizer_constraint_ledger_rows(
             "zone-assignment-needed" => ("zone_assignment_gap", row.repair_action.as_str()),
             _ => ("lower_tier_access_gap", row.repair_action.as_str()),
         };
+        let map_publication_excluded =
+            t4_terminal_access_map_exclusion
+                .as_ref()
+                .is_some_and(|decision| {
+                    tier == "T4"
+                        && constraint_class == "terminal_access_evidence_gap"
+                        && row.gap_class == decision.affected_gap_class
+                });
         rows.push(OptimizerConstraintLedgerRow {
             constraint_id: format!("CON-T3T4-{}", stable_id_fragment(&row.gap_id)),
             optimizer_run_id: "tier-optimizer-current".to_string(),
@@ -28073,7 +28116,11 @@ fn optimizer_constraint_ledger_rows(
             source_artifact: "data/t3-t4-access-gaps.csv".to_string(),
             source_row_id: row.gap_id.clone(),
             standard_artifact: "docs/t3-t4-access-optimization.md".to_string(),
-            evidence_status: "review".to_string(),
+            evidence_status: if map_publication_excluded {
+                "exception".to_string()
+            } else {
+                "review".to_string()
+            },
             constraint_status: "review".to_string(),
             observed_value: row.current_score.to_string(),
             threshold_value: if row.promise_horizon_hours == 1 {
@@ -28086,7 +28133,14 @@ fn optimizer_constraint_ledger_rows(
             } else {
                 "route_score".to_string()
             },
-            blocks_claims: "upgrade|map|publication".to_string(),
+            blocks_claims: if let Some(decision) = t4_terminal_access_map_exclusion
+                .as_ref()
+                .filter(|_| map_publication_excluded)
+            {
+                decision.preserved_claims_after.clone()
+            } else {
+                "upgrade|map|publication".to_string()
+            },
             budget_cost_m: 0.0,
             cost_category: String::new(),
             cost_basis: String::new(),
@@ -28098,10 +28152,31 @@ fn optimizer_constraint_ledger_rows(
             owner_jurisdiction: "route-program".to_string(),
             funding_program: String::new(),
             delivery_risk: "unknown".to_string(),
-            exception_id: row.gap_class.clone(),
-            exception_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            exception_id: if let Some(decision) = t4_terminal_access_map_exclusion
+                .as_ref()
+                .filter(|_| map_publication_excluded)
+            {
+                decision.decision_id.clone()
+            } else {
+                row.gap_class.clone()
+            },
+            exception_artifact: if map_publication_excluded {
+                "data/t4-terminal-access-map-exclusion.csv".to_string()
+            } else {
+                "data/t3-t4-access-gaps.csv".to_string()
+            },
             next_artifact: row.next_artifact.clone(),
-            optimizer_effect: row.gap_reason.clone(),
+            optimizer_effect: if let Some(decision) = t4_terminal_access_map_exclusion
+                .as_ref()
+                .filter(|_| map_publication_excluded)
+            {
+                format!(
+                    "{}; map/publication excluded by {} while {} remains blocked",
+                    row.gap_reason, decision.decision_id, decision.preserved_claims_after
+                )
+            } else {
+                row.gap_reason.clone()
+            },
             validation_status: row.validation_status.clone(),
         });
     }
@@ -52341,6 +52416,34 @@ fn load_t3_t4_access_gaps(path: &Path) -> Result<Vec<T3T4AccessGapRow>> {
     Ok(rows)
 }
 
+fn load_t4_terminal_access_map_exclusion(
+    path: &Path,
+) -> Result<Vec<T4TerminalAccessMapExclusionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn accepted_t4_terminal_access_map_exclusion(
+    rows: &[T4TerminalAccessMapExclusionRow],
+) -> Option<&T4TerminalAccessMapExclusionRow> {
+    rows.iter().find(|row| {
+        row.decision == "exclude-terminal-access-overlay-from-map-publication"
+            && row.validation_status == "accepted"
+            && row.affected_constraint_class == "terminal_access_evidence_gap"
+            && row.affected_gap_class == "terminal-evidence-needed"
+            && row.affected_tier == "T4"
+            && row.excluded_claims == "map|publication"
+            && !row.preserved_claims_after.trim().is_empty()
+    })
+}
+
 fn t3_zone_map_diagnostic_rows(
     route_rows: &[T3ZoneRouteColumnRow],
     gap_rows: &[T3T4AccessGapRow],
@@ -61689,7 +61792,8 @@ mod tests {
         T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
         T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
         T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
-        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactAcquisitionTargetRow,
+        T4TerminalAccessMapExclusionRow, T4TerminalAccessProofAcquisitionRow,
+        T4TerminalAccessProofArtifactAcquisitionTargetRow,
         T4TerminalAccessProofArtifactAttachmentRow, T4TerminalAccessProofArtifactRow,
         T4TerminalAccessProofAttachmentReviewRow, T4TerminalAccessProofIntakeRow,
         T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
@@ -68981,6 +69085,7 @@ mod tests {
             &[],
             &parallel_rows,
             &access_gap_rows,
+            &[],
             &beck_t1_rows,
             &beck_t2_rows,
             &source_policy_rows,
@@ -69094,6 +69199,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t1_rows,
             &[],
             &[],
@@ -69170,6 +69276,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69260,6 +69367,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -69342,6 +69450,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
             &beck_t2_rows,
             &[],
             &[],
@@ -69394,6 +69503,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69465,6 +69575,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69548,6 +69659,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
@@ -69559,6 +69671,83 @@ mod tests {
         assert!(!rows
             .iter()
             .any(|row| row.constraint_class == "lower_tier_feeder_gap"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_applies_t4_terminal_access_map_exclusion() {
+        let access_gap_rows = vec![T3T4AccessGapRow {
+            gap_id: "T4GAP-T3GREATLAKES-I115".to_string(),
+            source_surface: "t4-terminal-access-columns".to_string(),
+            route: "I-115".to_string(),
+            zone_id: "t3-great-lakes".to_string(),
+            current_score: 21.0,
+            constraint_adjusted_score: 20.0,
+            hard_blocker_count: 0,
+            claim_blocker_count: 1,
+            constraint_debt_cost_m: 0.0,
+            lifecycle_debt_cost_m: 0.0,
+            constraint_penalty_score: 1.0,
+            top_constraint_classes: "terminal_access_evidence_gap".to_string(),
+            constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            promise_horizon_hours: 1,
+            gap_class: "terminal-evidence-needed".to_string(),
+            gap_reason: "route-to-terminal contact proof is seed-only".to_string(),
+            required_evidence: "non-seed route-to-terminal contact proof".to_string(),
+            repair_action: "attach-non-seed-terminal-access-proof".to_string(),
+            next_artifact: "data/t4-terminal-access-proof-artifact-source-access.csv".to_string(),
+            upward_pressure_allowed: false,
+            validation_status: "review".to_string(),
+        }];
+        let exclusion_rows = vec![T4TerminalAccessMapExclusionRow {
+            decision_id: "T4TERM-MAPEXCL-TEST".to_string(),
+            decision_scope: "terminal-access-overlay-publication-scope".to_string(),
+            source_artifact: "data/t3-t4-access-gaps.csv".to_string(),
+            affected_constraint_class: "terminal_access_evidence_gap".to_string(),
+            affected_gap_class: "terminal-evidence-needed".to_string(),
+            affected_tier: "T4".to_string(),
+            affected_claims_before: "upgrade|map|publication".to_string(),
+            excluded_claims: "map|publication".to_string(),
+            preserved_claims_after: "upgrade".to_string(),
+            affected_route_count: 1,
+            decision: "exclude-terminal-access-overlay-from-map-publication".to_string(),
+            decision_basis: "render map without claiming terminal-access proof".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "accepted".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &access_gap_rows,
+            &exclusion_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+
+        let terminal_row = rows
+            .iter()
+            .find(|row| row.constraint_class == "terminal_access_evidence_gap")
+            .expect("terminal access ledger row");
+
+        assert_eq!(terminal_row.blocks_claims, "upgrade");
+        assert_eq!(terminal_row.evidence_status, "exception");
+        assert_eq!(
+            terminal_row.exception_artifact,
+            "data/t4-terminal-access-map-exclusion.csv"
+        );
+        assert!(!terminal_row.blocks_claims.contains("map"));
+        assert!(!terminal_row.blocks_claims.contains("publication"));
     }
 
     #[test]
