@@ -135,12 +135,14 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | T4 Terminal Access Proof Artifact Source Access | Classify non-seed proof acquisition targets as manual or cached source-needed before capture. | done |
 | 2026-05-15 | Map Publication Scope Decision | Separate render-valid maps from full T1-T4 publication validity and stop placeholder-only map-proof churn. | done |
 | 2026-05-15 | T4 Terminal Access Map Exclusion | Exclude unresolved T4 terminal-access overlays from current map publication while preserving upgrade evidence holds. | done |
+| 2026-05-15 | Source Snapshot Publication Exclusion | Exclude live source snapshot guards from current map publication while preserving evidence holds. | done |
 
 ## Next Active Wave
 
 No wave is active. Next map-validity work should clear the remaining publication
-blockers: the source snapshot guard and T2 asset-condition debt. Do not add more
-placeholder-only source-needed map-proof ledgers.
+blocker: T2 asset-condition debt. The source snapshot guard still blocks
+`evidence`, not `publication`. Do not add more placeholder-only source-needed
+map-proof ledgers.
 
 ## Operating Rules
 

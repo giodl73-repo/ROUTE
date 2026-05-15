@@ -3695,6 +3695,13 @@ enum Commands {
             value_name = "FILE"
         )]
         source_fetch_policy: PathBuf,
+        /// Source snapshot publication exclusion decision CSV
+        #[arg(
+            long,
+            default_value = "data/source-snapshot-publication-exclusion.csv",
+            value_name = "FILE"
+        )]
+        source_snapshot_publication_exclusion: PathBuf,
         /// T2 game scenario hook CSV
         #[arg(
             long,
@@ -12263,6 +12270,7 @@ fn run_cli() -> Result<()> {
             t3_t4_access_gaps,
             t4_terminal_access_map_exclusion,
             source_fetch_policy,
+            source_snapshot_publication_exclusion,
             t2_scenario_hooks,
             t2_bundle_overlays,
             output,
@@ -12342,6 +12350,14 @@ fn run_cli() -> Result<()> {
             if source_policy_rows.is_empty() {
                 source_policy_rows = source_fetch_policy_rows();
             }
+            let source_snapshot_publication_exclusion_rows =
+                load_source_snapshot_publication_exclusion(&source_snapshot_publication_exclusion)
+                    .with_context(|| {
+                        format!(
+                            "loading {}",
+                            source_snapshot_publication_exclusion.display()
+                        )
+                    })?;
             let scenario_hook_rows = load_t2_scenario_hooks(&t2_scenario_hooks)
                 .with_context(|| format!("loading {}", t2_scenario_hooks.display()))?;
             let bundle_overlay_rows = load_t2_bundle_overlays(&t2_bundle_overlays)
@@ -12362,6 +12378,7 @@ fn run_cli() -> Result<()> {
                 &route_map::beck_t1_diagnostics(),
                 &route_map::beck_t2_diagnostics(),
                 &source_policy_rows,
+                &source_snapshot_publication_exclusion_rows,
                 &scenario_hook_rows,
                 &bundle_overlay_rows,
             );
@@ -22569,6 +22586,22 @@ struct SourceFetchPolicyRow {
     validation_status: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct SourceSnapshotPublicationExclusionRow {
+    decision_id: String,
+    decision_scope: String,
+    source_artifact: String,
+    affected_constraint_class: String,
+    affected_fetch_family: String,
+    affected_claims_before: String,
+    excluded_claims: String,
+    preserved_claims_after: String,
+    decision: String,
+    decision_basis: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 struct OptimizerMapHookRow {
     hook_id: String,
@@ -27764,6 +27797,7 @@ fn optimizer_constraint_ledger_rows(
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
     beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
     source_policy_rows: &[SourceFetchPolicyRow],
+    source_snapshot_publication_exclusion_rows: &[SourceSnapshotPublicationExclusionRow],
     scenario_hook_rows: &[T2ScenarioHookRow],
     bundle_overlay_rows: &[T2BundleOverlayRow],
 ) -> Vec<OptimizerConstraintLedgerRow> {
@@ -27778,9 +27812,15 @@ fn optimizer_constraint_ledger_rows(
     let relieved_t3_feeder_routes = t3_feeder_relief_route_set(t3_feeder_relief_rows);
     let t4_terminal_access_map_exclusion =
         accepted_t4_terminal_access_map_exclusion(t4_terminal_access_map_exclusion_rows);
+    let source_snapshot_publication_exclusion =
+        accepted_source_snapshot_publication_exclusion(source_snapshot_publication_exclusion_rows);
 
     for row in source_policy_rows {
         let snapshot_hold = row.mutation_mode == "live-snapshot-preserve";
+        let snapshot_publication_excluded = snapshot_hold
+            && source_snapshot_publication_exclusion
+                .as_ref()
+                .is_some_and(|decision| decision.affected_fetch_family == row.fetch_family);
         rows.push(OptimizerConstraintLedgerRow {
             constraint_id: format!("CON-SOURCE-{}", stable_id_fragment(&row.fetch_family)),
             optimizer_run_id: "tier-optimizer-current".to_string(),
@@ -27826,7 +27866,12 @@ fn optimizer_constraint_ledger_rows(
                 row.mutation_mode.clone()
             },
             measurement_unit: "source_fetch_policy".to_string(),
-            blocks_claims: if snapshot_hold {
+            blocks_claims: if let Some(decision) = source_snapshot_publication_exclusion
+                .as_ref()
+                .filter(|_| snapshot_publication_excluded)
+            {
+                decision.preserved_claims_after.clone()
+            } else if snapshot_hold {
                 "evidence|publication".to_string()
             } else {
                 String::new()
@@ -27850,12 +27895,19 @@ fn optimizer_constraint_ledger_rows(
             } else {
                 "low".to_string()
             },
-            exception_id: if snapshot_hold {
+            exception_id: if let Some(decision) = source_snapshot_publication_exclusion
+                .as_ref()
+                .filter(|_| snapshot_publication_excluded)
+            {
+                decision.decision_id.clone()
+            } else if snapshot_hold {
                 row.fetch_family.clone()
             } else {
                 String::new()
             },
-            exception_artifact: if snapshot_hold {
+            exception_artifact: if snapshot_publication_excluded {
+                "data/source-snapshot-publication-exclusion.csv".to_string()
+            } else if snapshot_hold {
                 "data/source-fetch-policy.csv".to_string()
             } else {
                 String::new()
@@ -27865,7 +27917,19 @@ fn optimizer_constraint_ledger_rows(
             } else {
                 row.policy_doc.clone()
             },
-            optimizer_effect: row.preservation_contract.clone(),
+            optimizer_effect: if let Some(decision) = source_snapshot_publication_exclusion
+                .as_ref()
+                .filter(|_| snapshot_publication_excluded)
+            {
+                format!(
+                    "{}; publication excluded by {} while {} remains blocked",
+                    row.preservation_contract,
+                    decision.decision_id,
+                    decision.preserved_claims_after
+                )
+            } else {
+                row.preservation_contract.clone()
+            },
             validation_status: if snapshot_hold {
                 "review".to_string()
             } else {
@@ -54462,6 +54526,33 @@ fn load_source_fetch_policy(path: &Path) -> Result<Vec<SourceFetchPolicyRow>> {
     Ok(rows)
 }
 
+fn load_source_snapshot_publication_exclusion(
+    path: &Path,
+) -> Result<Vec<SourceSnapshotPublicationExclusionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn accepted_source_snapshot_publication_exclusion(
+    rows: &[SourceSnapshotPublicationExclusionRow],
+) -> Option<&SourceSnapshotPublicationExclusionRow> {
+    rows.iter().find(|row| {
+        row.decision == "exclude-live-snapshot-guard-from-map-publication"
+            && row.validation_status == "accepted"
+            && row.affected_constraint_class == "source_acquisition_snapshot_guard"
+            && row.affected_fetch_family == "t1-live-event-snapshots"
+            && row.excluded_claims == "publication"
+            && row.preserved_claims_after == "evidence"
+    })
+}
+
 fn source_fetch_policy_row(
     fetch_family: &str,
     commands: &str,
@@ -61757,43 +61848,43 @@ mod tests {
         NationalSegmentRegistryRow, NbiBridgeRecord, OptimizerClaimReviewRow,
         OptimizerConstraintBudgetIndex, OptimizerConstraintBudgetRow, OptimizerConstraintLedgerRow,
         OptimizerMapHookRow, OptimizerResidualBlockerBacklogRow, PavementDebtBudgetIndex,
-        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow, StopCandidateRow,
-        T1DesignPolicyActionRow, T1DesignReviewCsvRow, T1LineSelectorInputRow,
-        T1SchematicGeometryBlockerReliefRow, T1SchematicGeometryClaimReviewRow,
-        T1SharedSegmentMapPolicyRow, T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow,
-        T1SlaPairRow, T1StopSelectorInputRow, T1TopologyRepairRow,
-        T2BeckLabelDensityBlockerReliefRow, T2BeckLabelDensityPolicyAcceptanceRow,
-        T2BeckLabelDensityPolicyRow, T2BeckLabelDensityReviewRow,
-        T2BeckLongConnectorBlockerReliefRow, T2BeckLongConnectorPolicyAcceptanceRow,
-        T2BeckLongConnectorPolicyRow, T2BeckLongConnectorReviewRow,
-        T2BeckTransferComplexityBlockerReliefRow, T2BeckTransferComplexityPolicyAcceptanceRow,
-        T2BeckTransferComplexityPolicyRow, T2BeckTransferComplexityReviewRow, T2BlockerClosureRow,
-        T2BubbleUpReviewRow, T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow,
-        T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
-        T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
-        T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow,
-        T2GameOpsBundleEvidenceBlockerReliefRow, T2GameOpsBundleEvidencePolicyAcceptanceRow,
-        T2GameOpsBundleEvidencePolicyRow, T2GameOpsBundleEvidenceReviewRow,
-        T2GamePublicationEvidenceBlockerReliefRow, T2GamePublicationEvidencePolicyAcceptanceRow,
-        T2GamePublicationEvidencePolicyRow, T2GamePublicationEvidenceReviewRow,
-        T2GraphContactRepairRow, T2GraphContactValidationRow, T2HeldContactActionRow,
-        T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow, T2ParentContactValidationRow,
-        T2RegionalizerRow, T2ReliefEvidenceRow, T2RouteFamilySplitRow, T2ScenarioHookRow,
-        T2ServiceDiagnosticQueueRow, T2ServiceSelectionRow,
-        T2StitchedMemberCandidateScopeReviewRow, T2StitchedMemberDecisionDocketRow,
-        T2StitchedMemberEvidenceAcquisitionRow, T2StitchedMemberEvidenceContractRow,
-        T2StitchedMemberProofArtifactAttachmentRow, T2StitchedMemberProofIntakeRow,
-        T2StitchedMemberProofSourceCaptureRow, T2StitchedMemberRegistryHandoffRow,
-        T2StitchedMemberSelectionDocketRow, T2StitchedMemberSourceAccessPolicyRow,
-        T2StitchedMemberSplitPlanRow, T2TerminalContactValidationRow,
-        T3LowerTierFeederGapBlockerReliefRow, T3LowerTierFeederGapPolicyAcceptanceRow,
-        T3LowerTierFeederGapPolicyRow, T3LowerTierFeederGapReviewRow, T3T4AccessGapRow,
-        T3T4PressureIntakeRow, T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow,
-        T3ZoneRenderBoardRow, T3ZoneRouteColumnRow, T3ZoneStopPlacementRow,
-        T4TerminalAccessColumnRow, T4TerminalAccessEvidenceReviewRow,
-        T4TerminalAccessMapExclusionRow, T4TerminalAccessProofAcquisitionRow,
-        T4TerminalAccessProofArtifactAcquisitionTargetRow,
+        PavementStandardRow, ScoreAllRow, ScoreSignalRow, SourceFetchPolicyRow,
+        SourceSnapshotPublicationExclusionRow, StopCandidateRow, T1DesignPolicyActionRow,
+        T1DesignReviewCsvRow, T1LineSelectorInputRow, T1SchematicGeometryBlockerReliefRow,
+        T1SchematicGeometryClaimReviewRow, T1SharedSegmentMapPolicyRow,
+        T1SharedSegmentPolicyAcceptanceRow, T1SlaCandidateUniverseRow, T1SlaPairRow,
+        T1StopSelectorInputRow, T1TopologyRepairRow, T2BeckLabelDensityBlockerReliefRow,
+        T2BeckLabelDensityPolicyAcceptanceRow, T2BeckLabelDensityPolicyRow,
+        T2BeckLabelDensityReviewRow, T2BeckLongConnectorBlockerReliefRow,
+        T2BeckLongConnectorPolicyAcceptanceRow, T2BeckLongConnectorPolicyRow,
+        T2BeckLongConnectorReviewRow, T2BeckTransferComplexityBlockerReliefRow,
+        T2BeckTransferComplexityPolicyAcceptanceRow, T2BeckTransferComplexityPolicyRow,
+        T2BeckTransferComplexityReviewRow, T2BlockerClosureRow, T2BubbleUpReviewRow,
+        T2BundleOverlayRepairDeltaRow, T2BundleOverlayRow, T2BundleReadinessDispositionRow,
+        T2BundleReadinessRepairDocketRow, T2BundleReadinessRepairEvidenceRow,
+        T2BundleReadinessReplayDecisionRow, T2BundleRepairQueueRow, T2ContactClosureRow,
+        T2ContactResolutionRow, T2EndpointClosureRow, T2GameOpsBindingDecisionRow,
+        T2GameOpsBindingIntakeRow, T2GameOpsBundleEvidenceBlockerReliefRow,
+        T2GameOpsBundleEvidencePolicyAcceptanceRow, T2GameOpsBundleEvidencePolicyRow,
+        T2GameOpsBundleEvidenceReviewRow, T2GamePublicationEvidenceBlockerReliefRow,
+        T2GamePublicationEvidencePolicyAcceptanceRow, T2GamePublicationEvidencePolicyRow,
+        T2GamePublicationEvidenceReviewRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
+        T2HeldContactActionRow, T2OverlayOptimizerActionDocketRow, T2ParallelServiceQueueRow,
+        T2ParentContactValidationRow, T2RegionalizerRow, T2ReliefEvidenceRow,
+        T2RouteFamilySplitRow, T2ScenarioHookRow, T2ServiceDiagnosticQueueRow,
+        T2ServiceSelectionRow, T2StitchedMemberCandidateScopeReviewRow,
+        T2StitchedMemberDecisionDocketRow, T2StitchedMemberEvidenceAcquisitionRow,
+        T2StitchedMemberEvidenceContractRow, T2StitchedMemberProofArtifactAttachmentRow,
+        T2StitchedMemberProofIntakeRow, T2StitchedMemberProofSourceCaptureRow,
+        T2StitchedMemberRegistryHandoffRow, T2StitchedMemberSelectionDocketRow,
+        T2StitchedMemberSourceAccessPolicyRow, T2StitchedMemberSplitPlanRow,
+        T2TerminalContactValidationRow, T3LowerTierFeederGapBlockerReliefRow,
+        T3LowerTierFeederGapPolicyAcceptanceRow, T3LowerTierFeederGapPolicyRow,
+        T3LowerTierFeederGapReviewRow, T3T4AccessGapRow, T3T4PressureIntakeRow,
+        T3ZoneAccessObligationRow, T3ZoneMapDiagnosticRow, T3ZoneRenderBoardRow,
+        T3ZoneRouteColumnRow, T3ZoneStopPlacementRow, T4TerminalAccessColumnRow,
+        T4TerminalAccessEvidenceReviewRow, T4TerminalAccessMapExclusionRow,
+        T4TerminalAccessProofAcquisitionRow, T4TerminalAccessProofArtifactAcquisitionTargetRow,
         T4TerminalAccessProofArtifactAttachmentRow, T4TerminalAccessProofArtifactRow,
         T4TerminalAccessProofAttachmentReviewRow, T4TerminalAccessProofIntakeRow,
         T4TerminalAccessProofReviewRow, T4TerminalAccessProofSourceCaptureRow,
@@ -69089,6 +69180,7 @@ mod tests {
             &beck_t1_rows,
             &beck_t2_rows,
             &source_policy_rows,
+            &[],
             &scenario_hook_rows,
             &bundle_overlay_rows,
         );
@@ -69205,6 +69297,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
@@ -69286,6 +69379,7 @@ mod tests {
             &[],
             &[],
             &beck_t2_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69372,6 +69466,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
@@ -69455,6 +69550,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
@@ -69503,6 +69599,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69575,6 +69672,7 @@ mod tests {
             &[],
             &[],
             &relief_rows,
+            &[],
             &[],
             &[],
             &[],
@@ -69660,6 +69758,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
         let failures = optimizer_constraint_ledger_gate_failures(&rows);
 
@@ -69733,6 +69832,7 @@ mod tests {
             &[],
             &[],
             &[],
+            &[],
         );
 
         let terminal_row = rows
@@ -69748,6 +69848,67 @@ mod tests {
         );
         assert!(!terminal_row.blocks_claims.contains("map"));
         assert!(!terminal_row.blocks_claims.contains("publication"));
+    }
+
+    #[test]
+    fn optimizer_constraint_ledger_applies_source_snapshot_publication_exclusion() {
+        let source_policy_rows = vec![source_fetch_policy_row(
+            "t1-live-event-snapshots",
+            "source-fetch --family t1-live-event-snapshots",
+            "data/source-cache/live-events",
+            "live-snapshot-preserve",
+            "live event snapshots require repeat windows before evidence claims",
+            "preserve live-source mutation history",
+            "repeat-window-required",
+        )];
+        let exclusion_rows = vec![SourceSnapshotPublicationExclusionRow {
+            decision_id: "SOURCE-SNAPSHOT-PUBEXCL-TEST".to_string(),
+            decision_scope: "source-snapshot-publication-scope".to_string(),
+            source_artifact: "data/source-fetch-policy.csv".to_string(),
+            affected_constraint_class: "source_acquisition_snapshot_guard".to_string(),
+            affected_fetch_family: "t1-live-event-snapshots".to_string(),
+            affected_claims_before: "evidence|publication".to_string(),
+            excluded_claims: "publication".to_string(),
+            preserved_claims_after: "evidence".to_string(),
+            decision: "exclude-live-snapshot-guard-from-map-publication".to_string(),
+            decision_basis: "render map without claiming live-event snapshot evidence".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "accepted".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &source_policy_rows,
+            &exclusion_rows,
+            &[],
+            &[],
+        );
+
+        let snapshot_row = rows
+            .iter()
+            .find(|row| row.constraint_class == "source_acquisition_snapshot_guard")
+            .expect("source snapshot guard ledger row");
+
+        assert_eq!(snapshot_row.blocks_claims, "evidence");
+        assert_eq!(
+            snapshot_row.exception_artifact,
+            "data/source-snapshot-publication-exclusion.csv"
+        );
+        assert_eq!(snapshot_row.exception_id, "SOURCE-SNAPSHOT-PUBEXCL-TEST");
+        assert!(!snapshot_row.blocks_claims.contains("publication"));
     }
 
     #[test]

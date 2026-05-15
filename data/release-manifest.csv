@@ -9,6 +9,7 @@ data/source-fetch-policy.csv,source_policy,M10,release_candidate,public,cargo ru
 docs/map-publication-scope.md,map_publication_scope,M10,release_candidate,public,manual review,Doctrine separating render-valid maps from fully publication-valid T1-T4 map claims
 data/map-publication-scope-decision.csv,map_publication_review,M10,release_candidate,public,manual review,Scope decision holding full T1-T4 map publication until real evidence relief or explicit exclusion
 data/t4-terminal-access-map-exclusion.csv,map_publication_review,M10,release_candidate,public,manual review,Accepted scope exclusion removing unresolved T4 terminal-access overlays from current map publication while preserving upgrade evidence holds
+data/source-snapshot-publication-exclusion.csv,map_publication_review,M10,release_candidate,public,manual review,Accepted scope exclusion removing the live snapshot guard from current map publication while preserving evidence holds
 docs/optimizer-artifact-manifest.md,optimizer_docs,M10,release_candidate,public,manual review,Optimizer manifest contract explaining gate statuses held-known blockers and proof ownership
 docs/optimizer-constraint-ledger-spec.md,optimizer_docs,M10,release_candidate,public,manual review,Normalized optimizer constraint and debt ledger contract
 data/tier-optimizer-runs.csv,optimizer_manifest,M10,release_candidate,public,cargo run -q -p route -- optimizer-manifest --gate,Recursive tier optimizer run manifest proving optimizer artifacts remain wired into the bundle
