@@ -1,7 +1,7 @@
 ---
 wave: t2-bundle-overlay-repair-spine
 date_open: 2026-05-13
-status: active
+status: done
 source: waves/2026-05-13-t2-game-ops-binding-burndown/CLOSE.md
 ---
 

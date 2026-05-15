@@ -157,6 +157,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Houston Terminal Connector Proof Rejection | Reject the Houston US96 pairing contradicted by UP terminal and FHWA connector evidence. | done |
 | 2026-05-15 | Terminal Contact Proof Docket Generalization | Expand the positive terminal-contact proof docket beyond Great Lakes so all residual T4 rows can enter governed source-backed review. | done |
 | 2026-05-15 | New Orleans Terminal Proof Acceptance | Accept Port NOLA route-specific truck directions for I-510 and US90Z terminal-contact proof. | done |
+| 2026-05-15 | Fresh Pond Terminal Source Review | Check the current FHWA connector workbook for Fresh Pond and preserve the six held rows because it does not name terminal access routes. | done |
 
 ## Next Active Wave
 
@@ -174,6 +175,10 @@ repair debt. Remaining holds are non-publication claims: source snapshot
 ledgers. The terminal-contact positive proof docket now covers all 69 source-needed
 terminal-contact tasks across 23 districts; accepted proof can flow through the
 same registry/import path for any district, while unresolved rows remain held.
+Fresh Pond was checked against the current FHWA connector workbook after the
+New Orleans acceptance; because the workbook does not name Fresh Pond terminal
+access routes, it does not support accepted or rejected proof for the six
+remaining held rows.
 
 ## Operating Rules
 
