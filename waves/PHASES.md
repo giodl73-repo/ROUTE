@@ -130,12 +130,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Metadata Intake | Define required artifact metadata for accepted priority-A pavement funding evidence metadata sources before source capture. | done |
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Metadata Source Capture | Record source-needed capture placeholders for accepted priority-A pavement funding evidence metadata sources before attachment. | done |
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Metadata Source-Capture Artifact Attachment | Record source-needed artifact-attachment placeholders after accepted metadata source capture. | done |
+| 2026-05-15 | T4 Terminal Access Proof Attachment Review Return | Review terminal-access proof artifact-attachment placeholders and return unresolved map blockers to optimizer hold. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review accepted priority-A pavement
-funding evidence metadata source-capture artifact-attachment placeholders before
-evidence acceptance or asset-condition relief replay.
+No wave is active. Next map-validity work should acquire or cache non-seed T4
+terminal-access proof artifacts for the 69 held route-to-terminal contact rows
+before terminal-access map publication blockers can be replayed.
 
 ## Operating Rules
 
