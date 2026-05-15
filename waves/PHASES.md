@@ -132,12 +132,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Metadata Source-Capture Artifact Attachment | Record source-needed artifact-attachment placeholders after accepted metadata source capture. | done |
 | 2026-05-15 | T4 Terminal Access Proof Attachment Review Return | Review terminal-access proof artifact-attachment placeholders and return unresolved map blockers to optimizer hold. | done |
 | 2026-05-15 | T4 Terminal Access Proof Artifact Acquisition Targets | Turn held terminal-access attachment-review rows into non-seed proof acquisition/cache targets. | done |
+| 2026-05-15 | T4 Terminal Access Proof Artifact Source Access | Classify non-seed proof acquisition targets as manual or cached source-needed before capture. | done |
 
 ## Next Active Wave
 
-No wave is active. Next map-validity work should classify source access and
-capture/attach non-seed T4 terminal-access proof artifacts for the 69 acquisition
-targets before terminal-access map publication blockers can be replayed.
+No wave is active. Next map-validity work should capture and attach non-seed T4
+terminal-access proof artifacts for the 69 source-access rows before
+terminal-access map publication blockers can be replayed.
 
 ## Operating Rules
 
