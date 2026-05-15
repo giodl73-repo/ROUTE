@@ -107,11 +107,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Repair Debt Review | Confirm TX/LA/NM priority-A repair debt rows and preserve claims before funding, downgrade, exclusion, or relief replay. | done |
 | 2026-05-14 | Priority A Pavement Repair Disposition | Decide priority-A repair rows as funding-required and relief-ineligible before any asset-condition relief replay. | done |
 | 2026-05-14 | Priority A Pavement Repair Funding Package | Package priority-A repair funding requirements while preserving unfunded and relief-ineligible status. | done |
+| 2026-05-14 | Priority A Pavement Funding Commitment Review | Review priority-A repair package rows for accepted funding commitments while preserving blockers. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should attach an accepted priority-A
-pavement funding commitment or choose downgrade/exclusion before any
+No wave is active. Next optimizer work should choose downgrade/exclusion or
+attach accepted priority-A pavement funding evidence before any
 asset-condition relief replay.
 
 ## Operating Rules
