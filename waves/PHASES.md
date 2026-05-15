@@ -150,6 +150,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | San Antonio Terminal Proof Rejection | Reject San Antonio Kirby pairings contradicted by Union Pacific I-35 access evidence. | done |
 | 2026-05-15 | US2 Pavement Evidence Replay | Replay HPMS-backed US2 pavement evidence and remove the smallest T2 asset-condition evidence-debt row. | done |
 | 2026-05-15 | US30 US6 Pavement Evidence Replay | Replay HPMS-backed pavement evidence and remove the remaining T2 asset-condition evidence-debt rows. | done |
+| 2026-05-15 | Kansas St. Louis Terminal Proof Rejection | Reject Kansas City and St. Louis pairings contradicted by source-listed terminal access routes. | done |
 
 ## Next Active Wave
 
@@ -157,8 +158,8 @@ No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
-accepted, and thirty-three contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 35. US2 pavement evidence replay
+accepted, and forty contradicted terminal-contact pairings are rejected, reducing
+T4 terminal-access upgrade blockers from 69 to 28. US2 pavement evidence replay
 reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
 US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, all
 repair debt. Remaining holds are non-publication claims: source snapshot
