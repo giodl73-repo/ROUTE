@@ -121,12 +121,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Attachment Review | Review accepted-artifact attachment placeholders after metadata capture and preserve blockers before relief. | done |
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Artifact Acquisition | Turn held accepted-attachment reviews into source-needed acquisition/cache targets before evidence acceptance. | done |
 | 2026-05-15 | Priority A Pavement Funding Evidence Accepted Source Access | Classify accepted-artifact acquisition targets as manual or cached source-needed before intake capture. | done |
+| 2026-05-15 | Priority A Pavement Funding Evidence Accepted Intake | Define required artifact metadata for accepted priority-A pavement funding evidence before source capture. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should define intake/capture requirements
-for accepted priority-A pavement funding evidence artifacts before evidence
-acceptance or asset-condition relief replay.
+No wave is active. Next optimizer work should record accepted priority-A
+pavement funding evidence metadata-capture placeholders before artifact
+attachment, evidence acceptance, or asset-condition relief replay.
 
 ## Operating Rules
 
