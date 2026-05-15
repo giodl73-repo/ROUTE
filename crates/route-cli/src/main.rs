@@ -1249,6 +1249,27 @@ enum Commands {
         gate: bool,
     },
 
+    /// Define intake requirements for priority-A pavement funding evidence
+    TierPavementFundingEvidenceIntake {
+        /// Path to pavement funding evidence source-access CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-funding-evidence-source-access.csv",
+            value_name = "FILE"
+        )]
+        source_access: PathBuf,
+        /// Output pavement funding evidence intake CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-funding-evidence-intake.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if intake rows accept evidence or allow relief
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -8387,6 +8408,35 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement funding evidence source-access gate: PASS");
+            }
+        }
+
+        Commands::TierPavementFundingEvidenceIntake {
+            source_access,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-funding-evidence-intake");
+            let access_rows = load_tier_pavement_funding_evidence_source_access(&source_access)
+                .with_context(|| format!("loading {}", source_access.display()))?;
+            let rows = tier_pavement_funding_evidence_intake_rows(&access_rows);
+            write_tier_pavement_funding_evidence_intake(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_funding_evidence_intake_summary(&output, &rows);
+
+            if gate {
+                let failures =
+                    tier_pavement_funding_evidence_intake_gate_failures(&rows, &access_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement funding evidence intake gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement funding evidence intake gate failed");
+                }
+                println!();
+                println!("Tier pavement funding evidence intake gate: PASS");
             }
         }
 
@@ -20323,6 +20373,30 @@ struct TierPavementFundingEvidenceSourceAccessRow {
     evidence_artifact: String,
     accepted_evidence_status: String,
     relief_eligibility: String,
+    blocked_claims: String,
+    claim_blocker_delta: isize,
+    next_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementFundingEvidenceIntakeRow {
+    funding_evidence_intake_id: String,
+    source_access_id: String,
+    evidence_contract_id: String,
+    state: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    required_artifact_type: String,
+    required_source_metadata: String,
+    intake_status: String,
+    evidence_artifact: String,
+    evidence_review_status: String,
+    accepted_evidence_status: String,
+    relief_eligibility: String,
+    intake_blocker: String,
     blocked_claims: String,
     claim_blocker_delta: isize,
     next_action: String,
@@ -42106,6 +42180,195 @@ fn tier_pavement_funding_evidence_source_access_gate_failures(
     failures
 }
 
+fn load_tier_pavement_funding_evidence_source_access(
+    path: &Path,
+) -> Result<Vec<TierPavementFundingEvidenceSourceAccessRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_funding_evidence_intake_rows(
+    access_rows: &[TierPavementFundingEvidenceSourceAccessRow],
+) -> Vec<TierPavementFundingEvidenceIntakeRow> {
+    access_rows
+        .iter()
+        .filter(|row| {
+            row.access_mode == "manual-or-cached-source-needed"
+                && row.evidence_artifact == "source-needed"
+                && row.accepted_evidence_status == "not-accepted"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .map(|row| TierPavementFundingEvidenceIntakeRow {
+            funding_evidence_intake_id: format!(
+                "PAVEMENTFUNDINGINTAKE-{}",
+                stable_id_fragment(&row.source_access_id)
+            ),
+            source_access_id: row.source_access_id.clone(),
+            evidence_contract_id: row.evidence_contract_id.clone(),
+            state: row.state.clone(),
+            tier: row.tier.clone(),
+            route: row.route.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            required_artifact_type: "accepted-full-cost-programming-or-dot-commitment".to_string(),
+            required_source_metadata: row.required_source_metadata.clone(),
+            intake_status: "artifact-required".to_string(),
+            evidence_artifact: "source-needed".to_string(),
+            evidence_review_status: "not-reviewed".to_string(),
+            accepted_evidence_status: "not-accepted".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            intake_blocker: "accepted funding artifact metadata has not been captured or cached"
+                .to_string(),
+            blocked_claims: row.blocked_claims.clone(),
+            claim_blocker_delta: 0,
+            next_action: "capture accepted funding artifact metadata before attachment and review"
+                .to_string(),
+            next_artifact: "data/tier-pavement-funding-evidence-intake.csv".to_string(),
+            validation_status: "held".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_funding_evidence_intake(
+    path: &Path,
+    rows: &[TierPavementFundingEvidenceIntakeRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_funding_evidence_intake_summary(
+    output: &Path,
+    rows: &[TierPavementFundingEvidenceIntakeRow],
+) {
+    println!(
+        "  wrote {} pavement funding evidence intake rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} {}",
+            row.state, row.route, row.intake_status, row.evidence_artifact
+        );
+    }
+}
+
+fn tier_pavement_funding_evidence_intake_gate_failures(
+    rows: &[TierPavementFundingEvidenceIntakeRow],
+    access_rows: &[TierPavementFundingEvidenceSourceAccessRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = access_rows
+        .iter()
+        .filter(|row| {
+            row.access_mode == "manual-or-cached-source-needed"
+                && row.evidence_artifact == "source-needed"
+                && row.accepted_evidence_status == "not-accepted"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .map(|row| row.source_access_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if expected.is_empty() {
+        failures.push("funding evidence intake has no held source-access rows".to_string());
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "funding evidence intake has {} rows but expected {} source-access rows",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.funding_evidence_intake_id.trim().is_empty()
+            || row.source_access_id.trim().is_empty()
+            || row.evidence_contract_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.required_artifact_type.trim().is_empty()
+            || row.required_source_metadata.trim().is_empty()
+            || row.intake_status.trim().is_empty()
+            || row.evidence_artifact.trim().is_empty()
+            || row.evidence_review_status.trim().is_empty()
+            || row.accepted_evidence_status.trim().is_empty()
+            || row.relief_eligibility.trim().is_empty()
+            || row.intake_blocker.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete funding evidence intake row",
+                row.state, row.route
+            ));
+        }
+        if !seen.insert(row.source_access_id.clone()) {
+            failures.push(format!("{} appears more than once", row.source_access_id));
+        }
+        if !expected.contains(row.source_access_id.as_str()) {
+            failures.push(format!(
+                "{} is not a held source-access row",
+                row.source_access_id
+            ));
+        }
+        if row.required_artifact_type != "accepted-full-cost-programming-or-dot-commitment"
+            || row.intake_status != "artifact-required"
+            || row.evidence_artifact != "source-needed"
+        {
+            failures.push(format!(
+                "{} {} has unsupported funding evidence intake status",
+                row.state, row.route
+            ));
+        }
+        if row.evidence_review_status != "not-reviewed"
+            || row.accepted_evidence_status != "not-accepted"
+            || row.relief_eligibility != "not-eligible-for-relief"
+        {
+            failures.push(format!(
+                "{} {} accepts evidence or relief prematurely",
+                row.state, row.route
+            ));
+        }
+        if row.claim_blocker_delta != 0 {
+            failures.push(format!(
+                "{} {} changes blockers before relief",
+                row.state, row.route
+            ));
+        }
+        if row.validation_status != "held" {
+            failures.push(format!("{} {} is not held", row.state, row.route));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!(
+                "missing funding evidence intake row for {expected_id}"
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -49677,6 +49940,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement funding evidence source access requires manual or cached accepted artifacts",
             ),
             (
+                "tier-pavement-funding-evidence-intake",
+                "route tier-pavement-funding-evidence-intake --gate",
+                "data/tier-pavement-funding-evidence-intake.csv",
+                "held-known",
+                3,
+                "priority-A pavement funding evidence intake defines metadata requirements without evidence acceptance",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -56262,6 +56533,8 @@ mod tests {
         tier_pavement_funding_evidence_artifact_attachment_rows,
         tier_pavement_funding_evidence_contract_gate_failures,
         tier_pavement_funding_evidence_contract_rows,
+        tier_pavement_funding_evidence_intake_gate_failures,
+        tier_pavement_funding_evidence_intake_rows,
         tier_pavement_funding_evidence_review_docket_gate_failures,
         tier_pavement_funding_evidence_review_docket_rows,
         tier_pavement_funding_evidence_source_access_gate_failures,
@@ -56334,13 +56607,13 @@ mod tests {
         TierPavementDowngradeExclusionDecisionRow, TierPavementFundingCommitmentReviewRow,
         TierPavementFundingEvidenceAcquisitionRow,
         TierPavementFundingEvidenceArtifactAttachmentRow, TierPavementFundingEvidenceContractRow,
-        TierPavementFundingEvidenceReviewDocketRow, TierPavementFundingEvidenceSourceCaptureRow,
-        TierPavementHpmsScopeBroadeningRow, TierPavementRepairDebtReviewRow,
-        TierPavementRepairDispositionRow, TierPavementRepairFundingPackageRow,
-        TierPavementSourceAccessRow, TierPavementSourceFetchAttemptRow,
-        TierPavementSourceFetchReviewRow, TierPavementSourceGapRow,
-        TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementFundingEvidenceReviewDocketRow, TierPavementFundingEvidenceSourceAccessRow,
+        TierPavementFundingEvidenceSourceCaptureRow, TierPavementHpmsScopeBroadeningRow,
+        TierPavementRepairDebtReviewRow, TierPavementRepairDispositionRow,
+        TierPavementRepairFundingPackageRow, TierPavementSourceAccessRow,
+        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
+        TierPavementSourceGapRow, TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -66592,6 +66865,49 @@ mod tests {
             "unsupported-no-safe-funding-commitment-fetcher"
         );
         assert_eq!(rows[0].evidence_artifact, "source-needed");
+        assert_eq!(rows[0].accepted_evidence_status, "not-accepted");
+        assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn tier_pavement_funding_evidence_intake_requires_metadata() {
+        let access_rows = vec![TierPavementFundingEvidenceSourceAccessRow {
+            source_access_id: "PAVEMENTFUNDINGACCESS-TX-I220".to_string(),
+            funding_evidence_acquisition_id: "PAVEMENTFUNDINGACQUIRE-TX-I220".to_string(),
+            evidence_contract_id: "PAVEMENTFUNDINGEVIDENCE-TX-I220".to_string(),
+            state: "TX".to_string(),
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            source_owner: "TX DOT or accepted programming authority".to_string(),
+            access_mode: "manual-or-cached-source-needed".to_string(),
+            live_fetch_status: "unsupported-no-safe-funding-commitment-fetcher".to_string(),
+            required_source_metadata:
+                "source title; source url or cached artifact; capture date; issuing agency; committed amount; covered route and state"
+                    .to_string(),
+            cache_policy_artifact: "docs/source-fetch-cache-policy.md;data/source-fetch-policy.csv"
+                .to_string(),
+            source_access_blocker: "no safe live funding-commitment fetch command exists"
+                .to_string(),
+            evidence_artifact: "source-needed".to_string(),
+            accepted_evidence_status: "not-accepted".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_action: "collect manual or cached accepted funding artifact".to_string(),
+            next_artifact: "data/tier-pavement-funding-evidence-source-access.csv".to_string(),
+            validation_status: "held".to_string(),
+        }];
+
+        let rows = tier_pavement_funding_evidence_intake_rows(&access_rows);
+        let failures = tier_pavement_funding_evidence_intake_gate_failures(&rows, &access_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].intake_status, "artifact-required");
+        assert_eq!(rows[0].evidence_artifact, "source-needed");
+        assert_eq!(rows[0].evidence_review_status, "not-reviewed");
         assert_eq!(rows[0].accepted_evidence_status, "not-accepted");
         assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
         assert_eq!(rows[0].claim_blocker_delta, 0);

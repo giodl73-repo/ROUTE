@@ -115,11 +115,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Funding Evidence Review Docket | Review unattached priority-A pavement funding evidence placeholders and preserve blockers before any relief replay. | done |
 | 2026-05-14 | Priority A Pavement Funding Evidence Acquisition | Turn held priority-A pavement funding evidence reviews into source-needed accepted-artifact acquisition targets. | done |
 | 2026-05-14 | Priority A Pavement Funding Evidence Source Access | Classify accepted-artifact acquisition targets as manual or cached source-needed before collection. | done |
+| 2026-05-14 | Priority A Pavement Funding Evidence Intake | Define required metadata for accepted priority-A pavement funding artifacts before collection. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should define intake requirements for
-priority-A pavement funding evidence before any asset-condition relief replay.
+No wave is active. Next optimizer work should capture priority-A pavement
+funding evidence sources before any asset-condition relief replay.
 
 ## Operating Rules
 
