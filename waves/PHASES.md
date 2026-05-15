@@ -101,11 +101,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Fetch Attempt | Record scoped TX/LA/NM pavement fetch attempt outcomes without accepting evidence or reducing debt. | done |
 | 2026-05-14 | Priority A Pavement Fetch Review | Review scoped TX/LA/NM pavement fetch outcomes against current source gaps without accepting evidence or reducing debt. | done |
 | 2026-05-14 | Priority A NM Pavement Fetch Repair | Repair the New Mexico HPMS service-name fetch defect and reclassify NM as populated but still unaccepted pavement evidence. | done |
+| 2026-05-14 | Priority A Pavement Unmatched Join Review | Separate source-needed US-route pavement members from repair debt after populated TX/LA/NM HPMS fetches. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review unmatched TX/LA/NM HPMS
-joins with state DOT pavement evidence before any asset-condition debt relief.
+No wave is active. Next optimizer work should attach state DOT pavement
+condition evidence or broaden HPMS fetch scope for the TX/LA/NM source-needed
+US-route members before any asset-condition debt relief.
 
 ## Operating Rules
 
