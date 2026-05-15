@@ -24,9 +24,9 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 23,t2-parallel-service-queue,route t2-parallel-service-queue --gate,data/t2-parallel-service-queue.csv,1,pass,0,,pass
 24,tier-segment-candidates,route tier-segment-candidates --gate,data/tier-segment-candidates.csv,3947,pass,0,,pass
 25,tier-pavement-docket,route tier-pavement-docket --gate,data/tier-pavement-docket.csv,3947,pass,0,,pass
-26,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,9,pass,0,,pass
-27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,9,pass,0,,pass
-28,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,28,pass,0,,pass
+26,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,8,pass,0,,pass
+27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,8,pass,0,,pass
+28,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,19,pass,0,,pass
 29,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,28,pass,0,,pass
 30,tier-pavement-source-access,route tier-pavement-source-access --gate,data/tier-pavement-source-access.csv,3,held-known,3,priority-A pavement fetches preserve asset-condition blockers until scoped evidence is rebuilt and reviewed,held
 31,tier-pavement-source-fetch-attempt,route tier-pavement-source-fetch-attempt --gate,data/tier-pavement-source-fetch-attempt.csv,3,held-known,3,priority-A pavement fetch attempts preserve blockers until cache rows are rebuilt and reviewed,held
@@ -59,8 +59,8 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 58,tier-pavement-funding-evidence-accepted-metadata-intake,route tier-pavement-funding-evidence-accepted-metadata-intake --gate,data/tier-pavement-funding-evidence-accepted-metadata-intake.csv,4,held-known,3,priority-A pavement funding evidence accepted metadata intake defines required artifacts without evidence acceptance,held
 59,tier-pavement-funding-evidence-accepted-metadata-source-capture,route tier-pavement-funding-evidence-accepted-metadata-source-capture --gate,data/tier-pavement-funding-evidence-accepted-metadata-source-capture.csv,4,held-known,3,priority-A pavement funding evidence accepted metadata source capture preserves source-needed artifact holds,held
 60,tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment,route tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment --gate,data/tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment.csv,4,held-known,3,priority-A pavement funding evidence accepted metadata source-capture artifact attachment preserves source-needed artifact holds,held
-61,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,98,pass,0,,pass
-62,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,97,pass,0,,pass
+61,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,97,pass,0,,pass
+62,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,96,pass,0,,pass
 63,optimizer-residual-blocker-backlog,route optimizer-residual-blocker-backlog --gate,data/optimizer-residual-blocker-backlog.csv,3,held-known,117,Residual constraint-budget blockers are grouped into next optimizer wave families,held
 64,optimizer-claim-review,route optimizer-claim-review --gate,data/optimizer-claim-review.csv,6,held-known,31,P1 optimizer claim blockers remain held for source-specific review,held
 65,t2-game-publication-evidence-review,route t2-game-publication-evidence-review --gate,data/t2-game-publication-evidence-review.csv,3,held-known,3,T2 game publication readiness blockers remain held pending evidence policy,held
