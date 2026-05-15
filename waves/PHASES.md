@@ -108,12 +108,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Repair Disposition | Decide priority-A repair rows as funding-required and relief-ineligible before any asset-condition relief replay. | done |
 | 2026-05-14 | Priority A Pavement Repair Funding Package | Package priority-A repair funding requirements while preserving unfunded and relief-ineligible status. | done |
 | 2026-05-14 | Priority A Pavement Funding Commitment Review | Review priority-A repair package rows for accepted funding commitments while preserving blockers. | done |
+| 2026-05-14 | Priority A Pavement Downgrade Exclusion Decision | Select no downgrade and no exclusion for unfunded priority-A repair rows while preserving blockers. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should choose downgrade/exclusion or
-attach accepted priority-A pavement funding evidence before any
-asset-condition relief replay.
+No wave is active. Next optimizer work should attach accepted priority-A
+pavement funding evidence before any asset-condition relief replay.
 
 ## Operating Rules
 

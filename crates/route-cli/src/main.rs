@@ -1102,6 +1102,27 @@ enum Commands {
         gate: bool,
     },
 
+    /// Decide downgrade or exclusion status for unfunded priority-A pavement repair rows
+    TierPavementDowngradeExclusionDecision {
+        /// Path to pavement funding commitment review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-funding-commitment-review.csv",
+            value_name = "FILE"
+        )]
+        funding_commitment_review: PathBuf,
+        /// Output pavement downgrade/exclusion decision CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-downgrade-exclusion-decision.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if decisions reduce blockers or grant relief
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -5191,7 +5212,7 @@ enum GameCommand {
 fn main() -> Result<()> {
     std::thread::Builder::new()
         .name("route-cli".to_string())
-        .stack_size(8 * 1024 * 1024)
+        .stack_size(32 * 1024 * 1024)
         .spawn(run_cli)
         .context("spawning route CLI thread")?
         .join()
@@ -8020,6 +8041,38 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement funding commitment review gate: PASS");
+            }
+        }
+
+        Commands::TierPavementDowngradeExclusionDecision {
+            funding_commitment_review,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-downgrade-exclusion-decision");
+            let commitment_rows =
+                load_tier_pavement_funding_commitment_review(&funding_commitment_review)
+                    .with_context(|| format!("loading {}", funding_commitment_review.display()))?;
+            let rows = tier_pavement_downgrade_exclusion_decision_rows(&commitment_rows);
+            write_tier_pavement_downgrade_exclusion_decision(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_downgrade_exclusion_decision_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_pavement_downgrade_exclusion_decision_gate_failures(
+                    &rows,
+                    &commitment_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement downgrade/exclusion decision gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement downgrade/exclusion decision gate failed");
+                }
+                println!();
+                println!("Tier pavement downgrade/exclusion decision gate: PASS");
             }
         }
 
@@ -19799,6 +19852,26 @@ struct TierPavementFundingCommitmentReviewRow {
     estimated_repair_cost_m: f64,
     funding_commitment_status: String,
     accepted_commitment_artifact: String,
+    relief_eligibility: String,
+    blocked_claims: String,
+    claim_blocker_delta: isize,
+    next_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementDowngradeExclusionDecisionRow {
+    downgrade_exclusion_decision_id: String,
+    commitment_review_id: String,
+    state: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    estimated_repair_cost_m: f64,
+    downgrade_decision: String,
+    exclusion_decision: String,
+    service_status: String,
     relief_eligibility: String,
     blocked_claims: String,
     claim_blocker_delta: isize,
@@ -40288,6 +40361,175 @@ fn tier_pavement_funding_commitment_review_gate_failures(
     failures
 }
 
+fn load_tier_pavement_funding_commitment_review(
+    path: &Path,
+) -> Result<Vec<TierPavementFundingCommitmentReviewRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_downgrade_exclusion_decision_rows(
+    commitment_rows: &[TierPavementFundingCommitmentReviewRow],
+) -> Vec<TierPavementDowngradeExclusionDecisionRow> {
+    commitment_rows
+        .iter()
+        .filter(|row| {
+            row.funding_commitment_status == "no-accepted-commitment-attached"
+                && row.accepted_commitment_artifact == "none"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .map(|row| TierPavementDowngradeExclusionDecisionRow {
+            downgrade_exclusion_decision_id: format!(
+                "PAVEMENTDOWNGRADEEXCLUSION-{}",
+                stable_id_fragment(&row.commitment_review_id)
+            ),
+            commitment_review_id: row.commitment_review_id.clone(),
+            state: row.state.clone(),
+            tier: row.tier.clone(),
+            route: row.route.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            estimated_repair_cost_m: row.estimated_repair_cost_m,
+            downgrade_decision: "no-downgrade-selected".to_string(),
+            exclusion_decision: "no-exclusion-selected".to_string(),
+            service_status: "held-at-current-tier".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: row.blocked_claims.clone(),
+            claim_blocker_delta: 0,
+            next_action:
+                "attach accepted funding evidence before relief replay or open a separate downgrade/exclusion authorization"
+                    .to_string(),
+            next_artifact: "data/tier-pavement-downgrade-exclusion-decision.csv".to_string(),
+            validation_status: "held".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_downgrade_exclusion_decision(
+    path: &Path,
+    rows: &[TierPavementDowngradeExclusionDecisionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_downgrade_exclusion_decision_summary(
+    output: &Path,
+    rows: &[TierPavementDowngradeExclusionDecisionRow],
+) {
+    println!(
+        "  wrote {} pavement downgrade/exclusion decision rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} {}",
+            row.state, row.route, row.downgrade_decision, row.exclusion_decision
+        );
+    }
+}
+
+fn tier_pavement_downgrade_exclusion_decision_gate_failures(
+    rows: &[TierPavementDowngradeExclusionDecisionRow],
+    commitment_rows: &[TierPavementFundingCommitmentReviewRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = commitment_rows
+        .iter()
+        .filter(|row| {
+            row.funding_commitment_status == "no-accepted-commitment-attached"
+                && row.accepted_commitment_artifact == "none"
+                && row.relief_eligibility == "not-eligible-for-relief"
+                && row.validation_status == "held"
+        })
+        .count();
+    if expected > 0 && rows.len() != expected {
+        failures.push(format!(
+            "downgrade/exclusion decision rows {} do not match commitment review rows {}",
+            rows.len(),
+            expected
+        ));
+    }
+    for row in rows {
+        if row.downgrade_exclusion_decision_id.trim().is_empty()
+            || row.commitment_review_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.downgrade_decision.trim().is_empty()
+            || row.exclusion_decision.trim().is_empty()
+            || row.service_status.trim().is_empty()
+            || row.relief_eligibility.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete downgrade/exclusion row",
+                row.state, row.route
+            ));
+        }
+        if row.downgrade_decision != "no-downgrade-selected" {
+            failures.push(format!(
+                "{} {} downgrades without authorization",
+                row.state, row.route
+            ));
+        }
+        if row.exclusion_decision != "no-exclusion-selected" {
+            failures.push(format!(
+                "{} {} excludes without authorization",
+                row.state, row.route
+            ));
+        }
+        if row.service_status != "held-at-current-tier" {
+            failures.push(format!(
+                "{} {} changes service status",
+                row.state, row.route
+            ));
+        }
+        if row.relief_eligibility != "not-eligible-for-relief" {
+            failures.push(format!(
+                "{} {} is relief eligible without funding or authorized downgrade/exclusion",
+                row.state, row.route
+            ));
+        }
+        if row.claim_blocker_delta != 0 {
+            failures.push(format!(
+                "{} {} reduces blockers before relief",
+                row.state, row.route
+            ));
+        }
+        if row.estimated_repair_cost_m <= 0.0 {
+            failures.push(format!(
+                "{} {} lacks repair cost magnitude",
+                row.state, row.route
+            ));
+        }
+        if row.validation_status != "held" {
+            failures.push(format!("{} {} is not held", row.state, row.route));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -47803,6 +48045,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement funding commitment review finds no accepted commitment attached and preserves blockers",
             ),
             (
+                "tier-pavement-downgrade-exclusion-decision",
+                "route tier-pavement-downgrade-exclusion-decision --gate",
+                "data/tier-pavement-downgrade-exclusion-decision.csv",
+                "held-known",
+                3,
+                "priority-A pavement downgrade/exclusion decision keeps service held at current tier without relief",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -54378,6 +54628,8 @@ mod tests {
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
         tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
+        tier_pavement_downgrade_exclusion_decision_gate_failures,
+        tier_pavement_downgrade_exclusion_decision_rows,
         tier_pavement_funding_commitment_review_gate_failures,
         tier_pavement_funding_commitment_review_rows,
         tier_pavement_hpms_scope_broadening_gate_failures,
@@ -54442,12 +54694,13 @@ mod tests {
         T4TerminalContactSourceCatalogRow, T4TerminalContactSourcePlanRow,
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
-        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementHpmsScopeBroadeningRow,
-        TierPavementRepairDebtReviewRow, TierPavementRepairDispositionRow,
-        TierPavementRepairFundingPackageRow, TierPavementSourceAccessRow,
-        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
-        TierPavementSourceGapRow, TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementFundingCommitmentReviewRow,
+        TierPavementHpmsScopeBroadeningRow, TierPavementRepairDebtReviewRow,
+        TierPavementRepairDispositionRow, TierPavementRepairFundingPackageRow,
+        TierPavementSourceAccessRow, TierPavementSourceFetchAttemptRow,
+        TierPavementSourceFetchReviewRow, TierPavementSourceGapRow,
+        TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -64441,6 +64694,39 @@ mod tests {
             "no-accepted-commitment-attached"
         );
         assert_eq!(rows[0].accepted_commitment_artifact, "none");
+        assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn tier_pavement_downgrade_exclusion_decision_keeps_service_held() {
+        let commitment_rows = vec![TierPavementFundingCommitmentReviewRow {
+            commitment_review_id: "PAVEMENTFUNDINGCOMMITMENT-TX-I220".to_string(),
+            funding_package_id: "PAVEMENTREPAIRFUNDING-TX-I220".to_string(),
+            state: "TX".to_string(),
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            estimated_repair_cost_m: 10.0,
+            funding_commitment_status: "no-accepted-commitment-attached".to_string(),
+            accepted_commitment_artifact: "none".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_action: "choose downgrade/exclusion".to_string(),
+            next_artifact: "data/tier-pavement-funding-commitment-review.csv".to_string(),
+            validation_status: "held".to_string(),
+        }];
+
+        let rows = tier_pavement_downgrade_exclusion_decision_rows(&commitment_rows);
+        let failures =
+            tier_pavement_downgrade_exclusion_decision_gate_failures(&rows, &commitment_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].downgrade_decision, "no-downgrade-selected");
+        assert_eq!(rows[0].exclusion_decision, "no-exclusion-selected");
+        assert_eq!(rows[0].service_status, "held-at-current-tier");
         assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
         assert_eq!(rows[0].claim_blocker_delta, 0);
     }
