@@ -155,6 +155,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Atlanta Philadelphia Terminal Proof Rejection | Reject Atlanta and Philadelphia pairings contradicted by source-listed terminal access routes. | done |
 | 2026-05-15 | FHWA Terminal Connector Proof Rejection | Reject Memphis, Salt Lake, Portland, Miami, and New Orleans pairings contradicted by FHWA connector listings. | done |
 | 2026-05-15 | Houston Terminal Connector Proof Rejection | Reject the Houston US96 pairing contradicted by UP terminal and FHWA connector evidence. | done |
+| 2026-05-15 | Terminal Contact Proof Docket Generalization | Expand the positive terminal-contact proof docket beyond Great Lakes so all residual T4 rows can enter governed source-backed review. | done |
 
 ## Next Active Wave
 
@@ -169,7 +170,9 @@ US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, all
 repair debt. Remaining holds are non-publication claims: source snapshot
 `evidence`, T4 terminal-access `upgrade`, and T2 asset-condition
 `sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
-ledgers.
+ledgers. The terminal-contact positive proof docket now covers all 69 source-needed
+terminal-contact tasks across 23 districts; accepted proof can flow through the
+same registry/import path for any district, while unresolved rows remain held.
 
 ## Operating Rules
 

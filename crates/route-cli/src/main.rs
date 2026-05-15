@@ -3215,7 +3215,7 @@ enum Commands {
         gate: bool,
     },
 
-    /// Emit Great Lakes terminal-contact source acquisition plan
+    /// Emit terminal-contact source acquisition plan
     T4TerminalContactSourcePlan {
         /// T4 terminal contact evidence queue CSV
         #[arg(
@@ -3232,14 +3232,14 @@ enum Commands {
             value_name = "FILE"
         )]
         output: PathBuf,
-        /// Output Great Lakes terminal district source catalog CSV
+        /// Output terminal district source catalog CSV
         #[arg(
             long,
             default_value = "data/t4-terminal-contact-source-catalog.csv",
             value_name = "FILE"
         )]
         catalog_output: PathBuf,
-        /// Output Great Lakes route contact proof docket CSV
+        /// Output route contact proof docket CSV
         #[arg(
             long,
             default_value = "data/t4-terminal-contact-proof-docket.csv",
@@ -3268,7 +3268,7 @@ enum Commands {
 
     /// Emit terminal-contact proof source registry
     T4TerminalContactProofSourceRegistry {
-        /// Great Lakes route contact proof docket CSV
+        /// Route contact proof docket CSV
         #[arg(
             long,
             default_value = "data/t4-terminal-contact-proof-docket.csv",
@@ -3319,7 +3319,7 @@ enum Commands {
 
     /// Emit Columbus South terminal-contact proof intake from Great Lakes proof docket
     T4TerminalColumbusProofIntake {
-        /// Great Lakes route contact proof docket CSV
+        /// Route contact proof docket CSV
         #[arg(
             long,
             default_value = "data/t4-terminal-contact-proof-docket.csv",
@@ -50993,7 +50993,7 @@ fn t4_terminal_contact_source_plan_rows(
 ) -> Vec<T4TerminalContactSourcePlanRow> {
     let mut rows = contact_rows
         .iter()
-        .filter(|row| row.zone_id == "t3-great-lakes" && row.decision == "source-needed")
+        .filter(|row| row.decision == "source-needed")
         .map(|row| T4TerminalContactSourcePlanRow {
             plan_id: format!("T4SOURCEPLAN-{}", stable_id_fragment(&row.queue_id)),
             queue_id: row.queue_id.clone(),
@@ -51011,7 +51011,7 @@ fn t4_terminal_contact_source_plan_rows(
                 "terminal district seed is not route-to-terminal contact proof; acquire separate source"
                     .to_string(),
             next_artifact:
-                "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-02.md"
+                "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-02.md"
                     .to_string(),
             validation_status: "review".to_string(),
         })
@@ -51101,7 +51101,7 @@ fn t4_terminal_contact_source_catalog_rows(
             cache_policy_artifact: "docs/source-fetch-cache-policy.md;data/source-fetch-policy.csv"
                 .to_string(),
             next_artifact:
-                "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-03.md"
+                "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-03.md"
                     .to_string(),
             validation_status: "review".to_string(),
         })
@@ -51151,17 +51151,17 @@ fn t4_terminal_contact_source_plan_gate_failures(
     let mut failures = Vec::new();
     let expected_ids = contact_rows
         .iter()
-        .filter(|row| row.zone_id == "t3-great-lakes" && row.decision == "source-needed")
+        .filter(|row| row.decision == "source-needed")
         .map(|row| row.queue_id.as_str())
         .collect::<std::collections::BTreeSet<_>>();
 
     if rows.is_empty() {
-        failures.push("no Great Lakes terminal contact source plan rows emitted".to_string());
+        failures.push("no terminal contact source plan rows emitted".to_string());
         return failures;
     }
     if rows.len() != expected_ids.len() {
         failures.push(format!(
-            "source plan has {} rows but expected {} Great Lakes source-needed rows",
+            "source plan has {} rows but expected {} source-needed rows",
             rows.len(),
             expected_ids.len()
         ));
@@ -51190,12 +51190,9 @@ fn t4_terminal_contact_source_plan_gate_failures(
                 row.queue_id
             ));
         }
-        if row.zone_id != "t3-great-lakes" {
-            failures.push(format!("{} is not a Great Lakes row", row.queue_id));
-        }
         if !expected_ids.contains(row.queue_id.as_str()) {
             failures.push(format!(
-                "{} is not a Great Lakes source-needed contact row",
+                "{} is not a source-needed contact row",
                 row.queue_id
             ));
         }
@@ -51269,7 +51266,7 @@ fn t4_terminal_contact_source_catalog_gate_failures(
     );
 
     if rows.is_empty() {
-        failures.push("no Great Lakes terminal district source catalog rows emitted".to_string());
+        failures.push("no terminal district source catalog rows emitted".to_string());
         return failures;
     }
     if rows.len() != expected.len() {
@@ -51311,7 +51308,7 @@ fn t4_terminal_contact_source_catalog_gate_failures(
                 row.terminal_district, row.route_task_count, expected_count
             )),
             None => failures.push(format!(
-                "{} does not appear in the Great Lakes route source plan",
+                "{} does not appear in the route source plan",
                 row.terminal_district
             )),
         }
@@ -51399,7 +51396,7 @@ fn t4_terminal_contact_proof_docket_rows(
                     "no scenario-readiness until contact proof source and attachment are accepted"
                         .to_string(),
                 next_artifact:
-                    "waves/2026-05-13-great-lakes-terminal-contact-sources/plans/pulse-04.md"
+                    "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-04.md"
                         .to_string(),
                 validation_status: "review".to_string(),
             }
@@ -51468,7 +51465,7 @@ fn t4_terminal_contact_proof_docket_gate_failures(
         .collect::<std::collections::BTreeSet<_>>();
 
     if rows.is_empty() {
-        failures.push("no Great Lakes terminal contact proof docket rows emitted".to_string());
+        failures.push("no terminal contact proof docket rows emitted".to_string());
         return failures;
     }
     if rows.len() != expected_ids.len() {
@@ -51509,12 +51506,9 @@ fn t4_terminal_contact_proof_docket_gate_failures(
                 row.queue_id
             ));
         }
-        if row.zone_id != "t3-great-lakes" {
-            failures.push(format!("{} is not a Great Lakes proof task", row.queue_id));
-        }
         if !expected_ids.contains(row.queue_id.as_str()) {
             failures.push(format!(
-                "{} does not appear in the Great Lakes source plan",
+                "{} does not appear in the source plan",
                 row.queue_id
             ));
         }
@@ -56691,24 +56685,24 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "route t4-terminal-contact-source-plan --gate",
                 "data/t4-terminal-contact-source-plan.csv",
                 "held-known",
-                33,
-                "Great Lakes terminal contact source plan rows remain source-needed",
+                69,
+                "Terminal contact source plan rows remain source-needed",
             ),
             (
                 "t4-terminal-contact-source-catalog",
                 "route t4-terminal-contact-source-plan --gate",
                 "data/t4-terminal-contact-source-catalog.csv",
                 "held-known",
-                8,
-                "Great Lakes terminal district source families remain source-needed",
+                23,
+                "Terminal district source families remain source-needed",
             ),
             (
                 "t4-terminal-contact-proof-docket",
                 "route t4-terminal-contact-source-plan --gate",
                 "data/t4-terminal-contact-proof-docket.csv",
                 "held-known",
-                33,
-                "Great Lakes route contact proof tasks remain source-needed",
+                69,
+                "Route contact proof tasks remain source-needed",
             ),
             (
                 "t4-terminal-contact-proof-artifact-contract",
@@ -56723,8 +56717,8 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "route t4-terminal-contact-proof-source-registry --gate",
                 "data/t4-terminal-contact-proof-source-registry.csv",
                 "held-known",
-                33,
-                "Great Lakes terminal contact proof source registry rows remain source-needed until manual or cached proof artifacts are attached",
+                68,
+                "Terminal contact proof source registry rows remain source-needed until manual or cached proof artifacts are attached",
             ),
             (
                 "t4-terminal-contact-district-proof-import",
@@ -65597,7 +65591,7 @@ mod tests {
     }
 
     #[test]
-    fn t4_terminal_contact_source_plan_covers_great_lakes_source_needed_rows() {
+    fn t4_terminal_contact_source_plan_covers_all_source_needed_rows() {
         let contact_rows = vec![
             T4TerminalContactEvidenceRow {
                 queue_id: "T4CONTACT-T3GREATLAKES-I294".to_string(),
@@ -65662,8 +65656,7 @@ mod tests {
         let failures = t4_terminal_contact_source_plan_gate_failures(&rows, &contact_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
-        assert_eq!(rows.len(), 2);
-        assert!(rows.iter().all(|row| row.zone_id == "t3-great-lakes"));
+        assert_eq!(rows.len(), 3);
         assert!(rows
             .iter()
             .all(|row| row.contact_proof_source_artifact == "source-needed"));
@@ -65676,6 +65669,9 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.route == "US22" && row.terminal_district == "Columbus South"));
+        assert!(rows
+            .iter()
+            .any(|row| row.route == "US90Z" && row.terminal_district == "New Orleans Gentilly"));
     }
 
     #[test]
@@ -66172,8 +66168,7 @@ mod tests {
         assert!(
             failures
                 .iter()
-                .any(|failure| failure
-                    .contains("does not appear in the Great Lakes route source plan")),
+                .any(|failure| failure.contains("does not appear in the route source plan")),
             "{failures:?}"
         );
     }
