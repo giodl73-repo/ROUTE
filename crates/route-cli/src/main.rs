@@ -3760,6 +3760,28 @@ enum Commands {
         gate: bool,
     },
 
+    /// Emit T2 game/ops bundle evidence blocker relief rows from accepted policy
+    T2GameOpsBundleEvidenceBlockerRelief {
+        /// T2 game/ops bundle evidence policy acceptance CSV
+        #[arg(
+            long,
+            default_value = "data/t2-game-ops-bundle-evidence-policy-acceptance.csv",
+            value_name = "FILE"
+        )]
+        acceptance: PathBuf,
+        /// Output T2 game/ops bundle evidence blocker relief CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/t2-game-ops-bundle-evidence-blocker-relief.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if relief rows omit accepted policies or do not reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Emit diagnostic decisions for T2 service-overlay repair rows
     T2ServiceOverlayDiagnosticDecisions {
         /// T2 service-class repair docket CSV
@@ -11361,6 +11383,37 @@ fn run_cli() -> Result<()> {
             }
         }
 
+        Commands::T2GameOpsBundleEvidenceBlockerRelief {
+            acceptance,
+            output,
+            gate,
+        } => {
+            println!("route t2-game-ops-bundle-evidence-blocker-relief");
+            let acceptance_rows = load_t2_game_ops_bundle_evidence_policy_acceptance(&acceptance)
+                .with_context(|| format!("loading {}", acceptance.display()))?;
+            let rows = t2_game_ops_bundle_evidence_blocker_relief_rows(&acceptance_rows);
+            write_t2_game_ops_bundle_evidence_blocker_relief(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_t2_game_ops_bundle_evidence_blocker_relief_summary(&output, &rows);
+
+            if gate {
+                let failures = t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
+                    &rows,
+                    &acceptance_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("T2 game/ops bundle evidence blocker relief gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("T2 game/ops bundle evidence blocker relief gate failed");
+                }
+                println!();
+                println!("T2 game/ops bundle evidence blocker relief gate: PASS");
+            }
+        }
+
         Commands::T2ServiceOverlayDiagnosticDecisions {
             service_docket,
             targets,
@@ -18362,6 +18415,25 @@ struct T2GameOpsBundleEvidencePolicyAcceptanceRow {
     blocker_count_before: usize,
     blocker_count_after: usize,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T2GameOpsBundleEvidenceBlockerReliefRow {
+    relief_id: String,
+    acceptance_id: String,
+    policy_id: String,
+    route: String,
+    segment_bundle_id: String,
+    accepted_required_evidence: String,
+    relief_decision: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    blocker_count_before: usize,
+    blocker_count_after: usize,
+    claim_blocker_delta: isize,
+    ledger_replay_status: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -27327,6 +27399,201 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_gate_failures(
     if total_after != expected_blockers {
         failures.push(format!(
             "T2 game/ops bundle evidence policy acceptance preserves {total_after} blockers but policy rows have {expected_blockers}"
+        ));
+    }
+    failures
+}
+
+fn load_t2_game_ops_bundle_evidence_policy_acceptance(
+    path: &Path,
+) -> Result<Vec<T2GameOpsBundleEvidencePolicyAcceptanceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn t2_game_ops_bundle_evidence_blocker_relief_rows(
+    acceptance_rows: &[T2GameOpsBundleEvidencePolicyAcceptanceRow],
+) -> Vec<T2GameOpsBundleEvidenceBlockerReliefRow> {
+    let mut rows = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "bundle-evidence-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| T2GameOpsBundleEvidenceBlockerReliefRow {
+            relief_id: format!(
+                "T2GAMEOPSBUNDLERELIEF-{}",
+                stable_id_fragment(&row.acceptance_id)
+            ),
+            acceptance_id: row.acceptance_id.clone(),
+            policy_id: row.policy_id.clone(),
+            route: row.route.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            accepted_required_evidence: row.accepted_required_evidence.clone(),
+            relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
+            blocker_claims_before: row.blocker_claims_after.clone(),
+            blocker_claims_after: String::new(),
+            blocker_count_before: row.blocker_count_after,
+            blocker_count_after: 0,
+            claim_blocker_delta: -(row.blocker_count_after as isize),
+            ledger_replay_status: "pending-optimizer-constraint-ledger-replay".to_string(),
+            next_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
+            validation_status: "review".to_string(),
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.route
+            .cmp(&right.route)
+            .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
+    });
+    rows
+}
+
+fn write_t2_game_ops_bundle_evidence_blocker_relief(
+    path: &Path,
+    rows: &[T2GameOpsBundleEvidenceBlockerReliefRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_t2_game_ops_bundle_evidence_blocker_relief_summary(
+    output: &Path,
+    rows: &[T2GameOpsBundleEvidenceBlockerReliefRow],
+) {
+    let before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    println!(
+        "  wrote {} T2 game/ops bundle evidence blocker relief rows to {}",
+        rows.len(),
+        output.display()
+    );
+    println!("  claim blockers before: {before}");
+    println!("  claim blockers after: {after}");
+}
+
+fn t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
+    rows: &[T2GameOpsBundleEvidenceBlockerReliefRow],
+    acceptance_rows: &[T2GameOpsBundleEvidencePolicyAcceptanceRow],
+) -> Vec<String> {
+    let expected = acceptance_rows
+        .iter()
+        .filter(|row| {
+            row.acceptance_decision == "bundle-evidence-policy-accepted"
+                && row.claim_blocker_delta == 0
+                && row.blocker_count_after > 0
+        })
+        .map(|row| row.acceptance_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_before = acceptance_rows
+        .iter()
+        .filter(|row| expected.contains(row.acceptance_id.as_str()))
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    let mut failures = Vec::new();
+    if expected.is_empty() {
+        failures.push(
+            "T2 game/ops bundle evidence blocker relief has no accepted policy rows".to_string(),
+        );
+    }
+    if rows.len() != expected.len() {
+        failures.push(format!(
+            "T2 game/ops bundle evidence blocker relief has {} rows but expected {}",
+            rows.len(),
+            expected.len()
+        ));
+    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    for row in rows {
+        if row.relief_id.trim().is_empty()
+            || row.acceptance_id.trim().is_empty()
+            || row.policy_id.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.accepted_required_evidence.trim().is_empty()
+            || row.relief_decision.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.ledger_replay_status.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete relief fields",
+                row.acceptance_id
+            ));
+        }
+        if !seen.insert(row.acceptance_id.clone()) {
+            failures.push(format!("{} appears more than once", row.acceptance_id));
+        }
+        if !expected.contains(row.acceptance_id.as_str()) {
+            failures.push(format!(
+                "{} is not an expected acceptance row",
+                row.acceptance_id
+            ));
+        }
+        if row.relief_decision != "relief-ready-for-constraint-ledger-replay"
+            || row.ledger_replay_status != "pending-optimizer-constraint-ledger-replay"
+            || row.validation_status != "review"
+        {
+            failures.push(format!("{} has invalid relief state", row.acceptance_id));
+        }
+        if !row.blocker_claims_after.is_empty()
+            || row.blocker_count_after != 0
+            || row.claim_blocker_delta != -(row.blocker_count_before as isize)
+        {
+            failures.push(format!(
+                "{} did not reduce blockers to zero",
+                row.acceptance_id
+            ));
+        }
+        if row.next_artifact != "data/optimizer-constraint-ledger.csv" {
+            failures.push(format!(
+                "{} points at wrong next artifact",
+                row.acceptance_id
+            ));
+        }
+    }
+    for expected_id in expected {
+        if !seen.contains(expected_id) {
+            failures.push(format!("{expected_id} missing from blocker relief"));
+        }
+    }
+    let actual_before = rows
+        .iter()
+        .map(|row| row.blocker_count_before)
+        .sum::<usize>();
+    let actual_after = rows
+        .iter()
+        .map(|row| row.blocker_count_after)
+        .sum::<usize>();
+    if actual_before != expected_before || actual_after != 0 {
+        failures.push(format!(
+            "T2 game/ops bundle evidence relief before/after = {actual_before}/{actual_after}, expected {expected_before}/0"
         ));
     }
     failures
@@ -45279,6 +45546,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "T2 game ops bundle evidence policy acceptance preserves blockers pending relief",
             ),
             (
+                "t2-game-ops-bundle-evidence-blocker-relief",
+                "route t2-game-ops-bundle-evidence-blocker-relief --gate",
+                "data/t2-game-ops-bundle-evidence-blocker-relief.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "t2-service-overlay-diagnostic-decisions",
                 "route t2-service-overlay-diagnostic-decisions --gate",
                 "data/t2-service-overlay-diagnostic-decisions.csv",
@@ -51447,6 +51722,8 @@ mod tests {
         t2_endpoint_closure_gate_failures, t2_endpoint_closure_rows,
         t2_game_ops_binding_decision_gate_failures, t2_game_ops_binding_decision_rows,
         t2_game_ops_binding_intake_gate_failures, t2_game_ops_binding_intake_rows,
+        t2_game_ops_bundle_evidence_blocker_relief_gate_failures,
+        t2_game_ops_bundle_evidence_blocker_relief_rows,
         t2_game_ops_bundle_evidence_policy_acceptance_gate_failures,
         t2_game_ops_bundle_evidence_policy_acceptance_rows,
         t2_game_ops_bundle_evidence_policy_gate_failures, t2_game_ops_bundle_evidence_policy_rows,
@@ -51570,7 +51847,8 @@ mod tests {
         T2BundleReadinessDispositionRow, T2BundleReadinessRepairDocketRow,
         T2BundleReadinessRepairEvidenceRow, T2BundleReadinessReplayDecisionRow,
         T2BundleRepairQueueRow, T2ContactClosureRow, T2ContactResolutionRow, T2EndpointClosureRow,
-        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow, T2GameOpsBundleEvidencePolicyRow,
+        T2GameOpsBindingDecisionRow, T2GameOpsBindingIntakeRow,
+        T2GameOpsBundleEvidencePolicyAcceptanceRow, T2GameOpsBundleEvidencePolicyRow,
         T2GameOpsBundleEvidenceReviewRow, T2GamePublicationEvidenceBlockerReliefRow,
         T2GamePublicationEvidencePolicyAcceptanceRow, T2GamePublicationEvidencePolicyRow,
         T2GamePublicationEvidenceReviewRow, T2GraphContactRepairRow, T2GraphContactValidationRow,
@@ -57114,6 +57392,49 @@ mod tests {
         assert_eq!(
             rows[0].next_artifact,
             "data/t2-game-ops-bundle-evidence-blocker-relief.csv"
+        );
+    }
+
+    #[test]
+    fn t2_game_ops_bundle_evidence_blocker_relief_reduces_accepted_blockers() {
+        let acceptance_rows = vec![T2GameOpsBundleEvidencePolicyAcceptanceRow {
+            acceptance_id: "T2GAMEOPSBUNDLEACCEPT-I110".to_string(),
+            policy_id: "T2GAMEOPSBUNDLEPOLICY-I110".to_string(),
+            review_id: "T2GAMEOPSBUNDLEEVIDENCEREVIEW-I110".to_string(),
+            decision_id: "T2GAMEOPSDECISION-I110".to_string(),
+            target_id: "T2OVERLAYREPAIR-I110".to_string(),
+            route: "I110".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I110".to_string(),
+            accepted_required_evidence: "accepted-local-zone-overlay-handoff".to_string(),
+            accepted_policy_treatment:
+                "hold game/ops claims until local-zone overlay handoff is accepted or explicitly carried"
+                    .to_string(),
+            acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
+            blocker_claims_before: "game;incident;publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "game;incident;publication;sla;transit;upgrade".to_string(),
+            blocker_count_before: 6,
+            blocker_count_after: 6,
+            claim_blocker_delta: 0,
+            next_artifact: "data/t2-game-ops-bundle-evidence-blocker-relief.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = t2_game_ops_bundle_evidence_blocker_relief_rows(&acceptance_rows);
+        let failures =
+            t2_game_ops_bundle_evidence_blocker_relief_gate_failures(&rows, &acceptance_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].blocker_claims_before,
+            "game;incident;publication;sla;transit;upgrade"
+        );
+        assert_eq!(rows[0].blocker_claims_after, "");
+        assert_eq!(rows[0].blocker_count_after, 0);
+        assert_eq!(rows[0].claim_blocker_delta, -6);
+        assert_eq!(
+            rows[0].next_artifact,
+            "data/optimizer-constraint-ledger.csv"
         );
     }
 
