@@ -46088,7 +46088,7 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "data/tier-pavement-source-fetch-review.csv",
                 "held-known",
                 3,
-                "priority-A pavement fetch review preserves blockers while TX/LA joins and NM fetch repair remain unresolved",
+                "priority-A pavement fetch review preserves blockers while TX/LA/NM joins remain unresolved",
             ),
             (
                 "optimizer-constraint-ledger",

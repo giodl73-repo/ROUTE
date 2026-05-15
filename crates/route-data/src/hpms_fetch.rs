@@ -42,26 +42,26 @@ pub const STATE_CODES: &[(&str, &str)] = &[
     ("MT", "Montana"),
     ("NE", "Nebraska"),
     ("NV", "Nevada"),
-    ("NH", "New_Hampshire"),
-    ("NJ", "New_Jersey"),
-    ("NM", "New_Mexico"),
-    ("NY", "New_York"),
-    ("NC", "North_Carolina"),
-    ("ND", "North_Dakota"),
+    ("NH", "NewHampshire"),
+    ("NJ", "NewJersey"),
+    ("NM", "NewMexico"),
+    ("NY", "NewYork"),
+    ("NC", "NorthCarolina"),
+    ("ND", "NorthDakota"),
     ("OH", "Ohio"),
     ("OK", "Oklahoma"),
     ("OR", "Oregon"),
     ("PA", "Pennsylvania"),
-    ("RI", "Rhode_Island"),
-    ("SC", "South_Carolina"),
-    ("SD", "South_Dakota"),
+    ("RI", "RhodeIsland"),
+    ("SC", "SouthCarolina"),
+    ("SD", "SouthDakota"),
     ("TN", "Tennessee"),
     ("TX", "Texas"),
     ("UT", "Utah"),
     ("VT", "Vermont"),
     ("VA", "Virginia"),
     ("WA", "Washington"),
-    ("WV", "West_Virginia"),
+    ("WV", "WestVirginia"),
     ("WI", "Wisconsin"),
     ("WY", "Wyoming"),
 ];
@@ -281,5 +281,25 @@ pub fn normalise_hpms_route_id(raw: &str) -> String {
         "UNKNOWN".into()
     } else {
         format!("R{num}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::STATE_CODES;
+
+    #[test]
+    fn multiword_state_service_names_match_geo_dot_hosted_pattern() {
+        for (abbr, service_name) in STATE_CODES {
+            if matches!(
+                *abbr,
+                "NH" | "NJ" | "NM" | "NY" | "NC" | "ND" | "RI" | "SC" | "SD" | "WV"
+            ) {
+                assert!(
+                    !service_name.contains('_'),
+                    "{abbr} HPMS hosted service names do not use underscores"
+                );
+            }
+        }
     }
 }
