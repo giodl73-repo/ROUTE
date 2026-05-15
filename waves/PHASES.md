@@ -112,10 +112,11 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A Pavement Funding Evidence Contract | Define accepted full-cost funding evidence requirements before any asset-condition relief replay. | done |
 | 2026-05-14 | Priority A Pavement Funding Evidence Source Capture | Record that no accepted priority-A pavement funding artifact is attached and preserve blockers before any relief replay. | done |
 | 2026-05-14 | Priority A Pavement Funding Evidence Artifact Attachment | Record that no accepted priority-A pavement funding artifact is attached or reviewed and preserve blockers before any relief replay. | done |
+| 2026-05-14 | Priority A Pavement Funding Evidence Review Docket | Review unattached priority-A pavement funding evidence placeholders and preserve blockers before any relief replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should review accepted priority-A
+No wave is active. Next optimizer work should acquire accepted priority-A
 pavement funding evidence before any asset-condition relief replay.
 
 ## Operating Rules
