@@ -161,6 +161,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | TX I-220 Pavement Route-State Exclusion | Exclude the TX / I-220 pavement repair row using FHWA route-log state coverage and replay T2 asset-condition debt. | done |
 | 2026-05-15 | AL/NM I-110 Pavement Route-State Exclusion | Exclude the AL and NM I-110 pavement repair rows using FHWA route-log state coverage and replay T2 asset-condition debt. | done |
 | 2026-05-15 | Fresh Pond Truck Route Rejection | Reject the six remaining Fresh Pond held routes using NYC DOT truck-route evidence and replay T4 terminal-access debt. | done |
+| 2026-05-15 | LA I-110 Repair Funding Acceptance | Accept Louisiana DOTD STIP project H.010319 as full-cost repair funding for the LA I-110 pavement debt row. | done |
 
 ## Next Active Wave
 
@@ -172,8 +173,10 @@ and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,
 reducing T4 terminal-access upgrade blockers from 69 to 0. US2 pavement evidence replay
 reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
 US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, the
-TX I-220 route-state exclusion reduced it to 5 rows / $65.0M, and the AL/NM
-I-110 route-state exclusion reduced it to 3 rows / $55.0M, all repair debt.
+TX I-220 route-state exclusion reduced it to 5 rows / $65.0M, the AL/NM
+I-110 route-state exclusion reduced it to 3 rows / $55.0M, and the LA I-110
+repair-funding acceptance reduced it to 2 rows / $30.0M, all remaining repair
+debt.
 Remaining holds are non-publication claims: source snapshot
 `evidence` and T2 asset-condition `sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
 ledgers. The terminal-contact positive proof docket now covers all 69 source-needed
@@ -189,6 +192,10 @@ The T2 repair-debt path now has a governed route-state exclusion overlay for
 officially unsupported pavement route/state pairings; it has accepted rows for
 TX / I-220, AL / I-110, and NM / I-110 and is registered in the
 optimizer/release manifests.
+The repair-debt path also has a governed full-cost repair-funding acceptance
+overlay; Louisiana DOTD STIP project H.010319 is accepted for LA / I-110 and
+removes that row from the priced optimizer debt while preserving unfunded LA
+I-220 and CA I-110 repair holds.
 
 ## Operating Rules
 
