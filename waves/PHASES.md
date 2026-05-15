@@ -145,6 +145,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Terminal Access Negative Proof Rejection | Reject route-terminal pairings contradicted by source-listed terminal access routes and reduce T4 upgrade blockers. | done |
 | 2026-05-15 | Terminal Access Negative Proof Expansion | Reject ten more route-terminal pairings contradicted by source-listed terminal access routes and reduce T4 upgrade blockers. | done |
 | 2026-05-15 | Columbus Louisville Terminal Proof Rejection | Reject Columbus and Louisville pairings contradicted by source-listed direct terminal access routes. | done |
+| 2026-05-15 | Savannah Charlotte Terminal Proof Rejection | Reject Savannah and Charlotte pairings contradicted by source-listed direct terminal access routes. | done |
 
 ## Next Active Wave
 
@@ -152,8 +153,8 @@ No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
-accepted, and twenty-six contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 42. Remaining holds are
+accepted, and thirty contradicted terminal-contact pairings are rejected, reducing
+T4 terminal-access upgrade blockers from 69 to 38. Remaining holds are
 non-publication claims: source snapshot `evidence`, T4 terminal-access
 `upgrade`, and T2 asset-condition `sla|transit|upgrade`. Do not add more
 placeholder-only source-needed map-proof ledgers.
