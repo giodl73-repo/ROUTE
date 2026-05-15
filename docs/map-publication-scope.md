@@ -26,6 +26,7 @@ The controlling decision artifact is:
 
 ```text
 data/map-publication-scope-decision.csv
+data/map-publication-readiness.csv
 ```
 
 ## Current Decision
@@ -58,10 +59,12 @@ The residual non-publication holds are:
 - 9 T2 asset-condition debt rows blocking `SLA`, `transit`, and `upgrade`.
 
 There are now no residual `publication` blockers in
-`data/optimizer-residual-blocker-backlog.csv`. Structural T1-T4 maps may be
-published as maps only when labeled as held-claim surfaces. They must not be
-described as evidence-valid, SLA-valid, transit-ready, upgrade-ready, or
-asset-condition repaired until the blocker ledger says so.
+`data/optimizer-residual-blocker-backlog.csv`, and
+`data/map-publication-readiness.csv` is the gateable certification artifact.
+Structural T1-T4 maps may be published as maps only when labeled as held-claim
+surfaces. They must not be described as evidence-valid, SLA-valid,
+transit-ready, upgrade-ready, or asset-condition repaired until the blocker
+ledger says so.
 
 ## Anti-Churn Rule
 

@@ -8,6 +8,7 @@ Start here when deciding which document owns a claim.
 | `waves/PHASES.md` | Active wave index and execution rail for pulse-driven ROUTE work | You need to know what "continue", "next pulse", or "active wave" should do |
 | `docs/wave-execution.md` | ROUTE wave/pulse operating contract and local `/route-XXX` skill map | You need to create, review, execute, or close wave/pulse work |
 | `docs/map-publication-scope.md` | Doctrine separating render-valid map artifacts from fully publication-valid T1-T4 map claims | You need to decide whether a map can be published as full T1-T4 or only as a held-claim work-in-progress surface |
+| `data/map-publication-readiness.csv` | Gateable certification for current structural T1-T4 map publication readiness | You need to prove map publication has zero residual `publication` blockers while non-publication claims remain labeled |
 | `data/map-publication-scope-decision.csv` | Gate/status decision for current map publication scope | You need the current blocker-aware map publication status and next allowed action |
 | `data/t4-terminal-access-map-exclusion.csv` | Accepted scope exclusion for unresolved T4 terminal-access overlay claims | You need to know why current maps may publish without claiming terminal-access proof for seed-assigned T4 rows |
 | `data/source-snapshot-publication-exclusion.csv` | Accepted scope exclusion for live source snapshot publication claims | You need to know why current maps may publish without claiming live-event snapshot evidence |
