@@ -94,11 +94,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Policy | Author policy rows for residual T2 game/ops bundle-binding evidence holds before acceptance or relief. | done |
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Policy Acceptance | Accept T2 game/ops bundle evidence policy before blocker relief or ledger replay. | done |
 | 2026-05-14 | T2 Game/Ops Bundle Evidence Blocker Relief | Emit T2 game/ops bundle evidence relief rows before optimizer-ledger replay. | done |
+| 2026-05-14 | T2 Game/Ops Bundle Evidence Ledger Replay | Wire accepted T2 game/ops bundle evidence relief into the optimizer constraint ledger, budget, and residual backlog. | done |
 
 ## Next Active Wave
 
 No wave is active. Next optimizer work should resume residual blocker burn-down
-from the largest remaining optimizer backlog families before map refresh.
+from T4 terminal-access evidence unless selector readiness needs a map-refresh
+checkpoint first.
 
 ## Operating Rules
 
