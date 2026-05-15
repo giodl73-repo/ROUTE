@@ -40,4 +40,11 @@ Each polling run remains `snapshot_only` until a review records a real repeated 
 
 ## Next Step
 
-After several runs exist, add or update a `repeated_window` row in `data/t1-evidence-windows.csv` with the capture span, observation span, event counts, blocker, and review artifact.
+The 2026-05-15 polling run added four net new Iowa 511 observations and extended
+the ledgered snapshot capture through 2026-05-15. The row remains
+`snapshot_only` and `promotion_eligible=false` because the capture is still not
+a reviewed repeated window or historical archive.
+
+After several more runs exist, add or update a `repeated_window` row in
+`data/t1-evidence-windows.csv` with the capture span, observation span, event
+counts, blocker, and review artifact.
