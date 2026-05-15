@@ -39128,20 +39128,27 @@ fn tier_pavement_hpms_scope_broadening_rows(
         .join(",");
     unmatched_join_rows
         .iter()
-        .filter(|row| row.source_needed_member_count > 0)
         .map(|row| TierPavementHpmsScopeBroadeningRow {
             broadening_id: format!("PAVEMENTHPMSBROADEN-{}", stable_id_fragment(&row.state)),
             state: row.state.clone(),
             source_priority: row.source_priority.clone(),
-            source_needed_routes: row.source_needed_routes.clone(),
+            source_needed_routes: if row.source_needed_routes.trim().is_empty() {
+                "none".to_string()
+            } else {
+                row.source_needed_routes.clone()
+            },
             source_needed_member_count: row.source_needed_member_count,
             current_hpms_records_for_source_needed_routes: row.hpms_records_for_source_needed_routes,
             current_coverage_status: row.hpms_source_route_coverage.clone(),
             broadened_functional_systems: systems.clone(),
-            broadened_fetch_command: format!(
-                "route fetch-hpms --states {} --functional-systems {}",
-                row.state, systems
-            ),
+            broadened_fetch_command: if row.source_needed_member_count == 0 {
+                "not-required-after-broadened-fetch".to_string()
+            } else {
+                format!(
+                    "route fetch-hpms --states {} --functional-systems {}",
+                    row.state, systems
+                )
+            },
             preflight_gate: "route source-fetch-policy --gate".to_string(),
             postfetch_gate:
                 "route build --all-roads && route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
@@ -39151,7 +39158,11 @@ fn tier_pavement_hpms_scope_broadening_rows(
             blocker_claims_after: row.blocker_claims_after.clone(),
             claim_blocker_delta: 0,
             next_artifact: "data/tier-pavement-source-fetch-attempt.csv".to_string(),
-            validation_status: "review".to_string(),
+            validation_status: if row.source_needed_member_count == 0 {
+                "pass".to_string()
+            } else {
+                "review".to_string()
+            },
         })
         .collect()
 }
@@ -39221,7 +39232,9 @@ fn tier_pavement_hpms_scope_broadening_gate_failures(
         {
             failures.push(format!("{} has incomplete HPMS broadening row", row.state));
         }
-        if row.current_hpms_records_for_source_needed_routes != 0 {
+        if row.source_needed_member_count > 0
+            && row.current_hpms_records_for_source_needed_routes != 0
+        {
             failures.push(format!(
                 "{} already has HPMS records for source-needed routes",
                 row.state
@@ -39237,12 +39250,21 @@ fn tier_pavement_hpms_scope_broadening_gate_failures(
                 row.state
             ));
         }
-        if !row
-            .broadened_fetch_command
-            .starts_with("route fetch-hpms --states ")
-            || !row.broadened_fetch_command.contains("--functional-systems")
+        if row.source_needed_member_count > 0
+            && (!row
+                .broadened_fetch_command
+                .starts_with("route fetch-hpms --states ")
+                || !row.broadened_fetch_command.contains("--functional-systems"))
         {
             failures.push(format!("{} has invalid broadened fetch command", row.state));
+        }
+        if row.source_needed_member_count == 0
+            && row.broadened_fetch_command != "not-required-after-broadened-fetch"
+        {
+            failures.push(format!(
+                "{} has no source-needed members but still requires broadened fetch",
+                row.state
+            ));
         }
         if row.evidence_acceptance_status != "not-accepted" {
             failures.push(format!(
@@ -46738,9 +46760,9 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "tier-pavement-hpms-scope-broadening",
                 "route tier-pavement-hpms-scope-broadening --gate",
                 "data/tier-pavement-hpms-scope-broadening.csv",
-                "held-known",
-                3,
-                "priority-A HPMS scope-broadening plan preserves blockers before broader US-route cache mutation",
+                "pass",
+                0,
+                "",
             ),
             (
                 "optimizer-constraint-ledger",

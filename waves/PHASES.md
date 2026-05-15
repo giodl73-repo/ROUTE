@@ -103,12 +103,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A NM Pavement Fetch Repair | Repair the New Mexico HPMS service-name fetch defect and reclassify NM as populated but still unaccepted pavement evidence. | done |
 | 2026-05-14 | Priority A Pavement Unmatched Join Review | Separate source-needed US-route pavement members from repair debt after populated TX/LA/NM HPMS fetches. | done |
 | 2026-05-14 | Priority A HPMS Scope Broadening Policy | Author governed HPMS functional-system broadening rows for source-needed TX/LA/NM US-route pavement members before cache mutation. | done |
+| 2026-05-14 | Priority A HPMS Broad Fetch Execution | Execute governed broadened TX/LA/NM HPMS fetches and reclassify priority-A source-needed holds as repair debt without relief replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should execute the governed broadened
-HPMS scope fetch for TX/LA/NM or attach state DOT pavement condition evidence
-before any asset-condition debt relief.
+No wave is active. Next optimizer work should review priority-A pavement
+repair debt for TX/LA/NM before any asset-condition relief replay.
 
 ## Operating Rules
 

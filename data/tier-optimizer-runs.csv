@@ -24,17 +24,17 @@ step,optimizer_stage,command,artifact,row_count,gate_status,blocker_count,blocke
 23,t2-parallel-service-queue,route t2-parallel-service-queue --gate,data/t2-parallel-service-queue.csv,1,pass,0,,pass
 24,tier-segment-candidates,route tier-segment-candidates --gate,data/tier-segment-candidates.csv,3947,pass,0,,pass
 25,tier-pavement-docket,route tier-pavement-docket --gate,data/tier-pavement-docket.csv,3947,pass,0,,pass
-26,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,13,pass,0,,pass
-27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,13,pass,0,,pass
+26,tier-pavement-source-gaps,route tier-pavement-source-gaps --gate,data/tier-pavement-source-gaps.csv,9,pass,0,,pass
+27,tier-pavement-debt-budget,route tier-pavement-debt-budget --gate,data/tier-pavement-debt-budget.csv,9,pass,0,,pass
 28,tier-pavement-acquisition-plan,route tier-pavement-acquisition-plan --gate,data/tier-pavement-acquisition-plan.csv,28,pass,0,,pass
 29,tier-pavement-acquisition-docket,route tier-pavement-acquisition-docket --gate,data/tier-pavement-acquisition-docket.csv,28,pass,0,,pass
 30,tier-pavement-source-access,route tier-pavement-source-access --gate,data/tier-pavement-source-access.csv,3,held-known,3,priority-A pavement fetches preserve asset-condition blockers until scoped evidence is rebuilt and reviewed,held
 31,tier-pavement-source-fetch-attempt,route tier-pavement-source-fetch-attempt --gate,data/tier-pavement-source-fetch-attempt.csv,3,held-known,3,priority-A pavement fetch attempts preserve blockers until cache rows are rebuilt and reviewed,held
 32,tier-pavement-source-fetch-review,route tier-pavement-source-fetch-review --gate,data/tier-pavement-source-fetch-review.csv,3,held-known,3,priority-A pavement fetch review preserves blockers while TX/LA/NM joins remain unresolved,held
 33,tier-pavement-unmatched-join-review,route tier-pavement-unmatched-join-review --gate,data/tier-pavement-unmatched-join-review.csv,3,held-known,3,priority-A pavement unmatched-join review preserves blockers while source-needed US-route members lack HPMS route evidence,held
-34,tier-pavement-hpms-scope-broadening,route tier-pavement-hpms-scope-broadening --gate,data/tier-pavement-hpms-scope-broadening.csv,3,held-known,3,priority-A HPMS scope-broadening plan preserves blockers before broader US-route cache mutation,held
-35,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,136,pass,0,,pass
-36,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,135,pass,0,,pass
+34,tier-pavement-hpms-scope-broadening,route tier-pavement-hpms-scope-broadening --gate,data/tier-pavement-hpms-scope-broadening.csv,3,pass,0,,pass
+35,optimizer-constraint-ledger,route optimizer-constraint-ledger --gate,data/optimizer-constraint-ledger.csv,132,pass,0,,pass
+36,optimizer-constraint-budget,route optimizer-constraint-budget --gate,data/optimizer-constraint-budget.csv,131,pass,0,,pass
 37,optimizer-residual-blocker-backlog,route optimizer-residual-blocker-backlog --gate,data/optimizer-residual-blocker-backlog.csv,3,held-known,117,Residual constraint-budget blockers are grouped into next optimizer wave families,held
 38,optimizer-claim-review,route optimizer-claim-review --gate,data/optimizer-claim-review.csv,6,held-known,31,P1 optimizer claim blockers remain held for source-specific review,held
 39,t2-game-publication-evidence-review,route t2-game-publication-evidence-review --gate,data/t2-game-publication-evidence-review.csv,3,held-known,3,T2 game publication readiness blockers remain held pending evidence policy,held
