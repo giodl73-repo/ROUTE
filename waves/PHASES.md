@@ -141,16 +141,18 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Map Publication Inventory Package | Package the 17 structural map artifacts into a release-facing inventory with held-claim labels. | done |
 | 2026-05-15 | Map Publication Inventory Gate | Make the structural map publication inventory gateable against atlas and readiness artifacts. | done |
 | 2026-05-15 | Iowa 511 Snapshot Polling Acquisition | Run a real Iowa 511 polling pass and extend the T1 evidence-window ledger without promoting evidence. | done |
+| 2026-05-15 | Indianapolis Avon Terminal Proof Acceptance | Accept one non-seed I-465 terminal-contact proof source and reduce T4 terminal-access upgrade blockers. | done |
 
 ## Next Active Wave
 
 No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
-`snapshot_only`. Remaining holds are non-publication claims: source snapshot
-`evidence`, T4 terminal-access `upgrade`, and T2 asset-condition
-`sla|transit|upgrade`. Do not add more placeholder-only source-needed map-proof
-ledgers.
+`snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
+accepted, reducing T4 terminal-access upgrade blockers from 69 to 68.
+Remaining holds are non-publication claims: source snapshot `evidence`, T4
+terminal-access `upgrade`, and T2 asset-condition `sla|transit|upgrade`. Do
+not add more placeholder-only source-needed map-proof ledgers.
 
 ## Operating Rules
 

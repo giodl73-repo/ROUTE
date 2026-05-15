@@ -3275,6 +3275,13 @@ enum Commands {
             value_name = "FILE"
         )]
         proof_docket: PathBuf,
+        /// Accepted non-seed terminal-contact proof sources CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-accepted-proof-sources.csv",
+            value_name = "FILE"
+        )]
+        accepted_sources: PathBuf,
         /// Output terminal-contact proof source registry CSV
         #[arg(
             long,
@@ -3757,6 +3764,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t4_terminal_access_map_exclusion: PathBuf,
+        /// Accepted T4 terminal-contact proof import CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-district-proof-import.csv",
+            value_name = "FILE"
+        )]
+        t4_terminal_contact_district_proof_import: PathBuf,
         /// Source-fetch policy CSV
         #[arg(
             long,
@@ -11938,13 +11952,18 @@ fn run_cli() -> Result<()> {
 
         Commands::T4TerminalContactProofSourceRegistry {
             proof_docket,
+            accepted_sources,
             output,
             gate,
         } => {
             println!("route t4-terminal-contact-proof-source-registry");
             let proof_rows = load_t4_terminal_contact_proof_docket(&proof_docket)
                 .with_context(|| format!("loading {}", proof_docket.display()))?;
-            let rows = t4_terminal_contact_proof_source_registry_rows(&proof_rows);
+            let accepted_source_rows =
+                load_t4_terminal_contact_accepted_proof_sources(&accepted_sources)
+                    .with_context(|| format!("loading {}", accepted_sources.display()))?;
+            let rows =
+                t4_terminal_contact_proof_source_registry_rows(&proof_rows, &accepted_source_rows);
             write_t4_terminal_contact_proof_source_registry(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_t4_terminal_contact_proof_source_registry_summary(&output, &rows);
@@ -12413,6 +12432,7 @@ fn run_cli() -> Result<()> {
             t2_parallel_service_queue,
             t3_t4_access_gaps,
             t4_terminal_access_map_exclusion,
+            t4_terminal_contact_district_proof_import,
             source_fetch_policy,
             source_snapshot_publication_exclusion,
             t2_scenario_hooks,
@@ -12499,6 +12519,16 @@ fn run_cli() -> Result<()> {
                     .with_context(|| {
                         format!("loading {}", t4_terminal_access_map_exclusion.display())
                     })?;
+            let t4_terminal_contact_district_proof_import_rows =
+                load_t4_terminal_contact_district_proof_import(
+                    &t4_terminal_contact_district_proof_import,
+                )
+                .with_context(|| {
+                    format!(
+                        "loading {}",
+                        t4_terminal_contact_district_proof_import.display()
+                    )
+                })?;
             let mut source_policy_rows = load_source_fetch_policy(&source_fetch_policy)
                 .with_context(|| format!("loading {}", source_fetch_policy.display()))?;
             if source_policy_rows.is_empty() {
@@ -12516,7 +12546,7 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading {}", t2_scenario_hooks.display()))?;
             let bundle_overlay_rows = load_t2_bundle_overlays(&t2_bundle_overlays)
                 .with_context(|| format!("loading {}", t2_bundle_overlays.display()))?;
-            let rows = optimizer_constraint_ledger_rows(
+            let rows = optimizer_constraint_ledger_rows_with_terminal_proof(
                 &pavement_rows,
                 &t2_asset_condition_map_publication_exclusion_rows,
                 &topology_rows,
@@ -12530,6 +12560,7 @@ fn run_cli() -> Result<()> {
                 &parallel_rows,
                 &access_gap_rows,
                 &t4_terminal_access_map_exclusion_rows,
+                &t4_terminal_contact_district_proof_import_rows,
                 &route_map::beck_t1_diagnostics(),
                 &route_map::beck_t2_diagnostics(),
                 &source_policy_rows,
@@ -22836,6 +22867,21 @@ struct T4TerminalContactProofSourceRegistryRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalContactAcceptedProofSourceRow {
+    queue_id: String,
+    route: String,
+    terminal_district: String,
+    source_artifact_mode: String,
+    source_title: String,
+    source_url_or_cache_artifact: String,
+    capture_date: String,
+    contact_statement: String,
+    selected_higher_tier_attachment: String,
+    proof_source_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T4TerminalContactDistrictProofImportRow {
     import_id: String,
     registry_id: String,
@@ -28347,6 +28393,7 @@ fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQu
     Ok(rows)
 }
 
+#[cfg(test)]
 fn optimizer_constraint_ledger_rows(
     pavement_rows: &[TierPavementDebtBudgetRow],
     t2_asset_condition_map_publication_exclusion_rows: &[T2AssetConditionMapPublicationExclusionRow],
@@ -28361,6 +28408,52 @@ fn optimizer_constraint_ledger_rows(
     parallel_rows: &[T2ParallelServiceQueueRow],
     access_gap_rows: &[T3T4AccessGapRow],
     t4_terminal_access_map_exclusion_rows: &[T4TerminalAccessMapExclusionRow],
+    beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
+    beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
+    source_policy_rows: &[SourceFetchPolicyRow],
+    source_snapshot_publication_exclusion_rows: &[SourceSnapshotPublicationExclusionRow],
+    scenario_hook_rows: &[T2ScenarioHookRow],
+    bundle_overlay_rows: &[T2BundleOverlayRow],
+) -> Vec<OptimizerConstraintLedgerRow> {
+    optimizer_constraint_ledger_rows_with_terminal_proof(
+        pavement_rows,
+        t2_asset_condition_map_publication_exclusion_rows,
+        topology_rows,
+        schematic_relief_rows,
+        t2_transfer_relief_rows,
+        t2_label_relief_rows,
+        t2_long_relief_rows,
+        t2_game_relief_rows,
+        t2_game_ops_bundle_relief_rows,
+        t3_feeder_relief_rows,
+        parallel_rows,
+        access_gap_rows,
+        t4_terminal_access_map_exclusion_rows,
+        &[],
+        beck_t1_rows,
+        beck_t2_rows,
+        source_policy_rows,
+        source_snapshot_publication_exclusion_rows,
+        scenario_hook_rows,
+        bundle_overlay_rows,
+    )
+}
+
+fn optimizer_constraint_ledger_rows_with_terminal_proof(
+    pavement_rows: &[TierPavementDebtBudgetRow],
+    t2_asset_condition_map_publication_exclusion_rows: &[T2AssetConditionMapPublicationExclusionRow],
+    topology_rows: &[T1TopologyRepairRow],
+    schematic_relief_rows: &[T1SchematicGeometryBlockerReliefRow],
+    t2_transfer_relief_rows: &[T2BeckTransferComplexityBlockerReliefRow],
+    t2_label_relief_rows: &[T2BeckLabelDensityBlockerReliefRow],
+    t2_long_relief_rows: &[T2BeckLongConnectorBlockerReliefRow],
+    t2_game_relief_rows: &[T2GamePublicationEvidenceBlockerReliefRow],
+    t2_game_ops_bundle_relief_rows: &[T2GameOpsBundleEvidenceBlockerReliefRow],
+    t3_feeder_relief_rows: &[T3LowerTierFeederGapBlockerReliefRow],
+    parallel_rows: &[T2ParallelServiceQueueRow],
+    access_gap_rows: &[T3T4AccessGapRow],
+    t4_terminal_access_map_exclusion_rows: &[T4TerminalAccessMapExclusionRow],
+    t4_terminal_contact_district_proof_import_rows: &[T4TerminalContactDistrictProofImportRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
     beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
     source_policy_rows: &[SourceFetchPolicyRow],
@@ -28383,6 +28476,8 @@ fn optimizer_constraint_ledger_rows(
         );
     let t4_terminal_access_map_exclusion =
         accepted_t4_terminal_access_map_exclusion(t4_terminal_access_map_exclusion_rows);
+    let accepted_t4_terminal_proof_routes =
+        accepted_t4_terminal_proof_route_set(t4_terminal_contact_district_proof_import_rows);
     let source_snapshot_publication_exclusion =
         accepted_source_snapshot_publication_exclusion(source_snapshot_publication_exclusion_rows);
 
@@ -28734,9 +28829,12 @@ fn optimizer_constraint_ledger_rows(
     }
 
     for row in access_gap_rows.iter().filter(|row| {
+        let route_key = route_display_key(&row.route);
         !(row.gap_class == "below-threshold-feeder"
             && row.promise_horizon_hours == 6
-            && relieved_t3_feeder_routes.contains(&route_display_key(&row.route)))
+            && relieved_t3_feeder_routes.contains(&route_key))
+            && !(row.gap_class == "terminal-evidence-needed"
+                && accepted_t4_terminal_proof_routes.contains(&route_key))
     }) {
         let tier = if row.source_surface == "t4-terminal-access-columns"
             || row.promise_horizon_hours == 1
@@ -51624,32 +51722,67 @@ fn t4_terminal_contact_proof_artifact_contract_gate_failures(
 
 fn t4_terminal_contact_proof_source_registry_rows(
     proof_rows: &[T4TerminalContactProofDocketRow],
+    accepted_source_rows: &[T4TerminalContactAcceptedProofSourceRow],
 ) -> Vec<T4TerminalContactProofSourceRegistryRow> {
+    let accepted_by_queue = accepted_source_rows
+        .iter()
+        .filter(|row| row.validation_status == "pass")
+        .map(|row| (row.queue_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut rows = proof_rows
         .iter()
-        .map(|row| T4TerminalContactProofSourceRegistryRow {
-            registry_id: format!("T4CONTACTREGISTRY-{}", stable_id_fragment(&row.queue_id)),
-            task_id: row.task_id.clone(),
-            queue_id: row.queue_id.clone(),
-            route: row.route.clone(),
-            terminal_district: row.terminal_district.clone(),
-            source_family: row.source_family.clone(),
-            source_artifact_mode: "source-needed".to_string(),
-            source_title: "source-needed".to_string(),
-            source_url_or_cache_artifact: "source-needed".to_string(),
-            capture_date: "source-needed".to_string(),
-            contact_statement_status: "source-needed".to_string(),
-            selected_higher_tier_attachment_status: "source-needed".to_string(),
-            registry_status: "source-needed".to_string(),
-            proof_source_artifact: "source-needed".to_string(),
-            registry_blocker:
-                "manual citation or cached source artifact not registered for route-to-terminal contact proof"
-                    .to_string(),
-            contract_artifact: "data/t4-terminal-contact-proof-artifact-contract.csv".to_string(),
-            next_artifact:
-                "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-03.md"
-                    .to_string(),
-            validation_status: "review".to_string(),
+        .map(|row| {
+            if let Some(accepted) = accepted_by_queue.get(row.queue_id.as_str()) {
+                T4TerminalContactProofSourceRegistryRow {
+                    registry_id: format!("T4CONTACTREGISTRY-{}", stable_id_fragment(&row.queue_id)),
+                    task_id: row.task_id.clone(),
+                    queue_id: row.queue_id.clone(),
+                    route: row.route.clone(),
+                    terminal_district: row.terminal_district.clone(),
+                    source_family: row.source_family.clone(),
+                    source_artifact_mode: accepted.source_artifact_mode.clone(),
+                    source_title: accepted.source_title.clone(),
+                    source_url_or_cache_artifact: accepted.source_url_or_cache_artifact.clone(),
+                    capture_date: accepted.capture_date.clone(),
+                    contact_statement_status: "source-backed".to_string(),
+                    selected_higher_tier_attachment_status: "attached".to_string(),
+                    registry_status: "source-backed".to_string(),
+                    proof_source_artifact: accepted.proof_source_artifact.clone(),
+                    registry_blocker: "none".to_string(),
+                    contract_artifact: "data/t4-terminal-contact-proof-artifact-contract.csv"
+                        .to_string(),
+                    next_artifact:
+                        "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-03.md"
+                            .to_string(),
+                    validation_status: "pass".to_string(),
+                }
+            } else {
+                T4TerminalContactProofSourceRegistryRow {
+                    registry_id: format!("T4CONTACTREGISTRY-{}", stable_id_fragment(&row.queue_id)),
+                    task_id: row.task_id.clone(),
+                    queue_id: row.queue_id.clone(),
+                    route: row.route.clone(),
+                    terminal_district: row.terminal_district.clone(),
+                    source_family: row.source_family.clone(),
+                    source_artifact_mode: "source-needed".to_string(),
+                    source_title: "source-needed".to_string(),
+                    source_url_or_cache_artifact: "source-needed".to_string(),
+                    capture_date: "source-needed".to_string(),
+                    contact_statement_status: "source-needed".to_string(),
+                    selected_higher_tier_attachment_status: "source-needed".to_string(),
+                    registry_status: "source-needed".to_string(),
+                    proof_source_artifact: "source-needed".to_string(),
+                    registry_blocker:
+                        "manual citation or cached source artifact not registered for route-to-terminal contact proof"
+                            .to_string(),
+                    contract_artifact: "data/t4-terminal-contact-proof-artifact-contract.csv"
+                        .to_string(),
+                    next_artifact:
+                        "waves/2026-05-13-terminal-contact-source-acquisition-spine/plans/pulse-03.md"
+                            .to_string(),
+                    validation_status: "review".to_string(),
+                }
+            }
         })
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| {
@@ -51840,6 +51973,20 @@ fn load_t4_terminal_contact_proof_source_registry(
     Ok(rows)
 }
 
+fn load_t4_terminal_contact_accepted_proof_sources(
+    path: &Path,
+) -> Result<Vec<T4TerminalContactAcceptedProofSourceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn t4_terminal_contact_district_proof_import_rows(
     registry_rows: &[T4TerminalContactProofSourceRegistryRow],
 ) -> Vec<T4TerminalContactDistrictProofImportRow> {
@@ -51848,7 +51995,9 @@ fn t4_terminal_contact_district_proof_import_rows(
     };
     let mut rows = registry_rows
         .iter()
-        .filter(|row| row.terminal_district == selected_district)
+        .filter(|row| {
+            row.terminal_district == selected_district || row.registry_status == "source-backed"
+        })
         .map(|row| {
             let accepted = row.registry_status == "source-backed"
                 && row.proof_source_artifact != "source-needed"
@@ -51959,7 +52108,9 @@ fn t4_terminal_contact_district_proof_import_gate_failures(
     };
     let expected_ids = registry_rows
         .iter()
-        .filter(|row| row.terminal_district == expected_district)
+        .filter(|row| {
+            row.terminal_district == expected_district || row.registry_status == "source-backed"
+        })
         .map(|row| row.queue_id.as_str())
         .collect::<std::collections::BTreeSet<_>>();
     if rows.is_empty() {
@@ -52000,9 +52151,14 @@ fn t4_terminal_contact_district_proof_import_gate_failures(
                 row.queue_id
             ));
         }
-        if row.terminal_district != expected_district {
+        let selected_or_accepted = row.terminal_district == expected_district
+            || registry_rows.iter().any(|registry_row| {
+                registry_row.queue_id == row.queue_id
+                    && registry_row.registry_status == "source-backed"
+            });
+        if !selected_or_accepted {
             failures.push(format!(
-                "{} is outside selected district {}",
+                "{} is outside selected district {} and has no accepted registry proof",
                 row.queue_id, expected_district
             ));
         }
@@ -52068,6 +52224,33 @@ fn load_t4_terminal_contact_proof_docket(
         rows.push(row?);
     }
     Ok(rows)
+}
+
+fn load_t4_terminal_contact_district_proof_import(
+    path: &Path,
+) -> Result<Vec<T4TerminalContactDistrictProofImportRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn accepted_t4_terminal_proof_route_set(
+    rows: &[T4TerminalContactDistrictProofImportRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.import_status == "accepted"
+                && row.proof_decision == "source-backed"
+                && row.validation_status == "pass"
+        })
+        .map(|row| route_display_key(&row.route))
+        .collect()
 }
 
 fn t4_terminal_columbus_proof_intake_rows(
@@ -65539,7 +65722,7 @@ mod tests {
             },
         ];
 
-        let rows = t4_terminal_contact_proof_source_registry_rows(&proof_rows);
+        let rows = t4_terminal_contact_proof_source_registry_rows(&proof_rows, &[]);
         let failures = t4_terminal_contact_proof_source_registry_gate_failures(&rows, &proof_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
