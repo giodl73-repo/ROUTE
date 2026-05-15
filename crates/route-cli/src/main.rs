@@ -3771,6 +3771,13 @@ enum Commands {
             value_name = "FILE"
         )]
         t4_terminal_contact_district_proof_import: PathBuf,
+        /// Rejected T4 terminal-contact proof sources CSV
+        #[arg(
+            long,
+            default_value = "data/t4-terminal-contact-rejected-proof-sources.csv",
+            value_name = "FILE"
+        )]
+        t4_terminal_contact_rejected_proof_sources: PathBuf,
         /// Source-fetch policy CSV
         #[arg(
             long,
@@ -12433,6 +12440,7 @@ fn run_cli() -> Result<()> {
             t3_t4_access_gaps,
             t4_terminal_access_map_exclusion,
             t4_terminal_contact_district_proof_import,
+            t4_terminal_contact_rejected_proof_sources,
             source_fetch_policy,
             source_snapshot_publication_exclusion,
             t2_scenario_hooks,
@@ -12529,6 +12537,16 @@ fn run_cli() -> Result<()> {
                         t4_terminal_contact_district_proof_import.display()
                     )
                 })?;
+            let t4_terminal_contact_rejected_proof_source_rows =
+                load_t4_terminal_contact_rejected_proof_sources(
+                    &t4_terminal_contact_rejected_proof_sources,
+                )
+                .with_context(|| {
+                    format!(
+                        "loading {}",
+                        t4_terminal_contact_rejected_proof_sources.display()
+                    )
+                })?;
             let mut source_policy_rows = load_source_fetch_policy(&source_fetch_policy)
                 .with_context(|| format!("loading {}", source_fetch_policy.display()))?;
             if source_policy_rows.is_empty() {
@@ -12561,6 +12579,7 @@ fn run_cli() -> Result<()> {
                 &access_gap_rows,
                 &t4_terminal_access_map_exclusion_rows,
                 &t4_terminal_contact_district_proof_import_rows,
+                &t4_terminal_contact_rejected_proof_source_rows,
                 &route_map::beck_t1_diagnostics(),
                 &route_map::beck_t2_diagnostics(),
                 &source_policy_rows,
@@ -22882,6 +22901,20 @@ struct T4TerminalContactAcceptedProofSourceRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct T4TerminalContactRejectedProofSourceRow {
+    queue_id: String,
+    route: String,
+    terminal_district: String,
+    source_title: String,
+    source_url_or_cache_artifact: String,
+    capture_date: String,
+    listed_terminal_access_routes: String,
+    rejection_basis: String,
+    rejection_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct T4TerminalContactDistrictProofImportRow {
     import_id: String,
     registry_id: String,
@@ -28430,6 +28463,7 @@ fn optimizer_constraint_ledger_rows(
         access_gap_rows,
         t4_terminal_access_map_exclusion_rows,
         &[],
+        &[],
         beck_t1_rows,
         beck_t2_rows,
         source_policy_rows,
@@ -28454,6 +28488,7 @@ fn optimizer_constraint_ledger_rows_with_terminal_proof(
     access_gap_rows: &[T3T4AccessGapRow],
     t4_terminal_access_map_exclusion_rows: &[T4TerminalAccessMapExclusionRow],
     t4_terminal_contact_district_proof_import_rows: &[T4TerminalContactDistrictProofImportRow],
+    t4_terminal_contact_rejected_proof_source_rows: &[T4TerminalContactRejectedProofSourceRow],
     beck_t1_rows: &[route_map::BeckT1DiagnosticRow],
     beck_t2_rows: &[route_map::BeckT2DiagnosticRow],
     source_policy_rows: &[SourceFetchPolicyRow],
@@ -28478,6 +28513,8 @@ fn optimizer_constraint_ledger_rows_with_terminal_proof(
         accepted_t4_terminal_access_map_exclusion(t4_terminal_access_map_exclusion_rows);
     let accepted_t4_terminal_proof_routes =
         accepted_t4_terminal_proof_route_set(t4_terminal_contact_district_proof_import_rows);
+    let rejected_t4_terminal_proof_routes =
+        rejected_t4_terminal_proof_route_set(t4_terminal_contact_rejected_proof_source_rows);
     let source_snapshot_publication_exclusion =
         accepted_source_snapshot_publication_exclusion(source_snapshot_publication_exclusion_rows);
 
@@ -28834,7 +28871,8 @@ fn optimizer_constraint_ledger_rows_with_terminal_proof(
             && row.promise_horizon_hours == 6
             && relieved_t3_feeder_routes.contains(&route_key))
             && !(row.gap_class == "terminal-evidence-needed"
-                && accepted_t4_terminal_proof_routes.contains(&route_key))
+                && (accepted_t4_terminal_proof_routes.contains(&route_key)
+                    || rejected_t4_terminal_proof_routes.contains(&route_key)))
     }) {
         let tier = if row.source_surface == "t4-terminal-access-columns"
             || row.promise_horizon_hours == 1
@@ -51987,6 +52025,20 @@ fn load_t4_terminal_contact_accepted_proof_sources(
     Ok(rows)
 }
 
+fn load_t4_terminal_contact_rejected_proof_sources(
+    path: &Path,
+) -> Result<Vec<T4TerminalContactRejectedProofSourceRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
 fn t4_terminal_contact_district_proof_import_rows(
     registry_rows: &[T4TerminalContactProofSourceRegistryRow],
 ) -> Vec<T4TerminalContactDistrictProofImportRow> {
@@ -52247,6 +52299,18 @@ fn accepted_t4_terminal_proof_route_set(
         .filter(|row| {
             row.import_status == "accepted"
                 && row.proof_decision == "source-backed"
+                && row.validation_status == "pass"
+        })
+        .map(|row| route_display_key(&row.route))
+        .collect()
+}
+
+fn rejected_t4_terminal_proof_route_set(
+    rows: &[T4TerminalContactRejectedProofSourceRow],
+) -> std::collections::BTreeSet<String> {
+    rows.iter()
+        .filter(|row| {
+            row.rejection_status == "route-not-supported-by-terminal-access-source"
                 && row.validation_status == "pass"
         })
         .map(|row| route_display_key(&row.route))
