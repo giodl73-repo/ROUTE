@@ -1039,6 +1039,27 @@ enum Commands {
         gate: bool,
     },
 
+    /// Decide priority-A pavement repair disposition before relief eligibility
+    TierPavementRepairDisposition {
+        /// Path to pavement repair debt review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-repair-debt-review.csv",
+            value_name = "FILE"
+        )]
+        repair_debt_review: PathBuf,
+        /// Output pavement repair disposition CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-repair-disposition.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if disposition rows allow relief or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -7870,6 +7891,34 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement repair debt review gate: PASS");
+            }
+        }
+
+        Commands::TierPavementRepairDisposition {
+            repair_debt_review,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-repair-disposition");
+            let repair_rows = load_tier_pavement_repair_debt_review(&repair_debt_review)
+                .with_context(|| format!("loading {}", repair_debt_review.display()))?;
+            let rows = tier_pavement_repair_disposition_rows(&repair_rows);
+            write_tier_pavement_repair_disposition(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_repair_disposition_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_pavement_repair_disposition_gate_failures(&rows, &repair_rows);
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement repair disposition gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement repair disposition gate failed");
+                }
+                println!();
+                println!("Tier pavement repair disposition gate: PASS");
             }
         }
 
@@ -19592,6 +19641,26 @@ struct TierPavementRepairDebtReviewRow {
     evidence_acceptance_status: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_action: String,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementRepairDispositionRow {
+    disposition_id: String,
+    repair_review_id: String,
+    state: String,
+    source_priority: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    blocked_member_count: usize,
+    estimated_repair_cost_m: f64,
+    disposition: String,
+    relief_eligibility: String,
+    blocked_claims: String,
     claim_blocker_delta: isize,
     next_action: String,
     next_artifact: String,
@@ -39596,6 +39665,165 @@ fn tier_pavement_repair_debt_review_gate_failures(
     failures
 }
 
+fn load_tier_pavement_repair_debt_review(
+    path: &Path,
+) -> Result<Vec<TierPavementRepairDebtReviewRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_repair_disposition_rows(
+    repair_rows: &[TierPavementRepairDebtReviewRow],
+) -> Vec<TierPavementRepairDispositionRow> {
+    repair_rows
+        .iter()
+        .filter(|row| {
+            row.source_priority == "A"
+                && row.repair_debt_status == "confirmed-repair-debt"
+                && row.validation_status == "review"
+        })
+        .map(|row| TierPavementRepairDispositionRow {
+            disposition_id: format!(
+                "PAVEMENTREPAIRDISPOSITION-{}",
+                stable_id_fragment(&row.repair_review_id)
+            ),
+            repair_review_id: row.repair_review_id.clone(),
+            state: row.state.clone(),
+            source_priority: row.source_priority.clone(),
+            tier: row.tier.clone(),
+            route: row.route.clone(),
+            segment_bundle_id: row.segment_bundle_id.clone(),
+            blocked_member_count: row.blocked_member_count,
+            estimated_repair_cost_m: row.estimated_repair_cost_m,
+            disposition: "repair-funding-required".to_string(),
+            relief_eligibility: "not-eligible-for-relief".to_string(),
+            blocked_claims: row.blocker_claims_after.clone(),
+            claim_blocker_delta: 0,
+            next_action:
+                "create repair funding package or downgrade/exclude bundle before relief replay"
+                    .to_string(),
+            next_artifact: "data/tier-pavement-repair-disposition.csv".to_string(),
+            validation_status: "held".to_string(),
+        })
+        .collect()
+}
+
+fn write_tier_pavement_repair_disposition(
+    path: &Path,
+    rows: &[TierPavementRepairDispositionRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_repair_disposition_summary(
+    output: &Path,
+    rows: &[TierPavementRepairDispositionRow],
+) {
+    println!(
+        "  wrote {} pavement repair disposition rows to {}",
+        rows.len(),
+        output.display()
+    );
+    let total_cost = rows
+        .iter()
+        .map(|row| row.estimated_repair_cost_m)
+        .sum::<f64>();
+    println!("  repair funding required: ${total_cost:.2}M");
+    for row in rows {
+        println!(
+            "  {} {} {} {}",
+            row.state, row.route, row.disposition, row.relief_eligibility
+        );
+    }
+}
+
+fn tier_pavement_repair_disposition_gate_failures(
+    rows: &[TierPavementRepairDispositionRow],
+    repair_rows: &[TierPavementRepairDebtReviewRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    let expected = repair_rows
+        .iter()
+        .filter(|row| {
+            row.source_priority == "A"
+                && row.repair_debt_status == "confirmed-repair-debt"
+                && row.validation_status == "review"
+        })
+        .count();
+    if expected > 0 && rows.len() != expected {
+        failures.push(format!(
+            "repair disposition rows {} do not match repair review rows {}",
+            rows.len(),
+            expected
+        ));
+    }
+    for row in rows {
+        if row.disposition_id.trim().is_empty()
+            || row.repair_review_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_priority.trim().is_empty()
+            || row.tier.trim().is_empty()
+            || row.route.trim().is_empty()
+            || row.segment_bundle_id.trim().is_empty()
+            || row.disposition.trim().is_empty()
+            || row.relief_eligibility.trim().is_empty()
+            || row.blocked_claims.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} {} has incomplete disposition row",
+                row.state, row.route
+            ));
+        }
+        if row.disposition != "repair-funding-required" {
+            failures.push(format!(
+                "{} {} has unsupported disposition {}",
+                row.state, row.route, row.disposition
+            ));
+        }
+        if row.relief_eligibility != "not-eligible-for-relief" {
+            failures.push(format!(
+                "{} {} is relief eligible before repair",
+                row.state, row.route
+            ));
+        }
+        if row.claim_blocker_delta != 0 {
+            failures.push(format!(
+                "{} {} reduces blockers before relief",
+                row.state, row.route
+            ));
+        }
+        if row.blocked_member_count == 0 || row.estimated_repair_cost_m <= 0.0 {
+            failures.push(format!(
+                "{} {} lacks repair debt magnitude",
+                row.state, row.route
+            ));
+        }
+        if row.validation_status != "held" {
+            failures.push(format!("{} {} is not held", row.state, row.route));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -47087,6 +47315,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement repair debt is confirmed but claims stay blocked until repair funding, downgrade, exclusion, or accepted relief replay",
             ),
             (
+                "tier-pavement-repair-disposition",
+                "route tier-pavement-repair-disposition --gate",
+                "data/tier-pavement-repair-disposition.csv",
+                "held-known",
+                3,
+                "priority-A pavement repair disposition keeps repair rows relief-ineligible until funding, downgrade, or exclusion",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -53664,7 +53900,8 @@ mod tests {
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_hpms_scope_broadening_gate_failures,
         tier_pavement_hpms_scope_broadening_rows, tier_pavement_repair_debt_review_gate_failures,
-        tier_pavement_repair_debt_review_rows, tier_pavement_route_state_scope,
+        tier_pavement_repair_debt_review_rows, tier_pavement_repair_disposition_gate_failures,
+        tier_pavement_repair_disposition_rows, tier_pavement_route_state_scope,
         tier_pavement_source_access_gate_failures, tier_pavement_source_access_rows,
         tier_pavement_source_fetch_attempt_gate_failures, tier_pavement_source_fetch_attempt_rows,
         tier_pavement_source_fetch_review_gate_failures, tier_pavement_source_fetch_review_rows,
@@ -53723,10 +53960,10 @@ mod tests {
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementHpmsScopeBroadeningRow,
-        TierPavementSourceAccessRow, TierPavementSourceFetchAttemptRow,
-        TierPavementSourceFetchReviewRow, TierPavementSourceGapRow,
-        TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
-        TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementRepairDebtReviewRow, TierPavementSourceAccessRow,
+        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
+        TierPavementSourceGapRow, TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow,
+        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -63620,6 +63857,41 @@ mod tests {
         assert_eq!(rows[0].claim_blocker_delta, 0);
         assert_eq!(rows[0].blocker_claims_after, rows[0].blocker_claims_before);
         assert_eq!(rows[0].evidence_acceptance_status, "not-accepted");
+    }
+
+    #[test]
+    fn tier_pavement_repair_disposition_keeps_relief_ineligible() {
+        let repair_rows = vec![TierPavementRepairDebtReviewRow {
+            repair_review_id: "PAVEMENTREPAIRREVIEW-TX-I220".to_string(),
+            state: "TX".to_string(),
+            source_priority: "A".to_string(),
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I220".to_string(),
+            blocked_member_count: 4,
+            repair_debt_units: 4,
+            estimated_repair_cost_m: 10.0,
+            repair_debt_status: "confirmed-repair-debt".to_string(),
+            repair_decision: "hold-claims-until-repair-funded-or-design-downgraded".to_string(),
+            evidence_acceptance_status: "not-accepted".to_string(),
+            blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+            blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+            claim_blocker_delta: 0,
+            next_action: "prepare repair funding".to_string(),
+            next_artifact: "data/tier-pavement-repair-debt-review.csv".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = tier_pavement_repair_disposition_rows(&repair_rows);
+        let failures = tier_pavement_repair_disposition_gate_failures(&rows, &repair_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].disposition, "repair-funding-required");
+        assert_eq!(rows[0].relief_eligibility, "not-eligible-for-relief");
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[0].validation_status, "held");
     }
 
     #[test]

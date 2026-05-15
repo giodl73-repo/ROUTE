@@ -105,11 +105,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Priority A HPMS Scope Broadening Policy | Author governed HPMS functional-system broadening rows for source-needed TX/LA/NM US-route pavement members before cache mutation. | done |
 | 2026-05-14 | Priority A HPMS Broad Fetch Execution | Execute governed broadened TX/LA/NM HPMS fetches and reclassify priority-A source-needed holds as repair debt without relief replay. | done |
 | 2026-05-14 | Priority A Pavement Repair Debt Review | Confirm TX/LA/NM priority-A repair debt rows and preserve claims before funding, downgrade, exclusion, or relief replay. | done |
+| 2026-05-14 | Priority A Pavement Repair Disposition | Decide priority-A repair rows as funding-required and relief-ineligible before any asset-condition relief replay. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should decide priority-A pavement repair
-disposition before any asset-condition relief replay.
+No wave is active. Next optimizer work should create a priority-A pavement
+repair funding package or downgrade/exclusion decision before any
+asset-condition relief replay.
 
 ## Operating Rules
 

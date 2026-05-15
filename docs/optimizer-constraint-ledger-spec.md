@@ -147,7 +147,7 @@ Examples of source ledgers:
 
 | Source family | Current or expected source |
 |---|---|
-| Pavement and ride quality | `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-repair-debt-review.csv` |
+| Pavement and ride quality | `data/tier-pavement-debt-budget.csv`, `data/tier-pavement-repair-debt-review.csv`, `data/tier-pavement-repair-disposition.csv` |
 | Bridge, clearance, grade, and safety condition | National Bridge Inventory, HPMS, state DOT source ledgers, future condition dockets |
 | Capacity and reliability | NPMRDS/FPM, ATRI bottlenecks, HCM-derived capacity ledgers, future SLA reliability dockets |
 | Segment and bundle identity | `data/national-segment-registry.csv`, `data/national-segment-bundles.csv` |
