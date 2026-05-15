@@ -156,15 +156,16 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | FHWA Terminal Connector Proof Rejection | Reject Memphis, Salt Lake, Portland, Miami, and New Orleans pairings contradicted by FHWA connector listings. | done |
 | 2026-05-15 | Houston Terminal Connector Proof Rejection | Reject the Houston US96 pairing contradicted by UP terminal and FHWA connector evidence. | done |
 | 2026-05-15 | Terminal Contact Proof Docket Generalization | Expand the positive terminal-contact proof docket beyond Great Lakes so all residual T4 rows can enter governed source-backed review. | done |
+| 2026-05-15 | New Orleans Terminal Proof Acceptance | Accept Port NOLA route-specific truck directions for I-510 and US90Z terminal-contact proof. | done |
 
 ## Next Active Wave
 
 No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
-`snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
-accepted, and sixty contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 8. US2 pavement evidence replay
+`snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
+and US90Z), and sixty contradicted terminal-contact pairings are rejected, reducing
+T4 terminal-access upgrade blockers from 69 to 6. US2 pavement evidence replay
 reduced T2 asset-condition debt from 9 rows / $87.2M to 8 rows / $86.8M; the
 US30/US6 pavement evidence replay reduced it again to 6 rows / $75.0M, all
 repair debt. Remaining holds are non-publication claims: source snapshot
