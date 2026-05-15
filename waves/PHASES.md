@@ -99,12 +99,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-14 | Residual Backlog Classifier Hygiene | Remove zero-claim relieved game/ops rows from P1 backlog priority while preserving real asset debt. | done |
 | 2026-05-14 | Priority A Pavement Source Access | Classify priority-A pavement acquisition tasks before scoped HPMS/state fetches can mutate cache-backed inputs. | done |
 | 2026-05-14 | Priority A Pavement Fetch Attempt | Record scoped TX/LA/NM pavement fetch attempt outcomes without accepting evidence or reducing debt. | done |
+| 2026-05-14 | Priority A Pavement Fetch Review | Review scoped TX/LA/NM pavement fetch outcomes against current source gaps without accepting evidence or reducing debt. | done |
 
 ## Next Active Wave
 
-No wave is active. Next optimizer work should resume residual blocker burn-down
-from T4 terminal-access evidence using real non-seed proof attachments, or
-review TX/LA priority-A pavement cache joins while repairing the empty NM fetch.
+No wave is active. Next optimizer work should repair the empty NM pavement
+fetch or review unmatched TX/LA HPMS joins with state DOT pavement evidence
+before any asset-condition debt relief.
 
 ## Operating Rules
 

@@ -911,6 +911,41 @@ enum Commands {
         gate: bool,
     },
 
+    /// Review pavement source-fetch outcomes against current source gaps without relief
+    TierPavementSourceFetchReview {
+        /// Path to pavement source-fetch attempt summary CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-fetch-attempt.csv",
+            value_name = "FILE"
+        )]
+        fetch_attempt: PathBuf,
+        /// Path to pavement acquisition docket CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-acquisition-docket.csv",
+            value_name = "FILE"
+        )]
+        acquisition_docket: PathBuf,
+        /// Path to current pavement source-gap CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-gaps.csv",
+            value_name = "FILE"
+        )]
+        source_gaps: PathBuf,
+        /// Output pavement source-fetch review CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-source-fetch-review.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Fail if review rows accept evidence or reduce blockers
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show NBI bridge-condition coverage for tier bridge standards
     StandardsBridges {
         /// Path to generated tier table CSV
@@ -7573,6 +7608,48 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("Tier pavement source fetch attempt gate: PASS");
+            }
+        }
+
+        Commands::TierPavementSourceFetchReview {
+            fetch_attempt,
+            acquisition_docket,
+            source_gaps,
+            output,
+            gate,
+        } => {
+            println!("route tier-pavement-source-fetch-review");
+            let fetch_attempt_rows = load_tier_pavement_source_fetch_attempt(&fetch_attempt)
+                .with_context(|| format!("loading {}", fetch_attempt.display()))?;
+            let docket_rows = load_tier_pavement_acquisition_docket(&acquisition_docket)
+                .with_context(|| format!("loading {}", acquisition_docket.display()))?;
+            let source_gap_rows = load_tier_pavement_source_gaps(&source_gaps)
+                .with_context(|| format!("loading {}", source_gaps.display()))?;
+            let rows = tier_pavement_source_fetch_review_rows(
+                &fetch_attempt_rows,
+                &docket_rows,
+                &source_gap_rows,
+            );
+            write_tier_pavement_source_fetch_review(&output, &rows)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_tier_pavement_source_fetch_review_summary(&output, &rows);
+
+            if gate {
+                let failures = tier_pavement_source_fetch_review_gate_failures(
+                    &rows,
+                    &fetch_attempt_rows,
+                    &docket_rows,
+                );
+                if !failures.is_empty() {
+                    println!();
+                    println!("Tier pavement source fetch review gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("tier pavement source fetch review gate failed");
+                }
+                println!();
+                println!("Tier pavement source fetch review gate: PASS");
             }
         }
 
@@ -19185,6 +19262,27 @@ struct TierPavementSourceFetchAttemptRow {
     blocker_claims_before: String,
     blocker_claims_after: String,
     claim_blocker_delta: isize,
+    next_artifact: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementSourceFetchReviewRow {
+    review_id: String,
+    fetch_attempt_id: String,
+    task_id: String,
+    state: String,
+    source_priority: String,
+    cache_record_count: usize,
+    fetch_result_status: String,
+    pre_review_blocked_member_count: usize,
+    postfetch_unresolved_member_count: usize,
+    join_review_status: String,
+    evidence_acceptance_status: String,
+    blocker_claims_before: String,
+    blocker_claims_after: String,
+    claim_blocker_delta: isize,
+    next_action: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -38316,6 +38414,216 @@ fn tier_pavement_source_fetch_attempt_gate_failures(
     failures
 }
 
+fn load_tier_pavement_source_fetch_attempt(
+    path: &Path,
+) -> Result<Vec<TierPavementSourceFetchAttemptRow>> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
+}
+
+fn tier_pavement_source_fetch_review_rows(
+    fetch_attempt_rows: &[TierPavementSourceFetchAttemptRow],
+    docket_rows: &[TierPavementAcquisitionDocketRow],
+    source_gap_rows: &[TierPavementSourceGapRow],
+) -> Vec<TierPavementSourceFetchReviewRow> {
+    let docket_by_task = docket_rows
+        .iter()
+        .map(|row| (row.task_id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    fetch_attempt_rows
+        .iter()
+        .map(|row| {
+            let docket_row = docket_by_task.get(row.task_id.as_str()).copied();
+            let pre_review_blocked_member_count =
+                docket_row.map(|row| row.blocked_member_count).unwrap_or(0);
+            let postfetch_unresolved_member_count = docket_row
+                .map(|docket_row| {
+                    if pavement_source_gap_still_open_for_task(docket_row, source_gap_rows) {
+                        docket_row.blocked_member_count
+                    } else {
+                        0
+                    }
+                })
+                .unwrap_or(0);
+            let (join_review_status, next_action, next_artifact) =
+                if row.cache_record_count == 0
+                    || row.fetch_result_status == "fetch-failed-or-empty-cache"
+                {
+                    (
+                        "fetch-repair-needed",
+                        "repair scoped HPMS fetch or attach state DOT pavement source before evidence review",
+                        "data/tier-pavement-source-access.csv",
+                    )
+                } else if postfetch_unresolved_member_count > 0 {
+                    (
+                        "cache-populated-source-gap-still-open",
+                        "review unmatched HPMS joins or attach state DOT pavement condition evidence before blocker relief",
+                        "data/tier-pavement-docket.csv",
+                    )
+                } else {
+                    (
+                        "source-gap-closed-pending-evidence-review",
+                        "review rebuilt pavement docket before blocker relief replay",
+                        "data/tier-pavement-docket.csv",
+                    )
+                };
+            TierPavementSourceFetchReviewRow {
+                review_id: format!("PAVEMENTFETCHREVIEW-{}", stable_id_fragment(&row.task_id)),
+                fetch_attempt_id: row.fetch_attempt_id.clone(),
+                task_id: row.task_id.clone(),
+                state: row.state.clone(),
+                source_priority: row.source_priority.clone(),
+                cache_record_count: row.cache_record_count,
+                fetch_result_status: row.fetch_result_status.clone(),
+                pre_review_blocked_member_count,
+                postfetch_unresolved_member_count,
+                join_review_status: join_review_status.to_string(),
+                evidence_acceptance_status: "not-accepted".to_string(),
+                blocker_claims_before: row.blocker_claims_before.clone(),
+                blocker_claims_after: row.blocker_claims_after.clone(),
+                claim_blocker_delta: 0,
+                next_action: next_action.to_string(),
+                next_artifact: next_artifact.to_string(),
+                validation_status: "review".to_string(),
+            }
+        })
+        .collect()
+}
+
+fn pavement_source_gap_still_open_for_task(
+    docket_row: &TierPavementAcquisitionDocketRow,
+    source_gap_rows: &[TierPavementSourceGapRow],
+) -> bool {
+    let affected_bundles = docket_row
+        .affected_bundles
+        .split(';')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .collect::<std::collections::BTreeSet<_>>();
+    source_gap_rows.iter().any(|gap_row| {
+        affected_bundles.contains(gap_row.segment_bundle_id.as_str())
+            && gap_row
+                .affected_states
+                .split(';')
+                .map(str::trim)
+                .any(|state| state == docket_row.state)
+    })
+}
+
+fn write_tier_pavement_source_fetch_review(
+    path: &Path,
+    rows: &[TierPavementSourceFetchReviewRow],
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn print_tier_pavement_source_fetch_review_summary(
+    output: &Path,
+    rows: &[TierPavementSourceFetchReviewRow],
+) {
+    println!(
+        "  wrote {} pavement source-fetch review rows to {}",
+        rows.len(),
+        output.display()
+    );
+    for row in rows {
+        println!(
+            "  {} {} {} unresolved {}",
+            row.task_id, row.state, row.join_review_status, row.postfetch_unresolved_member_count
+        );
+    }
+}
+
+fn tier_pavement_source_fetch_review_gate_failures(
+    rows: &[TierPavementSourceFetchReviewRow],
+    fetch_attempt_rows: &[TierPavementSourceFetchAttemptRow],
+    docket_rows: &[TierPavementAcquisitionDocketRow],
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !fetch_attempt_rows.is_empty() && rows.len() != fetch_attempt_rows.len() {
+        failures.push(format!(
+            "fetch review rows {} do not match fetch attempt rows {}",
+            rows.len(),
+            fetch_attempt_rows.len()
+        ));
+    }
+    let docket_tasks = docket_rows
+        .iter()
+        .map(|row| row.task_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    for row in rows {
+        if row.review_id.trim().is_empty()
+            || row.fetch_attempt_id.trim().is_empty()
+            || row.task_id.trim().is_empty()
+            || row.state.trim().is_empty()
+            || row.source_priority.trim().is_empty()
+            || row.fetch_result_status.trim().is_empty()
+            || row.join_review_status.trim().is_empty()
+            || row.evidence_acceptance_status.trim().is_empty()
+            || row.blocker_claims_before.trim().is_empty()
+            || row.blocker_claims_after.trim().is_empty()
+            || row.next_action.trim().is_empty()
+            || row.next_artifact.trim().is_empty()
+            || row.validation_status.trim().is_empty()
+        {
+            failures.push(format!("{} has incomplete fetch-review row", row.task_id));
+        }
+        if !docket_tasks.contains(row.task_id.as_str()) {
+            failures.push(format!("{} has no acquisition docket row", row.task_id));
+        }
+        if row.evidence_acceptance_status != "not-accepted" {
+            failures.push(format!("{} accepts evidence before review", row.task_id));
+        }
+        if row.claim_blocker_delta != 0 || row.blocker_claims_after != row.blocker_claims_before {
+            failures.push(format!("{} reduces blockers before relief", row.task_id));
+        }
+        if row.cache_record_count == 0 && row.join_review_status != "fetch-repair-needed" {
+            failures.push(format!(
+                "{} has empty cache without fetch repair status",
+                row.task_id
+            ));
+        }
+        if row.cache_record_count > 0
+            && row.postfetch_unresolved_member_count > 0
+            && row.join_review_status != "cache-populated-source-gap-still-open"
+        {
+            failures.push(format!(
+                "{} has unresolved source gap without open-gap review status",
+                row.task_id
+            ));
+        }
+        if !matches!(
+            row.join_review_status.as_str(),
+            "fetch-repair-needed"
+                | "cache-populated-source-gap-still-open"
+                | "source-gap-closed-pending-evidence-review"
+        ) {
+            failures.push(format!(
+                "{} has invalid join review status {}",
+                row.task_id, row.join_review_status
+            ));
+        }
+    }
+    failures
+}
+
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
     let mut rows = Vec::new();
@@ -45775,6 +46083,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "priority-A pavement fetch attempts preserve blockers until cache rows are rebuilt and reviewed",
             ),
             (
+                "tier-pavement-source-fetch-review",
+                "route tier-pavement-source-fetch-review --gate",
+                "data/tier-pavement-source-fetch-review.csv",
+                "held-known",
+                3,
+                "priority-A pavement fetch review preserves blockers while TX/LA joins and NM fetch repair remain unresolved",
+            ),
+            (
                 "optimizer-constraint-ledger",
                 "route optimizer-constraint-ledger --gate",
                 "data/optimizer-constraint-ledger.csv",
@@ -52351,7 +52667,8 @@ mod tests {
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_route_state_scope, tier_pavement_source_access_gate_failures,
         tier_pavement_source_access_rows, tier_pavement_source_fetch_attempt_gate_failures,
-        tier_pavement_source_fetch_attempt_rows, tier_pavement_source_gap_gate_failures,
+        tier_pavement_source_fetch_attempt_rows, tier_pavement_source_fetch_review_gate_failures,
+        tier_pavement_source_fetch_review_rows, tier_pavement_source_gap_gate_failures,
         tier_pavement_source_gap_rows, tier_region_gate_failures,
         tier_segment_candidate_gate_failures, tier_segment_candidate_rows, write_tier_artifacts_to,
         AtriBottleneckRow, EndpointExceptionRow, FemaTile, GameT2ServiceOverlayRow, GapType,
@@ -52405,8 +52722,9 @@ mod tests {
         T4TerminalScenarioReadinessRow, TierCandidateColumnRow, TierContactWitnessInputRow,
         TierOptimizerRunRow, TierPavementAcquisitionDocketRow, TierPavementAcquisitionPlanRow,
         TierPavementDebtBudgetRow, TierPavementDocketRow, TierPavementSourceAccessRow,
-        TierPavementSourceFetchAttemptRow, TierPavementSourceGapRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
+        TierPavementSourceGapRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -61966,6 +62284,121 @@ mod tests {
         assert_eq!(rows[0].cache_record_count, 0);
         assert_eq!(rows[0].fetch_result_status, "fetch-failed-or-empty-cache");
         assert_eq!(rows[0].claim_blocker_delta, 0);
+    }
+
+    #[test]
+    fn tier_pavement_source_fetch_review_preserves_open_gaps_and_failed_fetches() {
+        let fetch_attempt_rows = vec![
+            TierPavementSourceFetchAttemptRow {
+                fetch_attempt_id: "PAVEMENTFETCH-PAVEMENTATX".to_string(),
+                access_policy_id: "PAVEMENTACCESS-PAVEMENTATX".to_string(),
+                task_id: "PAVEMENT-A-TX".to_string(),
+                state: "TX".to_string(),
+                source_priority: "A".to_string(),
+                fetch_command: "route fetch-hpms --states TX".to_string(),
+                cache_target: "data/cache/hpms_tx.csv".to_string(),
+                cache_record_count: 12,
+                fetch_result_status: "cache-populated-unreviewed".to_string(),
+                evidence_acceptance_status: "not-accepted".to_string(),
+                blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+                blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+                claim_blocker_delta: 0,
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierPavementSourceFetchAttemptRow {
+                fetch_attempt_id: "PAVEMENTFETCH-PAVEMENTANM".to_string(),
+                access_policy_id: "PAVEMENTACCESS-PAVEMENTANM".to_string(),
+                task_id: "PAVEMENT-A-NM".to_string(),
+                state: "NM".to_string(),
+                source_priority: "A".to_string(),
+                fetch_command: "route fetch-hpms --states NM".to_string(),
+                cache_target: "data/cache/hpms_nm.csv".to_string(),
+                cache_record_count: 0,
+                fetch_result_status: "fetch-failed-or-empty-cache".to_string(),
+                evidence_acceptance_status: "not-accepted".to_string(),
+                blocker_claims_before: "publication;sla;transit;upgrade".to_string(),
+                blocker_claims_after: "publication;sla;transit;upgrade".to_string(),
+                claim_blocker_delta: 0,
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let docket_rows = vec![
+            TierPavementAcquisitionDocketRow {
+                task_id: "PAVEMENT-A-TX".to_string(),
+                state: "TX".to_string(),
+                source_priority: "A".to_string(),
+                affected_routes: "US80".to_string(),
+                affected_bundles: "US.HWYBUNDLE.US80".to_string(),
+                blocked_member_count: 7,
+                fetch_command: "route fetch-hpms --states TX".to_string(),
+                rebuild_command: "route build --all-roads".to_string(),
+                verify_command:
+                    "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                        .to_string(),
+                source_contract: "route id; IRI; observation year".to_string(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+            TierPavementAcquisitionDocketRow {
+                task_id: "PAVEMENT-A-NM".to_string(),
+                state: "NM".to_string(),
+                source_priority: "A".to_string(),
+                affected_routes: "US70".to_string(),
+                affected_bundles: "US.HWYBUNDLE.US70".to_string(),
+                blocked_member_count: 5,
+                fetch_command: "route fetch-hpms --states NM".to_string(),
+                rebuild_command: "route build --all-roads".to_string(),
+                verify_command:
+                    "route tier-pavement-docket --gate && route tier-pavement-source-gaps --gate"
+                        .to_string(),
+                source_contract: "route id; IRI; observation year".to_string(),
+                next_artifact: "data/tier-pavement-docket.csv".to_string(),
+                validation_status: "review".to_string(),
+            },
+        ];
+        let source_gap_rows = vec![TierPavementSourceGapRow {
+            tier: "T2".to_string(),
+            route: "US80".to_string(),
+            region_id: "component-0".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.US80".to_string(),
+            stitch_group_id: "US.HWYSTITCH.US80".to_string(),
+            member_count: 7,
+            blocker_count: 7,
+            blocker_statuses: "pavement-source-needed".to_string(),
+            affected_states: "TX".to_string(),
+            affected_edge_ids: "1;2;3".to_string(),
+            source_contract: "HPMS IRI joined to T2 segment candidates".to_string(),
+            source_action: "price pavement evidence debt for affected member edges".to_string(),
+            next_artifact: "data/standards-l1-inventory.csv".to_string(),
+            optimizer_effect:
+                "bundle remains service-addressable while pavement source debt is acquired"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows: Vec<TierPavementSourceFetchReviewRow> = tier_pavement_source_fetch_review_rows(
+            &fetch_attempt_rows,
+            &docket_rows,
+            &source_gap_rows,
+        );
+        let failures = tier_pavement_source_fetch_review_gate_failures(
+            &rows,
+            &fetch_attempt_rows,
+            &docket_rows,
+        );
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows[0].join_review_status,
+            "cache-populated-source-gap-still-open"
+        );
+        assert_eq!(rows[0].postfetch_unresolved_member_count, 7);
+        assert_eq!(rows[0].claim_blocker_delta, 0);
+        assert_eq!(rows[1].join_review_status, "fetch-repair-needed");
+        assert_eq!(rows[1].evidence_acceptance_status, "not-accepted");
     }
 
     #[test]
