@@ -143,6 +143,7 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | Iowa 511 Snapshot Polling Acquisition | Run a real Iowa 511 polling pass and extend the T1 evidence-window ledger without promoting evidence. | done |
 | 2026-05-15 | Indianapolis Avon Terminal Proof Acceptance | Accept one non-seed I-465 terminal-contact proof source and reduce T4 terminal-access upgrade blockers. | done |
 | 2026-05-15 | Terminal Access Negative Proof Rejection | Reject route-terminal pairings contradicted by source-listed terminal access routes and reduce T4 upgrade blockers. | done |
+| 2026-05-15 | Terminal Access Negative Proof Expansion | Reject ten more route-terminal pairings contradicted by source-listed terminal access routes and reduce T4 upgrade blockers. | done |
 
 ## Next Active Wave
 
@@ -150,8 +151,8 @@ No wave is active. Current T1-T4 structural maps have a gateable readiness
 artifact, a gateable release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. One I-465 / Indianapolis Avon terminal-contact source is
-accepted, and five contradicted terminal-contact pairings are rejected, reducing
-T4 terminal-access upgrade blockers from 69 to 63. Remaining holds are
+accepted, and fifteen contradicted terminal-contact pairings are rejected, reducing
+T4 terminal-access upgrade blockers from 69 to 53. Remaining holds are
 non-publication claims: source snapshot `evidence`, T4 terminal-access
 `upgrade`, and T2 asset-condition `sla|transit|upgrade`. Do not add more
 placeholder-only source-needed map-proof ledgers.
