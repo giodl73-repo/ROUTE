@@ -865,6 +865,13 @@ enum Commands {
             value_name = "FILE"
         )]
         source_gaps: PathBuf,
+        /// Path to accepted route/state pavement exclusion CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-route-state-exclusions.csv",
+            value_name = "FILE"
+        )]
+        route_state_exclusions: PathBuf,
         /// Output pavement debt budget CSV
         #[arg(
             long,
@@ -1089,6 +1096,13 @@ enum Commands {
             value_name = "FILE"
         )]
         pavement_debt_budget: PathBuf,
+        /// Path to accepted route/state pavement exclusion CSV
+        #[arg(
+            long,
+            default_value = "data/tier-pavement-route-state-exclusions.csv",
+            value_name = "FILE"
+        )]
+        route_state_exclusions: PathBuf,
         /// Output pavement repair debt review CSV
         #[arg(
             long,
@@ -8345,6 +8359,7 @@ fn run_cli() -> Result<()> {
 
         Commands::TierPavementDebtBudget {
             source_gaps,
+            route_state_exclusions,
             output,
             details,
             gate,
@@ -8352,13 +8367,16 @@ fn run_cli() -> Result<()> {
             println!("route tier-pavement-debt-budget");
             let gap_rows = load_tier_pavement_source_gaps(&source_gaps)
                 .with_context(|| format!("loading {}", source_gaps.display()))?;
-            let rows = tier_pavement_debt_budget_rows(&gap_rows);
+            let exclusion_rows = load_tier_pavement_route_state_exclusions(&route_state_exclusions)
+                .with_context(|| format!("loading {}", route_state_exclusions.display()))?;
+            let rows = tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &exclusion_rows);
             write_tier_pavement_debt_budget(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_pavement_debt_budget_summary(&output, &rows, details);
 
             if gate {
-                let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows);
+                let failures =
+                    tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &exclusion_rows);
                 if !failures.is_empty() {
                     println!();
                     println!("Tier pavement debt budget gate: FAIL");
@@ -8612,6 +8630,7 @@ fn run_cli() -> Result<()> {
         Commands::TierPavementRepairDebtReview {
             unmatched_join_review,
             pavement_debt_budget,
+            route_state_exclusions,
             output,
             gate,
         } => {
@@ -8621,14 +8640,23 @@ fn run_cli() -> Result<()> {
                     .with_context(|| format!("loading {}", unmatched_join_review.display()))?;
             let debt_rows = load_tier_pavement_debt_budget(&pavement_debt_budget)
                 .with_context(|| format!("loading {}", pavement_debt_budget.display()))?;
-            let rows = tier_pavement_repair_debt_review_rows(&unmatched_join_rows, &debt_rows);
+            let exclusion_rows = load_tier_pavement_route_state_exclusions(&route_state_exclusions)
+                .with_context(|| format!("loading {}", route_state_exclusions.display()))?;
+            let rows = tier_pavement_repair_debt_review_rows(
+                &unmatched_join_rows,
+                &debt_rows,
+                &exclusion_rows,
+            );
             write_tier_pavement_repair_debt_review(&output, &rows)
                 .with_context(|| format!("writing {}", output.display()))?;
             print_tier_pavement_repair_debt_review_summary(&output, &rows);
 
             if gate {
-                let failures =
-                    tier_pavement_repair_debt_review_gate_failures(&rows, &unmatched_join_rows);
+                let failures = tier_pavement_repair_debt_review_gate_failures(
+                    &rows,
+                    &unmatched_join_rows,
+                    &exclusion_rows,
+                );
                 if !failures.is_empty() {
                     println!();
                     println!("Tier pavement repair debt review gate: FAIL");
@@ -21675,6 +21703,22 @@ struct TierPavementDebtBudgetRow {
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct TierPavementRouteStateExclusionRow {
+    exclusion_id: String,
+    state: String,
+    tier: String,
+    route: String,
+    segment_bundle_id: String,
+    source_title: String,
+    source_url_or_cache_artifact: String,
+    capture_date: String,
+    excluded_member_count: usize,
+    exclusion_basis: String,
+    exclusion_status: String,
+    validation_status: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 struct TierPavementAcquisitionPlanRow {
     state: String,
     tier: String,
@@ -28136,11 +28180,13 @@ struct TierPavementDebtBudgetRollup {
     affected_bundles: std::collections::BTreeSet<String>,
 }
 
-fn tier_pavement_debt_budget_rows(
+fn tier_pavement_debt_budget_rows_with_exclusions(
     gap_rows: &[TierPavementSourceGapRow],
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
 ) -> Vec<TierPavementDebtBudgetRow> {
     gap_rows
         .iter()
+        .filter(|row| !pavement_gap_has_accepted_route_state_exclusion(row, exclusion_rows))
         .map(|row| {
             let needs_repair = row.blocker_statuses.contains("pavement-repair-required");
             let needs_evidence = row.blocker_statuses.contains("pavement-source-needed");
@@ -28191,6 +28237,36 @@ fn tier_pavement_debt_budget_rows(
             }
         })
         .collect()
+}
+
+fn pavement_gap_has_accepted_route_state_exclusion(
+    gap_row: &TierPavementSourceGapRow,
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
+) -> bool {
+    exclusion_rows.iter().any(|exclusion| {
+        exclusion.validation_status == "pass"
+            && exclusion.exclusion_status == "route-state-not-supported"
+            && exclusion.tier == gap_row.tier
+            && route_display_key(&exclusion.route) == route_display_key(&gap_row.route)
+            && exclusion.segment_bundle_id == gap_row.segment_bundle_id
+            && semicolon_values(&gap_row.affected_states)
+                .iter()
+                .any(|state| state == &exclusion.state)
+    })
+}
+
+fn load_tier_pavement_route_state_exclusions(
+    path: &Path,
+) -> Result<Vec<TierPavementRouteStateExclusionRow>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut rows = Vec::new();
+    for row in reader.deserialize() {
+        rows.push(row?);
+    }
+    Ok(rows)
 }
 
 fn round_cost_m(value: f64) -> f64 {
@@ -41147,19 +41223,68 @@ fn print_tier_pavement_debt_budget_summary(
 fn tier_pavement_debt_budget_gate_failures(
     rows: &[TierPavementDebtBudgetRow],
     gap_rows: &[TierPavementSourceGapRow],
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
 ) -> Vec<String> {
     let mut failures = Vec::new();
-    if rows.len() != gap_rows.len() {
+    let expected_gap_rows = gap_rows
+        .iter()
+        .filter(|row| !pavement_gap_has_accepted_route_state_exclusion(row, exclusion_rows))
+        .collect::<Vec<_>>();
+    if rows.len() != expected_gap_rows.len() {
         failures.push(format!(
-            "pavement debt budget rows {} do not match source-gap rows {}",
+            "pavement debt budget rows {} do not match non-excluded source-gap rows {}",
             rows.len(),
-            gap_rows.len()
+            expected_gap_rows.len()
         ));
     }
-    let source_gap_bundles = gap_rows
+    let source_gap_bundles = expected_gap_rows
         .iter()
         .map(|row| row.segment_bundle_id.as_str())
         .collect::<std::collections::BTreeSet<_>>();
+    for exclusion in exclusion_rows
+        .iter()
+        .filter(|row| row.validation_status == "pass")
+    {
+        if exclusion.exclusion_id.trim().is_empty()
+            || exclusion.state.trim().is_empty()
+            || exclusion.tier.trim().is_empty()
+            || exclusion.route.trim().is_empty()
+            || exclusion.segment_bundle_id.trim().is_empty()
+            || exclusion.source_title.trim().is_empty()
+            || exclusion.source_url_or_cache_artifact.trim().is_empty()
+            || exclusion.capture_date.trim().is_empty()
+            || exclusion.exclusion_basis.trim().is_empty()
+            || exclusion.exclusion_status.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete pavement route-state exclusion",
+                exclusion.exclusion_id
+            ));
+        }
+        if exclusion.exclusion_status != "route-state-not-supported" {
+            failures.push(format!(
+                "{} has unsupported exclusion status {}",
+                exclusion.exclusion_id, exclusion.exclusion_status
+            ));
+        }
+        if exclusion.excluded_member_count == 0 {
+            failures.push(format!(
+                "{} has zero excluded pavement members",
+                exclusion.exclusion_id
+            ));
+        }
+        if !gap_rows.iter().any(|gap_row| {
+            pavement_gap_has_accepted_route_state_exclusion(
+                gap_row,
+                std::slice::from_ref(exclusion),
+            )
+        }) {
+            failures.push(format!(
+                "{} does not match a pavement source-gap row",
+                exclusion.exclusion_id
+            ));
+        }
+    }
     for row in rows {
         if row.tier.trim().is_empty()
             || row.route.trim().is_empty()
@@ -42516,6 +42641,7 @@ fn tier_pavement_hpms_scope_broadening_gate_failures(
 fn tier_pavement_repair_debt_review_rows(
     unmatched_join_rows: &[TierPavementUnmatchedJoinReviewRow],
     debt_rows: &[TierPavementDebtBudgetRow],
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
 ) -> Vec<TierPavementRepairDebtReviewRow> {
     let mut review_scope =
         std::collections::BTreeMap::<String, (&TierPavementUnmatchedJoinReviewRow, usize)>::new();
@@ -42524,7 +42650,13 @@ fn tier_pavement_repair_debt_review_rows(
             && row.join_review_status == "repair-debt-not-source-join"
             && row.repair_required_member_count > 0
         {
-            review_scope.insert(row.state.clone(), (row, row.repair_required_member_count));
+            let excluded_count = pavement_excluded_repair_member_count(row, exclusion_rows);
+            let expected_count = row
+                .repair_required_member_count
+                .saturating_sub(excluded_count);
+            if expected_count > 0 {
+                review_scope.insert(row.state.clone(), (row, expected_count));
+            }
         }
     }
 
@@ -42654,6 +42786,7 @@ fn print_tier_pavement_repair_debt_review_summary(
 fn tier_pavement_repair_debt_review_gate_failures(
     rows: &[TierPavementRepairDebtReviewRow],
     unmatched_join_rows: &[TierPavementUnmatchedJoinReviewRow],
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
 ) -> Vec<String> {
     let mut failures = Vec::new();
     let expected_by_state = unmatched_join_rows
@@ -42663,7 +42796,13 @@ fn tier_pavement_repair_debt_review_gate_failures(
                 && row.join_review_status == "repair-debt-not-source-join"
                 && row.repair_required_member_count > 0
         })
-        .map(|row| (row.state.clone(), row.repair_required_member_count))
+        .filter_map(|row| {
+            let excluded_count = pavement_excluded_repair_member_count(row, exclusion_rows);
+            let expected_count = row
+                .repair_required_member_count
+                .saturating_sub(excluded_count);
+            (expected_count > 0).then(|| (row.state.clone(), expected_count))
+        })
         .collect::<std::collections::BTreeMap<_, _>>();
     if !expected_by_state.is_empty() && rows.is_empty() {
         failures.push("no priority-A pavement repair debt review rows emitted".to_string());
@@ -42741,6 +42880,25 @@ fn tier_pavement_repair_debt_review_gate_failures(
         }
     }
     failures
+}
+
+fn pavement_excluded_repair_member_count(
+    join_row: &TierPavementUnmatchedJoinReviewRow,
+    exclusion_rows: &[TierPavementRouteStateExclusionRow],
+) -> usize {
+    let repair_routes = semicolon_values(&join_row.repair_required_routes);
+    exclusion_rows
+        .iter()
+        .filter(|row| {
+            row.validation_status == "pass"
+                && row.exclusion_status == "route-state-not-supported"
+                && row.state == join_row.state
+                && repair_routes
+                    .iter()
+                    .any(|route| route_display_key(route) == route_display_key(&row.route))
+        })
+        .map(|row| row.excluded_member_count)
+        .sum()
 }
 
 fn load_tier_pavement_repair_debt_review(
@@ -55777,6 +55935,14 @@ fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimizerRunRow>> 
                 "",
             ),
             (
+                "tier-pavement-route-state-exclusions",
+                "route tier-pavement-debt-budget --gate",
+                "data/tier-pavement-route-state-exclusions.csv",
+                "pass",
+                0,
+                "",
+            ),
+            (
                 "tier-pavement-debt-budget",
                 "route tier-pavement-debt-budget --gate",
                 "data/tier-pavement-debt-budget.csv",
@@ -62654,7 +62820,7 @@ mod tests {
         tier_contact_witness_rows, tier_for_score, tier_optimizer_run_gate_failures,
         tier_pavement_acquisition_docket_gate_failures, tier_pavement_acquisition_docket_rows,
         tier_pavement_acquisition_plan_gate_failures, tier_pavement_acquisition_plan_rows,
-        tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows,
+        tier_pavement_debt_budget_gate_failures, tier_pavement_debt_budget_rows_with_exclusions,
         tier_pavement_docket_gate_failures, tier_pavement_docket_rows,
         tier_pavement_downgrade_exclusion_decision_gate_failures,
         tier_pavement_downgrade_exclusion_decision_rows,
@@ -62788,10 +62954,11 @@ mod tests {
         TierPavementFundingEvidenceReviewDocketRow, TierPavementFundingEvidenceSourceAccessRow,
         TierPavementFundingEvidenceSourceCaptureRow, TierPavementHpmsScopeBroadeningRow,
         TierPavementRepairDebtReviewRow, TierPavementRepairDispositionRow,
-        TierPavementRepairFundingPackageRow, TierPavementSourceAccessRow,
-        TierPavementSourceFetchAttemptRow, TierPavementSourceFetchReviewRow,
-        TierPavementSourceGapRow, TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow,
-        TierRegionWorkloadRow, TierSegmentCandidateRow, TierTableScoreRow,
+        TierPavementRepairFundingPackageRow, TierPavementRouteStateExclusionRow,
+        TierPavementSourceAccessRow, TierPavementSourceFetchAttemptRow,
+        TierPavementSourceFetchReviewRow, TierPavementSourceGapRow,
+        TierPavementUnmatchedJoinReviewRow, TierRegionRepairInputRow, TierRegionWorkloadRow,
+        TierSegmentCandidateRow, TierTableScoreRow,
     };
     use geo_types::{coord, LineString};
     use route_network::{CorridorAttributes, HighwayEdge, HighwayGraph, HighwayNode};
@@ -69868,8 +70035,9 @@ mod tests {
             },
         ];
 
-        let rows: Vec<TierPavementDebtBudgetRow> = tier_pavement_debt_budget_rows(&gap_rows);
-        let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows);
+        let rows: Vec<TierPavementDebtBudgetRow> =
+            tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &[]);
+        let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &[]);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 2);
@@ -69880,6 +70048,47 @@ mod tests {
         assert_eq!(rows[1].repair_debt_units, 4);
         assert_eq!(rows[1].total_debt_cost_m, 10.0);
         assert!(rows[1].optimizer_penalty.contains("budget-cost"));
+    }
+
+    #[test]
+    fn tier_pavement_debt_budget_applies_route_state_exclusions() {
+        let gap_rows = vec![TierPavementSourceGapRow {
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            region_id: "component-0".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220TX".to_string(),
+            stitch_group_id: "US.HWYSTITCH.I220TX".to_string(),
+            member_count: 4,
+            blocker_count: 4,
+            blocker_statuses: "pavement-repair-required".to_string(),
+            affected_states: "TX".to_string(),
+            affected_edge_ids: "1;2;3;4".to_string(),
+            source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+            source_action: "price pavement repair debt".to_string(),
+            next_artifact: "data/tier-pavement-docket.csv".to_string(),
+            optimizer_effect: "bundle remains service-addressable".to_string(),
+            validation_status: "review".to_string(),
+        }];
+        let exclusion_rows = vec![TierPavementRouteStateExclusionRow {
+            exclusion_id: "PAVEMENTROUTESTATEEXCLUSION-TX-I220".to_string(),
+            state: "TX".to_string(),
+            tier: "T2".to_string(),
+            route: "I220".to_string(),
+            segment_bundle_id: "US.HWYBUNDLE.I220TX".to_string(),
+            source_title: "FHWA Interstate Route Log and Finders List Table 2".to_string(),
+            source_url_or_cache_artifact: "https://www.fhwa.dot.gov/planning/national_highway_system/interstate_highway_system/routefinder/table02.cfm".to_string(),
+            capture_date: "2026-05-15".to_string(),
+            excluded_member_count: 4,
+            exclusion_basis: "FHWA table omits I-220 Texas".to_string(),
+            exclusion_status: "route-state-not-supported".to_string(),
+            validation_status: "pass".to_string(),
+        }];
+
+        let rows = tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &exclusion_rows);
+        let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &exclusion_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert!(rows.is_empty());
     }
 
     #[test]
@@ -73053,8 +73262,8 @@ mod tests {
             validation_status: "review".to_string(),
         }];
 
-        let rows = tier_pavement_repair_debt_review_rows(&unmatched_rows, &debt_rows);
-        let failures = tier_pavement_repair_debt_review_gate_failures(&rows, &unmatched_rows);
+        let rows = tier_pavement_repair_debt_review_rows(&unmatched_rows, &debt_rows, &[]);
+        let failures = tier_pavement_repair_debt_review_gate_failures(&rows, &unmatched_rows, &[]);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
