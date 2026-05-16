@@ -4,6 +4,10 @@ The United States chose highways. Not rail, not canals, not airships — highway
 
 ROUTE is a research and design project for what comes next.
 
+**Review roles:** This repo uses
+[ROLES](https://github.com/giodl73-repo/ROLES), the `.roles` convention for
+repository-local review panels.
+
 See [docs/SYSTEM_PLAN.md](docs/SYSTEM_PLAN.md) for the living milepost roadmap that connects the specs, Rust implementation, research tracks, and `.roles` review process. See [docs/route-architecture.md](docs/route-architecture.md) for the core segment-identity architecture, and [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md) for spec ownership.
 
 ROUTE also has a game-facing path: [Interstate Tycoon](docs/INTERSTATE_TYCOON.md), a highway strategy game concept that puts the simulation engine under a playable infrastructure loop.
