@@ -2,6 +2,7 @@ pub mod census;
 pub mod faf5;
 pub mod fema;
 pub mod fetch;
+pub mod fletch;
 pub mod hpms;
 pub mod hpms_fetch;
 pub mod manifest;
@@ -21,6 +22,11 @@ pub use census::{
 };
 pub use faf5::Faf5Record;
 pub use fema::{fetch_all_sfha_counts, fetch_fema_count, CorridorBbox, FemaSfhaResult, T1_BBOXES};
+pub use fletch::{
+    fetch_all_manifest_sources_with_fletch, fletch_source_handoff_report,
+    load_fletch_source_registry, load_route_source_fetch_policy, write_fletch_source_handoff,
+    FletchSourceHandoffReport, FletchSourceHandoffRow, RouteSourceFetchPolicyRow,
+};
 pub use hpms::{HpmsFpmRecord, HpmsRecord};
 pub use hpms_fetch::{fetch_all_hpms, STATE_CODES};
 pub use manifest::Manifest;

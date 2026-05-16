@@ -585,6 +585,34 @@ enum Commands {
         gate: bool,
     },
 
+    /// Validate ROUTE source families against the FLETCH registry handoff
+    FletchSources {
+        /// ROUTE-owned FLETCH source registry JSON
+        #[arg(long, default_value = "data/fletch-registry.json", value_name = "FILE")]
+        registry: PathBuf,
+        /// ROUTE source-fetch preservation policy CSV
+        #[arg(
+            long,
+            default_value = "data/source-fetch-policy.csv",
+            value_name = "FILE"
+        )]
+        source_policy: PathBuf,
+        /// Output FLETCH handoff/readiness CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/fletch-source-handoff.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print each cacheline handoff row
+        #[arg(long)]
+        details: bool,
+        /// Fail if any source-fetch policy family is not covered by FLETCH
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show tier standards for a given tier
     Standards {
         /// Tier to show (1, 2, 3, or 4)
@@ -5903,7 +5931,7 @@ fn run_cli() -> Result<()> {
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             println!("  manifest: {} sources", manifest.sources.len());
-            route_data::fetch::fetch_all(&manifest, force)?;
+            route_data::fetch_all_manifest_sources_with_fletch(&manifest, force)?;
             println!("fetch complete.");
         }
 
@@ -7658,6 +7686,39 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("source fetch policy gate: PASS");
+            }
+        }
+
+        Commands::FletchSources {
+            registry,
+            source_policy,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route fletch-sources");
+            let registry_report = route_data::load_fletch_source_registry(&registry)
+                .with_context(|| format!("loading {}", registry.display()))?;
+            let source_policy_rows = route_data::load_route_source_fetch_policy(&source_policy)
+                .with_context(|| format!("loading {}", source_policy.display()))?;
+            let report =
+                route_data::fletch_source_handoff_report(&registry_report, &source_policy_rows);
+            route_data::write_fletch_source_handoff(&output, &report)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_fletch_source_handoff_summary(&output, &report, details);
+
+            if gate {
+                let failures = fletch_source_handoff_gate_failures(&report);
+                if !failures.is_empty() {
+                    println!();
+                    println!("FLETCH source handoff gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("FLETCH source handoff gate failed");
+                }
+                println!();
+                println!("FLETCH source handoff gate: PASS");
             }
         }
 
@@ -55652,7 +55713,7 @@ fn source_fetch_policy_rows() -> Vec<SourceFetchPolicyRow> {
             "data/cache/<manifest filename>",
             "full-replace-after-validation",
             "skip existing files unless --force; write new payload only after HTTP success",
-            "route_data::fetch::atomic_write_bytes",
+            "route_data::fetch_all_manifest_sources_with_fletch plus atomic legacy-path write",
             "HTTP success and complete byte write before replace",
         ),
         source_fetch_policy_row(
@@ -55793,6 +55854,94 @@ fn print_source_fetch_policy_summary(output: &Path, rows: &[SourceFetchPolicyRow
     for (mode, count) in modes {
         println!("  {mode}: {count}");
     }
+}
+
+fn print_fletch_source_handoff_summary(
+    output: &Path,
+    report: &route_data::FletchSourceHandoffReport,
+    details: bool,
+) {
+    let mut statuses = std::collections::BTreeMap::<&str, usize>::new();
+    for row in &report.rows {
+        *statuses.entry(row.handoff_status.as_str()).or_default() += 1;
+    }
+    println!(
+        "  wrote {} FLETCH source handoff rows to {}",
+        report.rows.len(),
+        output.display()
+    );
+    println!("  registry: {}", report.registry_id);
+    println!(
+        "  families covered: {}/{}",
+        report.covered_family_count, report.policy_family_count
+    );
+    println!(
+        "  fletches: {}  sources: {}  adapter-owned: {}",
+        report.fletch_count, report.source_count, report.adapter_source_count
+    );
+    println!(
+        "  graph: {} nodes / {} edges; dry-run steps: {}",
+        report.graph_node_count, report.graph_edge_count, report.flight_step_count
+    );
+    for (status, count) in statuses {
+        println!("  {status}: {count}");
+    }
+    if !report.missing_policy_families.is_empty() {
+        println!(
+            "  missing policy families: {}",
+            report.missing_policy_families.join(", ")
+        );
+    }
+    if details {
+        println!();
+        println!("  {:28}  {:18}  {}", "FLETCH", "handoff", "target");
+        println!("  {}", "-".repeat(76));
+        for row in &report.rows {
+            println!(
+                "  {:28}  {:18}  {}",
+                row.fletch_id, row.handoff_status, row.cache_targets
+            );
+        }
+    }
+}
+
+fn fletch_source_handoff_gate_failures(
+    report: &route_data::FletchSourceHandoffReport,
+) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !report.registry_valid {
+        failures.push(format!(
+            "registry {} is not valid ({} findings)",
+            report.registry_id, report.validation_finding_count
+        ));
+    }
+    if !report.missing_policy_families.is_empty() {
+        failures.push(format!(
+            "missing FLETCH coverage for source policy families: {}",
+            report.missing_policy_families.join(", ")
+        ));
+    }
+    if report.rows.is_empty() {
+        failures.push("FLETCH source handoff emitted no rows".to_string());
+    }
+    for row in &report.rows {
+        if row.validation_status != "pass" {
+            failures.push(format!("{} handoff row is not valid", row.fletch_id));
+        }
+        if row.fetch_family.trim().is_empty() {
+            failures.push(format!("{} missing fetch_family metadata", row.fletch_id));
+        }
+        if row.cache_targets.trim().is_empty() {
+            failures.push(format!("{} missing cache targets", row.fletch_id));
+        }
+        if row.activation_rule.trim().is_empty() {
+            failures.push(format!("{} missing activation rule", row.fletch_id));
+        }
+        if row.route_validation_floor.trim().is_empty() {
+            failures.push(format!("{} missing ROUTE validation floor", row.fletch_id));
+        }
+    }
+    failures
 }
 
 fn source_fetch_policy_gate_failures(rows: &[SourceFetchPolicyRow]) -> Vec<String> {

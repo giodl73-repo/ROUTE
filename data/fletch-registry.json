@@ -1,0 +1,330 @@
+{
+  "schema_version": "fletch.registry.v1",
+  "generated_by": "route-data/0.1.0",
+  "registry_id": "route.sources.v1",
+  "fletches": [
+    {
+      "id": "route.manifest.tiger-primary-roads",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "http",
+          "url": "https://www2.census.gov/geo/tiger/TIGER2023/PRIMARYROADS/tl_2023_us_primaryroads.zip",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.graph-build",
+          "kind": "derived-from",
+          "label": "feeds graph build",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "application/zip",
+        "encoding": null,
+        "compression": "zip",
+        "container": "shpzip",
+        "schema": "census.tiger-primary-roads.2023",
+        "record_shape": "TIGER/Line primary roads shapefile",
+        "preferred_local": "data/cache/tl_2023_us_primaryroads.zip"
+      },
+      "tags": ["route-source", "bootstrap", "manifest", "tiger"],
+      "metadata": {
+        "fetch_family": "manifest-downloads",
+        "manifest_source": "tiger-primary-roads",
+        "commands": "route fetch [--force]",
+        "cache_targets": "data/cache/tl_2023_us_primaryroads.zip",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "bootstrap;on-demand",
+        "activation_rule": "HTTP success and complete write to legacy cache path",
+        "route_validation_floor": "HTTP success and complete byte write before replace",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.manifest.census-gazetteer-counties",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "http",
+          "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2023_Gazetteer/2023_Gaz_counties_national.zip",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.population-geography",
+          "kind": "derived-from",
+          "label": "feeds county centroid and reach joins",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "application/zip",
+        "encoding": null,
+        "compression": "zip",
+        "container": "csvzip",
+        "schema": "census.gazetteer.counties.2023",
+        "record_shape": "county gazetteer rows",
+        "preferred_local": "data/cache/2023_Gaz_counties_national.zip"
+      },
+      "tags": ["route-source", "bootstrap", "manifest", "census"],
+      "metadata": {
+        "fetch_family": "manifest-downloads",
+        "manifest_source": "census-gazetteer-counties",
+        "commands": "route fetch [--force]",
+        "cache_targets": "data/cache/2023_Gaz_counties_national.zip",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "bootstrap;on-demand",
+        "activation_rule": "HTTP success and complete write to legacy cache path",
+        "route_validation_floor": "HTTP success and complete byte write before replace",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.manifest.manual-sources",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://manifest-manual-sources",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.graph-build",
+          "kind": "derived-from",
+          "label": "feeds graph build",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": null,
+        "encoding": null,
+        "compression": null,
+        "container": null,
+        "schema": "route.manifest.v1",
+        "record_shape": "manual manifest source rows",
+        "preferred_local": "data/cache/<manual manifest filename>"
+      },
+      "tags": ["route-source", "bootstrap", "manifest", "manual"],
+      "metadata": {
+        "fetch_family": "manifest-downloads",
+        "manifest_source": "nbi;bea-gdp-county;usda-rural-codes;atri-bottlenecks;census-acs-county-pop",
+        "commands": "route fetch [--force]",
+        "cache_targets": "data/cache/<manual manifest filename>",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "manual;bootstrap",
+        "activation_rule": "manual source is available at declared legacy cache path",
+        "route_validation_floor": "manual source is reviewed by ROUTE evidence policy before claim promotion",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.hpms.national",
+      "node_kind": "partition",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://fetch-hpms?scope=national",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.pavement-throughput",
+          "kind": "derived-from",
+          "label": "feeds pavement and throughput acquisition rows",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "text/csv",
+        "encoding": "utf-8",
+        "compression": null,
+        "container": null,
+        "schema": "route.hpms.csv",
+        "record_shape": "HPMS segment records",
+        "preferred_local": "data/cache/hpms_2018.csv"
+      },
+      "tags": ["route-source", "group", "hpms"],
+      "metadata": {
+        "fetch_family": "hpms-national",
+        "commands": "route fetch-hpms",
+        "cache_targets": "data/cache/hpms_2018.csv",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "group",
+        "activation_rule": "activate after non-empty parsed HPMS rows",
+        "route_validation_floor": "non-empty HPMS record set",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.hpms.state",
+      "node_kind": "partition",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://fetch-hpms?scope=state",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.hpms.national",
+          "kind": "rolls-up-to",
+          "label": "state scope merges into national HPMS cache",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "text/csv",
+        "encoding": "utf-8",
+        "compression": null,
+        "container": null,
+        "schema": "route.hpms.csv",
+        "record_shape": "state-scoped HPMS segment records",
+        "preferred_local": "data/cache/hpms_<state>.csv"
+      },
+      "tags": ["route-source", "partition", "hpms"],
+      "metadata": {
+        "fetch_family": "hpms-state-scope",
+        "commands": "route fetch-hpms --states <STATE[,STATE]>;route fetch-hpms --states <STATE[,STATE]> --functional-systems <SYSTEM[,SYSTEM]>",
+        "cache_targets": "data/cache/hpms_2018.csv;data/cache/hpms_<state>.csv",
+        "mutation_mode": "scoped-merge",
+        "acquisition_mode": "on-demand;group",
+        "activation_rule": "merge fetched state rows and preserve non-requested state rows",
+        "route_validation_floor": "at least one fetched HPMS row",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.acs.county",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://fetch-acs-county",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.population-equity-access",
+          "kind": "derived-from",
+          "label": "feeds population reach and equity/rural access evidence",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "text/csv",
+        "encoding": "utf-8",
+        "compression": null,
+        "container": null,
+        "schema": "route.acs.county.csv",
+        "record_shape": "county ACS rows",
+        "preferred_local": "data/cache/acs_county_*_2022.csv"
+      },
+      "tags": ["route-source", "group", "acs"],
+      "metadata": {
+        "fetch_family": "acs-county",
+        "commands": "route fetch-acs;route fetch-acs-income",
+        "cache_targets": "data/cache/acs_county_pop_2022.csv;data/cache/acs_county_income_2022.csv",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "group",
+        "activation_rule": "activate after Census JSON parses and CSV writes complete",
+        "route_validation_floor": "Census JSON parses before CSV replace",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.fema.sfha",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://fetch-fema-sfha",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.climate-flood-exposure",
+          "kind": "derived-from",
+          "label": "feeds climate and flood exposure evidence",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "text/csv",
+        "encoding": "utf-8",
+        "compression": null,
+        "container": null,
+        "schema": "route.fema.sfha.csv",
+        "record_shape": "corridor or tile SFHA counts",
+        "preferred_local": "data/cache/fema_sfha*_counts.csv"
+      },
+      "tags": ["route-source", "group", "fema"],
+      "metadata": {
+        "fetch_family": "fema-corridor",
+        "commands": "route fetch-fema;route fetch-fema-d1",
+        "cache_targets": "data/cache/fema_sfha_counts.csv;data/cache/fema_sfha_tile_counts.csv",
+        "mutation_mode": "full-replace-after-validation",
+        "acquisition_mode": "group",
+        "activation_rule": "activate after query loop and CSV flush",
+        "route_validation_floor": "CSV rows flushed after query loop",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    },
+    {
+      "id": "route.t1.events.live-snapshots",
+      "node_kind": "fletch",
+      "shafts": [
+        {
+          "kind": "adapter",
+          "url": "route-adapter://t1-live-event-snapshots",
+          "headers": {}
+        }
+      ],
+      "edges": [
+        {
+          "to": "route.derived.t1-failure-evidence-windows",
+          "kind": "derived-from",
+          "label": "feeds T1 failure evidence windows and scenario fixtures",
+          "metadata": {}
+        }
+      ],
+      "format": {
+        "media_type": "application/json",
+        "encoding": "utf-8",
+        "compression": null,
+        "container": null,
+        "schema": "route.t1.event-snapshot.json",
+        "record_shape": "provider event snapshot",
+        "preferred_local": "data/cache/*events.json;data/cache/*incidents.json"
+      },
+      "tags": ["route-source", "snapshot", "t1-events"],
+      "metadata": {
+        "fetch_family": "t1-live-event-snapshots",
+        "commands": "route t1-fetch-iowa511;route t1-fetch-tdot-smartway;route t1-fetch-mdot-midrive;route t1-fetch-indot-trafficwise",
+        "cache_targets": "data/cache/*events.json;data/cache/*incidents.json",
+        "mutation_mode": "live-snapshot-preserve",
+        "acquisition_mode": "on-demand;group",
+        "activation_rule": "activate latest snapshot only after source envelope validation where available",
+        "route_validation_floor": "HTTP success and source error envelope check where available",
+        "policy_doc": "docs/source-fetch-cache-policy.md",
+        "claim_validated_by_download": "false"
+      }
+    }
+  ]
+}

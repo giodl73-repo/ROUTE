@@ -23,6 +23,22 @@ has been successfully fetched, parsed, and written.
 This policy applies before optimizer, bundle, Beck, game, or release artifacts
 consume the source. Cache mutation should never silently reduce evidence scope.
 
+## FLETCH Orchestration Boundary
+
+FLETCH may orchestrate ROUTE source acquisition, cacheline grouping, registry
+validation, adapter handoff, local URL maps, PROOF document manifests, and
+publisher bundles under `docs/fletch-source-orchestration-spec.md`.
+
+The current implemented bridge is `data/fletch-registry.json` plus
+`route fletch-sources --gate`. Manifest-backed HTTP downloads in `route fetch`
+now use FLETCH acquisition before writing the legacy ROUTE cache target.
+
+ROUTE still owns source admissibility, parser validation, scoped merge behavior,
+preserve-last-good behavior, evidence promotion, optimizer claims, map claims,
+game claims, and publication readiness. A FLETCH report that says a source was
+downloaded, staged, or bundled is not proof that the corresponding ROUTE claim is
+validated.
+
 ## Terminal Contact Manual/Cache Proof
 
 Terminal-contact proof may enter through manual citations or cached source

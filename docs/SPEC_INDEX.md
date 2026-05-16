@@ -7,6 +7,10 @@ Start here when deciding which document owns a claim.
 | `docs/SYSTEM_PLAN.md` | Living roadmap, Milepost phases, roles, truth labels, forward plan | You need the current operating plan |
 | `waves/PHASES.md` | Active wave index and execution rail for pulse-driven ROUTE work | You need to know what "continue", "next pulse", or "active wave" should do |
 | `docs/wave-execution.md` | ROUTE wave/pulse operating contract and local `/route-XXX` skill map | You need to create, review, execute, or close wave/pulse work |
+| `docs/fletch-source-orchestration-spec.md` | FLETCH integration boundary for ROUTE source fetch/cache/url orchestration | You need to wire ROUTE source families to FLETCH without moving ROUTE evidence or claim logic into FLETCH |
+| `docs/reviews/fletch-source-orchestration-role-review.md` | ROUTE role validation for the FLETCH source orchestration spec | You need the role-review decision before implementing the FLETCH bridge |
+| `data/fletch-registry.json` | ROUTE-owned FLETCH registry for source acquisition/cacheline handoff | You need the cacheline ids, source kinds, dependencies, or activation rules for ROUTE source families |
+| `data/fletch-source-handoff.csv` | Generated FLETCH source handoff/readiness ledger | You need to prove every source-fetch policy family is represented in FLETCH |
 | `docs/map-publication-scope.md` | Doctrine separating render-valid map artifacts from fully publication-valid T1-T4 map claims | You need to decide whether a map can be published as full T1-T4 or only as a held-claim work-in-progress surface |
 | `data/map-publication-readiness.csv` | Gateable certification for current structural T1-T4 map publication readiness | You need to prove map publication has zero residual `publication` blockers while non-publication claims remain labeled |
 | `data/map-publication-inventory.csv` | Release-facing inventory of the 17 structural map artifacts and required held-claim label | You need the exact publishable map list for T1-T4 structural maps |
