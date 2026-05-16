@@ -1,11 +1,11 @@
 use crate::manifest::{Manifest, ManifestSource};
 use anyhow::{Context, Result};
 use fletch_core::{
-    adapter_handoff_report, cache_index_from_manifest, cache_manifest, dry_run_flight,
-    fetch_plan_with_kind, fetch_to_cache, graph_from_registry, read_cache_manifest_json,
-    upsert_cache_manifest_entries, validate_registry, write_cache_manifest_json, CacheEntry,
-    CacheManifest, CachePolicy, FetchOptions, FletchRegistry, FreshnessPolicy, SourceKind,
-    FLETCH_CACHE_INDEX_SCHEMA,
+    adapter_handoff_report, cache_index_from_manifest, cache_index_gate_report, cache_manifest,
+    dry_run_flight, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
+    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry,
+    write_cache_manifest_json, CacheEntry, CacheIndexGatePolicy, CacheManifest, CachePolicy,
+    FetchOptions, FletchRegistry, FreshnessPolicy, SourceKind, FLETCH_CACHE_INDEX_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -302,18 +302,28 @@ pub fn fletch_cache_index_report(
 ) -> FletchCacheIndexReport {
     let validation = validate_registry(registry);
     let index = cache_index_from_manifest(manifest);
-    let registered = registry
-        .fletches
-        .iter()
-        .map(|definition| definition.id.as_str())
+    let registered = cacheable_registry_ids(registry)
+        .into_iter()
         .collect::<BTreeSet<_>>();
+    let expected_dataset_ids = registered
+        .iter()
+        .map(|id| id.to_string())
+        .collect::<Vec<_>>();
+    let gate = cache_index_gate_report(
+        &index,
+        &CacheIndexGatePolicy {
+            expected_dataset_ids,
+            require_verified: true,
+            allow_missing_expected: true,
+        },
+    );
     let mut rows = Vec::new();
     let mut matched = BTreeSet::new();
 
     for entry in &index.entries {
         let registered_entry = registered.contains(entry.dataset_id.as_str());
         if registered_entry {
-            matched.insert(entry.dataset_id.as_str());
+            matched.insert(entry.dataset_id.clone());
         }
         rows.push(FletchCacheIndexRow {
             fletch_id: entry.dataset_id.clone(),
@@ -335,10 +345,10 @@ pub fn fletch_cache_index_report(
         });
     }
 
-    for definition in &registry.fletches {
-        if !matched.contains(definition.id.as_str()) {
+    for fletch_id in &registered {
+        if !matched.contains(fletch_id) {
             rows.push(FletchCacheIndexRow {
-                fletch_id: definition.id.clone(),
+                fletch_id: fletch_id.clone(),
                 version: String::new(),
                 cache_key: String::new(),
                 relative_path: String::new(),
@@ -367,15 +377,26 @@ pub fn fletch_cache_index_report(
         entry_count: index.entry_count,
         verified_count: index.verified_count,
         unverified_count: index.unverified_count,
-        unexpected_entry_count: rows
-            .iter()
-            .filter(|row| row.registry_status == "unexpected")
-            .count(),
+        unexpected_entry_count: gate.unexpected_count,
         byte_count: index.byte_count,
         registry_valid: validation.valid,
         validation_finding_count: validation.finding_count,
         rows,
     }
+}
+
+fn cacheable_registry_ids(registry: &FletchRegistry) -> Vec<String> {
+    registry
+        .fletches
+        .iter()
+        .filter(|definition| {
+            definition
+                .shafts
+                .iter()
+                .any(|shaft| matches!(shaft.kind, SourceKind::Http | SourceKind::File))
+        })
+        .map(|definition| definition.id.clone())
+        .collect()
 }
 
 pub fn write_fletch_cache_index(path: &Path, report: &FletchCacheIndexReport) -> Result<()> {
