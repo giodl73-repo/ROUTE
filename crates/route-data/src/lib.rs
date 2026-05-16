@@ -23,9 +23,12 @@ pub use census::{
 pub use faf5::Faf5Record;
 pub use fema::{fetch_all_sfha_counts, fetch_fema_count, CorridorBbox, FemaSfhaResult, T1_BBOXES};
 pub use fletch::{
-    fetch_all_manifest_sources_with_fletch, fletch_source_handoff_report,
-    load_fletch_source_registry, load_route_source_fetch_policy, write_fletch_source_handoff,
-    FletchSourceHandoffReport, FletchSourceHandoffRow, RouteSourceFetchPolicyRow,
+    fetch_all_manifest_sources_with_fletch, fletch_cache_index_gate_failures,
+    fletch_cache_index_report, fletch_cache_manifest_path, fletch_source_handoff_report,
+    load_fletch_source_registry, load_route_source_fetch_policy, read_fletch_cache_manifest,
+    write_fletch_cache_index, write_fletch_source_handoff, FletchCacheIndexReport,
+    FletchCacheIndexRow, FletchSourceHandoffReport, FletchSourceHandoffRow,
+    RouteSourceFetchPolicyRow,
 };
 pub use hpms::{HpmsFpmRecord, HpmsRecord};
 pub use hpms_fetch::{fetch_all_hpms, STATE_CODES};

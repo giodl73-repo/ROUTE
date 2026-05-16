@@ -613,6 +613,30 @@ enum Commands {
         gate: bool,
     },
 
+    /// Compare the ROUTE-owned FLETCH registry with the local cache manifest
+    FletchCacheIndex {
+        /// ROUTE-owned FLETCH source registry JSON
+        #[arg(long, default_value = "data/fletch-registry.json", value_name = "FILE")]
+        registry: PathBuf,
+        /// ROUTE-owned FLETCH cache manifest JSON
+        #[arg(long, value_name = "FILE")]
+        cache_manifest: Option<PathBuf>,
+        /// Output FLETCH cache-index CSV
+        #[arg(
+            long,
+            short,
+            default_value = "data/fletch-cache-index.csv",
+            value_name = "FILE"
+        )]
+        output: PathBuf,
+        /// Print each cache-index row
+        #[arg(long)]
+        details: bool,
+        /// Fail if cache entries are unexpected or unverified
+        #[arg(long)]
+        gate: bool,
+    },
+
     /// Show tier standards for a given tier
     Standards {
         /// Tier to show (1, 2, 3, or 4)
@@ -7719,6 +7743,44 @@ fn run_cli() -> Result<()> {
                 }
                 println!();
                 println!("FLETCH source handoff gate: PASS");
+            }
+        }
+
+        Commands::FletchCacheIndex {
+            registry,
+            cache_manifest,
+            output,
+            details,
+            gate,
+        } => {
+            println!("route fletch-cache-index");
+            let route_manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let cache_root = route_manifest.cache_dir.join(".fletch");
+            let cache_manifest_path = cache_manifest
+                .unwrap_or_else(|| route_data::fletch_cache_manifest_path(&cache_root));
+            let registry_report = route_data::load_fletch_source_registry(&registry)
+                .with_context(|| format!("loading {}", registry.display()))?;
+            let cache_manifest =
+                route_data::read_fletch_cache_manifest(&cache_manifest_path, &cache_root)
+                    .with_context(|| format!("loading {}", cache_manifest_path.display()))?;
+            let report = route_data::fletch_cache_index_report(&registry_report, &cache_manifest);
+            route_data::write_fletch_cache_index(&output, &report)
+                .with_context(|| format!("writing {}", output.display()))?;
+            print_fletch_cache_index_summary(&output, &report, details);
+
+            if gate {
+                let failures = route_data::fletch_cache_index_gate_failures(&report);
+                if !failures.is_empty() {
+                    println!();
+                    println!("FLETCH cache-index gate: FAIL");
+                    for failure in failures.iter().take(20) {
+                        println!("  - {failure}");
+                    }
+                    anyhow::bail!("FLETCH cache-index gate failed");
+                }
+                println!();
+                println!("FLETCH cache-index gate: PASS");
             }
         }
 
@@ -55942,6 +56004,41 @@ fn fletch_source_handoff_gate_failures(
         }
     }
     failures
+}
+
+fn print_fletch_cache_index_summary(
+    output: &Path,
+    report: &route_data::FletchCacheIndexReport,
+    details: bool,
+) {
+    println!(
+        "  wrote {} FLETCH cache-index rows to {}",
+        report.rows.len(),
+        output.display()
+    );
+    println!("  registry: {}", report.registry_id);
+    println!(
+        "  registered matched: {}/{} (missing: {})",
+        report.matched_registered_count, report.registered_count, report.missing_registered_count
+    );
+    println!(
+        "  entries: {} verified / {} unverified; unexpected: {}; bytes: {}",
+        report.verified_count,
+        report.unverified_count,
+        report.unexpected_entry_count,
+        report.byte_count
+    );
+    if details {
+        println!();
+        println!("  {:36}  {:10}  {:10}  path", "FLETCH", "registry", "cache");
+        println!("  {}", "-".repeat(92));
+        for row in &report.rows {
+            println!(
+                "  {:36}  {:10}  {:10}  {}",
+                row.fletch_id, row.registry_status, row.cache_status, row.relative_path
+            );
+        }
+    }
 }
 
 fn source_fetch_policy_gate_failures(rows: &[SourceFetchPolicyRow]) -> Vec<String> {

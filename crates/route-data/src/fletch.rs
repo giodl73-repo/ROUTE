@@ -1,9 +1,11 @@
 use crate::manifest::{Manifest, ManifestSource};
 use anyhow::{Context, Result};
 use fletch_core::{
-    adapter_handoff_report, dry_run_flight, fetch_plan_with_kind, fetch_to_cache,
-    graph_from_registry, validate_registry, CachePolicy, FetchOptions, FletchRegistry,
-    FreshnessPolicy, SourceKind,
+    adapter_handoff_report, cache_index_from_manifest, cache_manifest, dry_run_flight,
+    fetch_plan_with_kind, fetch_to_cache, graph_from_registry, read_cache_manifest_json,
+    upsert_cache_manifest_entries, validate_registry, write_cache_manifest_json, CacheEntry,
+    CacheManifest, CachePolicy, FetchOptions, FletchRegistry, FreshnessPolicy, SourceKind,
+    FLETCH_CACHE_INDEX_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -55,6 +57,36 @@ pub struct FletchSourceHandoffReport {
     pub covered_family_count: usize,
     pub missing_policy_families: Vec<String>,
     pub rows: Vec<FletchSourceHandoffRow>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchCacheIndexRow {
+    pub fletch_id: String,
+    pub version: String,
+    pub cache_key: String,
+    pub relative_path: String,
+    pub bytes: u64,
+    pub verified: bool,
+    pub registry_status: String,
+    pub cache_status: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchCacheIndexReport {
+    pub schema_version: String,
+    pub registry_id: String,
+    pub cache_root: String,
+    pub registered_count: usize,
+    pub matched_registered_count: usize,
+    pub missing_registered_count: usize,
+    pub entry_count: usize,
+    pub verified_count: usize,
+    pub unverified_count: usize,
+    pub unexpected_entry_count: usize,
+    pub byte_count: u64,
+    pub registry_valid: bool,
+    pub validation_finding_count: usize,
+    pub rows: Vec<FletchCacheIndexRow>,
 }
 
 pub fn load_fletch_source_registry(path: &Path) -> Result<FletchRegistry> {
@@ -239,6 +271,152 @@ pub fn write_fletch_source_handoff(path: &Path, report: &FletchSourceHandoffRepo
     Ok(())
 }
 
+pub fn fletch_cache_manifest_path(cache_root: &Path) -> PathBuf {
+    cache_root.join("cache-manifest.json")
+}
+
+pub fn read_fletch_cache_manifest(path: &Path, cache_root: &Path) -> Result<CacheManifest> {
+    if path.exists() {
+        read_cache_manifest_json(path).with_context(|| format!("reading {}", path.display()))
+    } else {
+        cache_manifest(cache_root.display().to_string(), Vec::new())
+            .with_context(|| format!("creating empty cache manifest for {}", cache_root.display()))
+    }
+}
+
+fn upsert_fletch_cache_manifest_entries(
+    cache_root: &Path,
+    entries: impl IntoIterator<Item = CacheEntry>,
+) -> Result<()> {
+    let path = fletch_cache_manifest_path(cache_root);
+    let manifest = read_fletch_cache_manifest(&path, cache_root)?;
+    let manifest = upsert_cache_manifest_entries(manifest, entries)
+        .with_context(|| format!("upserting {}", path.display()))?;
+    write_cache_manifest_json(&path, &manifest)
+        .with_context(|| format!("writing {}", path.display()))
+}
+
+pub fn fletch_cache_index_report(
+    registry: &FletchRegistry,
+    manifest: &CacheManifest,
+) -> FletchCacheIndexReport {
+    let validation = validate_registry(registry);
+    let index = cache_index_from_manifest(manifest);
+    let registered = registry
+        .fletches
+        .iter()
+        .map(|definition| definition.id.as_str())
+        .collect::<BTreeSet<_>>();
+    let mut rows = Vec::new();
+    let mut matched = BTreeSet::new();
+
+    for entry in &index.entries {
+        let registered_entry = registered.contains(entry.dataset_id.as_str());
+        if registered_entry {
+            matched.insert(entry.dataset_id.as_str());
+        }
+        rows.push(FletchCacheIndexRow {
+            fletch_id: entry.dataset_id.clone(),
+            version: entry.version.clone().unwrap_or_default(),
+            cache_key: entry.cache_key.clone(),
+            relative_path: entry.relative_path.clone(),
+            bytes: entry.bytes,
+            verified: entry.verified,
+            registry_status: if registered_entry {
+                "registered".to_string()
+            } else {
+                "unexpected".to_string()
+            },
+            cache_status: if entry.verified {
+                "verified".to_string()
+            } else {
+                "unverified".to_string()
+            },
+        });
+    }
+
+    for definition in &registry.fletches {
+        if !matched.contains(definition.id.as_str()) {
+            rows.push(FletchCacheIndexRow {
+                fletch_id: definition.id.clone(),
+                version: String::new(),
+                cache_key: String::new(),
+                relative_path: String::new(),
+                bytes: 0,
+                verified: false,
+                registry_status: "registered".to_string(),
+                cache_status: "missing".to_string(),
+            });
+        }
+    }
+
+    rows.sort_by(|left, right| {
+        left.fletch_id
+            .cmp(&right.fletch_id)
+            .then_with(|| left.cache_status.cmp(&right.cache_status))
+            .then_with(|| left.cache_key.cmp(&right.cache_key))
+    });
+
+    FletchCacheIndexReport {
+        schema_version: FLETCH_CACHE_INDEX_SCHEMA.to_string(),
+        registry_id: registry.registry_id.clone(),
+        cache_root: index.cache_root,
+        registered_count: registered.len(),
+        matched_registered_count: matched.len(),
+        missing_registered_count: registered.len().saturating_sub(matched.len()),
+        entry_count: index.entry_count,
+        verified_count: index.verified_count,
+        unverified_count: index.unverified_count,
+        unexpected_entry_count: rows
+            .iter()
+            .filter(|row| row.registry_status == "unexpected")
+            .count(),
+        byte_count: index.byte_count,
+        registry_valid: validation.valid,
+        validation_finding_count: validation.finding_count,
+        rows,
+    }
+}
+
+pub fn write_fletch_cache_index(path: &Path, report: &FletchCacheIndexReport) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in &report.rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+pub fn fletch_cache_index_gate_failures(report: &FletchCacheIndexReport) -> Vec<String> {
+    let mut failures = Vec::new();
+    if !report.registry_valid {
+        failures.push(format!(
+            "registry {} is not valid ({} findings)",
+            report.registry_id, report.validation_finding_count
+        ));
+    }
+    if report.unexpected_entry_count > 0 {
+        failures.push(format!(
+            "{} cache entries are not registered FLETCH sources",
+            report.unexpected_entry_count
+        ));
+    }
+    if report.unverified_count > 0 {
+        failures.push(format!(
+            "{} cache entries are not verified",
+            report.unverified_count
+        ));
+    }
+    failures
+}
+
 pub fn fetch_all_manifest_sources_with_fletch(manifest: &Manifest, force: bool) -> Result<()> {
     std::fs::create_dir_all(&manifest.cache_dir).context("creating cache directory")?;
     let fletch_root = manifest.cache_dir.join(".fletch");
@@ -301,6 +479,10 @@ fn fetch_manifest_source_to_fletch(
         FetchOptions::new(PathBuf::from(cache_root)).with_force(force),
     )
     .map_err(Into::into)
+    .and_then(|outcome| {
+        upsert_fletch_cache_manifest_entries(cache_root, [outcome.entry.clone()])?;
+        Ok(outcome)
+    })
 }
 
 fn source_kind_label(kind: &SourceKind) -> &'static str {
@@ -315,7 +497,7 @@ fn source_kind_label(kind: &SourceKind) -> &'static str {
 mod tests {
     use super::*;
     use fletch_core::{
-        FletchDefinition, GraphEdgeKind, GraphNodeKind, RegistryEdge, SourceSpec,
+        CacheEntry, FletchDefinition, GraphEdgeKind, GraphNodeKind, RegistryEdge, SourceSpec,
         FLETCH_REGISTRY_SCHEMA,
     };
 
@@ -382,5 +564,73 @@ mod tests {
         assert!(report.missing_policy_families.is_empty());
         assert_eq!(report.rows[0].handoff_status, "adapter-required");
         assert_eq!(report.rows[0].validation_status, "pass");
+    }
+
+    #[test]
+    fn cache_index_report_allows_missing_registered_sources_but_flags_unexpected() {
+        let registry = FletchRegistry {
+            schema_version: FLETCH_REGISTRY_SCHEMA.to_string(),
+            generated_by: "route-test".to_string(),
+            registry_id: "route.sources".to_string(),
+            fletches: vec![FletchDefinition {
+                id: "route.manifest.tiger-primary-roads".to_string(),
+                node_kind: GraphNodeKind::Fletch,
+                shafts: vec![SourceSpec {
+                    kind: SourceKind::Http,
+                    url: "https://example.test/tiger.zip".to_string(),
+                    headers: BTreeMap::new(),
+                }],
+                edges: Vec::new(),
+                format: None,
+                tags: vec!["route-source".to_string()],
+                metadata: BTreeMap::new(),
+            }],
+        };
+        let manifest =
+            cache_manifest(
+                "data/cache/.fletch",
+                vec![CacheEntry {
+                dataset_id: "route.manifest.tiger-primary-roads".to_string(),
+                version: Some("2023".to_string()),
+                source_url: "https://example.test/tiger.zip".to_string(),
+                cache_key:
+                    "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                        .to_string(),
+                relative_path: "objects/sha256/11".to_string(),
+                sha256: "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                    .to_string(),
+                bytes: 42,
+                fetched_at_ms: 1,
+                verified: true,
+                fetch_attempts: 1,
+                retry_count: 0,
+                last_retryable_error: None,
+            }, CacheEntry {
+                dataset_id: "route.unregistered.source".to_string(),
+                version: None,
+                source_url: "https://example.test/unregistered.zip".to_string(),
+                cache_key:
+                    "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+                        .to_string(),
+                relative_path: "objects/sha256/33".to_string(),
+                sha256: "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+                    .to_string(),
+                bytes: 7,
+                fetched_at_ms: 1,
+                verified: false,
+                fetch_attempts: 1,
+                retry_count: 0,
+                last_retryable_error: None,
+            }],
+            )
+            .unwrap();
+
+        let report = fletch_cache_index_report(&registry, &manifest);
+
+        assert_eq!(report.matched_registered_count, 1);
+        assert_eq!(report.missing_registered_count, 0);
+        assert_eq!(report.unexpected_entry_count, 1);
+        assert_eq!(report.unverified_count, 1);
+        assert_eq!(fletch_cache_index_gate_failures(&report).len(), 2);
     }
 }
