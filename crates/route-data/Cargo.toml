@@ -17,4 +17,4 @@ rayon      = { workspace = true }
 thiserror  = { workspace = true }
 anyhow     = { workspace = true }
 reqwest    = { workspace = true }
-fletch-core = { path = "../../../FLETCH/crates/fletch-core" }
+fletch-core = { path = "../../../../tools-infra/fletch/crates/fletch-core" }
