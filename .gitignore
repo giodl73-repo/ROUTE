@@ -41,3 +41,4 @@ data/cache/*.json
 Cargo.lock
 target/
 target2/
+.cargo/config.toml
