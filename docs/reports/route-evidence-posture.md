@@ -146,6 +146,11 @@ numeric overreach:
 | Interstate 2.0 doctrine report | Draft | Story-ready; named corridor, construction, official-plan, guarantee, and ROI claims gated. |
 | Relay hubs aviation model report | Draft | Story-ready / heuristic; labor, EV, AV, utilization, safety, construction, and ROI claims gated. |
 | 48-hour freight promise report | Draft | Story-ready / heuristic; operating SLA, corridor, managed-lane, relay, ROI, and construction claims gated. |
+| ROI without fake numbers report | Draft | Evidence contract; numeric ROI, cost, benefit, business-case, and construction claims gated. |
+| Rural access national service network report | Draft | Story-ready / heuristic; zone, access, terminal, emergency, and promotion claims gated. |
+| Resilience before crisis report | Draft | Story-ready / heuristic; hazard, recovery, alternate-capacity, site-specific, and hardening claims gated. |
+| Maps are not proof report | Draft | Story-ready structural map posture; SLA, upgrade, terminal, asset, official-plan, and construction claims gated. |
+| Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
 | Industry value brief | Draft | Story-ready; operating guarantees gated. |
