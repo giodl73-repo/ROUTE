@@ -99,11 +99,11 @@ stakeholder tension, and next evidence step that support or limit it.
 | 1 | Interstate 2.0 Doctrine Report | Flagship narrative: roads need a service hierarchy, not one flat interstate category. | Story-ready; official-plan, construction, and final-route claims gated. | draft as `docs/reports/interstate-2-0-doctrine-report.md` |
 | 2 | Relay Hubs: The Aviation Model For Freight | Explain driver exchange, charging, staging, maintenance, future AV handoff, and regional jobs. | Story-ready / heuristic; labor, EV, AV, utilization claims gated. | draft as `docs/reports/relay-hubs-aviation-model-report.md` |
 | 3 | The 48-Hour Freight Promise | Make T1 national reliability legible to funders and industry. | Story-ready / heuristic; operating SLA proof gated. | draft as `docs/reports/forty-eight-hour-freight-promise-report.md` |
-| 4 | ROI Without Fake Numbers | Explain benefit/cost categories, evidence gates, uncertainty, and why premature ROI is irresponsible. | Evidence contract; numeric ROI/cost claims gated. | planned |
-| 5 | Rural Access In A National Service Network | Keep farm regions, production zones, small metros, emergency access, and rural resilience in the story. | Story-ready / heuristic; zone/access claims gated. | planned |
-| 6 | Resilience Before Crisis | Translate flood, wildfire, snow/ice, port disruption, mountain closures, and evacuation into fundable obligations. | Story-ready / heuristic; hazard and recovery proof gated. | planned |
-| 7 | Maps Are Not Proof | Explain evidence-bounded infrastructure storytelling and why structural maps do not prove readiness. | Story-ready; map/SLA/upgrade claims gated. | planned |
-| 8 | Requirement-To-Refinement Demonstration Report | Document the loop from requirement to threshold, artifact, candidate/hold, and evidence ask. | Implemented / heuristic; full optimizer before/after fixture gated. | planned |
+| 4 | ROI Without Fake Numbers | Explain benefit/cost categories, evidence gates, uncertainty, and why premature ROI is irresponsible. | Evidence contract; numeric ROI/cost claims gated. | draft as `docs/reports/roi-without-fake-numbers-report.md` |
+| 5 | Rural Access In A National Service Network | Keep farm regions, production zones, small metros, emergency access, and rural resilience in the story. | Story-ready / heuristic; zone/access claims gated. | draft as `docs/reports/rural-access-national-service-network-report.md` |
+| 6 | Resilience Before Crisis | Translate flood, wildfire, snow/ice, port disruption, mountain closures, and evacuation into fundable obligations. | Story-ready / heuristic; hazard and recovery proof gated. | draft as `docs/reports/resilience-before-crisis-report.md` |
+| 7 | Maps Are Not Proof | Explain evidence-bounded infrastructure storytelling and why structural maps do not prove readiness. | Story-ready; map/SLA/upgrade claims gated. | draft as `docs/reports/maps-are-not-proof-report.md` |
+| 8 | Requirement-To-Refinement Demonstration Report | Document the loop from requirement to threshold, artifact, candidate/hold, and evidence ask. | Implemented / heuristic; full optimizer before/after fixture gated. | draft as `docs/reports/requirement-to-refinement-demonstration-report.md` |
 
 ## Deck And Report Guardrails
 
