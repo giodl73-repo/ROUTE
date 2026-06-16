@@ -21,6 +21,12 @@ sources:
   - .roles/parliament/foxx.md
   - .roles/stakeholders/state-dot.md
   - .roles/stakeholders/freight-industry.md
+  - .roles/stakeholders/regional-shipper.md
+  - .roles/stakeholders/long-haul-trucker.md
+  - .roles/stakeholders/rural-farmer.md
+  - .roles/stakeholders/rural-resident.md
+  - .roles/stakeholders/local-official.md
+  - .roles/stakeholders/transit-dependent.md
   - .roles/stakeholders/environmental-community.md
   - docs/decks/interstate-2-0-pitch.md
   - docs/decks/route-technology-story.md
@@ -28,6 +34,11 @@ sources:
   - docs/reports/interstate-2-0-doctrine-report.md
   - docs/reports/relay-hubs-aviation-model-report.md
   - docs/reports/forty-eight-hour-freight-promise-report.md
+  - docs/reports/roi-without-fake-numbers-report.md
+  - docs/reports/rural-access-national-service-network-report.md
+  - docs/reports/resilience-before-crisis-report.md
+  - docs/reports/maps-are-not-proof-report.md
+  - docs/reports/requirement-to-refinement-demonstration-report.md
   - docs/briefs/political-value-brief.md
   - docs/briefs/state-value-brief.md
   - docs/briefs/industry-value-brief.md
@@ -52,6 +63,11 @@ package:
 - Interstate 2.0 doctrine report;
 - relay hubs aviation model report;
 - 48-hour freight promise report;
+- ROI without fake numbers report;
+- rural access national service network report;
+- resilience before crisis report;
+- maps are not proof report;
+- requirement-to-refinement demonstration report;
 - political value brief;
 - state value brief;
 - industry value brief;
@@ -93,6 +109,8 @@ refinement loop.
 | CONS-003 | The service hierarchy story is the strongest core narrative. | Eisenhower-style national frame, Freight Economist, Rural Advocate, State DOT, Schematic Cartographer | accepted |
 | CONS-004 | Relay hubs are the best human/operational bridge between current trucking, driver quality of life, EV charging, and future autonomy. | Freight Industry, Freight Economist, State DOT, Rural Advocate, Traffic Engineer | accepted_with_risk |
 | CONS-005 | The evidence posture report and ROI/cost framework are necessary guardrails before external funder use. | Numeracy Checker, Citation Auditor, Freight Economist, Scope Keeper | accepted |
+| CONS-006 | The five new reports preserve evidence boundaries and improve the research/report slate without promoting construction, official-plan, guaranteed-SLA, or numeric ROI claims. | Scope Keeper, Citation Auditor, Numeracy Checker, Optimization Methodologist | accepted |
+| CONS-007 | The new reports make the right tensions visible: freight value vs. rural access, map persuasion vs. map proof, resilience obligation vs. hazard proof, and demo artifact loop vs. optimizer proof. | Freight Economist, Rural Advocate, Schematic Cartographer, Climate Resilience Engineer, State DOT | accepted_with_risk |
 
 ## Role Findings And Suggestions
 
@@ -113,6 +131,41 @@ refinement loop.
 | Climate Resilience Engineer | pass_with_risk | Resilience is included as a core service obligation. | "Resilience" is generic unless tied to hazard classes and time horizon. | Add hazard examples: flood, heat, wildfire, storm surge, snow/ice, mountain pass closure, port disruption. |
 | Transit-Dependent / Access Lens | pass_with_risk | T3/T4 and hub language can support access beyond through-freight. | Passenger/non-driving access is not prominent in the public pitch. | Keep passenger/transit claims gated, but add intake prompt for intercity coach, park-and-ride, and first/last-mile access. |
 
+## Supplemental Review: Report Slate
+
+This supplemental pass applies the same `.roles` lanes to the five reports added
+after the first communications package review. The result is still
+`pass_with_risk`: the reports are safe as internal draft communications
+artifacts, but they should drive specific next evidence packages before any
+external or claim-promoting use.
+
+| Report | Primary Role Lanes | Decision | Role Finding | Required Next Evidence / Edit |
+|---|---|---|---|---|
+| `roi-without-fake-numbers-report.md` | Freight Economist, Numeracy Checker, Citation Auditor, State DOT, Foxx, Environmental Community | pass | Correctly refuses numeric ROI and requires price year, scope, uncertainty, exclusions, and negative cases. | Add a future ROI source-pack template with freight flow, delay/reliability, drayage, operating cost, lifecycle cost, mitigation, and distributional-impact fields before any numeric work. |
+| `rural-access-national-service-network-report.md` | Rural Advocate, Rural Farmer, Rural Resident, Local Official, Transit-Dependent, State DOT | pass_with_risk | Strongly protects T3/T4 as first-class access tiers and blocks score-only promotion. | Add rural access intake fields for farm-to-elevator/processor distance, bridge/weight limits, trauma-center access, evacuation capacity, intercity coach stops, and local maintenance burden. |
+| `resilience-before-crisis-report.md` | Climate Resilience Engineer, Traffic Engineer, Long-Haul Trucker, State DOT, Environmental Community | pass_with_risk | Correctly frames resilience as a service obligation and avoids crisis-proof or hardening-proof claims. | Add a hazard-source matrix for flood, wildfire, snow/ice, heat, storm surge, mountain closure, port disruption, and incident recovery, including time horizon and uncertainty treatment. |
+| `maps-are-not-proof-report.md` | Schematic Cartographer, Optimization Methodologist, Traffic Engineer, Transit-Dependent, Citation Auditor | pass | Cleanly separates render validity, structural maps, held-claim surfaces, and evidence-valid claims. | Add a standard map caption pattern for decks: map level, claim label, excluded claims, and pointer to generated artifact/gate. |
+| `requirement-to-refinement-demonstration-report.md` | Optimization Methodologist, Schematic Cartographer, State DOT, Freight Industry, Rural Advocate, Scope Keeper | pass_with_risk | Correctly presents the current demo as an artifact loop, not full optimizer proof. | Capture a concrete before/after fixture where one state, industry, rural, or community requirement changes an artifact, hold, or evidence label. |
+
+## Supplemental Role Findings
+
+| Role | Finding On New Reports | Disposition |
+|---|---|---|
+| Freight Economist | ROI discipline is credible because it permits weak or negative cases, but the next package needs actual commodity flow, delay, drayage, backhaul, and operating-cost source fields. | pass_with_risk |
+| Rural Advocate | Rural access is not treated as leftover map coverage; however, future evidence must distinguish true rural access gaps from centroid, map, or source artifacts. | pass_with_risk |
+| Rural Farmer | The rural report should eventually name harvest-window, weight-limit, grain elevator, processor, and export-terminal evidence fields before agricultural claims strengthen. | pass_with_risk |
+| Rural Resident | Emergency and healthcare access are safely labeled as scenarios, but promotion needs trauma-center, evacuation, and employment-access evidence rather than generalized rural language. | pass_with_risk |
+| State DOT Planner | All five reports preserve delivery boundaries. The next funder-facing package still needs match funding, maintenance, ROW, environmental review, lifecycle cost, and phasing fields. | pass_with_risk |
+| Freight Industry / Regional Shipper | The ROI and demo reports are good guardrails, but industry intake must capture HOS, parking, WIM/PrePass, bridge weight, clearance, dwell, PTI, drayage, and intermodal constraints. | pass_with_risk |
+| Long-Haul Trucker | Resilience and relay language should eventually account for HOS effects, safe parking, grade/weather closure, and legal rest options during disruption. | pass_with_risk |
+| Climate Resilience Engineer | The resilience report names useful hazard classes but should add source families, time horizon, and uncertainty before any hazard-strengthened claim. | pass_with_risk |
+| Environmental Community / Foxx | ROI and resilience reports preserve community/environmental review, but future templates should explicitly track air quality, noise, runoff, habitat, displacement, and who bears costs. | pass_with_risk |
+| Schematic Cartographer | The maps report is well bounded. The practical next edit is reusable caption language so every deck map carries its proof posture. | pass |
+| Optimization Methodologist | The demo report is honest about current limitations. The next prototype needs a reproducible before/after scenario, rejected/held row, and command evidence. | pass_with_risk |
+| Citation Auditor | The five reports introduce no external numeric transportation claims. Future templates must require traceable source path, source title, year/date, and access note for every quantitative field. | pass |
+| Numeracy Checker | No arithmetic, unit conversions, ROI ratios, cost totals, or traffic volumes are introduced. Future ROI and resilience work must state units, price year, time horizon, and uncertainty before values appear. | pass |
+| Scope Keeper | All five reports match their declared `type: report` and remain communications/evidence-boundary artifacts, not design proposals or construction programs. | pass |
+
 ## Key Dissent / Productive Tensions
 
 | Tension | Roles | Review Interpretation |
@@ -132,6 +185,11 @@ refinement loop.
 | `state-value-brief.md` | pass_with_risk | Good state posture; avoids official-plan overclaim. | Add delivery checklist: match, maintenance, ROW, environmental review, lifecycle cost, phasing. |
 | `industry-value-brief.md` | pass_with_risk | Good operating model and relay framing. | Add explicit data ask: OD lanes, bottlenecks, dwell, HOS, parking, bridge/weight/clearance, WIM, charging. |
 | `route-roi-cost-framework.md` | pass | Strong guardrail against fake numbers. | Keep as required gate before any numeric funding claim. |
+| `roi-without-fake-numbers-report.md` | pass | Strong public explanation of why premature ROI is unsafe. | Add future ROI source-pack template before numeric work. |
+| `rural-access-national-service-network-report.md` | pass_with_risk | Keeps rural, agricultural, emergency, terminal, and smaller-metro access visible without solving it by assertion. | Add rural/access evidence intake fields before external rural-access claims. |
+| `resilience-before-crisis-report.md` | pass_with_risk | Strong resilience frame; avoids hardening and hazard-proof overclaim. | Add hazard-source matrix and time-horizon language. |
+| `maps-are-not-proof-report.md` | pass | Excellent guardrail for schematic and publication-scope misuse. | Add reusable caption/note pattern to deck guide. |
+| `requirement-to-refinement-demonstration-report.md` | pass_with_risk | Honest about current artifact loop and full before/after fixture gap. | Build and capture one before/after requirement scenario. |
 | `route-evidence-posture.md` | pass | Strong claim-boundary artifact. | Keep updated whenever a deck or brief promotes a claim. |
 | `research-conclusions.md` | pass_with_risk | Useful plain-English synthesis. | Add paper/review pointers later if research artifacts are formalized. |
 | `COMMUNICATIONS_STRATEGY.md` | pass | Now controls the split deck and audience-surface backlog. | Add this review as the role-review evidence pointer. |
@@ -152,6 +210,7 @@ a concrete corridor, hub, ROI, operating, construction, or SLA-readiness claim.
 | P2 | Add map-use note: schematic hierarchy visual, detailed proof in generated artifacts. | Schematic Cartographer / V&V | Solution deck speaker notes / tech deck | addressed in solution deck and technology deck |
 | P2 | Add one requirement-to-refinement demo script. | Optimization Methodologist | `docs/how-to/run-route-demo.md` or deck slide | addressed in technology deck and demo how-to; next stronger fixture still needed |
 | P2 | Add hazard-class examples for resilience. | Climate Resilience Engineer | Solution deck / evidence posture | partially addressed through resilience examples; hazard-specific evidence campaign still needed |
+| P2 | Add report-specific intake templates for ROI, rural access, resilience, map captions, and requirement-to-refinement demo evidence. | Freight Economist / Rural Advocate / Climate Engineer / Schematic Cartographer / Optimization Methodologist | New report slate / demo package / presenter guide | open; reports identify the fields but do not yet provide reusable templates |
 
 ## Claims Approved For Internal Draft Use
 
