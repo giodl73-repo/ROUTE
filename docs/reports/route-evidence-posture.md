@@ -157,6 +157,7 @@ numeric overreach:
 | Communications external rehearsal readiness | Draft | Current decision is hold_external_rehearsal until a named venue, populated source-backed fixture, affected role review, prohibited-claim scan, and L0 close. |
 | External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Communications crate coverage audit | Draft | Finds partial coverage: pitch and pressure-test story are strong, but source ops, standards/Blueprint gates, optimizer chain, bundle identity, lower-tier access, simulation/game, asset evidence, and release readiness need selected appendices. |
+| Source operations evidence roadmap | Draft | Story-ready evidence-governance roadmap; explains source acquisition, cache policy, FLETCH handoff, source health, snapshot guards, proof artifacts, and claim-promotion holds. |
 | Communications pass-artifacts role review | Draft | `.roles` addendum accepts trace, demo capture, source-pack templates, intake surfaces, regional packet, and verification gate for internal rehearsal; external claims remain held. |
 | Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
