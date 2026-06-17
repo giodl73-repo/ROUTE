@@ -12,6 +12,7 @@ sources:
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
+  - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
   - docs/reports/route-evidence-posture.md
   - docs/vtrace/VERIFICATION.md
@@ -40,7 +41,9 @@ The package passes the internal five-round simulation with risk, but it should
 not yet be used in a named external rehearsal because no populated
 source-backed stakeholder fixture exists. The package has the process, template,
 trace, evidence capture, and role-review infrastructure needed to prepare that
-fixture.
+fixture. The external rehearsal packet template now defines where a future
+reviewer records the named venue, selected materials, source-backed fixture,
+role review, validation, and closing ask.
 
 ## Rehearsal Context Gate
 
@@ -51,6 +54,7 @@ fixture.
 | Materials list | Deck, brief, report, runbook, trace, source pack, and evidence posture files selected. | held |
 | Closing ask | Intake, evidence, source pack, demo fixture, standards, or bounded pilot ask selected. | held |
 | Recorder | Person or role responsible for intake, dissent, and source custody named. | held |
+| Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
 
