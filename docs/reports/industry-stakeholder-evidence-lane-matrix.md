@@ -42,6 +42,7 @@ sources:
   - docs/reports/resilience-before-crisis-report.md
   - docs/reports/asset-condition-evidence-appendix.md
   - docs/reports/standards-blueprint-gates-appendix.md
+  - docs/reports/industry-stakeholder-source-fixture-campaign.md
 ---
 
 # ROUTE Industry And Stakeholder Evidence-Lane Matrix
@@ -123,7 +124,7 @@ Avoid these phrases:
 
 | Gap | Why It Matters | Disposition |
 |---|---|---|
-| Only one populated source-backed fixture exists. | It demonstrates process, not cross-industry agreement. | Add more fixture packs by lane before stronger claims. |
+| Only one populated source-backed fixture exists. | It demonstrates process, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
 | Most lanes are represented by roles and reports, not outside participants. | Role simulation is useful for pressure testing but cannot stand in for affected-party review. | Keep external validation language held. |
 | ROI, cost, reliability, asset, hazard, and local-impact claims remain source-specific. | These are the claims most likely to drift into unsupported proof language. | Require source packs and numeracy/domain review before promotion. |
 | Media materials exist before public readiness is closed. | Reporters may find the repo and overstate it. | Point media users to this matrix, the source index, and evidence posture. |
