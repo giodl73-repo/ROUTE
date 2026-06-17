@@ -249,6 +249,10 @@ Do not say:
 
 ## Close Every Meeting With One Ask
 
+Before using this package in a named external rehearsal, apply
+`docs/reviews/communications-external-rehearsal-readiness.md`. An internal
+pressure-test pass is not external readiness.
+
 Pick one:
 
 | Ask | Use When |
