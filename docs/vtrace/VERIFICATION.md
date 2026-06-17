@@ -59,6 +59,7 @@ game, release, or public-readiness claims.
 | Stakeholder fixture closeout runbook exists. | `docs/how-to/stakeholder-fixture-closeout-runbook.md` | draft; makes remaining blocker executable |
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
+| Third pressure-test run exists. | `docs/reviews/communications-pressure-test-run-003.md` | draft; internal sponsor-to-DOT dry run pass; external rehearsal held |
 | Communications rude Q&A exists. | `docs/reviews/communications-rude-qa.md` | draft; internal adversarial prep with external/public readiness held |
 | Communications rude Q&A drill scorecard exists. | `docs/reviews/communications-rude-qa-drill-scorecard.md` | draft; internal drill scorecard with external/public readiness held |
 | Communications rude Q&A drill run 001 exists. | `docs/reviews/communications-rude-qa-drill-run-001.md` | draft; internal pass_with_risk with presenter repairs open |
