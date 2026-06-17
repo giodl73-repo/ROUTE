@@ -58,6 +58,7 @@ game, release, or public-readiness claims.
 | Stakeholder fixture template exists. | `docs/templates/source-packs/stakeholder-fixture-source-pack-template.md` | draft; real populated fixture pending |
 | Stakeholder fixture closeout runbook exists. | `docs/how-to/stakeholder-fixture-closeout-runbook.md` | draft; makes remaining blocker executable |
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
+| Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |

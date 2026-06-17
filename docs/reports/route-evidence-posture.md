@@ -153,6 +153,7 @@ numeric overreach:
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
 | Communications pressure-test run 001 | Draft | Rounds 1-5 pass_with_risk for internal rehearsal; external/public readiness remains held until a populated source-backed stakeholder fixture and L1/L2 readiness evidence close. |
+| Communications pressure-test run 002 | Draft | Updated package passes the simulated five-round ladder for internal rehearsal; external/public use remains held by source-backed fixture and readiness validation. |
 | Communications pass-artifacts role review | Draft | `.roles` addendum accepts trace, demo capture, source-pack templates, intake surfaces, regional packet, and verification gate for internal rehearsal; external claims remain held. |
 | Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
