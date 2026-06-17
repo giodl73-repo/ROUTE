@@ -19,6 +19,7 @@ sources:
   - docs/how-to/round2-state-intake-payload.md
   - docs/briefs/state-to-aashto-regional-packet.md
   - docs/traces/route-claim-promotion-trace.md
+  - docs/reviews/communications-rude-qa-drill-run-001.md
 ---
 
 # Split Deck Presenter Guide
@@ -128,6 +129,8 @@ Then open the ROUTE technology deck.
 | "What exactly changes when a requirement arrives?" | "The current demo shows requirements becoming thresholds, diagnostics, candidate dockets, promotion scaffolds, or evidence holds." |
 | "Why VTRACE?" | "VTRACE keeps mission, requirements, specs, evidence, verification, validation, and review connected so the pitch cannot outrun proof." |
 | "Can this produce ROI?" | "It can produce the evidence contract for ROI now; numeric ROI requires sources, price year, scope, uncertainty, exclusions, and review." |
+| "Why should anyone trust the score?" | "Do not trust the total alone. The total is an index for review; dimensions, confidence, and sensitivity decide whether a claim can move." |
+| "Can we reproduce and challenge the artifacts?" | "You can inspect the current command capture and verification gate. L1/L2 release evidence is still held where public, browser, game, or readiness claims are made." |
 | "Why not show every technical detail?" | "This deck sells the refinement engine. Detailed artifacts belong in the demo runbook and evidence package." |
 
 ## Audience-Specific Emphasis
@@ -150,6 +153,7 @@ meetings.
 |---|---|
 | Opening posture | "This is requirements before concrete. The map is a structural service surface, not a project list." |
 | Intake artifact | Use `docs/how-to/local-regional-intake-template.md`. |
+| Local impact answer | "Local intake, environmental/community health, non-driving access, delivery feasibility, rural access, and dissent rows all stay visible before any claim is promoted." |
 | Rural example card | "Harvest access, trauma-center access, evacuation, and farm-to-terminal movement become T3/T4 obligations or held evidence rows." |
 | Closeout | Requirements captured, dissent preserved, map posture stated, next evidence/demo ask selected. |
 | Allowed asks | Intake package, evidence package, demo fixture, source pack, or bounded pilot. |
@@ -233,6 +237,7 @@ reviewers to:
 | Source-pack schemas | `docs/templates/source-packs/` |
 | Evidence posture | `docs/reports/route-evidence-posture.md` |
 | Round 5 verification gate | `docs/vtrace/VERIFICATION.md` |
+| DOT rejection handling | Rejected claims are revised, downgraded, held, or split into source-needed tasks; the rejection becomes a review record and claim-trace update. |
 
 ## Red Lines
 
