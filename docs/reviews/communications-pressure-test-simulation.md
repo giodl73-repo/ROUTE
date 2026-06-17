@@ -368,13 +368,15 @@ eligibility screening.
 
 ## Simulated Final Decision
 
-Decision: **pass_with_risk for internal escalation simulation**
+Decision: **pass_with_risk for discussion-only rehearsal; fail for internal
+technical readiness gate**
 
 The package can be pressure-tested through the five-round ladder without
 breaking evidence boundaries if presenters follow the red lines. It is not ready
-for real external review as a claim package until the P1 edits exist,
-especially local intake, map caption pattern, non-authorization note,
-claim-promotion trace, and captured demo evidence.
+for a full simulated FHWA/USDOT-style technical review pass until the P1 edits
+exist, especially local intake, map caption pattern, non-authorization note,
+claim-promotion trace, captured demo evidence, source-pack templates, and a
+Round 5 verification gate.
 
 ## Non-Approved Claims
 
