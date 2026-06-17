@@ -159,6 +159,7 @@ numeric overreach:
 | Claim-promotion trace | Draft | Reviewer-facing trace; does not promote claims beyond their evidence labels. |
 | Source-pack templates | Draft | Schema surfaces only; completing them does not prove ROI, resilience, rural access, map readiness, demo readiness, or stakeholder validation. |
 | Stakeholder fixture source-pack template | Draft | Defines the required source-backed requirement-to-refinement fixture shape; not populated with real sources and not evidence of stakeholder endorsement. |
+| Stakeholder fixture closeout runbook | Draft | Execution path for source custody, before/after artifact change, role review, and fixture closeout; does not close any real stakeholder claim by itself. |
 | Round 5 demo capture | Draft | Command bundle and 225-mile threshold fixture captured; source-backed stakeholder fixture, public release, official-plan, construction, guaranteed-SLA, ROI, eligibility, and compliance claims remain gated. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
