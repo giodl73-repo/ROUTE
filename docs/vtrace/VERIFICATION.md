@@ -71,6 +71,7 @@ game, release, or public-readiness claims.
 | Asset condition evidence appendix exists. | `docs/reports/asset-condition-evidence-appendix.md` | draft; story-ready appendix with asset readiness claims held |
 | Release and publication scope appendix exists. | `docs/reports/release-publication-scope-appendix.md` | draft; story-ready appendix with public readiness claims held |
 | Corpus and report generation appendix exists. | `docs/reports/corpus-report-generation-appendix.md` | draft; story-ready appendix with generated-report claims held |
+| Graph and scoring measurement appendix exists. | `docs/reports/graph-scoring-measurement-appendix.md` | draft; story-ready appendix with measurement claims held |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
