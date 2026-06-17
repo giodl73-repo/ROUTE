@@ -157,7 +157,7 @@ numeric overreach:
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
 | Claim-promotion trace | Draft | Reviewer-facing trace; does not promote claims beyond their evidence labels. |
 | Source-pack templates | Draft | Schema surfaces only; completing them does not prove ROI, resilience, rural access, map readiness, or demo readiness. |
-| Round 5 demo capture | Draft | Command bundle captured; before/after fixture, public release, official-plan, construction, guaranteed-SLA, ROI, eligibility, and compliance claims remain gated. |
+| Round 5 demo capture | Draft | Command bundle and 225-mile threshold fixture captured; source-backed stakeholder fixture, public release, official-plan, construction, guaranteed-SLA, ROI, eligibility, and compliance claims remain gated. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
 | Industry value brief | Draft | Story-ready; operating guarantees gated. |

@@ -53,7 +53,7 @@ game, release, or public-readiness claims.
 | Gate Item | Required Artifact / Check | Current Result |
 |---|---|---|
 | Claim-promotion trace exists. | `docs/traces/route-claim-promotion-trace.md` | draft |
-| Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle captured, before/after fixture pending |
+| Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle and 225-mile before/after fixture captured |
 | Source-pack templates exist. | `docs/templates/source-packs/` | draft |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
@@ -62,8 +62,9 @@ game, release, or public-readiness claims.
 
 Decision rule: Round 5 readiness remains `fail_ready` until every item is
 `passed` or explicitly held with owner, rationale, and revisit trigger. The
-current demo capture upgrades reproducibility from open to draft evidence, but
-does not close the before/after fixture or public-readiness gates.
+current demo capture upgrades reproducibility from open to draft evidence and
+adds a bounded threshold before/after fixture, but does not close source-backed
+stakeholder fixture or public-readiness gates.
 
 ## Evidence Ledger
 
