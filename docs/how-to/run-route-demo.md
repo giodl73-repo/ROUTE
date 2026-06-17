@@ -195,9 +195,24 @@ Do not lead with command names. Lead with the loop:
 
 That is the hidden gem: ROUTE makes the Interstate 2.0 vision refinable.
 
+## Current before/after fixture
+
+The Round 5 evidence capture uses the optional 225-mile stress as a bounded
+before/after fixture:
+
+| State | Command / Artifact | Interpretation |
+|---|---|---|
+| Before | `stop-sla-candidates` at `--target-gap 250`; `target\demo\beck-stop-sla-candidates-demo.csv` | Header-only candidate docket; no open candidate rows at the current passing threshold. |
+| After | `stop-sla-candidates` at `--target-gap 225`; `target\demo\beck-stop-sla-candidates-225-demo.csv` | Five stress-threshold candidate rows appear. Named ledger rows are heuristic; algorithmic midpoint rows are source-needed and held. |
+| Scaffold | `stop-sla-promotions` on the 225-mile docket; `target\demo\beck-stop-sla-promotions-225-demo.csv` | Three append-ready source-needed midpoint rows appear as review scaffolds, not recommendations. |
+
+This fixture shows that a changed planning requirement can change an artifact
+and evidence posture. It still does not prove a full recursive optimizer, final
+route ranking, construction recommendation, or operating SLA.
+
 ## Next demo gap
 
-The next stronger demo should add a small scenario fixture where a state,
-industry, or community requirement changes one selected service option and
-records the before/after evidence label. Until that exists, present this demo as
-the current artifact/gate path, not a full recursive optimizer demonstration.
+The next stronger demo should use a state, industry, rural, or community input
+that changes a real source-backed requirement field, not only a planning
+threshold. Until that exists, present the 225-mile fixture as a threshold stress
+test, not a full stakeholder-driven optimizer demonstration.

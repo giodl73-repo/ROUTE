@@ -45,24 +45,28 @@ or endorsement.
 | DEMO-CMD-006 | `cargo run -q -p route -- beck-t2-diagnostics --output target\demo\beck-t2-diagnostics-demo.csv --gate` | `target\demo\beck-t2-diagnostics-demo.csv` | T2 lines: 26; diagnostics gate PASS | 27 lines; 4,569 bytes | pass_with_risk | Diagnostics classify review categories; not a route-promotion claim. |
 | DEMO-CMD-007 | `cargo run -q -p route -- beck-t2-service-standards --output target\demo\beck-t2-service-standards-demo.csv --gate` | `target\demo\beck-t2-service-standards-demo.csv` | service classes: 4; standards gate PASS | 5 lines; 1,197 bytes | pass | Service-class contract; not proof of delivery readiness. |
 | DEMO-CMD-008 | `cargo run -q -p route -- beck-t2-qualification-actions --output target\demo\beck-t2-qualification-actions-demo.csv --gate` | `target\demo\beck-t2-qualification-actions-demo.csv` | qualification actions: 4; actions gate PASS | 5 lines; 1,447 bytes | pass | Qualification-action contract; review categories do not imply construction. |
+| DEMO-CMD-009 | `cargo run -q -p route -- stop-sla-candidates --input target\demo\beck-stop-sla-demo.csv --output target\demo\beck-stop-sla-candidates-225-demo.csv --target-gap 225 --top 5 --gate` | `target\demo\beck-stop-sla-candidates-225-demo.csv` | tightened planning threshold inspected 5 gaps; candidate gate PASS | 6 lines; 1,611 bytes | pass_with_risk | Before/after stress fixture; candidates are heuristic or source-needed, not recommendations. |
+| DEMO-CMD-010 | `cargo run -q -p route -- stop-sla-promotions --input target\demo\beck-stop-sla-candidates-225-demo.csv --output target\demo\beck-stop-sla-promotions-225-demo.csv --gate` | `target\demo\beck-stop-sla-promotions-225-demo.csv` | promotion rows: 3; promotion gate PASS | 4 lines; 1,557 bytes | pass / hold | Append-ready source-needed review scaffold only; no promotion claim. |
 
 ## Before / After Fixture Status
 
 | Field | Entry |
 |---|---|
 | Fixture ID | ROUND5-FIXTURE-001 |
-| Requirement | Show how a local/state/industry requirement changes an artifact, hold, or evidence label. |
-| Before artifact | Current stop/SLA surface and T2 diagnostics captured above. |
-| Changed input / threshold / evidence field | Not yet captured in this run. |
-| After artifact or held row | Pending. |
-| Evidence label change | Pending. |
-| Role-review implication | Pending Optimization Methodologist, State DOT, rural/freight/community lane review. |
-| Claim boundary | Current capture proves the command path, not a full before/after optimizer fixture. |
+| Requirement | A reviewer asks what would need inspection if the stop/SLA spacing requirement tightened below the current passing 250-mile planning threshold. |
+| Before artifact | `target\demo\beck-stop-sla-candidates-demo.csv` at 250-mile target: header-only; no open candidate rows. |
+| Changed input / threshold / evidence field | `--target-gap 225 --top 5` stress threshold. |
+| After artifact or held row | `target\demo\beck-stop-sla-candidates-225-demo.csv`: five candidate rows; `target\demo\beck-stop-sla-promotions-225-demo.csv`: three source-needed midpoint review rows. |
+| Evidence label change | Current threshold: pass / no open candidate docket. Stress threshold: named ledger candidates are heuristic; algorithmic midpoint rows are source-needed and held for real interchange/service-city validation. |
+| Role-review implication | Optimization Methodologist gets a visible threshold sensitivity artifact; State DOT, rural/freight/community lanes must review any source-needed midpoint before it can become a real candidate. |
+| Claim boundary | The fixture shows artifact/refinement behavior under a stress threshold. It does not recommend stops, construction, ROI, or operating SLA. |
 
 ## Gate
 
 Decision: pass_with_risk
 
 Rationale: The current command bundle is captured and passes its documented
-gates. Round 5 technical readiness still requires a before/after fixture and
-claim-specific source packs before stronger demo claims can be promoted.
+gates. The 225-mile stress fixture now demonstrates a bounded before/after
+artifact change. Round 5 technical readiness still requires claim-specific
+source packs and role review before stronger candidate or promotion claims can
+be used outside internal review.
