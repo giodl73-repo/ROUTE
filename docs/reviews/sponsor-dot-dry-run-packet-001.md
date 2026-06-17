@@ -15,6 +15,7 @@ sources:
   - docs/decks/split-deck-presenter-guide.md
   - docs/reports/route-evidence-posture.md
   - docs/reviews/source-backed-stakeholder-fixture-candidate-001.md
+  - docs/reviews/source-backed-stakeholder-fixture-001.md
 ---
 
 # Sponsor To DOT Dry Run Packet 001
@@ -41,16 +42,17 @@ compliance, public-readiness, agency approval, or external-readiness.
 | Recorder | review steward |
 | Source custody owner | Citation Auditor |
 | Closing ask | source pack plus demo fixture |
-| Current gate | hold_external_rehearsal |
+| Current gate | pass_with_risk for internal dry run; hold_external_rehearsal |
 
 ## Decision
 
-Decision: **hold_external_rehearsal**
+Decision: **pass_with_risk for internal dry run; hold_external_rehearsal**
 
 The rude Q&A package now passes an internal closed-book drill, and the presenter
-guide contains the repaired answers. This packet is still held because the
-source-backed stakeholder fixture is only a candidate shell, not a populated
-fixture with source custody, before/after artifact change, and role review.
+guide contains the repaired answers. The package now has one populated
+source-backed terminal-access fixture for internal rehearsal. External rehearsal
+remains held because this is not a real sponsor meeting, state/DOT authority
+review, public-readiness closeout, or release gate.
 
 ## Materials Selected
 
@@ -63,7 +65,8 @@ fixture with source custody, before/after artifact change, and role review.
 | Rude Q&A run 002 | `docs/reviews/communications-rude-qa-drill-run-002.md` | internal hostile-question rehearsal result | internal pass / external held | yes |
 | Claim trace | `docs/traces/route-claim-promotion-trace.md` | claim-to-evidence walkthrough | draft | yes |
 | Demo capture | `docs/evidence/round5-demo-capture.md` | command evidence | pass_with_risk / internal | yes |
-| Stakeholder fixture candidate | `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` | missing real requirement work item | held_template | yes |
+| Stakeholder fixture candidate | `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` | original missing real requirement work item | held_template / superseded by populated fixture | yes |
+| Source-backed stakeholder fixture | `docs/reviews/source-backed-stakeholder-fixture-001.md` | populated terminal-access example | pass_with_risk / internal only | yes |
 | External readiness checklist | `docs/reviews/communications-external-rehearsal-readiness.md` | gate and holds | hold_external_rehearsal | yes |
 
 ## Safe Opening
@@ -79,8 +82,9 @@ Use this opening posture:
 
 Close with one ask:
 
-> Help us populate one source-backed stakeholder fixture: a real requirement,
-> source custody, before/after artifact or label change, and role review.
+> Walk the Port NOLA terminal-access fixture with us: source custody,
+> before/after label change, role review holds, and the exact claims still
+> blocked before any external use.
 
 Do not close on construction funding, map adoption, ROI, eligibility,
 compliance, endorsement, approval, or public-readiness.
@@ -89,17 +93,17 @@ compliance, endorsement, approval, or public-readiness.
 
 | Field | Entry |
 |---|---|
-| Fixture source pack | held; see `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` |
-| Stakeholder lane | sponsor-to-DOT candidate; exact affected lane pending source |
-| Source-backed requirement | held; no real source selected |
-| Source ID(s) | none yet |
-| Before artifact / label | pending fixture selection |
-| After artifact / label | pending fixture selection |
-| Role-review result | pending |
-| Claim allowed? | no; internal only once populated and reviewed |
+| Fixture source pack | populated as `docs/reviews/source-backed-stakeholder-fixture-001.md` |
+| Stakeholder lane | freight industry / terminal access |
+| Source-backed requirement | Terminal-access examples need route-to-terminal source custody before use. |
+| Source ID(s) | STAKE-SRC-001; Port NOLA road page and repo-local accepted proof-source rows |
+| Before artifact / label | stakeholder fixture candidate was `held_template`; generic T4 terminal-access proof rows were source-needed |
+| After artifact / label | populated internal fixture with map/publication/upgrade holds preserved |
+| Role-review result | pass_with_risk for internal rehearsal; State DOT authority and stronger operating claims held |
+| Claim allowed? | internal only |
 
-Because this section is not populated, the packet remains
-`hold_external_rehearsal`.
+Because this section is now populated, the packet can be used for another
+internal sponsor-to-DOT dry run. It remains `hold_external_rehearsal`.
 
 ## Claim Trace Rows
 
@@ -109,19 +113,19 @@ Because this section is not populated, the packet remains
 | ROUTE makes claims inspectable and refinable. | claim-promotion trace / evidence posture | implemented / pass_with_risk | local docs | yes, internal | "inspectable" and "evidence-bounded"; no proof claim |
 | ROI is an evidence contract. | ROI/cost framework | gated | local docs | yes, internal | "numeric ROI held until source pack and review close" |
 | Current demo shows internal command capture. | round5 demo capture | pass_with_risk / internal | local docs | yes, internal | "command capture is inspectable; L1/L2 release evidence remains held" |
-| Real stakeholder requirement changes an artifact. | stakeholder fixture candidate | held_template | missing real source | no | Say the fixture is the next evidence ask, not completed evidence |
+| Real stakeholder requirement changes an artifact. | source-backed stakeholder fixture 001 | pass_with_risk / internal only | public Port NOLA source plus repo-local accepted proof rows | yes, internal | Say the fixture closes one internal example while external, authority, map, and operating claims remain held |
 
 ## Required Role Review
 
 | Role Lane | Required? | Reviewer / Record | Result | Hold / Condition |
 |---|---|---|---|---|
 | Scope Keeper | yes | pending | hold | named packet needs final scope review |
-| Citation Auditor | yes | pending | hold | source-backed fixture missing |
+| Citation Auditor | yes | `docs/reviews/source-backed-stakeholder-fixture-001.md` | pass | Port NOLA source custody recorded for internal fixture |
 | Numeracy Checker | yes | pending | hold | ROI/cost/score language must remain bounded |
-| Optimization Methodologist | if before/after fixture appears | pending | hold | fixture not populated |
+| Optimization Methodologist | if before/after fixture appears | `docs/reviews/source-backed-stakeholder-fixture-001.md` | pass_with_risk | before/after is label/source-pack change, not optimizer output |
 | Schematic Cartographer | if map appears | presenter guide / maps report | pass_with_risk | map captions required |
-| State DOT Planner | yes | pending | hold | sponsor-to-DOT lane needs state/DOT feasibility review |
-| Freight Economist / Freight Industry | if freight example appears | pending | hold | freight example source not selected |
+| State DOT Planner | yes | `docs/reviews/source-backed-stakeholder-fixture-001.md` | hold | no state/DOT authority or delivery review included |
+| Freight Economist / Freight Industry | if freight example appears | `docs/reviews/source-backed-stakeholder-fixture-001.md` | pass_with_risk | terminal-access example is sourced; operating and ROI claims remain held |
 | Rural Advocate / rural stakeholder | if rural/access example appears | pending | hold | affected lane pending source |
 | Foxx / Environmental Community | if community/environmental example appears | pending | hold | affected lane pending source |
 
@@ -135,14 +139,14 @@ Because this section is not populated, the packet remains
 | Score boundary | Score total is an index for review; dimensions, confidence, and sensitivity decide whether a claim can move. | pass |
 | Reproducibility boundary | Current command capture can be inspected; L1/L2 release evidence remains held where relevant. | pass |
 | Authority boundary | ROUTE does not replace state, regional, federal, public, or engineering review. | pass |
-| Closing ask | Populate one source-backed stakeholder fixture. | pass |
+| Closing ask | Walk the populated terminal-access fixture and its remaining holds. | pass |
 
 ## Validation Closeout
 
 | Check | Command / Inspection | Result | Evidence |
 |---|---|---|---|
-| Prohibited-claim scan | scan selected packet files for promoted prohibited claims | required at closeout | pending |
-| L0 | `npm run check:l0` | required at closeout | pending |
+| Prohibited-claim scan | scan selected packet files for promoted prohibited claims | pass | hits are guardrail, held, or non-approved contexts |
+| L0 | `npm run check:l0` | pass | workspace lib/bin tests passed |
 | L1 | package-specific or full repo confidence when technical claims are used | hold | not required for internal packet draft |
 | L2 | browser/game/release/public-readiness only | scoped out | no public/browser/game/release claim made |
 
@@ -152,14 +156,15 @@ Because this section is not populated, the packet remains
 - This packet is public-ready or external-ready.
 - This packet is an official plan, construction program, ROI proof, eligibility
   finding, compliance finding, guaranteed service claim, or agency approval.
-- The stakeholder fixture is populated.
+- The stakeholder fixture authorizes external use.
 - The internal closed-book rude Q&A pass authorizes external use.
 
 ## Next Work
 
-1. Select one real stakeholder requirement source.
-2. Populate the fixture candidate with source custody.
-3. Record a before/after artifact or label change.
-4. Run affected role review.
-5. Run prohibited-claim scan and L0 for the selected packet.
-6. Revisit external rehearsal readiness after the fixture closes.
+1. Run prohibited-claim scan and L0 for the selected packet.
+2. Add DOT/port meeting context if this packet moves from internal rehearsal to
+   a named external rehearsal.
+3. Capture any venue-specific dissent, authority, map, operating, and
+   public-readiness holds.
+4. Revisit external rehearsal readiness only after venue-specific role review
+   and validation close.

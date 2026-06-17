@@ -55,7 +55,7 @@ game, release, or public-readiness claims.
 | Claim-promotion trace exists. | `docs/traces/route-claim-promotion-trace.md` | draft |
 | Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle and 225-mile before/after fixture captured |
 | Source-pack templates exist. | `docs/templates/source-packs/` | draft |
-| Stakeholder fixture template exists. | `docs/templates/source-packs/stakeholder-fixture-source-pack-template.md` | draft; real populated fixture pending |
+| Stakeholder fixture template exists. | `docs/templates/source-packs/stakeholder-fixture-source-pack-template.md` | draft; template retained for future fixtures |
 | Stakeholder fixture closeout runbook exists. | `docs/how-to/stakeholder-fixture-closeout-runbook.md` | draft; makes remaining blocker executable |
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
@@ -65,7 +65,8 @@ game, release, or public-readiness claims.
 | Communications rude Q&A repair closeout exists. | `docs/reviews/communications-rude-qa-repair-closeout.md` | draft; presenter repairs closed for internal rehearsal |
 | Communications rude Q&A drill run 002 exists. | `docs/reviews/communications-rude-qa-drill-run-002.md` | draft; internal closed-book pass with external/public readiness held |
 | Sponsor-to-DOT dry-run packet exists. | `docs/reviews/sponsor-dot-dry-run-packet-001.md` | draft; internal named packet with hold_external_rehearsal |
-| Source-backed stakeholder fixture candidate exists. | `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` | draft; held template for missing populated fixture |
+| Source-backed stakeholder fixture candidate exists. | `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` | draft; original held template retained as source-selection record |
+| Populated source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-001.md` | draft; terminal-access fixture pass_with_risk for internal rehearsal |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
@@ -89,9 +90,10 @@ Decision: pass_with_risk for internal Round 5 rehearsal.
 Rationale: The missing artifact classes identified by the pressure-test run now
 exist as draft surfaces, the command bundle plus 225-mile threshold fixture are
 captured, `.roles` pass-artifacts review is recorded, and the stakeholder
-fixture closeout runbook exists. External/public readiness remains held until a
-populated source-backed stakeholder fixture, L1/L2 readiness evidence, and any
-claim-specific source packs close.
+fixture closeout runbook exists, and a populated terminal-access fixture is
+recorded for internal rehearsal. External/public readiness remains held until
+venue-specific role review, L1/L2 readiness evidence, and any claim-specific
+source packs close.
 
 ## Evidence Ledger
 
