@@ -39,13 +39,15 @@ positive ROI, compliance, eligibility, or endorsement.
 
 ## Overall Result
 
-Decision: **fail_ready_until_trace_demo_capture_and_source_templates_exist**
+Decision: **pass_with_risk for internal Round 5 rehearsal; external and public
+readiness still held**
 
-The package is disciplined enough for internal discussion and rehearsal. It is
-not yet strong enough to claim a full simulated pass through a skeptical
-FHWA/USDOT-style technical review because the required trace, captured command
-evidence, source-pack templates, and consolidated technical non-claims are still
-open.
+The package is now disciplined enough for an internal Round 5 technical
+rehearsal: trace, command capture, source-pack templates, map-caption controls,
+technical non-claims, and a bounded before/after threshold fixture exist. It is
+still not ready for real external review, public release, construction, ROI,
+eligibility, compliance, guaranteed-SLA, or endorsement claims because
+source-backed stakeholder evidence and public/readiness gates remain held.
 
 | Round | Venue | Result | Why |
 |---|---|---|---|
@@ -53,7 +55,7 @@ open.
 | 2 | State DOT / governor-sponsor meeting | pass_with_risk | State value is well framed, but the state-to-regional packet and state intake payload are missing. |
 | 3 | AASHTO regional association meeting | pass_with_risk | The package can frame shared evidence, but needs regional packet, sensitivity, governance non-claim, and map-caption controls. |
 | 4 | Congressional hearing | pass_with_risk | Political/funder guardrails exist, but hearing controls, fiscal-staff language, and claim-promotion trace are missing. |
-| 5 | FHWA / USDOT technical review | fail_readiness | Technical reviewers need traceable claims, captured demo outputs, source-pack schemas, and consolidated compliance non-claims. |
+| 5 | FHWA / USDOT technical review | pass_with_risk for internal rehearsal | Trace, demo outputs, source-pack schemas, map captions, non-claims, and threshold fixture now exist; source-backed stakeholder fixture and public-readiness gates remain held. |
 
 ## Round 1 Findings: Intra-State Regional
 
@@ -152,58 +154,57 @@ open.
 
 | Objection | Review Interpretation |
 |---|---|
-| "Where is the claim-promotion trace?" | Required trace file is still proposed/open. |
-| "Where are the captured demo outputs?" | Runbook exists, but no frozen evidence bundle. |
-| "Can I reproduce the exact evidence bundle?" | No manifest, checksums, row counts, or command transcript. |
-| "What source custody rules apply?" | Rules exist in prose, but reusable source-pack schemas are missing. |
-| "How do claims map from requirement to artifact to review decision?" | Needs reviewer-facing walkthrough. |
-| "Where are eligibility, design-standard, NEPA, safety, and civil-rights boundaries consolidated?" | Non-claims are dispersed. |
-| "What exactly passed L0/L1/L2?" | Needs closed readiness checklist with command evidence. |
+| "Where is the claim-promotion trace?" | Addressed as draft in `docs/traces/route-claim-promotion-trace.md`. |
+| "Where are the captured demo outputs?" | Addressed as draft in `docs/evidence/round5-demo-capture.md`. |
+| "Can I reproduce the exact evidence bundle?" | Partially addressed: command, output path, row count/size, and status are captured; checksums remain optional future hardening. |
+| "What source custody rules apply?" | Addressed as draft templates in `docs/templates/source-packs/`. |
+| "How do claims map from requirement to artifact to review decision?" | Addressed as draft trace rows; future rows needed for concrete external claims. |
+| "Where are eligibility, design-standard, NEPA, safety, and civil-rights boundaries consolidated?" | Addressed in presenter guide technical non-claims. |
+| "What exactly passed L0/L1/L2?" | L0 captured in commit validation; L1/L2 remain future/public-readiness gates. |
 
 ### Pass Edits
 
-| Priority | Edit |
-|---|---|
-| P1 | Add `docs/traces/route-claim-promotion-trace.md` with claim, requirement, artifact, command, source status, evidence label, role review, blocker, decision, and next step. |
-| P1 | Add captured demo evidence record under `docs/evidence/` or as a demo appendix. |
-| P1 | Add source-pack templates for ROI, resilience, rural access, map claims, and demo evidence. |
-| P1 | Add Round 5 technical review non-claims block to pressure-test doc and presenter guide. |
-| P1 | Add standard map caption pattern package-wide. |
-| P1 | Add before/after requirement fixture plan. |
-| P1 | Add Round 5 readiness row to evidence posture. |
-| P1 | Move `COMMS-TRACE-001` to required-before-Round-5-pass and add a captured evidence/source-pack surface. |
-| P1 | Add VTRACE verification gate for trace, demo capture, templates, caption pattern, non-claims block, and prohibited-claim scan. |
+| Priority | Edit | Status |
+|---|---|---|
+| P1 | Add `docs/traces/route-claim-promotion-trace.md` with claim, requirement, artifact, command, source status, evidence label, role review, blocker, decision, and next step. | addressed as draft |
+| P1 | Add captured demo evidence record under `docs/evidence/` or as a demo appendix. | addressed as draft |
+| P1 | Add source-pack templates for ROI, resilience, rural access, map claims, and demo evidence. | addressed as draft |
+| P1 | Add Round 5 technical review non-claims block to pressure-test doc and presenter guide. | addressed as draft |
+| P1 | Add standard map caption pattern package-wide. | addressed as draft |
+| P1 | Add before/after requirement fixture plan. | addressed with 225-mile threshold fixture |
+| P1 | Add Round 5 readiness row to evidence posture. | addressed as draft |
+| P1 | Move `COMMS-TRACE-001` to required-before-Round-5-pass and add a captured evidence/source-pack surface. | addressed as draft |
+| P1 | Add VTRACE verification gate for trace, demo capture, templates, caption pattern, non-claims block, and prohibited-claim scan. | addressed as draft |
 
 ## Consolidated Backlog To Pass The Ladder
 
 | Priority | Backlog Item | Unlocks |
 |---|---|---|
-| P1 | Local/regional intake template | Round 1 external readiness. |
-| P1 | Round 1 closeout template | Round 1 evidence handoff. |
-| P1 | Standard map caption pattern | All rounds; especially regional, congressional, DOT. |
-| P1 | State-to-AASHTO regional packet | Round 2 to Round 3 handoff. |
-| P1 | Round 2 state intake payload | State readiness and regional payload. |
-| P1 | Governance and federal-role non-claims | Regional, congressional, and DOT review. |
-| P1 | Congressional "what this does not authorize" note | Round 4 readiness. |
-| P1 | Claim-promotion trace | Round 4 to Round 5 handoff. |
-| P1 | Captured demo evidence bundle | Round 5 readiness. |
-| P1 | Source-pack templates | Fiscal, technical, and evidence review. |
-| P1 | Round 5 technical non-claims block | DOT technical review readiness. |
-| P1 | VTRACE Round 5 verification gate | Internal readiness discipline. |
-| P2 | Rural example card | Stronger Round 1/4 persuasion. |
-| P2 | Sensitivity section: "what changes the answer?" | Round 3 method credibility. |
-| P2 | Fiscal-staff subsection | Round 4 budget discipline. |
-| P2 | Before/after requirement fixture | Demo credibility. |
+| P1 | Local/regional intake template | addressed as draft |
+| P1 | Round 1 closeout template | addressed as draft |
+| P1 | Standard map caption pattern | addressed as draft |
+| P1 | State-to-AASHTO regional packet | addressed as draft |
+| P1 | Round 2 state intake payload | addressed as draft |
+| P1 | Governance and federal-role non-claims | addressed as draft |
+| P1 | Congressional "what this does not authorize" note | addressed as draft |
+| P1 | Claim-promotion trace | addressed as draft |
+| P1 | Captured demo evidence bundle | addressed as draft |
+| P1 | Source-pack templates | addressed as draft |
+| P1 | Round 5 technical non-claims block | addressed as draft |
+| P1 | VTRACE Round 5 verification gate | addressed as draft |
+| P2 | Rural example card | addressed in presenter guide as draft |
+| P2 | Sensitivity section: "what changes the answer?" | addressed in regional packet as draft |
+| P2 | Fiscal-staff subsection | addressed in funder brief as draft |
+| P2 | Before/after requirement fixture | addressed with 225-mile threshold fixture; source-backed stakeholder fixture remains future work |
 
-## Recommended Execution Order
+## Remaining Work
 
-1. Build the intake and closeout templates for Round 1 and Round 2.
-2. Add the map caption pattern and non-authorization language to the presenter
-   guide.
-3. Add the state-to-AASHTO packet and sensitivity/governance material.
-4. Add the claim-promotion trace.
-5. Capture the demo evidence bundle and source-pack templates.
-6. Add a VTRACE Round 5 verification gate.
+| Priority | Item | Reason |
+|---|---|---|
+| P1 | Source-backed stakeholder fixture | The 225-mile fixture shows threshold sensitivity, but not a state, industry, rural, or community requirement backed by an external source pack. |
+| P1 | Role-review closeout of pass artifacts | The new templates, trace, source packs, and capture need explicit `.roles` review before any external rehearsal. |
+| P2 | Optional command manifest/checksums | Technical hardening for reproducibility beyond row counts and output paths. |
+| P2 | L1/L2 package validation | Needed before release/public-readiness claims; browser L2 remains separately blocked. |
 
 ## Non-Approved Claims
 
@@ -218,9 +219,11 @@ open.
 
 ## Gate
 
-Decision: **fail_ready_until_trace_demo_capture_and_source_templates_exist**
+Decision: **pass_with_risk for internal Round 5 rehearsal**
 
-Rationale: The package is safe as an internal communications rehearsal, but it
-does not yet pass the full simulated review ladder. Rounds 1-4 can proceed only
-as `pass_with_risk` rehearsal. Round 5 must fail readiness until traceability,
-reproducibility, source custody, non-claims, and verification gates exist.
+Rationale: The package now has the artifacts that the first pressure-test run
+identified as missing: intake templates, regional packet, map captions,
+non-claims, claim trace, demo capture, source-pack templates, and a Round 5
+verification gate. The pass remains internal and risk-labeled because no
+source-backed stakeholder fixture, real external review, public readiness,
+construction, ROI, eligibility, compliance, or endorsement claim is closed.

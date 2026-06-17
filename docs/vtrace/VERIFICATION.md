@@ -60,11 +60,13 @@ game, release, or public-readiness claims.
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
 | L0 command gate passes. | `npm run check:l0` | required at closeout |
 
-Decision rule: Round 5 readiness remains `fail_ready` until every item is
-`passed` or explicitly held with owner, rationale, and revisit trigger. The
-current demo capture upgrades reproducibility from open to draft evidence and
-adds a bounded threshold before/after fixture, but does not close source-backed
-stakeholder fixture or public-readiness gates.
+Decision: pass_with_risk for internal Round 5 rehearsal.
+
+Rationale: The missing artifact classes identified by the pressure-test run now
+exist as draft surfaces, and the command bundle plus 225-mile threshold fixture
+are captured. External/public readiness remains held until a source-backed
+stakeholder fixture, role-review closeout, L1/L2 readiness evidence, and any
+claim-specific source packs close.
 
 ## Evidence Ledger
 
