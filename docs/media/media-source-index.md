@@ -19,6 +19,7 @@ sources:
   - docs/reports/route-roi-cost-framework.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
+  - docs/reports/industry-stakeholder-evidence-lane-matrix.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -47,7 +48,8 @@ public-readiness, external-readiness, or approval.
 | Media-safe status | Media resources are reference materials with claim holds. | `docs/media/README.md`; `docs/media/media-claim-guide.md`; this file | media-safe reference | public launch, external rehearsal, or publication approval |
 | Pressure-test status | Internal sponsor-to-DOT dry run passes; external rehearsal remains held. | `docs/reviews/communications-pressure-test-run-003.md` | internal pass / external held | real agency, congressional, or stakeholder review |
 | Source-backed example | One Port NOLA terminal-access fixture demonstrates source custody and holds. | `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | Port NOLA endorsement, terminal performance proof, or state/DOT approval |
-| Stakeholder input | ROUTE has workflows for converting requirements into source-backed refinements. | `docs/how-to/stakeholder-fixture-closeout-runbook.md`; `docs/reviews/source-backed-stakeholder-fixture-001.md` | workflow exists / one bounded internal fixture | stakeholder validation of the plan |
+| Industry/stakeholder coverage | ROUTE represents freight, terminal, rural, state DOT, community/environmental, transit, resilience, funder, technical, and media lanes. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md`; `docs/reviews/communications-role-review-pass-artifacts.md` | representation shown / validation held | industry validation, stakeholder endorsement, or external acceptance |
+| Stakeholder input | ROUTE has workflows for converting requirements into source-backed refinements. | `docs/how-to/stakeholder-fixture-closeout-runbook.md`; `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | workflow exists / one bounded internal fixture | stakeholder validation of the plan |
 | Public readiness | Public/browser/release readiness remains gated where claimed. | `docs/vtrace/VERIFICATION.md`; `docs/reports/route-evidence-posture.md` | held unless explicitly scoped and validated | publication-ready product or release claim |
 
 ## Quote-Ready Source Pointers
@@ -61,6 +63,7 @@ public-readiness, external-readiness, or approval.
 | Map limitations | `docs/reports/maps-are-not-proof-report.md` |
 | Internal pressure-test status | `docs/reviews/communications-pressure-test-run-003.md` |
 | Source-backed example | `docs/reviews/source-backed-stakeholder-fixture-001.md` |
+| Industry/stakeholder lane coverage | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` |
 
 ## Source-Use Rules
 
