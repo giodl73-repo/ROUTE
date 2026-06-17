@@ -15,6 +15,10 @@ sources:
   - docs/briefs/industry-value-brief.md
   - docs/reports/route-evidence-posture.md
   - docs/reports/route-roi-cost-framework.md
+  - docs/how-to/local-regional-intake-template.md
+  - docs/how-to/round2-state-intake-payload.md
+  - docs/briefs/state-to-aashto-regional-packet.md
+  - docs/traces/route-claim-promotion-trace.md
 ---
 
 # Split Deck Presenter Guide
@@ -39,6 +43,23 @@ Use this one-sentence spine:
 
 For public audiences, stop before "and ROUTE..." unless asked how the plan is
 made inspectable.
+
+## Standard Map Caption Pattern
+
+Use this caption shape for every map shown in a meeting, deck appendix, or
+rehearsal packet:
+
+```text
+Map level: structural / heuristic / held-claim / evidence-valid.
+Claim label: <label>.
+Excluded claims: SLA readiness, upgrade readiness, terminal proof,
+asset-condition proof, environmental readiness, construction readiness,
+official adoption, numeric ROI.
+Evidence pointer: <artifact path or gate>.
+```
+
+Do not show a map without saying whether it is a structural surface, heuristic
+surface, held-claim surface, or evidence-valid claim.
 
 ## Deck A: Interstate 2.0 Pitch
 
@@ -119,6 +140,99 @@ Then open the ROUTE technology deck.
 | Freight / industry | Service windows, bottlenecks, terminal access, relay hubs, charging, parking, HOS, data ask. | Guaranteed operating outcomes. |
 | Communities | Concerns before concrete: noise, air, safety, displacement, access, runoff, habitat. | Net-benefit language that erases local harm. |
 | Technical reviewers | Artifact generation, bundle identity, evidence labels, VTRACE, demo runbook. | Pure vision without proof posture. |
+
+## Round 1: Local / Regional Meeting Controls
+
+Use with MPO/RPO, district, local official, freight advisory, rural, or community
+meetings.
+
+| Item | Required Action |
+|---|---|
+| Opening posture | "This is requirements before concrete. The map is a structural service surface, not a project list." |
+| Intake artifact | Use `docs/how-to/local-regional-intake-template.md`. |
+| Rural example card | "Harvest access, trauma-center access, evacuation, and farm-to-terminal movement become T3/T4 obligations or held evidence rows." |
+| Closeout | Requirements captured, dissent preserved, map posture stated, next evidence/demo ask selected. |
+| Allowed asks | Intake package, evidence package, demo fixture, source pack, or bounded pilot. |
+| Do not ask for | Endorsement, construction funding, project approval, or map adoption. |
+
+## Round 2: State Review Controls
+
+Use with state DOT, governor-sponsor, state freight office, and legislative
+transportation staff.
+
+| State Input | ROUTE Artifact Target | Evidence Label | Held Claim | AASHTO Peer Question |
+|---|---|---|---|---|
+| Delivery constraint | `docs/how-to/round2-state-intake-payload.md` | source-needed / held | Funding, ROW, maintenance, environmental, lifecycle readiness. | Which constraints are shared or cross-border? |
+| Freight data ask | ROI/source-pack or demo artifact | source-needed / heuristic | Reliability, PTI, terminal, parking, HOS, weight/clearance claim. | Which OD lanes or terminals matter regionally? |
+| Rural/access ask | T3/T4 access row or source pack | source-needed / held | Access coverage or route promotion. | Which access obligations cross state markets? |
+| Community/environmental concern | Dissent / hold row | held | Mitigation, equity, or impact resolution. | Which burdens are regional or repeated? |
+
+Use the governor-safe line from `docs/how-to/round2-state-intake-payload.md`.
+
+## Round 3: AASHTO Regional Association Controls
+
+Safe opening:
+
+> This is shared service evidence, not state wins. The goal is to expose which
+> regional claims need sources, sensitivity, dissent, and owner review before
+> any option is promoted.
+
+| Objection | Safe Answer |
+|---|---|
+| "Why does your state get the spine?" | "T1/T2/T3/T4 are service roles. Selection claims require regional evidence, sensitivity, and holds." |
+| "This map demotes our connector." | "The map is structural. Treatment can change only through contact, access, promise, or evidence rows." |
+| "Who governs cross-border promises?" | "ROUTE does not create authority, governance, eligibility, or cross-border commitments." |
+| "Where is ROI?" | "ROI remains a source-pack gate: price year, benefits, costs, uncertainty, exclusions, negative cases, and review." |
+| "Where are rural and environmental burdens?" | "They are required fields in the regional packet, not afterthoughts." |
+
+Required close: regional evidence/source-pack standard or bounded pilot. Do not
+close on construction or endorsement.
+
+## Congressional Hearing Controls
+
+Use this module before any elected-official hearing, member briefing, or staff
+roundtable.
+
+| Objection | Safe Answer |
+|---|---|
+| "Are you asking Congress to fund a new interstate buildout?" | "No. The ask is standards, intake, evidence, demo/source packs, and bounded pilots before major commitments." |
+| "What is the ROI?" | "No numeric ROI is promoted. Source pack first: price year, benefit/cost classes, uncertainty, exclusions, and negative or marginal cases." |
+| "Why trust the map?" | "Do not trust a map alone. Maps are structural or held-claim surfaces until claim-specific evidence closes." |
+| "How do communities avoid repeated highway harms?" | "Displacement, air, noise, runoff, habitat, safety, access, mitigation, and who bears costs enter before feature promotion." |
+
+Permitted asks: story, intake, evidence, demo, source pack, standards, or bounded
+pilot package.
+
+Forbidden phrases: official plan, construction authorization, guaranteed
+service, positive ROI, agency endorsement, statutory compliance, NEPA complete,
+design compliant, safety compliant.
+
+## What This Does Not Authorize
+
+The communications package does not authorize, endorse, or prove:
+
+- official federal, state, regional, or local plan adoption;
+- construction, project approval, or funding obligation;
+- guaranteed service windows or operating SLAs;
+- numeric ROI, benefit-cost ratio, or federal exposure;
+- statutory or program eligibility;
+- NEPA, public-involvement, safety, civil-rights, or design-standard compliance;
+- state, regional, congressional, FHWA, USDOT, stakeholder, or community
+  endorsement.
+
+## Round 5 Technical Review Non-Claims
+
+For FHWA/USDOT-style technical review, repeat the non-claims above and point
+reviewers to:
+
+| Need | Artifact |
+|---|---|
+| Claim trace | `docs/traces/route-claim-promotion-trace.md` |
+| Demo commands | `docs/how-to/run-route-demo.md` |
+| Demo evidence capture | `docs/evidence/round5-demo-capture.md` |
+| Source-pack schemas | `docs/templates/source-packs/` |
+| Evidence posture | `docs/reports/route-evidence-posture.md` |
+| Round 5 verification gate | `docs/vtrace/VERIFICATION.md` |
 
 ## Red Lines
 

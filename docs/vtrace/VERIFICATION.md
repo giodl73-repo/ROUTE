@@ -44,6 +44,27 @@ git status --short
 | L1 | Full repo confidence before push or PR. | `cargo test -q`; VTRACE artifact inspection; role-review evidence for claim changes | pass_with_risk |
 | L2 | Integration/readiness proof before merge, release, or public claim. | `npm run check:l2`; release/review gate; generated artifact inspection | pass_with_risk |
 
+## Round 5 Communications Readiness Gate
+
+This gate is required before the communications package can claim an internal
+FHWA/USDOT-style technical review pass. It does not replace L2 for browser,
+game, release, or public-readiness claims.
+
+| Gate Item | Required Artifact / Check | Current Result |
+|---|---|---|
+| Claim-promotion trace exists. | `docs/traces/route-claim-promotion-trace.md` | draft |
+| Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle captured, before/after fixture pending |
+| Source-pack templates exist. | `docs/templates/source-packs/` | draft |
+| Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
+| Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
+| Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
+| L0 command gate passes. | `npm run check:l0` | required at closeout |
+
+Decision rule: Round 5 readiness remains `fail_ready` until every item is
+`passed` or explicitly held with owner, rationale, and revisit trigger. The
+current demo capture upgrades reproducibility from open to draft evidence, but
+does not close the before/after fixture or public-readiness gates.
+
 ## Evidence Ledger
 
 | Evidence ID | Type | Path / URL / Command | Covers | Result |

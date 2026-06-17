@@ -14,6 +14,8 @@ sources:
   - docs/reports/route-roi-cost-framework.md
   - docs/research-conclusions.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
+  - docs/how-to/round2-state-intake-payload.md
+  - docs/briefs/state-to-aashto-regional-packet.md
 ---
 
 # Interstate 2.0 State Value Brief
@@ -40,6 +42,16 @@ state priority -> national service role -> staged package -> evidence need -> fu
 | A staged funding path | Large visions can be split into planning, evidence, hub, charging, safety, interchange, access, and corridor packages. |
 | More honest risk handling | Delivery, right-of-way, source, environmental, maintenance, and community blockers stay visible instead of being hidden. |
 | A coalition story | Governors and legislators can talk about jobs, access, reliability, competitiveness, and resilience without pretending every project is ready. |
+
+## Governor-Safe Boundary
+
+Safe line:
+
+> This state is exploring how its transportation priorities could be mapped to a
+> national service framework. The work is at the intake and evidence stage. It
+> does not endorse a map, authorize construction, guarantee service windows,
+> prove ROI, or replace state, MPO, FHWA, environmental, safety, civil-rights, or
+> public-involvement processes.
 
 ## State-Specific Questions To Ask
 
@@ -81,6 +93,22 @@ package can begin with smaller pieces:
 | Resilience pilot | Closure, interchange, flood, mountain-pass, port, or evacuation stress testing. |
 | Access package | Rural, agricultural, production-zone, port, border, warehouse, or terminal access review. |
 | Decision package | A funder-facing option set with benefits, costs, evidence labels, blockers, and next steps. |
+
+## State-To-AASHTO Regional Packet
+
+Before a state carries this package into a regional association setting, prepare
+`docs/briefs/state-to-aashto-regional-packet.md`.
+
+| Packet Field | Why It Matters |
+|---|---|
+| Shared corridors / service questions | Keeps the discussion regional instead of one-state advocacy. |
+| Cross-border OD lanes | Gives freight and passenger service claims a sourceable question. |
+| Terminal, port, border, and rural access | Keeps local access from being erased by the national map. |
+| Reliability / PTI evidence needs | Blocks guaranteed-SLA language. |
+| Resilience stressors | Turns closure, weather, port, and evacuation concerns into evidence rows. |
+| Delivery constraints | Preserves match, maintenance, ROW, environmental review, lifecycle, and phasing. |
+| Holds and dissent | Shows what must stay blocked or challenged. |
+| Non-claims | Repeats no official plan, construction readiness, guaranteed service, numeric ROI, eligibility, or endorsement. |
 
 ## What To Say
 
