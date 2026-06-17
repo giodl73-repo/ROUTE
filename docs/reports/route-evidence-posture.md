@@ -153,6 +153,11 @@ numeric overreach:
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
 | Communications pressure-test run 001 | Draft | Rounds 1-4 pass_with_risk for rehearsal; Round 5 fails readiness until trace, demo capture, source-pack templates, non-claims, and verification gate exist. |
+| Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
+| State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
+| Claim-promotion trace | Draft | Reviewer-facing trace; does not promote claims beyond their evidence labels. |
+| Source-pack templates | Draft | Schema surfaces only; completing them does not prove ROI, resilience, rural access, map readiness, or demo readiness. |
+| Round 5 demo capture | Draft | Command bundle captured; before/after fixture, public release, official-plan, construction, guaranteed-SLA, ROI, eligibility, and compliance claims remain gated. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
 | Industry value brief | Draft | Story-ready; operating guarantees gated. |

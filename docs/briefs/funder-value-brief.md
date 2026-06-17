@@ -42,6 +42,15 @@ plan before major construction commitments are made.
 | Pilot package | Candidate hubs, charging/staging studies, interchange studies, access reviews, resilience tests. | Keeps early funding tied to studies, pilots, and decision gates. |
 | ROI/cost source pack | Price-year rules, benefit/cost classes, uncertainty, exclusions, and review lanes. | Blocks fake ROI numbers while preparing real benefit-cost work. |
 
+## Fiscal Staff Controls
+
+| Question | Safe Answer |
+|---|---|
+| What is the ROI? | No numeric ROI is promoted. The next fundable step is the source pack. |
+| What is the federal exposure? | Not estimated here. Federal exposure requires scope, program fit, cost basis, match, lifecycle, and exclusions. |
+| What if the result is weak? | Negative or marginal results are valid outcomes; they can hold, downgrade, or reject a package. |
+| What prevents fake precision? | Price year, source path/title/date/access note, units, uncertainty, exclusions, and Numeracy Checker review are required before values move. |
+
 ## Why This Is A Better Ask
 
 | Traditional Megaproject Ask | Interstate 2.0 Ask |

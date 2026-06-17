@@ -80,6 +80,15 @@ Pick one ask per meeting.
   autonomy, or delivery risk.
 - This means communities or stakeholders have validated the plan.
 
+## What This Does Not Authorize
+
+Use this in congressional, member, or staff settings:
+
+This package does not authorize a federal build program, state plan adoption,
+construction funding, project approval, guaranteed service levels, numeric ROI,
+agency endorsement, or waiver of state, MPO, FHWA, USDOT, NEPA, safety,
+civil-rights, environmental, or public-involvement processes.
+
 ## Answering Political Pushback
 
 | Pushback | Response |
