@@ -151,6 +151,7 @@ numeric overreach:
 | Resilience before crisis report | Draft | Story-ready / heuristic; hazard, recovery, alternate-capacity, site-specific, and hardening claims gated. |
 | Maps are not proof report | Draft | Story-ready structural map posture; SLA, upgrade, terminal, asset, official-plan, and construction claims gated. |
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
+| Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
 | Industry value brief | Draft | Story-ready; operating guarantees gated. |
