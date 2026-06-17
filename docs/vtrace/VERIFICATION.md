@@ -64,6 +64,7 @@ game, release, or public-readiness claims.
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
 | Source operations evidence roadmap exists. | `docs/reports/source-operations-evidence-roadmap.md` | draft; story-ready roadmap with claim promotion held |
 | Optimizer evidence appendix exists. | `docs/reports/optimizer-evidence-appendix.md` | draft; story-ready appendix with optimizer claims held |
+| Bundle identity technical brief exists. | `docs/briefs/bundle-identity-brief.md` | draft; story-ready brief with identity claims held |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
