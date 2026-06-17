@@ -152,7 +152,7 @@ numeric overreach:
 | Maps are not proof report | Draft | Story-ready structural map posture; SLA, upgrade, terminal, asset, official-plan, and construction claims gated. |
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
-| Communications pressure-test run 001 | Draft | Rounds 1-4 pass_with_risk for rehearsal; Round 5 fails readiness until trace, demo capture, source-pack templates, non-claims, and verification gate exist. |
+| Communications pressure-test run 001 | Draft | Rounds 1-5 pass_with_risk for internal rehearsal; external/public readiness remains held until source-backed stakeholder fixture, role-review closeout, and L1/L2 readiness evidence close. |
 | Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
 | Claim-promotion trace | Draft | Reviewer-facing trace; does not promote claims beyond their evidence labels. |
