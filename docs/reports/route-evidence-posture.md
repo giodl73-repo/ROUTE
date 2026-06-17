@@ -152,6 +152,7 @@ numeric overreach:
 | Maps are not proof report | Draft | Story-ready structural map posture; SLA, upgrade, terminal, asset, official-plan, and construction claims gated. |
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
+| Communications pressure-test run 001 | Draft | Rounds 1-4 pass_with_risk for rehearsal; Round 5 fails readiness until trace, demo capture, source-pack templates, non-claims, and verification gate exist. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |
 | Industry value brief | Draft | Story-ready; operating guarantees gated. |
