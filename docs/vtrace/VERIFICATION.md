@@ -70,7 +70,7 @@ game, release, or public-readiness claims.
 | Populated source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-001.md` | draft; terminal-access fixture pass_with_risk for internal rehearsal |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
-| Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md` | draft; media-safe reference with claim holds |
+| Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
 | Source operations evidence roadmap exists. | `docs/reports/source-operations-evidence-roadmap.md` | draft; story-ready roadmap with claim promotion held |
 | Optimizer evidence appendix exists. | `docs/reports/optimizer-evidence-appendix.md` | draft; story-ready appendix with optimizer claims held |
