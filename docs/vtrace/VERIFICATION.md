@@ -64,6 +64,8 @@ game, release, or public-readiness claims.
 | Communications rude Q&A drill run 001 exists. | `docs/reviews/communications-rude-qa-drill-run-001.md` | draft; internal pass_with_risk with presenter repairs open |
 | Communications rude Q&A repair closeout exists. | `docs/reviews/communications-rude-qa-repair-closeout.md` | draft; presenter repairs closed for internal rehearsal |
 | Communications rude Q&A drill run 002 exists. | `docs/reviews/communications-rude-qa-drill-run-002.md` | draft; internal closed-book pass with external/public readiness held |
+| Sponsor-to-DOT dry-run packet exists. | `docs/reviews/sponsor-dot-dry-run-packet-001.md` | draft; internal named packet with hold_external_rehearsal |
+| Source-backed stakeholder fixture candidate exists. | `docs/reviews/source-backed-stakeholder-fixture-candidate-001.md` | draft; held template for missing populated fixture |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
