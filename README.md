@@ -12,6 +12,17 @@ ROUTE gives roads the kind of service hierarchy rail and metro systems already
 use: express spine, regional connector, feeder, terminal access. It turns
 Interstate 2.0 from a road list into a promise network.
 
+## Media resources
+
+If you are reporting on ROUTE or Interstate 2.0, start with
+[`docs/media/README.md`](docs/media/README.md). The media materials include a
+fact sheet, claim guide, evidence posture, and source pointers.
+
+Important boundary: ROUTE is a research and tooling project. The current
+materials do not claim official-plan status, construction readiness, guaranteed
+service, numeric ROI, eligibility, compliance, agency endorsement, or public
+readiness.
+
 ![ROUTE Beck schematic](maps/beck-schematic.png)
 
 ## The core idea
