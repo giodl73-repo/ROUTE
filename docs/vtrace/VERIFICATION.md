@@ -60,6 +60,7 @@ game, release, or public-readiness claims.
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
 | Communications rude Q&A exists. | `docs/reviews/communications-rude-qa.md` | draft; internal adversarial prep with external/public readiness held |
+| Communications rude Q&A drill scorecard exists. | `docs/reviews/communications-rude-qa-drill-scorecard.md` | draft; internal drill scorecard with external/public readiness held |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
