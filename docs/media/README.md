@@ -12,6 +12,7 @@ sources:
   - docs/reports/route-evidence-posture.md
   - docs/reports/interstate-2-0-doctrine-report.md
   - docs/reports/maps-are-not-proof-report.md
+  - docs/reports/industry-stakeholder-evidence-lane-matrix.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -42,6 +43,7 @@ agency endorsement, public-readiness, or external-readiness.
 | Media Q&A | Deadline-friendly answers and verification checklist. | `docs/media/media-q-and-a.md` |
 | Media source index | Claim-to-source map for reporter fact checks. | `docs/media/media-source-index.md` |
 | Media visual assets | Recommended maps, captions, and proof-by-picture boundaries. | `docs/media/media-visual-assets.md` |
+| Industry/stakeholder matrix | Which stakeholder lanes are represented and what remains unvalidated. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` |
 | Evidence posture | Current claim boundary for decks, reports, maps, demos, and reviews. | `docs/reports/route-evidence-posture.md` |
 | Doctrine report | The core Interstate 2.0 service-hierarchy argument. | `docs/reports/interstate-2-0-doctrine-report.md` |
 | Maps are not proof | How to use ROUTE maps without treating images as evidence. | `docs/reports/maps-are-not-proof-report.md` |
