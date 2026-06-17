@@ -38,6 +38,11 @@ ROI, compliance, eligibility, public readiness, or endorsement.
 
 Decision: **pass_with_risk for internal five-round rehearsal**
 
+Supersession note: this run records the state before
+`docs/reviews/source-backed-stakeholder-fixture-001.md` existed. Current
+pressure-test status is recorded in
+`docs/reviews/communications-pressure-test-run-003.md`.
+
 The current package can now pass the simulated ladder as an internal rehearsal.
 The pass means the materials survive role pressure without breaking evidence
 boundaries, not that any external claim is approved.

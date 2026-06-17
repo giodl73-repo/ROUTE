@@ -9,7 +9,9 @@ created: 2026-06-17
 updated: 2026-06-17
 sources:
   - docs/reviews/communications-pressure-test-run-002.md
+  - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/communications-role-review-pass-artifacts.md
+  - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
@@ -37,13 +39,13 @@ agency approval.
 
 Decision: **hold_external_rehearsal**
 
-The package passes the internal five-round simulation with risk, but it should
-not yet be used in a named external rehearsal because no populated
-source-backed stakeholder fixture exists. The package has the process, template,
-trace, evidence capture, and role-review infrastructure needed to prepare that
-fixture. The external rehearsal packet template now defines where a future
-reviewer records the named venue, selected materials, source-backed fixture,
-role review, validation, and closing ask.
+The package passes the internal five-round simulation with risk, and it now has
+one populated source-backed terminal-access fixture for internal rehearsal. It
+should still not be used in a named external rehearsal because no named external
+venue packet, selected material set, presenter/recorder, venue-specific role
+review, or external validation closeout exists. The external rehearsal packet
+template defines where a future reviewer records the named venue, selected
+materials, source-backed fixture, role review, validation, and closing ask.
 
 ## Rehearsal Context Gate
 
@@ -60,8 +62,8 @@ role review, validation, and closing ask.
 
 | Item | Required Before External Rehearsal | Current Status |
 |---|---|---|
-| Populated stakeholder fixture | Source custody row, requirement row, before/after artifact or label change, and role-review result. | held |
-| Source custody | Every concrete external example has owner, title, date/year, path/access note, units when needed, and reviewer. | held |
+| Populated stakeholder fixture | Source custody row, requirement row, before/after artifact or label change, and role-review result. | pass_with_risk for internal rehearsal; external venue use held |
+| Source custody | Every concrete external example has owner, title, date/year, path/access note, units when needed, and reviewer. | pass_with_risk for Port NOLA fixture; held for any venue-specific example |
 | Claim trace | Any concrete claim has a row in `docs/traces/route-claim-promotion-trace.md` or is explicitly out of scope. | pass_with_risk |
 | Evidence posture | Every artifact shown has story-ready, implemented, heuristic, source-needed, gated, or held label. | pass_with_risk |
 | Demo capture | Any command shown has command, output path, observed status, row count/size when applicable, and non-claim label. | pass_with_risk |
@@ -74,7 +76,7 @@ role review, validation, and closing ask.
 | Citation Auditor | Confirms source custody for every concrete example and quantitative field. | held for selected venue |
 | Numeracy Checker | Confirms no uncited or unreviewed quantity, threshold, cost, benefit, ROI, volume, or service claim is promoted. | held for selected venue |
 | Affected stakeholder lanes | Review the concrete fixture and any dissent, burden, or held claim. | held for selected venue |
-| Optimization Methodologist | Confirms any before/after artifact change is reproducible and not hand-shaped. | held for selected fixture |
+| Optimization Methodologist | Confirms any before/after artifact change is reproducible and not hand-shaped. | pass_with_risk for Port NOLA fixture; held for selected venue packet |
 | Schematic Cartographer | Confirms any map is captioned by posture and does not imply proof. | pass_with_risk |
 
 ## Presenter Gate
@@ -103,7 +105,7 @@ External rehearsal readiness can move from `hold_external_rehearsal` to
 
 1. A named venue and audience lane exist.
 2. A populated stakeholder fixture or explicit source-backed concrete example
-   exists.
+   exists for the selected venue.
 3. Source custody and affected role review are recorded for that fixture.
 4. The selected material set has a prohibited-claim scan.
 5. L0 passes after edits.
@@ -123,7 +125,8 @@ External rehearsal readiness can move from `hold_external_rehearsal` to
 
 Decision: **hold_external_rehearsal**
 
-Rationale: The internal simulation package is disciplined, but an external
-rehearsal needs a concrete venue, selected materials, populated source-backed
-fixture, role review, and closeout validation. Until those exist, external use
-would risk converting process readiness into implied stakeholder validation.
+Rationale: The internal simulation package is disciplined, and the Port NOLA
+fixture closes one internal source-backed example. External rehearsal still
+needs a concrete venue, selected materials, venue-specific role review, and
+closeout validation. Until those exist, external use would risk converting
+process readiness into implied stakeholder validation.
