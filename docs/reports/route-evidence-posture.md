@@ -155,6 +155,7 @@ numeric overreach:
 | Communications pressure-test run 001 | Draft | Rounds 1-5 pass_with_risk for internal rehearsal; external/public readiness remains held until a populated source-backed stakeholder fixture and L1/L2 readiness evidence close. |
 | Communications pressure-test run 002 | Draft | Updated package passes the simulated five-round ladder for internal rehearsal; external/public use remains held by source-backed fixture and readiness validation. |
 | Communications external rehearsal readiness | Draft | Current decision is hold_external_rehearsal until a named venue, populated source-backed fixture, affected role review, prohibited-claim scan, and L0 close. |
+| External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Communications pass-artifacts role review | Draft | `.roles` addendum accepts trace, demo capture, source-pack templates, intake surfaces, regional packet, and verification gate for internal rehearsal; external claims remain held. |
 | Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |

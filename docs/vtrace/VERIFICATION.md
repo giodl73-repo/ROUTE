@@ -60,6 +60,7 @@ game, release, or public-readiness claims.
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
+| External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
