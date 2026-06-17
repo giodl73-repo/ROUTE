@@ -40,6 +40,7 @@ agency endorsement, public-readiness, or external-readiness.
 | Media fact sheet | Short, attributable description of ROUTE and Interstate 2.0. | `docs/media/media-fact-sheet.md` |
 | Media claim guide | What can and cannot be said without overclaiming. | `docs/media/media-claim-guide.md` |
 | Media Q&A | Deadline-friendly answers and verification checklist. | `docs/media/media-q-and-a.md` |
+| Media source index | Claim-to-source map for reporter fact checks. | `docs/media/media-source-index.md` |
 | Evidence posture | Current claim boundary for decks, reports, maps, demos, and reviews. | `docs/reports/route-evidence-posture.md` |
 | Doctrine report | The core Interstate 2.0 service-hierarchy argument. | `docs/reports/interstate-2-0-doctrine-report.md` |
 | Maps are not proof | How to use ROUTE maps without treating images as evidence. | `docs/reports/maps-are-not-proof-report.md` |
