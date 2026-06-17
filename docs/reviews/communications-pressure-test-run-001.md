@@ -201,8 +201,8 @@ source-backed stakeholder evidence and public/readiness gates remain held.
 
 | Priority | Item | Reason |
 |---|---|---|
-| P1 | Source-backed stakeholder fixture | The 225-mile fixture shows threshold sensitivity, but not a state, industry, rural, or community requirement backed by an external source pack. |
-| P1 | Role-review closeout of pass artifacts | The new templates, trace, source packs, and capture need explicit `.roles` review before any external rehearsal. |
+| P1 | Populated source-backed stakeholder fixture | The 225-mile fixture shows threshold sensitivity, and the stakeholder fixture template now exists, but no state, industry, rural, or community requirement backed by an external source pack has been filled and reviewed. |
+| P1 | External-rehearsal role approval | Pass-artifacts `.roles` review is recorded for internal rehearsal; a real external rehearsal still needs artifact-specific owner approval and source custody. |
 | P2 | Optional command manifest/checksums | Technical hardening for reproducibility beyond row counts and output paths. |
 | P2 | L1/L2 package validation | Needed before release/public-readiness claims; browser L2 remains separately blocked. |
 
@@ -224,6 +224,8 @@ Decision: **pass_with_risk for internal Round 5 rehearsal**
 Rationale: The package now has the artifacts that the first pressure-test run
 identified as missing: intake templates, regional packet, map captions,
 non-claims, claim trace, demo capture, source-pack templates, and a Round 5
-verification gate. The pass remains internal and risk-labeled because no
-source-backed stakeholder fixture, real external review, public readiness,
-construction, ROI, eligibility, compliance, or endorsement claim is closed.
+verification gate. The pass-artifacts role review and stakeholder fixture
+template are now recorded. The pass remains internal and risk-labeled because no
+populated source-backed stakeholder fixture, real external review, public
+readiness, construction, ROI, eligibility, compliance, or endorsement claim is
+closed.

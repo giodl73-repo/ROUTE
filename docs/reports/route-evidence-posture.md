@@ -152,11 +152,13 @@ numeric overreach:
 | Maps are not proof report | Draft | Story-ready structural map posture; SLA, upgrade, terminal, asset, official-plan, and construction claims gated. |
 | Requirement-to-refinement demonstration report | Draft | Implemented / heuristic; full before/after optimizer proof and release-readiness claims gated. |
 | Communications pressure-test simulation | Draft | Internal simulation only; no real state, regional, congressional, FHWA, USDOT, endorsement, or approval claim. |
-| Communications pressure-test run 001 | Draft | Rounds 1-5 pass_with_risk for internal rehearsal; external/public readiness remains held until source-backed stakeholder fixture, role-review closeout, and L1/L2 readiness evidence close. |
+| Communications pressure-test run 001 | Draft | Rounds 1-5 pass_with_risk for internal rehearsal; external/public readiness remains held until a populated source-backed stakeholder fixture and L1/L2 readiness evidence close. |
+| Communications pass-artifacts role review | Draft | `.roles` addendum accepts trace, demo capture, source-pack templates, intake surfaces, regional packet, and verification gate for internal rehearsal; external claims remain held. |
 | Local/regional and state intake templates | Draft | Intake surfaces only; no endorsement, official-plan, construction, SLA, ROI, eligibility, or approval claim. |
 | State-to-AASHTO regional packet | Draft | Regional evidence handoff only; no governance, cross-border commitment, eligibility, endorsement, or construction claim. |
 | Claim-promotion trace | Draft | Reviewer-facing trace; does not promote claims beyond their evidence labels. |
-| Source-pack templates | Draft | Schema surfaces only; completing them does not prove ROI, resilience, rural access, map readiness, or demo readiness. |
+| Source-pack templates | Draft | Schema surfaces only; completing them does not prove ROI, resilience, rural access, map readiness, demo readiness, or stakeholder validation. |
+| Stakeholder fixture source-pack template | Draft | Defines the required source-backed requirement-to-refinement fixture shape; not populated with real sources and not evidence of stakeholder endorsement. |
 | Round 5 demo capture | Draft | Command bundle and 225-mile threshold fixture captured; source-backed stakeholder fixture, public release, official-plan, construction, guaranteed-SLA, ROI, eligibility, and compliance claims remain gated. |
 | Political value brief | Draft | Story-ready; official-plan, construction, numeric ROI, and guarantee claims gated. |
 | State value brief | Draft | Story-ready; corridor-specific claims gated. |

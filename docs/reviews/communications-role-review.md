@@ -210,7 +210,7 @@ a concrete corridor, hub, ROI, operating, construction, or SLA-readiness claim.
 | P2 | Add map-use note: schematic hierarchy visual, detailed proof in generated artifacts. | Schematic Cartographer / V&V | Solution deck speaker notes / tech deck | addressed in solution deck and technology deck |
 | P2 | Add one requirement-to-refinement demo script. | Optimization Methodologist | `docs/how-to/run-route-demo.md` or deck slide | addressed in technology deck and demo how-to; next stronger fixture still needed |
 | P2 | Add hazard-class examples for resilience. | Climate Resilience Engineer | Solution deck / evidence posture | partially addressed through resilience examples; hazard-specific evidence campaign still needed |
-| P2 | Add report-specific intake templates for ROI, rural access, resilience, map captions, and requirement-to-refinement demo evidence. | Freight Economist / Rural Advocate / Climate Engineer / Schematic Cartographer / Optimization Methodologist | New report slate / demo package / presenter guide | open; reports identify the fields but do not yet provide reusable templates |
+| P2 | Add report-specific intake templates for ROI, rural access, resilience, map captions, requirement-to-refinement demo evidence, and stakeholder fixtures. | Freight Economist / Rural Advocate / Climate Engineer / Schematic Cartographer / Optimization Methodologist | New report slate / demo package / presenter guide | addressed as draft templates; real source-backed rows remain required before external claim promotion |
 
 ## Claims Approved For Internal Draft Use
 

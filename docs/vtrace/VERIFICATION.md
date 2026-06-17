@@ -55,6 +55,8 @@ game, release, or public-readiness claims.
 | Claim-promotion trace exists. | `docs/traces/route-claim-promotion-trace.md` | draft |
 | Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle and 225-mile before/after fixture captured |
 | Source-pack templates exist. | `docs/templates/source-packs/` | draft |
+| Stakeholder fixture template exists. | `docs/templates/source-packs/stakeholder-fixture-source-pack-template.md` | draft; real populated fixture pending |
+| Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Map caption pattern exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Technical non-claims block exists. | `docs/decks/split-deck-presenter-guide.md` | draft |
 | Prohibited-claim scan passes. | Search for official-plan, construction-ready, guaranteed-SLA, positive ROI, eligibility, compliance, endorsement claims in promoted contexts. | required at closeout |
@@ -63,10 +65,10 @@ game, release, or public-readiness claims.
 Decision: pass_with_risk for internal Round 5 rehearsal.
 
 Rationale: The missing artifact classes identified by the pressure-test run now
-exist as draft surfaces, and the command bundle plus 225-mile threshold fixture
-are captured. External/public readiness remains held until a source-backed
-stakeholder fixture, role-review closeout, L1/L2 readiness evidence, and any
-claim-specific source packs close.
+exist as draft surfaces, the command bundle plus 225-mile threshold fixture are
+captured, and `.roles` pass-artifacts review is recorded. External/public
+readiness remains held until a populated source-backed stakeholder fixture,
+L1/L2 readiness evidence, and any claim-specific source packs close.
 
 ## Evidence Ledger
 
