@@ -13,6 +13,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
+  - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
@@ -85,6 +86,7 @@ required L1/L2 evidence close.
 | Technical rude Q&A addendum | pass_with_risk | Good hostile-question coverage for internal rehearsal; answers must stay short and evidence-bounded. |
 | Technical rude Q&A drill run 001 | pass_with_risk | Closed-book drill has no fail rows; repair closeout 001 closes the source-custody, optimizer-wording, and graph-score recommendation repairs for internal rehearsal. |
 | Five-minute technical demo script | pass_with_risk | The script compresses the loop from requirement to source posture, command, artifact, hold, and next evidence while keeping external use held. |
+| Technical demo run 001 | pass_with_risk | Internal timeboxed run shows the loop can be delivered in five minutes; real venue, source custody, and external closeout remain held. |
 | Round 5 demo capture | pass_with_risk | Command capture can be inspected; it does not prove public release, network operation, or service performance. |
 | Source operations roadmap | pass_with_risk | Explains source-needed to source-backed workflow; it does not mean the evidence corpus is complete. |
 | Optimizer appendix | pass_with_risk | Shows artifact lineage and held-known rows; no final optimization, construction, or service claim. |
@@ -98,7 +100,7 @@ required L1/L2 evidence close.
 |---|---|---|
 | Named venue missing | A generic FHWA/USDOT-style lane cannot stand in for a real review context. | Fill a venue-specific external rehearsal packet only after the reviewer class, presenter, recorder, and material set are known. |
 | Source custody missing for venue use | Repo-local sources are enough for internal rehearsal, not for a real packet handoff. | Assign source custody owner and selected source list for the named packet. |
-| Named venue missing | The compressed demo is ready for internal rehearsal, but no real venue, reviewer, presenter, recorder, or final material set exists. | Fill a venue-specific external rehearsal packet before any external use. |
+| Named venue missing for demo use | The compressed demo passed internally with risk, but no real venue, reviewer, presenter, recorder, or final material set exists. | Fill a venue-specific external rehearsal packet before any external use. |
 | Operational evidence held | The packet does not close traffic engineering, service reliability, or design claims. | Keep all V/C, LOS, reliability, managed-lane, geometry, and throughput answers in evidence-needed posture. |
 | L1/L2 held | Technical evidence may require package-specific confidence beyond docs-only L0. | Select L1/L2 only if the named packet uses implementation, browser, game, release, or public-readiness claims. |
 
@@ -127,10 +129,10 @@ required L1/L2 evidence close.
 
 ## Next Work
 
-1. Run the five-minute technical demo script in the next internal technical
-   rehearsal.
-2. Keep the external rehearsal packet held until a named venue, presenter,
+1. Keep the external rehearsal packet held until a named venue, presenter,
    recorder, selected final materials, and venue-specific source custody exist.
+2. Add venue-specific source custody and role-review rows before any external
+   use of the technical demo.
 
 ## Validation Closeout
 

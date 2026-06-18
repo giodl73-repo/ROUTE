@@ -37,6 +37,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
+  - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -75,6 +76,7 @@ public-readiness, external-readiness, or approval.
 | Technical candidate role review | ROUTE has an internal `.roles` review of the FHWA/USDOT-style candidate and technical Q&A addendum. | `docs/reviews/external-rehearsal-technical-candidate-role-review.md` | internal pass_with_risk / external held | real technical signoff, agency review, approval, endorsement, validation, public readiness, or external readiness |
 | Technical Q&A drill | ROUTE has an internal closed-book technical hostile-question drill with repair closeout for the three pass-with-risk phrasing rows. | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md`; `docs/reviews/external-rehearsal-technical-repair-closeout-001.md` | internal pass_with_risk / repairs closed / external held | real technical review, agency acceptance, approval, endorsement, validation, public readiness, or external readiness |
 | Technical demo script | ROUTE has an internal five-minute script for showing the requirement-to-evidence loop. | `docs/how-to/external-rehearsal-technical-demo-script.md`; `docs/evidence/round5-demo-capture.md` | internal demo script / external held | real agency review, final optimizer answer, construction program, guaranteed service, numeric ROI, eligibility, compliance, public readiness, or external readiness |
+| Technical demo run | ROUTE has an internal pass-with-risk run of the five-minute technical demo. | `docs/reviews/external-rehearsal-technical-demo-run-001.md`; `docs/how-to/external-rehearsal-technical-demo-script.md` | internal pass_with_risk / external held | real agency review, technical signoff, final optimizer answer, construction program, guaranteed service, numeric ROI, eligibility, compliance, public readiness, or external readiness |
 | Public readiness | Public/browser/release readiness remains gated where claimed. | `docs/vtrace/VERIFICATION.md`; `docs/reports/route-evidence-posture.md` | held unless explicitly scoped and validated | publication-ready product or release claim |
 
 ## Quote-Ready Source Pointers
@@ -98,6 +100,7 @@ public-readiness, external-readiness, or approval.
 | Technical Q&A drill | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md` |
 | Technical repair closeout | `docs/reviews/external-rehearsal-technical-repair-closeout-001.md` |
 | Technical demo script | `docs/how-to/external-rehearsal-technical-demo-script.md` |
+| Technical demo run | `docs/reviews/external-rehearsal-technical-demo-run-001.md` |
 
 ## Source-Use Rules
 
