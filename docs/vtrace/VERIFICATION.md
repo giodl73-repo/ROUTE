@@ -75,11 +75,12 @@ game, release, or public-readiness claims.
 | Non-driving access source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-006.md` | draft; rural transit/intercity bus access fixture pass_with_risk for internal rehearsal |
 | Resilience/emergency-management source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-007.md` | draft; hazard/resilience/emergency-management fixture pass_with_risk for internal rehearsal |
 | ROI/cost source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-008.md` | draft; ROI/cost evidence-contract fixture pass_with_risk for internal rehearsal |
+| Technical rehearsal-control source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-009.md` | draft; technical / DOT-style rehearsal-control fixture pass_with_risk for internal rehearsal |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
-| Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; open fixture campaign; STAKE-FIX-001 through STAKE-FIX-008 populated |
+| Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; open fixture campaign; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
 | Source operations evidence roadmap exists. | `docs/reports/source-operations-evidence-roadmap.md` | draft; story-ready roadmap with claim promotion held |
 | Optimizer evidence appendix exists. | `docs/reports/optimizer-evidence-appendix.md` | draft; story-ready appendix with optimizer claims held |
@@ -100,9 +101,9 @@ Decision: pass_with_risk for internal Round 5 rehearsal.
 
 Rationale: The missing artifact classes identified by the pressure-test run now
 exist as draft surfaces, the command bundle plus 225-mile threshold fixture are
-captured, `.roles` pass-artifacts review is recorded, and the stakeholder
-fixture closeout runbook exists, and a populated terminal-access fixture is
-recorded for internal rehearsal. External/public readiness remains held until
+captured, `.roles` pass-artifacts review is recorded, the stakeholder fixture
+closeout runbook exists, and STAKE-FIX-001 through STAKE-FIX-009 are populated
+for internal rehearsal. External/public readiness remains held until
 venue-specific role review, L1/L2 readiness evidence, and any claim-specific
 source packs close.
 

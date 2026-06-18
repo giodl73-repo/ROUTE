@@ -12,6 +12,7 @@ sources:
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
+  - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
@@ -39,8 +40,8 @@ agency approval.
 
 Decision: **hold_external_rehearsal**
 
-The package passes the internal five-round simulation with risk, and it now has
-one populated source-backed terminal-access fixture for internal rehearsal. It
+The package passes the internal five-round simulation with risk, and
+STAKE-FIX-001 through STAKE-FIX-009 are populated for internal rehearsal. It
 should still not be used in a named external rehearsal because no named external
 venue packet, selected material set, presenter/recorder, venue-specific role
 review, or external validation closeout exists. The external rehearsal packet
@@ -62,8 +63,8 @@ materials, source-backed fixture, role review, validation, and closing ask.
 
 | Item | Required Before External Rehearsal | Current Status |
 |---|---|---|
-| Populated stakeholder fixture | Source custody row, requirement row, before/after artifact or label change, and role-review result. | pass_with_risk for internal rehearsal; external venue use held |
-| Source custody | Every concrete external example has owner, title, date/year, path/access note, units when needed, and reviewer. | pass_with_risk for Port NOLA fixture; held for any venue-specific example |
+| Populated stakeholder fixture | Source custody row, requirement row, before/after artifact or label change, and role-review result. | pass_with_risk for internal rehearsal across STAKE-FIX-001 through STAKE-FIX-009; external venue use held |
+| Source custody | Every concrete external example has owner, title, date/year, path/access note, units when needed, and reviewer. | pass_with_risk for internal fixtures; held for any venue-specific external example |
 | Claim trace | Any concrete claim has a row in `docs/traces/route-claim-promotion-trace.md` or is explicitly out of scope. | pass_with_risk |
 | Evidence posture | Every artifact shown has story-ready, implemented, heuristic, source-needed, gated, or held label. | pass_with_risk |
 | Demo capture | Any command shown has command, output path, observed status, row count/size when applicable, and non-claim label. | pass_with_risk |
@@ -125,8 +126,9 @@ External rehearsal readiness can move from `hold_external_rehearsal` to
 
 Decision: **hold_external_rehearsal**
 
-Rationale: The internal simulation package is disciplined, and the Port NOLA
-fixture closes one internal source-backed example. External rehearsal still
-needs a concrete venue, selected materials, venue-specific role review, and
-closeout validation. Until those exist, external use would risk converting
-process readiness into implied stakeholder validation.
+Rationale: The internal simulation package is disciplined, and STAKE-FIX-001
+through STAKE-FIX-009 close bounded internal source-backed examples and
+rehearsal controls. External rehearsal still needs a concrete venue, selected
+materials, venue-specific role review, and closeout validation. Until those
+exist, external use would risk converting process readiness into implied
+stakeholder validation.
