@@ -10,6 +10,7 @@ updated: 2026-06-18
 sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
+  - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
@@ -80,6 +81,7 @@ required L1/L2 evidence close.
 |---|---|---|
 | Candidate packet | pass_with_risk | Selected as a planning candidate only; no real external meeting or reviewer exists. |
 | Technical rude Q&A addendum | pass_with_risk | Good hostile-question coverage for internal rehearsal; answers must stay short and evidence-bounded. |
+| Technical rude Q&A drill run 001 | pass_with_risk | Closed-book drill has no fail rows, but source-custody, optimizer-wording, and graph-score recommendation repairs remain open. |
 | Round 5 demo capture | pass_with_risk | Command capture can be inspected; it does not prove public release, network operation, or service performance. |
 | Source operations roadmap | pass_with_risk | Explains source-needed to source-backed workflow; it does not mean the evidence corpus is complete. |
 | Optimizer appendix | pass_with_risk | Shows artifact lineage and held-known rows; no final optimization, construction, or service claim. |
@@ -93,7 +95,7 @@ required L1/L2 evidence close.
 |---|---|---|
 | Named venue missing | A generic FHWA/USDOT-style lane cannot stand in for a real review context. | Fill a venue-specific external rehearsal packet only after the reviewer class, presenter, recorder, and material set are known. |
 | Source custody missing for venue use | Repo-local sources are enough for internal rehearsal, not for a real packet handoff. | Assign source custody owner and selected source list for the named packet. |
-| Presenter not tested against the addendum | The addendum exists, but no closed-book technical Q&A drill has been recorded. | Run and record a technical rude Q&A drill before treating the candidate as ready for a dry run. |
+| Presenter repair closeout open | The addendum has a closed-book drill, but three pass-with-risk phrasing repairs remain. | Close source-custody, optimizer-wording, and graph-score repair rows before broader dry run or named packet use. |
 | Operational evidence held | The packet does not close traffic engineering, service reliability, or design claims. | Keep all V/C, LOS, reliability, managed-lane, geometry, and throughput answers in evidence-needed posture. |
 | L1/L2 held | Technical evidence may require package-specific confidence beyond docs-only L0. | Select L1/L2 only if the named packet uses implementation, browser, game, release, or public-readiness claims. |
 
@@ -122,8 +124,9 @@ required L1/L2 evidence close.
 
 ## Next Work
 
-1. Run a closed-book internal technical rude Q&A drill using the addendum.
-2. Record missed answers, overclaim risks, and repairs in a drill-run artifact.
+1. Close the three repair rows from technical rude Q&A drill run 001.
+2. Rerun TQ-003, TQ-004, TQ-005, and the graph-score trap as a focused repair
+   closeout.
 3. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected final material set exist.
 

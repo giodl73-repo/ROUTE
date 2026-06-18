@@ -19,6 +19,7 @@ sources:
   - docs/reports/release-publication-scope-appendix.md
   - docs/reports/route-evidence-posture.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
+  - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
 ---
 
 # External Rehearsal Technical Rude Q&A Addendum
@@ -50,16 +51,20 @@ review, and external-use boundaries.
 
 | ID | Technical Rude Question | Passing Answer | Required Artifact | Score |
 |---|---|---|---|---|
-| TQ-001 | Has FHWA or USDOT reviewed, accepted, or validated this package? | No. This is a candidate packet for a future FHWA/USDOT-style technical rehearsal. No real agency review, acceptance, validation, approval, or endorsement is claimed. | `docs/reviews/external-rehearsal-packet-candidate-001.md`; `docs/reviews/communications-external-rehearsal-readiness.md` | pending |
-| TQ-002 | What exactly can a technical reviewer reproduce today? | The reviewer can inspect the captured command bundle, output paths, observed statuses, row counts, and non-claim labels. That is internal command evidence, not release, SLA, or public-readiness proof. | `docs/evidence/round5-demo-capture.md` | pending |
-| TQ-003 | Are the source inputs complete enough for transportation claims? | No blanket claim. Source posture is artifact-specific: source-needed, cached, archived, fixture-backed, or held. Missing sources become source tasks, not promoted claims. | `docs/reports/source-operations-evidence-roadmap.md` | pending |
-| TQ-004 | Did the optimizer find the final national answer? | No. Optimizer artifacts show candidates, constraints, held-known rows, manifests, and next evidence steps. They do not prove final optimality, construction readiness, SLA, ROI, eligibility, compliance, or approval. | `docs/reports/optimizer-evidence-appendix.md` | pending |
-| TQ-005 | Are graph scores, centrality, coverage, flow, or investment outputs recommendations? | No. They are review artifacts with assumptions, confidence labels, and source posture. They cannot become final rankings, funding recommendations, managed-lane proof, ROI, or project claims without source pack, sensitivity, and role review. | `docs/reports/graph-scoring-measurement-appendix.md` | pending |
-| TQ-006 | Can maps, release manifests, or browser/game artifacts be shown publicly after this? | Not from this candidate. Structural maps and release metadata have narrow held-claim uses; browser/game/public readiness remains governed by release scope and L1/L2 gates where claimed. | `docs/reports/release-publication-scope-appendix.md` | pending |
-| TQ-007 | What happens if a technical reviewer rejects a claim? | The claim is downgraded, split, held, or converted into a source, command, role-review, or validation task. Rejection is a review record, not something to hide. | `docs/traces/route-claim-promotion-trace.md`; `docs/reports/route-evidence-posture.md` | pending |
-| TQ-008 | Why is STAKE-FIX-009 enough to talk about a DOT-style technical review? | It is enough only as an internal rehearsal-control example. It records that technical-review language requires a named packet, selected materials, presenter, recorder, role lanes, validation checks, and prohibited-claim scan. It does not prove external review or agency acceptance. | `docs/reviews/source-backed-stakeholder-fixture-009.md` | pending |
-| TQ-009 | Are you asking FHWA/USDOT for a decision, clearance, funding, or eligibility opinion? | No. The safe ask is technical evidence review or a demo fixture. Decisions, clearances, funding, eligibility, compliance, and official policy remain outside this candidate. | `docs/reviews/external-rehearsal-packet-candidate-001.md` | pending |
-| TQ-010 | What would let this move from candidate to actual external rehearsal packet? | A named venue, reviewer lane, presenter, recorder, final material set, venue-specific source custody, affected role review, prohibited-claim scan, L0, and any required L1/L2 closeout. | `docs/reviews/communications-external-rehearsal-readiness.md`; `docs/templates/external-rehearsal-packet-template.md` | pending |
+| TQ-001 | Has FHWA or USDOT reviewed, accepted, or validated this package? | No. This is a candidate packet for a future FHWA/USDOT-style technical rehearsal. No real agency review, acceptance, validation, approval, or endorsement is claimed. | `docs/reviews/external-rehearsal-packet-candidate-001.md`; `docs/reviews/communications-external-rehearsal-readiness.md` | pass |
+| TQ-002 | What exactly can a technical reviewer reproduce today? | The reviewer can inspect the captured command bundle, output paths, observed statuses, row counts, and non-claim labels. That is internal command evidence, not release, SLA, or public-readiness proof. | `docs/evidence/round5-demo-capture.md` | pass |
+| TQ-003 | Are the source inputs complete enough for transportation claims? | No blanket claim. Source posture is artifact-specific: source-needed, cached, archived, fixture-backed, or held. Missing sources become source tasks, not promoted claims. | `docs/reports/source-operations-evidence-roadmap.md` | pass_with_risk |
+| TQ-004 | Did the optimizer find the final national answer? | No. Optimizer artifacts show candidates, constraints, held-known rows, manifests, and next evidence steps. They do not prove final optimality, construction readiness, SLA, ROI, eligibility, compliance, or approval. | `docs/reports/optimizer-evidence-appendix.md` | pass_with_risk |
+| TQ-005 | Are graph scores, centrality, coverage, flow, or investment outputs recommendations? | No. They are review artifacts with assumptions, confidence labels, and source posture. They cannot become final rankings, funding recommendations, managed-lane proof, ROI, or project claims without source pack, sensitivity, and role review. | `docs/reports/graph-scoring-measurement-appendix.md` | pass_with_risk |
+| TQ-006 | Can maps, release manifests, or browser/game artifacts be shown publicly after this? | Not from this candidate. Structural maps and release metadata have narrow held-claim uses; browser/game/public readiness remains governed by release scope and L1/L2 gates where claimed. | `docs/reports/release-publication-scope-appendix.md` | pass |
+| TQ-007 | What happens if a technical reviewer rejects a claim? | The claim is downgraded, split, held, or converted into a source, command, role-review, or validation task. Rejection is a review record, not something to hide. | `docs/traces/route-claim-promotion-trace.md`; `docs/reports/route-evidence-posture.md` | pass |
+| TQ-008 | Why is STAKE-FIX-009 enough to talk about a DOT-style technical review? | It is enough only as an internal rehearsal-control example. It records that technical-review language requires a named packet, selected materials, presenter, recorder, role lanes, validation checks, and prohibited-claim scan. It does not prove external review or agency acceptance. | `docs/reviews/source-backed-stakeholder-fixture-009.md` | pass |
+| TQ-009 | Are you asking FHWA/USDOT for a decision, clearance, funding, or eligibility opinion? | No. The safe ask is technical evidence review or a demo fixture. Decisions, clearances, funding, eligibility, compliance, and official policy remain outside this candidate. | `docs/reviews/external-rehearsal-packet-candidate-001.md` | pass |
+| TQ-010 | What would let this move from candidate to actual external rehearsal packet? | A named venue, reviewer lane, presenter, recorder, final material set, venue-specific source custody, affected role review, prohibited-claim scan, L0, and any required L1/L2 closeout. | `docs/reviews/communications-external-rehearsal-readiness.md`; `docs/templates/external-rehearsal-packet-template.md` | pass |
+
+Drill run 001 records closed-book scores for these rows. TQ-003, TQ-004, and
+TQ-005 passed with risk and need the repair wording in that run before any
+broader dry run or named packet use.
 
 ## Follow-Up Traps
 
@@ -70,7 +75,7 @@ review, and external-use boundaries.
 | "The graph score tells us what to fund first, right?" | "No. Score outputs are review indices with confidence and assumptions, not funding recommendations." |
 | "A map render means publication is cleared?" | "Only narrow structural map use can be allowed with held-claim captions; public readiness remains separate." |
 | "Can we quote FHWA/USDOT as being in the loop?" | "No. No real agency venue or reviewer exists in this candidate." |
-| "Can we call this technically accepted?" | "No. Acceptance would require a real reviewer, selected packet, review record, and closeout." |
+| "Can we say a technical reviewer signed off?" | "No. That would require a real reviewer, selected packet, review record, and closeout." |
 
 ## Scorecard Add-On Rows
 
@@ -79,16 +84,16 @@ candidate.
 
 | Question ID | Score | Failure Mode If Any | Repair Note | Owner | Evidence Step |
 |---|---|---|---|---|---|
-| TQ-001 | pending |  |  | Scope Keeper | preserve no-review / no-acceptance language |
-| TQ-002 | pending |  |  | route-cli owner / Citation Auditor | point to command capture and non-claim labels |
-| TQ-003 | pending |  |  | route-data owner / Citation Auditor | point to source operations and source-needed tasks |
-| TQ-004 | pending |  |  | Optimization Methodologist | distinguish artifacts from final optimizer proof |
-| TQ-005 | pending |  |  | Numeracy Checker / route-score owner | preserve score/confidence/sensitivity boundary |
-| TQ-006 | pending |  |  | Schematic Cartographer / V&V | preserve release/publication scope |
-| TQ-007 | pending |  |  | review steward | record downgrade/hold path |
-| TQ-008 | pending |  |  | Citation Auditor / Scope Keeper | keep STAKE-FIX-009 internal-only |
-| TQ-009 | pending |  |  | State DOT Planner / Scope Keeper | block decision, clearance, funding, eligibility, and compliance asks |
-| TQ-010 | pending |  |  | review steward | name external-readiness packet requirements |
+| TQ-001 | pass | none | none | Scope Keeper | preserve no-review / no-acceptance language |
+| TQ-002 | pass | none | none | route-cli owner / Citation Auditor | point to command capture and non-claim labels |
+| TQ-003 | pass_with_risk | source-custody wording needs to appear earlier | Add venue-packet prompt for source owner, artifact, and access note. | route-data owner / Citation Auditor | point to source operations and source-needed tasks |
+| TQ-004 | pass_with_risk | "best candidate" phrasing repaired during answer | Replace with "selected artifact under declared constraints." | Optimization Methodologist | distinguish artifacts from final optimizer proof |
+| TQ-005 | pass_with_risk | review-index boundary came after clarification | Put "review index, not recommendation" in the first sentence. | Numeracy Checker / route-score owner | preserve score/confidence/sensitivity boundary |
+| TQ-006 | pass | none | none | Schematic Cartographer / V&V | preserve release/publication scope |
+| TQ-007 | pass | none | none | review steward | record downgrade/hold path |
+| TQ-008 | pass | none | none | Citation Auditor / Scope Keeper | keep STAKE-FIX-009 internal-only |
+| TQ-009 | pass | none | none | State DOT Planner / Scope Keeper | block decision, clearance, funding, eligibility, and compliance asks |
+| TQ-010 | pass | none | none | review steward | name external-readiness packet requirements |
 
 ## Pass Conditions
 
@@ -103,6 +108,10 @@ This addendum passes an internal technical Q&A rehearsal only when:
 4. Every answer names a source artifact or explicitly holds the claim.
 5. Any `pass_with_risk` answer gets a repair note before a named external
    packet is filled.
+
+Drill run 001 meets the first four conditions and records three pass-with-risk
+repair notes. Those repairs must close before any broader dry run or named
+external packet use.
 
 ## Validation Closeout
 
@@ -120,4 +129,5 @@ Decision: **technical_rude_qa_addendum_ready; external_rehearsal_held**
 Rationale: The FHWA/USDOT-style candidate now has a technical hostile-question
 set that forces source, command, model, graph, release, and external-readiness
 boundaries into every answer. It does not close the actual technical rehearsal
-or external-readiness gate.
+or external-readiness gate. Drill run 001 shows the presenter can clear the
+question set internally with three phrasing repairs still open.
