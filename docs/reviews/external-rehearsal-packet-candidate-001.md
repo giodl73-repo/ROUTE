@@ -11,6 +11,7 @@ sources:
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/reviews/communications-external-rehearsal-readiness.md
+  - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -88,6 +89,7 @@ community acceptance, industry validation, or state delivery authority.
 | Graph and scoring appendix | `docs/reports/graph-scoring-measurement-appendix.md` | graph, scoring, coverage, flow, and allocation boundaries | story-ready / measurement claims held | yes |
 | Release and publication scope appendix | `docs/reports/release-publication-scope-appendix.md` | map, release, browser/game, scenario, and external-use boundaries | pass_with_risk / public readiness held | yes |
 | Fixture closeout report | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | package-level source-backed fixture summary | pass_with_risk / internal only | yes |
+| Technical rude Q&A addendum | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` | hostile technical questions and safe answers for this candidate lane | internal rehearsal addendum / external held | yes |
 | Public solution deck | `docs/decks/interstate-2-0-pitch.md` | optional framing only if reviewer asks "why this matters" | story-ready / gated claims | optional |
 | Political, funder, or public media materials | docs/briefs and docs/media | not needed for technical review unless requested | media-safe / claim holds | no by default |
 
@@ -155,6 +157,7 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 | "Can this become a state or federal plan?" | Not from this packet. State/federal authority, environmental, funding, engineering, public, and legal processes remain outside the claim. | pass |
 | "Are scores or maps a recommendation?" | No. Scores are review indices and maps are structural visuals with held-claim labels. | pass |
 | "What would make this packet usable externally?" | A named venue, selected final materials, presenter, recorder, venue-specific role review, prohibited-claim scan, L0, and any required L1/L2 closeout. | pass |
+| "What hostile technical questions must we rehearse first?" | Use the technical rude Q&A addendum; it adds source, command, optimizer, graph/scoring, release, and agency-review traps for this candidate lane. | pass_with_risk |
 
 ## Validation Closeout
 
@@ -180,10 +183,8 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 ## Next Work
 
 1. Run prohibited-claim scan and L0 after this candidate packet is added.
-2. Add a venue-specific rude Q&A addendum for the FHWA/USDOT technical reviewer
-   lane.
-3. Re-run role review for the selected candidate after the Q&A addendum exists.
-4. Fill a real external rehearsal packet only after a named venue, presenter,
+2. Re-run role review for the selected candidate after the Q&A addendum exists.
+3. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected material set exist.
 
 ## Gate

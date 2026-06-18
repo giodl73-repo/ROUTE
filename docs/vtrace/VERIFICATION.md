@@ -79,6 +79,7 @@ game, release, or public-readiness claims.
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet selection runbook exists. | `docs/how-to/external-rehearsal-packet-selection-runbook.md` | draft; selection runbook ready; external rehearsal held |
 | External rehearsal packet candidate 001 exists. | `docs/reviews/external-rehearsal-packet-candidate-001.md` | draft; FHWA/USDOT technical candidate selected; external rehearsal held |
+| External rehearsal technical rude Q&A addendum exists. | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` | draft; technical hostile-question addendum ready; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -110,6 +111,8 @@ for internal rehearsal. External packet selection now has an FHWA/USDOT
 technical reviewer candidate, but external/public readiness remains held until
 a named venue, final material packet, venue-specific role review, L1/L2
 readiness evidence when applicable, and any claim-specific source packs close.
+The technical candidate now has a hostile-question addendum for the next
+internal role-review pass.
 
 ## Evidence Ledger
 
