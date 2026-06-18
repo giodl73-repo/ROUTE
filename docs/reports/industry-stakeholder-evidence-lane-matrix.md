@@ -36,6 +36,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-004.md
   - docs/reviews/source-backed-stakeholder-fixture-005.md
   - docs/reviews/source-backed-stakeholder-fixture-006.md
+  - docs/reviews/source-backed-stakeholder-fixture-007.md
   - docs/media/media-source-index.md
   - docs/reports/route-evidence-posture.md
   - docs/reports/forty-eight-hour-freight-promise-report.md
@@ -69,8 +70,8 @@ Decision: **representation_shown_validation_held**
 
 The package represents the major review lanes needed for an Interstate 2.0
 communications rehearsal. The strongest support is internal: `.roles` coverage,
-role-review findings, source-pack discipline, media claim controls, and one
-bounded Port NOLA terminal-access fixture.
+role-review findings, source-pack discipline, media claim controls, and seven
+bounded source-backed stakeholder fixtures.
 
 That is enough for media, sponsor, and internal dry-run language that says
 ROUTE has represented lanes and a source-gated workflow. It is not enough to say
@@ -87,7 +88,7 @@ plan.
 | State DOT, corridor delivery, asset owners, and maintenance agencies | ROUTE separates analytical merit from delivery authority, funding, right-of-way, maintenance, phasing, project development, and asset condition. | State DOT role; state value brief; sponsor-to-DOT dry-run packet; pressure-test run 003; asset condition appendix; FHWA/DOT state delivery-control fixture 004. | No state DOT approval, funding path, environmental process outcome, maintenance commitment, asset-condition finding, or corridor delivery decision is closed. | Add a named state/corridor source pack with plan references, asset rows, funding context, ROW/environmental status, and state/local role review. |
 | Community, environmental, public-health, and local-impact lanes | ROUTE keeps dissent, harm, air quality, noise, runoff, habitat, displacement, social-environment, and community-health questions visible. | Foxx role; environmental community role; local official role; local/regional intake template; resilience and maps-not-proof reports; FHWA/EPA community/environmental fixture 005. | No community has validated the plan, and no mitigation, public-health, environmental, local-impact, clearance, or support conclusion is closed. | Add a named community/corridor source pack with affected population, meeting record, pollutant/noise/runoff/habitat issue, mitigation status, and role review. |
 | Transit-dependent, intercity traveler, and non-driving access lanes | ROUTE represents non-driving access as a review lane when road-service claims affect access to intercity travel. | Transit-dependent, intercity traveler, and rural resident roles; intake templates; T3/T4 access appendix; FTA rural transit/intercity bus fixture 006. | No transit service, passenger facility, intercity coach, park-and-ride, first/last-mile, accessibility, ridership, or benefit claim is validated. | Add a named route, stop, facility, schedule, local connection, accessibility, or service-quality source pack with role review. |
-| Climate, resilience, emergency management, and disruption recovery | ROUTE treats hazards, closures, redundancy, evacuation, and recovery as evidence lanes rather than rhetorical benefits. | Climate engineer role; resilience before crisis report; route evidence posture; pressure-test reviews. | No site-specific hazard, closure frequency, recovery-time, alternate-capacity, or hardening claim is closed. | Build a closure, flood, wildfire, snow/ice, port disruption, or evacuation source pack with uncertainty and time horizon. |
+| Climate, resilience, emergency management, and disruption recovery | ROUTE treats hazards, closures, redundancy, evacuation, and recovery as evidence lanes rather than rhetorical benefits. | Climate engineer role; resilience before crisis report; route evidence posture; pressure-test reviews; FHWA/FEMA resilience and hazard-data fixture 007. | No site-specific hazard, closure frequency, recovery-time, alternate-capacity, evacuation-capacity, hardening, mitigation, or resilience-benefit claim is closed. | Add a named corridor, asset, event, closure, flood, wildfire, snow/ice, port disruption, evacuation, or recovery source pack with uncertainty, time horizon, and role review. |
 | Funders, finance reviewers, economists, and benefit-cost readers | ROUTE frames ROI and cost as evidence contracts before any number is promoted. | ROI/cost framework; ROI without fake numbers report; funder brief; Numeracy Checker and Freight Economist roles; media claim guide. | No numeric ROI, benefit-cost ratio, cost estimate, price-year basis, eligibility finding, or funding recommendation is closed. | Create an ROI source pack that names units, price year, cost basis, excluded benefits, uncertainty, and reviewer. |
 | Technical reviewers, DOT/FHWA/USDOT-style reviewers, and maintainers | ROUTE has trace, command, demo, role-review, verification, and source-pack surfaces for technical challenge. | Claim-promotion trace; Round 5 demo capture; verification gate; communications role review; pressure-test run 003; source-pack templates. | Internal dry runs are not agency review, federal review, L1/L2 release closeout, or external technical acceptance. | Run a named external rehearsal packet only after venue, materials, presenter, recorder, role review, prohibited-claim scan, and validation closeout are set. |
 | Media, public readers, editors, and researchers | ROUTE has media-facing materials that help readers avoid claim drift. | Media README, fact sheet, claim guide, Q&A, source index, visual-assets guide, evidence posture report. | Media-safe reference material is not a launch, press release, public-readiness record, or permission to treat the package as externally reviewed. | Before any publication push, close venue/source-specific media review and re-run prohibited-claim and L0 gates. |
@@ -99,7 +100,7 @@ Use these phrases:
 - "represented in the review lanes"
 - "covered by `.roles` and role review"
 - "source-gated"
-- "one bounded terminal-access fixture"
+- "seven bounded source-backed fixtures"
 - "internal dry-run pass with external rehearsal held"
 - "requires source custody before promotion"
 
@@ -129,7 +130,7 @@ Avoid these phrases:
 
 | Gap | Why It Matters | Disposition |
 |---|---|---|
-| Six populated source-backed fixtures exist. | They demonstrate process for terminal access, freight parking/rest constraints, rural/agricultural access lanes, state delivery controls, community/environmental impact lanes, and non-driving access lanes, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
+| Seven populated source-backed fixtures exist. | They demonstrate process for terminal access, freight parking/rest constraints, rural/agricultural access lanes, state delivery controls, community/environmental impact lanes, non-driving access lanes, and resilience/emergency-management lanes, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
 | Most lanes are represented by roles and reports, not outside participants. | Role simulation is useful for pressure testing but cannot stand in for affected-party review. | Keep external validation language held. |
 | ROI, cost, reliability, asset, hazard, and local-impact claims remain source-specific. | These are the claims most likely to drift into unsupported proof language. | Require source packs and numeracy/domain review before promotion. |
 | Media materials exist before public readiness is closed. | Reporters may find the repo and overstate it. | Point media users to this matrix, the source index, and evidence posture. |

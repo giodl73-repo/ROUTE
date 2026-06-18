@@ -17,6 +17,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-004.md
   - docs/reviews/source-backed-stakeholder-fixture-005.md
   - docs/reviews/source-backed-stakeholder-fixture-006.md
+  - docs/reviews/source-backed-stakeholder-fixture-007.md
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/media/media-source-index.md
@@ -43,13 +44,13 @@ industry validation.
 
 Decision: **fixture_campaign_open**
 
-Six fixtures are populated: the Port NOLA terminal-access example, the FHWA
+Seven fixtures are populated: the Port NOLA terminal-access example, the FHWA
 truck-parking freight-operations example, the USDA/USDOT rural/agricultural
 access example, the FHWA/DOT state delivery-control example, and the FHWA/EPA
 community/environmental impact example, and the FTA rural transit/intercity bus
-access example. All other lanes remain planned fixture work. Until more
-fixtures close, ROUTE can say the lanes are represented and source-gated, not
-externally validated.
+access example, and the FHWA/FEMA resilience and hazard-data example. All
+other lanes remain planned fixture work. Until more fixtures close, ROUTE can
+say the lanes are represented and source-gated, not externally validated.
 
 ## Fixture Ledger
 
@@ -61,7 +62,7 @@ externally validated.
 | STAKE-FIX-004 | State DOT / delivery / maintenance | pass_with_risk for internal rehearsal | Public FHWA asset-management source and DOT Navigator FHWA NEPA/project-development source. | Delivery, maintenance, asset, financial-plan, investment-strategy, and project-development controls become a bounded source-backed example. | State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker, Schematic Cartographer, Freight Economist, Environmental Community. | Closed for one bounded internal example; no state approval, project readiness, funding, environmental clearance, eligibility, or asset-condition claim. |
 | STAKE-FIX-005 | Community / environmental / local impact | pass_with_risk for internal rehearsal | Public FHWA social-environment source and EPA transportation air-pollution source. | Community/social-environment, vehicle-pollution, and health-effect concerns become a bounded source-backed review-control example. | Foxx, Environmental Community, Local Official, Scope Keeper, Citation Auditor, Numeracy Checker, Traffic Engineer, State DOT Planner. | Closed for one bounded internal example; no named impact, mitigation, clearance, public-involvement, compliance, or community-support claim. |
 | STAKE-FIX-006 | Transit-dependent / intercity / non-driving access | pass_with_risk for internal rehearsal | Public FTA rural transit page and FTA Rural Areas Formula Program circular. | Rural transit, intercity bus connection, facility, planning, and first/last-mile questions become a bounded source-backed review-control example. | Transit-Dependent, Intercity Traveler, Rural Resident, Scope Keeper, Citation Auditor, Numeracy Checker, State DOT Planner, Schematic Cartographer. | Closed for one bounded internal example; no named service, stop, facility, accessibility, funding, ridership, or benefit claim. |
-| STAKE-FIX-007 | Climate / resilience / emergency management | planned | Public hazard, closure, evacuation, detour, port disruption, wildfire, flood, snow/ice, or recovery source. | Add one hazard or recovery requirement with uncertainty and time horizon. | Climate Engineer, State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker. | Hazard pathway is source-backed or held; no resilience benefit, hardening, or recovery-performance claim. |
+| STAKE-FIX-007 | Climate / resilience / emergency management | pass_with_risk for internal rehearsal | Public FHWA resilience/extreme-events source and FEMA National Risk Index / Resilience Analysis and Planning Tool source. | Hazard, resilience, closure, detour, evacuation, alternate-capacity, and recovery questions become a bounded source-backed review-control example. | Climate Engineer, State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker, Rural Resident, Environmental Community. | Closed for one bounded internal example; no site exposure, hazard probability, closure frequency, evacuation capacity, recovery time, hardening, mitigation, benefit, funding, or emergency-plan claim. |
 | STAKE-FIX-008 | ROI / cost / finance | planned | Public cost basis, price year, benefit category, freight delay, safety, asset repair, operations, funding program, or uncertainty source. | Add one ROI/cost evidence-contract row with units and excluded benefits. | Numeracy Checker, Freight Economist, Funder lens, Scope Keeper, Citation Auditor. | Inputs and exclusions are defined; no numeric ROI, benefit-cost, eligibility, or funding recommendation claim. |
 | STAKE-FIX-009 | Technical / DOT-style review | planned | Named dry-run venue packet, selected materials, presenter, recorder, role review, and prohibited-claim scan. | External rehearsal packet can be evaluated as held/pass/fail. | Scope Keeper, Citation Auditor, Numeracy Checker, State DOT Planner, Traffic Engineer, affected lane roles. | A named rehearsal record exists; no agency review or approval unless explicitly documented by the external venue. |
 
@@ -122,6 +123,6 @@ Decision: **open_campaign**
 
 Rationale: The campaign is now executable: the lanes, fixture IDs, evidence
 targets, artifact effects, review roles, and pass thresholds are named.
-STAKE-FIX-001 through STAKE-FIX-006 are populated for bounded internal
+STAKE-FIX-001 through STAKE-FIX-007 are populated for bounded internal
 examples. All other fixture lanes remain planned until source custody,
 before/after artifact posture, and role review close.
