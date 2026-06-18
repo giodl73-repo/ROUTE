@@ -14,6 +14,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/reviews/source-backed-stakeholder-fixture-002.md
   - docs/reviews/source-backed-stakeholder-fixture-003.md
+  - docs/reviews/source-backed-stakeholder-fixture-004.md
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/media/media-source-index.md
@@ -40,11 +41,11 @@ industry validation.
 
 Decision: **fixture_campaign_open**
 
-Three fixtures are populated: the Port NOLA terminal-access example, the FHWA
-truck-parking freight-operations example, and the USDA/USDOT rural/agricultural
-access example. All other lanes remain planned fixture work. Until more
-fixtures close, ROUTE can say the lanes are represented and source-gated, not
-externally validated.
+Four fixtures are populated: the Port NOLA terminal-access example, the FHWA
+truck-parking freight-operations example, the USDA/USDOT rural/agricultural
+access example, and the FHWA/DOT state delivery-control example. All other
+lanes remain planned fixture work. Until more fixtures close, ROUTE can say the
+lanes are represented and source-gated, not externally validated.
 
 ## Fixture Ledger
 
@@ -53,7 +54,7 @@ externally validated.
 | STAKE-FIX-001 | Ports / terminal access | pass_with_risk for internal rehearsal | Public terminal road-access source. | Source-backed fixture and trace-ready terminal-access label. | Scope Keeper, Citation Auditor, Numeracy Checker, Optimization Methodologist, Freight Economist, Freight Industry, Schematic Cartographer, State DOT Planner. | Closed for one bounded internal example; no external or broad terminal claim. |
 | STAKE-FIX-002 | Freight carriers / shippers / operations | pass_with_risk for internal rehearsal | Public FHWA truck parking source. | Truck parking/rest/HOS becomes a bounded source-backed operating-constraint example. | Freight Industry, Long-Haul Trucker, Regional Shipper, Freight Economist, Numeracy Checker, Scope Keeper, Citation Auditor, Traffic Engineer, State DOT Planner. | Closed for one bounded internal example; no operating SLA, ROI, carrier, shipper, or corridor-specific parking claim. |
 | STAKE-FIX-003 | Rural / agriculture / production-zone access | pass_with_risk for internal rehearsal | Public USDA rural transportation source and USDOT rural surface transportation program source. | Rural/agricultural access becomes a bounded source-backed review-lane example. | Rural Advocate, Rural Farmer, Rural Resident, State DOT Planner, Scope Keeper, Citation Auditor, Numeracy Checker, Traffic Engineer, Freight Economist. | Closed for one bounded internal example; no route support, access guarantee, funding, eligibility, county, or facility claim. |
-| STAKE-FIX-004 | State DOT / delivery / maintenance | planned | Public state DOT plan, asset-management note, freight plan, STIP/LRTP excerpt, maintenance constraint, bridge/pavement source, or environmental-process source. | Add one delivery constraint, hold label, or state-facing red-line row. | State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker. | Delivery authority and feasibility constraints are visible; no state approval, funding, or project-readiness claim. |
+| STAKE-FIX-004 | State DOT / delivery / maintenance | pass_with_risk for internal rehearsal | Public FHWA asset-management source and DOT Navigator FHWA NEPA/project-development source. | Delivery, maintenance, asset, financial-plan, investment-strategy, and project-development controls become a bounded source-backed example. | State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker, Schematic Cartographer, Freight Economist, Environmental Community. | Closed for one bounded internal example; no state approval, project readiness, funding, environmental clearance, eligibility, or asset-condition claim. |
 | STAKE-FIX-005 | Community / environmental / local impact | planned | Public meeting record, environmental justice source, local concern, noise/air/runoff/habitat/displacement source, or local official record. | Add one dissent, harm, exclusion, or mitigation-held row. | Foxx, Environmental Community, Local Official, Scope Keeper, Citation Auditor, Numeracy Checker. | Local impact concern is preserved as a claim boundary; no mitigation or community validation claim. |
 | STAKE-FIX-006 | Transit-dependent / intercity / non-driving access | planned | Public intercity coach, park-and-ride, first/last-mile, passenger facility, accessibility, or non-driving access source. | Add one non-driving access requirement, hold, or exclusion row. | Transit-Dependent, Intercity Traveler, Rural Resident, Scope Keeper, Citation Auditor, Numeracy Checker. | Non-driving access impact is visible; no transit service, facility, or access benefit claim. |
 | STAKE-FIX-007 | Climate / resilience / emergency management | planned | Public hazard, closure, evacuation, detour, port disruption, wildfire, flood, snow/ice, or recovery source. | Add one hazard or recovery requirement with uncertainty and time horizon. | Climate Engineer, State DOT Planner, Traffic Engineer, Scope Keeper, Citation Auditor, Numeracy Checker. | Hazard pathway is source-backed or held; no resilience benefit, hardening, or recovery-performance claim. |
@@ -117,6 +118,6 @@ Decision: **open_campaign**
 
 Rationale: The campaign is now executable: the lanes, fixture IDs, evidence
 targets, artifact effects, review roles, and pass thresholds are named.
-STAKE-FIX-001, STAKE-FIX-002, and STAKE-FIX-003 are populated for bounded
-internal examples. All other fixture lanes remain planned until source custody,
-before/after artifact posture, and role review close.
+STAKE-FIX-001, STAKE-FIX-002, STAKE-FIX-003, and STAKE-FIX-004 are populated
+for bounded internal examples. All other fixture lanes remain planned until
+source custody, before/after artifact posture, and role review close.
