@@ -33,6 +33,7 @@ sources:
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
+  - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -68,6 +69,7 @@ public-readiness, external-readiness, or approval.
 | External rehearsal selection | ROUTE has a runbook for choosing a first real external rehearsal packet. | `docs/how-to/external-rehearsal-packet-selection-runbook.md`; `docs/reviews/communications-external-rehearsal-readiness.md`; `docs/templates/external-rehearsal-packet-template.md` | selection workflow ready / external rehearsal held | selected venue, approval, endorsement, external validation, or public readiness |
 | External rehearsal candidate | ROUTE has selected an FHWA/USDOT-style technical reviewer lane as the first candidate. | `docs/reviews/external-rehearsal-packet-candidate-001.md`; `docs/reviews/communications-external-rehearsal-readiness.md` | candidate selected / external rehearsal held | real FHWA/USDOT review, agency acceptance, approval, endorsement, validation, or external readiness |
 | Technical hostile Q&A | ROUTE has internal hostile-question prep for the FHWA/USDOT-style candidate. | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` | internal rehearsal prep / external held | real technical review, agency acceptance, approval, validation, endorsement, or public readiness |
+| Technical candidate role review | ROUTE has an internal `.roles` review of the FHWA/USDOT-style candidate and technical Q&A addendum. | `docs/reviews/external-rehearsal-technical-candidate-role-review.md` | internal pass_with_risk / external held | real technical acceptance, agency review, approval, endorsement, validation, public readiness, or external readiness |
 | Public readiness | Public/browser/release readiness remains gated where claimed. | `docs/vtrace/VERIFICATION.md`; `docs/reports/route-evidence-posture.md` | held unless explicitly scoped and validated | publication-ready product or release claim |
 
 ## Quote-Ready Source Pointers
@@ -87,6 +89,7 @@ public-readiness, external-readiness, or approval.
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
 | Technical hostile Q&A | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` |
+| Technical candidate role review | `docs/reviews/external-rehearsal-technical-candidate-role-review.md` |
 
 ## Source-Use Rules
 

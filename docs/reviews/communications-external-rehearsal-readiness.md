@@ -17,6 +17,7 @@ sources:
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/reviews/external-rehearsal-packet-candidate-001.md
+  - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -52,7 +53,8 @@ defines how to choose the venue, audience lane, fixture anchor, role lanes, and
 closing ask before the external rehearsal packet template is filled. Candidate
 001 selects an FHWA/USDOT technical reviewer lane, but it remains held because
 no real venue, reviewer, presenter, recorder, final material set, or external
-closeout exists.
+closeout exists. The candidate now has an internal technical role review, which
+passes with risk for continued internal rehearsal and keeps external use held.
 
 ## Rehearsal Context Gate
 
@@ -65,6 +67,7 @@ closeout exists.
 | Recorder | Person or role responsible for intake, dissent, and source custody named. | held |
 | Packet selection | Venue type, fixture anchor, required roles, material class, and safe closing ask selected. | runbook exists; selection held |
 | Candidate packet | Candidate packet selects a first lane without claiming a real external review. | FHWA/USDOT technical candidate selected; external rehearsal held |
+| Candidate role review | Selected `.roles` lanes review the candidate and technical rude Q&A addendum. | internal pass_with_risk; external rehearsal held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -87,6 +90,7 @@ closeout exists.
 | Affected stakeholder lanes | Review the concrete fixture and any dissent, burden, or held claim. | held for selected venue |
 | Optimization Methodologist | Confirms any before/after artifact change is reproducible and not hand-shaped. | pass_with_risk for internal fixture package; held for selected venue packet |
 | Schematic Cartographer | Confirms any map is captioned by posture and does not imply proof. | pass_with_risk |
+| Technical candidate roles | Review Candidate 001 plus the technical Q&A addendum across scope, source, numeracy, optimizer, state-delivery, map, and traffic-engineering lanes. | pass_with_risk for internal technical candidate; venue-specific role review still held |
 
 ## Presenter Gate
 
@@ -139,7 +143,8 @@ Decision: **hold_external_rehearsal**
 Rationale: The internal simulation package is disciplined, and STAKE-FIX-001
 through STAKE-FIX-009 close bounded internal source-backed examples and
 rehearsal controls. The packet-selection runbook is ready, and Candidate 001
-selects an FHWA/USDOT technical reviewer lane. External rehearsal still needs a
-concrete venue, selected final materials, venue-specific role review, and
-closeout validation. Until those exist, external use would risk converting
-process readiness into implied stakeholder validation.
+selects an FHWA/USDOT technical reviewer lane. The candidate now has an
+internal technical role review, but external rehearsal still needs a concrete
+venue, selected final materials, venue-specific role review, and closeout
+validation. Until those exist, external use would risk converting process
+readiness into implied stakeholder validation.
