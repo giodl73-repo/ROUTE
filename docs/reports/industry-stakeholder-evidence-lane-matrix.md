@@ -31,6 +31,7 @@ sources:
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
+  - docs/reviews/source-backed-stakeholder-fixture-002.md
   - docs/media/media-source-index.md
   - docs/reports/route-evidence-posture.md
   - docs/reports/forty-eight-hour-freight-promise-report.md
@@ -76,7 +77,7 @@ plan.
 
 | Lane | Safe Claim | Current Evidence | Current Boundary | Next Source-Backed Fixture |
 |---|---|---|---|---|
-| Freight carriers, shippers, brokers, and logistics operators | ROUTE represents freight operating constraints as review lanes. | `freight-industry`, `long-haul-trucker`, `regional-shipper`, Freight Economist roles; 48-hour freight report; relay hubs report; role review; pressure-test run 003; Port NOLA terminal-access fixture. | No carrier, shipper, broker, warehouse operator, or driver group has validated the plan; no operating service promise is guaranteed. | Source one carrier, shipper, broker, or public freight operations record and route it through requirement, source custody, artifact change, and role review. |
+| Freight carriers, shippers, brokers, and logistics operators | ROUTE represents freight operating constraints as review lanes. | `freight-industry`, `long-haul-trucker`, `regional-shipper`, Freight Economist roles; 48-hour freight report; relay hubs report; role review; pressure-test run 003; FHWA truck-parking fixture 002. | No carrier, shipper, broker, warehouse operator, or driver group has validated the plan; no operating service promise is guaranteed. | Add a carrier, shipper, broker, corridor, dwell, weight, clearance, or reliability source pack with before/after artifact impact. |
 | Ports, terminals, warehouses, and intermodal access | ROUTE keeps terminal and local freight access visible through T4 and source-pack gates. | T3/T4 access appendix; Port NOLA terminal-access fixture; maps-not-proof report; media source index. | One terminal-access fixture is not broad port or terminal validation, and it is not Port NOLA endorsement or performance proof. | Add a second port, terminal, warehouse, rail-intermodal, or border-crossing source pack with before/after artifact impact. |
 | Rural regions, agriculture, production zones, and small metros | ROUTE represents rural access, production-zone access, and emergency-access concerns instead of treating them as afterthoughts. | Rural Advocate, rural farmer, rural resident roles; rural access report; T3/T4 access appendix; local/regional and state intake templates; role review. | No farm, processor, elevator, rural county, hospital, or emergency manager has validated a route or service claim. | Build a farm-to-processor, harvest-window, rural healthcare, evacuation, or small-metro access fixture with named sources and dissent rows. |
 | State DOT, corridor delivery, asset owners, and maintenance agencies | ROUTE separates analytical merit from delivery authority, funding, right-of-way, maintenance, phasing, and asset condition. | State DOT role; state value brief; sponsor-to-DOT dry-run packet; pressure-test run 003; asset condition appendix; external readiness checklist. | No state DOT approval, funding path, environmental process outcome, maintenance commitment, or corridor delivery decision is closed. | Select one state-facing delivery constraint and source it through intake, source custody, role review, and media red-line update. |
@@ -124,7 +125,7 @@ Avoid these phrases:
 
 | Gap | Why It Matters | Disposition |
 |---|---|---|
-| Only one populated source-backed fixture exists. | It demonstrates process, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
+| Two populated source-backed fixtures exist. | They demonstrate process for terminal access and freight parking/rest constraints, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
 | Most lanes are represented by roles and reports, not outside participants. | Role simulation is useful for pressure testing but cannot stand in for affected-party review. | Keep external validation language held. |
 | ROI, cost, reliability, asset, hazard, and local-impact claims remain source-specific. | These are the claims most likely to drift into unsupported proof language. | Require source packs and numeracy/domain review before promotion. |
 | Media materials exist before public readiness is closed. | Reporters may find the repo and overstate it. | Point media users to this matrix, the source index, and evidence posture. |

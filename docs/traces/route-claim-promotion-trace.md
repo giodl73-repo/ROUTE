@@ -14,6 +14,7 @@ sources:
   - docs/reports/route-evidence-posture.md
   - docs/reviews/communications-pressure-test-run-001.md
   - docs/how-to/run-route-demo.md
+  - docs/reviews/source-backed-stakeholder-fixture-002.md
 ---
 
 # ROUTE Claim Promotion Trace
@@ -40,6 +41,7 @@ endorsement-ready status.
 | TRACE-CLAIM-007 | A tighter planning threshold changes the stop/SLA candidate artifact. | REQ-006 / REQ-007 / REQ-010 | `target/demo/beck-stop-sla-candidates-225-demo.csv` | `cargo run -q -p route -- stop-sla-candidates --input target\demo\beck-stop-sla-demo.csv --output target\demo\beck-stop-sla-candidates-225-demo.csv --target-gap 225 --top 5 --gate` | repo-local generated artifact | implemented / heuristic / source-needed | `docs/evidence/round5-demo-capture.md` | Stress-threshold candidates require source and role review before promotion. | use internally as before/after fixture | Keep named candidates heuristic and midpoint rows held/source-needed. |
 | TRACE-CLAIM-008 | A stress-threshold promotion scaffold can expose source-needed review rows without promoting construction. | REQ-002 / REQ-007 / REQ-010 | `target/demo/beck-stop-sla-promotions-225-demo.csv` | `cargo run -q -p route -- stop-sla-promotions --input target\demo\beck-stop-sla-candidates-225-demo.csv --output target\demo\beck-stop-sla-promotions-225-demo.csv --gate` | repo-local generated artifact | source-needed / held | `docs/evidence/round5-demo-capture.md` | Rows are append-ready review scaffolds; not recommendations. | hold from public claims | Validate real interchange/service-city candidates and role review before promotion. |
 | TRACE-CLAIM-009 | A terminal-access fixture can be source-backed for internal rehearsal when route-to-terminal custody is recorded. | REQ-002 / REQ-010 | `docs/reviews/source-backed-stakeholder-fixture-001.md`; `data/t4-terminal-contact-accepted-proof-sources.csv` | inspection | public Port NOLA source plus repo-local accepted proof-source rows | source-backed / pass_with_risk / internal only | `docs/reviews/source-backed-stakeholder-fixture-001.md` | State/DOT authority, operating performance, map publication, upgrade, ROI, eligibility, compliance, endorsement, and approval claims remain held. | use internally with holds | Add venue-specific DOT/port role review before external rehearsal or stronger terminal-access claim. |
+| TRACE-CLAIM-010 | Truck parking, rest access, and HOS break needs can be source-backed as freight operating constraints. | REQ-002 / REQ-009 / REQ-010 | `docs/reviews/source-backed-stakeholder-fixture-002.md`; FHWA truck parking page | inspection | public FHWA source plus role review fixture | source-backed / pass_with_risk / internal only | `docs/reviews/source-backed-stakeholder-fixture-002.md` | Corridor-specific parking adequacy, service-window impact, construction, ROI, eligibility, compliance, endorsement, approval, and external-readiness claims remain held. | use internally with holds | Add state/corridor parking inventory, utilization, delivery-window, and delivery-authority sources before stronger claims. |
 
 ## Promotion Rules
 

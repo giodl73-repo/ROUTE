@@ -19,6 +19,7 @@ sources:
   - docs/reports/route-roi-cost-framework.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
+  - docs/reviews/source-backed-stakeholder-fixture-002.md
   - docs/reports/industry-stakeholder-evidence-lane-matrix.md
   - docs/reports/industry-stakeholder-source-fixture-campaign.md
   - docs/traces/route-claim-promotion-trace.md
@@ -48,9 +49,9 @@ public-readiness, external-readiness, or approval.
 | ROI and cost | ROI/cost work is an evidence contract before any number. | `docs/reports/route-roi-cost-framework.md`; `docs/reports/route-evidence-posture.md` | story-ready framework / numeric claims gated | positive ROI or benefit-cost proof |
 | Media-safe status | Media resources are reference materials with claim holds. | `docs/media/README.md`; `docs/media/media-claim-guide.md`; this file | media-safe reference | public launch, external rehearsal, or publication approval |
 | Pressure-test status | Internal sponsor-to-DOT dry run passes; external rehearsal remains held. | `docs/reviews/communications-pressure-test-run-003.md` | internal pass / external held | real agency, congressional, or stakeholder review |
-| Source-backed example | One Port NOLA terminal-access fixture demonstrates source custody and holds. | `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | Port NOLA endorsement, terminal performance proof, or state/DOT approval |
+| Source-backed examples | Port NOLA terminal-access fixture and FHWA truck-parking freight-operations fixture demonstrate source custody and holds. | `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/reviews/source-backed-stakeholder-fixture-002.md`; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | source owner endorsement, terminal performance proof, corridor parking adequacy, or state/DOT approval |
 | Industry/stakeholder coverage | ROUTE represents freight, terminal, rural, state DOT, community/environmental, transit, resilience, funder, technical, and media lanes. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md`; `docs/reviews/communications-role-review-pass-artifacts.md` | representation shown / validation held | industry validation, stakeholder endorsement, or external acceptance |
-| Stakeholder fixture campaign | ROUTE has a lane-by-lane fixture campaign for moving represented concerns toward bounded source-backed examples. | `docs/reports/industry-stakeholder-source-fixture-campaign.md`; `docs/how-to/stakeholder-fixture-closeout-runbook.md` | open campaign / only STAKE-FIX-001 populated | completed validation campaign or broad stakeholder acceptance |
+| Stakeholder fixture campaign | ROUTE has a lane-by-lane fixture campaign for moving represented concerns toward bounded source-backed examples. | `docs/reports/industry-stakeholder-source-fixture-campaign.md`; `docs/how-to/stakeholder-fixture-closeout-runbook.md` | open campaign / STAKE-FIX-001 and STAKE-FIX-002 populated | completed validation campaign or broad stakeholder acceptance |
 | Stakeholder input | ROUTE has workflows for converting requirements into source-backed refinements. | `docs/how-to/stakeholder-fixture-closeout-runbook.md`; `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | workflow exists / one bounded internal fixture | stakeholder validation of the plan |
 | Public readiness | Public/browser/release readiness remains gated where claimed. | `docs/vtrace/VERIFICATION.md`; `docs/reports/route-evidence-posture.md` | held unless explicitly scoped and validated | publication-ready product or release claim |
 
@@ -64,7 +65,7 @@ public-readiness, external-readiness, or approval.
 | Full claim boundary | `docs/reports/route-evidence-posture.md` |
 | Map limitations | `docs/reports/maps-are-not-proof-report.md` |
 | Internal pressure-test status | `docs/reviews/communications-pressure-test-run-003.md` |
-| Source-backed example | `docs/reviews/source-backed-stakeholder-fixture-001.md` |
+| Source-backed examples | `docs/reviews/source-backed-stakeholder-fixture-001.md`; `docs/reviews/source-backed-stakeholder-fixture-002.md` |
 | Industry/stakeholder lane coverage | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` |
 | Stakeholder fixture campaign | `docs/reports/industry-stakeholder-source-fixture-campaign.md` |
 
