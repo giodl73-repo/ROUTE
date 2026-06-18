@@ -56,7 +56,7 @@ game, release, or public-readiness claims.
 | Demo command capture exists. | `docs/evidence/round5-demo-capture.md` | draft; command bundle and 225-mile before/after fixture captured |
 | Source-pack templates exist. | `docs/templates/source-packs/` | draft |
 | Stakeholder fixture template exists. | `docs/templates/source-packs/stakeholder-fixture-source-pack-template.md` | draft; template retained for future fixtures |
-| Stakeholder fixture closeout runbook exists. | `docs/how-to/stakeholder-fixture-closeout-runbook.md` | draft; makes remaining blocker executable |
+| Stakeholder fixture closeout runbook exists. | `docs/how-to/stakeholder-fixture-closeout-runbook.md` | draft; used for STAKE-FIX-001 through STAKE-FIX-009 |
 | Pass-artifacts role review exists. | `docs/reviews/communications-role-review-pass-artifacts.md` | draft; pass_with_risk for internal rehearsal |
 | Second pressure-test run exists. | `docs/reviews/communications-pressure-test-run-002.md` | draft; internal five-round pass_with_risk; external/public readiness held |
 | Third pressure-test run exists. | `docs/reviews/communications-pressure-test-run-003.md` | draft; internal sponsor-to-DOT dry run pass; external rehearsal held |

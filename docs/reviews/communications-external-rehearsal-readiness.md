@@ -11,6 +11,7 @@ sources:
   - docs/reviews/communications-pressure-test-run-002.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reviews/communications-role-review-pass-artifacts.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
@@ -77,7 +78,7 @@ materials, source-backed fixture, role review, validation, and closing ask.
 | Citation Auditor | Confirms source custody for every concrete example and quantitative field. | held for selected venue |
 | Numeracy Checker | Confirms no uncited or unreviewed quantity, threshold, cost, benefit, ROI, volume, or service claim is promoted. | held for selected venue |
 | Affected stakeholder lanes | Review the concrete fixture and any dissent, burden, or held claim. | held for selected venue |
-| Optimization Methodologist | Confirms any before/after artifact change is reproducible and not hand-shaped. | pass_with_risk for Port NOLA fixture; held for selected venue packet |
+| Optimization Methodologist | Confirms any before/after artifact change is reproducible and not hand-shaped. | pass_with_risk for internal fixture package; held for selected venue packet |
 | Schematic Cartographer | Confirms any map is captioned by posture and does not imply proof. | pass_with_risk |
 
 ## Presenter Gate
