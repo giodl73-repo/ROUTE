@@ -16,6 +16,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
+  - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -48,7 +49,10 @@ should still not be used in a named external rehearsal because no named external
 venue packet, selected material set, presenter/recorder, venue-specific role
 review, or external validation closeout exists. The packet-selection runbook
 defines how to choose the venue, audience lane, fixture anchor, role lanes, and
-closing ask before the external rehearsal packet template is filled.
+closing ask before the external rehearsal packet template is filled. Candidate
+001 selects an FHWA/USDOT technical reviewer lane, but it remains held because
+no real venue, reviewer, presenter, recorder, final material set, or external
+closeout exists.
 
 ## Rehearsal Context Gate
 
@@ -60,6 +64,7 @@ closing ask before the external rehearsal packet template is filled.
 | Closing ask | Intake, evidence, source pack, demo fixture, standards, or bounded pilot ask selected. | held |
 | Recorder | Person or role responsible for intake, dissent, and source custody named. | held |
 | Packet selection | Venue type, fixture anchor, required roles, material class, and safe closing ask selected. | runbook exists; selection held |
+| Candidate packet | Candidate packet selects a first lane without claiming a real external review. | FHWA/USDOT technical candidate selected; external rehearsal held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -133,7 +138,8 @@ Decision: **hold_external_rehearsal**
 
 Rationale: The internal simulation package is disciplined, and STAKE-FIX-001
 through STAKE-FIX-009 close bounded internal source-backed examples and
-rehearsal controls. The packet-selection runbook is ready, but external
-rehearsal still needs a concrete venue, selected materials, venue-specific role
-review, and closeout validation. Until those exist, external use would risk
-converting process readiness into implied stakeholder validation.
+rehearsal controls. The packet-selection runbook is ready, and Candidate 001
+selects an FHWA/USDOT technical reviewer lane. External rehearsal still needs a
+concrete venue, selected final materials, venue-specific role review, and
+closeout validation. Until those exist, external use would risk converting
+process readiness into implied stakeholder validation.
