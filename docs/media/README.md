@@ -13,8 +13,8 @@ sources:
   - docs/reports/interstate-2-0-doctrine-report.md
   - docs/reports/maps-are-not-proof-report.md
   - docs/reports/industry-stakeholder-evidence-lane-matrix.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/communications-pressure-test-run-003.md
-  - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
 ---
 
@@ -48,7 +48,7 @@ agency endorsement, public-readiness, or external-readiness.
 | Doctrine report | The core Interstate 2.0 service-hierarchy argument. | `docs/reports/interstate-2-0-doctrine-report.md` |
 | Maps are not proof | How to use ROUTE maps without treating images as evidence. | `docs/reports/maps-are-not-proof-report.md` |
 | Pressure-test run 003 | Latest internal communications pressure test result. | `docs/reviews/communications-pressure-test-run-003.md` |
-| Source-backed fixture 001 | One bounded example of source custody and claim holds. | `docs/reviews/source-backed-stakeholder-fixture-001.md` |
+| Source-backed fixture closeout | Nine bounded internal examples of source custody and claim holds. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` |
 
 ## Media-Safe Summary
 

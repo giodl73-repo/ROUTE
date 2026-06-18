@@ -13,7 +13,7 @@ sources:
   - docs/media/media-claim-guide.md
   - docs/reports/route-evidence-posture.md
   - docs/reviews/communications-pressure-test-run-003.md
-  - docs/reviews/source-backed-stakeholder-fixture-001.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -41,7 +41,7 @@ eligibility finding, compliance finding, endorsement record, or approval record.
 | Does ROUTE prove ROI? | No. ROI and cost are treated as evidence contracts; numeric ROI claims remain gated. |
 | Are agencies or stakeholders endorsing this? | No endorsement or approval claim is made. |
 | Why mention Port NOLA? | ROUTE uses a public Port NOLA road-access source as one bounded example of source custody and claim holds, not as endorsement or proof of terminal performance. |
-| What is the strongest current claim? | ROUTE has a coherent evidence-bounded communications package and one source-backed fixture for internal rehearsal. External/public readiness remains held. |
+| What is the strongest current claim? | ROUTE has a coherent evidence-bounded communications package and nine bounded source-backed fixtures for internal rehearsal. External/public readiness remains held. |
 
 ## If You Quote One Sentence
 
@@ -66,7 +66,7 @@ Before relying on a stronger claim, check:
 | Is the claim about ROI or cost? | Look for a source pack and numeracy review; otherwise describe ROI as gated. |
 | Is the claim about stakeholder validation? | Look for a source-backed fixture and affected role review; otherwise say stakeholder validation is not claimed. |
 | Is the claim about a service window? | Describe it as a planning target, not a guarantee. |
-| Is the claim about Port NOLA? | Say the public source supports a bounded terminal-access fixture only; do not imply endorsement. |
+| Is the claim about Port NOLA? | Say the public source supports one bounded terminal-access fixture only; do not imply endorsement or terminal performance. |
 
 ## Media Response Patterns
 
@@ -77,7 +77,7 @@ Before relying on a stronger claim, check:
 | "Can I use the maps?" | Yes as structural visuals with captions and holds; no as proof of readiness. |
 | "Can I say this solves freight reliability?" | No. You can say it frames freight reliability as a planning and evidence problem. |
 | "Can I say it helps rural access?" | You can say T3/T4 keep rural and production access visible; do not say access problems are solved. |
-| "Can I say it has a real source-backed example?" | Yes, one bounded Port NOLA terminal-access fixture exists for internal rehearsal and evidence discipline. |
+| "Can I say it has real source-backed examples?" | Yes, nine bounded fixtures exist for internal rehearsal and evidence discipline. Do not describe them as external validation. |
 
 ## Corrections Policy For This Package
 

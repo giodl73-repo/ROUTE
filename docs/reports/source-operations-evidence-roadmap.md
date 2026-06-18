@@ -17,6 +17,7 @@ sources:
   - docs/reviews/milepost-9-evidence-operations-review.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/reports/route-evidence-posture.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
 ---
 
 # Source Operations Evidence Roadmap
@@ -86,7 +87,7 @@ is the exact path from missing source to allowed claim."
 | FEMA flood / SFHA counts | Supports flood exposure and resilience source rows. | `route fetch-fema`, `route fetch-fema-d1`, corridor/tile cache behavior. | source operations implemented / hazard claims gated |
 | T1 live event feeds | Supports evidence campaigns for T1/T1 failure observations. | Iowa 511, INDOT, TDOT, MDOT fetch/import paths; source health and snapshot plans. | observation/sample posture; annual/recovery claims gated |
 | Terminal/contact proof | Supports T4 and terminal access source-needed rows. | manual/cached proof artifact contract, proof intake, source registry, attachment review. | proof workflow exists; source-backed rows still require accepted artifacts |
-| Stakeholder fixture sources | Supports external rehearsal readiness and requirement-to-refinement fixtures. | source-pack template and fixture closeout runbook. | template/runbook exists; populated fixture held |
+| Stakeholder fixture sources | Supports external rehearsal readiness and requirement-to-refinement fixtures. | source-pack template, fixture closeout runbook, and nine-fixture closeout package. | internal fixture package exists; venue-specific external use held |
 
 ## Why This Matters In Review
 
@@ -112,12 +113,12 @@ is the exact path from missing source to allowed claim."
 
 ## Current External-Rehearsal Impact
 
-The external rehearsal gate remains `hold_external_rehearsal` until a populated
-source-backed stakeholder fixture or equivalent source-backed concrete example
-exists.
+The external rehearsal gate remains `hold_external_rehearsal` even though
+STAKE-FIX-001 through STAKE-FIX-009 now provide internal source-backed
+examples. Those fixtures show source custody and claim discipline; they do not
+replace a venue-specific external packet.
 
-Source operations help prepare that fixture, but they do not replace it. A
-venue-specific packet still needs:
+A venue-specific packet still needs:
 
 - named venue and audience lane;
 - selected materials;
@@ -134,7 +135,7 @@ venue-specific packet still needs:
 | P1 | Add source operations row to presenter technical appendix. | Technical reviewers should see why evidence holds are operational, not vague. |
 | P1 | Add source operations pointer to external rehearsal packet template. | Any concrete external example needs source custody before use. |
 | P1 | Add source operations to route evidence posture. | Current posture should show this as a communications surface. |
-| P2 | Add one populated source-backed fixture when real input exists. | This is the true external-readiness blocker. |
+| P2 | Add a venue-specific external rehearsal packet and source-backed example when a real venue is selected. | Internal fixtures exist; external readiness now depends on selected materials, venue-specific source custody, affected role review, and validation closeout. |
 | P2 | Add command transcript for source gates when a technical rehearsal needs it. | Some reviewers may ask for reproducibility beyond row/status summaries. |
 
 ## Gate
