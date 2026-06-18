@@ -39,6 +39,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-007.md
   - docs/reviews/source-backed-stakeholder-fixture-008.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/media/media-source-index.md
   - docs/reports/route-evidence-posture.md
   - docs/reports/forty-eight-hour-freight-promise-report.md
@@ -132,7 +133,7 @@ Avoid these phrases:
 
 | Gap | Why It Matters | Disposition |
 |---|---|---|
-| Nine populated source-backed fixtures exist. | They demonstrate process for terminal access, freight parking/rest constraints, rural/agricultural access lanes, state delivery controls, community/environmental impact lanes, non-driving access lanes, resilience/emergency-management lanes, ROI/cost review controls, and internal technical rehearsal controls, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-source-fixture-campaign.md` to add more fixture packs by lane before stronger claims. |
+| Nine populated source-backed fixtures exist. | They demonstrate process for terminal access, freight parking/rest constraints, rural/agricultural access lanes, state delivery controls, community/environmental impact lanes, non-driving access lanes, resilience/emergency-management lanes, ROI/cost review controls, and internal technical rehearsal controls, not cross-industry agreement. | Use `docs/reports/industry-stakeholder-fixture-closeout-report.md` for package-level language and use venue-specific packets before stronger claims. |
 | Most lanes are represented by roles and reports, not outside participants. | Role simulation is useful for pressure testing but cannot stand in for affected-party review. | Keep external validation language held. |
 | ROI, cost, reliability, asset, hazard, and local-impact claims remain source-specific. | These are the claims most likely to drift into unsupported proof language. | Require source packs and numeracy/domain review before promotion. |
 | Media materials exist before public readiness is closed. | Reporters may find the repo and overstate it. | Point media users to this matrix, the source index, and evidence posture. |

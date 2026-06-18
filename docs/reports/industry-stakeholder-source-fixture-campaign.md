@@ -20,6 +20,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-007.md
   - docs/reviews/source-backed-stakeholder-fixture-008.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
+  - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/communications-role-review-pass-artifacts.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/media/media-source-index.md
@@ -44,7 +45,7 @@ industry validation.
 
 ## Current Campaign State
 
-Decision: **fixture_campaign_open**
+Decision: **fixture_package_populated_external_validation_held**
 
 Nine fixtures are populated: the Port NOLA terminal-access example, the FHWA
 truck-parking freight-operations example, the USDA/USDOT rural/agricultural
@@ -120,9 +121,13 @@ Every closed fixture should add a short closeout using this shape:
 | Rehearsal package | Named venue packet, selected materials, role review, prohibited-claim scan, and closeout exist. | "The package passed or held a named rehearsal under the recorded conditions." |
 | External validation | Named external participant, source permission, venue, claim scope, and closeout authorize a specific statement. | Only the specific validated statement may be used. |
 
+Current fixture-package status: **closed for internal rehearsal**. See
+`docs/reports/industry-stakeholder-fixture-closeout-report.md` for the package
+finding and held external-validation language.
+
 ## Gate
 
-Decision: **open_campaign**
+Decision: **fixture_package_populated_external_validation_held**
 
 Rationale: The campaign is now executable: the lanes, fixture IDs, evidence
 targets, artifact effects, review roles, and pass thresholds are named.
