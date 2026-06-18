@@ -133,8 +133,8 @@ prohibited-claim scan, L0, and any required L1/L2 evidence remain required.
 
 ## Next Work
 
-1. Build a five-minute technical demo script for the requirement, source,
-   command, artifact, hold, and next-evidence loop.
+1. Use the five-minute technical demo script in the next internal technical
+   rehearsal.
 2. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected final material set exist.
 
