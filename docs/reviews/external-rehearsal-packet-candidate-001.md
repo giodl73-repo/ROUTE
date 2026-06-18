@@ -14,6 +14,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
+  - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -93,6 +94,7 @@ community acceptance, industry validation, or state delivery authority.
 | Fixture closeout report | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | package-level source-backed fixture summary | pass_with_risk / internal only | yes |
 | Technical rude Q&A addendum | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` | hostile technical questions and safe answers for this candidate lane | internal rehearsal addendum / external held | yes |
 | Technical rude Q&A drill run 001 | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md` | closed-book internal technical hostile-question scores and repairs | pass_with_risk / external held | yes |
+| Technical repair closeout 001 | `docs/reviews/external-rehearsal-technical-repair-closeout-001.md` | closes source-custody, optimizer-wording, and graph-score phrasing repairs | internal repairs closed / external held | yes |
 | Public solution deck | `docs/decks/interstate-2-0-pitch.md` | optional framing only if reviewer asks "why this matters" | story-ready / gated claims | optional |
 | Political, funder, or public media materials | docs/briefs and docs/media | not needed for technical review unless requested | media-safe / claim holds | no by default |
 
@@ -161,7 +163,7 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 | "Are scores or maps a recommendation?" | No. Scores are review indices and maps are structural visuals with held-claim labels. | pass |
 | "What would make this packet usable externally?" | A named venue, selected final materials, presenter, recorder, venue-specific role review, prohibited-claim scan, L0, and any required L1/L2 closeout. | pass |
 | "What hostile technical questions must we rehearse first?" | Use the technical rude Q&A addendum; it adds source, command, optimizer, graph/scoring, release, and agency-review traps for this candidate lane. | pass_with_risk |
-| "Did the closed-book technical drill pass?" | Yes for internal rehearsal with risk. TQ-003, TQ-004, and TQ-005 need source-custody, optimizer-wording, and graph-score repair closeout before broader dry-run or named packet use. | pass_with_risk |
+| "Did the closed-book technical drill pass?" | Yes for internal rehearsal with risk. Repair closeout 001 closes the source-custody, optimizer-wording, and graph-score first-sentence repairs. | pass_with_risk |
 
 ## Validation Closeout
 
@@ -187,7 +189,8 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 ## Next Work
 
 1. Run prohibited-claim scan and L0 after this candidate packet is added.
-2. Close the three technical drill repair lines from drill run 001.
+2. Build a five-minute technical demo script for the requirement, source,
+   command, artifact, hold, and next-evidence loop.
 3. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected material set exist.
 

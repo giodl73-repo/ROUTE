@@ -20,6 +20,7 @@ sources:
   - docs/briefs/state-to-aashto-regional-packet.md
   - docs/traces/route-claim-promotion-trace.md
   - docs/reviews/communications-rude-qa-drill-run-001.md
+  - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
 ---
 
 # Split Deck Presenter Guide
@@ -238,6 +239,14 @@ reviewers to:
 | Evidence posture | `docs/reports/route-evidence-posture.md` |
 | Round 5 verification gate | `docs/vtrace/VERIFICATION.md` |
 | DOT rejection handling | Rejected claims are revised, downgraded, held, or split into source-needed tasks; the rejection becomes a review record and claim-trace update. |
+
+For technical hostile questions, use these first-sentence rules:
+
+| Pressure | First Sentence |
+|---|---|
+| Source completeness | "Source posture is artifact-specific; tell me which source owner, artifact, and access note controls the example." |
+| Optimizer finality | "No final national answer is claimed; this is a selected artifact under declared constraints." |
+| Graph/scoring recommendation | "This is a review index, not a recommendation." |
 
 ## Red Lines
 
