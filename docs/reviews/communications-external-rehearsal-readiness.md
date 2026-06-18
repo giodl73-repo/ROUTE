@@ -19,6 +19,7 @@ sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
+  - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -56,8 +57,8 @@ closing ask before the external rehearsal packet template is filled. Candidate
 no real venue, reviewer, presenter, recorder, final material set, or external
 closeout exists. The candidate now has an internal technical role review, which
 passes with risk for continued internal rehearsal and keeps external use held.
-The first closed-book technical Q&A drill also passes with risk internally, with
-three phrasing repairs still open before broader dry-run or named packet use.
+The first closed-book technical Q&A drill also passes with risk internally, and
+repair closeout 001 closes the three phrasing repairs for internal rehearsal.
 
 ## Rehearsal Context Gate
 
@@ -71,7 +72,7 @@ three phrasing repairs still open before broader dry-run or named packet use.
 | Packet selection | Venue type, fixture anchor, required roles, material class, and safe closing ask selected. | runbook exists; selection held |
 | Candidate packet | Candidate packet selects a first lane without claiming a real external review. | FHWA/USDOT technical candidate selected; external rehearsal held |
 | Candidate role review | Selected `.roles` lanes review the candidate and technical rude Q&A addendum. | internal pass_with_risk; external rehearsal held |
-| Candidate technical Q&A drill | Closed-book internal drill tests hostile technical answers for the candidate lane. | internal pass_with_risk; three repair rows open; external rehearsal held |
+| Candidate technical Q&A drill | Closed-book internal drill tests hostile technical answers for the candidate lane. | internal pass_with_risk; repairs closed for internal rehearsal; external rehearsal held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -148,8 +149,8 @@ Rationale: The internal simulation package is disciplined, and STAKE-FIX-001
 through STAKE-FIX-009 close bounded internal source-backed examples and
 rehearsal controls. The packet-selection runbook is ready, and Candidate 001
 selects an FHWA/USDOT technical reviewer lane. The candidate now has an
-internal technical role review and a closed-book technical Q&A drill with three
-repair rows open, but external rehearsal still needs a concrete venue, selected
-final materials, venue-specific role review, and closeout validation. Until
-those exist, external use would risk converting process readiness into implied
-stakeholder validation.
+internal technical role review, a closed-book technical Q&A drill, and repair
+closeout for the three phrasing rows, but external rehearsal still needs a
+concrete venue, selected final materials, venue-specific role review, and
+closeout validation. Until those exist, external use would risk converting
+process readiness into implied stakeholder validation.

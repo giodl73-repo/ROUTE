@@ -81,7 +81,8 @@ game, release, or public-readiness claims.
 | External rehearsal packet candidate 001 exists. | `docs/reviews/external-rehearsal-packet-candidate-001.md` | draft; FHWA/USDOT technical candidate selected; external rehearsal held |
 | External rehearsal technical rude Q&A addendum exists. | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` | draft; technical hostile-question addendum ready; external rehearsal held |
 | External rehearsal technical candidate role review exists. | `docs/reviews/external-rehearsal-technical-candidate-role-review.md` | draft; pass_with_risk for internal technical candidate; external rehearsal held |
-| External rehearsal technical rude Q&A drill run 001 exists. | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md` | draft; pass_with_risk for internal technical drill; three repairs open; external rehearsal held |
+| External rehearsal technical rude Q&A drill run 001 exists. | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md` | draft; pass_with_risk for internal technical drill; repairs closed for internal rehearsal; external rehearsal held |
+| External rehearsal technical repair closeout 001 exists. | `docs/reviews/external-rehearsal-technical-repair-closeout-001.md` | draft; repairs closed for internal technical rehearsal; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -114,8 +115,9 @@ technical reviewer candidate, but external/public readiness remains held until
 a named venue, final material packet, venue-specific role review, L1/L2
 readiness evidence when applicable, and any claim-specific source packs close.
 The technical candidate now has a hostile-question addendum, internal role
-review, and closed-book technical Q&A drill; the next rehearsal step is repair
-closeout for the three pass-with-risk technical drill rows.
+review, closed-book technical Q&A drill, and repair closeout for the three
+pass-with-risk technical drill rows. The next rehearsal step is a compressed
+five-minute technical demo script.
 
 ## Evidence Ledger
 

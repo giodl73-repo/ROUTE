@@ -10,6 +10,7 @@ updated: 2026-06-18
 sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
+  - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/communications-rude-qa-drill-scorecard.md
   - docs/reviews/communications-external-rehearsal-readiness.md
@@ -58,9 +59,9 @@ readiness.
 Decision: **pass_with_risk_for_internal_technical_drill; hold_external_rehearsal**
 
 The presenter cleared all ten required technical hostile questions with no fail
-rows. Three rows remain pass-with-risk because the answer is safe but needs
-sharper venue-packet language before any named external rehearsal: source
-custody, optimizer finality, and graph/scoring recommendation boundaries.
+rows. Repair closeout 001 closes the three pass-with-risk phrasing repairs for
+internal technical rehearsal: source custody, optimizer finality, and
+graph/scoring recommendation boundaries.
 
 This does not clear external use. A named venue, reviewer lane, presenter,
 recorder, selected final packet, venue-specific source custody, role review,
@@ -73,7 +74,7 @@ prohibited-claim scan, L0, and any required L1/L2 evidence remain required.
 | TQ-001 | Has FHWA or USDOT reviewed, accepted, or validated this package? | pass | Presenter answered no, named the packet as a future technical rehearsal candidate, and blocked review, acceptance, approval, validation, and endorsement language. | none |
 | TQ-002 | What exactly can a technical reviewer reproduce today? | pass | Presenter limited reproducibility to captured commands, output paths, observed status, and non-claim labels. Release, SLA, and public-readiness proof stayed held. | none |
 | TQ-003 | Are the source inputs complete enough for transportation claims? | pass_with_risk | Presenter used artifact-specific source posture and rejected blanket source completeness. The answer was safe but should name source custody before saying a reviewer can inspect examples. | Add a venue-packet prompt: "Which source owner, artifact, and access note controls this example?" |
-| TQ-004 | Did the optimizer find the final national answer? | pass_with_risk | Presenter held final optimality and construction/service claims, but initially said "best candidate" before repairing to "candidate artifact under constraints." | Replace "best candidate" with "selected artifact under declared constraints" in technical rehearsal notes. |
+| TQ-004 | Did the optimizer find the final national answer? | pass_with_risk | Presenter held final optimality and construction/service claims, but initially used overstrong candidate language before repairing to "candidate artifact under constraints." | Use "selected artifact under declared constraints" in technical rehearsal notes. |
 | TQ-005 | Are graph scores, centrality, coverage, flow, or investment outputs recommendations? | pass_with_risk | Presenter blocked final ranking and funding recommendations, then clarified scores are review indices with assumptions and confidence labels. The first answer needed the clarification. | Require "review index, not recommendation" in the first sentence. |
 | TQ-006 | Can maps, release manifests, or browser/game artifacts be shown publicly after this? | pass | Presenter said not from this candidate and kept structural maps, release metadata, browser/game, and public readiness behind release-scope and L1/L2 gates. | none |
 | TQ-007 | What happens if a technical reviewer rejects a claim? | pass | Presenter said rejected claims are downgraded, split, held, or converted into source, command, role-review, or validation tasks. | none |
@@ -96,9 +97,9 @@ prohibited-claim scan, L0, and any required L1/L2 evidence remain required.
 
 | Repair ID | Trigger | Required Wording / Action | Owner | Status |
 |---|---|---|---|---|
-| TECH-REPAIR-001 | TQ-003 source completeness answer | First answer must name artifact-specific source posture and ask which source owner, artifact, and access note controls the example. | Citation Auditor / route-data owner | open |
-| TECH-REPAIR-002 | TQ-004 optimizer finality answer | Replace "best candidate" with "selected artifact under declared constraints." | Optimization Methodologist | open |
-| TECH-REPAIR-003 | TQ-005 graph/scoring recommendation answer | First sentence must say "review index, not recommendation." | Numeracy Checker / route-score owner | open |
+| TECH-REPAIR-001 | TQ-003 source completeness answer | First answer must name artifact-specific source posture and ask which source owner, artifact, and access note controls the example. | Citation Auditor / route-data owner | closed by repair closeout 001 |
+| TECH-REPAIR-002 | TQ-004 optimizer finality answer | Use "selected artifact under declared constraints." | Optimization Methodologist | closed by repair closeout 001 |
+| TECH-REPAIR-003 | TQ-005 graph/scoring recommendation answer | First sentence must say "review index, not recommendation." | Numeracy Checker / route-score owner | closed by repair closeout 001 |
 
 ## Residual Holds
 
@@ -132,18 +133,16 @@ prohibited-claim scan, L0, and any required L1/L2 evidence remain required.
 
 ## Next Work
 
-1. Apply the three repair lines to the technical Q&A addendum or presenter
-   controls.
-2. Rerun only TQ-003, TQ-004, TQ-005, and the graph-score trap as a focused
-   repair closeout.
-3. Fill a real external rehearsal packet only after a named venue, presenter,
+1. Build a five-minute technical demo script for the requirement, source,
+   command, artifact, hold, and next-evidence loop.
+2. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected final material set exist.
 
 ## Validation Closeout
 
 | Check | Command / Inspection | Result | Evidence |
 |---|---|---|---|
-| Drill scoring inspection | TQ-001 through TQ-010 and trap handling rows reviewed | pass_with_risk | three repair rows remain open |
+| Drill scoring inspection | TQ-001 through TQ-010 and trap handling rows reviewed | pass_with_risk | three repair rows closed by repair closeout 001 |
 | Prohibited-claim scan | scan touched drill, candidate, addendum, media, posture, verification, and strategy files | pass | hits are guardrail, held, do-not-infer, or non-approved contexts |
 | L0 | `npm run check:l0` | pass | workspace lib/bin tests passed |
 
@@ -152,6 +151,6 @@ prohibited-claim scan, L0, and any required L1/L2 evidence remain required.
 Decision: **pass_with_risk_for_internal_technical_drill; hold_external_rehearsal**
 
 Rationale: The presenter can survive the technical hostile-question set without
-claim drift, but three phrasing repairs should close before the technical
-candidate is used in a broader dry run. External rehearsal remains held until
-the venue-specific packet and validation gates close.
+claim drift, and repair closeout 001 closes the first-sentence phrasing repairs
+for internal rehearsal. External rehearsal remains held until the venue-specific
+packet and validation gates close.
