@@ -9,6 +9,7 @@ created: 2026-06-17
 updated: 2026-06-17
 sources:
   - docs/reviews/communications-external-rehearsal-readiness.md
+  - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -20,7 +21,9 @@ sources:
 ## Purpose
 
 Use this packet to prepare a named external rehearsal after the internal
-pressure-test package passes with risk.
+pressure-test package passes with risk and the packet-selection runbook has
+identified the venue, audience lane, fixture anchor, role lanes, and closing
+ask.
 
 This packet does not create endorsement, official-plan status, construction
 readiness, guaranteed service, numeric ROI, eligibility, compliance, public
@@ -34,6 +37,7 @@ readiness, or agency approval.
 | Rehearsal date |  |
 | Venue / body |  |
 | Audience lane | sponsor / state / AASHTO regional / freight / rural / community / congressional / FHWA-USDOT / funder / other |
+| Selection runbook row |  |
 | Presenter |  |
 | Recorder |  |
 | Source custody owner |  |
@@ -67,6 +71,10 @@ readiness, or agency approval.
 | Claim allowed? | no / internal only / story-ready / source-needed / held |
 
 If this section is blank, the packet remains `hold_external_rehearsal`.
+
+If the venue, audience lane, fixture anchor, required roles, or closing ask are
+not selected using `docs/how-to/external-rehearsal-packet-selection-runbook.md`,
+the packet also remains `hold_external_rehearsal`.
 
 ## Claim Trace Rows
 
