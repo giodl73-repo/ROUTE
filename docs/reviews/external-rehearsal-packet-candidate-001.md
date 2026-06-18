@@ -12,6 +12,7 @@ sources:
   - docs/templates/external-rehearsal-packet-template.md
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/external-rehearsal-technical-rude-qa-addendum.md
+  - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -128,13 +129,13 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 
 | Role Lane | Required? | Reviewer / Record | Result | Hold / Condition |
 |---|---|---|---|---|
-| Scope Keeper | yes | this candidate packet | hold | no named external venue or selected final packet exists |
-| Citation Auditor | yes | this candidate packet plus fixture closeout report | pass_with_risk | source paths are repo-local; external reviewer source custody still missing |
-| Numeracy Checker | yes | this candidate packet | pass_with_risk | no numeric ROI, cost, benefit, volume, or SLA value promoted |
-| Optimization Methodologist | yes | optimizer appendix and STAKE-FIX-009 | pass_with_risk | before/after examples are artifact and label changes, not construction outputs |
-| State DOT Planner | yes | state delivery fixture and external readiness checklist | hold | state authority, delivery, maintenance, ROW, funding, and project-development review remain venue-specific |
-| Schematic Cartographer | if map appears | presenter guide and maps-not-proof posture | pass_with_risk | every map needs held-claim caption |
-| Traffic Engineer | if flow/SLA appears | graph/scoring and demo surfaces | hold | no operating reliability, design, throughput, or managed-lane proof promoted |
+| Scope Keeper | yes | `docs/reviews/external-rehearsal-technical-candidate-role-review.md` | pass_with_risk | candidate-only posture must remain explicit |
+| Citation Auditor | yes | technical candidate role review plus fixture closeout report | pass_with_risk | source paths are repo-local; external reviewer source custody still missing |
+| Numeracy Checker | yes | technical candidate role review | pass | no numeric ROI, cost, benefit, volume, or SLA value promoted |
+| Optimization Methodologist | yes | technical candidate role review, optimizer appendix, and STAKE-FIX-009 | pass_with_risk | before/after examples are artifact and label changes, not construction outputs |
+| State DOT Planner | yes | technical candidate role review, state delivery fixture, and external readiness checklist | hold_for_external | state authority, delivery, maintenance, ROW, funding, and project-development review remain venue-specific |
+| Schematic Cartographer | if map appears | technical candidate role review, presenter guide, and maps-not-proof posture | pass_with_risk | every map needs held-claim caption |
+| Traffic Engineer | if flow/SLA appears | technical candidate role review, graph/scoring, and demo surfaces | hold_for_operational_claims | no operating reliability, design, throughput, or managed-lane proof promoted |
 
 ## Presenter Controls
 
@@ -183,7 +184,8 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 ## Next Work
 
 1. Run prohibited-claim scan and L0 after this candidate packet is added.
-2. Re-run role review for the selected candidate after the Q&A addendum exists.
+2. Run a closed-book internal technical rude Q&A drill using the addendum and
+   role-review holds.
 3. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected material set exist.
 
