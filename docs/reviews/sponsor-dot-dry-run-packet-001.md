@@ -9,6 +9,7 @@ created: 2026-06-17
 updated: 2026-06-17
 sources:
   - docs/templates/external-rehearsal-packet-template.md
+  - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/communications-rude-qa-drill-run-002.md
   - docs/reviews/communications-rude-qa-repair-closeout.md
@@ -166,8 +167,8 @@ internal sponsor-to-DOT dry run. It remains `hold_external_rehearsal`.
 ## Next Work
 
 1. Run prohibited-claim scan and L0 for the selected packet.
-2. Add DOT/port/industry/community/funder meeting context if this packet moves
-   from internal rehearsal to a named external rehearsal.
+2. Use `docs/how-to/external-rehearsal-packet-selection-runbook.md` before this
+   packet moves from internal rehearsal to a named external rehearsal.
 3. Capture any venue-specific dissent, authority, map, operating, and
    public-readiness holds.
 4. Revisit external rehearsal readiness only after venue-specific role review

@@ -15,6 +15,7 @@ sources:
   - docs/reviews/source-backed-stakeholder-fixture-001.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/how-to/stakeholder-fixture-closeout-runbook.md
+  - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -45,9 +46,9 @@ The package passes the internal five-round simulation with risk, and
 STAKE-FIX-001 through STAKE-FIX-009 are populated for internal rehearsal. It
 should still not be used in a named external rehearsal because no named external
 venue packet, selected material set, presenter/recorder, venue-specific role
-review, or external validation closeout exists. The external rehearsal packet
-template defines where a future reviewer records the named venue, selected
-materials, source-backed fixture, role review, validation, and closing ask.
+review, or external validation closeout exists. The packet-selection runbook
+defines how to choose the venue, audience lane, fixture anchor, role lanes, and
+closing ask before the external rehearsal packet template is filled.
 
 ## Rehearsal Context Gate
 
@@ -58,6 +59,7 @@ materials, source-backed fixture, role review, validation, and closing ask.
 | Materials list | Deck, brief, report, runbook, trace, source pack, and evidence posture files selected. | held |
 | Closing ask | Intake, evidence, source pack, demo fixture, standards, or bounded pilot ask selected. | held |
 | Recorder | Person or role responsible for intake, dissent, and source custody named. | held |
+| Packet selection | Venue type, fixture anchor, required roles, material class, and safe closing ask selected. | runbook exists; selection held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -106,12 +108,14 @@ External rehearsal readiness can move from `hold_external_rehearsal` to
 `pass_with_risk` only when:
 
 1. A named venue and audience lane exist.
-2. A populated stakeholder fixture or explicit source-backed concrete example
+2. The packet-selection runbook identifies the fixture anchor, selected
+   materials, required roles, and safe closing ask.
+3. A populated stakeholder fixture or explicit source-backed concrete example
    exists for the selected venue.
-3. Source custody and affected role review are recorded for that fixture.
-4. The selected material set has a prohibited-claim scan.
-5. L0 passes after edits.
-6. The closing ask is intake, evidence, source pack, demo fixture, standards, or
+4. Source custody and affected role review are recorded for that fixture.
+5. The selected material set has a prohibited-claim scan.
+6. L0 passes after edits.
+7. The closing ask is intake, evidence, source pack, demo fixture, standards, or
    bounded pilot only.
 
 ## Non-Approved Claims
@@ -129,7 +133,7 @@ Decision: **hold_external_rehearsal**
 
 Rationale: The internal simulation package is disciplined, and STAKE-FIX-001
 through STAKE-FIX-009 close bounded internal source-backed examples and
-rehearsal controls. External rehearsal still needs a concrete venue, selected
-materials, venue-specific role review, and closeout validation. Until those
-exist, external use would risk converting process readiness into implied
-stakeholder validation.
+rehearsal controls. The packet-selection runbook is ready, but external
+rehearsal still needs a concrete venue, selected materials, venue-specific role
+review, and closeout validation. Until those exist, external use would risk
+converting process readiness into implied stakeholder validation.
