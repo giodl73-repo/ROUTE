@@ -16,6 +16,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
+  - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -97,6 +98,7 @@ community acceptance, industry validation, or state delivery authority.
 | Technical rude Q&A drill run 001 | `docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md` | closed-book internal technical hostile-question scores and repairs | pass_with_risk / external held | yes |
 | Technical repair closeout 001 | `docs/reviews/external-rehearsal-technical-repair-closeout-001.md` | closes source-custody, optimizer-wording, and graph-score phrasing repairs | internal repairs closed / external held | yes |
 | Five-minute technical demo script | `docs/how-to/external-rehearsal-technical-demo-script.md` | presenter script for requirement, source, command, artifact, hold, and next evidence loop | internal demo-ready / external held | yes |
+| Technical demo run 001 | `docs/reviews/external-rehearsal-technical-demo-run-001.md` | internal timeboxed rehearsal of the five-minute technical demo loop | pass_with_risk / external held | yes |
 | Public solution deck | `docs/decks/interstate-2-0-pitch.md` | optional framing only if reviewer asks "why this matters" | story-ready / gated claims | optional |
 | Political, funder, or public media materials | docs/briefs and docs/media | not needed for technical review unless requested | media-safe / claim holds | no by default |
 
@@ -167,6 +169,7 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 | "What hostile technical questions must we rehearse first?" | Use the technical rude Q&A addendum; it adds source, command, optimizer, graph/scoring, release, and agency-review traps for this candidate lane. | pass_with_risk |
 | "Did the closed-book technical drill pass?" | Yes for internal rehearsal with risk. Repair closeout 001 closes the source-custody, optimizer-wording, and graph-score first-sentence repairs. | pass_with_risk |
 | "Can you show the whole loop quickly?" | Use the five-minute technical demo script: requirement, source posture, command, artifact change, hold, and next evidence. | pass_with_risk |
+| "Did the five-minute demo pass?" | Yes for internal rehearsal with risk. Demo run 001 scores the loop as pass_with_risk and keeps external rehearsal held. | pass_with_risk |
 
 ## Validation Closeout
 
@@ -191,8 +194,9 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 
 ## Next Work
 
-1. Run prohibited-claim scan and L0 after this candidate packet is added.
-2. Run the five-minute technical demo script in the next internal rehearsal.
+1. Run prohibited-claim scan and L0 after this candidate packet is updated.
+2. Prepare a venue-specific external packet scaffold only after a named venue,
+   presenter, recorder, and selected material set exist.
 3. Fill a real external rehearsal packet only after a named venue, presenter,
    recorder, and selected material set exist.
 

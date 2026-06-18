@@ -22,6 +22,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
+  - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -186,6 +187,7 @@ numeric overreach:
 | External rehearsal technical rude Q&A drill run 001 | Draft | Closed-book internal technical drill passes with risk; repair closeout 001 closes the source-custody, optimizer-wording, and graph-score repair rows for internal rehearsal while real technical review, agency review, endorsement, approval, public-readiness, and external-readiness claims remain held. |
 | External rehearsal technical repair closeout 001 | Draft | Applies first-sentence compression rules for source custody, selected artifact under declared constraints, and review-index language; no source-completeness, final optimizer, recommendation, agency review, public-readiness, or external-readiness claim. |
 | External rehearsal technical demo script | Draft | Five-minute internal script walks requirement, source posture, command, artifact, hold, and next evidence; no final optimizer, agency review, construction, SLA, ROI, eligibility, compliance, public-readiness, or external-readiness claim. |
+| External rehearsal technical demo run 001 | Draft | Internal timeboxed run passes with risk for the five-minute requirement-to-evidence loop; no real agency review, technical signoff, public-readiness, or external-readiness claim. |
 | External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Media resources | Draft | Media-safe reference package; gives fact sheet, claim guide, Q&A, source index, visual-assets guide, source pointers, caption pattern, verification checklist, and red lines while holding official-plan, construction, SLA, ROI, eligibility, compliance, endorsement, approval, public-readiness, and external-readiness claims. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
