@@ -86,6 +86,7 @@ game, release, or public-readiness claims.
 | External rehearsal technical demo script exists. | `docs/how-to/external-rehearsal-technical-demo-script.md` | draft; internal demo script ready; external rehearsal held |
 | External rehearsal technical demo run 001 exists. | `docs/reviews/external-rehearsal-technical-demo-run-001.md` | draft; pass_with_risk for internal technical demo; external rehearsal held |
 | External rehearsal technical venue packet scaffold exists. | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` | draft; technical packet scaffold ready; external rehearsal held |
+| External rehearsal technical source custody preflight 001 exists. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` | draft; source custody preflight ready; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -121,8 +122,9 @@ The technical candidate now has a hostile-question addendum, internal role
 review, closed-book technical Q&A drill, and repair closeout for the three
 pass-with-risk technical drill rows. The compressed five-minute technical demo
 now has an internal pass-with-risk run, and the technical venue packet scaffold
-defines the pre-fill gate. The next external-readiness step remains a named
-venue packet with source custody and role review.
+defines the pre-fill gate. The technical source custody preflight identifies
+candidate custody rows, but the next external-readiness step remains a named
+venue packet with selected source custody and role review.
 
 ## Evidence Ledger
 

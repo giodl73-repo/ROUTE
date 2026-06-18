@@ -13,6 +13,7 @@ sources:
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
+  - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reports/route-evidence-posture.md
   - docs/decks/split-deck-presenter-guide.md
@@ -46,6 +47,7 @@ answer.
 | Source custody owner | Person or role responsible for the selected source list. | Citation Auditor proposed; venue-specific owner held |
 | Material set | Final list of included and excluded files. | hold |
 | Primary fixture anchor | STAKE-FIX-009 or new venue-specific source pack. | STAKE-FIX-009 internal only |
+| Source custody preflight | Selected source rows for the technical packet. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` ready; venue-specific selection held |
 | Closing ask | Technical evidence review or demo fixture. | proposed; not venue-approved |
 | Validation plan | Prohibited-claim scan, L0, and scoped L1/L2 if selected claims require them. | required at closeout |
 
@@ -144,8 +146,8 @@ review.
 
 Decision: **technical_packet_scaffold_ready; hold_external_rehearsal**
 
-Rationale: The technical lane now has a concrete pre-fill scaffold for moving
-from candidate to named venue packet without fabricating venue evidence.
-External use remains held until the entry-lock rows, venue-specific source
-custody, role review, validation closeout, and any claim-specific L1/L2 evidence
-exist.
+Rationale: The technical lane now has a concrete pre-fill scaffold and source
+custody preflight for moving from candidate to named venue packet without
+fabricating venue evidence. External use remains held until the entry-lock rows,
+venue-specific source custody, role review, validation closeout, and any
+claim-specific L1/L2 evidence exist.
