@@ -23,6 +23,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
+  - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
 ---
 
 # Split Deck Presenter Guide
@@ -243,6 +244,7 @@ reviewers to:
 | DOT rejection handling | Rejected claims are revised, downgraded, held, or split into source-needed tasks; the rejection becomes a review record and claim-trace update. |
 | Five-minute technical demo | `docs/how-to/external-rehearsal-technical-demo-script.md` |
 | Five-minute technical demo run | `docs/reviews/external-rehearsal-technical-demo-run-001.md` |
+| Technical venue packet scaffold | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` |
 
 For technical hostile questions, use these first-sentence rules:
 

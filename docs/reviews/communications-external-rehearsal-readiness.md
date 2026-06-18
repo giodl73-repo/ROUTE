@@ -22,6 +22,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
+  - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -62,7 +63,8 @@ passes with risk for continued internal rehearsal and keeps external use held.
 The first closed-book technical Q&A drill also passes with risk internally, and
 repair closeout 001 closes the three phrasing repairs for internal rehearsal.
 The five-minute technical demo now has an internal pass-with-risk rehearsal run
-and keeps external use held.
+and keeps external use held. The technical venue packet scaffold exists as a
+pre-fill gate, but no real venue packet is filled.
 
 ## Rehearsal Context Gate
 
@@ -79,6 +81,7 @@ and keeps external use held.
 | Candidate technical Q&A drill | Closed-book internal drill tests hostile technical answers for the candidate lane. | internal pass_with_risk; repairs closed for internal rehearsal; external rehearsal held |
 | Candidate technical demo script | Five-minute script walks requirement, source posture, command, artifact, hold, and next evidence. | internal demo-ready; external rehearsal held |
 | Candidate technical demo run | Internal timeboxed run scores the five-minute script and interruption handling. | internal pass_with_risk; external rehearsal held |
+| Technical venue packet scaffold | Pre-fill checklist for moving the technical candidate into a named venue packet. | scaffold ready; no real venue packet filled; external rehearsal held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -157,7 +160,8 @@ rehearsal controls. The packet-selection runbook is ready, and Candidate 001
 selects an FHWA/USDOT technical reviewer lane. The candidate now has an
 internal technical role review, a closed-book technical Q&A drill, repair
 closeout for the three phrasing rows, and an internal pass-with-risk run of the
-five-minute technical demo. External rehearsal still needs a concrete venue,
-selected final materials, venue-specific role review, and closeout validation.
-Until those exist, external use would risk converting process readiness into
-implied stakeholder validation.
+five-minute technical demo. The technical venue packet scaffold now makes the
+entry-lock fields explicit, but external rehearsal still needs a concrete
+venue, selected final materials, venue-specific role review, and closeout
+validation. Until those exist, external use would risk converting process
+readiness into implied stakeholder validation.
