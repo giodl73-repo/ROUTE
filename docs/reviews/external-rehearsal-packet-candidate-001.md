@@ -18,6 +18,7 @@ sources:
   - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
+  - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -101,6 +102,7 @@ community acceptance, industry validation, or state delivery authority.
 | Five-minute technical demo script | `docs/how-to/external-rehearsal-technical-demo-script.md` | presenter script for requirement, source, command, artifact, hold, and next evidence loop | internal demo-ready / external held | yes |
 | Technical demo run 001 | `docs/reviews/external-rehearsal-technical-demo-run-001.md` | internal timeboxed rehearsal of the five-minute technical demo loop | pass_with_risk / external held | yes |
 | Technical venue packet scaffold | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` | pre-fill gate for a named technical venue packet | scaffold ready / external held | yes |
+| Technical source custody preflight 001 | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` | source-custody rows and missing venue fields for a future technical packet | preflight ready / external held | yes |
 | Public solution deck | `docs/decks/interstate-2-0-pitch.md` | optional framing only if reviewer asks "why this matters" | story-ready / gated claims | optional |
 | Political, funder, or public media materials | docs/briefs and docs/media | not needed for technical review unless requested | media-safe / claim holds | no by default |
 
@@ -167,7 +169,7 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 | "Does the demo prove the network works?" | No. It captures internal command behavior and a bounded before/after threshold fixture. | pass |
 | "Can this become a state or federal plan?" | Not from this packet. State/federal authority, environmental, funding, engineering, public, and legal processes remain outside the claim. | pass |
 | "Are scores or maps a recommendation?" | No. Scores are review indices and maps are structural visuals with held-claim labels. | pass |
-| "What would make this packet usable externally?" | Use the technical venue packet scaffold: name venue, reviewer class, presenter, recorder, source owner, material set, role rows, prohibited-claim scan, L0, and any required L1/L2 closeout. | pass |
+| "What would make this packet usable externally?" | Use the technical venue packet scaffold and source custody preflight: name venue, reviewer class, presenter, recorder, source owner, material set, selected custody rows, role rows, prohibited-claim scan, L0, and any required L1/L2 closeout. | pass |
 | "What hostile technical questions must we rehearse first?" | Use the technical rude Q&A addendum; it adds source, command, optimizer, graph/scoring, release, and agency-review traps for this candidate lane. | pass_with_risk |
 | "Did the closed-book technical drill pass?" | Yes for internal rehearsal with risk. Repair closeout 001 closes the source-custody, optimizer-wording, and graph-score first-sentence repairs. | pass_with_risk |
 | "Can you show the whole loop quickly?" | Use the five-minute technical demo script: requirement, source posture, command, artifact change, hold, and next evidence. | pass_with_risk |
@@ -196,10 +198,10 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 
 ## Next Work
 
-1. Use the technical venue packet scaffold when a named venue, presenter,
-   recorder, and selected material set exist.
+1. Use the technical venue packet scaffold and source custody preflight when a
+   named venue, presenter, recorder, and selected material set exist.
 2. Fill a real external rehearsal packet only after a named venue, presenter,
-   recorder, selected material set, source custody, and role rows exist.
+   recorder, selected material set, selected source custody, and role rows exist.
 
 ## Gate
 

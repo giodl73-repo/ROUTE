@@ -39,6 +39,7 @@ sources:
   - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
+  - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -79,6 +80,7 @@ public-readiness, external-readiness, or approval.
 | Technical demo script | ROUTE has an internal five-minute script for showing the requirement-to-evidence loop. | `docs/how-to/external-rehearsal-technical-demo-script.md`; `docs/evidence/round5-demo-capture.md` | internal demo script / external held | real agency review, final optimizer answer, construction program, guaranteed service, numeric ROI, eligibility, compliance, public readiness, or external readiness |
 | Technical demo run | ROUTE has an internal pass-with-risk run of the five-minute technical demo. | `docs/reviews/external-rehearsal-technical-demo-run-001.md`; `docs/how-to/external-rehearsal-technical-demo-script.md` | internal pass_with_risk / external held | real agency review, technical signoff, final optimizer answer, construction program, guaranteed service, numeric ROI, eligibility, compliance, public readiness, or external readiness |
 | Technical venue packet scaffold | ROUTE has a pre-fill scaffold for a future named FHWA/USDOT-style technical venue packet. | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md`; `docs/templates/external-rehearsal-packet-template.md` | scaffold ready / external held | real venue packet, agency review, technical signoff, approval, endorsement, validation, public readiness, or external readiness |
+| Technical source custody preflight | ROUTE has candidate source-custody rows for a future technical venue packet. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md`; `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` | preflight ready / external held | real source handoff, real venue packet, agency review, technical signoff, approval, endorsement, validation, public readiness, or external readiness |
 | Public readiness | Public/browser/release readiness remains gated where claimed. | `docs/vtrace/VERIFICATION.md`; `docs/reports/route-evidence-posture.md` | held unless explicitly scoped and validated | publication-ready product or release claim |
 
 ## Quote-Ready Source Pointers
@@ -104,6 +106,7 @@ public-readiness, external-readiness, or approval.
 | Technical demo script | `docs/how-to/external-rehearsal-technical-demo-script.md` |
 | Technical demo run | `docs/reviews/external-rehearsal-technical-demo-run-001.md` |
 | Technical venue packet scaffold | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` |
+| Technical source custody preflight | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` |
 
 ## Source-Use Rules
 

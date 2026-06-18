@@ -16,6 +16,8 @@ sources:
   - docs/reviews/external-rehearsal-technical-repair-closeout-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/communications-external-rehearsal-readiness.md
+  - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
+  - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reports/route-evidence-posture.md
   - docs/decks/split-deck-presenter-guide.md
 ---
@@ -118,10 +120,10 @@ and any required L1/L2 closeout.
 
 ## Next Work
 
-1. Prepare a venue-specific external packet scaffold only after a real venue,
-   reviewer class, presenter, recorder, and selected material set are known.
-2. Add venue-specific source custody and role-review rows before any external
-   use of the technical demo.
+1. Use the technical venue packet scaffold only after a real venue, reviewer
+   class, presenter, recorder, and selected material set are known.
+2. Select or replace the technical source custody preflight rows before any
+   external use of the technical demo.
 3. Keep L1/L2 scoped to the selected packet claims; do not use them to imply
    public, browser, game, release, or agency readiness unless those claims are
    explicitly selected and closed.

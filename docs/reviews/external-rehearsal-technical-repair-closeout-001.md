@@ -14,6 +14,9 @@ sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/decks/split-deck-presenter-guide.md
   - docs/how-to/external-rehearsal-technical-demo-script.md
+  - docs/reviews/external-rehearsal-technical-demo-run-001.md
+  - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
+  - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reports/source-operations-evidence-roadmap.md
   - docs/reports/optimizer-evidence-appendix.md
   - docs/reports/graph-scoring-measurement-appendix.md
@@ -102,8 +105,8 @@ prohibited-claim scan, L0, and any required L1/L2 evidence close.
 
 ## Next Work
 
-1. Use the five-minute technical demo script for the next internal technical
-   rehearsal.
+1. Use the technical venue packet scaffold and source custody preflight before
+   any named packet is filled.
 2. Keep the external rehearsal packet held until a named venue, presenter,
    recorder, selected final materials, and venue-specific source custody exist.
 
