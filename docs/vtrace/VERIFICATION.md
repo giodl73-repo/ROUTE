@@ -70,11 +70,12 @@ game, release, or public-readiness claims.
 | Populated source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-001.md` | draft; terminal-access fixture pass_with_risk for internal rehearsal |
 | Freight-operations source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-002.md` | draft; truck parking/rest/HOS fixture pass_with_risk for internal rehearsal |
 | Rural/agricultural source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-003.md` | draft; rural/agricultural access fixture pass_with_risk for internal rehearsal |
+| State delivery-control source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-004.md` | draft; state delivery/maintenance/project-development fixture pass_with_risk for internal rehearsal |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
-| Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; open fixture campaign; STAKE-FIX-001, STAKE-FIX-002, and STAKE-FIX-003 populated |
+| Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; open fixture campaign; STAKE-FIX-001 through STAKE-FIX-004 populated |
 | Crate coverage audit exists. | `docs/reviews/communications-crate-coverage-audit.md` | draft; partial_coverage and appendix backlog identified |
 | Source operations evidence roadmap exists. | `docs/reports/source-operations-evidence-roadmap.md` | draft; story-ready roadmap with claim promotion held |
 | Optimizer evidence appendix exists. | `docs/reports/optimizer-evidence-appendix.md` | draft; story-ready appendix with optimizer claims held |
