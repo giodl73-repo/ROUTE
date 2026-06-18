@@ -16,6 +16,7 @@ sources:
   - docs/research-conclusions.md
   - docs/reports/route-roi-cost-framework.md
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
+  - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -174,6 +175,7 @@ numeric overreach:
 | Source-backed stakeholder fixture 009 | Draft | Populated internal technical rehearsal-control fixture; records packet, pressure-test, verification, role-review, prohibited-claim, and L0 source custody while holding external venue, agency review, approval, public-readiness, L1/L2 release, endorsement, and outside-validation claims. |
 | Communications external rehearsal readiness | Draft | Current decision is hold_external_rehearsal until a named venue, selected materials, venue-specific role review, prohibited-claim scan, and L0 close. |
 | External rehearsal packet selection runbook | Draft | Selection workflow is ready; venue choice, audience lane, fixture anchor, material set, role review, validation, and external-readiness claims remain held until a real packet is filled. |
+| External rehearsal packet candidate 001 | Draft | FHWA/USDOT technical reviewer lane selected as the first candidate; no real agency review, venue, reviewer, presenter, recorder, final material set, validation closeout, endorsement, approval, or external-readiness claim. |
 | External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Media resources | Draft | Media-safe reference package; gives fact sheet, claim guide, Q&A, source index, visual-assets guide, source pointers, caption pattern, verification checklist, and red lines while holding official-plan, construction, SLA, ROI, eligibility, compliance, endorsement, approval, public-readiness, and external-readiness claims. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |

@@ -78,6 +78,7 @@ game, release, or public-readiness claims.
 | Technical rehearsal-control source-backed stakeholder fixture exists. | `docs/reviews/source-backed-stakeholder-fixture-009.md` | draft; technical / DOT-style rehearsal-control fixture pass_with_risk for internal rehearsal |
 | External rehearsal readiness checklist exists. | `docs/reviews/communications-external-rehearsal-readiness.md` | draft; hold_external_rehearsal |
 | External rehearsal packet selection runbook exists. | `docs/how-to/external-rehearsal-packet-selection-runbook.md` | draft; selection runbook ready; external rehearsal held |
+| External rehearsal packet candidate 001 exists. | `docs/reviews/external-rehearsal-packet-candidate-001.md` | draft; FHWA/USDOT technical candidate selected; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -105,9 +106,10 @@ Rationale: The missing artifact classes identified by the pressure-test run now
 exist as draft surfaces, the command bundle plus 225-mile threshold fixture are
 captured, `.roles` pass-artifacts review is recorded, the stakeholder fixture
 closeout runbook exists, and STAKE-FIX-001 through STAKE-FIX-009 are populated
-for internal rehearsal. External/public readiness remains held until
-venue-specific packet selection, role review, L1/L2 readiness evidence, and
-any claim-specific source packs close.
+for internal rehearsal. External packet selection now has an FHWA/USDOT
+technical reviewer candidate, but external/public readiness remains held until
+a named venue, final material packet, venue-specific role review, L1/L2
+readiness evidence when applicable, and any claim-specific source packs close.
 
 ## Evidence Ledger
 
