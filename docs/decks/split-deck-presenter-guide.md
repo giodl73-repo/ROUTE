@@ -21,6 +21,7 @@ sources:
   - docs/traces/route-claim-promotion-trace.md
   - docs/reviews/communications-rude-qa-drill-run-001.md
   - docs/reviews/external-rehearsal-technical-rude-qa-drill-run-001.md
+  - docs/how-to/external-rehearsal-technical-demo-script.md
 ---
 
 # Split Deck Presenter Guide
@@ -239,6 +240,7 @@ reviewers to:
 | Evidence posture | `docs/reports/route-evidence-posture.md` |
 | Round 5 verification gate | `docs/vtrace/VERIFICATION.md` |
 | DOT rejection handling | Rejected claims are revised, downgraded, held, or split into source-needed tasks; the rejection becomes a review record and claim-trace update. |
+| Five-minute technical demo | `docs/how-to/external-rehearsal-technical-demo-script.md` |
 
 For technical hostile questions, use these first-sentence rules:
 

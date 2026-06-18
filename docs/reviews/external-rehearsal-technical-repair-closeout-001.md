@@ -13,6 +13,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/decks/split-deck-presenter-guide.md
+  - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reports/source-operations-evidence-roadmap.md
   - docs/reports/optimizer-evidence-appendix.md
   - docs/reports/graph-scoring-measurement-appendix.md
@@ -101,8 +102,8 @@ prohibited-claim scan, L0, and any required L1/L2 evidence close.
 
 ## Next Work
 
-1. Build a five-minute technical demo script that shows the requirement,
-   source, command, artifact, hold, and next-evidence loop.
+1. Use the five-minute technical demo script for the next internal technical
+   rehearsal.
 2. Keep the external rehearsal packet held until a named venue, presenter,
    recorder, selected final materials, and venue-specific source custody exist.
 
