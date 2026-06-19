@@ -107,6 +107,7 @@ game, release, or public-readiness claims.
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
 | International Canada parser preflight 001 exists. | `docs/reviews/international-canada-parser-preflight-001.md`, `data/international-canada-parser-preflight-001.csv` | draft; Canada parser preflight ready; implementation held |
+| International Canada parser output contract 001 exists. | `docs/reviews/international-canada-parser-output-contract-001.md`, `data/international-canada-parser-output-contract-001.csv` | draft; Canada parser output contract ready; implementation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -204,6 +205,10 @@ The Canada parser preflight turns that source-pack declaration into an
 auditable task ledger while keeping parser implementation, fixture replacement,
 parsed-adapter, official-network, approval, SLA, construction, ROI, compliance,
 endorsement, public-readiness, external-readiness, and validation claims held.
+The Canada parser output contract adds required columns, labels, acceptance
+rules, and blocked claim values for a future dry run while keeping source
+download, parser implementation, parsed-adapter, fixture replacement, and
+promotion claims held.
 
 ## Evidence Ledger
 

@@ -55,6 +55,8 @@ sources:
   - data/international-canada-adapter-source-pack-001.csv
   - docs/reviews/international-canada-parser-preflight-001.md
   - data/international-canada-parser-preflight-001.csv
+  - docs/reviews/international-canada-parser-output-contract-001.md
+  - data/international-canada-parser-output-contract-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -385,6 +387,20 @@ promote source-bound rows. Parsed-adapter, official-network, route designation,
 Transport Canada/provincial/port approval, guaranteed SLA, construction, ROI,
 eligibility, compliance, endorsement, public-readiness, external-readiness, and
 external validation claims remain held.
+
+## Canada Parser Output Contract 001
+
+`docs/reviews/international-canada-parser-output-contract-001.md` defines the
+mechanical output contract for a future Canada parser dry run:
+
+`data/international-canada-parser-output-contract-001.csv`
+
+The contract names required columns, allowed evidence labels, acceptance rules,
+and blocked claim values for candidate links, candidate needs, node gaps,
+service-target holds, evidence-label carry-forward, and role-review backlog. It
+does not implement the parser, download/cache sources, replace fixture rows, or
+promote parsed-adapter, official-network, SLA, construction, ROI, compliance,
+endorsement, public-readiness, external-readiness, or validation claims.
 
 ## Product Language
 
