@@ -471,6 +471,12 @@ route-number/name fields are present but sampled as `None` in the bounded first
 rows, and geometry remains a reference candidate only. The next Canada parser
 step is broader filtered extraction, not fixture replacement.
 
+`data/international-canada-road-graph-filtered-route-sample-001.csv` performs
+that first filtered extraction step with a bounded no-geometry object-ID window.
+It records usable route numbers and a route name for parser intake, while source
+validation, geometry acceptance, fixture replacement, and official-network
+claims remain held.
+
 ## Product Language
 
 Use:
