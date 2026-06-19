@@ -47,6 +47,8 @@ sources:
   - docs/reviews/international-china-hierarchy-iteration-001.md
   - data/international-china-candidate-hierarchy-v2.csv
   - maps/international/china-candidate-hierarchy-v2.svg
+  - docs/reviews/international-hierarchy-replication-closeout-001.md
+  - data/international-hierarchy-replication-summary-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -325,6 +327,20 @@ EU Rhine-Alpine, India, Japan, and China. It does not validate a Chinese
 corridor, policy alignment, official designation, guaranteed SLA, construction
 priority, ROI, eligibility, compliance, endorsement, public-readiness,
 external-readiness, or external validation claim.
+
+## Replication Closeout 001
+
+`docs/reviews/international-hierarchy-replication-closeout-001.md` packages the
+five hierarchy iterations into a single review surface. The companion summary
+ledger is `data/international-hierarchy-replication-summary-001.csv`.
+
+The closeout shows that the reusable loop found a recurring hierarchy defect:
+port, terminal, border, or local-access proximity can downgrade trunk continuity
+unless the product separates trunk roles from access feeders. Canada, EU
+Rhine-Alpine, India, Japan, and China each repair that pressure in different
+local terms while preserving source-bound, official-network, SLA, construction,
+ROI, compliance, endorsement, public-readiness, external-readiness, and
+validation holds.
 
 ## Product Language
 
