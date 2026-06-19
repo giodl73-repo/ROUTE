@@ -45,6 +45,12 @@ external-readiness, or external validation claims.
 Run:
 
 ```powershell
+npm run check:canada
+```
+
+Equivalent commands:
+
+```powershell
 python tools\build_canada_parser_dry_run.py
 python tools\check_canada_parser_dry_run.py
 ```
@@ -62,6 +68,7 @@ Canada parser dry-run gate: PASS
 |---|---|---|---|
 | Regenerate fixture | `python tools\build_canada_parser_dry_run.py` | pass | six dry-run CSVs written |
 | Dry-run gate | `python tools\check_canada_parser_dry_run.py` | pass | columns, labels, source limits, evidence coverage, and review backlog checked |
+| Package command | `npm run check:canada` | pass | generator and gate run together |
 | Python compile | `python -m py_compile tools\build_canada_parser_dry_run.py tools\check_canada_parser_dry_run.py` | pass | scripts compile |
 | Claim-boundary scan | scan gate, review, and edited index surfaces | pass | hits are blocked, held, or do-not-infer contexts |
 | Diff hygiene | `git diff --check` | pass | no whitespace errors |
