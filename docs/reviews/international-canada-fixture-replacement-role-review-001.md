@@ -17,6 +17,7 @@ sources:
   - tools/build_canada_fixture_replacement_role_review.py
   - tools/check_canada_fixture_replacement_role_review.py
   - data/international-canada-fixture-replacement-role-review-001.csv
+  - data/international-canada-source-row-validation-001.csv
   - data/international-canada-parser-extraction-candidates-001.csv
   - data/canada_source_link_candidates.csv
 ---
@@ -35,8 +36,10 @@ claims. That is enough to keep parser extraction work moving.
 
 It is not enough to replace `data/canada_source_link_candidates.csv`.
 Replacement remains held because the candidate rows still have no accepted
-geometry, no source-row validation closeout, no parsed adapter promotion, no
-operational evidence, and no jurisdictional authority or delivery evidence.
+geometry, no parsed adapter promotion, no operational evidence, and no
+jurisdictional authority or delivery evidence. A later candidate-only
+source-row validation gate now closes row matching for this bounded extraction
+table, but that does not change this replacement decision.
 
 ## Role Findings
 
