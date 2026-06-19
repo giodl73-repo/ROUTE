@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1040" width="1700" height="1040">
+<rect width="1700" height="1040" fill="#0f172a"/>
+<rect x="30" y="30" width="1640" height="980" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="70.0" y="82.0" font-family="Arial,sans-serif" font-size="32" fill="#f8fafc" text-anchor="start">EU Rhine-Alpine candidate hierarchy v2</text>
+<text x="70.0" y="116.0" font-family="Arial,sans-serif" font-size="15" fill="#cbd5e1" text-anchor="start">Iteration result: cross-border spine, port connectors, access feeders; official, SLA, construction, ROI, approval, and validation claims held.</text>
+<line x1="408.5" y1="186.4" x2="688.0" y2="217.0" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T1-001 T1: North Sea port cluster to Rhine industrial spine</title></line>
+<line x1="688.0" y1="217.0" x2="875.8" y2="307.6" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T1-002 T1: Rhine industrial reliability and inland hub continuity</title></line>
+<line x1="875.8" y1="307.6" x2="756.8" y2="586.1" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T1-003 T1: Alpine gateway continuity candidate</title></line>
+<line x1="756.8" y1="586.1" x2="931.5" y2="815.4" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T1-004 T1: Alpine crossing to northern Italy market candidate</title></line>
+<line x1="417.2" y1="110.0" x2="408.5" y2="186.4" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T2-001 T2: North Sea port cluster access</title></line>
+<line x1="931.5" y1="815.4" x2="903.1" y2="930.0" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T2-002 T2: Mediterranean port access connector</title></line>
+<line x1="756.8" y1="586.1" x2="456.5" y2="782.6" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>EUR-HIER2-T2-003 T2: Alpine/Rhone alternate access candidate</title></line>
+<line x1="688.0" y1="217.0" x2="716.4" y2="158.0" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>EUR-HIER2-T3-001 T3: Ruhr industrial access candidate</title></line>
+<line x1="875.8" y1="307.6" x2="930.4" y2="452.8" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>EUR-HIER2-T3-002 T3: Southwest Germany industry access candidate</title></line>
+<line x1="756.8" y1="586.1" x2="860.5" y2="605.7" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>EUR-HIER2-T3-003 T3: Swiss metro and logistics access candidate</title></line>
+<line x1="688.0" y1="217.0" x2="774.3" y2="474.7" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>EUR-HIER2-T3-004 T3: Upper Rhine alternate access candidate</title></line>
+<circle cx="408.5" cy="186.4" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="424.5" y="178.4" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Antwerp</text>
+<text x="424.5" y="196.4" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">ANR</text>
+<circle cx="688.0" cy="217.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="704.0" y="209.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Cologne</text>
+<text x="704.0" y="227.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">CGN</text>
+<circle cx="875.8" cy="307.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="891.8" y="299.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Frankfurt</text>
+<text x="891.8" y="317.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">FRA</text>
+<circle cx="756.8" cy="586.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="772.8" y="578.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Basel</text>
+<text x="772.8" y="596.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">BSL</text>
+<circle cx="931.5" cy="815.4" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="947.5" y="807.4" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Milan</text>
+<text x="947.5" y="825.4" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">MIL</text>
+<circle cx="417.2" cy="110.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="433.2" y="102.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Rotterdam</text>
+<text x="433.2" y="120.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">RTM</text>
+<circle cx="903.1" cy="930.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="919.1" y="922.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Genoa</text>
+<text x="919.1" y="940.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">GOA</text>
+<circle cx="456.5" cy="782.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="472.5" y="774.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Lyon</text>
+<text x="472.5" y="792.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">LYN</text>
+<circle cx="716.4" cy="158.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="732.4" y="150.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Ruhr</text>
+<text x="732.4" y="168.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">RUR</text>
+<circle cx="930.4" cy="452.8" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="946.4" y="444.8" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Stuttgart</text>
+<text x="946.4" y="462.8" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">STR</text>
+<circle cx="860.5" cy="605.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="876.5" y="597.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Zurich</text>
+<text x="876.5" y="615.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">ZRH</text>
+<circle cx="774.3" cy="474.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="790.3" y="466.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Strasbourg</text>
+<text x="790.3" y="484.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">STRS</text>
+<rect x="1190" y="150" width="400" height="590" rx="12" fill="#020617" stroke="#334155"/>
+<text x="1214.0" y="188.0" font-family="Arial,sans-serif" font-size="20" fill="#f8fafc" text-anchor="start">Iteration changes</text>
+<text x="1224.0" y="228.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Basel-Lyon alternate T2 added</text>
+<text x="1224.0" y="256.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Cologne-Strasbourg T3 added</text>
+<text x="1224.0" y="284.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Alpine links kept with constraint risk</text>
+<text x="1224.0" y="312.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- governance/source claims held</text>
+<text x="1214.0" y="385.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Tier counts</text>
+<line x1="1220" y1="428" x2="1285" y2="428" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+<text x="1302.0" y="433.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T1: 4 candidate links</text>
+<line x1="1220" y1="480" x2="1285" y2="480" stroke="#059669" stroke-width="7" stroke-linecap="round"/>
+<text x="1302.0" y="485.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T2: 3 candidate links</text>
+<line x1="1220" y1="532" x2="1285" y2="532" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 8"/>
+<text x="1302.0" y="537.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T3: 4 candidate links</text>
+<text x="1214.0" y="615.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Still held</text>
+<text x="1224.0" y="652.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- TEN-T/source-bound parsing</text>
+<text x="1224.0" y="678.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- national road graph source packs</text>
+<text x="1224.0" y="704.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Alpine constraint evidence</text>
+<text x="1224.0" y="730.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- governance and SLA proof</text>
+<text x="70.0" y="986.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official EU corridor designation, member-state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>
