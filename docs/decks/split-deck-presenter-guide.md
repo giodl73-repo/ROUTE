@@ -25,6 +25,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
 ---
 
 # Split Deck Presenter Guide
@@ -247,6 +248,7 @@ reviewers to:
 | Five-minute technical demo run | `docs/reviews/external-rehearsal-technical-demo-run-001.md` |
 | Technical venue packet scaffold | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` |
 | Technical source custody preflight | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` |
+| Technical venue role preflight | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` |
 
 For technical hostile questions, use these first-sentence rules:
 
