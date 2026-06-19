@@ -44,6 +44,9 @@ sources:
   - docs/reviews/international-japan-hierarchy-iteration-001.md
   - data/international-japan-candidate-hierarchy-v2.csv
   - maps/international/japan-candidate-hierarchy-v2.svg
+  - docs/reviews/international-china-hierarchy-iteration-001.md
+  - data/international-china-candidate-hierarchy-v2.csv
+  - maps/international/china-candidate-hierarchy-v2.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -298,6 +301,30 @@ island/geohazard context. It does not validate a Japanese corridor, ministry
 approval, disaster-readiness, official designation, guaranteed SLA,
 construction priority, ROI, eligibility, compliance, endorsement,
 public-readiness, external-readiness, or external validation claim.
+
+## China Hierarchy Iteration 001
+
+`docs/reviews/international-china-hierarchy-iteration-001.md` applies the same
+score-repair-render loop to a fifth region:
+
+`maps/international/china-candidate-hierarchy-v2.svg`
+
+The iteration tests whether the portable hierarchy process can handle scale,
+coastal manufacturing, Yangtze inland movement, and port/export gateways
+without converting them into official or policy claims:
+
+- Beijing-Tianjin is repaired from fixture T4 to T1.
+- Guangzhou-Shenzhen is repaired from fixture T4 to T2.
+- Zhengzhou is added as an inland distribution connector.
+- Tianjin Port and Yantian Port are separated as T3 terminal feeders.
+- Policy alignment, source-bound road graph, logistics node, terminal,
+  performance, and SLA claims remain held.
+
+This completes the first five-fixture replication ladder from Canada through
+EU Rhine-Alpine, India, Japan, and China. It does not validate a Chinese
+corridor, policy alignment, official designation, guaranteed SLA, construction
+priority, ROI, eligibility, compliance, endorsement, public-readiness,
+external-readiness, or external validation claim.
 
 ## Product Language
 

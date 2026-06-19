@@ -102,6 +102,7 @@ game, release, or public-readiness claims.
 | International EU Rhine-Alpine hierarchy iteration 001 exists. | `docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md`, `data/international-eu-rhine-alpine-scorecard-001.csv`, `data/international-eu-rhine-alpine-candidate-hierarchy-v2.csv`, `maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg` | draft; EU Rhine-Alpine hierarchy v2 generated; validation held |
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
+| International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -178,6 +179,10 @@ The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
 endorsement, public-readiness, and external-readiness holds.
+The China hierarchy iteration applies the loop to a fifth region and repairs
+port/export downgrades while preserving official-corridor, policy alignment,
+SLA, construction, ROI, eligibility, compliance, endorsement,
+public-readiness, and external-readiness holds.
 
 ## Evidence Ledger
 
