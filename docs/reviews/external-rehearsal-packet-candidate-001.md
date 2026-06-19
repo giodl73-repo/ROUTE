@@ -21,6 +21,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md
   - docs/reviews/sponsor-dot-dry-run-packet-001.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
@@ -107,6 +108,7 @@ community acceptance, industry validation, or state delivery authority.
 | Technical source custody preflight 001 | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` | source-custody rows and missing venue fields for a future technical packet | preflight ready / external held | yes |
 | Technical venue role preflight 001 | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` | role-rerun contract for a future named technical venue packet | preflight ready / external held | yes |
 | Technical validation preflight 001 | `docs/reviews/external-rehearsal-technical-validation-preflight-001.md` | validation matrix for a future named technical venue packet | preflight ready / external held | yes |
+| Technical pre-venue closeout 001 | `docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md` | confirms generic technical pre-venue planning stack is complete | prevenue complete / external held | yes |
 | Public solution deck | `docs/decks/interstate-2-0-pitch.md` | optional framing only if reviewer asks "why this matters" | story-ready / gated claims | optional |
 | Political, funder, or public media materials | docs/briefs and docs/media | not needed for technical review unless requested | media-safe / claim holds | no by default |
 
@@ -178,6 +180,7 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 | "Did the closed-book technical drill pass?" | Yes for internal rehearsal with risk. Repair closeout 001 closes the source-custody, optimizer-wording, and graph-score first-sentence repairs. | pass_with_risk |
 | "Can you show the whole loop quickly?" | Use the five-minute technical demo script: requirement, source posture, command, artifact change, hold, and next evidence. | pass_with_risk |
 | "Did the five-minute demo pass?" | Yes for internal rehearsal with risk. Demo run 001 scores the loop as pass_with_risk and keeps external rehearsal held. | pass_with_risk |
+| "Are we done with generic technical prep?" | Yes for the pre-venue planning stack. The next step is a real venue packet, or a lane shift if no technical venue exists. | pass_with_risk |
 
 ## Validation Closeout
 
@@ -202,11 +205,14 @@ Secondary fixture rows may be used only to answer narrow technical questions:
 
 ## Next Work
 
-1. Use the technical venue packet scaffold, source custody preflight, venue role
-   preflight, and validation preflight when a named venue, presenter, recorder,
-   and selected material set exist.
-2. Fill a real external rehearsal packet only after a named venue, presenter,
-   recorder, selected material set, selected source custody, and role rows exist.
+1. If a real technical venue exists, use the technical venue packet scaffold,
+   source custody preflight, venue role preflight, and validation preflight to
+   fill a named packet.
+2. If no real technical venue exists, stop adding generic technical preflight
+   docs and choose another lane or wait for venue inputs.
+3. Fill a real external rehearsal packet only after a named venue, presenter,
+   recorder, selected material set, selected source custody, role rows, and
+   validation closeout exist.
 
 ## Gate
 

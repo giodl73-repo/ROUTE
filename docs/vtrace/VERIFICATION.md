@@ -89,6 +89,7 @@ game, release, or public-readiness claims.
 | External rehearsal technical source custody preflight 001 exists. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` | draft; source custody preflight ready; external rehearsal held |
 | External rehearsal technical venue role preflight 001 exists. | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` | draft; venue role preflight ready; external rehearsal held |
 | External rehearsal technical validation preflight 001 exists. | `docs/reviews/external-rehearsal-technical-validation-preflight-001.md` | draft; technical validation preflight ready; external rehearsal held |
+| External rehearsal technical pre-venue closeout 001 exists. | `docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md` | draft; prevenue technical stack complete; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -127,9 +128,10 @@ now has an internal pass-with-risk run, and the technical venue packet scaffold
 defines the pre-fill gate. The technical source custody preflight identifies
 candidate custody rows, and the technical venue role preflight defines the
 required rerun lanes. The technical validation preflight defines scan, L0, and
-L1/L2 escalation rules. The next external-readiness step remains a named venue
-packet with selected source custody, venue-specific role review, and validation
-closeout.
+L1/L2 escalation rules, and the pre-venue closeout records that generic
+technical packet planning is complete. The next external-readiness step remains
+a named venue packet with selected source custody, venue-specific role review,
+and validation closeout, or a lane shift if no technical venue exists.
 
 ## Evidence Ledger
 
