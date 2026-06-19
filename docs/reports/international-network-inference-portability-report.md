@@ -57,6 +57,13 @@ sources:
   - data/international-canada-parser-preflight-001.csv
   - docs/reviews/international-canada-parser-output-contract-001.md
   - data/international-canada-parser-output-contract-001.csv
+  - docs/reviews/international-canada-parser-dry-run-fixture-001.md
+  - data/canada_source_link_candidates.csv
+  - data/canada_source_need_candidates.csv
+  - data/canada_source_node_candidates.csv
+  - data/canada_service_target_candidates.csv
+  - data/canada_adapter_evidence_labels.csv
+  - data/canada_adapter_review_backlog.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -401,6 +408,23 @@ service-target holds, evidence-label carry-forward, and role-review backlog. It
 does not implement the parser, download/cache sources, replace fixture rows, or
 promote parsed-adapter, official-network, SLA, construction, ROI, compliance,
 endorsement, public-readiness, external-readiness, or validation claims.
+
+## Canada Parser Dry Run Fixture 001
+
+`docs/reviews/international-canada-parser-dry-run-fixture-001.md` emits the
+contract-shaped Canada parser dry-run tables:
+
+- `data/canada_source_link_candidates.csv`
+- `data/canada_source_need_candidates.csv`
+- `data/canada_source_node_candidates.csv`
+- `data/canada_service_target_candidates.csv`
+- `data/canada_adapter_evidence_labels.csv`
+- `data/canada_adapter_review_backlog.csv`
+
+These rows demonstrate the parser output contract can be represented with
+candidate, gap, held, evidence-label, and review-backlog tables. They are still
+fixture rows, not parser output from downloaded sources, not a parsed adapter,
+and not a replacement for the Canada hierarchy fixture.
 
 ## Product Language
 
