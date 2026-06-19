@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980" width="1600" height="980">
+<rect width="1600" height="980" fill="#0f172a"/>
+<rect x="28" y="28" width="1544" height="924" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="60.0" y="78.0" font-family="Arial,sans-serif" font-size="30" fill="#f8fafc" text-anchor="start">Japan Pacific Belt adapter fixture</text>
+<text x="60.0" y="112.0" font-family="Arial,sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">Fixture output: inferred service roles from local adapter rows; not an official network or SLA proof.</text>
+<line x1="1319.0" y1="522.0" x2="963.2" y2="586.0" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>JPN-L1 T1: pacific_belt_reliability</title></line>
+<line x1="963.2" y1="586.0" x2="782.7" y2="648.7" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>JPN-L2 T1: industrial_metro_reliability</title></line>
+<line x1="782.7" y1="648.7" x2="743.0" y2="648.7" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" opacity="0.9"><title>JPN-L3 T4: port_cluster_access</title></line>
+<line x1="743.0" y1="648.7" x2="393.6" y2="687.1" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>JPN-L4 T2: western_honshu_resilience</title></line>
+<line x1="393.6" y1="687.1" x2="130.0" y2="789.5" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>JPN-L5 T2: kyushu_gateway_access</title></line>
+<line x1="1319.0" y1="522.0" x2="1470.0" y2="190.5" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>JPN-L6 T2: tohoku_resilience_access</title></line>
+<circle cx="1319.0" cy="522.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1337.0" y="514.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Tokyo</text>
+<text x="1337.0" y="533.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_gateway</text>
+<circle cx="963.2" cy="586.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="981.2" y="578.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Nagoya</text>
+<text x="981.2" y="597.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">industrial_hub</text>
+<circle cx="782.7" cy="648.7" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="800.7" y="640.7" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Osaka</text>
+<text x="800.7" y="659.7" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_gateway</text>
+<circle cx="743.0" cy="648.7" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="761.0" y="640.7" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Kobe</text>
+<text x="761.0" y="659.7" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="393.6" cy="687.1" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="411.6" y="679.1" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Hiroshima</text>
+<text x="411.6" y="698.1" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">regional_hub</text>
+<circle cx="130.0" cy="789.5" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="148.0" y="781.5" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Fukuoka</text>
+<text x="148.0" y="800.5" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_gateway</text>
+<circle cx="1470.0" cy="190.5" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1488.0" y="182.5" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Sendai</text>
+<text x="1488.0" y="201.5" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">resilience_hub</text>
+<rect x="44" y="762" width="510" height="148" rx="12" fill="#020617" stroke="#334155"/>
+<text x="60.0" y="784.0" font-family="Arial,sans-serif" font-size="16" fill="#f8fafc" text-anchor="start">Legend</text>
+<line x1="60" y1="812" x2="114" y2="812" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round"/>
+<text x="126.0" y="817.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T1: T1 candidate spine</text>
+<line x1="60" y1="838" x2="114" y2="838" stroke="#059669" stroke-width="6" stroke-linecap="round"/>
+<text x="126.0" y="843.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T2: T2 candidate connector</text>
+<line x1="60" y1="864" x2="114" y2="864" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="869.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T3: T3 candidate access</text>
+<line x1="60" y1="890" x2="114" y2="890" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="895.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T4: T4 candidate terminal/local</text>
+<text x="60.0" y="938.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official plan, construction, guaranteed SLA, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>
