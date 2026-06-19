@@ -15,6 +15,7 @@ sources:
   - docs/reports/industry-stakeholder-evidence-lane-matrix.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
   - docs/reviews/communications-pressure-test-run-003.md
+  - docs/reviews/media-discovery-stress-test-001.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
 ---
 
@@ -43,6 +44,7 @@ agency endorsement, public-readiness, or external-readiness.
 | Media Q&A | Deadline-friendly answers and verification checklist. | `docs/media/media-q-and-a.md` |
 | Media source index | Claim-to-source map for reporter fact checks. | `docs/media/media-source-index.md` |
 | Media visual assets | Recommended maps, captions, and proof-by-picture boundaries. | `docs/media/media-visual-assets.md` |
+| Media discovery stress test | Internal test of whether a reporter/editor can use these materials without claim drift. | `docs/reviews/media-discovery-stress-test-001.md` |
 | Industry/stakeholder matrix | Which stakeholder lanes are represented and what remains unvalidated. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` |
 | Evidence posture | Current claim boundary for decks, reports, maps, demos, and reviews. | `docs/reports/route-evidence-posture.md` |
 | Doctrine report | The core Interstate 2.0 service-hierarchy argument. | `docs/reports/interstate-2-0-doctrine-report.md` |
@@ -99,6 +101,7 @@ use `docs/reports/route-evidence-posture.md` as the controlling boundary.
 Decision: **media_safe_reference_with_claim_holds**
 
 Rationale: The media package can help external readers avoid misframing ROUTE,
-but it does not authorize external rehearsal, public release, official-plan,
+and the media discovery stress test passes with risk for internal discovery
+use. It does not authorize external rehearsal, public release, official-plan,
 construction, guaranteed-SLA, ROI, eligibility, compliance, endorsement, or
 approval claims.

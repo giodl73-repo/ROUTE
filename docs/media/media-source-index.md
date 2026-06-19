@@ -43,6 +43,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
   - docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md
+  - docs/reviews/media-discovery-stress-test-001.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -69,6 +70,7 @@ public-readiness, external-readiness, or approval.
 | Maps | ROUTE maps are structural service visualizations with claim holds. | `docs/reports/maps-are-not-proof-report.md` | story-ready / held-claim map surface | SLA, upgrade, terminal, asset, environmental, or construction proof |
 | ROI and cost | ROI/cost work is an evidence contract before any number. | `docs/reports/route-roi-cost-framework.md`; `docs/reviews/source-backed-stakeholder-fixture-008.md`; `docs/reports/route-evidence-posture.md` | source-backed review control / numeric claims gated | positive ROI or benefit-cost proof |
 | Media-safe status | Media resources are reference materials with claim holds. | `docs/media/README.md`; `docs/media/media-claim-guide.md`; this file | media-safe reference | public launch, external rehearsal, or publication approval |
+| Media discovery status | ROUTE has an internal stress test for whether reporters and editors can use the media package without claim drift. | `docs/reviews/media-discovery-stress-test-001.md`; `docs/media/README.md` | pass_with_risk / public readiness held | press release, public launch, publication approval, agency review, endorsement, external validation, public readiness, or external readiness |
 | Pressure-test status | Internal sponsor-to-DOT dry run passes; external rehearsal remains held. | `docs/reviews/communications-pressure-test-run-003.md` | internal pass / external held | real agency, congressional, or stakeholder review |
 | Source-backed examples | Port NOLA terminal-access, FHWA truck-parking freight-operations, USDA/USDOT rural/agricultural access, FHWA/DOT state delivery-control, FHWA/EPA community/environmental impact, FTA rural transit/intercity bus access, FHWA/FEMA resilience/hazard-data, USDOT ROI/cost, and internal technical rehearsal-control fixtures demonstrate source custody and holds. | `docs/reports/industry-stakeholder-fixture-closeout-report.md`; fixture source files STAKE-FIX-001 through STAKE-FIX-009; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | source owner endorsement, terminal performance proof, corridor parking adequacy, rural route support, state delivery readiness, funding eligibility, environmental clearance, mitigation adequacy, community support, transit service proof, accessibility compliance, site hazard proof, evacuation-capacity proof, recovery-performance proof, resilience benefit, hardening proof, numeric ROI, benefit-cost ratio, dollar value, grant rating, business-case conclusion, agency review, outside validation, or agency approval |
 | Industry/stakeholder coverage | ROUTE represents freight, terminal, rural, state DOT, community/environmental, transit, resilience, funder, technical, and media lanes. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md`; `docs/reviews/communications-role-review-pass-artifacts.md` | representation shown / validation held | industry validation, stakeholder endorsement, or external acceptance |
@@ -116,6 +118,7 @@ public-readiness, external-readiness, or approval.
 | Technical venue role preflight | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` |
 | Technical validation preflight | `docs/reviews/external-rehearsal-technical-validation-preflight-001.md` |
 | Technical pre-venue closeout | `docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md` |
+| Media discovery stress test | `docs/reviews/media-discovery-stress-test-001.md` |
 
 ## Source-Use Rules
 
