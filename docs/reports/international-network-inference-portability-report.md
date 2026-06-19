@@ -21,7 +21,10 @@ sources:
   - docs/reviews/communications-crate-coverage-audit.md
   - docs/reviews/media-discovery-stress-test-001.md
   - docs/reviews/international-portability-pilot-map-run-001.md
+  - docs/reviews/international-canada-source-adapter-preflight-001.md
   - data/international-portability-pilot-map-index.csv
+  - data/international-canada-source-custody-preflight.csv
+  - data/international-canada-adapter-coverage-preflight.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -137,6 +140,24 @@ artifacts from comparable adapter rows. It still does not prove any official
 network, guaranteed SLA, construction priority, ROI, compliance, endorsement,
 or country/region validation.
 
+## Canada Source Adapter Preflight 001
+
+`docs/reviews/international-canada-source-adapter-preflight-001.md` promotes
+the Canada pilot one step beyond the compact map fixture. It adds source
+custody candidates, adapter coverage rows, and a source-custody overlay map:
+
+| Artifact | Path | Current Posture |
+|---|---|---|
+| Source custody rows | `data/international-canada-source-custody-preflight.csv` | candidate sources and source-needed rows declared |
+| Adapter coverage matrix | `data/international-canada-adapter-coverage-preflight.csv` | preflight-ready, source-candidate, source-needed, and held fields separated |
+| Source-custody overlay map | `maps/international/canada-source-custody-preflight.svg` | review surface; validation held |
+
+This is the first proof-of-process step after map replication: local source
+candidates and source gaps are now visible adapter inputs. It still does not
+bind source fields into graph inference, validate the Canada service network,
+prove service targets, or create any official-plan, construction, ROI,
+compliance, endorsement, public-readiness, or external-readiness claim.
+
 ## Product Language
 
 Use:
@@ -160,9 +181,9 @@ Avoid:
 
 ## Next Work
 
-1. Promote one generated pilot map into a source-backed adapter with local road
-   graph, node catalog, need surfaces, service target set, constraints, evidence
-   labels, and review roles.
+1. Promote the Canada preflight into a parsed source adapter by downloading or
+   caching selected source artifacts, mapping fields, and replacing fixture
+   node/link rows with source-bound rows.
 2. Run a bounded border-gateway source-backed pilot next, because ROUTE already
    has port/border concepts and can test adapter seams without claiming a
    foreign national network.

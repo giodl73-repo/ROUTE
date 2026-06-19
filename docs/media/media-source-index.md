@@ -46,7 +46,10 @@ sources:
   - docs/reviews/media-discovery-stress-test-001.md
   - docs/reports/international-network-inference-portability-report.md
   - docs/reviews/international-portability-pilot-map-run-001.md
+  - docs/reviews/international-canada-source-adapter-preflight-001.md
   - data/international-portability-pilot-map-index.csv
+  - data/international-canada-source-custody-preflight.csv
+  - data/international-canada-adapter-coverage-preflight.csv
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -76,6 +79,7 @@ public-readiness, external-readiness, or approval.
 | Media discovery status | ROUTE has an internal stress test for whether reporters and editors can use the media package without claim drift. | `docs/reviews/media-discovery-stress-test-001.md`; `docs/media/README.md` | pass_with_risk / public readiness held | press release, public launch, publication approval, agency review, endorsement, external validation, public readiness, or external readiness |
 | International portability | ROUTE can be framed as a portable service-network inference product hypothesis for countries or regions when local source custody and adapters exist. | `docs/reports/international-network-inference-portability-report.md`; `docs/reports/route-evidence-posture.md` | hypothesis ready / validation held | official foreign network, EU/China/India/Canada/Japan approval, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
 | International pilot maps | ROUTE has five generated held-claim map fixtures showing the same adapter-to-inference-to-map flow across Canada, EU-region, India, Japan, and China examples. | `docs/reviews/international-portability-pilot-map-run-001.md`; `data/international-portability-pilot-map-index.csv`; `maps/international/*.svg` | maps generated / validation held | official foreign network, map proof, country or regional approval, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
+| Canada source-adapter preflight | ROUTE has a Canada source-custody preflight that names candidate public sources, adapter coverage gaps, and a source-overlay map. | `docs/reviews/international-canada-source-adapter-preflight-001.md`; `data/international-canada-source-custody-preflight.csv`; `data/international-canada-adapter-coverage-preflight.csv`; `maps/international/canada-source-custody-preflight.svg` | preflight ready / validation held | official Canadian network, Transport Canada/provincial/port review, country approval, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
 | Pressure-test status | Internal sponsor-to-DOT dry run passes; external rehearsal remains held. | `docs/reviews/communications-pressure-test-run-003.md` | internal pass / external held | real agency, congressional, or stakeholder review |
 | Source-backed examples | Port NOLA terminal-access, FHWA truck-parking freight-operations, USDA/USDOT rural/agricultural access, FHWA/DOT state delivery-control, FHWA/EPA community/environmental impact, FTA rural transit/intercity bus access, FHWA/FEMA resilience/hazard-data, USDOT ROI/cost, and internal technical rehearsal-control fixtures demonstrate source custody and holds. | `docs/reports/industry-stakeholder-fixture-closeout-report.md`; fixture source files STAKE-FIX-001 through STAKE-FIX-009; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | source owner endorsement, terminal performance proof, corridor parking adequacy, rural route support, state delivery readiness, funding eligibility, environmental clearance, mitigation adequacy, community support, transit service proof, accessibility compliance, site hazard proof, evacuation-capacity proof, recovery-performance proof, resilience benefit, hardening proof, numeric ROI, benefit-cost ratio, dollar value, grant rating, business-case conclusion, agency review, outside validation, or agency approval |
 | Industry/stakeholder coverage | ROUTE represents freight, terminal, rural, state DOT, community/environmental, transit, resilience, funder, technical, and media lanes. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md`; `docs/reviews/communications-role-review-pass-artifacts.md` | representation shown / validation held | industry validation, stakeholder endorsement, or external acceptance |
@@ -112,6 +116,7 @@ public-readiness, external-readiness, or approval.
 | Stakeholder fixture closeout | `docs/reports/industry-stakeholder-fixture-closeout-report.md` |
 | International portability | `docs/reports/international-network-inference-portability-report.md` |
 | International pilot maps | `docs/reviews/international-portability-pilot-map-run-001.md` |
+| Canada source-adapter preflight | `docs/reviews/international-canada-source-adapter-preflight-001.md` |
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
 | Technical hostile Q&A | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` |
