@@ -17,6 +17,8 @@ sources:
   - data/map-publication-readiness.csv
   - data/international-portability-pilot-map-index.csv
   - docs/reviews/international-portability-pilot-map-run-001.md
+  - docs/reviews/international-canada-source-adapter-preflight-001.md
+  - data/international-canada-adapter-coverage-preflight.csv
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -72,6 +74,7 @@ If space is tight:
 | Rural/access explainer | `maps/t3-great-lakes.png`, `maps/t3-southeast.png`, `maps/t3-texas-border.png`, `maps/t3-mountain-west.png`, `maps/t3-mid-south.png` | Show feeder/access zones and lower-tier visibility. | Local access and terminal proof remain source-gated. |
 | Corridor context | `maps/i5.png`, `maps/i10.png`, `maps/i35.png`, `maps/i40.png`, `maps/i75.png`, `maps/i80.png`, `maps/i90.png`, `maps/i95.png` | Give context for named T1 corridor surfaces. | Corridor maps are context, not construction or ROI recommendations. |
 | International portability fixture | `maps/international/canada-service-network.svg`, `maps/international/eu-rhine-alpine-region.svg`, `maps/international/india-logistics-spine.svg`, `maps/international/japan-pacific-belt.svg`, `maps/international/china-logistics-spine.svg` | Show that the same adapter-to-inference-to-map workflow can generate comparable held-claim service-network fixtures across regions. | Replicability fixture only; no official network, country/regional approval, SLA, construction, ROI, compliance, endorsement, validation, or public-readiness claim. |
+| Canada source-custody overlay | `maps/international/canada-source-custody-preflight.svg` | Show how a country pilot moves from map fixture to visible source-candidate/source-needed adapter coverage. | Preflight review surface only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 
 ## Do Not Use Visuals To Claim
 
