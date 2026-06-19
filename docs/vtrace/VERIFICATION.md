@@ -110,6 +110,7 @@ game, release, or public-readiness claims.
 | International Canada parser output contract 001 exists. | `docs/reviews/international-canada-parser-output-contract-001.md`, `data/international-canada-parser-output-contract-001.csv` | draft; Canada parser output contract ready; implementation held |
 | International Canada parser dry-run fixture 001 exists. | `docs/reviews/international-canada-parser-dry-run-fixture-001.md`, `data/canada_source_link_candidates.csv`, `data/canada_source_need_candidates.csv`, `data/canada_source_node_candidates.csv`, `data/canada_service_target_candidates.csv`, `data/canada_adapter_evidence_labels.csv`, `data/canada_adapter_review_backlog.csv` | draft; Canada parser dry-run fixture emitted; implementation held |
 | International Canada parser dry-run generator 001 exists. | `docs/reviews/international-canada-parser-dry-run-generator-001.md`, `tools/build_canada_parser_dry_run.py` | draft; Canada parser dry-run fixture reproducible; source parser held |
+| International Canada parser dry-run gate 001 exists. | `docs/reviews/international-canada-parser-dry-run-gate-001.md`, `tools/check_canada_parser_dry_run.py` | draft; Canada parser dry-run gate passes; source payload validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -217,6 +218,9 @@ implementation, fixture replacement, parsed-adapter, or promotion claims.
 The Canada parser dry-run generator now regenerates those tables from declared
 source-pack, preflight, and contract rows while keeping source payload parsing,
 fixture replacement, parsed-adapter promotion, and validation claims held.
+The Canada parser dry-run gate now mechanically checks contract shape,
+evidence-label coverage, source limits, and pending review backlog while keeping
+source payload validation, adapter promotion, and performance claims held.
 
 ## Evidence Ledger
 

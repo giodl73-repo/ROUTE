@@ -433,6 +433,12 @@ payloads, parse Canadian network data, promote a source-bound adapter, or prove
 official-network, SLA, construction, ROI, compliance, endorsement,
 public-readiness, external-readiness, or validation claims.
 
+`tools/check_canada_parser_dry_run.py` gates that dry-run surface by checking
+contract columns, evidence labels, source-ID limits, minimum gap rows,
+evidence-label coverage, and pending review backlog. A pass means the Canada
+dry-run contract is internally runnable; it is not a source-payload validation
+or service-performance claim.
+
 ## Product Language
 
 Use:

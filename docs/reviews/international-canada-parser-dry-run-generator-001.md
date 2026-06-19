@@ -9,6 +9,7 @@ created: 2026-06-19
 updated: 2026-06-19
 sources:
   - tools/build_canada_parser_dry_run.py
+  - tools/check_canada_parser_dry_run.py
   - data/international-canada-adapter-source-pack-001.csv
   - data/international-canada-parser-preflight-001.csv
   - data/international-canada-parser-output-contract-001.csv
@@ -64,6 +65,7 @@ reproducible from declared inputs:
 | Check | Command / Inspection | Result | Evidence |
 |---|---|---|---|
 | Generator run | `python tools\build_canada_parser_dry_run.py` | pass | six dry-run CSVs written |
+| Dry-run gate | `python tools\check_canada_parser_dry_run.py` | pass | columns, labels, source limits, evidence coverage, and review backlog checked |
 | Determinism | inspect `git diff -- data\canada_*.csv` after generator run | pass | generated CSVs match committed fixture rows |
 | Claim-boundary scan | scan generator, review, and edited index surfaces | pass | hits are blocked, held, or do-not-infer contexts |
 | Diff hygiene | `git diff --check` | pass | no whitespace errors |
