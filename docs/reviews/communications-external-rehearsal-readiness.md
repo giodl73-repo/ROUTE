@@ -25,6 +25,7 @@ sources:
   - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
   - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
   - docs/templates/source-packs/stakeholder-fixture-source-pack-template.md
   - docs/templates/external-rehearsal-packet-template.md
   - docs/decks/split-deck-presenter-guide.md
@@ -66,8 +67,8 @@ The first closed-book technical Q&A drill also passes with risk internally, and
 repair closeout 001 closes the three phrasing repairs for internal rehearsal.
 The five-minute technical demo now has an internal pass-with-risk rehearsal run
 and keeps external use held. The technical venue packet scaffold, source
-custody preflight, and venue role preflight exist as pre-fill gates, but no
-real venue packet is filled.
+custody preflight, venue role preflight, and validation preflight exist as
+pre-fill gates, but no real venue packet is filled.
 
 ## Rehearsal Context Gate
 
@@ -87,6 +88,7 @@ real venue packet is filled.
 | Technical venue packet scaffold | Pre-fill checklist for moving the technical candidate into a named venue packet. | scaffold ready; no real venue packet filled; external rehearsal held |
 | Technical source custody preflight | Candidate custody rows for a future technical venue packet. | preflight ready; venue-specific selection held; external rehearsal held |
 | Technical venue role preflight | Role-rerun contract for a future named technical venue packet. | preflight ready; no venue-specific role review completed; external rehearsal held |
+| Technical validation preflight | Scan, L0, L1/L2 escalation, and inspection matrix for a future named technical venue packet. | preflight ready; no named packet validation closeout; external rehearsal held |
 | Rehearsal packet | `docs/templates/external-rehearsal-packet-template.md` copied or filled for the named venue. | template exists; packet held |
 
 ## Evidence Gate
@@ -168,7 +170,8 @@ closeout for the three phrasing rows, and an internal pass-with-risk run of the
 five-minute technical demo. The technical venue packet scaffold now makes the
 entry-lock fields explicit, and the source custody preflight identifies
 candidate custody rows. The venue role preflight defines the required rerun
-lanes. External rehearsal still needs a concrete venue, selected final
-materials, venue-specific source ownership, role review, and closeout
-validation. Until those exist, external use would risk converting process
-readiness into implied stakeholder validation.
+lanes, and the validation preflight defines scan/test escalation rules. External
+rehearsal still needs a concrete venue, selected final materials,
+venue-specific source ownership, role review, and closeout validation. Until
+those exist, external use would risk converting process readiness into implied
+stakeholder validation.

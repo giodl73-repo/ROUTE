@@ -88,6 +88,7 @@ game, release, or public-readiness claims.
 | External rehearsal technical venue packet scaffold exists. | `docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md` | draft; technical packet scaffold ready; external rehearsal held |
 | External rehearsal technical source custody preflight 001 exists. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` | draft; source custody preflight ready; external rehearsal held |
 | External rehearsal technical venue role preflight 001 exists. | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` | draft; venue role preflight ready; external rehearsal held |
+| External rehearsal technical validation preflight 001 exists. | `docs/reviews/external-rehearsal-technical-validation-preflight-001.md` | draft; technical validation preflight ready; external rehearsal held |
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
@@ -125,8 +126,10 @@ pass-with-risk technical drill rows. The compressed five-minute technical demo
 now has an internal pass-with-risk run, and the technical venue packet scaffold
 defines the pre-fill gate. The technical source custody preflight identifies
 candidate custody rows, and the technical venue role preflight defines the
-required rerun lanes. The next external-readiness step remains a named venue
-packet with selected source custody and venue-specific role review.
+required rerun lanes. The technical validation preflight defines scan, L0, and
+L1/L2 escalation rules. The next external-readiness step remains a named venue
+packet with selected source custody, venue-specific role review, and validation
+closeout.
 
 ## Evidence Ledger
 

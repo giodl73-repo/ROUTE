@@ -14,6 +14,7 @@ sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/communications-external-rehearsal-readiness.md
+  - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
   - docs/reports/route-evidence-posture.md
   - .roles/editorial/scope-keeper.md
   - .roles/editorial/citation-auditor.md
@@ -57,7 +58,7 @@ Do not run a venue-specific role review until these inputs exist:
 | Selected material set | Included and excluded files are named. | hold |
 | Selected custody rows | Rows from source custody preflight are accepted, replaced, or removed. | hold |
 | Closing ask | Technical evidence review or demo fixture. | proposed; not venue-specific |
-| Validation plan | Prohibited-claim scan, L0, and scoped L1/L2 when selected claims require them. | required at packet closeout |
+| Validation plan | Prohibited-claim scan, L0, and scoped L1/L2 when selected claims require them. | technical validation preflight ready; packet closeout held |
 
 ## Required Role Rerun Matrix
 
@@ -107,7 +108,7 @@ marked `not used` without a material-selection reason, the packet remains held.
 | Required venue role lanes are known. | pass | Scope, citation, numeracy, optimizer, state delivery, map, and traffic roles control the technical packet risk. |
 | Source custody preflight exists. | pass_with_risk | It identifies candidate custody rows, but final source selection remains venue-specific. |
 | Named venue role review exists. | hold | No real venue, reviewer class, presenter, recorder, material set, or closing ask exists. |
-| External use decision can move. | hold | The package still lacks venue-specific role results and validation closeout. |
+| External use decision can move. | hold | The package still lacks venue-specific role results and validation closeout, even though validation preflight is ready. |
 
 ## Failure Modes
 
@@ -127,7 +128,9 @@ marked `not used` without a material-selection reason, the packet remains held.
    this role matrix.
 2. Record venue-specific role decisions in the filled packet or a dedicated
    venue role-review record.
-3. Keep all external rehearsal, agency review, technical signoff, approval,
+3. Use `docs/reviews/external-rehearsal-technical-validation-preflight-001.md`
+   after role review and before any external use.
+4. Keep all external rehearsal, agency review, technical signoff, approval,
    endorsement, public readiness, construction, service, ROI, eligibility, and
    compliance claims held until role review and validation close.
 

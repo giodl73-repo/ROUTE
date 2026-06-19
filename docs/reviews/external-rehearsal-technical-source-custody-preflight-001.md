@@ -14,6 +14,7 @@ sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/evidence/round5-demo-capture.md
@@ -81,7 +82,7 @@ venue, reviewer class, presenter, recorder, and material set are known.
 | Selected final material set | The default material set is too broad for a real packet. | Include/exclude each artifact deliberately. |
 | Source custody owner | Repo-local ownership does not equal packet handoff ownership. | Assign a named source owner or accountable role for the packet. |
 | Venue-specific role review | Candidate role review is not a named venue review. | Use the technical venue role preflight, then re-run required roles against the selected venue and materials. |
-| Validation closeout | Claims can drift after packet edits. | Run prohibited-claim scan, L0, and scoped L1/L2 after the packet is filled. |
+| Validation closeout | Claims can drift after packet edits. | Use the technical validation preflight, then run prohibited-claim scan, L0, and scoped L1/L2 after the packet is filled. |
 
 ## Presenter Custody Prompts
 
@@ -124,7 +125,9 @@ one, the packet stays held.
    import only the selected custody rows.
 2. Use `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md`
    before any packet is described as usable.
-3. Keep all external rehearsal, agency review, public readiness, and technical
+3. Use the technical validation preflight after role review and before external
+   use.
+4. Keep all external rehearsal, agency review, public readiness, and technical
    signoff claims held until packet validation closes.
 
 ## Validation Closeout
