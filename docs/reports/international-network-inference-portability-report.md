@@ -25,6 +25,10 @@ sources:
   - data/international-portability-pilot-map-index.csv
   - data/international-canada-source-custody-preflight.csv
   - data/international-canada-adapter-coverage-preflight.csv
+  - data/international-canada-adapter-field-map.csv
+  - data/international-canada-source-adapter-readiness.csv
+  - data/international-canada-source-adapter-gap-backlog.csv
+  - docs/reviews/international-canada-source-adapter-readiness-001.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -158,6 +162,25 @@ bind source fields into graph inference, validate the Canada service network,
 prove service targets, or create any official-plan, construction, ROI,
 compliance, endorsement, public-readiness, or external-readiness claim.
 
+## Canada Adapter Readiness 001
+
+`docs/reviews/international-canada-source-adapter-readiness-001.md` adds the
+machine-readable promotion step after preflight. The command
+`python tools\build_canada_adapter_readiness.py` reads source custody,
+coverage, and field-map rows, then writes:
+
+| Artifact | Path | Current Posture |
+|---|---|---|
+| Field map | `data/international-canada-adapter-field-map.csv` | target adapter columns declared |
+| Readiness ledger | `data/international-canada-source-adapter-readiness.csv` | parse-ready, carry-forward, source-needed, and held decisions generated |
+| Gap backlog | `data/international-canada-source-adapter-gap-backlog.csv` | next evidence actions generated |
+
+The result is a promotion ledger, not a parsed source adapter. Road graph and
+need-surface rows are ready for a future parser but are not promoted. Node,
+constraint, and service-target rows remain source-needed or held. No Canadian
+network, official review, SLA, construction, ROI, compliance, endorsement,
+public-readiness, or external-readiness claim is created.
+
 ## Product Language
 
 Use:
@@ -181,9 +204,9 @@ Avoid:
 
 ## Next Work
 
-1. Promote the Canada preflight into a parsed source adapter by downloading or
-   caching selected source artifacts, mapping fields, and replacing fixture
-   node/link rows with source-bound rows.
+1. Promote the Canada readiness ledger into a parsed source adapter by
+   downloading or caching selected source artifacts, mapping fields, and
+   replacing fixture node/link rows with source-bound rows.
 2. Run a bounded border-gateway source-backed pilot next, because ROUTE already
    has port/border concepts and can test adapter seams without claiming a
    foreign national network.
