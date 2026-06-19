@@ -10,12 +10,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ACCESS = ROOT / "data" / "international-canada-source-payload-access-001.csv"
+RESOLUTION = ROOT / "data" / "international-canada-source-payload-resolution-001.csv"
 PROBE = ROOT / "data" / "international-canada-source-payload-probe-001.csv"
 
 FIELDS = [
     "probe_id",
     "source_id",
     "payload_url_or_status",
+    "probe_url",
     "probe_method",
     "http_status",
     "final_url",
@@ -29,6 +31,8 @@ FIELDS = [
 
 
 def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    if not path.exists():
+        return [], []
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return list(reader.fieldnames or []), list(reader)
@@ -36,6 +40,7 @@ def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
 
 def main() -> int:
     _, access_rows = read_csv(ACCESS)
+    _, resolution_rows = read_csv(RESOLUTION)
     fields, probe_rows = read_csv(PROBE)
     failures: list[str] = []
 
@@ -45,6 +50,11 @@ def main() -> int:
         failures.append("probe row count does not match source-payload access rows")
 
     access_by_source = {row["source_id"]: row for row in access_rows}
+    primary_resolution = {
+        row["source_id"]: row["resolved_url"]
+        for row in resolution_rows
+        if row["probe_priority"] == "primary"
+    }
     for row in probe_rows:
         source_id = row["source_id"]
         access = access_by_source.get(source_id)
@@ -53,9 +63,12 @@ def main() -> int:
             continue
         if row["evidence_acceptance_status"] != "not-accepted":
             failures.append(f"{source_id} accepts evidence from probe")
+        expected_probe_url = primary_resolution.get(source_id, access["payload_url_or_status"])
+        if row["probe_url"] != expected_probe_url:
+            failures.append(f"{source_id} probe_url does not match resolved access target")
         if not row["blocked_claims"]:
             failures.append(f"{source_id} missing blocked claims")
-        if access["payload_url_or_status"].startswith("http"):
+        if row["probe_url"].startswith("http"):
             if row["probe_method"] != "http-get-sample":
                 failures.append(f"{source_id} URL source was not probed with HTTP sample")
             if row["http_status"] == "not-applicable":
