@@ -11,6 +11,7 @@ sources:
   - tools/probe_canada_source_payloads.py
   - tools/check_canada_source_payload_probe.py
   - data/international-canada-source-payload-probe-001.csv
+  - data/international-canada-source-payload-resolution-001.csv
   - data/international-canada-source-payload-access-001.csv
   - docs/reviews/international-canada-source-payload-access-001.md
 ---
@@ -20,19 +21,19 @@ sources:
 ## Result
 
 This adds a bounded live probe for Canada source-payload candidates. The probe
-samples URL sources and records HTTP status, final URL, content type, bytes
-sampled, not-accepted evidence posture, blocked claims, and next action. It
-does not cache full payloads, parse source fields, promote fixture replacement,
-or validate Canadian network, approval, SLA, construction, ROI, compliance,
-endorsement, public-readiness, external-readiness, or external validation
-claims.
+uses `data/international-canada-source-payload-resolution-001.csv` when a source
+needs a better access URL than the source-pack landing page, then records HTTP
+status, final URL, content type, bytes sampled, not-accepted evidence posture,
+blocked claims, and next action. It does not cache full payloads, parse source
+fields, promote fixture replacement, or validate Canadian network, approval,
+SLA, construction, ROI, compliance, endorsement, public-readiness,
+external-readiness, or external validation claims.
 
 Probe result summary:
 
-- `CAN-SRC-001` returned HTTP 405 for the simple sampler, so the road-graph
-  source needs a metadata endpoint, browser/FLETCH handoff, or alternate access
-  method before field inventory.
-- `CAN-SRC-002`, `CAN-SRC-003`, and `CAN-SRC-004` returned HTTP 200 HTML samples
+- `CAN-SRC-001` resolves to the Canada NHS ESRI REST service metadata endpoint
+  and returns HTTP 200 for the bounded sampler.
+- `CAN-SRC-002`, `CAN-SRC-003`, and `CAN-SRC-004` return HTTP 200 HTML samples
   and remain not accepted as evidence until field inventory and parser review.
 - `CAN-SRC-005` remains source-needed.
 - `CAN-SRC-SLA-001` remains held.
@@ -66,8 +67,9 @@ Canada source-payload probe gate: PASS
 
 ## Gate
 
-Decision: **canada_source_payload_probe_passed_with_access_gap**
+Decision: **canada_source_payload_probe_passed; field_inventory_held**
 
-Rationale: The probe confirms three URL candidates are reachable by simple HTTP
-sampling and one road-graph URL needs a better metadata access path. The result
-is useful parser intake evidence, not source validation or adapter promotion.
+Rationale: The probe confirms the road-graph source has a usable metadata
+endpoint and the other URL candidates are reachable by bounded HTTP sampling.
+The result is useful parser intake evidence, not source validation or adapter
+promotion.

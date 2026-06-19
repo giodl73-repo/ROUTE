@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ACCESS = ROOT / "data" / "international-canada-source-payload-access-001.csv"
+RESOLUTION = ROOT / "data" / "international-canada-source-payload-resolution-001.csv"
 OUTPUT = ROOT / "data" / "international-canada-source-payload-probe-001.csv"
 USER_AGENT = "ROUTE-Canada-payload-probe/0.1 evidence-not-accepted"
 TIMEOUT_SECONDS = 20
@@ -26,6 +27,7 @@ FIELDS = [
     "probe_id",
     "source_id",
     "payload_url_or_status",
+    "probe_url",
     "probe_method",
     "http_status",
     "final_url",
@@ -39,6 +41,8 @@ FIELDS = [
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
     with path.open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
@@ -65,18 +69,29 @@ def probe_url(url: str) -> tuple[str, str, str, int, str]:
         return "none", url, "unknown", 0, f"probe-error-not-accepted:{type(exc).__name__}"
 
 
+def primary_resolution_by_source() -> dict[str, str]:
+    rows = read_csv(RESOLUTION)
+    return {
+        row["source_id"]: row["resolved_url"]
+        for row in rows
+        if row["probe_priority"] == "primary"
+    }
+
+
 def main() -> int:
     _ = dt.datetime.now(dt.timezone.utc).isoformat()
     rows: list[dict[str, str]] = []
+    resolved_urls = primary_resolution_by_source()
     for access in read_csv(ACCESS):
         source_id = access["source_id"]
         url_or_status = access["payload_url_or_status"]
-        if url_or_status.startswith("http"):
-            status, final_url, content_type, bytes_sampled, result = probe_url(url_or_status)
+        probe_target = resolved_urls.get(source_id, url_or_status)
+        if probe_target.startswith("http"):
+            status, final_url, content_type, bytes_sampled, result = probe_url(probe_target)
             probe_method = "http-get-sample"
         else:
             status = "not-applicable"
-            final_url = url_or_status
+            final_url = probe_target
             content_type = "not-applicable"
             bytes_sampled = 0
             result = access["payload_status"]
@@ -87,6 +102,7 @@ def main() -> int:
                 "probe_id": f"CAN-PROBE-{source_id.replace('CAN-SRC-', '').replace('-', '')}",
                 "source_id": source_id,
                 "payload_url_or_status": url_or_status,
+                "probe_url": probe_target,
                 "probe_method": probe_method,
                 "http_status": status,
                 "final_url": final_url,
