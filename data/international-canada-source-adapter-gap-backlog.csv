@@ -1,0 +1,6 @@
+adapter_field,gap_type,current_decision,required_next_action,blocked_claims
+road_graph,field_mapping_and_source_extraction_required,ready_for_parse_not_promoted,download source metadata and map NHS/base-road fields to link schema,official-network;construction-ready;engineering-precision
+node_catalog,missing_source_custody,source_pack_required,replace centroid fixture nodes with source-custody rows by node class,port-endorsement;terminal-performance;node-completeness
+need_surfaces,field_mapping_and_source_extraction_required,ready_for_parse_not_promoted,convert road/trade-corridor language into bounded need rows,freight-benefit-proof;ROI;funding-eligibility
+service_target_set,held_assumption,assumption_held,document target rationale and keep all target values assumption-labeled,guaranteed-SLA;travel-time-proof;delivery-commitment
+constraint_ledger,missing_source_custody,source_pack_required,create constraint ledger with source-needed and candidate rows,climate-resilience-proof;bottleneck-proof;construction-priority
