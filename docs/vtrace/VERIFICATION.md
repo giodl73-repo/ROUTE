@@ -93,6 +93,7 @@ game, release, or public-readiness claims.
 | External rehearsal packet template exists. | `docs/templates/external-rehearsal-packet-template.md` | draft; venue-specific packet pending |
 | Media resources exist. | `docs/media/README.md`, `docs/media/media-fact-sheet.md`, `docs/media/media-claim-guide.md`, `docs/media/media-q-and-a.md`, `docs/media/media-source-index.md`, `docs/media/media-visual-assets.md` | draft; media-safe reference with claim holds |
 | Media discovery stress test 001 exists. | `docs/reviews/media-discovery-stress-test-001.md` | draft; media discovery pass_with_risk; public readiness held |
+| International network inference portability report exists. | `docs/reports/international-network-inference-portability-report.md` | draft; international portability hypothesis ready; validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -135,6 +136,9 @@ a named venue packet with selected source custody, venue-specific role review,
 and validation closeout, or a lane shift if no technical venue exists. The media
 discovery stress test now records a pass-with-risk internal discovery path for
 reporters and editors while keeping public-readiness and publication claims
+held. The international portability report now defines the portable
+network-inference hypothesis, jurisdiction adapter contract, and first pilot
+ladder while keeping foreign validation and country/region readiness claims
 held.
 
 ## Evidence Ledger
