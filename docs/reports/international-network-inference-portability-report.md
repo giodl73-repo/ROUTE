@@ -426,6 +426,13 @@ candidate, gap, held, evidence-label, and review-backlog tables. They are still
 fixture rows, not parser output from downloaded sources, not a parsed adapter,
 and not a replacement for the Canada hierarchy fixture.
 
+`tools/build_canada_parser_dry_run.py` now regenerates the dry-run tables from
+the Canada source pack, parser preflight ledger, and output contract. This makes
+the Canada dry-run surface reproducible, but it still does not fetch source
+payloads, parse Canadian network data, promote a source-bound adapter, or prove
+official-network, SLA, construction, ROI, compliance, endorsement,
+public-readiness, external-readiness, or validation claims.
+
 ## Product Language
 
 Use:
