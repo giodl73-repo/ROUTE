@@ -453,6 +453,12 @@ other URL candidates return HTTP 200 samples, and all rows remain not accepted
 as evidence. The next Canada parser step is source field inventory, not adapter
 promotion.
 
+`data/international-canada-source-field-inventory-001.csv` now records that
+field inventory: 49 road-graph fields from the resolved ESRI REST layer plus
+held rows for road-context, base-road, trade-need, port/terminal, and service
+target sources. The inventory identifies candidate route, class, and geometry
+fields but does not query features, replace fixtures, or validate source rows.
+
 ## Product Language
 
 Use:
