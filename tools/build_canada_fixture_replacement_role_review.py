@@ -60,8 +60,8 @@ def main() -> None:
             "role_source": ".roles/editorial/scope-keeper.md",
             "input_compared": compared,
             "decision": "pass_with_risk",
-            "finding": "extraction candidates are correctly separate from the dry-run fixture and stay inside review scope",
-            "required_next_step": "keep dry-run fixture unchanged until replacement closeout explicitly changes output ownership",
+            "finding": "source-derived candidates now occupy the internal link fixture under closeout scope",
+            "required_next_step": "keep non-link fixture replacement map adapter and external uses blocked",
             "blocked_claims": BLOCKED,
         },
         {
@@ -70,8 +70,8 @@ def main() -> None:
             "role_source": ".roles/editorial/citation-auditor.md",
             "input_compared": compared,
             "decision": "pass_with_risk",
-            "finding": "source owner date access note evidence label and blocked claims are carried forward on extracted rows",
-            "required_next_step": "add source-row validation evidence before promotion beyond candidate rows",
+            "finding": "source owner date access note evidence label blocked claims and source-row validation are carried into the internal link fixture",
+            "required_next_step": "preserve source custody and blocked claims in any future parser closeout",
             "blocked_claims": BLOCKED,
         },
         {

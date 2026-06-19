@@ -26,7 +26,7 @@ sources:
 
 ## Result
 
-This review compares the current Canada dry-run link fixture with the
+This review compares the current Canada internal link fixture with the
 source-derived extraction candidates.
 
 The extraction candidates are stronger than the dry-run placeholders because
@@ -34,38 +34,37 @@ they carry bounded source attributes: route IDs, route names where present,
 source class, source owner, date, access note, evidence label, and blocked
 claims. That is enough to keep parser extraction work moving.
 
-It is not enough to replace `data/canada_source_link_candidates.csv`.
-Replacement remains held because the candidate rows still have no accepted
-geometry, no parsed adapter promotion, no operational evidence, and no
-jurisdictional authority or delivery evidence. A later candidate-only
-source-row validation gate now closes row matching for this bounded extraction
-table, but that does not change this replacement decision.
+This review originally blocked fixture replacement until role review,
+source-row validation, geometry policy, and a replacement contract closed. The
+later closeout now replaces `data/canada_source_link_candidates.csv` for the
+narrow internal parser link fixture only. Map use, topology proof, parsed
+adapter promotion, operational evidence, and jurisdictional authority or
+delivery evidence remain held.
 
 ## Role Findings
 
 | Role Lane | Decision | Finding | Required Next Step |
 |---|---|---|---|
-| Scope Keeper | pass_with_risk | Extraction candidates are correctly separate from the dry-run fixture and stay inside review scope. | Keep the dry-run fixture unchanged until replacement closeout explicitly changes output ownership. |
-| Citation Auditor | pass_with_risk | Source owner, date, access note, evidence label, and blocked claims are carried forward on extracted rows. | Add source-row validation evidence before promotion beyond candidate rows. |
+| Scope Keeper | pass_with_risk | Source-derived candidates now occupy the internal link fixture under closeout scope. | Keep non-link fixture replacement, map, adapter, and external uses blocked. |
+| Citation Auditor | pass_with_risk | Source owner, date, access note, evidence label, blocked claims, and source-row validation are carried into the internal link fixture. | Preserve source custody and blocked claims in any future parser closeout. |
 | Schematic Cartographer | hold_for_map_or_fixture_use | No-geometry rows cannot support map overlay or topology proof. | Define geometry policy and map-caption posture before any map-facing replacement. |
 | Traffic Engineer | hold_for_operational_claims | Route number, class, and name fields do not prove capacity, reliability, geometry, safety, or throughput. | Require operational source fields or explicit no-operational-claim posture before promotion. |
 | State DOT Planner | hold_for_authority_and_delivery_claims | Extracted rows do not establish Canadian authority review, funding eligibility, project delivery, or designation. | Keep approval, eligibility, delivery, and designation claims blocked unless jurisdiction-specific sources close. |
 
 ## Replacement Decision
 
-Decision: **replacement_review_pass_with_holds; dry_run_fixture_unchanged**
+Decision: **replacement_review_pass_with_holds; internal_link_fixture_replaced**
 
 Allowed language:
 
 - ROUTE has source-derived Canada link-candidate rows for internal parser
   extraction review.
-- Those rows can be compared with the dry-run fixture and role-reviewed before
-  replacement.
-- Fixture replacement is still held.
+- Those rows now occupy the internal parser link fixture under the replacement
+  closeout contract.
+- Internal link-fixture replacement is closed with holds.
 
 Do not say:
 
-- The Canada fixture has been replaced.
 - ROUTE has a parsed Canada adapter.
 - The extracted rows prove an official Canadian network, route designation,
   geometry, topology, operating SLA, reliability, capacity, eligibility,
@@ -101,8 +100,9 @@ Canada fixture replacement role-review gate: PASS
 
 ## Gate
 
-Decision: **replacement_review_pass_with_holds; dry_run_fixture_unchanged**
+Decision: **replacement_review_pass_with_holds; internal_link_fixture_replaced**
 
-Rationale: the extraction candidates are ready for internal parser review, but
-role findings still block fixture replacement, geometry/map use, operational
-claims, authority/delivery claims, parsed-adapter promotion, and external use.
+Rationale: the extraction candidates now occupy the internal link fixture, but
+role findings still block geometry/map use, non-link fixture replacement,
+operational claims, authority/delivery claims, parsed-adapter promotion, and
+external use.

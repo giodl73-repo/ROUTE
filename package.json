@@ -12,6 +12,7 @@
     "check:canada:source-row-validation": "python tools/build_canada_source_row_validation.py && python tools/check_canada_source_row_validation.py",
     "check:canada:geometry-policy": "python tools/build_canada_geometry_policy.py && python tools/check_canada_geometry_policy.py",
     "check:canada:replacement-contract": "python tools/build_canada_fixture_replacement_contract.py && python tools/check_canada_fixture_replacement_contract.py",
+    "check:canada:link-fixture-replacement": "python tools/build_canada_link_fixture_replacement_closeout.py && python tools/check_canada_link_fixture_replacement_closeout.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

@@ -122,6 +122,7 @@ game, release, or public-readiness claims.
 | International Canada source row validation 001 exists. | `docs/reviews/international-canada-source-row-validation-001.md`, `data/international-canada-source-row-validation-001.csv`, `tools/check_canada_source_row_validation.py`, `npm run check:canada:source-row-validation` | draft; candidate source rows validated; fixture replacement held |
 | International Canada geometry policy 001 exists. | `docs/reviews/international-canada-geometry-policy-001.md`, `data/international-canada-geometry-policy-001.csv`, `tools/check_canada_geometry_policy.py`, `npm run check:canada:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
 | International Canada fixture replacement contract 001 exists. | `docs/reviews/international-canada-fixture-replacement-contract-001.md`, `data/international-canada-fixture-replacement-contract-001.csv`, `tools/check_canada_fixture_replacement_contract.py`, `npm run check:canada:replacement-contract` | draft; contract ready for internal link-fixture closeout; map and adapter use held |
+| International Canada link fixture replacement closeout 001 exists. | `docs/reviews/international-canada-link-fixture-replacement-closeout-001.md`, `data/international-canada-link-fixture-replacement-closeout-001.csv`, `tools/check_canada_link_fixture_replacement_closeout.py`, `npm run check:canada:link-fixture-replacement` | draft; internal link fixture replaced; adapter and map use held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -269,6 +270,11 @@ The Canada fixture replacement contract now allows no-geometry source-derived
 rows to proceed only to an internal parser link-candidate fixture closeout,
 while map, topology, adapter, official, operational, approval, ROI,
 public-readiness, and external-readiness uses remain blocked.
+The Canada link-fixture replacement closeout now regenerates
+`data/canada_source_link_candidates.csv` from validated source-derived
+no-geometry candidates while keeping adapter, map, topology, official,
+operational, approval, ROI, public-readiness, external-readiness, and external
+validation uses blocked.
 
 ## Evidence Ledger
 
