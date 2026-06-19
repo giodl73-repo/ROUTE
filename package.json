@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "check:canada": "python tools/build_canada_parser_dry_run.py && python tools/check_canada_parser_dry_run.py",
+    "check:canada": "python tools/build_canada_source_payload_access.py && python tools/check_canada_source_payload_access.py && python tools/build_canada_parser_dry_run.py && python tools/check_canada_parser_dry_run.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

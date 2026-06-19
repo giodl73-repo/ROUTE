@@ -439,6 +439,12 @@ evidence-label coverage, and pending review backlog. A pass means the Canada
 dry-run contract is internally runnable; it is not a source-payload validation
 or service-performance claim.
 
+`data/international-canada-source-payload-access-001.csv` and
+`tools/check_canada_source_payload_access.py` add the next source-payload access
+gate. The gate confirms which Canada source-pack rows are URL cache candidates,
+source-needed, or held before any payload fetch, field inventory, or parser
+extraction claim.
+
 ## Product Language
 
 Use:
