@@ -20,6 +20,8 @@ sources:
   - docs/reports/release-publication-scope-appendix.md
   - docs/reviews/communications-crate-coverage-audit.md
   - docs/reviews/media-discovery-stress-test-001.md
+  - docs/reviews/international-portability-pilot-map-run-001.md
+  - data/international-portability-pilot-map-index.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -116,6 +118,25 @@ candidate network.
 | Review portability | Local role lanes can challenge freight, rural/access, environmental/community, finance, map, and technical claims. | The product treats code output as validation. |
 | Refinement loop | Objections become source packs, constraints, or artifact changes. | Objections are treated as narrative feedback only. |
 
+## Pilot Map Run 001
+
+`docs/reviews/international-portability-pilot-map-run-001.md` implements the
+first compact replicability fixture. It uses the same node/link input shape and
+role inference rule to generate five held-claim schematic maps:
+
+| Pilot | Map | Current Posture |
+|---|---|---|
+| Canada service network | `maps/international/canada-service-network.svg` | replicability fixture generated; validation held |
+| EU Rhine-Alpine region | `maps/international/eu-rhine-alpine-region.svg` | replicability fixture generated; validation held |
+| India logistics spine | `maps/international/india-logistics-spine.svg` | replicability fixture generated; validation held |
+| Japan Pacific Belt | `maps/international/japan-pacific-belt.svg` | replicability fixture generated; validation held |
+| China logistics spine | `maps/international/china-logistics-spine.svg` | replicability fixture generated; validation held |
+
+This is stronger than a concept memo because it produces comparable map
+artifacts from comparable adapter rows. It still does not prove any official
+network, guaranteed SLA, construction priority, ROI, compliance, endorsement,
+or country/region validation.
+
 ## Product Language
 
 Use:
@@ -139,13 +160,13 @@ Avoid:
 
 ## Next Work
 
-1. Create an international adapter template with fields for jurisdiction scope,
-   road graph, node catalog, need surfaces, service target set, constraints,
-   evidence labels, and review roles.
-2. Run a bounded border-gateway pilot first, because ROUTE already has
-   port/border concepts and can test adapter seams without claiming a foreign
-   national network.
-3. Pick one first non-U.S. national or regional pilot and keep it internal until
+1. Promote one generated pilot map into a source-backed adapter with local road
+   graph, node catalog, need surfaces, service target set, constraints, evidence
+   labels, and review roles.
+2. Run a bounded border-gateway source-backed pilot next, because ROUTE already
+   has port/border concepts and can test adapter seams without claiming a
+   foreign national network.
+3. Keep each non-U.S. national or regional pilot internal until
    source custody, local roles, prohibited-claim scan, L0, and any required L1/L2
    evidence close.
 

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980" width="1600" height="980">
+<rect width="1600" height="980" fill="#0f172a"/>
+<rect x="28" y="28" width="1544" height="924" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="60.0" y="78.0" font-family="Arial,sans-serif" font-size="30" fill="#f8fafc" text-anchor="start">China logistics-spine adapter fixture</text>
+<text x="60.0" y="112.0" font-family="Arial,sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">Fixture output: inferred service roles from local adapter rows; not an official network or SLA proof.</text>
+<line x1="899.5" y1="130.0" x2="932.3" y2="162.4" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" opacity="0.9"><title>CHN-L1 T4: capital_port_access</title></line>
+<line x1="932.3" y1="162.4" x2="1109.4" y2="489.6" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CHN-L2 T1: north_coast_to_yangtze</title></line>
+<line x1="1109.4" y1="489.6" x2="998.7" y2="455.2" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>CHN-L3 T2: yangtze_delta_access</title></line>
+<line x1="998.7" y1="455.2" x2="812.4" y2="516.1" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CHN-L4 T1: yangtze_midstream</title></line>
+<line x1="812.4" y1="516.1" x2="490.6" y2="558.8" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>CHN-L5 T2: upper_yangtze_access</title></line>
+<line x1="1109.4" y1="489.6" x2="768.9" y2="825.5" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CHN-L6 T1: coastal_manufacturing_spine</title></line>
+<line x1="768.9" y1="825.5" x2="802.1" y2="850.0" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" opacity="0.9"><title>CHN-L7 T4: pearl_river_export_access</title></line>
+<circle cx="899.5" cy="130.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="917.5" y="122.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Beijing</text>
+<text x="917.5" y="141.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">national_capital</text>
+<circle cx="932.3" cy="162.4" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="950.3" y="154.4" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Tianjin</text>
+<text x="950.3" y="173.4" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="1109.4" cy="489.6" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1127.4" y="481.6" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Shanghai</text>
+<text x="1127.4" y="500.6" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="998.7" cy="455.2" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1016.7" y="447.2" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Nanjing</text>
+<text x="1016.7" y="466.2" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">inland_hub</text>
+<circle cx="812.4" cy="516.1" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="830.4" y="508.1" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Wuhan</text>
+<text x="830.4" y="527.1" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">inland_hub</text>
+<circle cx="490.6" cy="558.8" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="508.6" y="550.8" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Chongqing</text>
+<text x="508.6" y="569.8" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">inland_hub</text>
+<circle cx="768.9" cy="825.5" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="786.9" y="817.5" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Guangzhou</text>
+<text x="786.9" y="836.5" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_gateway</text>
+<circle cx="802.1" cy="850.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="820.1" y="842.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Shenzhen</text>
+<text x="820.1" y="861.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<rect x="44" y="762" width="510" height="148" rx="12" fill="#020617" stroke="#334155"/>
+<text x="60.0" y="784.0" font-family="Arial,sans-serif" font-size="16" fill="#f8fafc" text-anchor="start">Legend</text>
+<line x1="60" y1="812" x2="114" y2="812" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round"/>
+<text x="126.0" y="817.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T1: T1 candidate spine</text>
+<line x1="60" y1="838" x2="114" y2="838" stroke="#059669" stroke-width="6" stroke-linecap="round"/>
+<text x="126.0" y="843.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T2: T2 candidate connector</text>
+<line x1="60" y1="864" x2="114" y2="864" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="869.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T3: T3 candidate access</text>
+<line x1="60" y1="890" x2="114" y2="890" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="895.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T4: T4 candidate terminal/local</text>
+<text x="60.0" y="938.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official plan, construction, guaranteed SLA, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>

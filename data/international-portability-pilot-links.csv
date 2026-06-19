@@ -1,0 +1,30 @@
+pilot_id,link_id,from_node,to_node,road_class_hint,need_class,service_target_hours,confidence,source_status,boundary
+canada-service-network,CAN-L1,YVR,CGY,national_spine,coast_to_inland_freight,48,medium,source-needed,not an official Canadian network or SLA
+canada-service-network,CAN-L2,CGY,WPG,national_spine,prairie_reliability,48,medium,source-needed,not an official Canadian network or SLA
+canada-service-network,CAN-L3,WPG,TOR,national_spine,cross_country_freight,48,medium,source-needed,not an official Canadian network or SLA
+canada-service-network,CAN-L4,TOR,MTL,national_spine,great_lakes_st_lawrence,12,medium,source-needed,not an official Canadian network or SLA
+canada-service-network,CAN-L5,MTL,HFX,regional_connector,atlantic_resilience_access,36,low,source-needed,not an official Canadian network or SLA
+eu-rhine-alpine-region,EUR-L1,RTM,ANR,terminal_connector,port_cluster_access,1,medium,source-needed,not an official EU corridor designation or SLA
+eu-rhine-alpine-region,EUR-L2,ANR,CGN,national_spine,cross_border_freight,12,medium,source-needed,not an official EU corridor designation or SLA
+eu-rhine-alpine-region,EUR-L3,CGN,FRA,national_spine,rhine_industrial_reliability,12,medium,source-needed,not an official EU corridor designation or SLA
+eu-rhine-alpine-region,EUR-L4,FRA,BSL,regional_connector,alpine_gateway,12,low,source-needed,not an official EU corridor designation or SLA
+eu-rhine-alpine-region,EUR-L5,BSL,MIL,regional_connector,alpine_crossing_resilience,12,low,source-needed,not an official EU corridor designation or SLA
+eu-rhine-alpine-region,EUR-L6,MIL,GOA,terminal_connector,mediterranean_port_access,1,low,source-needed,not an official EU corridor designation or SLA
+india-logistics-spine,IND-L1,DEL,JAI,national_spine,north_west_logistics,12,medium,source-needed,not an official Indian corridor or SLA
+india-logistics-spine,IND-L2,JAI,AMD,national_spine,industrial_corridor,12,medium,source-needed,not an official Indian corridor or SLA
+india-logistics-spine,IND-L3,AMD,MUM,national_spine,port_hinterland,12,medium,source-needed,not an official Indian corridor or SLA
+india-logistics-spine,IND-L4,MUM,PUN,regional_connector,metro_industrial_relief,6,medium,source-needed,not an official Indian corridor or SLA
+india-logistics-spine,IND-L5,PUN,CHN,regional_connector,west_south_market_access,36,low,source-needed,not an official Indian corridor or SLA
+japan-pacific-belt,JPN-L1,TKY,NGY,national_spine,pacific_belt_reliability,6,medium,source-needed,not an official Japanese corridor or SLA
+japan-pacific-belt,JPN-L2,NGY,OSA,national_spine,industrial_metro_reliability,6,medium,source-needed,not an official Japanese corridor or SLA
+japan-pacific-belt,JPN-L3,OSA,KOB,terminal_connector,port_cluster_access,1,medium,source-needed,not an official Japanese corridor or SLA
+japan-pacific-belt,JPN-L4,KOB,HIR,regional_connector,western_honshu_resilience,12,low,source-needed,not an official Japanese corridor or SLA
+japan-pacific-belt,JPN-L5,HIR,FUK,regional_connector,kyushu_gateway_access,12,low,source-needed,not an official Japanese corridor or SLA
+japan-pacific-belt,JPN-L6,TKY,SEN,regional_connector,tohoku_resilience_access,12,low,source-needed,not an official Japanese corridor or SLA
+china-logistics-spine,CHN-L1,BEI,TJN,terminal_connector,capital_port_access,1,medium,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L2,TJN,SHG,national_spine,north_coast_to_yangtze,12,medium,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L3,SHG,NKG,regional_connector,yangtze_delta_access,6,medium,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L4,NKG,WUH,national_spine,yangtze_midstream,12,medium,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L5,WUH,CHQ,regional_connector,upper_yangtze_access,24,low,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L6,SHG,GZ,national_spine,coastal_manufacturing_spine,24,medium,source-needed,not an official Chinese corridor or SLA
+china-logistics-spine,CHN-L7,GZ,SZX,terminal_connector,pearl_river_export_access,1,medium,source-needed,not an official Chinese corridor or SLA

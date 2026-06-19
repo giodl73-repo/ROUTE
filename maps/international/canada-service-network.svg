@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980" width="1600" height="980">
+<rect width="1600" height="980" fill="#0f172a"/>
+<rect x="28" y="28" width="1544" height="924" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="60.0" y="78.0" font-family="Arial,sans-serif" font-size="30" fill="#f8fafc" text-anchor="start">Canada service-network adapter fixture</text>
+<text x="60.0" y="112.0" font-family="Arial,sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">Fixture output: inferred service roles from local adapter rows; not an official network or SLA proof.</text>
+<line x1="130.0" y1="446.6" x2="333.7" y2="406.7" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CAN-L1 T1: coast_to_inland_freight</title></line>
+<line x1="333.7" y1="406.7" x2="714.7" y2="432.6" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CAN-L2 T1: prairie_reliability</title></line>
+<line x1="714.7" y1="432.6" x2="1114.4" y2="573.3" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CAN-L3 T1: cross_country_freight</title></line>
+<line x1="1114.4" y1="573.3" x2="1245.2" y2="531.6" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>CAN-L4 T1: great_lakes_st_lawrence</title></line>
+<line x1="1245.2" y1="531.6" x2="1470.0" y2="550.8" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>CAN-L5 T2: atlantic_resilience_access</title></line>
+<circle cx="130.0" cy="446.6" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="148.0" y="438.6" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Vancouver</text>
+<text x="148.0" y="457.6" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="333.7" cy="406.7" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="351.7" y="398.7" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Calgary</text>
+<text x="351.7" y="417.7" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">logistics_hub</text>
+<circle cx="714.7" cy="432.6" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="732.7" y="424.6" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Winnipeg</text>
+<text x="732.7" y="443.6" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">inland_hub</text>
+<circle cx="1114.4" cy="573.3" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1132.4" y="565.3" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Toronto</text>
+<text x="1132.4" y="584.3" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_gateway</text>
+<circle cx="1245.2" cy="531.6" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1263.2" y="523.6" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Montreal</text>
+<text x="1263.2" y="542.6" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="1470.0" cy="550.8" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1488.0" y="542.8" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Halifax</text>
+<text x="1488.0" y="561.8" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<rect x="44" y="762" width="510" height="148" rx="12" fill="#020617" stroke="#334155"/>
+<text x="60.0" y="784.0" font-family="Arial,sans-serif" font-size="16" fill="#f8fafc" text-anchor="start">Legend</text>
+<line x1="60" y1="812" x2="114" y2="812" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round"/>
+<text x="126.0" y="817.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T1: T1 candidate spine</text>
+<line x1="60" y1="838" x2="114" y2="838" stroke="#059669" stroke-width="6" stroke-linecap="round"/>
+<text x="126.0" y="843.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T2: T2 candidate connector</text>
+<line x1="60" y1="864" x2="114" y2="864" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="869.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T3: T3 candidate access</text>
+<line x1="60" y1="890" x2="114" y2="890" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="895.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T4: T4 candidate terminal/local</text>
+<text x="60.0" y="938.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official plan, construction, guaranteed SLA, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>

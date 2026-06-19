@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980" width="1600" height="980">
+<rect width="1600" height="980" fill="#0f172a"/>
+<rect x="28" y="28" width="1544" height="924" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="60.0" y="78.0" font-family="Arial,sans-serif" font-size="30" fill="#f8fafc" text-anchor="start">EU Rhine-Alpine style regional adapter fixture</text>
+<text x="60.0" y="112.0" font-family="Arial,sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">Fixture output: inferred service roles from local adapter rows; not an official network or SLA proof.</text>
+<line x1="578.1" y1="130.0" x2="570.4" y2="197.1" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" opacity="0.9"><title>EUR-L1 T4: port_cluster_access</title></line>
+<line x1="570.4" y1="197.1" x2="815.8" y2="224.0" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>EUR-L2 T1: cross_border_freight</title></line>
+<line x1="815.8" y1="224.0" x2="980.7" y2="303.5" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round" opacity="0.9"><title>EUR-L3 T1: rhine_industrial_reliability</title></line>
+<line x1="980.7" y1="303.5" x2="876.2" y2="548.0" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>EUR-L4 T2: alpine_gateway</title></line>
+<line x1="876.2" y1="548.0" x2="1029.6" y2="749.3" stroke="#059669" stroke-width="6" stroke-linecap="round" opacity="0.9"><title>EUR-L5 T2: alpine_crossing_resilience</title></line>
+<line x1="1029.6" y1="749.3" x2="1004.7" y2="850.0" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" opacity="0.9"><title>EUR-L6 T4: mediterranean_port_access</title></line>
+<circle cx="578.1" cy="130.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="596.1" y="122.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Rotterdam</text>
+<text x="596.1" y="141.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="570.4" cy="197.1" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="588.4" y="189.1" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Antwerp</text>
+<text x="588.4" y="208.1" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<circle cx="815.8" cy="224.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="833.8" y="216.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Cologne</text>
+<text x="833.8" y="235.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_logistics</text>
+<circle cx="980.7" cy="303.5" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="998.7" y="295.5" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Frankfurt</text>
+<text x="998.7" y="314.5" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_logistics</text>
+<circle cx="876.2" cy="548.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="894.2" y="540.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Basel</text>
+<text x="894.2" y="559.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">border_hub</text>
+<circle cx="1029.6" cy="749.3" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1047.6" y="741.3" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Milan</text>
+<text x="1047.6" y="760.3" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">metro_logistics</text>
+<circle cx="1004.7" cy="850.0" r="13" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1022.7" y="842.0" font-family="Arial,sans-serif" font-size="15" fill="#f8fafc" text-anchor="start">Genoa</text>
+<text x="1022.7" y="861.0" font-family="Arial,sans-serif" font-size="12" fill="#94a3b8" text-anchor="start">port_gateway</text>
+<rect x="44" y="762" width="510" height="148" rx="12" fill="#020617" stroke="#334155"/>
+<text x="60.0" y="784.0" font-family="Arial,sans-serif" font-size="16" fill="#f8fafc" text-anchor="start">Legend</text>
+<line x1="60" y1="812" x2="114" y2="812" stroke="#1d4ed8" stroke-width="8" stroke-linecap="round"/>
+<text x="126.0" y="817.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T1: T1 candidate spine</text>
+<line x1="60" y1="838" x2="114" y2="838" stroke="#059669" stroke-width="6" stroke-linecap="round"/>
+<text x="126.0" y="843.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T2: T2 candidate connector</text>
+<line x1="60" y1="864" x2="114" y2="864" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="869.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T3: T3 candidate access</text>
+<line x1="60" y1="890" x2="114" y2="890" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+<text x="126.0" y="895.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">T4: T4 candidate terminal/local</text>
+<text x="60.0" y="938.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official plan, construction, guaranteed SLA, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>
