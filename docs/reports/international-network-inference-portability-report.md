@@ -465,6 +465,12 @@ records five feature-attribute rows for parser intake while keeping feature
 validation, fixture replacement, official-network, SLA, construction, ROI,
 compliance, endorsement, public-readiness, and external-readiness claims held.
 
+`data/international-canada-parser-mapping-ledger-001.csv` maps the resolved
+road-graph fields into the dry-run output contract: class fields map cleanly,
+route-number/name fields are present but sampled as `None` in the bounded first
+rows, and geometry remains a reference candidate only. The next Canada parser
+step is broader filtered extraction, not fixture replacement.
+
 ## Product Language
 
 Use:
