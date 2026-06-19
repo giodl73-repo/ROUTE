@@ -29,6 +29,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-validation-preflight-001.md
   - docs/reviews/external-rehearsal-technical-prevenue-closeout-001.md
   - docs/reviews/media-discovery-stress-test-001.md
+  - docs/reports/international-network-inference-portability-report.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -202,6 +203,7 @@ numeric overreach:
 | External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Media resources | Draft | Media-safe reference package; gives fact sheet, claim guide, Q&A, source index, visual-assets guide, source pointers, caption pattern, verification checklist, and red lines while holding official-plan, construction, SLA, ROI, eligibility, compliance, endorsement, approval, public-readiness, and external-readiness claims. |
 | Media discovery stress test 001 | Draft | Internal discovery test passes with risk for reporter/editor use of media resources; no press release, public launch, publication approval, agency review, endorsement, public-readiness, or external-readiness claim. |
+| International network inference portability report | Draft | Product hypothesis for inferring country/region service networks from roads, needs, service targets, constraints, and evidence labels; no foreign agency review, official network, guaranteed SLA, ROI, compliance, endorsement, public-readiness, or external-readiness claim. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
 | Industry/stakeholder source fixture campaign | Draft | Executable fixture backlog for freight, rural/agriculture, state DOT, community/environmental, non-driving access, resilience, ROI/cost, and technical rehearsal lanes; STAKE-FIX-001 through STAKE-FIX-009 are populated, and validation/endorsement claims remain held. |
 | Industry/stakeholder fixture closeout report | Draft | Package-level closeout for the nine bounded internal fixtures; confirms representation and source-gated workflow while holding industry validation, stakeholder endorsement, agency review, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, external-readiness, and broad acceptance claims. |
