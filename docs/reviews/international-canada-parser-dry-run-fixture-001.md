@@ -8,6 +8,7 @@ author: codex
 created: 2026-06-19
 updated: 2026-06-19
 sources:
+  - tools/build_canada_parser_dry_run.py
   - data/international-canada-parser-output-contract-001.csv
   - docs/reviews/international-canada-parser-output-contract-001.md
   - data/canada_source_link_candidates.csv
@@ -22,10 +23,11 @@ sources:
 
 ## Result
 
-This creates a contract-conforming Canada parser dry-run fixture. It emits
-candidate, gap, held, evidence-label, and review-backlog tables using existing
-declared source custody. It does not download sources, implement a parser,
-replace fixture links, or promote a parsed Canada adapter.
+This creates a contract-conforming Canada parser dry-run fixture. The fixture
+can be regenerated with `python tools\build_canada_parser_dry_run.py`, which
+emits candidate, gap, held, evidence-label, and review-backlog tables using
+existing declared source custody. It does not download sources, implement a
+source parser, replace fixture links, or promote a parsed Canada adapter.
 
 It does not create official Canadian network, route designation, Transport
 Canada/provincial/port approval, guaranteed SLA, construction, ROI,
@@ -60,6 +62,7 @@ promoting claims:
 | Check | Command / Inspection | Result | Evidence |
 |---|---|---|---|
 | Contract conformance | compare fixture tables against output contract columns, labels, and acceptance rules | pass | dry-run tables use contract columns and required labels |
+| Generator run | `python tools\build_canada_parser_dry_run.py` | pass | generator rewrites all six dry-run fixture tables |
 | Evidence-label coverage | compare emitted rows to `data/canada_adapter_evidence_labels.csv` | pass | candidate, gap, and held rows have matching evidence-label rows |
 | Claim-boundary scan | scan dry-run fixture and edited index surfaces | pass | hits are guardrail, held, or do-not-infer contexts |
 | L0 | `npm run check:l0` | pass | workspace lib/bin tests passed |
