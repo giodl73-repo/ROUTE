@@ -459,6 +459,12 @@ held rows for road-context, base-road, trade-need, port/terminal, and service
 target sources. The inventory identifies candidate route, class, and geometry
 fields but does not query features, replace fixtures, or validate source rows.
 
+`data/international-canada-road-graph-feature-sample-001.csv` then performs a
+bounded no-geometry source query against the resolved road-graph layer. It
+records five feature-attribute rows for parser intake while keeping feature
+validation, fixture replacement, official-network, SLA, construction, ROI,
+compliance, endorsement, public-readiness, and external-readiness claims held.
+
 ## Product Language
 
 Use:

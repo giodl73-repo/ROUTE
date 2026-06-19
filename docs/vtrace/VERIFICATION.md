@@ -114,6 +114,7 @@ game, release, or public-readiness claims.
 | International Canada source payload access 001 exists. | `docs/reviews/international-canada-source-payload-access-001.md`, `data/international-canada-source-payload-access-001.csv`, `tools/check_canada_source_payload_access.py`, `npm run check:canada` | draft; Canada source-payload access gate passes; fetch and payload validation held |
 | International Canada source payload probe 001 exists. | `docs/reviews/international-canada-source-payload-probe-001.md`, `data/international-canada-source-payload-probe-001.csv`, `data/international-canada-source-payload-resolution-001.csv`, `tools/check_canada_source_payload_probe.py`, `npm run check:canada:probe` | draft; Canada source-payload probe passes; payload validation held |
 | International Canada source field inventory 001 exists. | `docs/reviews/international-canada-source-field-inventory-001.md`, `data/international-canada-source-field-inventory-001.csv`, `tools/check_canada_source_field_inventory.py`, `npm run check:canada:inventory` | draft; Canada source field inventory passes; feature extraction held |
+| International Canada road-graph feature sample 001 exists. | `docs/reviews/international-canada-road-graph-feature-sample-001.md`, `data/international-canada-road-graph-feature-sample-001.csv`, `tools/check_canada_road_graph_feature_sample.py`, `npm run check:canada:sample` | draft; Canada road-graph feature sample passes; fixture replacement held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -233,6 +234,9 @@ adapter promotion, and performance claims held.
 The Canada source field inventory now records road-graph field candidates from
 resolved ESRI REST metadata while keeping feature queries, fixture replacement,
 source validation, and adapter promotion held.
+The Canada road-graph feature sample now executes a bounded no-geometry source
+query while keeping source-row validation, geometry acceptance, fixture
+replacement, and adapter promotion held.
 
 ## Evidence Ledger
 
