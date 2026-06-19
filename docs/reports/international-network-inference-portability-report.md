@@ -445,6 +445,12 @@ gate. The gate confirms which Canada source-pack rows are URL cache candidates,
 source-needed, or held before any payload fetch, field inventory, or parser
 extraction claim.
 
+`data/international-canada-source-payload-probe-001.csv` records a bounded live
+probe: three URL sources returned HTTP 200 HTML samples, the Geo.ca map-browser
+road-graph URL returned HTTP 405 for the simple sampler, and all rows remain
+not accepted as evidence. The next Canada parser step is a road-graph metadata
+access path and field inventory, not adapter promotion.
+
 ## Product Language
 
 Use:

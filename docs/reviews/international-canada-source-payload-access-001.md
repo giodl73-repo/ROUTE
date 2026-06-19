@@ -8,6 +8,8 @@ author: codex
 created: 2026-06-19
 updated: 2026-06-19
 sources:
+  - tools/probe_canada_source_payloads.py
+  - tools/check_canada_source_payload_probe.py
   - tools/build_canada_source_payload_access.py
   - tools/check_canada_source_payload_access.py
   - data/international-canada-source-payload-access-001.csv
@@ -35,6 +37,9 @@ dry-run fixture, promote a parsed adapter, or create official Canadian network,
 route designation, Transport Canada/provincial/port approval, guaranteed SLA,
 construction, ROI, eligibility, compliance, endorsement, public-readiness,
 external-readiness, or external validation claims.
+
+`npm run check:canada:probe` may be used after this gate to record live URL
+reachability metadata. Probe output remains not accepted as evidence.
 
 ## Command Closeout
 
