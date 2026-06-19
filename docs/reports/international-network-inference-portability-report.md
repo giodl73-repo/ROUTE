@@ -482,6 +482,12 @@ filtered sample into separate link-candidate extraction rows. They follow the
 dry-run link-candidate shape but remain outside the fixture table until role
 review, geometry policy, source-row validation, and replacement closeout pass.
 
+`data/international-canada-fixture-replacement-role-review-001.csv` runs that
+role review against the current dry-run link fixture. It confirms the extraction
+candidates are stronger than placeholders for internal parser review, but it
+keeps fixture replacement, map/topology use, operational claims, authority
+claims, parsed-adapter promotion, and external use held.
+
 ## Product Language
 
 Use:
