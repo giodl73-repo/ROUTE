@@ -15,6 +15,7 @@ sources:
   - docs/how-to/external-rehearsal-technical-demo-script.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/reviews/communications-external-rehearsal-readiness.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
@@ -89,6 +90,7 @@ required L1/L2 evidence close.
 | Five-minute technical demo script | pass_with_risk | The script compresses the loop from requirement to source posture, command, artifact, hold, and next evidence while keeping external use held. |
 | Technical demo run 001 | pass_with_risk | Internal timeboxed run shows the loop can be delivered in five minutes; real venue, source custody, and external closeout remain held. |
 | Technical source custody preflight 001 | pass_with_risk | Preflight rows identify source custody candidates and venue-specific missing fields; they do not close a real packet. |
+| Technical venue role preflight 001 | pass_with_risk | Role-rerun contract identifies which `.roles` lanes must be rerun for a named venue; it is not a venue-specific role review. |
 | Round 5 demo capture | pass_with_risk | Command capture can be inspected; it does not prove public release, network operation, or service performance. |
 | Source operations roadmap | pass_with_risk | Explains source-needed to source-backed workflow; it does not mean the evidence corpus is complete. |
 | Optimizer appendix | pass_with_risk | Shows artifact lineage and held-known rows; no final optimization, construction, or service claim. |
@@ -133,8 +135,8 @@ required L1/L2 evidence close.
 
 1. Keep the external rehearsal packet held until a named venue, presenter,
    recorder, selected final materials, and venue-specific source custody exist.
-2. Select or replace the source custody preflight rows before any external use
-   of the technical demo.
+2. Select or replace the source custody preflight rows and run the venue role
+   preflight before any external use of the technical demo.
 
 ## Validation Closeout
 

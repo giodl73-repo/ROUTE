@@ -25,6 +25,7 @@ sources:
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/how-to/external-rehearsal-technical-venue-packet-scaffold.md
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -192,6 +193,7 @@ numeric overreach:
 | External rehearsal technical demo run 001 | Draft | Internal timeboxed run passes with risk for the five-minute requirement-to-evidence loop; no real agency review, technical signoff, public-readiness, or external-readiness claim. |
 | External rehearsal technical venue packet scaffold | Draft | Pre-fill gate for a named technical venue packet; names required venue, material, source custody, role, and validation fields without claiming a real venue packet or external readiness. |
 | External rehearsal technical source custody preflight 001 | Draft | Candidate source-custody rows for a future technical venue packet; no real source handoff, venue packet, agency review, technical signoff, public-readiness, or external-readiness claim. |
+| External rehearsal technical venue role preflight 001 | Draft | Role-rerun contract for a future named technical venue packet; no venue-specific role review, agency review, technical signoff, public-readiness, or external-readiness claim. |
 | External rehearsal packet template | Draft | Fillable packet for venue, selected materials, source-backed fixture, role review, presenter controls, and validation; does not represent a completed rehearsal. |
 | Media resources | Draft | Media-safe reference package; gives fact sheet, claim guide, Q&A, source index, visual-assets guide, source pointers, caption pattern, verification checklist, and red lines while holding official-plan, construction, SLA, ROI, eligibility, compliance, endorsement, approval, public-readiness, and external-readiness claims. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |

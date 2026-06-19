@@ -13,6 +13,7 @@ sources:
   - docs/how-to/external-rehearsal-packet-selection-runbook.md
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
+  - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/source-backed-stakeholder-fixture-009.md
   - docs/evidence/round5-demo-capture.md
@@ -79,7 +80,7 @@ venue, reviewer class, presenter, recorder, and material set are known.
 | Presenter and recorder | Accountability for statements, intake, dissent, and follow-up source tasks is not assigned. | Name presenter and recorder before any external rehearsal. |
 | Selected final material set | The default material set is too broad for a real packet. | Include/exclude each artifact deliberately. |
 | Source custody owner | Repo-local ownership does not equal packet handoff ownership. | Assign a named source owner or accountable role for the packet. |
-| Venue-specific role review | Candidate role review is not a named venue review. | Re-run required roles against the selected venue and materials. |
+| Venue-specific role review | Candidate role review is not a named venue review. | Use the technical venue role preflight, then re-run required roles against the selected venue and materials. |
 | Validation closeout | Claims can drift after packet edits. | Run prohibited-claim scan, L0, and scoped L1/L2 after the packet is filled. |
 
 ## Presenter Custody Prompts
@@ -113,7 +114,7 @@ one, the packet stays held.
 |---|---|
 | Only this preflight exists. | hold_external_rehearsal |
 | Venue exists but source custody owner is unnamed. | hold_external_rehearsal |
-| Source custody rows are selected but role rows are not rerun. | hold_external_rehearsal |
+| Source custody rows are selected but role rows are not rerun through the venue role preflight. | hold_external_rehearsal |
 | Role rows pass but validation closeout is missing. | hold_external_rehearsal |
 | Venue, source custody, role rows, validation, and safe closing ask are all recorded. | eligible_for_named_packet_review |
 
@@ -121,7 +122,8 @@ one, the packet stays held.
 
 1. When a real venue exists, copy the external rehearsal packet template and
    import only the selected custody rows.
-2. Re-run venue-specific roles before any packet is described as usable.
+2. Use `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md`
+   before any packet is described as usable.
 3. Keep all external rehearsal, agency review, public readiness, and technical
    signoff claims held until packet validation closes.
 

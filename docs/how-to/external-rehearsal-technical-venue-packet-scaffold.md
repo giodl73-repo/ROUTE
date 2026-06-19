@@ -14,6 +14,7 @@ sources:
   - docs/reviews/external-rehearsal-packet-candidate-001.md
   - docs/reviews/external-rehearsal-technical-demo-run-001.md
   - docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md
+  - docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md
   - docs/reviews/external-rehearsal-technical-candidate-role-review.md
   - docs/reports/route-evidence-posture.md
   - docs/decks/split-deck-presenter-guide.md
@@ -48,6 +49,7 @@ answer.
 | Material set | Final list of included and excluded files. | hold |
 | Primary fixture anchor | STAKE-FIX-009 or new venue-specific source pack. | STAKE-FIX-009 internal only |
 | Source custody preflight | Selected source rows for the technical packet. | `docs/reviews/external-rehearsal-technical-source-custody-preflight-001.md` ready; venue-specific selection held |
+| Venue role preflight | Required `.roles` rerun contract for the named technical packet. | `docs/reviews/external-rehearsal-technical-venue-role-preflight-001.md` ready; venue-specific review held |
 | Closing ask | Technical evidence review or demo fixture. | proposed; not venue-approved |
 | Validation plan | Prohibited-claim scan, L0, and scoped L1/L2 if selected claims require them. | required at closeout |
 
