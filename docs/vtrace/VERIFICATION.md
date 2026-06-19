@@ -120,6 +120,7 @@ game, release, or public-readiness claims.
 | International Canada parser extraction candidates 001 exists. | `docs/reviews/international-canada-parser-extraction-candidates-001.md`, `data/international-canada-parser-extraction-candidates-001.csv`, `tools/check_canada_parser_extraction_candidates.py`, `npm run check:canada:extract` | draft; Canada parser extraction candidates pass; fixture replacement held |
 | International Canada fixture replacement role review 001 exists. | `docs/reviews/international-canada-fixture-replacement-role-review-001.md`, `data/international-canada-fixture-replacement-role-review-001.csv`, `tools/check_canada_fixture_replacement_role_review.py`, `npm run check:canada:replacement-review` | draft; replacement review pass_with_holds; dry-run fixture unchanged |
 | International Canada source row validation 001 exists. | `docs/reviews/international-canada-source-row-validation-001.md`, `data/international-canada-source-row-validation-001.csv`, `tools/check_canada_source_row_validation.py`, `npm run check:canada:source-row-validation` | draft; candidate source rows validated; fixture replacement held |
+| International Canada geometry policy 001 exists. | `docs/reviews/international-canada-geometry-policy-001.md`, `data/international-canada-geometry-policy-001.csv`, `tools/check_canada_geometry_policy.py`, `npm run check:canada:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -260,6 +261,9 @@ The Canada source-row validation gate now matches the five extraction
 candidates to their bounded filtered sample rows while keeping fixture
 replacement, geometry acceptance, parsed-adapter promotion, operational claims,
 authority claims, and external validation held.
+The Canada geometry policy gate now rejects geometry for the current candidate
+set and names prerequisites for any future geometry intake before topology,
+map overlay, fixture replacement, or adapter promotion.
 
 ## Evidence Ledger
 
