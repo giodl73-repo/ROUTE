@@ -488,6 +488,12 @@ candidates are stronger than placeholders for internal parser review, but it
 keeps fixture replacement, map/topology use, operational claims, authority
 claims, parsed-adapter promotion, and external use held.
 
+`data/international-canada-source-row-validation-001.csv` validates each
+extraction candidate against its bounded filtered source row. Candidate
+source-row matching now passes for the five-row extraction table, while
+geometry acceptance, fixture replacement, parsed-adapter promotion, operational
+claims, authority claims, and external validation remain held.
+
 ## Product Language
 
 Use:
