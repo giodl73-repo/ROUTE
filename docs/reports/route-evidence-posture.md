@@ -41,6 +41,8 @@ sources:
   - docs/reviews/international-canada-source-adapter-readiness-001.md
   - docs/reviews/international-canada-candidate-hierarchy-map-001.md
   - data/international-canada-candidate-hierarchy.csv
+  - docs/reviews/international-canada-hierarchy-iteration-001.md
+  - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
@@ -219,6 +221,7 @@ numeric overreach:
 | International Canada source adapter preflight 001 | Draft | Canada pilot source-custody candidates, adapter coverage rows, and source overlay map exist; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | International Canada source adapter readiness 001 | Draft | Canada field map, readiness ledger, and gap backlog are generated from source-custody and coverage rows; no parsed source adapter, official Canadian network, agency review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | International Canada candidate hierarchy map 001 | Draft | Canada T1/T2/T3 candidate hierarchy SVG is generated from explicit held rows; no official Canadian network, route designation, agency/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
+| International Canada hierarchy iteration 001 | Draft | Canada v1 hierarchy is scored and repaired into a v2 SVG map; no official Canadian network, route designation, agency/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
 | Industry/stakeholder source fixture campaign | Draft | Executable fixture backlog for freight, rural/agriculture, state DOT, community/environmental, non-driving access, resilience, ROI/cost, and technical rehearsal lanes; STAKE-FIX-001 through STAKE-FIX-009 are populated, and validation/endorsement claims remain held. |
 | Industry/stakeholder fixture closeout report | Draft | Package-level closeout for the nine bounded internal fixtures; confirms representation and source-gated workflow while holding industry validation, stakeholder endorsement, agency review, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, external-readiness, and broad acceptance claims. |
