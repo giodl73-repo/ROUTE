@@ -494,6 +494,11 @@ source-row matching now passes for the five-row extraction table, while
 geometry acceptance, fixture replacement, parsed-adapter promotion, operational
 claims, authority claims, and external validation remain held.
 
+`data/international-canada-geometry-policy-001.csv` makes the geometry boundary
+explicit: the current Canada candidates remain no-geometry rows. Geometry,
+topology, map overlay, fixture replacement, and adapter promotion require a
+separate geometry intake fixture and role review.
+
 ## Product Language
 
 Use:
