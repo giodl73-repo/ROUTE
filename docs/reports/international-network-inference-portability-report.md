@@ -35,6 +35,9 @@ sources:
   - docs/reviews/international-canada-hierarchy-iteration-001.md
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - maps/international/canada-candidate-hierarchy-v2.svg
+  - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
+  - data/international-eu-rhine-alpine-candidate-hierarchy-v2.csv
+  - maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -224,6 +227,27 @@ portable to the EU, India, Japan, China, or other regional pilots, but it still
 does not produce official networks, guaranteed SLAs, construction priorities,
 ROI claims, compliance findings, endorsements, public-readiness, or
 external-readiness.
+
+## EU Rhine-Alpine Hierarchy Iteration 001
+
+`docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md` applies
+the same score-repair-render loop to a second region:
+
+`maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg`
+
+The iteration keeps the port-cluster and Rhine-Alpine spine visible while adding
+alternate access candidates:
+
+- Basel-Lyon is added as a T2 alternate regional connector.
+- Cologne-Strasbourg is added as a T3 cross-border access feeder.
+- Alpine T1 candidates remain visible with constraint risk held.
+- Governance, TEN-T/source binding, member-state approval, and SLA claims remain
+  held.
+
+This confirms the process is portable beyond Canada. It does not validate an EU
+corridor, member-state agreement, official designation, guaranteed SLA,
+construction priority, ROI, eligibility, compliance, endorsement,
+public-readiness, or external-readiness claim.
 
 ## Product Language
 

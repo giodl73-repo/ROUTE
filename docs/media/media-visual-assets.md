@@ -23,6 +23,7 @@ sources:
   - docs/reviews/international-canada-candidate-hierarchy-map-001.md
   - data/international-canada-candidate-hierarchy-v2.csv
   - docs/reviews/international-canada-hierarchy-iteration-001.md
+  - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -81,6 +82,7 @@ If space is tight:
 | Canada source-custody overlay | `maps/international/canada-source-custody-preflight.svg` | Show how a country pilot moves from map fixture to visible source-candidate/source-needed adapter coverage. | Preflight review surface only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 | Canada candidate hierarchy | `maps/international/canada-candidate-hierarchy.svg` | Show a concrete T1/T2/T3 candidate hierarchy result for Canada from ROUTE-held rows. | Candidate result only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 | Canada candidate hierarchy v2 | `maps/international/canada-candidate-hierarchy-v2.svg` | Show the score-repair-render iteration result for Canada, including tier and coverage repairs. | Candidate iteration only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
+| EU Rhine-Alpine candidate hierarchy v2 | `maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg` | Show the score-repair-render iteration result for a second region, including cross-border spine, port connectors, and alternate access candidates. | Candidate iteration only; no official EU corridor designation, member-state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 
 ## Do Not Use Visuals To Claim
 
