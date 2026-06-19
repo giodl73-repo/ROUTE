@@ -10,6 +10,7 @@ updated: 2026-06-19
 sources:
   - tools/build_canada_parser_mapping_ledger.py
   - tools/check_canada_parser_mapping_ledger.py
+  - data/international-canada-road-graph-filtered-route-sample-001.csv
   - data/international-canada-parser-mapping-ledger-001.csv
   - data/international-canada-source-field-inventory-001.csv
   - data/international-canada-road-graph-feature-sample-001.csv
@@ -32,6 +33,10 @@ The sampled rows show useful class values (`Expressway / Highway`, `Core`) but
 route number/name are `None` in the bounded five-row sample. That is a parser
 intake finding, not a failure: fixture replacement still requires broader
 feature extraction, filtering, geometry policy, and review.
+
+`data/international-canada-road-graph-filtered-route-sample-001.csv` now closes
+that narrow intake question by showing usable route number/name attributes in a
+bounded no-geometry route sample. The mapping ledger remains candidate-only.
 
 The ledger does not replace dry-run fixtures, accept geometry, validate source
 rows, promote a parsed adapter, or create official Canadian network, route
