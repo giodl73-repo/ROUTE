@@ -104,6 +104,7 @@ game, release, or public-readiness claims.
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
+| International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -189,6 +190,10 @@ ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
 construction, ROI, eligibility, compliance, endorsement, public-readiness,
 external-readiness, and validation holds.
+The international source-bound next step adds a cross-region scoring rubric and
+adapter source-pack template so future promotion work starts with source
+custody, field mapping, role review, and claim scans instead of treating maps
+as proof.
 
 ## Evidence Ledger
 

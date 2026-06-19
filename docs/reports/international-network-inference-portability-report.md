@@ -49,6 +49,8 @@ sources:
   - maps/international/china-candidate-hierarchy-v2.svg
   - docs/reviews/international-hierarchy-replication-closeout-001.md
   - data/international-hierarchy-replication-summary-001.csv
+  - data/international-cross-region-scoring-rubric-001.csv
+  - docs/templates/source-packs/international-adapter-source-pack-template.md
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -341,6 +343,15 @@ Rhine-Alpine, India, Japan, and China each repair that pressure in different
 local terms while preserving source-bound, official-network, SLA, construction,
 ROI, compliance, endorsement, public-readiness, external-readiness, and
 validation holds.
+
+## Source-Bound Next Step 001
+
+The replication ladder now has two source-bound follow-through artifacts:
+
+| Artifact | Path | Use | Boundary |
+|---|---|---|---|
+| Cross-region scoring rubric | `data/international-cross-region-scoring-rubric-001.csv` | Compare coverage, tier fit, freight value, resilience, regional access, source readiness, SLA plausibility, and claim discipline across regions. | Scores are review indices, not rankings, funding priorities, official readiness, or ROI. |
+| International adapter source-pack template | `docs/templates/source-packs/international-adapter-source-pack-template.md` | Collect road graph, node, need, terminal, hazard, governance, and service-target source custody before adapter promotion. | Source rows do not create official network, approval, policy alignment, SLA, construction, ROI, compliance, endorsement, public-readiness, or external validation claims. |
 
 ## Product Language
 
