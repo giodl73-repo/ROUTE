@@ -97,6 +97,7 @@ game, release, or public-readiness claims.
 | International portability pilot map run 001 exists. | `docs/reviews/international-portability-pilot-map-run-001.md`, `maps/international/*.svg`, `data/international-portability-pilot-inference.csv` | draft; international pilot maps generated; validation held |
 | International Canada source adapter preflight 001 exists. | `docs/reviews/international-canada-source-adapter-preflight-001.md`, `data/international-canada-source-custody-preflight.csv`, `data/international-canada-adapter-coverage-preflight.csv`, `maps/international/canada-source-custody-preflight.svg` | draft; Canada source adapter preflight ready; validation held |
 | International Canada source adapter readiness 001 exists. | `docs/reviews/international-canada-source-adapter-readiness-001.md`, `data/international-canada-adapter-field-map.csv`, `data/international-canada-source-adapter-readiness.csv`, `data/international-canada-source-adapter-gap-backlog.csv` | draft; Canada adapter readiness generated; validation held |
+| International Canada candidate hierarchy map 001 exists. | `docs/reviews/international-canada-candidate-hierarchy-map-001.md`, `data/international-canada-candidate-hierarchy.csv`, `maps/international/canada-candidate-hierarchy.svg` | draft; Canada candidate hierarchy map generated; validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -153,7 +154,10 @@ public-readiness, and external-readiness claims held. The Canada adapter
 readiness run now turns those rows into a machine-readable field map, readiness
 ledger, and gap backlog while keeping parsed-adapter, official-network,
 agency-review, SLA, construction, ROI, eligibility, compliance, endorsement,
-public-readiness, and external-readiness claims held.
+public-readiness, and external-readiness claims held. The Canada candidate
+hierarchy map now renders a concrete T1/T2/T3 result while keeping official
+network, route-designation, agency-review, SLA, construction, ROI, eligibility,
+compliance, endorsement, public-readiness, and external-readiness claims held.
 
 ## Evidence Ledger
 

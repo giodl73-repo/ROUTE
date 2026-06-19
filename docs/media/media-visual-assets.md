@@ -19,6 +19,8 @@ sources:
   - docs/reviews/international-portability-pilot-map-run-001.md
   - docs/reviews/international-canada-source-adapter-preflight-001.md
   - data/international-canada-adapter-coverage-preflight.csv
+  - data/international-canada-candidate-hierarchy.csv
+  - docs/reviews/international-canada-candidate-hierarchy-map-001.md
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -75,6 +77,7 @@ If space is tight:
 | Corridor context | `maps/i5.png`, `maps/i10.png`, `maps/i35.png`, `maps/i40.png`, `maps/i75.png`, `maps/i80.png`, `maps/i90.png`, `maps/i95.png` | Give context for named T1 corridor surfaces. | Corridor maps are context, not construction or ROI recommendations. |
 | International portability fixture | `maps/international/canada-service-network.svg`, `maps/international/eu-rhine-alpine-region.svg`, `maps/international/india-logistics-spine.svg`, `maps/international/japan-pacific-belt.svg`, `maps/international/china-logistics-spine.svg` | Show that the same adapter-to-inference-to-map workflow can generate comparable held-claim service-network fixtures across regions. | Replicability fixture only; no official network, country/regional approval, SLA, construction, ROI, compliance, endorsement, validation, or public-readiness claim. |
 | Canada source-custody overlay | `maps/international/canada-source-custody-preflight.svg` | Show how a country pilot moves from map fixture to visible source-candidate/source-needed adapter coverage. | Preflight review surface only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
+| Canada candidate hierarchy | `maps/international/canada-candidate-hierarchy.svg` | Show a concrete T1/T2/T3 candidate hierarchy result for Canada from ROUTE-held rows. | Candidate result only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 
 ## Do Not Use Visuals To Claim
 
