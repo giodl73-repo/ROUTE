@@ -38,6 +38,9 @@ sources:
   - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
   - data/international-eu-rhine-alpine-candidate-hierarchy-v2.csv
   - maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg
+  - docs/reviews/international-india-hierarchy-iteration-001.md
+  - data/international-india-candidate-hierarchy-v2.csv
+  - maps/international/india-candidate-hierarchy-v2.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -248,6 +251,27 @@ This confirms the process is portable beyond Canada. It does not validate an EU
 corridor, member-state agreement, official designation, guaranteed SLA,
 construction priority, ROI, eligibility, compliance, endorsement,
 public-readiness, or external-readiness claim.
+
+## India Hierarchy Iteration 001
+
+`docs/reviews/international-india-hierarchy-iteration-001.md` applies the same
+score-repair-render loop to a third region:
+
+`maps/international/india-candidate-hierarchy-v2.svg`
+
+The iteration converts fixture critique into concrete row changes:
+
+- Ahmedabad-Mumbai is repaired from fixture T4 to T1.
+- Mumbai-Pune is up-tiered to T1.
+- Lucknow and Bengaluru are added as regional connectors.
+- Port access is separated into T3 feeders.
+- Hyderabad is added as an inland access candidate.
+
+This strengthens the replicability story by showing the process can find and
+repair hierarchy errors in another geography. It does not validate an Indian
+corridor, national/state approval, official designation, guaranteed SLA,
+construction priority, ROI, eligibility, compliance, endorsement,
+public-readiness, external-readiness, or external validation claim.
 
 ## Product Language
 

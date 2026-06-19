@@ -24,6 +24,7 @@ sources:
   - data/international-canada-candidate-hierarchy-v2.csv
   - docs/reviews/international-canada-hierarchy-iteration-001.md
   - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
+  - docs/reviews/international-india-hierarchy-iteration-001.md
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -83,6 +84,7 @@ If space is tight:
 | Canada candidate hierarchy | `maps/international/canada-candidate-hierarchy.svg` | Show a concrete T1/T2/T3 candidate hierarchy result for Canada from ROUTE-held rows. | Candidate result only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 | Canada candidate hierarchy v2 | `maps/international/canada-candidate-hierarchy-v2.svg` | Show the score-repair-render iteration result for Canada, including tier and coverage repairs. | Candidate iteration only; no official Canadian network, Transport Canada/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 | EU Rhine-Alpine candidate hierarchy v2 | `maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg` | Show the score-repair-render iteration result for a second region, including cross-border spine, port connectors, and alternate access candidates. | Candidate iteration only; no official EU corridor designation, member-state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
+| India candidate hierarchy v2 | `maps/international/india-candidate-hierarchy-v2.svg` | Show score-repair-render iteration for a third region, including logistics spine repair and port feeder separation. | Candidate iteration only; no official Indian corridor, national/state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, validation, or public-readiness claim. |
 
 ## Do Not Use Visuals To Claim
 
