@@ -9,6 +9,7 @@ created: 2026-06-19
 updated: 2026-06-19
 sources:
   - tools/build_canada_parser_dry_run.py
+  - tools/check_canada_parser_dry_run.py
   - data/international-canada-parser-output-contract-001.csv
   - docs/reviews/international-canada-parser-output-contract-001.md
   - data/canada_source_link_candidates.csv
@@ -63,6 +64,7 @@ promoting claims:
 |---|---|---|---|
 | Contract conformance | compare fixture tables against output contract columns, labels, and acceptance rules | pass | dry-run tables use contract columns and required labels |
 | Generator run | `python tools\build_canada_parser_dry_run.py` | pass | generator rewrites all six dry-run fixture tables |
+| Dry-run gate | `python tools\check_canada_parser_dry_run.py` | pass | columns, labels, source limits, evidence coverage, and role backlog pass |
 | Evidence-label coverage | compare emitted rows to `data/canada_adapter_evidence_labels.csv` | pass | candidate, gap, and held rows have matching evidence-label rows |
 | Claim-boundary scan | scan dry-run fixture and edited index surfaces | pass | hits are guardrail, held, or do-not-infer contexts |
 | L0 | `npm run check:l0` | pass | workspace lib/bin tests passed |
