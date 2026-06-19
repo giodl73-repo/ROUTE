@@ -111,6 +111,7 @@ game, release, or public-readiness claims.
 | International Canada parser dry-run fixture 001 exists. | `docs/reviews/international-canada-parser-dry-run-fixture-001.md`, `data/canada_source_link_candidates.csv`, `data/canada_source_need_candidates.csv`, `data/canada_source_node_candidates.csv`, `data/canada_service_target_candidates.csv`, `data/canada_adapter_evidence_labels.csv`, `data/canada_adapter_review_backlog.csv` | draft; Canada parser dry-run fixture emitted; implementation held |
 | International Canada parser dry-run generator 001 exists. | `docs/reviews/international-canada-parser-dry-run-generator-001.md`, `tools/build_canada_parser_dry_run.py` | draft; Canada parser dry-run fixture reproducible; source parser held |
 | International Canada parser dry-run gate 001 exists. | `docs/reviews/international-canada-parser-dry-run-gate-001.md`, `tools/check_canada_parser_dry_run.py`, `npm run check:canada` | draft; Canada parser dry-run gate passes; source payload validation held |
+| International Canada source payload access 001 exists. | `docs/reviews/international-canada-source-payload-access-001.md`, `data/international-canada-source-payload-access-001.csv`, `tools/check_canada_source_payload_access.py`, `npm run check:canada` | draft; Canada source-payload access gate passes; fetch and payload validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -221,6 +222,9 @@ fixture replacement, parsed-adapter promotion, and validation claims held.
 The Canada parser dry-run gate now mechanically checks contract shape,
 evidence-label coverage, source limits, and pending review backlog while keeping
 source payload validation, adapter promotion, and performance claims held.
+The Canada source-payload access gate now checks source-pack coverage, held
+fetch status, Canada-scoped cache targets, not-accepted evidence posture, and
+claim blockers before any payload fetch or field inventory claim.
 
 ## Evidence Ledger
 

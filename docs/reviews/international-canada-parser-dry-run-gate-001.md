@@ -8,6 +8,9 @@ author: codex
 created: 2026-06-19
 updated: 2026-06-19
 sources:
+  - data/international-canada-source-payload-access-001.csv
+  - tools/build_canada_source_payload_access.py
+  - tools/check_canada_source_payload_access.py
   - tools/build_canada_parser_dry_run.py
   - tools/check_canada_parser_dry_run.py
   - data/international-canada-parser-output-contract-001.csv
@@ -67,6 +70,7 @@ Canada parser dry-run gate: PASS
 | Check | Command / Inspection | Result | Evidence |
 |---|---|---|---|
 | Regenerate fixture | `python tools\build_canada_parser_dry_run.py` | pass | six dry-run CSVs written |
+| Source-payload access gate | `python tools\check_canada_source_payload_access.py` | pass | source-pack coverage, held fetch status, cache targets, and blockers checked |
 | Dry-run gate | `python tools\check_canada_parser_dry_run.py` | pass | columns, labels, source limits, evidence coverage, and review backlog checked |
 | Package command | `npm run check:canada` | pass | generator and gate run together |
 | Python compile | `python -m py_compile tools\build_canada_parser_dry_run.py tools\check_canada_parser_dry_run.py` | pass | scripts compile |
