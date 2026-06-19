@@ -112,6 +112,7 @@ game, release, or public-readiness claims.
 | International Canada parser dry-run generator 001 exists. | `docs/reviews/international-canada-parser-dry-run-generator-001.md`, `tools/build_canada_parser_dry_run.py` | draft; Canada parser dry-run fixture reproducible; source parser held |
 | International Canada parser dry-run gate 001 exists. | `docs/reviews/international-canada-parser-dry-run-gate-001.md`, `tools/check_canada_parser_dry_run.py`, `npm run check:canada` | draft; Canada parser dry-run gate passes; source payload validation held |
 | International Canada source payload access 001 exists. | `docs/reviews/international-canada-source-payload-access-001.md`, `data/international-canada-source-payload-access-001.csv`, `tools/check_canada_source_payload_access.py`, `npm run check:canada` | draft; Canada source-payload access gate passes; fetch and payload validation held |
+| International Canada source payload probe 001 exists. | `docs/reviews/international-canada-source-payload-probe-001.md`, `data/international-canada-source-payload-probe-001.csv`, `tools/check_canada_source_payload_probe.py`, `npm run check:canada:probe` | draft; Canada source-payload probe passes with road-graph access gap; payload validation held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -225,6 +226,9 @@ source payload validation, adapter promotion, and performance claims held.
 The Canada source-payload access gate now checks source-pack coverage, held
 fetch status, Canada-scoped cache targets, not-accepted evidence posture, and
 claim blockers before any payload fetch or field inventory claim.
+The Canada source-payload probe now records bounded HTTP reachability metadata
+for URL candidates while keeping source validation, field extraction,
+adapter promotion, and performance claims held.
 
 ## Evidence Ledger
 
