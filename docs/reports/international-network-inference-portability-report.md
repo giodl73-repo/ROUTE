@@ -51,6 +51,8 @@ sources:
   - data/international-hierarchy-replication-summary-001.csv
   - data/international-cross-region-scoring-rubric-001.csv
   - docs/templates/source-packs/international-adapter-source-pack-template.md
+  - docs/reviews/international-canada-adapter-source-pack-001.md
+  - data/international-canada-adapter-source-pack-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -352,6 +354,20 @@ The replication ladder now has two source-bound follow-through artifacts:
 |---|---|---|---|
 | Cross-region scoring rubric | `data/international-cross-region-scoring-rubric-001.csv` | Compare coverage, tier fit, freight value, resilience, regional access, source readiness, SLA plausibility, and claim discipline across regions. | Scores are review indices, not rankings, funding priorities, official readiness, or ROI. |
 | International adapter source-pack template | `docs/templates/source-packs/international-adapter-source-pack-template.md` | Collect road graph, node, need, terminal, hazard, governance, and service-target source custody before adapter promotion. | Source rows do not create official network, approval, policy alignment, SLA, construction, ROI, compliance, endorsement, public-readiness, or external validation claims. |
+
+## Canada Adapter Source Pack 001
+
+`docs/reviews/international-canada-adapter-source-pack-001.md` fills the
+international adapter source-pack template for Canada using the existing Canada
+source-custody preflight and readiness ledgers. The machine-readable source
+family declaration is `data/international-canada-adapter-source-pack-001.csv`.
+
+The result is a source-pack declaration, not a parsed adapter. Road graph and
+need vocabulary rows are parse-ready candidates but not promoted. Port/terminal,
+constraint, and service-target rows remain source-needed or held. No Canadian
+network, route designation, Transport Canada/provincial/port approval,
+guaranteed SLA, construction, ROI, eligibility, compliance, endorsement,
+public-readiness, external-readiness, or external validation claim is created.
 
 ## Product Language
 
