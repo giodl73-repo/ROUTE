@@ -15,6 +15,7 @@
     "check:canada:link-fixture-replacement": "python tools/build_canada_link_fixture_replacement_closeout.py && python tools/check_canada_link_fixture_replacement_closeout.py",
     "check:canada:adapter-promotion": "python tools/build_canada_adapter_promotion_preflight.py && python tools/check_canada_adapter_promotion_preflight.py",
     "check:canada:node-source-selection": "python tools/build_canada_node_source_selection.py && python tools/check_canada_node_source_selection.py",
+    "check:canada:node-source-probe": "python tools/probe_canada_node_sources.py && python tools/check_canada_node_source_probe.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
