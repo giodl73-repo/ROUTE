@@ -44,6 +44,7 @@ sources:
   - docs/reviews/international-canada-hierarchy-iteration-001.md
   - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
   - docs/reviews/international-india-hierarchy-iteration-001.md
+  - docs/reviews/international-japan-hierarchy-iteration-001.md
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
@@ -226,6 +227,7 @@ numeric overreach:
 | International Canada hierarchy iteration 001 | Draft | Canada v1 hierarchy is scored and repaired into a v2 SVG map; no official Canadian network, route designation, agency/provincial/port review, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | International EU Rhine-Alpine hierarchy iteration 001 | Draft | EU Rhine-Alpine hierarchy is scored and repaired into a v2 SVG map using the reusable iteration loop; no official EU corridor designation, member-state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | International India hierarchy iteration 001 | Draft | India logistics hierarchy is scored and repaired into a v2 SVG map using the reusable iteration loop; no official Indian corridor, national/state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
+| International Japan hierarchy iteration 001 | Draft | Japan Pacific Belt hierarchy is scored and repaired into a v2 SVG map using the reusable iteration loop; no official Japanese corridor, ministry approval, guaranteed SLA, disaster-readiness, construction, ROI, eligibility, compliance, endorsement, public-readiness, or external-readiness claim. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
 | Industry/stakeholder source fixture campaign | Draft | Executable fixture backlog for freight, rural/agriculture, state DOT, community/environmental, non-driving access, resilience, ROI/cost, and technical rehearsal lanes; STAKE-FIX-001 through STAKE-FIX-009 are populated, and validation/endorsement claims remain held. |
 | Industry/stakeholder fixture closeout report | Draft | Package-level closeout for the nine bounded internal fixtures; confirms representation and source-gated workflow while holding industry validation, stakeholder endorsement, agency review, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, external-readiness, and broad acceptance claims. |

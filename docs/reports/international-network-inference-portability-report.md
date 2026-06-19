@@ -41,6 +41,9 @@ sources:
   - docs/reviews/international-india-hierarchy-iteration-001.md
   - data/international-india-candidate-hierarchy-v2.csv
   - maps/international/india-candidate-hierarchy-v2.svg
+  - docs/reviews/international-japan-hierarchy-iteration-001.md
+  - data/international-japan-candidate-hierarchy-v2.csv
+  - maps/international/japan-candidate-hierarchy-v2.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -270,6 +273,29 @@ The iteration converts fixture critique into concrete row changes:
 This strengthens the replicability story by showing the process can find and
 repair hierarchy errors in another geography. It does not validate an Indian
 corridor, national/state approval, official designation, guaranteed SLA,
+construction priority, ROI, eligibility, compliance, endorsement,
+public-readiness, external-readiness, or external validation claim.
+
+## Japan Hierarchy Iteration 001
+
+`docs/reviews/international-japan-hierarchy-iteration-001.md` applies the same
+score-repair-render loop to a fourth region:
+
+`maps/international/japan-candidate-hierarchy-v2.svg`
+
+The iteration tests whether the portable hierarchy process can handle dense
+megaregion continuity and resilience branches without turning them into proof:
+
+- Osaka-Kobe is repaired from fixture T4 to T1.
+- Kobe-Hiroshima is up-tiered to T1 to preserve Pacific Belt continuity.
+- Tokyo-Niigata is added as an alternate-coast resilience connector.
+- Kobe terminal access is separated into a T3 feeder.
+- MLIT/source-bound, hazard, terminal, disaster-readiness, and SLA claims remain
+  held.
+
+This extends the method beyond continental freight corridors into an
+island/geohazard context. It does not validate a Japanese corridor, ministry
+approval, disaster-readiness, official designation, guaranteed SLA,
 construction priority, ROI, eligibility, compliance, endorsement,
 public-readiness, external-readiness, or external validation claim.
 

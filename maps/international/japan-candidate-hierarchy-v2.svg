@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1040" width="1700" height="1040">
+<rect width="1700" height="1040" fill="#0f172a"/>
+<rect x="30" y="30" width="1640" height="980" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="70.0" y="82.0" font-family="Arial,sans-serif" font-size="32" fill="#f8fafc" text-anchor="start">Japan Pacific Belt candidate hierarchy v2</text>
+<text x="70.0" y="116.0" font-family="Arial,sans-serif" font-size="15" fill="#cbd5e1" text-anchor="start">Iteration result: Pacific Belt spine, resilience branches, port feeders; official, SLA, disaster-readiness, construction, ROI, approval, and validation claims held.</text>
+<line x1="1084.4" y1="545.5" x2="800.3" y2="596.6" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T1-001 T1: kept from v1</title></line>
+<line x1="800.3" y1="596.6" x2="656.2" y2="646.7" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T1-002 T1: kept from v1</title></line>
+<line x1="656.2" y1="646.7" x2="624.5" y2="646.7" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T1-003 T1: repaired from fixture T4 misclassification to T1 candidate</title></line>
+<line x1="624.5" y1="646.7" x2="345.5" y2="677.4" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T1-004 T1: up-tiered from v1 T2 to preserve Pacific Belt continuity</title></line>
+<line x1="345.5" y1="677.4" x2="135.0" y2="759.1" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T2-001 T2: kept as T2 gateway pending stronger source evidence</title></line>
+<line x1="1084.4" y1="545.5" x2="1205.0" y2="280.9" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T2-002 T2: kept as resilience branch with hazard hold</title></line>
+<line x1="1084.4" y1="545.5" x2="1018.0" y2="316.6" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>JPN-HIER2-T2-003 T2: added alternate-coast resilience candidate</title></line>
+<line x1="1084.4" y1="545.5" x2="1079.3" y2="570.1" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>JPN-HIER2-T3-001 T3: kept as port feeder separate from trunk</title></line>
+<line x1="656.2" y1="646.7" x2="683.8" y2="614.0" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>JPN-HIER2-T3-002 T3: kept as regional access feeder</title></line>
+<line x1="624.5" y1="646.7" x2="628.6" y2="647.7" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>JPN-HIER2-T3-003 T3: added terminal feeder so trunk spine is not downgraded</title></line>
+<circle cx="1084.4" cy="545.5" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1100.4" y="537.5" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Tokyo</text>
+<text x="1100.4" y="555.5" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">TKY</text>
+<circle cx="800.3" cy="596.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="816.3" y="588.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Nagoya</text>
+<text x="816.3" y="606.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">NGY</text>
+<circle cx="656.2" cy="646.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="672.2" y="638.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Osaka</text>
+<text x="672.2" y="656.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">OSA</text>
+<circle cx="624.5" cy="646.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="640.5" y="638.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Kobe</text>
+<text x="640.5" y="656.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">KOB</text>
+<circle cx="345.5" cy="677.4" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="361.5" y="669.4" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Hiroshima</text>
+<text x="361.5" y="687.4" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">HIR</text>
+<circle cx="135.0" cy="759.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="151.0" y="751.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Fukuoka</text>
+<text x="151.0" y="769.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">FUK</text>
+<circle cx="1205.0" cy="280.9" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1221.0" y="272.9" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Sendai</text>
+<text x="1221.0" y="290.9" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">SEN</text>
+<circle cx="1018.0" cy="316.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1034.0" y="308.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Niigata</text>
+<text x="1034.0" y="326.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">NIG</text>
+<circle cx="1079.3" cy="570.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1095.3" y="562.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Yokohama</text>
+<text x="1095.3" y="580.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">YOK</text>
+<circle cx="683.8" cy="614.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="699.8" y="606.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Kyoto</text>
+<text x="699.8" y="624.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">KYO</text>
+<circle cx="628.6" cy="647.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="644.6" y="639.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Kobe Port</text>
+<text x="644.6" y="657.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">KBP</text>
+<rect x="1190" y="150" width="400" height="625" rx="12" fill="#020617" stroke="#334155"/>
+<text x="1214.0" y="188.0" font-family="Arial,sans-serif" font-size="20" fill="#f8fafc" text-anchor="start">Iteration changes</text>
+<text x="1224.0" y="228.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Osaka-Kobe repaired to T1</text>
+<text x="1224.0" y="256.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Kobe-Hiroshima up-tiered to T1</text>
+<text x="1224.0" y="284.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Niigata resilience branch added</text>
+<text x="1224.0" y="312.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Kobe terminal feeder separated</text>
+<text x="1224.0" y="340.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- MLIT/hazard/source claims held</text>
+<text x="1214.0" y="405.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Tier counts</text>
+<line x1="1220" y1="447" x2="1285" y2="447" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+<text x="1302.0" y="452.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T1: 4 candidate links</text>
+<line x1="1220" y1="499" x2="1285" y2="499" stroke="#059669" stroke-width="7" stroke-linecap="round"/>
+<text x="1302.0" y="504.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T2: 3 candidate links</text>
+<line x1="1220" y1="551" x2="1285" y2="551" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 8"/>
+<text x="1302.0" y="556.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T3: 3 candidate links</text>
+<text x="1214.0" y="638.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Still held</text>
+<text x="1224.0" y="674.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- MLIT/source-bound road parsing</text>
+<text x="1224.0" y="700.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- port terminal source packs</text>
+<text x="1224.0" y="726.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- hazard/disaster-readiness proof</text>
+<text x="1224.0" y="752.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- target/SLA proof</text>
+<text x="70.0" y="986.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official Japanese corridor, ministry approval, guaranteed SLA, disaster-readiness, construction, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>
