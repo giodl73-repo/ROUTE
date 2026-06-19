@@ -53,6 +53,8 @@ sources:
   - docs/templates/source-packs/international-adapter-source-pack-template.md
   - docs/reviews/international-canada-adapter-source-pack-001.md
   - data/international-canada-adapter-source-pack-001.csv
+  - docs/reviews/international-canada-parser-preflight-001.md
+  - data/international-canada-parser-preflight-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -368,6 +370,21 @@ constraint, and service-target rows remain source-needed or held. No Canadian
 network, route designation, Transport Canada/provincial/port approval,
 guaranteed SLA, construction, ROI, eligibility, compliance, endorsement,
 public-readiness, external-readiness, or external validation claim is created.
+
+## Canada Parser Preflight 001
+
+`docs/reviews/international-canada-parser-preflight-001.md` converts the Canada
+source-pack declaration into an auditable parser job:
+
+`data/international-canada-parser-preflight-001.csv`
+
+The preflight names candidate output tables for road links, need/context rows,
+node gaps, service-target holds, evidence labels, and role-review backlog. It
+does not implement the parser, download sources, replace fixture links, or
+promote source-bound rows. Parsed-adapter, official-network, route designation,
+Transport Canada/provincial/port approval, guaranteed SLA, construction, ROI,
+eligibility, compliance, endorsement, public-readiness, external-readiness, and
+external validation claims remain held.
 
 ## Product Language
 
