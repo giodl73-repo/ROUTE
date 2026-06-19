@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1040" width="1700" height="1040">
+<rect width="1700" height="1040" fill="#0f172a"/>
+<rect x="30" y="30" width="1640" height="980" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="70.0" y="82.0" font-family="Arial,sans-serif" font-size="32" fill="#f8fafc" text-anchor="start">India candidate logistics hierarchy v2</text>
+<text x="70.0" y="116.0" font-family="Arial,sans-serif" font-size="15" fill="#cbd5e1" text-anchor="start">Iteration result: national logistics spine, regional connectors, port feeders; official, SLA, construction, ROI, approval, and validation claims held.</text>
+<line x1="756.2" y1="105.0" x2="680.9" y2="195.2" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T1-001 T1: kept from v1</title></line>
+<line x1="680.9" y1="195.2" x2="510.0" y2="401.7" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T1-002 T1: kept from v1</title></line>
+<line x1="510.0" y1="401.7" x2="526.4" y2="610.7" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T1-003 T1: repaired from fixture T4 misclassification to T1 candidate</title></line>
+<line x1="526.4" y1="610.7" x2="578.5" y2="640.5" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T1-004 T1: up-tiered from fixture T2 to keep metro-industrial trunk continuity</title></line>
+<line x1="578.5" y1="640.5" x2="918.6" y2="929.2" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T2-001 T2: kept from fixture as T2 with constraint hold</title></line>
+<line x1="756.2" y1="105.0" x2="954.7" y2="198.4" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T2-002 T2: added north regional connector</title></line>
+<line x1="918.6" y1="929.2" x2="776.4" y2="935.0" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>IND-HIER2-T2-003 T2: added south industrial connector</title></line>
+<line x1="510.0" y1="401.7" x2="385.3" y2="401.1" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>IND-HIER2-T3-001 T3: added separate port feeder so trunk spine is not downgraded</title></line>
+<line x1="526.4" y1="610.7" x2="530.2" y2="617.6" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>IND-HIER2-T3-002 T3: added terminal feeder</title></line>
+<line x1="918.6" y1="929.2" x2="921.3" y2="920.1" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>IND-HIER2-T3-003 T3: added terminal feeder</title></line>
+<line x1="578.5" y1="640.5" x2="824.2" y2="700.4" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>IND-HIER2-T3-004 T3: added inland access candidate</title></line>
+<circle cx="756.2" cy="105.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="772.2" y="97.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Delhi</text>
+<text x="772.2" y="115.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">DEL</text>
+<circle cx="680.9" cy="195.2" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="696.9" y="187.2" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Jaipur</text>
+<text x="696.9" y="205.2" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">JAI</text>
+<circle cx="510.0" cy="401.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="526.0" y="393.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Ahmedabad</text>
+<text x="526.0" y="411.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">AMD</text>
+<circle cx="526.4" cy="610.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="542.4" y="602.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Mumbai</text>
+<text x="542.4" y="620.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">MUM</text>
+<circle cx="578.5" cy="640.5" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="594.5" y="632.5" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Pune</text>
+<text x="594.5" y="650.5" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">PUN</text>
+<circle cx="918.6" cy="929.2" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="934.6" y="921.2" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Chennai</text>
+<text x="934.6" y="939.2" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">CHN</text>
+<circle cx="954.7" cy="198.4" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="970.7" y="190.4" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Lucknow</text>
+<text x="970.7" y="208.4" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">LKO</text>
+<circle cx="776.4" cy="935.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="792.4" y="927.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Bengaluru</text>
+<text x="792.4" y="945.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">BLR</text>
+<circle cx="385.3" cy="401.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="401.3" y="393.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Kandla</text>
+<text x="401.3" y="411.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">KDL</text>
+<circle cx="530.2" cy="617.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="546.2" y="609.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Jawaharlal Nehru Port</text>
+<text x="546.2" y="627.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">JNP</text>
+<circle cx="921.3" cy="920.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="937.3" y="912.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Ennore</text>
+<text x="937.3" y="930.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">ENR</text>
+<circle cx="824.2" cy="700.4" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="840.2" y="692.4" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Hyderabad</text>
+<text x="840.2" y="710.4" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">HYD</text>
+<rect x="1190" y="150" width="400" height="610" rx="12" fill="#020617" stroke="#334155"/>
+<text x="1214.0" y="188.0" font-family="Arial,sans-serif" font-size="20" fill="#f8fafc" text-anchor="start">Iteration changes</text>
+<text x="1224.0" y="228.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Ahmedabad-Mumbai repaired to T1</text>
+<text x="1224.0" y="256.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Mumbai-Pune up-tiered to T1</text>
+<text x="1224.0" y="284.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Lucknow and Bengaluru added</text>
+<text x="1224.0" y="312.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Port access separated as T3</text>
+<text x="1224.0" y="340.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Hyderabad access candidate added</text>
+<text x="1214.0" y="400.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Tier counts</text>
+<line x1="1220" y1="442" x2="1285" y2="442" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+<text x="1302.0" y="447.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T1: 4 candidate links</text>
+<line x1="1220" y1="494" x2="1285" y2="494" stroke="#059669" stroke-width="7" stroke-linecap="round"/>
+<text x="1302.0" y="499.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T2: 3 candidate links</text>
+<line x1="1220" y1="546" x2="1285" y2="546" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 8"/>
+<text x="1302.0" y="551.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T3: 4 candidate links</text>
+<text x="1214.0" y="630.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Still held</text>
+<text x="1224.0" y="666.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- NHAI/NH source-bound parsing</text>
+<text x="1224.0" y="692.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- port terminal source packs</text>
+<text x="1224.0" y="718.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- monsoon/resilience constraints</text>
+<text x="1224.0" y="744.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- target/SLA proof</text>
+<text x="70.0" y="986.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official Indian corridor, national/state approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>

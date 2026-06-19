@@ -1,0 +1,8 @@
+score_id,dimension,score_0_10,finding,repair_action,claim_boundary
+IND-SCORE-001,coverage,6,Delhi-Jaipur-Ahmedabad-Mumbai-Pune-Chennai spine is visible but east and south connectors are thin,add Lucknow and Bengaluru connectors,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-002,tier_fit,5,Ahmedabad-Mumbai was misclassified as terminal/local because port_hinterland triggered T4,restore Ahmedabad-Mumbai to T1 national logistics spine,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-003,freight_value,7,Western industrial and port hinterland logic is strong,add explicit port access feeders instead of downgrading trunk spine,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-004,resilience,5,Monsoon/weather and alternate routing constraints are missing,keep constraints source-needed and add resilience review hold,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-005,rural_regional_access,5,Regional access is under-modeled beyond the western/southern spine,add north and south regional connectors,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-006,source_readiness,3,No source-bound NHAI/NH/logistics node rows are attached,hold source-bound promotion until local source packs exist,no official Indian corridor SLA construction ROI approval endorsement or validation claim
+IND-SCORE-007,sla_plausibility,6,Short windows are useful targets but not guarantee-ready,keep target classes as assumptions,no official Indian corridor SLA construction ROI approval endorsement or validation claim
