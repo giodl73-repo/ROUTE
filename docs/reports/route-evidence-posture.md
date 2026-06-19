@@ -52,6 +52,8 @@ sources:
   - docs/templates/source-packs/international-adapter-source-pack-template.md
   - docs/reviews/international-canada-adapter-source-pack-001.md
   - data/international-canada-adapter-source-pack-001.csv
+  - docs/reviews/international-canada-parser-preflight-001.md
+  - data/international-canada-parser-preflight-001.csv
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
@@ -239,6 +241,7 @@ numeric overreach:
 | International hierarchy replication closeout 001 | Draft | Five-region hierarchy replication ladder is summarized with recurring failure mode and repair pattern; no official foreign network, country/regional approval, policy alignment, guaranteed SLA, disaster-readiness, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, or validation claim. |
 | International source-bound next step 001 | Draft | Cross-region scoring rubric and international adapter source-pack template are ready for source custody work; no parsed adapter, official foreign network, approval, policy alignment, guaranteed SLA, disaster-readiness, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, or validation claim. |
 | International Canada adapter source pack 001 | Draft | Canada adapter source-pack declaration is filled from existing source-custody, field-map, and readiness rows; no parsed adapter, official Canadian network, route designation, agency/provincial/port approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, or validation claim. |
+| International Canada parser preflight 001 | Draft | Canada parser task ledger defines candidate outputs, blockers, and held fields before implementation; no parser implementation, parsed adapter, fixture replacement, official Canadian network, route designation, agency/provincial/port approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, or validation claim. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
 | Industry/stakeholder source fixture campaign | Draft | Executable fixture backlog for freight, rural/agriculture, state DOT, community/environmental, non-driving access, resilience, ROI/cost, and technical rehearsal lanes; STAKE-FIX-001 through STAKE-FIX-009 are populated, and validation/endorsement claims remain held. |
 | Industry/stakeholder fixture closeout report | Draft | Package-level closeout for the nine bounded internal fixtures; confirms representation and source-gated workflow while holding industry validation, stakeholder endorsement, agency review, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, external-readiness, and broad acceptance claims. |
