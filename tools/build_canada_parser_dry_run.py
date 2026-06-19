@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACK = ROOT / "data" / "international-canada-adapter-source-pack-001.csv"
 PREFLIGHT = ROOT / "data" / "international-canada-parser-preflight-001.csv"
 CONTRACT = ROOT / "data" / "international-canada-parser-output-contract-001.csv"
+EXTRACTION_CANDIDATES = ROOT / "data" / "international-canada-parser-extraction-candidates-001.csv"
 
 LINKS = ROOT / "data" / "canada_source_link_candidates.csv"
 NEEDS = ROOT / "data" / "canada_source_need_candidates.csv"
@@ -85,23 +86,6 @@ BACKLOG_FIELDS = [
     "result",
 ]
 
-
-LINK_TEMPLATES = {
-    "CAN-SRC-001": {
-        "route_id": "CAN-LINK-CAND-001",
-        "route_name": "National Highway System candidate route class",
-        "source_class": "NHS metadata candidate",
-        "geometry_ref": "metadata_ref_needed",
-        "access_note": "metadata inspection required before geometry use",
-    },
-    "CAN-SRC-003": {
-        "route_id": "CAN-LINK-CAND-002",
-        "route_name": "Statistics Canada road network candidate",
-        "source_class": "base road metadata candidate",
-        "geometry_ref": "metadata_ref_needed",
-        "access_note": "version and suitability warning required before geometry join",
-    },
-}
 
 NEED_TEMPLATES = {
     "CAN-SRC-002": {
@@ -259,26 +243,7 @@ def main() -> None:
     link_contract = contract_for(contracts, "canada_source_link_candidates")
     target_contract = contract_for(contracts, "canada_service_target_candidates")
 
-    link_rows: list[dict[str, str]] = []
-    for task_id in ["CAN-PARSE-001", "CAN-PARSE-002"]:
-        task = task_for(preflight, task_id)
-        source = source_pack[task["source_id"]]
-        template = LINK_TEMPLATES[task["source_id"]]
-        link_rows.append(
-            {
-                "source_id": task["source_id"],
-                "source_family": task["source_family"],
-                "route_id": template["route_id"],
-                "route_name": template["route_name"],
-                "source_class": template["source_class"],
-                "geometry_ref": template["geometry_ref"],
-                "source_owner": source["owner_or_publisher"],
-                "source_date": source["date_accessed"],
-                "access_note": template["access_note"],
-                "evidence_label": task["allowed_output_label"],
-                "blocked_claims": link_contract["blocked_columns_or_values"],
-            }
-        )
+    link_rows = build_source_derived_link_rows(link_contract)
 
     need_rows: list[dict[str, str]] = []
     for task_id in ["CAN-PARSE-003", "CAN-PARSE-004"]:
@@ -347,10 +312,8 @@ def main() -> None:
 
 
 def review_note_for(path: str, row_id: str) -> str:
-    if path.endswith("link_candidates.csv") and row_id == "CAN-LINK-CAND-001":
-        return "metadata candidate only; no fixture replacement"
     if path.endswith("link_candidates.csv"):
-        return "metadata candidate only; no geometry join"
+        return "source-derived no-geometry candidate; internal link fixture only"
     if path.endswith("need_candidates.csv") and row_id == "CAN-NEED-CAND-001":
         return "bounded vocabulary only"
     if path.endswith("need_candidates.csv"):
@@ -358,6 +321,27 @@ def review_note_for(path: str, row_id: str) -> str:
     if path.endswith("node_candidates.csv"):
         return "gap row only"
     return "assumption row only"
+
+
+def build_source_derived_link_rows(link_contract: dict[str, str]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for candidate in read_csv(EXTRACTION_CANDIDATES):
+        rows.append(
+            {
+                "source_id": candidate["source_id"],
+                "source_family": candidate["source_family"],
+                "route_id": candidate["route_id"],
+                "route_name": candidate["route_name"],
+                "source_class": candidate["source_class"],
+                "geometry_ref": candidate["geometry_ref"],
+                "source_owner": candidate["source_owner"],
+                "source_date": candidate["source_date"],
+                "access_note": "source-derived no-geometry internal link fixture; not map or adapter use",
+                "evidence_label": candidate["evidence_label"],
+                "blocked_claims": link_contract["blocked_columns_or_values"],
+            }
+        )
+    return rows
 
 
 if __name__ == "__main__":

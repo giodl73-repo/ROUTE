@@ -505,6 +505,13 @@ internal parser link-candidate fixture closeout only. Map, topology, adapter,
 official, operational, approval, ROI, public-readiness, and external-readiness
 uses remain blocked.
 
+`data/international-canada-link-fixture-replacement-closeout-001.csv` closes
+that narrow replacement. `data/canada_source_link_candidates.csv` now
+regenerates from the validated source-derived no-geometry extraction candidates,
+but it remains an internal parser fixture and does not promote map, topology,
+adapter, official-network, operational, approval, ROI, public-readiness, or
+external-readiness claims.
+
 ## Product Language
 
 Use:

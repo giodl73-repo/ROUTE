@@ -153,6 +153,10 @@ def main() -> int:
         table_rows["canada_adapter_evidence_labels"],
         failures,
     )
+    validate_source_derived_link_replacement(
+        table_rows["canada_source_link_candidates"],
+        failures,
+    )
     validate_backlog(table_rows["canada_adapter_review_backlog"], failures)
 
     if failures:
@@ -164,6 +168,26 @@ def main() -> int:
     print("Canada parser dry-run gate: PASS")
     print("  checked columns, labels, source limits, evidence coverage, and review backlog")
     return 0
+
+
+def validate_source_derived_link_replacement(
+    rows: list[dict[str, str]],
+    failures: list[str],
+) -> None:
+    if len(rows) != 5:
+        fail("canada_source_link_candidates: expected 5 source-derived rows", failures)
+    for index, row in enumerate(rows, start=1):
+        if row["source_id"] != "CAN-SRC-001":
+            fail(f"canada_source_link_candidates: row {index} is not CAN-SRC-001", failures)
+        if not row["geometry_ref"].startswith("not_requested:"):
+            fail(f"canada_source_link_candidates: row {index} accepted geometry", failures)
+        if "internal link fixture" not in row["access_note"]:
+            fail(
+                f"canada_source_link_candidates: row {index} missing internal fixture access note",
+                failures,
+            )
+        if row["route_id"].startswith("CAN-LINK-CAND-"):
+            fail(f"canada_source_link_candidates: row {index} is still a placeholder", failures)
 
 
 if __name__ == "__main__":
