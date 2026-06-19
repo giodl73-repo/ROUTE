@@ -118,6 +118,7 @@ game, release, or public-readiness claims.
 | International Canada parser mapping ledger 001 exists. | `docs/reviews/international-canada-parser-mapping-ledger-001.md`, `data/international-canada-parser-mapping-ledger-001.csv`, `tools/check_canada_parser_mapping_ledger.py`, `npm run check:canada:mapping` | draft; Canada parser mapping ledger passes; fixture replacement held |
 | International Canada road-graph filtered route sample 001 exists. | `docs/reviews/international-canada-road-graph-filtered-route-sample-001.md`, `data/international-canada-road-graph-filtered-route-sample-001.csv`, `tools/check_canada_road_graph_filtered_route_sample.py`, `npm run check:canada:filtered` | draft; Canada filtered route sample passes; parser extraction held |
 | International Canada parser extraction candidates 001 exists. | `docs/reviews/international-canada-parser-extraction-candidates-001.md`, `data/international-canada-parser-extraction-candidates-001.csv`, `tools/check_canada_parser_extraction_candidates.py`, `npm run check:canada:extract` | draft; Canada parser extraction candidates pass; fixture replacement held |
+| International Canada fixture replacement role review 001 exists. | `docs/reviews/international-canada-fixture-replacement-role-review-001.md`, `data/international-canada-fixture-replacement-role-review-001.csv`, `tools/check_canada_fixture_replacement_role_review.py`, `npm run check:canada:replacement-review` | draft; replacement review pass_with_holds; dry-run fixture unchanged |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -250,6 +251,10 @@ held.
 The Canada parser extraction candidate step now converts filtered source
 attributes into separate link-candidate rows while keeping fixture replacement,
 source-row validation, geometry acceptance, and adapter promotion held.
+The Canada fixture replacement role review now compares those candidates
+against the dry-run link fixture and keeps the dry-run fixture unchanged until
+replacement closeout, geometry policy, operational posture, authority posture,
+source-row validation, and adapter promotion close.
 
 ## Evidence Ledger
 
