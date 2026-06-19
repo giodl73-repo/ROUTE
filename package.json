@@ -7,6 +7,7 @@
     "check:canada:sample": "python tools/sample_canada_road_graph_features.py && python tools/check_canada_road_graph_feature_sample.py",
     "check:canada:filtered": "python tools/sample_canada_road_graph_filtered_routes.py && python tools/check_canada_road_graph_filtered_route_sample.py",
     "check:canada:mapping": "python tools/build_canada_parser_mapping_ledger.py && python tools/check_canada_parser_mapping_ledger.py",
+    "check:canada:extract": "python tools/build_canada_parser_extraction_candidates.py && python tools/check_canada_parser_extraction_candidates.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
