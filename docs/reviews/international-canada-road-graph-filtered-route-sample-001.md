@@ -8,6 +8,7 @@ author: codex
 created: 2026-06-19
 updated: 2026-06-19
 sources:
+  - data/international-canada-parser-extraction-candidates-001.csv
   - tools/sample_canada_road_graph_filtered_routes.py
   - tools/check_canada_road_graph_filtered_route_sample.py
   - data/international-canada-road-graph-filtered-route-sample-001.csv
@@ -34,6 +35,10 @@ promote a parsed adapter, or create official Canadian network, route
 designation, Transport Canada/provincial/port approval, guaranteed SLA,
 construction, ROI, eligibility, compliance, endorsement, public-readiness,
 external-readiness, or external validation claims.
+
+`data/international-canada-parser-extraction-candidates-001.csv` uses this
+filtered sample to produce separate no-geometry extraction candidates. Those
+rows remain candidate-only and do not replace the dry-run fixture.
 
 ## Command Closeout
 

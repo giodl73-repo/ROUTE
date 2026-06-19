@@ -477,6 +477,11 @@ It records usable route numbers and a route name for parser intake, while source
 validation, geometry acceptance, fixture replacement, and official-network
 claims remain held.
 
+`data/international-canada-parser-extraction-candidates-001.csv` converts the
+filtered sample into separate link-candidate extraction rows. They follow the
+dry-run link-candidate shape but remain outside the fixture table until role
+review, geometry policy, source-row validation, and replacement closeout pass.
+
 ## Product Language
 
 Use:
