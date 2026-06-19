@@ -29,6 +29,9 @@ sources:
   - data/international-canada-source-adapter-readiness.csv
   - data/international-canada-source-adapter-gap-backlog.csv
   - docs/reviews/international-canada-source-adapter-readiness-001.md
+  - data/international-canada-candidate-hierarchy.csv
+  - docs/reviews/international-canada-candidate-hierarchy-map-001.md
+  - maps/international/canada-candidate-hierarchy.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -180,6 +183,23 @@ need-surface rows are ready for a future parser but are not promoted. Node,
 constraint, and service-target rows remain source-needed or held. No Canadian
 network, official review, SLA, construction, ROI, compliance, endorsement,
 public-readiness, or external-readiness claim is created.
+
+## Canada Candidate Hierarchy Map 001
+
+`docs/reviews/international-canada-candidate-hierarchy-map-001.md` produces the
+first visible Canada T1/T2/T3 candidate hierarchy result:
+
+| Tier | Candidate Role | Count |
+|---|---|---|
+| T1 | national spine | 4 |
+| T2 | regional connector | 3 |
+| T3 | access feeder | 5 |
+
+The result map is `maps/international/canada-candidate-hierarchy.svg`. It is a
+candidate result from held rows, not an official Canadian network or parsed
+source adapter. It does not create route-designation, agency/provincial/port
+review, guaranteed-SLA, construction, ROI, eligibility, compliance,
+endorsement, public-readiness, or external-readiness claims.
 
 ## Product Language
 
