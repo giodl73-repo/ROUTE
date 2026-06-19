@@ -121,6 +121,7 @@ game, release, or public-readiness claims.
 | International Canada fixture replacement role review 001 exists. | `docs/reviews/international-canada-fixture-replacement-role-review-001.md`, `data/international-canada-fixture-replacement-role-review-001.csv`, `tools/check_canada_fixture_replacement_role_review.py`, `npm run check:canada:replacement-review` | draft; replacement review pass_with_holds; dry-run fixture unchanged |
 | International Canada source row validation 001 exists. | `docs/reviews/international-canada-source-row-validation-001.md`, `data/international-canada-source-row-validation-001.csv`, `tools/check_canada_source_row_validation.py`, `npm run check:canada:source-row-validation` | draft; candidate source rows validated; fixture replacement held |
 | International Canada geometry policy 001 exists. | `docs/reviews/international-canada-geometry-policy-001.md`, `data/international-canada-geometry-policy-001.csv`, `tools/check_canada_geometry_policy.py`, `npm run check:canada:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
+| International Canada fixture replacement contract 001 exists. | `docs/reviews/international-canada-fixture-replacement-contract-001.md`, `data/international-canada-fixture-replacement-contract-001.csv`, `tools/check_canada_fixture_replacement_contract.py`, `npm run check:canada:replacement-contract` | draft; contract ready for internal link-fixture closeout; map and adapter use held |
 | Industry/stakeholder evidence-lane matrix exists. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` | draft; representation shown; validation held |
 | Industry/stakeholder source fixture campaign exists. | `docs/reports/industry-stakeholder-source-fixture-campaign.md` | draft; fixture package populated; STAKE-FIX-001 through STAKE-FIX-009 populated |
 | Industry/stakeholder fixture closeout report exists. | `docs/reports/industry-stakeholder-fixture-closeout-report.md` | draft; fixture package populated; external validation held |
@@ -264,6 +265,10 @@ authority claims, and external validation held.
 The Canada geometry policy gate now rejects geometry for the current candidate
 set and names prerequisites for any future geometry intake before topology,
 map overlay, fixture replacement, or adapter promotion.
+The Canada fixture replacement contract now allows no-geometry source-derived
+rows to proceed only to an internal parser link-candidate fixture closeout,
+while map, topology, adapter, official, operational, approval, ROI,
+public-readiness, and external-readiness uses remain blocked.
 
 ## Evidence Ledger
 
