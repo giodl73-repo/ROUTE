@@ -499,6 +499,12 @@ explicit: the current Canada candidates remain no-geometry rows. Geometry,
 topology, map overlay, fixture replacement, and adapter promotion require a
 separate geometry intake fixture and role review.
 
+`data/international-canada-fixture-replacement-contract-001.csv` narrows the
+replacement path: no-geometry source-derived rows may be considered for an
+internal parser link-candidate fixture closeout only. Map, topology, adapter,
+official, operational, approval, ROI, public-readiness, and external-readiness
+uses remain blocked.
+
 ## Product Language
 
 Use:
