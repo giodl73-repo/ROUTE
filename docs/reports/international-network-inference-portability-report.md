@@ -66,6 +66,8 @@ sources:
   - data/canada_adapter_review_backlog.csv
   - docs/reviews/international-canada-adapter-promotion-preflight-001.md
   - data/international-canada-adapter-promotion-preflight-001.csv
+  - docs/reviews/international-canada-node-source-selection-001.md
+  - data/international-canada-node-source-selection-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
