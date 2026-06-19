@@ -10,6 +10,8 @@ updated: 2026-06-19
 sources:
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - data/international-hierarchy-replication-summary-001.csv
+  - data/international-cross-region-scoring-rubric-001.csv
+  - docs/templates/source-packs/international-adapter-source-pack-template.md
   - docs/reviews/international-canada-hierarchy-iteration-001.md
   - docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md
   - docs/reviews/international-india-hierarchy-iteration-001.md
@@ -73,11 +75,13 @@ validation.
 
 1. Promote one region into source-bound adapter work, with Canada still the best
    candidate because source-custody and readiness ledgers already exist.
-2. Create a cross-region scoring rubric that compares coverage, tier fit,
-   freight value, resilience, regional access, source readiness, and SLA
-   plausibility without creating numeric ROI or official-readiness claims.
-3. Add source-pack templates for non-U.S. road graph, port/terminal,
-   logistics-node, hazard/resilience, and governance/policy evidence.
+2. Use `data/international-cross-region-scoring-rubric-001.csv` to compare
+   coverage, tier fit, freight value, resilience, regional access, source
+   readiness, SLA plausibility, and claim discipline without creating numeric
+   ROI or official-readiness claims.
+3. Use `docs/templates/source-packs/international-adapter-source-pack-template.md`
+   for non-U.S. road graph, port/terminal, logistics-node, hazard/resilience,
+   and governance/policy evidence before any adapter promotion.
 
 ## Validation Closeout
 
