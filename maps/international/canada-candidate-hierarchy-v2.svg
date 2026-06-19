@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1080" width="1800" height="1080">
+<rect width="1800" height="1080" fill="#0f172a"/>
+<rect x="30" y="30" width="1740" height="1020" rx="20" fill="#111827" stroke="#334155" stroke-width="2"/>
+<text x="70.0" y="82.0" font-family="Arial,sans-serif" font-size="34" fill="#f8fafc" text-anchor="start">Canada candidate service hierarchy v2</text>
+<text x="70.0" y="118.0" font-family="Arial,sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">Iteration result: repaired tier fit and coverage; official, SLA, construction, ROI, approval, and validation claims held.</text>
+<line x1="279.0" y1="543.8" x2="422.2" y2="515.8" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T1-001 T1: Pacific gateway to western inland distribution; kept from v1</title></line>
+<line x1="422.2" y1="515.8" x2="571.8" y2="525.3" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T1-002 T1: Western prairie spine and production access; split v1 Calgary-Winnipeg to expose prairie node</title></line>
+<line x1="571.8" y1="525.3" x2="690.2" y2="534.0" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T1-003 T1: Prairie continuity and inland freight access; split v1 Calgary-Winnipeg to expose prairie node</title></line>
+<line x1="690.2" y1="534.0" x2="971.3" y2="632.9" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T1-004 T1: Long-haul cross-country freight and market access; kept from v1</title></line>
+<line x1="971.3" y1="632.9" x2="1063.2" y2="603.6" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T1-005 T1: Great Lakes and St. Lawrence market spine; kept from v1</title></line>
+<line x1="1063.2" y1="603.6" x2="1221.3" y2="617.1" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T2-001 T2: Atlantic resilience and port access connector; kept from v1</title></line>
+<line x1="422.2" y1="515.8" x2="431.4" y2="476.2" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T2-002 T2: Alberta inland distribution connector; kept as T2 pending source review</title></line>
+<line x1="971.3" y1="632.9" x2="913.3" y2="654.1" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T2-003 T2: Border and industrial trade connector; up-tiered from v1 T3</title></line>
+<line x1="971.3" y1="632.9" x2="1029.5" y2="604.9" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T2-004 T2: Capital-region and Ontario-Quebec access connector; added missing capital-region connector</title></line>
+<line x1="1063.2" y1="603.6" x2="1100.6" y2="582.9" stroke="#059669" stroke-width="7" stroke-linecap="round" opacity="0.88"><title>CAN-HIER2-T2-005 T2: St. Lawrence regional access connector; up-tiered from v1 T3</title></line>
+<line x1="279.0" y1="543.8" x2="165.0" y2="464.2" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>CAN-HIER2-T3-001 T3: Pacific secondary port access candidate; kept but flagged for route-shape source pack</title></line>
+<line x1="431.4" y1="476.2" x2="464.8" y2="425.9" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>CAN-HIER2-T3-002 T3: Energy and northern production access candidate; rerouted via Edmonton instead of Calgary</title></line>
+<line x1="690.2" y1="534.0" x2="678.8" y2="441.6" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>CAN-HIER2-T3-003 T3: Northern Manitoba access and resilience candidate; demoted from v1 T2 pending source evidence</title></line>
+<line x1="571.8" y1="525.3" x2="539.3" y2="498.7" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>CAN-HIER2-T3-004 T3: Prairie production and regional access candidate; added prairie production access</title></line>
+<line x1="1221.3" y1="617.1" x2="1275.0" y2="593.5" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.88" stroke-dasharray="10 8"><title>CAN-HIER2-T3-005 T3: Atlantic terminal and resilience access candidate; kept from v1</title></line>
+<circle cx="279.0" cy="543.8" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="295.0" y="535.8" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Vancouver</text>
+<text x="295.0" y="553.8" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">YVR</text>
+<circle cx="422.2" cy="515.8" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="438.2" y="507.8" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Calgary</text>
+<text x="438.2" y="525.8" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">CGY</text>
+<circle cx="571.8" cy="525.3" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="587.8" y="517.3" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Regina</text>
+<text x="587.8" y="535.3" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">REG</text>
+<circle cx="690.2" cy="534.0" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="706.2" y="526.0" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Winnipeg</text>
+<text x="706.2" y="544.0" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">WPG</text>
+<circle cx="971.3" cy="632.9" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="987.3" y="624.9" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Toronto</text>
+<text x="987.3" y="642.9" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">TOR</text>
+<circle cx="1063.2" cy="603.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1079.2" y="595.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Montreal</text>
+<text x="1079.2" y="613.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">MTL</text>
+<circle cx="1221.3" cy="617.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1237.3" y="609.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Halifax</text>
+<text x="1237.3" y="627.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">HFX</text>
+<circle cx="431.4" cy="476.2" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="447.4" y="468.2" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Edmonton</text>
+<text x="447.4" y="486.2" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">EDM</text>
+<circle cx="913.3" cy="654.1" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="929.3" y="646.1" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Windsor</text>
+<text x="929.3" y="664.1" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">WDS</text>
+<circle cx="1029.5" cy="604.9" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1045.5" y="596.9" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Ottawa</text>
+<text x="1045.5" y="614.9" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">OTT</text>
+<circle cx="1100.6" cy="582.9" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1116.6" y="574.9" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Quebec City</text>
+<text x="1116.6" y="592.9" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">QUE</text>
+<circle cx="165.0" cy="464.2" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="181.0" y="456.2" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Prince Rupert</text>
+<text x="181.0" y="474.2" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">PRR</text>
+<circle cx="464.8" cy="425.9" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="480.8" y="417.9" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Fort McMurray</text>
+<text x="480.8" y="435.9" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">FTM</text>
+<circle cx="678.8" cy="441.6" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="694.8" y="433.6" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Thompson</text>
+<text x="694.8" y="451.6" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">YTH</text>
+<circle cx="539.3" cy="498.7" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="555.3" y="490.7" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Saskatoon</text>
+<text x="555.3" y="508.7" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">SSK</text>
+<circle cx="1275.0" cy="593.5" r="12" fill="#f8fafc" stroke="#0f172a" stroke-width="3"/>
+<text x="1291.0" y="585.5" font-family="Arial,sans-serif" font-size="14" fill="#f8fafc" text-anchor="start">Sydney</text>
+<text x="1291.0" y="603.5" font-family="Arial,sans-serif" font-size="11" fill="#94a3b8" text-anchor="start">SYD</text>
+<rect x="1290" y="150" width="430" height="610" rx="12" fill="#020617" stroke="#334155"/>
+<text x="1314.0" y="188.0" font-family="Arial,sans-serif" font-size="20" fill="#f8fafc" text-anchor="start">Iteration changes</text>
+<text x="1324.0" y="228.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Toronto-Windsor up-tiered to T2</text>
+<text x="1324.0" y="256.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Winnipeg-Thompson demoted to T3</text>
+<text x="1324.0" y="284.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Regina/Saskatoon added</text>
+<text x="1324.0" y="312.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Ottawa and Quebec City added</text>
+<text x="1324.0" y="340.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- Fort McMurray rerouted via Edmonton</text>
+<text x="1314.0" y="400.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Tier counts</text>
+<line x1="1320" y1="442" x2="1385" y2="442" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+<text x="1402.0" y="447.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T1: 5 candidate links</text>
+<line x1="1320" y1="494" x2="1385" y2="494" stroke="#059669" stroke-width="7" stroke-linecap="round"/>
+<text x="1402.0" y="499.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T2: 5 candidate links</text>
+<line x1="1320" y1="546" x2="1385" y2="546" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 8"/>
+<text x="1402.0" y="551.0" font-family="Arial,sans-serif" font-size="14" fill="#e5e7eb" text-anchor="start">T3: 5 candidate links</text>
+<text x="1314.0" y="635.0" font-family="Arial,sans-serif" font-size="18" fill="#f8fafc" text-anchor="start">Still held</text>
+<text x="1324.0" y="672.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- source-bound graph parsing</text>
+<text x="1324.0" y="698.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- node source packs</text>
+<text x="1324.0" y="724.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- constraint evidence</text>
+<text x="1324.0" y="750.0" font-family="Arial,sans-serif" font-size="13" fill="#cbd5e1" text-anchor="start">- target/SLA proof</text>
+<text x="70.0" y="1026.0" font-family="Arial,sans-serif" font-size="14" fill="#fbbf24" text-anchor="start">Held claims: official Canadian network, route designation, agency/provincial/port approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, external validation.</text>
+</svg>

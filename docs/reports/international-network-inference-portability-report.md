@@ -32,6 +32,9 @@ sources:
   - data/international-canada-candidate-hierarchy.csv
   - docs/reviews/international-canada-candidate-hierarchy-map-001.md
   - maps/international/canada-candidate-hierarchy.svg
+  - docs/reviews/international-canada-hierarchy-iteration-001.md
+  - docs/how-to/international-hierarchy-iteration-playbook.md
+  - maps/international/canada-candidate-hierarchy-v2.svg
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
@@ -200,6 +203,27 @@ candidate result from held rows, not an official Canadian network or parsed
 source adapter. It does not create route-designation, agency/provincial/port
 review, guaranteed-SLA, construction, ROI, eligibility, compliance,
 endorsement, public-readiness, or external-readiness claims.
+
+## Canada Hierarchy Iteration 001
+
+`docs/reviews/international-canada-hierarchy-iteration-001.md` scores the first
+Canada hierarchy and produces a v2 map:
+
+`maps/international/canada-candidate-hierarchy-v2.svg`
+
+The iteration changes are concrete:
+
+- Toronto-Windsor is moved from T3 to T2.
+- Winnipeg-Thompson is moved from T2 to T3 pending stronger evidence.
+- Regina, Saskatoon, Ottawa, and Quebec City are added.
+- Fort McMurray access is rerouted through Edmonton.
+
+`docs/how-to/international-hierarchy-iteration-playbook.md` captures the
+repeatable loop: score, repair rows, rerender, record holds. This process is
+portable to the EU, India, Japan, China, or other regional pilots, but it still
+does not produce official networks, guaranteed SLAs, construction priorities,
+ROI claims, compliance findings, endorsements, public-readiness, or
+external-readiness.
 
 ## Product Language
 
