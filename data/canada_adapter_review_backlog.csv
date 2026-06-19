@@ -1,0 +1,6 @@
+role_lane,review_question,trigger_output,required_before,hold_claims,result
+Scope Keeper,Does the dry run remain an internal parser fixture rather than an adapter promotion?,all output tables,any use beyond internal inspection,official_network;route_designation;approval;construction_ready;public_readiness;external_readiness,pending
+Citation Auditor,Do candidate rows preserve source owner date access note evidence label and blocked claims?,canada_source_link_candidates;canada_source_need_candidates,parser implementation closeout,validation;endorsement;external_validation,pending
+Numeracy Checker,Are service targets assumption-labeled with no SLA or travel-time proof?,canada_service_target_candidates,any target use in a map or report,guaranteed_sla;travel_time_proof;delivery_commitment,pending
+Schematic Cartographer,Could candidate rows be mistaken for a source-bound map?,canada_source_link_candidates;canada_source_node_candidates,any map overlay or fixture replacement,official_network;map_proof;route_designation,pending
+V&V,Does every emitted row have a matching evidence-label row?,canada_adapter_evidence_labels,parser dry-run closeout,validation;public_readiness;external_readiness,pending

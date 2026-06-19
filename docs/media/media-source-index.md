@@ -71,6 +71,13 @@ sources:
   - data/international-canada-parser-preflight-001.csv
   - docs/reviews/international-canada-parser-output-contract-001.md
   - data/international-canada-parser-output-contract-001.csv
+  - docs/reviews/international-canada-parser-dry-run-fixture-001.md
+  - data/canada_source_link_candidates.csv
+  - data/canada_source_need_candidates.csv
+  - data/canada_source_node_candidates.csv
+  - data/canada_service_target_candidates.csv
+  - data/canada_adapter_evidence_labels.csv
+  - data/canada_adapter_review_backlog.csv
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/traces/route-claim-promotion-trace.md
 ---
@@ -114,6 +121,7 @@ public-readiness, external-readiness, or approval.
 | Canada adapter source pack | ROUTE has a filled Canada adapter source-pack declaration using existing Canada custody, field-map, and readiness rows. | `docs/reviews/international-canada-adapter-source-pack-001.md`; `data/international-canada-adapter-source-pack-001.csv`; `data/international-canada-source-adapter-readiness.csv` | source pack declared / parser promotion held | parsed adapter, official Canadian network, Transport Canada/provincial/port approval, route designation, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
 | Canada parser preflight | ROUTE has an auditable Canada parser task ledger that defines candidate outputs, blockers, and held fields before implementation. | `docs/reviews/international-canada-parser-preflight-001.md`; `data/international-canada-parser-preflight-001.csv`; `docs/reviews/international-canada-adapter-source-pack-001.md` | parser preflight ready / implementation held | parser implementation, parsed adapter, fixture replacement, official Canadian network, Transport Canada/provincial/port approval, route designation, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
 | Canada parser output contract | ROUTE has a Canada parser dry-run output contract defining required columns, labels, acceptance rules, and blocked claim values. | `docs/reviews/international-canada-parser-output-contract-001.md`; `data/international-canada-parser-output-contract-001.csv`; `docs/reviews/international-canada-parser-preflight-001.md` | output contract ready / implementation held | parser implementation, source download, parsed adapter, fixture replacement, official Canadian network, Transport Canada/provincial/port approval, route designation, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
+| Canada parser dry-run fixture | ROUTE has contract-shaped Canada parser dry-run tables for candidate links, candidate needs, node gaps, target holds, evidence labels, and role backlog. | `docs/reviews/international-canada-parser-dry-run-fixture-001.md`; `data/canada_source_link_candidates.csv`; `data/canada_adapter_evidence_labels.csv` | dry-run fixture emitted / implementation held | parser implementation, source download, parsed adapter, fixture replacement, official Canadian network, Transport Canada/provincial/port approval, route designation, guaranteed SLA, construction readiness, ROI, eligibility, compliance, endorsement, external validation, public readiness, or external readiness |
 | Pressure-test status | Internal sponsor-to-DOT dry run passes; external rehearsal remains held. | `docs/reviews/communications-pressure-test-run-003.md` | internal pass / external held | real agency, congressional, or stakeholder review |
 | Source-backed examples | Port NOLA terminal-access, FHWA truck-parking freight-operations, USDA/USDOT rural/agricultural access, FHWA/DOT state delivery-control, FHWA/EPA community/environmental impact, FTA rural transit/intercity bus access, FHWA/FEMA resilience/hazard-data, USDOT ROI/cost, and internal technical rehearsal-control fixtures demonstrate source custody and holds. | `docs/reports/industry-stakeholder-fixture-closeout-report.md`; fixture source files STAKE-FIX-001 through STAKE-FIX-009; `docs/traces/route-claim-promotion-trace.md` | pass_with_risk / internal only | source owner endorsement, terminal performance proof, corridor parking adequacy, rural route support, state delivery readiness, funding eligibility, environmental clearance, mitigation adequacy, community support, transit service proof, accessibility compliance, site hazard proof, evacuation-capacity proof, recovery-performance proof, resilience benefit, hardening proof, numeric ROI, benefit-cost ratio, dollar value, grant rating, business-case conclusion, agency review, outside validation, or agency approval |
 | Industry/stakeholder coverage | ROUTE represents freight, terminal, rural, state DOT, community/environmental, transit, resilience, funder, technical, and media lanes. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md`; `docs/reviews/communications-role-review-pass-artifacts.md` | representation shown / validation held | industry validation, stakeholder endorsement, or external acceptance |
@@ -163,6 +171,7 @@ public-readiness, external-readiness, or approval.
 | Canada adapter source pack | `docs/reviews/international-canada-adapter-source-pack-001.md` |
 | Canada parser preflight | `docs/reviews/international-canada-parser-preflight-001.md` |
 | Canada parser output contract | `docs/reviews/international-canada-parser-output-contract-001.md` |
+| Canada parser dry-run fixture | `docs/reviews/international-canada-parser-dry-run-fixture-001.md` |
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
 | Technical hostile Q&A | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` |

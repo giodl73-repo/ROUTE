@@ -1,0 +1,3 @@
+target_gap_id,role,needed_source,assumption_label,evidence_label,blocked_claims
+CAN-TARGET-GAP-001,T1 national logistics spine,adopted service target source and reliability basis,planning_assumption_only,held,guaranteed_sla;travel_time_proof;delivery_commitment;official_approval;construction_ready;roi;compliance;endorsement;validation;public_readiness;external_readiness
+CAN-TARGET-GAP-002,T2 regional connector,adopted service target source and numeracy review,planning_assumption_only,held,guaranteed_sla;travel_time_proof;delivery_commitment;official_approval;construction_ready;roi;compliance;endorsement;validation;public_readiness;external_readiness
