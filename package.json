@@ -33,6 +33,7 @@
     "check:eu:payload-probe": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/build_eu_rhine_alpine_parser_preflight.py && python tools/build_eu_rhine_alpine_source_payload_access.py && python tools/probe_eu_rhine_alpine_source_payloads.py && python tools/check_eu_rhine_alpine_source_payload_probe.py",
     "check:eu:field-inventory": "python tools/build_eu_rhine_alpine_source_field_inventory.py && python tools/check_eu_rhine_alpine_source_field_inventory.py",
     "check:eu:source-row-validation": "python tools/build_eu_rhine_alpine_source_field_inventory.py && python tools/build_eu_rhine_alpine_source_row_validation.py && python tools/check_eu_rhine_alpine_source_field_inventory.py && python tools/check_eu_rhine_alpine_source_row_validation.py",
+    "check:eu:parity-gap": "python tools/build_eu_rhine_alpine_parity_gap.py && python tools/check_eu_rhine_alpine_parity_gap.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
