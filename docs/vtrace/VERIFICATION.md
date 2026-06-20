@@ -104,6 +104,7 @@ game, release, or public-readiness claims.
 | International EU Rhine-Alpine GISCO transport page links 001 exists. | `docs/reviews/international-eu-rhine-alpine-gisco-transport-page-links-001.md`, `data/international-eu-rhine-alpine-gisco-transport-page-links-001.csv`, `tools/check_eu_rhine_alpine_gisco_transport_page_links.py`, `npm run check:eu:gisco-transport-page-links` | draft; official page link inventory complete; road endpoint not exposed |
 | International EU Rhine-Alpine road-link endpoint candidates 001 exists. | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-candidates-001.md`, `data/international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv`, `tools/check_eu_rhine_alpine_road_link_endpoint_candidates.py`, `npm run check:eu:road-link-endpoint-candidates` | draft; endpoint not acquired; source-row extraction held |
 | International EU Rhine-Alpine link fixture blocker 001 exists. | `docs/reviews/international-eu-rhine-alpine-link-fixture-blocker-001.md`, `data/international-eu-rhine-alpine-link-fixture-blocker-001.csv`, `tools/check_eu_rhine_alpine_link_fixture_blocker.py`, `npm run check:eu:link-fixture-blocker` | draft; link replacement blocked by missing road-link endpoint |
+| International EU Rhine-Alpine road-link source disposition 001 exists. | `docs/reviews/international-eu-rhine-alpine-road-link-source-disposition-001.md`, `data/international-eu-rhine-alpine-road-link-source-disposition-001.csv`, `tools/check_eu_rhine_alpine_road_link_source_disposition.py`, `npm run check:eu:road-link-source-disposition` | draft; endpoint not acquired; alternative/contact step required |
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
@@ -357,6 +358,10 @@ with source-row extraction and fixture replacement held.
 The EU Rhine-Alpine GISCO transport page-link gate now records that the official
 transport page exposes airport and port package links but no road-link endpoint
 in the scraped page surface.
+The EU Rhine-Alpine road-link source-disposition gate now closes the current
+endpoint acquisition attempt: documentation lead exists, official page and
+direct candidates do not expose the endpoint, and fixture replacement remains
+blocked.
 The EU Rhine-Alpine port package-access gate now records reachable GDB and SHP
 ZIP package metadata for GISCO Ports 2013 by HEAD only while keeping download,
 parsing, geometry, node replacement, terminal performance, SLA, ROI, validation,
