@@ -323,6 +323,10 @@ SLA, ROI, construction, public-readiness, and external-readiness claims held.
 The EU Rhine-Alpine parity gap gate now records that EU has not reached
 Canada-level internal proof; source-derived link replacement, selected node
 replacement, target posture, and internal proof remain blocked.
+The EU Rhine-Alpine source-content and extraction gates now add bounded
+official-source content and no-geometry extraction candidates while preserving a
+current-corridor rebase warning and holding road-feature replacement, internal
+proof, SLA, ROI, public-readiness, and external-readiness claims.
 
 ## Evidence Ledger
 
