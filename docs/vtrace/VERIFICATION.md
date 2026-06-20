@@ -320,6 +320,9 @@ The EU Rhine-Alpine source field inventory and source-row validation gates now
 record candidate field groups and bounded dry-run row checks while keeping
 source-content validation, geometry acceptance, fixture replacement, approval,
 SLA, ROI, construction, public-readiness, and external-readiness claims held.
+The EU Rhine-Alpine parity gap gate now records that EU has not reached
+Canada-level internal proof; source-derived link replacement, selected node
+replacement, target posture, and internal proof remain blocked.
 
 ## Evidence Ledger
 
