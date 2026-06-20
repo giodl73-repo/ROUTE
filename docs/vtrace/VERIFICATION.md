@@ -327,6 +327,10 @@ The EU Rhine-Alpine source-content and extraction gates now add bounded
 official-source content and no-geometry extraction candidates while preserving a
 current-corridor rebase warning and holding road-feature replacement, internal
 proof, SLA, ROI, public-readiness, and external-readiness claims.
+The EU Rhine-Alpine source-content row validation and current-corridor rebase
+gates now make the remaining parity blocker machine-checkable: EU has
+source-content rows, but not Canada-equivalent road-feature rows or an approved
+current-corridor fixture scope.
 
 ## Evidence Ledger
 
