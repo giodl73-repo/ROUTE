@@ -106,6 +106,7 @@ game, release, or public-readiness claims.
 | International EU Rhine-Alpine link fixture blocker 001 exists. | `docs/reviews/international-eu-rhine-alpine-link-fixture-blocker-001.md`, `data/international-eu-rhine-alpine-link-fixture-blocker-001.csv`, `tools/check_eu_rhine_alpine_link_fixture_blocker.py`, `npm run check:eu:link-fixture-blocker` | draft; link replacement blocked by missing road-link endpoint |
 | International EU Rhine-Alpine road-link source disposition 001 exists. | `docs/reviews/international-eu-rhine-alpine-road-link-source-disposition-001.md`, `data/international-eu-rhine-alpine-road-link-source-disposition-001.csv`, `tools/check_eu_rhine_alpine_road_link_source_disposition.py`, `npm run check:eu:road-link-source-disposition` | draft; endpoint not acquired; alternative/contact step required |
 | International EU Rhine-Alpine road-link endpoint request 001 exists. | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-request-001.md`, `data/international-eu-rhine-alpine-road-link-endpoint-request-001.csv`, `tools/check_eu_rhine_alpine_road_link_endpoint_request.py`, `npm run check:eu:road-link-endpoint-request` | draft; request packet ready; no contact made |
+| International EU Rhine-Alpine adaptive proof closeout 001 exists. | `docs/reviews/international-eu-rhine-alpine-adaptive-proof-closeout-001.md`, `data/international-eu-rhine-alpine-adaptive-proof-closeout-001.csv`, `tools/check_eu_rhine_alpine_adaptive_proof_closeout.py`, `npm run check:eu:adaptive-closeout` | draft; adaptive proof complete; Canada-depth proof not claimed |
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
@@ -403,6 +404,10 @@ The EU Rhine-Alpine target-posture gate now accepts held service-target
 assumptions only for future internal adapter proof with explicit target holds,
 while adopted target, SLA, travel-time, delivery, ROI, validation,
 public-readiness, and external-readiness claims remain blocked.
+The EU Rhine-Alpine adaptive-proof closeout now finishes EU as a portability
+proof with bounded claims: hierarchy, source kernel, parser, node fixture, and
+target posture are complete with holds, while road-link fixture replacement and
+Canada-depth internal proof remain blocked by missing endpoint custody.
 
 ## Evidence Ledger
 
