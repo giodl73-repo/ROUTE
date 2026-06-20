@@ -347,6 +347,10 @@ The EU Rhine-Alpine port package-access gate now records reachable GDB and SHP
 ZIP package metadata for GISCO Ports 2013 by HEAD only while keeping download,
 parsing, geometry, node replacement, terminal performance, SLA, ROI, validation,
 and readiness claims blocked.
+The EU Rhine-Alpine port package-manifest gate now reads package manifests and
+the `PORT_PT_2013` DBF header only, exposing node field mapping inputs while
+keeping geometry, node replacement, terminal performance, SLA, ROI, validation,
+and readiness claims blocked.
 
 ## Evidence Ledger
 
