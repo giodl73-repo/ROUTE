@@ -59,12 +59,12 @@ def main() -> None:
         {
             "preflight_id": "CAN-ADAPTER-PROMO-003",
             "promotion_surface": "need_node_target_tables",
-            "closed_inputs": "dry_run_gate",
+            "closed_inputs": "dry_run_gate;node_fixture_replacement;target_posture",
             "current_decision": "hold",
-            "blocker": "need_node_and_target_rows_remain_source_needed_or_assumption_rows",
+            "blocker": "need_rows_bounded_context_only;service_targets_remain_held_assumptions",
             "allowed_use": "none",
             "blocked_claims": BLOCKED_CLAIMS,
-            "next_action": "replace need node and target fixtures with source-backed rows before adapter promotion",
+            "next_action": "use internal proof closeout only; do not promote SLA official or external validation claims",
         },
         {
             "preflight_id": "CAN-ADAPTER-PROMO-004",

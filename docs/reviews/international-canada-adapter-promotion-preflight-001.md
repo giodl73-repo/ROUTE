@@ -30,8 +30,9 @@ Allowed language:
 - The Canada internal parser link fixture is ready for internal parser-contract
   work.
 - Parsed Canada adapter promotion is held pending a separate adapter contract,
-  geometry/topology disposition, source-backed need/node/target rows, and
-  authority/public-use review.
+  geometry/topology disposition, held target posture, and authority/public-use
+  review. Node rows now have an internal fixture closeout, but node validation
+  and external use remain held.
 
 Do not say:
 
@@ -60,6 +61,6 @@ Canada adapter promotion preflight gate: PASS
 
 Decision: **internal_link_fixture_ready; parsed_adapter_promotion_held**
 
-Rationale: link-candidate rows have passed the internal replacement closeout,
-but geometry, topology, need/node/target source rows, authority review, public
-use, external use, and parsed adapter contract gates are not closed.
+Rationale: link-candidate rows and node-candidate rows have internal replacement
+closeouts, but geometry, topology, target proof, authority review, public use,
+external use, and parsed adapter contract gates are not closed.

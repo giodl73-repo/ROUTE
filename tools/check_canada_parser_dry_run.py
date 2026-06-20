@@ -32,7 +32,7 @@ ALLOWED_SOURCES = {
 ROW_ID_FIELDS = {
     "canada_source_link_candidates": "route_id",
     "canada_source_need_candidates": "need_id",
-    "canada_source_node_candidates": "node_gap_id",
+    "canada_source_node_candidates": "node_id",
     "canada_service_target_candidates": "target_gap_id",
 }
 
@@ -157,6 +157,10 @@ def main() -> int:
         table_rows["canada_source_link_candidates"],
         failures,
     )
+    validate_source_selected_node_replacement(
+        table_rows["canada_source_node_candidates"],
+        failures,
+    )
     validate_backlog(table_rows["canada_adapter_review_backlog"], failures)
 
     if failures:
@@ -188,6 +192,33 @@ def validate_source_derived_link_replacement(
             )
         if row["route_id"].startswith("CAN-LINK-CAND-"):
             fail(f"canada_source_link_candidates: row {index} is still a placeholder", failures)
+
+
+def validate_source_selected_node_replacement(
+    rows: list[dict[str, str]],
+    failures: list[str],
+) -> None:
+    expected_nodes = {
+        "CAN-PORT-VANCOUVER",
+        "CAN-PORT-MONTREAL",
+        "CAN-PORT-HALIFAX",
+    }
+    actual_nodes = {row["node_id"] for row in rows}
+    missing = sorted(expected_nodes - actual_nodes)
+    if missing:
+        fail(f"canada_source_node_candidates: missing source-selected nodes {missing}", failures)
+    for index, row in enumerate(rows, start=1):
+        if row["source_id"] != "CAN-SRC-005":
+            fail(f"canada_source_node_candidates: row {index} is not CAN-SRC-005", failures)
+        if row["evidence_label"] != "source-candidate":
+            fail(f"canada_source_node_candidates: row {index} is not source-candidate", failures)
+        if "internal node fixture" not in row["access_note"]:
+            fail(
+                f"canada_source_node_candidates: row {index} missing internal fixture access note",
+                failures,
+            )
+        if not row["source_url"].startswith("https://"):
+            fail(f"canada_source_node_candidates: row {index} source_url is not https", failures)
 
 
 if __name__ == "__main__":

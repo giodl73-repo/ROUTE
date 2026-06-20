@@ -69,6 +69,12 @@ sources:
   - data/international-canada-node-source-selection-001.csv
   - docs/reviews/international-canada-node-source-probe-001.md
   - data/international-canada-node-source-probe-001.csv
+  - docs/reviews/international-canada-node-fixture-contract-001.md
+  - docs/reviews/international-canada-node-replacement-role-review-001.md
+  - docs/reviews/international-canada-node-fixture-replacement-closeout-001.md
+  - docs/reviews/international-canada-target-posture-001.md
+  - docs/reviews/international-canada-internal-adapter-proof-001.md
+  - data/international-canada-internal-adapter-proof-001.csv
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md
@@ -273,6 +279,7 @@ numeric overreach:
 | International Canada geometry policy 001 | Draft | Canada geometry policy rejects geometry for the current candidate set and names prerequisites for any future geometry intake; topology, map overlay, fixture replacement, parsed adapter, official Canadian network, approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, and external validation remain held. |
 | International Canada fixture replacement contract 001 | Draft | Canada replacement contract allows source-derived no-geometry rows to be considered only for internal parser link-candidate fixture closeout; map, topology, parsed adapter, official Canadian network, approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, and external validation remain held. |
 | International Canada link fixture replacement closeout 001 | Draft | Canada internal parser link fixture now regenerates from validated source-derived no-geometry candidate rows; map, topology, parsed adapter, official Canadian network, approval, guaranteed SLA, construction, ROI, eligibility, compliance, endorsement, public-readiness, external-readiness, and external validation remain held. |
+| International Canada internal adapter proof 001 | Draft | Canada is internally proven as a source-backed evidence-gated adapter workflow with source-derived link rows, selected source-custody node rows, bounded need vocabulary, and held target posture; official network, route designation, geometry/topology/map proof, agency or port approval, guaranteed SLA, ROI, construction, compliance, endorsement, validation, public-readiness, external-readiness, and external validation remain held. |
 | Industry/stakeholder evidence-lane matrix | Draft | Media/sponsor-safe matrix showing which lanes are represented and internally reviewed while holding industry validation, endorsement, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, and external-readiness claims. |
 | Industry/stakeholder source fixture campaign | Draft | Executable fixture backlog for freight, rural/agriculture, state DOT, community/environmental, non-driving access, resilience, ROI/cost, and technical rehearsal lanes; STAKE-FIX-001 through STAKE-FIX-009 are populated, and validation/endorsement claims remain held. |
 | Industry/stakeholder fixture closeout report | Draft | Package-level closeout for the nine bounded internal fixtures; confirms representation and source-gated workflow while holding industry validation, stakeholder endorsement, agency review, approval, official-plan, construction, SLA, ROI, eligibility, compliance, public-readiness, external-readiness, and broad acceptance claims. |
