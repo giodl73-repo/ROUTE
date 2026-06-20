@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LINKS = ROOT / "data" / "eu_rhine_alpine_source_link_candidates.csv"
 EXTRACTION = ROOT / "data" / "international-eu-rhine-alpine-parser-extraction-candidates-001.csv"
 METADATA_PROBE = ROOT / "data" / "international-eu-rhine-alpine-road-feature-metadata-probe-001.csv"
+ENDPOINT_CANDIDATES = ROOT / "data" / "international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv"
 OUTPUT = ROOT / "data" / "international-eu-rhine-alpine-link-fixture-blocker-001.csv"
 
 FIELDS = [
@@ -43,6 +44,9 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def road_endpoint_status() -> str:
+    endpoint_rows = read_csv(ENDPOINT_CANDIDATES) if ENDPOINT_CANDIDATES.exists() else []
+    if endpoint_rows and all(row["endpoint_status"] != "candidate_reachable_not_accepted" for row in endpoint_rows):
+        return "candidate_endpoints_probed_exact_road_link_endpoint_missing"
     rows = read_csv(METADATA_PROBE)
     road_rows = [row for row in rows if row["selected_for"] == "road_feature_probe"]
     if road_rows and all("endpoint" in row["next_action"] for row in road_rows):

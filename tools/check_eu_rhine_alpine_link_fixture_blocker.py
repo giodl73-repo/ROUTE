@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BLOCKER = ROOT / "data" / "international-eu-rhine-alpine-link-fixture-blocker-001.csv"
 LINKS = ROOT / "data" / "eu_rhine_alpine_source_link_candidates.csv"
 EXTRACTION = ROOT / "data" / "international-eu-rhine-alpine-parser-extraction-candidates-001.csv"
+ENDPOINT_CANDIDATES = ROOT / "data" / "international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv"
 
 FIELDS = [
     "blocker_id",
@@ -52,6 +53,7 @@ def main() -> int:
     fields, rows = read_csv(BLOCKER)
     _, link_rows = read_csv(LINKS)
     _, extraction_rows = read_csv(EXTRACTION)
+    _, endpoint_rows = read_csv(ENDPOINT_CANDIDATES)
     failures: list[str] = []
 
     if fields != FIELDS:
@@ -68,8 +70,12 @@ def main() -> int:
     for row in extraction_rows:
         if row["candidate_status"] != "source_content_extraction_candidate_not_promoted":
             failures.append(f"{row['candidate_id']} source-content row was promoted")
+    if len(endpoint_rows) != 10:
+        failures.append("EU link blocker requires endpoint-candidate probe rows")
+    if any(row["endpoint_status"] == "candidate_reachable_not_accepted" for row in endpoint_rows):
+        failures.append("EU link blocker found a reachable endpoint; package-access gate required before blocker can pass")
     for row in rows:
-        if row["road_endpoint_status"] != "exact_road_link_endpoint_missing":
+        if row["road_endpoint_status"] != "candidate_endpoints_probed_exact_road_link_endpoint_missing":
             failures.append("EU link blocker must preserve missing road endpoint status")
         if row["replacement_decision"] != "blocked_exact_road_link_endpoint_missing":
             failures.append("EU link blocker must block replacement")
