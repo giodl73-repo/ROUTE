@@ -355,6 +355,10 @@ The EU Rhine-Alpine port node field-mapping gate now maps GISCO DBF headers to
 node-candidate schema fields while keeping record validation, geometry, node
 selection, node replacement, terminal performance, SLA, ROI, validation, and
 readiness claims blocked.
+The EU Rhine-Alpine port node record-sample gate now reads bounded attributes
+for Rotterdam, Antwerpen, Genova, Basel, and Duisburg and confirms point-layer
+joins while keeping geometry, node replacement, terminal performance, road
+access, SLA, ROI, validation, and readiness claims blocked.
 
 ## Evidence Ledger
 

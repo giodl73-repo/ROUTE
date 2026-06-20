@@ -44,6 +44,7 @@
     "check:eu:port-package-access": "python tools/build_eu_rhine_alpine_port_package_access.py && python tools/check_eu_rhine_alpine_port_package_access.py",
     "check:eu:port-package-manifest": "python tools/build_eu_rhine_alpine_port_package_manifest.py && python tools/check_eu_rhine_alpine_port_package_manifest.py",
     "check:eu:port-node-field-mapping": "python tools/build_eu_rhine_alpine_port_node_field_mapping.py && python tools/check_eu_rhine_alpine_port_node_field_mapping.py",
+    "check:eu:port-node-record-sample": "python tools/build_eu_rhine_alpine_port_node_record_sample.py && python tools/check_eu_rhine_alpine_port_node_record_sample.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
