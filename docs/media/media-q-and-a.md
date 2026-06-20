@@ -14,6 +14,7 @@ sources:
   - docs/reports/route-evidence-posture.md
   - docs/reviews/communications-pressure-test-run-003.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
+  - docs/media/canada-internal-proof-brief.md
   - docs/traces/route-claim-promotion-trace.md
 ---
 
@@ -41,6 +42,7 @@ eligibility finding, compliance finding, endorsement record, or approval record.
 | Does ROUTE prove ROI? | No. ROI and cost are treated as evidence contracts; numeric ROI claims remain gated. |
 | Are agencies or stakeholders endorsing this? | No endorsement or approval claim is made. |
 | Why mention Port NOLA? | ROUTE uses a public Port NOLA road-access source as one bounded example of source custody and claim holds, not as endorsement or proof of terminal performance. |
+| What does the Canada pilot prove? | It proves internally that ROUTE can move a non-U.S. country pilot through a source-backed evidence-gated adapter workflow. It does not prove an official Canadian network, approval, SLA, ROI, public readiness, or external validation. |
 | What is the strongest current claim? | ROUTE has a coherent evidence-bounded communications package and nine bounded source-backed fixtures for internal rehearsal. External/public readiness remains held. |
 
 ## If You Quote One Sentence
@@ -78,6 +80,7 @@ Before relying on a stronger claim, check:
 | "Can I say this solves freight reliability?" | No. You can say it frames freight reliability as a planning and evidence problem. |
 | "Can I say it helps rural access?" | You can say T3/T4 keep rural and production access visible; do not say access problems are solved. |
 | "Can I say it has real source-backed examples?" | Yes, nine bounded fixtures exist for internal rehearsal and evidence discipline. Do not describe them as external validation. |
+| "Can I say Canada is proven?" | Say Canada is internally proven as a source-backed adapter workflow; do not say it is externally validated or officially adopted. |
 
 ## Corrections Policy For This Package
 
