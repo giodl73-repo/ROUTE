@@ -44,6 +44,7 @@ agency endorsement, public-readiness, or external-readiness.
 | Media Q&A | Deadline-friendly answers and verification checklist. | `docs/media/media-q-and-a.md` |
 | Media source index | Claim-to-source map for reporter fact checks. | `docs/media/media-source-index.md` |
 | Media visual assets | Recommended maps, captions, and proof-by-picture boundaries. | `docs/media/media-visual-assets.md` |
+| Canada internal proof brief | Media-safe summary of what the Canada pilot internally proves and what remains held. | `docs/media/canada-internal-proof-brief.md` |
 | Media discovery stress test | Internal test of whether a reporter/editor can use these materials without claim drift. | `docs/reviews/media-discovery-stress-test-001.md` |
 | Industry/stakeholder matrix | Which stakeholder lanes are represented and what remains unvalidated. | `docs/reports/industry-stakeholder-evidence-lane-matrix.md` |
 | Evidence posture | Current claim boundary for decks, reports, maps, demos, and reviews. | `docs/reports/route-evidence-posture.md` |
@@ -75,6 +76,7 @@ discipline behind it. They are not proof that any named project should be built.
 | Maps can make the service structure visible. | Maps prove SLA, upgrade, terminal, asset, or construction readiness. |
 | ROI and cost work are treated as evidence contracts. | ROUTE has proven positive ROI for a corridor, hub, or standard. |
 | Stakeholder requirements can refine the package through source custody and role review. | Stakeholders, agencies, or DOTs have endorsed the plan. |
+| Canada is internally proven as a source-backed adapter workflow. | Canada has an official network, approval, SLA, ROI, or external validation. |
 
 ## Recommended Attribution
 

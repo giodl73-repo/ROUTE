@@ -75,6 +75,8 @@ sources:
   - docs/reviews/international-canada-target-posture-001.md
   - docs/reviews/international-canada-internal-adapter-proof-001.md
   - data/international-canada-internal-adapter-proof-001.csv
+  - docs/media/canada-internal-proof-brief.md
+  - data/international-canada-media-proof-card-001.csv
   - docs/how-to/international-hierarchy-iteration-playbook.md
   - docs/vtrace/EVIDENCE.md
   - docs/vtrace/VERIFICATION.md

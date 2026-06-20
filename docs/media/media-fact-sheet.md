@@ -17,6 +17,7 @@ sources:
   - docs/reports/rural-access-national-service-network-report.md
   - docs/reports/maps-are-not-proof-report.md
   - docs/reports/industry-stakeholder-fixture-closeout-report.md
+  - docs/media/canada-internal-proof-brief.md
 ---
 
 # ROUTE Media Fact Sheet
@@ -61,6 +62,7 @@ service roles. They are not guaranteed operating commitments.
 | Evidence posture | Reported claim boundaries for decks, maps, reports, ROI, demos, and reviews. |
 | Communications package | Split decks, briefs, presenter guide, pressure-test records, rude Q&A, and media resources. |
 | Source-backed examples | Nine bounded internal fixtures covering terminal access, freight operations, rural/agricultural access, state delivery controls, community/environmental concerns, non-driving access, resilience/emergency management, ROI/cost discipline, and technical rehearsal controls. |
+| Canada portability proof | Internally proven source-backed adapter workflow; external validation and official Canadian transport claims remain held. |
 | External/public readiness | Held until venue-specific role review, validation, and claim-specific evidence close. |
 
 ## What ROUTE Does Not Claim
@@ -98,6 +100,7 @@ service roles. They are not guaranteed operating commitments.
 | Rural access | `docs/reports/rural-access-national-service-network-report.md` |
 | Pressure testing | `docs/reviews/communications-pressure-test-run-003.md` |
 | Source-backed examples | `docs/reports/industry-stakeholder-fixture-closeout-report.md` |
+| Canada internal proof | `docs/media/canada-internal-proof-brief.md` |
 
 ## Gate
 
