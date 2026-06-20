@@ -343,6 +343,10 @@ The EU Rhine-Alpine road-feature metadata probe now separates the next unblock:
 GISCO Ports 2013 is ready as a port-node package lead, while road-feature
 extraction still needs the exact GISCO Transport v3 endpoint before any fixture
 replacement work.
+The EU Rhine-Alpine port package-access gate now records reachable GDB and SHP
+ZIP package metadata for GISCO Ports 2013 by HEAD only while keeping download,
+parsing, geometry, node replacement, terminal performance, SLA, ROI, validation,
+and readiness claims blocked.
 
 ## Evidence Ledger
 

@@ -41,6 +41,7 @@
     "check:eu:content-row-validation": "python tools/build_eu_rhine_alpine_source_content_sample.py && python tools/build_eu_rhine_alpine_parser_extraction_candidates.py && python tools/build_eu_rhine_alpine_source_content_row_validation.py && python tools/check_eu_rhine_alpine_source_content_sample.py && python tools/check_eu_rhine_alpine_parser_extraction_candidates.py && python tools/check_eu_rhine_alpine_source_content_row_validation.py",
     "check:eu:road-source-selection": "python tools/build_eu_rhine_alpine_road_feature_source_selection.py && python tools/check_eu_rhine_alpine_road_feature_source_selection.py",
     "check:eu:road-metadata-probe": "python tools/build_eu_rhine_alpine_road_feature_metadata_probe.py && python tools/check_eu_rhine_alpine_road_feature_metadata_probe.py",
+    "check:eu:port-package-access": "python tools/build_eu_rhine_alpine_port_package_access.py && python tools/check_eu_rhine_alpine_port_package_access.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
