@@ -359,6 +359,10 @@ The EU Rhine-Alpine port node record-sample gate now reads bounded attributes
 for Rotterdam, Antwerpen, Genova, Basel, and Duisburg and confirms point-layer
 joins while keeping geometry, node replacement, terminal performance, road
 access, SLA, ROI, validation, and readiness claims blocked.
+The EU Rhine-Alpine port-node role-review gate now records a five-lane
+pass_with_holds review over sampled port records while keeping the records
+internal and blocking node replacement, geometry, terminal performance, road
+access, SLA, ROI, validation, public-readiness, and external-readiness claims.
 
 ## Evidence Ledger
 
