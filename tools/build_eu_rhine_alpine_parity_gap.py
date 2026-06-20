@@ -63,8 +63,8 @@ def main() -> None:
         {
             "gap_id": "EUR-PARITY-004",
             "canada_parity_surface": "link fixture replacement closeout",
-            "eu_current_artifact": "data/eu_rhine_alpine_source_link_candidates.csv",
-            "eu_status": "metadata_rows_not_source_derived_links",
+            "eu_current_artifact": "data/international-eu-rhine-alpine-link-fixture-blocker-001.csv",
+            "eu_status": "blocked_exact_road_link_endpoint_missing",
             "parity_decision": "blocked",
             "blocked_claims": BLOCKED,
             "required_next_step": "build source-derived no-geometry EU link candidates before fixture replacement",

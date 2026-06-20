@@ -33,7 +33,7 @@ internal adapter proof.
 | Source pack and payload probe | parity reached; evidence not accepted |
 | Parser preflight and dry run | parity reached for dry-run layer |
 | Field inventory / source-row validation | partial; metadata validation only |
-| Link fixture replacement | blocked |
+| Link fixture replacement | blocked by missing exact road-link endpoint |
 | Node fixture replacement | reached for internal no-geometry node fixture only |
 | Target posture / internal proof | target posture reached; internal proof blocked by link fixture |
 
