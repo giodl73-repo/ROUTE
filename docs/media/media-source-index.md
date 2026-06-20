@@ -201,6 +201,7 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine road-link endpoint candidates | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-candidates-001.md` |
 | EU Rhine-Alpine link fixture blocker | `docs/reviews/international-eu-rhine-alpine-link-fixture-blocker-001.md` |
 | EU Rhine-Alpine road-link source disposition | `docs/reviews/international-eu-rhine-alpine-road-link-source-disposition-001.md` |
+| EU Rhine-Alpine road-link endpoint request | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-request-001.md` |
 | EU Rhine-Alpine port package access | `docs/reviews/international-eu-rhine-alpine-port-package-access-001.md` |
 | EU Rhine-Alpine port package manifest | `docs/reviews/international-eu-rhine-alpine-port-package-manifest-001.md` |
 | EU Rhine-Alpine port node field mapping | `docs/reviews/international-eu-rhine-alpine-port-node-field-mapping-001.md` |
