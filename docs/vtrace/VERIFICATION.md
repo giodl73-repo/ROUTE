@@ -363,6 +363,10 @@ The EU Rhine-Alpine port-node role-review gate now records a five-lane
 pass_with_holds review over sampled port records while keeping the records
 internal and blocking node replacement, geometry, terminal performance, road
 access, SLA, ROI, validation, public-readiness, and external-readiness claims.
+The EU Rhine-Alpine port-node source-row validation gate now validates sampled
+GISCO port attributes as internal candidate rows while preserving the geometry
+hold and blocking node replacement, terminal performance, road access, SLA, ROI,
+validation, public-readiness, and external-readiness claims.
 
 ## Evidence Ledger
 
