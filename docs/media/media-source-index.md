@@ -197,6 +197,7 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine current corridor rebase | `docs/reviews/international-eu-rhine-alpine-current-corridor-rebase-001.md` |
 | EU Rhine-Alpine road feature source selection | `docs/reviews/international-eu-rhine-alpine-road-feature-source-selection-001.md` |
 | EU Rhine-Alpine road feature metadata probe | `docs/reviews/international-eu-rhine-alpine-road-feature-metadata-probe-001.md` |
+| EU Rhine-Alpine GISCO transport page links | `docs/reviews/international-eu-rhine-alpine-gisco-transport-page-links-001.md` |
 | EU Rhine-Alpine road-link endpoint candidates | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-candidates-001.md` |
 | EU Rhine-Alpine link fixture blocker | `docs/reviews/international-eu-rhine-alpine-link-fixture-blocker-001.md` |
 | EU Rhine-Alpine port package access | `docs/reviews/international-eu-rhine-alpine-port-package-access-001.md` |
