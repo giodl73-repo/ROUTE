@@ -225,6 +225,7 @@ public-readiness, external-readiness, or approval.
 | Canada media proof brief | `docs/media/canada-internal-proof-brief.md` |
 | Canada external review pathway | `docs/reviews/international-canada-external-review-pathway-001.md` |
 | International adapter proof kernel | `docs/reports/international-adapter-proof-kernel-report.md` |
+| International system flexibility proof | `docs/reviews/international-system-flexibility-proof-001.md` |
 | Canada port authority packet preflight | `docs/reviews/international-canada-port-authority-packet-preflight-001.md` |
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
