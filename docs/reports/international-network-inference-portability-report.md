@@ -546,6 +546,19 @@ Vancouver, Montreal, and Halifax node source-custody rows and keeps named venue,
 port review, endorsement, terminal performance, throughput, SLA, ROI,
 construction, public-readiness, external-readiness, and validation claims held.
 
+`data/international-eu-rhine-alpine-adapter-source-pack-001.csv` starts the
+second-region kernel application. It declares candidate source-custody rows for
+European Commission TEN-T/TENtec surfaces, GISCO transport geodata,
+Rhine-Alpine context, and held service targets. It does not parse source data,
+replace EU hierarchy fixtures, validate an EU corridor, or create member-state
+approval, SLA, ROI, construction, public-readiness, external-readiness, or
+external-validation claims.
+
+`data/international-eu-rhine-alpine-kernel-application-001.csv` compares EU to
+the Canada-instantiated kernel. EU has source custody started; parser contract,
+fixture replacement, target-posture closeout, internal proof, media proof, and
+external review remain held.
+
 ## Product Language
 
 Use:
