@@ -21,12 +21,13 @@ FIELDS = [
 ]
 
 BLOCKED = (
-    "official_corridor_designation;member_state_approval;route_designation;"
-    "geometry_acceptance;topology_proof;map_overlay;terminal_performance;"
-    "node_completeness;road_access_proof;construction_ready;guaranteed_sla;"
-    "travel_time_proof;delivery_commitment;numeric_roi;roi;eligibility;"
-    "compliance;endorsement;validation;external_validation;public_readiness;"
-    "external_readiness;internal_adapter_proof"
+    "official_network;official_corridor_designation;member_state_approval;"
+    "route_designation;geometry_acceptance;topology_proof;map_overlay;"
+    "terminal_performance;node_completeness;road_access_proof;"
+    "throughput_proof;construction_ready;guaranteed_sla;travel_time_proof;"
+    "delivery_commitment;numeric_roi;roi;eligibility;compliance;endorsement;"
+    "validation;external_validation;public_readiness;external_readiness;"
+    "internal_adapter_proof"
 )
 
 
@@ -72,19 +73,19 @@ def main() -> None:
             "gap_id": "EUR-PARITY-005",
             "canada_parity_surface": "node fixture replacement closeout",
             "eu_current_artifact": "data/eu_rhine_alpine_source_node_candidates.csv",
-            "eu_status": "source_needed_node_gap",
-            "parity_decision": "blocked",
+            "eu_status": "internal_node_fixture_replaced_no_geometry",
+            "parity_decision": "complete_for_node_fixture_layer",
             "blocked_claims": BLOCKED,
-            "required_next_step": "select official port terminal gateway node sources before node fixture replacement",
+            "required_next_step": "keep geometry terminal performance road access and validation blocked before internal proof",
         },
         {
             "gap_id": "EUR-PARITY-006",
             "canada_parity_surface": "target posture and internal adapter proof",
-            "eu_current_artifact": "data/eu_rhine_alpine_service_target_candidates.csv",
-            "eu_status": "held_target_assumption_no_internal_proof",
+            "eu_current_artifact": "data/international-eu-rhine-alpine-target-posture-001.csv",
+            "eu_status": "target_posture_reached_internal_proof_blocked_by_link_fixture",
             "parity_decision": "blocked",
             "blocked_claims": BLOCKED,
-            "required_next_step": "close link and node replacement plus EU target posture before internal proof",
+            "required_next_step": "close source-derived no-geometry link fixture replacement before internal proof",
         },
     ]
     with OUTPUT.open("w", newline="", encoding="utf-8") as f:

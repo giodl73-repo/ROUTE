@@ -23,14 +23,17 @@ FIELDS = [
 REQUIRED_DECISIONS = {
     "complete_for_pre_validation_layer",
     "complete_for_dry_run_layer",
+    "complete_for_node_fixture_layer",
     "partial_not_canada_equivalent",
     "blocked",
 }
 REQUIRED_BLOCKS = {
     "internal_adapter_proof",
+    "official_network",
     "official_corridor_designation",
     "member_state_approval",
     "geometry_acceptance",
+    "throughput_proof",
     "guaranteed_sla",
     "roi",
     "validation",
