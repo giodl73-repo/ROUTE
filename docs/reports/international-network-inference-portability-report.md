@@ -526,6 +526,14 @@ but it remains an internal parser fixture and does not promote map, topology,
 adapter, official-network, operational, approval, ROI, public-readiness, or
 external-readiness claims.
 
+`data/international-canada-external-review-pathway-001.csv` names the bounded
+path from internal Canada proof to future external review: federal transport,
+port authority, provincial or regional transport, academic or transport
+research, and an explicit external-validation-not-started decision row. It does
+not create a named venue, completed packet, agency review, port review,
+approval, endorsement, official Canadian network, SLA, ROI, construction,
+public-readiness, external-readiness, or validation claim.
+
 ## Product Language
 
 Use:

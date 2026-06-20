@@ -9,6 +9,7 @@ created: 2026-06-19
 updated: 2026-06-19
 sources:
   - docs/reviews/international-canada-internal-adapter-proof-001.md
+  - docs/reviews/international-canada-external-review-pathway-001.md
   - data/international-canada-internal-adapter-proof-001.csv
   - docs/reports/international-network-inference-portability-report.md
   - docs/reports/route-evidence-posture.md
@@ -56,6 +57,17 @@ Use:
 
 Avoid language that turns the internal proof into certification, adoption, or
 network validation.
+
+## External Review Path
+
+The next Canada step is selecting a real external review lane and venue, not
+claiming external validation. The scoped pathway is recorded in
+`docs/reviews/international-canada-external-review-pathway-001.md`.
+
+Safe wording:
+
+> Canada has a scoped pathway for future external review; external validation
+> has not started.
 
 ## Gate
 
