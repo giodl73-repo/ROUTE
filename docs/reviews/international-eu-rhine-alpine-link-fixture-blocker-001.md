@@ -8,8 +8,8 @@ EU Rhine-Alpine link fixture replacement is not ready.
 
 The current link table contains metadata/no-geometry dry-run rows. The bounded
 source-content extraction rows are context rows, not accepted road-link feature
-rows. The road-feature probe still requires an exact GISCO Transport version 3
-road-link endpoint before source-row extraction.
+rows. The road-feature probe and endpoint-candidate probe still require an exact
+GISCO Transport version 3 road-link endpoint before source-row extraction.
 
 ## Why This Matters
 

@@ -101,6 +101,7 @@ game, release, or public-readiness claims.
 | International Canada hierarchy iteration 001 exists. | `docs/reviews/international-canada-hierarchy-iteration-001.md`, `data/international-canada-hierarchy-scorecard-001.csv`, `data/international-canada-candidate-hierarchy-v2.csv`, `maps/international/canada-candidate-hierarchy-v2.svg` | draft; Canada hierarchy v2 generated; validation held |
 | International EU Rhine-Alpine hierarchy iteration 001 exists. | `docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md`, `data/international-eu-rhine-alpine-scorecard-001.csv`, `data/international-eu-rhine-alpine-candidate-hierarchy-v2.csv`, `maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg` | draft; EU Rhine-Alpine hierarchy v2 generated; validation held |
 | International EU Rhine-Alpine target posture 001 exists. | `docs/reviews/international-eu-rhine-alpine-target-posture-001.md`, `data/international-eu-rhine-alpine-target-posture-001.csv`, `tools/check_eu_rhine_alpine_target_posture.py`, `npm run check:eu:target-posture` | draft; target assumptions held; internal proof allowed with holds |
+| International EU Rhine-Alpine road-link endpoint candidates 001 exists. | `docs/reviews/international-eu-rhine-alpine-road-link-endpoint-candidates-001.md`, `data/international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv`, `tools/check_eu_rhine_alpine_road_link_endpoint_candidates.py`, `npm run check:eu:road-link-endpoint-candidates` | draft; endpoint not acquired; source-row extraction held |
 | International EU Rhine-Alpine link fixture blocker 001 exists. | `docs/reviews/international-eu-rhine-alpine-link-fixture-blocker-001.md`, `data/international-eu-rhine-alpine-link-fixture-blocker-001.csv`, `tools/check_eu_rhine_alpine_link_fixture_blocker.py`, `npm run check:eu:link-fixture-blocker` | draft; link replacement blocked by missing road-link endpoint |
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
@@ -349,6 +350,9 @@ The EU Rhine-Alpine link-fixture blocker gate now records that context and
 metadata rows cannot replace the link fixture; exact GISCO Transport version 3
 road-link endpoint acquisition must precede source-row extraction and fixture
 replacement.
+The EU Rhine-Alpine road-link endpoint-candidates gate now probes direct
+official-path candidates and records that endpoint acquisition remains open,
+with source-row extraction and fixture replacement held.
 The EU Rhine-Alpine port package-access gate now records reachable GDB and SHP
 ZIP package metadata for GISCO Ports 2013 by HEAD only while keeping download,
 parsing, geometry, node replacement, terminal performance, SLA, ROI, validation,
