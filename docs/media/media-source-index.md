@@ -217,6 +217,7 @@ public-readiness, external-readiness, or approval.
 | India kernel application | `docs/reviews/international-india-kernel-application-001.md` |
 | India source payload access | `docs/reviews/international-india-source-payload-access-001.md` |
 | India source payload probe | `docs/reviews/international-india-source-payload-probe-001.md` |
+| India source field inventory | `docs/reviews/international-india-source-field-inventory-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
