@@ -18,6 +18,7 @@ SOURCE_PACK = ROOT / "data" / "international-canada-adapter-source-pack-001.csv"
 PREFLIGHT = ROOT / "data" / "international-canada-parser-preflight-001.csv"
 CONTRACT = ROOT / "data" / "international-canada-parser-output-contract-001.csv"
 EXTRACTION_CANDIDATES = ROOT / "data" / "international-canada-parser-extraction-candidates-001.csv"
+NODE_SOURCE_SELECTION = ROOT / "data" / "international-canada-node-source-selection-001.csv"
 
 LINKS = ROOT / "data" / "canada_source_link_candidates.csv"
 NEEDS = ROOT / "data" / "canada_source_need_candidates.csv"
@@ -53,11 +54,14 @@ NEED_FIELDS = [
     "blocked_claims",
 ]
 NODE_FIELDS = [
-    "node_gap_id",
     "source_id",
+    "node_id",
+    "node_label",
     "node_class",
-    "needed_fields",
-    "gap_reason",
+    "source_owner",
+    "source_date",
+    "source_url",
+    "access_note",
     "evidence_label",
     "blocked_claims",
 ]
@@ -117,34 +121,6 @@ NEED_TEMPLATES = {
         ),
     },
 }
-
-NODE_TEMPLATES = [
-    {
-        "node_gap_id": "CAN-NODE-GAP-001",
-        "source_id": "CAN-SRC-005",
-        "node_class": "port_gateway",
-        "needed_fields": "port node; terminal node; access road; owner; source date; access note",
-        "gap_reason": "official port or terminal source custody is not attached",
-        "blocked_claims": (
-            "port_endorsement;terminal_performance;node_completeness;"
-            "throughput_proof;road_access_proof;construction_ready;"
-            "guaranteed_sla;roi;compliance;endorsement;validation;"
-            "public_readiness;external_readiness"
-        ),
-    },
-    {
-        "node_gap_id": "CAN-NODE-GAP-002",
-        "source_id": "CAN-SRC-005",
-        "node_class": "northern_or_rural_access_node",
-        "needed_fields": "node id; label; node class; source owner; source date; access note",
-        "gap_reason": "non-metro access node source custody is not attached",
-        "blocked_claims": (
-            "node_completeness;access_adequacy;route_promotion;"
-            "construction_ready;guaranteed_sla;roi;compliance;endorsement;"
-            "validation;public_readiness;external_readiness"
-        ),
-    },
-]
 
 TARGET_TEMPLATES = [
     {
@@ -265,13 +241,7 @@ def main() -> None:
             }
         )
 
-    node_rows = [
-        {
-            **template,
-            "evidence_label": task_for(preflight, "CAN-PARSE-005")["allowed_output_label"],
-        }
-        for template in NODE_TEMPLATES
-    ]
+    node_rows = build_source_selected_node_rows(contracts, preflight)
     target_rows = [
         {
             **template,
@@ -286,7 +256,7 @@ def main() -> None:
     for path, row_id_field, rows in [
         ("data/canada_source_link_candidates.csv", "route_id", link_rows),
         ("data/canada_source_need_candidates.csv", "need_id", need_rows),
-        ("data/canada_source_node_candidates.csv", "node_gap_id", node_rows),
+        ("data/canada_source_node_candidates.csv", "node_id", node_rows),
         ("data/canada_service_target_candidates.csv", "target_gap_id", target_rows),
     ]:
         for row in rows:
@@ -319,7 +289,7 @@ def review_note_for(path: str, row_id: str) -> str:
     if path.endswith("need_candidates.csv"):
         return "bounded need/constraint vocabulary only"
     if path.endswith("node_candidates.csv"):
-        return "gap row only"
+        return "source-selected port gateway candidate; internal node fixture only"
     return "assumption row only"
 
 
@@ -339,6 +309,31 @@ def build_source_derived_link_rows(link_contract: dict[str, str]) -> list[dict[s
                 "access_note": "source-derived no-geometry internal link fixture; not map or adapter use",
                 "evidence_label": candidate["evidence_label"],
                 "blocked_claims": link_contract["blocked_columns_or_values"],
+            }
+        )
+    return rows
+
+
+def build_source_selected_node_rows(
+    contracts: list[dict[str, str]],
+    preflight: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    node_contract = contract_for(contracts, "canada_source_node_candidates")
+    task = task_for(preflight, "CAN-PARSE-005")
+    rows: list[dict[str, str]] = []
+    for selected in read_csv(NODE_SOURCE_SELECTION):
+        rows.append(
+            {
+                "source_id": selected["source_id"],
+                "node_id": selected["node_id"],
+                "node_label": selected["node_label"],
+                "node_class": selected["node_class"],
+                "source_owner": selected["source_owner"],
+                "source_date": selected["source_date"],
+                "source_url": selected["source_url"],
+                "access_note": "source-selected internal node fixture; not terminal proof or public use",
+                "evidence_label": task["allowed_output_label"].replace("source-needed", "source-candidate"),
+                "blocked_claims": node_contract["blocked_columns_or_values"],
             }
         )
     return rows

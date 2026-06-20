@@ -70,6 +70,12 @@ sources:
   - data/international-canada-node-source-selection-001.csv
   - docs/reviews/international-canada-node-source-probe-001.md
   - data/international-canada-node-source-probe-001.csv
+  - docs/reviews/international-canada-node-fixture-contract-001.md
+  - docs/reviews/international-canada-node-replacement-role-review-001.md
+  - docs/reviews/international-canada-node-fixture-replacement-closeout-001.md
+  - docs/reviews/international-canada-target-posture-001.md
+  - docs/reviews/international-canada-internal-adapter-proof-001.md
+  - data/international-canada-internal-adapter-proof-001.csv
   - docs/vtrace/COMMUNICATIONS_STRATEGY.md
   - docs/vtrace/VERIFICATION.md
 ---
