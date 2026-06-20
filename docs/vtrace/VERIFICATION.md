@@ -110,6 +110,8 @@ game, release, or public-readiness claims.
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International India adapter source pack 001 exists. | `docs/reviews/international-india-adapter-source-pack-001.md`, `data/international-india-adapter-source-pack-001.csv`, `tools/check_india_adapter_source_pack.py`, `npm run check:india:source-pack` | draft; source-pack preflight ready; promotion held |
 | International India kernel application 001 exists. | `docs/reviews/international-india-kernel-application-001.md`, `data/international-india-kernel-application-001.csv`, `tools/check_india_kernel_application.py`, `npm run check:india:kernel-application` | draft; source custody started; parser and fixture work held |
+| International India source payload access 001 exists. | `docs/reviews/international-india-source-payload-access-001.md`, `data/international-india-source-payload-access-001.csv`, `tools/check_india_source_payload_access.py`, `npm run check:india:payload-access` | draft; access manifest ready; evidence not accepted |
+| International India source payload probe 001 exists. | `docs/reviews/international-india-source-payload-probe-001.md`, `data/international-india-source-payload-probe-001.csv`, `tools/check_india_source_payload_probe.py`, `npm run check:india:payload-probe` | draft; HTTP metadata recorded; evidence not accepted |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
@@ -218,6 +220,10 @@ validation.
 The India kernel-application gate now records that India has started the
 reusable proof kernel at source custody only; parser contract, fixture
 replacement, target posture, and review packet remain held.
+The India source-payload access and probe gates now separate official URL cache
+candidates from local/held rows and record bounded HTTP metadata while keeping
+evidence acceptance, field parsing, row validation, fixture replacement, SLA,
+ROI, public-readiness, and external-readiness blocked.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
