@@ -198,6 +198,7 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine road feature source selection | `docs/reviews/international-eu-rhine-alpine-road-feature-source-selection-001.md` |
 | EU Rhine-Alpine road feature metadata probe | `docs/reviews/international-eu-rhine-alpine-road-feature-metadata-probe-001.md` |
 | EU Rhine-Alpine port package access | `docs/reviews/international-eu-rhine-alpine-port-package-access-001.md` |
+| EU Rhine-Alpine port package manifest | `docs/reviews/international-eu-rhine-alpine-port-package-manifest-001.md` |
 | India hierarchy iteration | `docs/reviews/international-india-hierarchy-iteration-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
