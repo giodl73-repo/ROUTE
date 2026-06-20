@@ -13,6 +13,7 @@ BLOCKER = ROOT / "data" / "international-eu-rhine-alpine-link-fixture-blocker-00
 LINKS = ROOT / "data" / "eu_rhine_alpine_source_link_candidates.csv"
 EXTRACTION = ROOT / "data" / "international-eu-rhine-alpine-parser-extraction-candidates-001.csv"
 ENDPOINT_CANDIDATES = ROOT / "data" / "international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv"
+PAGE_LINKS = ROOT / "data" / "international-eu-rhine-alpine-gisco-transport-page-links-001.csv"
 
 FIELDS = [
     "blocker_id",
@@ -54,6 +55,7 @@ def main() -> int:
     _, link_rows = read_csv(LINKS)
     _, extraction_rows = read_csv(EXTRACTION)
     _, endpoint_rows = read_csv(ENDPOINT_CANDIDATES)
+    _, page_rows = read_csv(PAGE_LINKS)
     failures: list[str] = []
 
     if fields != FIELDS:
@@ -74,8 +76,12 @@ def main() -> int:
         failures.append("EU link blocker requires endpoint-candidate probe rows")
     if any(row["endpoint_status"] == "candidate_reachable_not_accepted" for row in endpoint_rows):
         failures.append("EU link blocker found a reachable endpoint; package-access gate required before blocker can pass")
+    if not page_rows:
+        failures.append("EU link blocker requires official GISCO page-link scrape rows")
+    if any(row["link_family"] == "road_link_candidate" for row in page_rows):
+        failures.append("EU link blocker found a road link on official page; package-access gate required before blocker can pass")
     for row in rows:
-        if row["road_endpoint_status"] != "candidate_endpoints_probed_exact_road_link_endpoint_missing":
+        if row["road_endpoint_status"] != "official_page_scraped_candidates_probed_road_link_endpoint_missing":
             failures.append("EU link blocker must preserve missing road endpoint status")
         if row["replacement_decision"] != "blocked_exact_road_link_endpoint_missing":
             failures.append("EU link blocker must block replacement")

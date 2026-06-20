@@ -12,6 +12,7 @@ LINKS = ROOT / "data" / "eu_rhine_alpine_source_link_candidates.csv"
 EXTRACTION = ROOT / "data" / "international-eu-rhine-alpine-parser-extraction-candidates-001.csv"
 METADATA_PROBE = ROOT / "data" / "international-eu-rhine-alpine-road-feature-metadata-probe-001.csv"
 ENDPOINT_CANDIDATES = ROOT / "data" / "international-eu-rhine-alpine-road-link-endpoint-candidates-001.csv"
+PAGE_LINKS = ROOT / "data" / "international-eu-rhine-alpine-gisco-transport-page-links-001.csv"
 OUTPUT = ROOT / "data" / "international-eu-rhine-alpine-link-fixture-blocker-001.csv"
 
 FIELDS = [
@@ -45,7 +46,11 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 def road_endpoint_status() -> str:
     endpoint_rows = read_csv(ENDPOINT_CANDIDATES) if ENDPOINT_CANDIDATES.exists() else []
+    page_rows = read_csv(PAGE_LINKS) if PAGE_LINKS.exists() else []
+    page_has_no_road = page_rows and all(row["link_family"] != "road_link_candidate" for row in page_rows)
     if endpoint_rows and all(row["endpoint_status"] != "candidate_reachable_not_accepted" for row in endpoint_rows):
+        if page_has_no_road:
+            return "official_page_scraped_candidates_probed_road_link_endpoint_missing"
         return "candidate_endpoints_probed_exact_road_link_endpoint_missing"
     rows = read_csv(METADATA_PROBE)
     road_rows = [row for row in rows if row["selected_for"] == "road_feature_probe"]
