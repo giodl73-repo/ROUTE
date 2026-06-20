@@ -113,6 +113,7 @@ game, release, or public-readiness claims.
 | International India source payload access 001 exists. | `docs/reviews/international-india-source-payload-access-001.md`, `data/international-india-source-payload-access-001.csv`, `tools/check_india_source_payload_access.py`, `npm run check:india:payload-access` | draft; access manifest ready; evidence not accepted |
 | International India source payload probe 001 exists. | `docs/reviews/international-india-source-payload-probe-001.md`, `data/international-india-source-payload-probe-001.csv`, `tools/check_india_source_payload_probe.py`, `npm run check:india:payload-probe` | draft; HTTP metadata recorded; evidence not accepted |
 | International India source field inventory 001 exists. | `docs/reviews/international-india-source-field-inventory-001.md`, `data/international-india-source-field-inventory-001.csv`, `tools/check_india_source_field_inventory.py`, `npm run check:india:field-inventory` | draft; candidate field inventory ready; evidence not accepted |
+| International India parser preflight 001 exists. | `docs/reviews/international-india-parser-preflight-001.md`, `data/international-india-parser-preflight-001.csv`, `data/international-india-parser-output-contract-001.csv`, `tools/check_india_parser_preflight.py`, `npm run check:india:parser-preflight` | draft; parser contract ready; implementation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
@@ -229,6 +230,10 @@ The India source field-inventory gate now records candidate field groups from
 the bounded probe while keeping parsing, source-row validation, fixture
 replacement, geometry, SLA, ROI, validation, public-readiness, and
 external-readiness blocked.
+The India parser-preflight gate now defines no-geometry output contracts for
+link, need, node, held target, evidence-label, and review-backlog tables while
+keeping parser implementation, row validation, fixture replacement, geometry,
+SLA, ROI, validation, public-readiness, and external-readiness blocked.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,

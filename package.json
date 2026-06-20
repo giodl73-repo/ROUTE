@@ -61,6 +61,7 @@
     "check:india:payload-access": "python tools/build_india_adapter_source_pack.py && python tools/build_india_source_payload_access.py && python tools/check_india_adapter_source_pack.py && python tools/check_india_source_payload_access.py",
     "check:india:payload-probe": "python tools/build_india_adapter_source_pack.py && python tools/build_india_source_payload_access.py && python tools/probe_india_source_payloads.py && python tools/check_india_source_payload_access.py && python tools/check_india_source_payload_probe.py",
     "check:india:field-inventory": "python tools/build_india_adapter_source_pack.py && python tools/build_india_source_payload_access.py && python tools/probe_india_source_payloads.py && python tools/build_india_source_field_inventory.py && python tools/check_india_source_payload_probe.py && python tools/check_india_source_field_inventory.py",
+    "check:india:parser-preflight": "python tools/build_india_adapter_source_pack.py && python tools/build_india_source_payload_access.py && python tools/probe_india_source_payloads.py && python tools/build_india_source_field_inventory.py && python tools/build_india_parser_preflight.py && python tools/check_india_source_field_inventory.py && python tools/check_india_parser_preflight.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
