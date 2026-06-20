@@ -335,6 +335,10 @@ The international flexibility proof gate now records the larger product result:
 Canada proves depth, EU proves adaptive branching under source mismatch, and the
 multi-region map fixtures prove breadth while official, SLA, ROI, validation,
 public-readiness, and external-readiness claims remain held.
+The EU Rhine-Alpine road-feature source-selection gate now selects GISCO road
+and port-node source families for next metadata probes while keeping geometry,
+fixture replacement, terminal performance, SLA, ROI, validation, and readiness
+claims blocked.
 
 ## Evidence Ledger
 
