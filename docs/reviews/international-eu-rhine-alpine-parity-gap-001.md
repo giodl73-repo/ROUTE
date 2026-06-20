@@ -22,9 +22,9 @@ sources:
 EU Rhine-Alpine is not yet at Canada-level internal proof.
 
 It has reached the source-pack, parser dry-run, payload probe, field inventory,
-and bounded row-validation layers. It has not reached Canada parity for
-source-derived link fixture replacement, selected node fixture replacement,
-target-posture closeout, or internal adapter proof.
+bounded row-validation, no-geometry node fixture, and target-posture layers. It
+has not reached Canada parity for source-derived link fixture replacement or
+internal adapter proof.
 
 ## Current Parity
 
@@ -34,8 +34,8 @@ target-posture closeout, or internal adapter proof.
 | Parser preflight and dry run | parity reached for dry-run layer |
 | Field inventory / source-row validation | partial; metadata validation only |
 | Link fixture replacement | blocked |
-| Node fixture replacement | blocked |
-| Target posture / internal proof | blocked |
+| Node fixture replacement | reached for internal no-geometry node fixture only |
+| Target posture / internal proof | target posture reached; internal proof blocked by link fixture |
 
 ## Gate
 
@@ -49,5 +49,4 @@ npm run check:eu:parity-gap
 
 Rationale: EU has advanced substantially up the same proof ladder, but claiming
 Canada-level parity now would be false. The next required step is source-derived
-EU link candidates and selected official node custody before fixture
-replacement, target posture, and internal proof.
+EU link candidates before link fixture replacement and any internal proof.

@@ -100,6 +100,7 @@ game, release, or public-readiness claims.
 | International Canada candidate hierarchy map 001 exists. | `docs/reviews/international-canada-candidate-hierarchy-map-001.md`, `data/international-canada-candidate-hierarchy.csv`, `maps/international/canada-candidate-hierarchy.svg` | draft; Canada candidate hierarchy map generated; validation held |
 | International Canada hierarchy iteration 001 exists. | `docs/reviews/international-canada-hierarchy-iteration-001.md`, `data/international-canada-hierarchy-scorecard-001.csv`, `data/international-canada-candidate-hierarchy-v2.csv`, `maps/international/canada-candidate-hierarchy-v2.svg` | draft; Canada hierarchy v2 generated; validation held |
 | International EU Rhine-Alpine hierarchy iteration 001 exists. | `docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md`, `data/international-eu-rhine-alpine-scorecard-001.csv`, `data/international-eu-rhine-alpine-candidate-hierarchy-v2.csv`, `maps/international/eu-rhine-alpine-candidate-hierarchy-v2.svg` | draft; EU Rhine-Alpine hierarchy v2 generated; validation held |
+| International EU Rhine-Alpine target posture 001 exists. | `docs/reviews/international-eu-rhine-alpine-target-posture-001.md`, `data/international-eu-rhine-alpine-target-posture-001.csv`, `tools/check_eu_rhine_alpine_target_posture.py`, `npm run check:eu:target-posture` | draft; target assumptions held; internal proof allowed with holds |
 | International India hierarchy iteration 001 exists. | `docs/reviews/international-india-hierarchy-iteration-001.md`, `data/international-india-scorecard-001.csv`, `data/international-india-candidate-hierarchy-v2.csv`, `maps/international/india-candidate-hierarchy-v2.svg` | draft; India hierarchy v2 generated; validation held |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
@@ -321,8 +322,8 @@ record candidate field groups and bounded dry-run row checks while keeping
 source-content validation, geometry acceptance, fixture replacement, approval,
 SLA, ROI, construction, public-readiness, and external-readiness claims held.
 The EU Rhine-Alpine parity gap gate records that EU has not reached
-Canada-level internal proof; source-derived link replacement, target posture,
-and internal proof remain blocked.
+Canada-level internal proof; source-derived link replacement and internal proof
+remain blocked after no-geometry node fixture closeout and target posture.
 The EU Rhine-Alpine source-content and extraction gates now add bounded
 official-source content and no-geometry extraction candidates while preserving a
 current-corridor rebase warning and holding road-feature replacement, internal
@@ -376,6 +377,10 @@ node table with five validated GISCO Ports 2013 attribute candidates while
 keeping geometry, topology, map overlay, terminal performance, road access,
 throughput, SLA, ROI, validation, public-readiness, and external-readiness
 claims blocked.
+The EU Rhine-Alpine target-posture gate now accepts held service-target
+assumptions only for future internal adapter proof with explicit target holds,
+while adopted target, SLA, travel-time, delivery, ROI, validation,
+public-readiness, and external-readiness claims remain blocked.
 
 ## Evidence Ledger
 
