@@ -311,6 +311,11 @@ bounded-need, source-needed, held-target, evidence-label, and review-backlog
 rows while keeping geometry acceptance, fixture replacement, validation,
 approval, SLA, ROI, construction, public-readiness, and external-readiness
 claims held.
+The EU Rhine-Alpine source-payload access and probe gates now record cache
+candidate and bounded HTTP metadata posture while evidence remains not accepted
+and field inventory, source validation, parser promotion, fixture replacement,
+approval, SLA, ROI, construction, public-readiness, and external-readiness
+claims remain held.
 
 ## Evidence Ledger
 

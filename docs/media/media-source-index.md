@@ -186,6 +186,8 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine kernel application | `docs/reviews/international-eu-rhine-alpine-kernel-application-001.md` |
 | EU Rhine-Alpine parser preflight | `docs/reviews/international-eu-rhine-alpine-parser-preflight-001.md` |
 | EU Rhine-Alpine parser dry run | `docs/reviews/international-eu-rhine-alpine-parser-dry-run-001.md` |
+| EU Rhine-Alpine source payload access | `docs/reviews/international-eu-rhine-alpine-source-payload-access-001.md` |
+| EU Rhine-Alpine source payload probe | `docs/reviews/international-eu-rhine-alpine-source-payload-probe-001.md` |
 | India hierarchy iteration | `docs/reviews/international-india-hierarchy-iteration-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |

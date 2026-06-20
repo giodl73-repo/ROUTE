@@ -570,6 +570,13 @@ source-needed, or held; they do not accept geometry, replace hierarchy fixtures,
 validate an EU corridor, or promote approval, SLA, ROI, construction,
 public-readiness, external-readiness, or external-validation claims.
 
+`data/international-eu-rhine-alpine-source-payload-access-001.csv` and
+`data/international-eu-rhine-alpine-source-payload-probe-001.csv` add the next
+Canada-equivalent layer for EU: access planning and bounded HTTP reachability
+metadata. Evidence remains not accepted, and no source content, geometry, field
+inventory, fixture replacement, approval, SLA, ROI, construction,
+public-readiness, external-readiness, or validation claim is promoted.
+
 ## Product Language
 
 Use:
