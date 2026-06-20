@@ -286,6 +286,14 @@ The Canada external review pathway now names candidate review lanes and required
 packet controls while keeping named venue, real external review, agency or port
 approval, endorsement, validation, public-readiness, and external-readiness
 claims held.
+The international adapter proof kernel now separates reusable source-custody,
+parser-contract, fixture-replacement, target-posture, and review-packet steps
+from Canada-specific fixtures while keeping official, approval, SLA, ROI,
+construction, validation, public-readiness, and external-readiness claims held.
+The Canada port authority packet preflight now selects a narrow source-custody
+packet lane for Vancouver, Montreal, and Halifax node candidates while keeping
+named venue, port review, endorsement, performance, throughput, SLA, ROI,
+public-readiness, and external-readiness claims held.
 
 ## Evidence Ledger
 

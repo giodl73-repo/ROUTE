@@ -534,6 +534,18 @@ not create a named venue, completed packet, agency review, port review,
 approval, endorsement, official Canadian network, SLA, ROI, construction,
 public-readiness, external-readiness, or validation claim.
 
+`data/international-adapter-proof-kernel-001.csv` separates the reusable proof
+kernel from Canada-specific rows. The reusable steps are source custody, parser
+contract, fixture replacement, target posture, and review packet conversion.
+Canada instantiates those steps, but the kernel remains reusable for another
+country or region after a new source pack and local review roles are selected.
+
+`data/international-canada-port-authority-packet-preflight-001.csv` selects the
+port-authority lane as the first narrow Canada packet candidate. It anchors on
+Vancouver, Montreal, and Halifax node source-custody rows and keeps named venue,
+port review, endorsement, terminal performance, throughput, SLA, ROI,
+construction, public-readiness, external-readiness, and validation claims held.
+
 ## Product Language
 
 Use:
