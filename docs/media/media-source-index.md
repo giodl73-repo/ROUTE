@@ -191,6 +191,8 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine source field inventory | `docs/reviews/international-eu-rhine-alpine-source-field-inventory-001.md` |
 | EU Rhine-Alpine source row validation | `docs/reviews/international-eu-rhine-alpine-source-row-validation-001.md` |
 | EU Rhine-Alpine parity gap | `docs/reviews/international-eu-rhine-alpine-parity-gap-001.md` |
+| EU Rhine-Alpine source content sample | `docs/reviews/international-eu-rhine-alpine-source-content-sample-001.md` |
+| EU Rhine-Alpine parser extraction candidates | `docs/reviews/international-eu-rhine-alpine-parser-extraction-candidates-001.md` |
 | India hierarchy iteration | `docs/reviews/international-india-hierarchy-iteration-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
