@@ -351,6 +351,10 @@ The EU Rhine-Alpine port package-manifest gate now reads package manifests and
 the `PORT_PT_2013` DBF header only, exposing node field mapping inputs while
 keeping geometry, node replacement, terminal performance, SLA, ROI, validation,
 and readiness claims blocked.
+The EU Rhine-Alpine port node field-mapping gate now maps GISCO DBF headers to
+node-candidate schema fields while keeping record validation, geometry, node
+selection, node replacement, terminal performance, SLA, ROI, validation, and
+readiness claims blocked.
 
 ## Evidence Ledger
 
