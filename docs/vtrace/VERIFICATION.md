@@ -282,6 +282,10 @@ The Canada link-fixture replacement closeout now regenerates
 no-geometry candidates while keeping adapter, map, topology, official,
 operational, approval, ROI, public-readiness, external-readiness, and external
 validation uses blocked.
+The Canada external review pathway now names candidate review lanes and required
+packet controls while keeping named venue, real external review, agency or port
+approval, endorsement, validation, public-readiness, and external-readiness
+claims held.
 
 ## Evidence Ledger
 

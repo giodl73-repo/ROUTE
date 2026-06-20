@@ -210,6 +210,7 @@ public-readiness, external-readiness, or approval.
 | Canada node source probe | `docs/reviews/international-canada-node-source-probe-001.md` |
 | Canada internal adapter proof | `docs/reviews/international-canada-internal-adapter-proof-001.md` |
 | Canada media proof brief | `docs/media/canada-internal-proof-brief.md` |
+| Canada external review pathway | `docs/reviews/international-canada-external-review-pathway-001.md` |
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
 | Technical hostile Q&A | `docs/reviews/external-rehearsal-technical-rude-qa-addendum.md` |
