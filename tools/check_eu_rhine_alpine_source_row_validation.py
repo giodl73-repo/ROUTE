@@ -38,8 +38,8 @@ def main() -> int:
     failures: list[str] = []
     if fields != FIELDS:
         failures.append("EU source-row validation columns do not match contract")
-    if len(rows) != 6:
-        failures.append("EU source-row validation must cover six dry-run rows")
+    if len(rows) != 10:
+        failures.append("EU source-row validation must cover ten dry-run rows")
     for row in rows:
         if row["validation_result"] not in ALLOWED_RESULTS:
             failures.append(f"{row['row_id']} unsupported validation result")

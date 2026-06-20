@@ -10,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACK = ROOT / "data" / "international-eu-rhine-alpine-adapter-source-pack-001.csv"
 CONTRACT = ROOT / "data" / "international-eu-rhine-alpine-parser-output-contract-001.csv"
+PORT_NODE_RECORD_SAMPLE = ROOT / "data" / "international-eu-rhine-alpine-port-node-record-sample-001.csv"
+PORT_NODE_SOURCE_ROW_VALIDATION = ROOT / "data" / "international-eu-rhine-alpine-port-node-source-row-validation-001.csv"
 
 LINKS = ROOT / "data" / "eu_rhine_alpine_source_link_candidates.csv"
 NEEDS = ROOT / "data" / "eu_rhine_alpine_source_need_candidates.csv"
@@ -46,10 +48,13 @@ NEED_FIELDS = [
 ]
 NODE_FIELDS = [
     "source_id",
-    "node_gap_id",
+    "node_id",
+    "node_label",
     "node_class",
-    "needed_source",
-    "assumption_label",
+    "source_owner",
+    "source_date",
+    "source_url",
+    "access_note",
     "evidence_label",
     "blocked_claims",
 ]
@@ -104,6 +109,34 @@ def source(source_id: str) -> dict[str, str]:
         if row["source_id"] == source_id:
             return row
     raise KeyError(source_id)
+
+
+def build_node_rows(node_blocked: str) -> list[dict[str, str]]:
+    sample_rows = {row["sample_id"]: row for row in read_csv(PORT_NODE_RECORD_SAMPLE)}
+    validation_rows = read_csv(PORT_NODE_SOURCE_ROW_VALIDATION)
+    src3 = source("EUR-SRC-003")
+    node_rows: list[dict[str, str]] = []
+    for validation in validation_rows:
+        if validation["validation_result"] != "candidate_attribute_row_validated_geometry_held":
+            raise ValueError(f"unsupported node validation result: {validation['validation_id']}")
+        sample = sample_rows[validation["sample_id"]]
+        if sample["port_id"] != validation["port_id"]:
+            raise ValueError(f"sample/validation port mismatch: {validation['validation_id']}")
+        node_rows.append(
+            {
+                "source_id": "EUR-SRC-003",
+                "node_id": sample["port_id"],
+                "node_label": sample["port_name"],
+                "node_class": "port_gateway_attribute_candidate",
+                "source_owner": src3["owner_or_publisher"],
+                "source_date": src3["date_accessed"],
+                "source_url": "https://ec.europa.eu/eurostat/cache/GISCO/geodatafiles/PORT_2013_SH.zip",
+                "access_note": "validated GISCO Ports 2013 attribute row; internal node fixture only; geometry not read or accepted",
+                "evidence_label": "source-candidate",
+                "blocked_claims": node_blocked,
+            }
+        )
+    return node_rows
 
 
 def main() -> None:
@@ -172,17 +205,7 @@ def main() -> None:
         },
     ]
 
-    node_rows = [
-        {
-            "source_id": "EUR-SRC-005",
-            "node_gap_id": "EUR-NODE-GAP-001",
-            "node_class": "port_or_terminal_gateway",
-            "needed_source": "road/port node source custody for Rotterdam Antwerp Rhine industrial nodes Genoa and Alpine gateways",
-            "assumption_label": "source_needed",
-            "evidence_label": "source-needed",
-            "blocked_claims": node_blocked,
-        }
-    ]
+    node_rows = build_node_rows(node_blocked)
     target_rows = [
         {
             "target_gap_id": "EUR-TARGET-GAP-001",
@@ -198,7 +221,7 @@ def main() -> None:
     for path, row_id, rows in [
         ("data/eu_rhine_alpine_source_link_candidates.csv", "route_or_layer_id", link_rows),
         ("data/eu_rhine_alpine_source_need_candidates.csv", "need_id", need_rows),
-        ("data/eu_rhine_alpine_source_node_candidates.csv", "node_gap_id", node_rows),
+        ("data/eu_rhine_alpine_source_node_candidates.csv", "node_id", node_rows),
         ("data/eu_rhine_alpine_service_target_candidates.csv", "target_gap_id", target_rows),
     ]:
         for row in rows:

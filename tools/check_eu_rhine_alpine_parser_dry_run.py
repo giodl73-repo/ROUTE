@@ -21,14 +21,15 @@ TABLES = {
 ROW_ID_FIELDS = {
     "eu_rhine_alpine_source_link_candidates": "route_or_layer_id",
     "eu_rhine_alpine_source_need_candidates": "need_id",
-    "eu_rhine_alpine_source_node_candidates": "node_gap_id",
+    "eu_rhine_alpine_source_node_candidates": "node_id",
     "eu_rhine_alpine_service_target_candidates": "target_gap_id",
 }
 ALLOWED_SOURCES = {
     "eu_rhine_alpine_source_link_candidates": {"EUR-SRC-002", "EUR-SRC-003"},
     "eu_rhine_alpine_source_need_candidates": {"EUR-SRC-001", "EUR-SRC-004"},
-    "eu_rhine_alpine_source_node_candidates": {"EUR-SRC-005"},
+    "eu_rhine_alpine_source_node_candidates": {"EUR-SRC-003"},
 }
+REQUIRED_NODE_IDS = {"NLRTM", "BEANR", "ITGOA", "CHBSL", "DEDUI"}
 
 
 def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
@@ -75,6 +76,17 @@ def main() -> int:
     for row in table_rows["eu_rhine_alpine_source_link_candidates"]:
         if not row["geometry_ref"].startswith("not_accepted:"):
             failures.append("EU link candidate accepted geometry")
+    actual_node_ids = {row["node_id"] for row in table_rows["eu_rhine_alpine_source_node_candidates"]}
+    if REQUIRED_NODE_IDS - actual_node_ids:
+        failures.append(f"EU node candidate fixture missing nodes: {sorted(REQUIRED_NODE_IDS - actual_node_ids)}")
+    for row in table_rows["eu_rhine_alpine_source_node_candidates"]:
+        if "internal node fixture" not in row["access_note"]:
+            failures.append(f"{row['node_id']} missing internal node fixture access note")
+        if "geometry not read or accepted" not in row["access_note"]:
+            failures.append(f"{row['node_id']} does not preserve no-geometry posture")
+        for blocked in {"geometry_acceptance", "map_overlay", "terminal_performance", "road_access_proof"}:
+            if blocked not in row["blocked_claims"].split(";"):
+                failures.append(f"{row['node_id']} missing blocked claim {blocked}")
     for row in table_rows["eu_rhine_alpine_adapter_review_backlog"]:
         if row["result"] != "pending":
             failures.append(f"role backlog result is not pending for {row['role_lane']}")

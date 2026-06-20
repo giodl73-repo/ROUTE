@@ -304,13 +304,13 @@ proof kernel and records that source custody plus parser dry-run surfaces have
 started; fixture replacement, target posture closeout, internal proof, media
 proof, and external review remain held.
 The EU Rhine-Alpine parser preflight now defines parser task and output-contract
-surfaces before any parser implementation, source-row validation, geometry
-acceptance, fixture replacement, or internal proof claim.
+surfaces before any parser implementation, geometry acceptance, link fixture
+replacement, or internal proof claim.
 The EU Rhine-Alpine parser dry run now emits contract-shaped metadata,
-bounded-need, source-needed, held-target, evidence-label, and review-backlog
-rows while keeping geometry acceptance, fixture replacement, validation,
-approval, SLA, ROI, construction, public-readiness, and external-readiness
-claims held.
+bounded-need, source-candidate no-geometry port-node, held-target,
+evidence-label, and review-backlog rows while keeping geometry acceptance,
+validation, approval, SLA, ROI, construction, public-readiness, and
+external-readiness claims held.
 The EU Rhine-Alpine source-payload access and probe gates now record cache
 candidate and bounded HTTP metadata posture while evidence remains not accepted
 and field inventory, source validation, parser promotion, fixture replacement,
@@ -320,9 +320,9 @@ The EU Rhine-Alpine source field inventory and source-row validation gates now
 record candidate field groups and bounded dry-run row checks while keeping
 source-content validation, geometry acceptance, fixture replacement, approval,
 SLA, ROI, construction, public-readiness, and external-readiness claims held.
-The EU Rhine-Alpine parity gap gate now records that EU has not reached
-Canada-level internal proof; source-derived link replacement, selected node
-replacement, target posture, and internal proof remain blocked.
+The EU Rhine-Alpine parity gap gate records that EU has not reached
+Canada-level internal proof; source-derived link replacement, target posture,
+and internal proof remain blocked.
 The EU Rhine-Alpine source-content and extraction gates now add bounded
 official-source content and no-geometry extraction candidates while preserving a
 current-corridor rebase warning and holding road-feature replacement, internal
@@ -371,6 +371,11 @@ The EU Rhine-Alpine port-node fixture-contract gate now defines a no-geometry
 internal closeout contract for selected candidate rows while keeping actual
 fixture replacement, geometry, topology, terminal performance, road access, SLA,
 ROI, validation, public-readiness, and external-readiness claims blocked.
+The EU Rhine-Alpine port-node fixture-closeout gate now replaces the internal
+node table with five validated GISCO Ports 2013 attribute candidates while
+keeping geometry, topology, map overlay, terminal performance, road access,
+throughput, SLA, ROI, validation, public-readiness, and external-readiness
+claims blocked.
 
 ## Evidence Ledger
 
