@@ -316,6 +316,10 @@ candidate and bounded HTTP metadata posture while evidence remains not accepted
 and field inventory, source validation, parser promotion, fixture replacement,
 approval, SLA, ROI, construction, public-readiness, and external-readiness
 claims remain held.
+The EU Rhine-Alpine source field inventory and source-row validation gates now
+record candidate field groups and bounded dry-run row checks while keeping
+source-content validation, geometry acceptance, fixture replacement, approval,
+SLA, ROI, construction, public-readiness, and external-readiness claims held.
 
 ## Evidence Ledger
 

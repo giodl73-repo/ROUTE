@@ -577,6 +577,13 @@ metadata. Evidence remains not accepted, and no source content, geometry, field
 inventory, fixture replacement, approval, SLA, ROI, construction,
 public-readiness, external-readiness, or validation claim is promoted.
 
+`data/international-eu-rhine-alpine-source-field-inventory-001.csv` and
+`data/international-eu-rhine-alpine-source-row-validation-001.csv` then make the
+EU dry-run rows inspectable as bounded metadata/gap/held rows. This still stops
+short of source-content validation, geometry acceptance, fixture replacement,
+target-posture closeout, internal proof, approval, SLA, ROI, construction,
+public-readiness, external-readiness, or external validation.
+
 ## Product Language
 
 Use:
