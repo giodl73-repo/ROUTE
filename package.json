@@ -25,6 +25,7 @@
     "check:canada:external-review": "python tools/build_canada_external_review_pathway.py && python tools/check_canada_external_review_pathway.py",
     "check:canada:port-authority-packet": "python tools/build_canada_port_authority_packet_preflight.py && python tools/check_canada_port_authority_packet_preflight.py",
     "check:international:proof-kernel": "python tools/build_international_adapter_proof_kernel.py && python tools/check_international_adapter_proof_kernel.py",
+    "check:international:flexibility-proof": "python tools/build_international_system_flexibility_proof.py && python tools/check_international_system_flexibility_proof.py",
     "check:eu:source-pack": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py",
     "check:eu:kernel-application": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/build_eu_rhine_alpine_kernel_application.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_kernel_application.py",
     "check:eu:parser-preflight": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/build_eu_rhine_alpine_parser_preflight.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_parser_preflight.py",

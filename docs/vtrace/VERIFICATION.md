@@ -331,6 +331,10 @@ The EU Rhine-Alpine source-content row validation and current-corridor rebase
 gates now make the remaining parity blocker machine-checkable: EU has
 source-content rows, but not Canada-equivalent road-feature rows or an approved
 current-corridor fixture scope.
+The international flexibility proof gate now records the larger product result:
+Canada proves depth, EU proves adaptive branching under source mismatch, and the
+multi-region map fixtures prove breadth while official, SLA, ROI, validation,
+public-readiness, and external-readiness claims remain held.
 
 ## Evidence Ledger
 
