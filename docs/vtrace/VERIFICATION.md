@@ -294,6 +294,15 @@ The Canada port authority packet preflight now selects a narrow source-custody
 packet lane for Vancouver, Montreal, and Halifax node candidates while keeping
 named venue, port review, endorsement, performance, throughput, SLA, ROI,
 public-readiness, and external-readiness claims held.
+The EU Rhine-Alpine adapter source pack now starts the second-region proof
+kernel at source custody using candidate TEN-T/TENtec, GISCO, Rhine-Alpine, and
+held service-target rows while keeping parser, fixture replacement, approval,
+SLA, ROI, construction, validation, public-readiness, and external-readiness
+claims held.
+The EU Rhine-Alpine kernel application now compares EU against the reusable
+proof kernel and records that only source custody has started; parser contract,
+fixture replacement, target posture closeout, internal proof, media proof, and
+external review remain held.
 
 ## Evidence Ledger
 

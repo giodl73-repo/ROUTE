@@ -182,6 +182,8 @@ public-readiness, external-readiness, or approval.
 | Canada candidate hierarchy map | `docs/reviews/international-canada-candidate-hierarchy-map-001.md` |
 | Canada hierarchy iteration | `docs/reviews/international-canada-hierarchy-iteration-001.md` |
 | EU Rhine-Alpine hierarchy iteration | `docs/reviews/international-eu-rhine-alpine-hierarchy-iteration-001.md` |
+| EU Rhine-Alpine adapter source pack | `docs/reviews/international-eu-rhine-alpine-adapter-source-pack-001.md` |
+| EU Rhine-Alpine kernel application | `docs/reviews/international-eu-rhine-alpine-kernel-application-001.md` |
 | India hierarchy iteration | `docs/reviews/international-india-hierarchy-iteration-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |

@@ -63,6 +63,20 @@ external readiness, or external validation.
 - The Canada hierarchy maps and Canada fixture rows.
 - The Canada media brief and Canada external review lane choices.
 
+## Second-Region Application
+
+EU Rhine-Alpine is the next region in the proof-kernel ladder. Its current
+status is source-pack preflight only:
+
+- source custody has started with candidate TEN-T/TENtec, GISCO, Rhine-Alpine,
+  and service-target rows;
+- parser contract, fixture replacement, internal proof, media proof, and
+  external review remain held;
+- the EU hierarchy map remains a heuristic-held review surface, not validation.
+
+This is intentionally weaker than Canada. The point is to show that the generic
+kernel can be applied to another region without promoting premature claims.
+
 ## Gate
 
 Decision: **generic_kernel_instantiated_by_canada; external_validation_held**
