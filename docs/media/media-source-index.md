@@ -201,6 +201,7 @@ public-readiness, external-readiness, or approval.
 | EU Rhine-Alpine port package manifest | `docs/reviews/international-eu-rhine-alpine-port-package-manifest-001.md` |
 | EU Rhine-Alpine port node field mapping | `docs/reviews/international-eu-rhine-alpine-port-node-field-mapping-001.md` |
 | EU Rhine-Alpine port node record sample | `docs/reviews/international-eu-rhine-alpine-port-node-record-sample-001.md` |
+| EU Rhine-Alpine port node role review | `docs/reviews/international-eu-rhine-alpine-port-node-role-review-001.md` |
 | India hierarchy iteration | `docs/reviews/international-india-hierarchy-iteration-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
