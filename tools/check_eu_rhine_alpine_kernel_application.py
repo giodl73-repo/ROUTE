@@ -64,7 +64,7 @@ def main() -> int:
 
     for row in rows:
         step = row.get("kernel_step", "<missing>")
-        if row["promotion_decision"] not in {"preflight_ready_not_promoted", "held"}:
+        if row["promotion_decision"] not in {"preflight_ready_not_promoted", "dry_run_ready_not_promoted", "held"}:
             failures.append(f"{step} has unsupported promotion decision: {row['promotion_decision']}")
         missing_blocks = REQUIRED_BLOCKS - set(row["blocked_claims"].split(";"))
         if missing_blocks:

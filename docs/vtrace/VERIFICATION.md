@@ -300,9 +300,17 @@ held service-target rows while keeping parser, fixture replacement, approval,
 SLA, ROI, construction, validation, public-readiness, and external-readiness
 claims held.
 The EU Rhine-Alpine kernel application now compares EU against the reusable
-proof kernel and records that only source custody has started; parser contract,
-fixture replacement, target posture closeout, internal proof, media proof, and
-external review remain held.
+proof kernel and records that source custody plus parser dry-run surfaces have
+started; fixture replacement, target posture closeout, internal proof, media
+proof, and external review remain held.
+The EU Rhine-Alpine parser preflight now defines parser task and output-contract
+surfaces before any parser implementation, source-row validation, geometry
+acceptance, fixture replacement, or internal proof claim.
+The EU Rhine-Alpine parser dry run now emits contract-shaped metadata,
+bounded-need, source-needed, held-target, evidence-label, and review-backlog
+rows while keeping geometry acceptance, fixture replacement, validation,
+approval, SLA, ROI, construction, public-readiness, and external-readiness
+claims held.
 
 ## Evidence Ledger
 

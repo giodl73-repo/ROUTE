@@ -42,12 +42,12 @@ def main() -> None:
         },
         {
             "kernel_step": "parser_contract",
-            "eu_status": "not_started",
-            "eu_artifact": "source-pack only",
+            "eu_status": "parser_preflight_and_dry_run_ready",
+            "eu_artifact": "data/international-eu-rhine-alpine-parser-preflight-001.csv;data/international-eu-rhine-alpine-parser-output-contract-001.csv;docs/reviews/international-eu-rhine-alpine-parser-dry-run-001.md",
             "canada_comparison": "Canada has parser preflight, output contract, dry-run generator, and gate.",
-            "promotion_decision": "held",
+            "promotion_decision": "dry_run_ready_not_promoted",
             "blocked_claims": BLOCKED,
-            "next_action": "select source metadata and fields before creating EU parser preflight",
+            "next_action": "run payload access and field inventory before source-row validation or fixture replacement",
         },
         {
             "kernel_step": "fixture_replacement",
@@ -56,7 +56,7 @@ def main() -> None:
             "canada_comparison": "Canada has link and node fixture replacement closeouts.",
             "promotion_decision": "held",
             "blocked_claims": BLOCKED,
-            "next_action": "close source-row validation, role review, and geometry policy before replacing EU hierarchy rows",
+            "next_action": "close payload access, field inventory, source-row validation, role review, and geometry policy before replacing EU hierarchy rows",
         },
         {
             "kernel_step": "target_posture",
