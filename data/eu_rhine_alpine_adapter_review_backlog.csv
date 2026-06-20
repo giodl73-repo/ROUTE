@@ -1,0 +1,5 @@
+role_lane,review_question,trigger_output,required_before,hold_claims,result
+Scope Keeper,Does EU remain a source-custody dry run rather than validation?,all output tables,any use beyond internal inspection,official_corridor_designation;member_state_approval;external_validation,pending
+Citation Auditor,"Do EU rows preserve owner, date, access note, label, and blocked claims?",all output tables,parser implementation closeout,validation;endorsement;external_validation,pending
+Schematic Cartographer,Could metadata rows be mistaken for accepted geometry or map proof?,eu_rhine_alpine_source_link_candidates,any map overlay or fixture replacement,geometry_acceptance;topology_proof;official_corridor_designation,pending
+V&V,Does every EU row have a matching evidence-label row?,eu_rhine_alpine_adapter_evidence_labels,parser dry-run closeout,validation;public_readiness;external_readiness,pending

@@ -23,17 +23,19 @@ sources:
 This review compares the EU Rhine-Alpine state against the reusable
 international adapter proof kernel.
 
-EU now has the first kernel step started: source-custody preflight. The other
-kernel steps remain held. This is the correct result for a second-region switch:
-it proves the generic process can be started outside Canada without pretending
-the EU example has reached Canada-level internal proof.
+EU now has the first two kernel steps started: source-custody preflight and a
+parser preflight/dry-run surface. Fixture replacement, target-posture closeout,
+internal proof, media proof, and external review remain held. This is the
+correct result for a second-region switch: it proves the generic process can be
+started outside Canada without pretending the EU example has reached
+Canada-level internal proof.
 
 ## Kernel Status
 
 | Kernel Step | EU Status | Promotion Decision |
 |---|---|---|
 | Source custody | source pack preflight declared | preflight ready; not promoted |
-| Parser contract | not started | held |
+| Parser contract | parser preflight and dry run ready | dry run ready; not promoted |
 | Fixture replacement | not started | held |
 | Target posture | target assumptions held | held |
 | Review packet | not started | held |
@@ -44,8 +46,8 @@ Use:
 
 - "EU Rhine-Alpine is the second-region application of the generic proof
   kernel."
-- "EU source custody has started; parser, fixture replacement, internal proof,
-  and external review remain held."
+- "EU source custody and parser dry-run surfaces have started; fixture
+  replacement, internal proof, and external review remain held."
 - "The EU hierarchy map remains a heuristic-held review surface until
   source-row validation and role review close."
 
@@ -68,5 +70,7 @@ npm run check:eu:kernel-application
 ```
 
 Rationale: EU Rhine-Alpine is now the next region in the proof-kernel ladder,
-but only at source-pack preflight. Canada remains the completed internal proof
-example; EU is the second-region source-custody application.
+with source-custody and parser dry-run surfaces started. Canada remains the
+completed internal proof example; EU still needs payload access, field
+inventory, source-row validation, geometry policy, fixture replacement, target
+posture, and internal proof.

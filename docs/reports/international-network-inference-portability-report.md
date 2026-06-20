@@ -555,9 +555,20 @@ approval, SLA, ROI, construction, public-readiness, external-readiness, or
 external-validation claims.
 
 `data/international-eu-rhine-alpine-kernel-application-001.csv` compares EU to
-the Canada-instantiated kernel. EU has source custody started; parser contract,
-fixture replacement, target-posture closeout, internal proof, media proof, and
-external review remain held.
+the Canada-instantiated kernel. EU now has source custody and parser dry-run
+surfaces started; fixture replacement, target-posture closeout, internal proof,
+media proof, and external review remain held.
+
+`data/international-eu-rhine-alpine-parser-preflight-001.csv` and
+`data/international-eu-rhine-alpine-parser-output-contract-001.csv` define the
+EU parser dry-run contract. `data/eu_rhine_alpine_source_link_candidates.csv`,
+`data/eu_rhine_alpine_source_need_candidates.csv`,
+`data/eu_rhine_alpine_source_node_candidates.csv`, and
+`data/eu_rhine_alpine_service_target_candidates.csv` then provide the first
+contract-shaped EU dry-run fixture. The rows are metadata, bounded vocabulary,
+source-needed, or held; they do not accept geometry, replace hierarchy fixtures,
+validate an EU corridor, or promote approval, SLA, ROI, construction,
+public-readiness, external-readiness, or external-validation claims.
 
 ## Product Language
 

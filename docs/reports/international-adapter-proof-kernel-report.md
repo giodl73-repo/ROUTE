@@ -70,8 +70,9 @@ status is source-pack preflight only:
 
 - source custody has started with candidate TEN-T/TENtec, GISCO, Rhine-Alpine,
   and service-target rows;
-- parser contract, fixture replacement, internal proof, media proof, and
-  external review remain held;
+- parser preflight and a contract-shaped dry run now exist, but parser
+  implementation, fixture replacement, internal proof, media proof, and external
+  review remain held;
 - the EU hierarchy map remains a heuristic-held review surface, not validation.
 
 This is intentionally weaker than Canada. The point is to show that the generic
