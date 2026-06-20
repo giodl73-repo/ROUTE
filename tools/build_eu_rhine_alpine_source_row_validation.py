@@ -40,7 +40,7 @@ def main() -> None:
     sources = [
         ("data/eu_rhine_alpine_source_link_candidates.csv", LINKS, "route_or_layer_id"),
         ("data/eu_rhine_alpine_source_need_candidates.csv", NEEDS, "need_id"),
-        ("data/eu_rhine_alpine_source_node_candidates.csv", NODES, "node_gap_id"),
+        ("data/eu_rhine_alpine_source_node_candidates.csv", NODES, "node_id"),
         ("data/eu_rhine_alpine_service_target_candidates.csv", TARGETS, "target_gap_id"),
     ]
     count = 1

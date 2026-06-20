@@ -35,11 +35,12 @@ CONTRACT_FIELDS = [
 ]
 
 BLOCKED = (
-    "official_corridor_designation;member_state_approval;route_designation;"
-    "geometry_acceptance;topology_proof;terminal_performance;construction_ready;"
-    "guaranteed_sla;travel_time_proof;delivery_commitment;numeric_roi;roi;"
-    "eligibility;compliance;endorsement;validation;external_validation;"
-    "public_readiness;external_readiness"
+    "official_network;official_corridor_designation;member_state_approval;"
+    "route_designation;geometry_acceptance;topology_proof;map_overlay;"
+    "terminal_performance;node_completeness;road_access_proof;"
+    "throughput_proof;construction_ready;guaranteed_sla;travel_time_proof;"
+    "delivery_commitment;numeric_roi;roi;eligibility;compliance;endorsement;"
+    "validation;external_validation;public_readiness;external_readiness"
 )
 
 
@@ -103,15 +104,15 @@ def main() -> None:
         },
         {
             "task_id": "EUR-PARSE-005",
-            "source_id": "EUR-SRC-005",
-            "source_family": "rail_freight_context",
+            "source_id": "EUR-SRC-003",
+            "source_family": "port_geodata",
             "target_adapter_table": "eu_rhine_alpine_source_node_candidates",
-            "required_fields": "freight corridor context; organization scope; access note",
-            "preflight_action": "do not convert rail-freight context into road-node proof",
-            "allowed_output_label": "source-needed",
-            "blocked_if_missing": "road terminal or port source custody missing",
+            "required_fields": "port id; port name; country code; NUTS code; TEN code; hierarchy; access note",
+            "preflight_action": "load validated GISCO Ports 2013 attribute candidates only; do not accept geometry",
+            "allowed_output_label": "source-candidate",
+            "blocked_if_missing": "validated no-geometry port attribute rows missing",
             "claim_boundary": BLOCKED,
-            "next_action": "select road/port node source rows before node fixture replacement",
+            "next_action": "write node fixture closeout before any internal adapter proof",
         },
         {
             "task_id": "EUR-PARSE-006",
@@ -171,12 +172,12 @@ def main() -> None:
         },
         {
             "output_table": "eu_rhine_alpine_source_node_candidates",
-            "required_columns": "source_id;node_gap_id;node_class;needed_source;assumption_label;evidence_label;blocked_claims",
-            "required_label": "source-needed",
-            "minimum_rows_allowed": "1",
+            "required_columns": "source_id;node_id;node_label;node_class;source_owner;source_date;source_url;access_note;evidence_label;blocked_claims",
+            "required_label": "source-candidate",
+            "minimum_rows_allowed": "5",
             "blocked_columns_or_values": BLOCKED,
-            "acceptance_rule": "node rows remain source-needed until road/port node custody exists",
-            "claim_boundary": "no terminal performance road access proof node completeness endorsement validation public-readiness or external-readiness claim",
+            "acceptance_rule": "rows may come only from validated GISCO Ports 2013 attribute samples and must remain no-geometry internal node candidates",
+            "claim_boundary": "no geometry acceptance topology map overlay terminal performance road access proof node completeness endorsement validation public-readiness or external-readiness claim",
         },
         {
             "output_table": "eu_rhine_alpine_service_target_candidates",
