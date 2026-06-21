@@ -233,6 +233,7 @@ public-readiness, external-readiness, or approval.
 | Japan adapter source pack | `docs/reviews/international-japan-adapter-source-pack-001.md` |
 | Japan kernel application | `docs/reviews/international-japan-kernel-application-001.md` |
 | Japan source payload access | `docs/reviews/international-japan-source-payload-access-001.md` |
+| Japan source payload probe | `docs/reviews/international-japan-source-payload-probe-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
