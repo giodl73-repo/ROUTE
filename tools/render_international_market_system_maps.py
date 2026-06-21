@@ -371,6 +371,96 @@ CONFIG = {
             "NOR": (18, -18),
         },
     },
+    "michigan": {
+        "title": "Michigan Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Detroit gateway, Grand Rapids/Lansing triangle, Lake Michigan belt, Flint/Saginaw, northern access, Upper Peninsula, and bridge/port feeders.",
+        "output": "state/michigan-market-system-v1.svg",
+        "outline_lonlat": [(-90.4, 46.6), (-84.6, 46.6), (-82.4, 45.1), (-82.5, 42.8), (-83.5, 41.7), (-86.5, 41.8), (-87.2, 43.8), (-88.9, 45.3)],
+        "zones_lonlat": [
+            ("Detroit gateway", -83.1, 42.4, 0.8, 0.6, "#c2410c"),
+            ("Lower Peninsula triangle", -84.7, 43.0, 1.6, 1.2, "#16a34a"),
+            ("Lake Michigan belt", -86.5, 43.4, 0.9, 1.2, "#2563eb"),
+            ("Northern access", -85.1, 45.0, 1.7, 0.8, "#0f766e"),
+            ("Upper Peninsula", -87.4, 46.2, 2.0, 0.6, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Michigan as automotive gateway, west Michigan market, capital hub, northern access, bridge, port, and Upper Peninsula promises."),
+            ("Client workshop", "Rank Detroit gateway, Grand Rapids/Lansing reliability, Lake Michigan belt, Flint/Saginaw access, Mackinac continuity, UP coverage, and port feeders."),
+            ("Still held", "Official MDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "DET": (18, 24),
+            "PTD": (-102, -10),
+            "LAN": (18, -18),
+            "GRR": (-110, 8),
+            "KAL": (-92, 10),
+            "TVC": (18, -18),
+            "MCK": (18, -18),
+            "SSM": (18, -18),
+        },
+    },
+    "washington": {
+        "title": "Washington Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Puget Sound gateway, I-5 urban belt, Columbia Basin, Spokane inland hub, Tri-Cities, port feeders, and mountain-pass resilience.",
+        "output": "state/washington-market-system-v1.svg",
+        "outline_lonlat": [(-124.8, 49.0), (-117.0, 49.0), (-117.0, 45.6), (-121.0, 45.6), (-124.0, 46.2)],
+        "zones_lonlat": [
+            ("Puget Sound gateway", -122.6, 47.5, 1.0, 1.1, "#c2410c"),
+            ("I-5 urban belt", -122.5, 47.0, 0.9, 1.6, "#16a34a"),
+            ("Columbia Basin", -120.0, 46.8, 1.5, 1.0, "#0f766e"),
+            ("Spokane inland hub", -117.5, 47.6, 0.8, 0.7, "#2563eb"),
+            ("Mountain-pass resilience", -121.0, 47.2, 1.2, 0.8, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Washington as port gateway, I-5 belt, mountain-pass resilience, agricultural basin, inland hub, and border access promises."),
+            ("Client workshop", "Rank Puget Sound ports, I-5 reliability, Cascade pass resilience, Tri-Cities, Spokane, border access, and rural freight coverage."),
+            ("Still held", "Official WSDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "zone_label_offsets": {
+            "Puget Sound gateway": (-22, -34),
+            "I-5 urban belt": (18, 18),
+            "Mountain-pass resilience": (18, -16),
+        },
+        "label_offsets": {
+            "SEA": (18, -18),
+            "TAC": (18, 24),
+            "PSE": (-118, -16),
+            "PTT": (-118, 30),
+            "OLY": (-92, 8),
+            "VAN": (18, 24),
+            "YAK": (18, 20),
+            "TRI": (18, 22),
+            "SPO": (18, -18),
+        },
+    },
+    "arizona": {
+        "title": "Arizona Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Phoenix hub, Tucson border spine, northern I-40 access, Yuma/California gateway, Flagstaff mountain resilience, and rural tribal access.",
+        "output": "state/arizona-market-system-v1.svg",
+        "outline_lonlat": [(-114.8, 37.0), (-109.0, 37.0), (-109.0, 31.3), (-111.0, 31.3), (-114.8, 32.6)],
+        "zones_lonlat": [
+            ("Phoenix hub", -112.1, 33.5, 1.1, 0.9, "#16a34a"),
+            ("Tucson / border spine", -111.2, 32.2, 1.0, 1.0, "#c2410c"),
+            ("Northern I-40 access", -112.4, 35.2, 2.1, 0.7, "#2563eb"),
+            ("Yuma / California gateway", -114.2, 32.8, 0.8, 0.6, "#0f766e"),
+            ("Rural / tribal access", -110.4, 34.6, 1.2, 1.2, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Arizona as Phoenix hub, Tucson/border spine, I-40 northern access, Yuma gateway, mountain resilience, and rural access promises."),
+            ("Client workshop", "Rank Phoenix reliability, Tucson/border access, Flagstaff/I-40, Yuma gateway, rural/tribal access, heat resilience, and California connectors."),
+            ("Still held", "Official ADOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "PHX": (18, -18),
+            "TUS": (18, 22),
+            "NOG": (18, 24),
+            "FLG": (18, -18),
+            "YUM": (-92, 8),
+            "KIN": (-92, -10),
+            "GAL": (18, -18),
+            "SHOW": (18, 22),
+        },
+    },
     "canada": {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
@@ -609,7 +699,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "pennsylvania", "ohio", "north-carolina", "canada"]:
+    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "pennsylvania", "ohio", "north-carolina", "michigan", "washington", "arizona", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 
