@@ -15,6 +15,8 @@ sources:
   - data/full-state-system-tierization-slate-001-scorecard.csv
   - data/full-state-system-tierization-slate-002.csv
   - data/full-state-system-tierization-slate-002-scorecard.csv
+  - data/full-state-system-tierization-slate-003.csv
+  - data/full-state-system-tierization-slate-003-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -128,6 +130,14 @@ New York, Illinois, Georgia, and Pennsylvania. It emphasizes legacy dense
 networks where the client value is not identifying famous corridors, but
 separating statewide trunks from state/US-route redundancy, rural access,
 terminal access, resilience overlays, and non-promoted maintained routes.
+
+## Slate 003
+
+`data/full-state-system-tierization-slate-003.csv` extends the redo pattern to
+Ohio, North Carolina, Michigan, and Washington. It emphasizes state systems where
+full value comes from recognizing secondary but critical roles: Appalachian and
+river access, barrier-island/coastal access, Upper Peninsula continuity, and
+mountain-pass/port resilience.
 
 ## Evidence Boundary
 
