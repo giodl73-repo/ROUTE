@@ -177,6 +177,7 @@ public-readiness, external-readiness, or approval.
 | Stakeholder fixture closeout | `docs/reports/industry-stakeholder-fixture-closeout-report.md` |
 | International portability | `docs/reports/international-network-inference-portability-report.md` |
 | International pilot maps | `docs/reviews/international-portability-pilot-map-run-001.md` |
+| ROUTE business model report | `docs/reports/route-business-model-report.md` |
 | Canada source-adapter preflight | `docs/reviews/international-canada-source-adapter-preflight-001.md` |
 | Canada adapter readiness | `docs/reviews/international-canada-source-adapter-readiness-001.md` |
 | Canada candidate hierarchy map | `docs/reviews/international-canada-candidate-hierarchy-map-001.md` |
