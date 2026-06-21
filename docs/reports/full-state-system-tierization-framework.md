@@ -13,6 +13,8 @@ sources:
   - data/full-state-system-tierization-iowa-sample.csv
   - data/full-state-system-tierization-slate-001.csv
   - data/full-state-system-tierization-slate-001-scorecard.csv
+  - data/full-state-system-tierization-slate-002.csv
+  - data/full-state-system-tierization-slate-002-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -118,6 +120,14 @@ selection to role assignment:
 - the scorecard in
   `data/full-state-system-tierization-slate-001-scorecard.csv` attaches failure
   metrics to the tierization rows.
+
+## Slate 002
+
+`data/full-state-system-tierization-slate-002.csv` extends the redo pattern to
+New York, Illinois, Georgia, and Pennsylvania. It emphasizes legacy dense
+networks where the client value is not identifying famous corridors, but
+separating statewide trunks from state/US-route redundancy, rural access,
+terminal access, resilience overlays, and non-promoted maintained routes.
 
 ## Evidence Boundary
 
