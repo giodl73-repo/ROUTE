@@ -127,6 +127,7 @@ game, release, or public-readiness claims.
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International Japan adapter source pack 001 exists. | `docs/reviews/international-japan-adapter-source-pack-001.md`, `data/international-japan-adapter-source-pack-001.csv`, `tools/check_japan_adapter_source_pack.py`, `npm run check:japan:source-pack` | draft; source-pack preflight ready; promotion held |
 | International Japan kernel application 001 exists. | `docs/reviews/international-japan-kernel-application-001.md`, `data/international-japan-kernel-application-001.csv`, `tools/check_japan_kernel_application.py`, `npm run check:japan:kernel-application` | draft; source custody started; promotion held |
+| International Japan source payload access 001 exists. | `docs/reviews/international-japan-source-payload-access-001.md`, `data/international-japan-source-payload-access-001.csv`, `tools/check_japan_source_payload_access.py`, `npm run check:japan:payload-access` | draft; payload access manifest ready; evidence not accepted |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
@@ -283,6 +284,9 @@ families while parser promotion and validation remain held.
 The Japan kernel-application gate now records source custody as started while
 parser contract, fixture replacement, target posture, review packet, and
 promotion remain held.
+The Japan source-payload access gate now separates official URL cache
+candidates from local fixture and held target rows before any live probe,
+parser contract, or evidence acceptance.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
