@@ -154,6 +154,7 @@ game, release, or public-readiness claims.
 | State highway system pilot Iowa 001 exists. | `docs/reviews/state-highway-system-pilot-iowa-001.md`, `data/state-highway-system-pilot-iowa-001.csv`, `tools/check_iowa_state_highway_pilot.py`, `npm run check:state:iowa-pilot` | draft; state-use pilot ready; authority and validation held |
 | State highway Iowa source pack 001 exists. | `docs/reviews/state-highway-iowa-source-pack-001.md`, `data/state-highway-iowa-source-pack-001.csv`, `tools/check_iowa_state_source_pack.py`, `npm run check:state:iowa-source-pack` | draft; source-pack preflight ready; promotion held |
 | Iowa state service network goals exist. | `docs/briefs/iowa-state-service-network-goals.md` | draft; product-facing state promise design brief; legal SLA and official-plan claims held |
+| Iowa state service network offer exists. | `docs/briefs/iowa-state-service-network-offer.md` | draft; client-facing 90-day offer; legal SLA and official-plan claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -441,6 +442,11 @@ evidence discipline treated as backend quality control rather than the headline
 offer. It proposes Iowa tier roles, resilience promises, investment packages,
 and an operating dashboard while holding official-plan, construction, legal-SLA,
 funding, ROI, clearance, public-readiness, and validation claims.
+The Iowa state service network offer turns that product goal into a 90-day
+client package: priority intake, tier design, promise design, resilience
+blueprint, investment packaging, and dashboard design, while keeping official
+plan, legal SLA, engineering, construction, funding, clearance, ROI, and
+validation claims held.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
