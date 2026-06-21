@@ -162,6 +162,7 @@ game, release, or public-readiness claims.
 | Texas state service network offer exists. | `docs/briefs/texas-state-service-network-offer.md` | draft; client-facing 90-day offer; legal SLA and official-plan claims held |
 | ROUTE business model report exists. | `docs/reports/route-business-model-report.md` | draft; consultative-product hypothesis; customer, procurement, endorsement, ROI, and validation claims held |
 | ROUTE competitive landscape report exists. | `docs/reports/route-competitive-landscape-report.md` | draft; competitive-positioning hypothesis; customer, procurement, market-share, displacement, endorsement, ROI, and validation claims held |
+| ROUTE first client wedge package exists. | `docs/briefs/route-first-client-wedge-package.md` | draft; sales-readiness screen; customer, qualified-lead, procurement, endorsement, market-demand, ROI, and validation claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -493,6 +494,12 @@ should package those inputs into service-network decisions, promise holds,
 resilience obligations, investment sequencing, and dashboard specifications
 while holding customer, procurement, market-share, displacement, endorsement,
 legal-SLA, demand, ROI, funding, public-readiness, and validation claims.
+The ROUTE first client wedge package turns the commercial hypothesis into a
+prospect screen: first-client candidates should have named network scope,
+service pain, existing evidence surfaces, a budget/sponsor path, and acceptance
+of claim boundaries, while paying-customer, qualified-lead, procurement,
+endorsement, market-demand, legal-SLA, traffic-demand, ROI, construction,
+funding, public-readiness, and validation claims remain held.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
