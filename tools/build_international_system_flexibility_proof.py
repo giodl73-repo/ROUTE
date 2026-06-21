@@ -92,6 +92,17 @@ def main() -> None:
         },
         {
             "proof_id": "FLEX-006",
+            "region_or_surface": "China",
+            "kernel_step": "source_custody_to_dry_run_blocker",
+            "observed_variation": "transport ministry, plan, statistics, standards, and port/waterway context can support source custody and dry-run tables but not content-row or source-row validation",
+            "system_response": "China advances through source pack, payload classification, parser contract, dry run, role review, fixture blocker, geometry policy, and dry-run-depth adaptive closeout",
+            "flexibility_decision": "dry_run_depth_adaptive_branch_complete_deeper_proof_held",
+            "evidence_artifacts": "docs/reviews/international-china-adaptive-proof-closeout-001.md;data/international-china-adaptive-proof-closeout-001.csv",
+            "blocked_claims": BLOCKED,
+            "next_action": "select accepted content or source rows before content-depth proof, source-row validation, or fixture replacement",
+        },
+        {
+            "proof_id": "FLEX-007",
             "region_or_surface": "multi-region maps",
             "kernel_step": "adapter_to_map_fixture",
             "observed_variation": "Canada, EU, India, Japan, and China produce comparable held-claim schematic fixtures from different geography and governance patterns",
