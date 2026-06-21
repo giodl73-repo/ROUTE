@@ -266,6 +266,38 @@
       fill: var(--muted);
     }
 
+    .state-outline {
+      fill: #eef3f6;
+      stroke: #b9c6d1;
+      stroke-width: 2;
+    }
+
+    .state-river {
+      fill: none;
+      stroke: #c8d8e5;
+      stroke-width: 8;
+      stroke-linecap: round;
+      opacity: 0.72;
+    }
+
+    .state-grid {
+      stroke: #dbe3ea;
+      stroke-width: 1;
+      opacity: 0.6;
+    }
+
+    .region-label {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #75818d;
+      letter-spacing: 0;
+    }
+
+    .background-note {
+      font-size: 11px;
+      fill: #6d7782;
+    }
+
     .tier-buttons button {
       min-width: 42px;
       padding: 5px 7px;
@@ -515,6 +547,8 @@
       bg.setAttribute("fill", "#fbfcfd");
       svg.appendChild(bg);
 
+      renderStateBackground(svg);
+
       for (const link of state.links) {
         const a = node(link.from);
         const b = node(link.to);
@@ -557,6 +591,42 @@
         svg.appendChild(textSvg(n.x + 16, n.y - 6, n.label, "node-label"));
         svg.appendChild(textSvg(n.x + 16, n.y + 10, `${n.role} / ${n.cls}`, "node-sub"));
       }
+    }
+
+    function appendPath(svg, d, cls) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("class", cls);
+      svg.appendChild(path);
+      return path;
+    }
+
+    function appendLine(svg, x1, y1, x2, y2, cls) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("class", cls);
+      svg.appendChild(line);
+      return line;
+    }
+
+    function renderStateBackground(svg) {
+      appendPath(svg, "M142 92 L755 86 C773 119 775 154 766 188 C788 218 792 256 775 292 C794 335 787 382 760 421 C710 441 651 448 595 442 C536 461 471 463 412 448 C355 460 292 453 240 427 C197 432 161 414 146 376 C126 331 128 292 144 251 C130 209 128 167 142 92 Z", "state-outline");
+      appendPath(svg, "M162 110 C145 157 150 197 166 234 C146 277 145 324 166 374 C180 404 205 419 239 426", "state-river");
+      appendPath(svg, "M756 91 C776 137 774 177 759 211 C786 248 787 292 765 333 C786 369 775 407 758 421", "state-river");
+
+      [250, 350, 450, 550, 650].forEach((x) => appendLine(svg, x, 112, x, 428, "state-grid"));
+      [160, 230, 300, 370].forEach((y) => appendLine(svg, 166, y, 760, y, "state-grid"));
+
+      svg.appendChild(textSvg(204, 160, "Northwest", "region-label"));
+      svg.appendChild(textSvg(466, 144, "North Central", "region-label"));
+      svg.appendChild(textSvg(614, 205, "Northeast", "region-label"));
+      svg.appendChild(textSvg(265, 354, "Western Gateway", "region-label"));
+      svg.appendChild(textSvg(458, 343, "Central Spine", "region-label"));
+      svg.appendChild(textSvg(640, 390, "Eastern Gateway", "region-label"));
+      svg.appendChild(textSvg(184, 474, "Schematic Iowa background; not a surveyed map or proof of route geometry.", "background-note"));
     }
 
     function renderNodes() {
