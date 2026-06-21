@@ -19,6 +19,8 @@ sources:
   - data/full-state-system-tierization-slate-003-scorecard.csv
   - data/full-state-system-tierization-slate-004.csv
   - data/full-state-system-tierization-slate-004-scorecard.csv
+  - data/full-state-system-tierization-slate-005.csv
+  - data/full-state-system-tierization-slate-005-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -148,6 +150,14 @@ Arizona, Colorado, Tennessee, and Missouri. It emphasizes systems where the
 interstate spine is obvious but the product value is in assigning roles to
 border access, mountain alternates, river terminals, Ozark/southeast coverage,
 rural continuity, and maintained/non-promoted segments.
+
+## Slate 005
+
+`data/full-state-system-tierization-slate-005.csv` extends the redo pattern to
+Minnesota, Wisconsin, Virginia, and Louisiana. It emphasizes winter operations,
+Great Lakes and Mississippi River access, Mid-Atlantic port/evacuation risk, and
+Gulf/coastal energy resilience while preserving maintenance-only and
+outside-scope rows.
 
 ## Evidence Boundary
 
