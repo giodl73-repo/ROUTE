@@ -21,6 +21,8 @@ sources:
   - data/full-state-system-tierization-slate-004-scorecard.csv
   - data/full-state-system-tierization-slate-005.csv
   - data/full-state-system-tierization-slate-005-scorecard.csv
+  - data/full-state-system-tierization-slate-006.csv
+  - data/full-state-system-tierization-slate-006-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -158,6 +160,13 @@ Minnesota, Wisconsin, Virginia, and Louisiana. It emphasizes winter operations,
 Great Lakes and Mississippi River access, Mid-Atlantic port/evacuation risk, and
 Gulf/coastal energy resilience while preserving maintenance-only and
 outside-scope rows.
+
+## Slate 006
+
+`data/full-state-system-tierization-slate-006.csv` extends the redo pattern to
+Oregon, Alabama, Kentucky, and Massachusetts. It emphasizes coastal isolation,
+Columbia Gorge and Gulf access, state parkway redundancy, air-cargo terminal
+access, dense New England constraints, and explicit outside-scope rows.
 
 ## Evidence Boundary
 
