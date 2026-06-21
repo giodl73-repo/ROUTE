@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ROUTE State Network Planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18212b;
+      --muted: #5f6873;
+      --line: #cfd7df;
+      --paper: #ffffff;
+      --panel: #f5f7f9;
+      --panel-strong: #e8edf2;
+      --accent: #16736f;
+      --freight: #8a5a12;
+      --access: #4d6f2f;
+      --warn: #b33a2f;
+      --held: #6d5cae;
+      --t1: #0f5f78;
+      --t2: #2d7b4f;
+      --t3: #94611b;
+      --t4: #6b7280;
+      --r: #9a3b52;
+      --focus: #111827;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    select,
+    input[type="text"] {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 34px;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 6px 9px;
+    }
+
+    button:focus,
+    select:focus,
+    input:focus,
+    textarea:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .subhead {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .top-actions,
+    .badges,
+    .panel-actions,
+    .tier-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .badge {
+      min-height: 30px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .badge.held {
+      border-color: #d6caef;
+      background: #f5f1ff;
+      color: #4e3f86;
+    }
+
+    .badge.warn {
+      border-color: #e5aaa4;
+      background: #fff3f1;
+      color: #84251e;
+    }
+
+    main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(260px, 0.85fr) minmax(420px, 1.45fr) minmax(300px, 0.95fr);
+    }
+
+    aside,
+    section {
+      min-width: 0;
+    }
+
+    aside {
+      overflow: auto;
+      background: var(--panel);
+      padding: 14px;
+      border-right: 1px solid var(--line);
+    }
+
+    aside.right {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(360px, 1fr) auto;
+      gap: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .item,
+    .edit-box,
+    .tray,
+    .dial-box {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      padding: 9px;
+    }
+
+    .item.selected {
+      border-color: var(--accent);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .map-shell {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      background: #fbfcfd;
+      position: relative;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      min-height: 360px;
+      display: block;
+    }
+
+    .legend {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 9px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .legend-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 5px;
+      display: inline-block;
+      border-radius: 0;
+      background: var(--ink);
+    }
+
+    .swatch.t1 { background: var(--t1); }
+    .swatch.t2 { background: var(--t2); }
+    .swatch.t3 { background: var(--t3); }
+    .swatch.t4 { background: var(--t4); }
+    .swatch.r { background: var(--r); }
+
+    .node-label {
+      font-size: 12px;
+      font-weight: 700;
+      fill: var(--ink);
+    }
+
+    .node-sub {
+      font-size: 10px;
+      fill: var(--muted);
+    }
+
+    .link-label {
+      font-size: 11px;
+      fill: var(--muted);
+    }
+
+    .tier-buttons button {
+      min-width: 42px;
+      padding: 5px 7px;
+    }
+
+    .tier-buttons button.active {
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    .active.tier-t1 { background: var(--t1); }
+    .active.tier-t2 { background: var(--t2); }
+    .active.tier-t3 { background: var(--t3); }
+    .active.tier-t4 { background: var(--t4); }
+    .active.tier-r { background: var(--r); }
+
+    .dial-box {
+      display: grid;
+      gap: 6px;
+    }
+
+    .dial-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .form-row {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      padding: 8px;
+      font: 12px/1.35 Consolas, monospace;
+    }
+
+    .tray {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .package {
+      border-left: 4px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    @media (max-width: 1050px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      aside,
+      aside.right {
+        border: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .workspace {
+        order: -1;
+      }
+    }
+
+    @media (max-width: 720px) {
+      header,
+      .tray {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Iowa State Network Planner</h1>
+        <p class="subhead">Prototype session: candidate network, editable priorities, held-claim export</p>
+        <div class="badges" aria-label="Session posture">
+          <span class="badge held"><strong>Posture</strong> prototype</span>
+          <span class="badge warn"><strong>SLA</strong> held</span>
+          <span class="badge"><strong>Scenario</strong> Iowa sample</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="reset-session" title="Reset session">Reset</button>
+        <button type="button" id="export-json" title="Export readout JSON">Export JSON</button>
+      </div>
+    </header>
+
+    <main>
+      <aside aria-label="Places and links">
+        <h2>Network</h2>
+        <div class="edit-box">
+          <div class="form-row">
+            <label for="new-node-label">Add place</label>
+            <input id="new-node-label" type="text" placeholder="Council Bluffs terminal">
+          </div>
+          <div class="form-row">
+            <label for="new-node-class">Class</label>
+            <select id="new-node-class">
+              <option>city</option>
+              <option>freight node</option>
+              <option>rural region</option>
+              <option>terminal</option>
+              <option>hospital/campus</option>
+            </select>
+          </div>
+          <button type="button" id="add-node">Add</button>
+        </div>
+        <h2 style="margin-top:14px">Places</h2>
+        <div id="node-list" class="list"></div>
+        <h2 style="margin-top:14px">Corridors</h2>
+        <div id="link-list" class="list"></div>
+      </aside>
+
+      <section class="workspace" aria-label="Planning workspace">
+        <div class="legend" aria-label="Tier legend">
+          <span class="legend-key"><span class="swatch t1"></span>T1 spine</span>
+          <span class="legend-key"><span class="swatch t2"></span>T2 regional</span>
+          <span class="legend-key"><span class="swatch t3"></span>T3 access</span>
+          <span class="legend-key"><span class="swatch t4"></span>T4 terminal</span>
+          <span class="legend-key"><span class="swatch r"></span>R resilience</span>
+        </div>
+
+        <div class="map-shell">
+          <svg id="network-map" viewBox="0 0 900 560" role="img" aria-label="Iowa candidate state service network"></svg>
+        </div>
+
+        <div class="tray" aria-label="Session output tray">
+          <div>
+            <h2>Package Sequence</h2>
+            <div id="package-list" class="list"></div>
+          </div>
+          <div>
+            <h2>Promise Backlog</h2>
+            <div id="promise-list" class="list"></div>
+          </div>
+          <div>
+            <h2>Evidence Holds</h2>
+            <div id="hold-list" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right" aria-label="Planner dials and export">
+        <h2>Planning Dials</h2>
+        <div id="dial-list" class="list"></div>
+
+        <h2 style="margin-top:14px">Selected Corridor</h2>
+        <div id="selected-link-box" class="edit-box"></div>
+
+        <h2 style="margin-top:14px">Readout Export</h2>
+        <textarea id="readout" readonly aria-label="Planner readout JSON"></textarea>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const seed = {
+      nodes: [
+        { id: "des-moines", label: "Des Moines", cls: "city", x: 455, y: 284, role: "T1", source: "heuristic" },
+        { id: "ames", label: "Ames", cls: "city", x: 438, y: 212, role: "T2", source: "heuristic" },
+        { id: "cedar-rapids", label: "Cedar Rapids", cls: "city", x: 630, y: 245, role: "T2", source: "heuristic" },
+        { id: "iowa-city", label: "Iowa City", cls: "city", x: 682, y: 312, role: "T2", source: "heuristic" },
+        { id: "quad-cities", label: "Quad Cities", cls: "gateway", x: 780, y: 330, role: "T2", source: "source-needed" },
+        { id: "council-bluffs", label: "Council Bluffs", cls: "gateway", x: 170, y: 298, role: "T1", source: "heuristic" },
+        { id: "sioux-city", label: "Sioux City", cls: "freight node", x: 205, y: 126, role: "T2", source: "heuristic" },
+        { id: "waterloo", label: "Waterloo", cls: "city", x: 568, y: 152, role: "T2", source: "heuristic" },
+        { id: "mason-city", label: "Mason City", cls: "rural region", x: 424, y: 86, role: "T3", source: "source-needed" },
+        { id: "ottumwa", label: "Ottumwa", cls: "rural region", x: 555, y: 414, role: "T3", source: "source-needed" }
+      ],
+      links: [
+        { id: "cb-dsm", from: "council-bluffs", to: "des-moines", tier: "T1", source: "heuristic", note: "I-80 west spine" },
+        { id: "dsm-qc", from: "des-moines", to: "quad-cities", tier: "T1", source: "heuristic", note: "I-80 east spine" },
+        { id: "dsm-ames", from: "des-moines", to: "ames", tier: "T2", source: "heuristic", note: "I-35 / central connector" },
+        { id: "ames-mason", from: "ames", to: "mason-city", tier: "T3", source: "source-needed", note: "northern access" },
+        { id: "dsm-cr", from: "des-moines", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "regional access" },
+        { id: "cr-ic", from: "cedar-rapids", to: "iowa-city", tier: "T2", source: "heuristic", note: "eastern metro connector" },
+        { id: "dsm-ottumwa", from: "des-moines", to: "ottumwa", tier: "T3", source: "source-needed", note: "southeast access" },
+        { id: "sioux-dsm", from: "sioux-city", to: "des-moines", tier: "R", source: "source-needed", note: "resilience / north-south alternate" },
+        { id: "waterloo-cr", from: "waterloo", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "northeast production connector" }
+      ],
+      dials: {
+        reliability: 72,
+        freight: 64,
+        rural: 58,
+        resilience: 66,
+        assetDebt: 44,
+        capital: 38
+      },
+      selectedLinkId: "cb-dsm",
+      edits: []
+    };
+
+    let state = JSON.parse(JSON.stringify(seed));
+    const tierColors = { T1: "#0f5f78", T2: "#2d7b4f", T3: "#94611b", T4: "#6b7280", R: "#9a3b52" };
+    const tierWidths = { T1: 13, T2: 9, T3: 6, T4: 5, R: 7 };
+
+    function node(id) {
+      return state.nodes.find((item) => item.id === id);
+    }
+
+    function selectedLink() {
+      return state.links.find((item) => item.id === state.selectedLinkId) || state.links[0];
+    }
+
+    function slug(text) {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `node-${Date.now()}`;
+    }
+
+    function textSvg(x, y, content, cls) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      el.setAttribute("x", x);
+      el.setAttribute("y", y);
+      el.setAttribute("class", cls);
+      el.textContent = content;
+      return el;
+    }
+
+    function renderMap() {
+      const svg = document.getElementById("network-map");
+      svg.innerHTML = "";
+      const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      bg.setAttribute("x", "0");
+      bg.setAttribute("y", "0");
+      bg.setAttribute("width", "900");
+      bg.setAttribute("height", "560");
+      bg.setAttribute("fill", "#fbfcfd");
+      svg.appendChild(bg);
+
+      for (const link of state.links) {
+        const a = node(link.from);
+        const b = node(link.to);
+        if (!a || !b) continue;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", a.x);
+        line.setAttribute("y1", a.y);
+        line.setAttribute("x2", b.x);
+        line.setAttribute("y2", b.y);
+        line.setAttribute("stroke", tierColors[link.tier]);
+        line.setAttribute("stroke-width", tierWidths[link.tier]);
+        line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("opacity", link.id === state.selectedLinkId ? "1" : "0.72");
+        if (link.source !== "heuristic") {
+          line.setAttribute("stroke-dasharray", "9 8");
+        }
+        line.addEventListener("click", () => {
+          state.selectedLinkId = link.id;
+          render();
+        });
+        svg.appendChild(line);
+
+        const midX = (a.x + b.x) / 2;
+        const midY = (a.y + b.y) / 2;
+        svg.appendChild(textSvg(midX + 8, midY - 8, link.tier, "link-label"));
+      }
+
+      for (const n of state.nodes) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", n.x);
+        circle.setAttribute("cy", n.y);
+        circle.setAttribute("r", n.role === "T1" ? "15" : "12");
+        circle.setAttribute("fill", "#ffffff");
+        circle.setAttribute("stroke", tierColors[n.role] || "#18212b");
+        circle.setAttribute("stroke-width", n.source === "source-needed" ? "3" : "4");
+        if (n.source === "source-needed") {
+          circle.setAttribute("stroke-dasharray", "4 4");
+        }
+        svg.appendChild(circle);
+        svg.appendChild(textSvg(n.x + 16, n.y - 6, n.label, "node-label"));
+        svg.appendChild(textSvg(n.x + 16, n.y + 10, `${n.role} / ${n.cls}`, "node-sub"));
+      }
+    }
+
+    function renderNodes() {
+      const root = document.getElementById("node-list");
+      root.innerHTML = "";
+      for (const n of state.nodes) {
+        const item = document.createElement("article");
+        item.className = "item";
+        item.innerHTML = `<h3>${n.label}</h3><p class="meta">${n.role} ${n.cls}; ${n.source}</p>`;
+        root.appendChild(item);
+      }
+    }
+
+    function renderLinks() {
+      const root = document.getElementById("link-list");
+      root.innerHTML = "";
+      for (const link of state.links) {
+        const a = node(link.from);
+        const b = node(link.to);
+        const item = document.createElement("article");
+        item.className = `item ${link.id === state.selectedLinkId ? "selected" : ""}`;
+        item.innerHTML = `<h3>${a.label} to ${b.label}</h3><p class="meta">${link.tier}; ${link.note}; ${link.source}</p>`;
+        item.addEventListener("click", () => {
+          state.selectedLinkId = link.id;
+          render();
+        });
+        root.appendChild(item);
+      }
+    }
+
+    function renderDials() {
+      const labels = [
+        ["reliability", "Reliability"],
+        ["freight", "Freight priority"],
+        ["rural", "Rural access"],
+        ["resilience", "Resilience"],
+        ["assetDebt", "Asset debt"],
+        ["capital", "Capital appetite"]
+      ];
+      const root = document.getElementById("dial-list");
+      root.innerHTML = "";
+      for (const [key, label] of labels) {
+        const box = document.createElement("div");
+        box.className = "dial-box";
+        box.innerHTML = `
+          <div class="dial-row"><h3>${label}</h3><strong>${state.dials[key]}</strong></div>
+          <input type="range" min="0" max="100" value="${state.dials[key]}" aria-label="${label}">
+        `;
+        box.querySelector("input").addEventListener("input", (event) => {
+          state.dials[key] = Number(event.target.value);
+          state.edits.push({ type: "dial", key, value: state.dials[key], claim_status: "planning-preference" });
+          render();
+        });
+        root.appendChild(box);
+      }
+    }
+
+    function renderSelectedLink() {
+      const link = selectedLink();
+      const a = node(link.from);
+      const b = node(link.to);
+      const root = document.getElementById("selected-link-box");
+      root.innerHTML = `
+        <h3>${a.label} to ${b.label}</h3>
+        <p class="meta">${link.note}; ${link.source}</p>
+        <div class="tier-buttons" role="group" aria-label="Change selected corridor tier">
+          ${["T1", "T2", "T3", "T4", "R"].map((tier) => `<button type="button" class="tier-${tier.toLowerCase()} ${link.tier === tier ? "active" : ""}" data-tier="${tier}">${tier}</button>`).join("")}
+        </div>
+      `;
+      for (const button of root.querySelectorAll("button[data-tier]")) {
+        button.addEventListener("click", () => {
+          const tier = button.getAttribute("data-tier");
+          link.tier = tier;
+          link.source = link.source === "source-backed" ? "source-backed" : "heuristic-edit";
+          state.edits.push({ type: "tier-change", link_id: link.id, tier, claim_status: "candidate-role" });
+          render();
+        });
+      }
+    }
+
+    function packageRows() {
+      const rows = [
+        { name: "Operations quick wins", basis: "incident playbook, work-zone sequencing, dashboard spec" },
+        { name: "Spine reliability package", basis: "T1 candidate links and recovery promises" },
+        { name: "Rural and terminal access package", basis: "T3/T4 source-needed rows and client additions" }
+      ];
+      if (state.dials.resilience > 60) rows.splice(1, 0, { name: "Resilience hardening package", basis: "R overlay, closure alternates, evacuation/recovery targets" });
+      if (state.dials.capital > 65) rows.push({ name: "Long-range capital package", basis: "candidate only; construction and funding held" });
+      return rows;
+    }
+
+    function promiseRows() {
+      return [
+        { name: "T1 reliability", body: `${state.dials.reliability}/100 emphasis; planning target only` },
+        { name: "Freight gateways", body: `${state.dials.freight}/100 emphasis; demand and ROI held` },
+        { name: "Rural access", body: `${state.dials.rural}/100 emphasis; coverage proof held` },
+        { name: "Recovery", body: `${state.dials.resilience}/100 emphasis; disaster-readiness held` }
+      ];
+    }
+
+    function holdRows() {
+      return [
+        "Client edits are planning preferences, not validation.",
+        "Tier changes are candidate roles, not official designation.",
+        "Planning promises are not legal SLAs.",
+        "Scenario comparison is heuristic until source and role review close.",
+        "Package sequence is not funding eligibility or construction readiness.",
+        "Map view is structural, not proof."
+      ];
+    }
+
+    function renderOutputLists() {
+      const packages = document.getElementById("package-list");
+      packages.innerHTML = "";
+      packageRows().forEach((row, index) => {
+        const item = document.createElement("article");
+        item.className = "item package";
+        item.innerHTML = `<h3>${index + 1}. ${row.name}</h3><p class="meta">${row.basis}</p>`;
+        packages.appendChild(item);
+      });
+
+      const promises = document.getElementById("promise-list");
+      promises.innerHTML = "";
+      promiseRows().forEach((row) => {
+        const item = document.createElement("article");
+        item.className = "item";
+        item.innerHTML = `<h3>${row.name}</h3><p class="meta">${row.body}</p>`;
+        promises.appendChild(item);
+      });
+
+      const holds = document.getElementById("hold-list");
+      holds.innerHTML = "";
+      holdRows().forEach((body) => {
+        const item = document.createElement("article");
+        item.className = "item";
+        item.innerHTML = `<p class="meta">${body}</p>`;
+        holds.appendChild(item);
+      });
+    }
+
+    function readout() {
+      return {
+        session: {
+          client_id: "sample-iowa",
+          region_id: "iowa",
+          scenario_id: "state-network-planner-prototype-001",
+          evidence_posture: "prototype; held claims visible",
+          export_status: "internal"
+        },
+        dials: state.dials,
+        selected_link: selectedLink(),
+        nodes: state.nodes,
+        links: state.links,
+        packages: packageRows(),
+        promises: promiseRows(),
+        evidence_holds: holdRows(),
+        edits: state.edits
+      };
+    }
+
+    function renderReadout() {
+      document.getElementById("readout").value = JSON.stringify(readout(), null, 2);
+    }
+
+    function addNode() {
+      const input = document.getElementById("new-node-label");
+      const label = input.value.trim();
+      if (!label) return;
+      const id = slug(label);
+      if (state.nodes.some((item) => item.id === id)) return;
+      const x = 170 + ((state.nodes.length * 83) % 600);
+      const y = 110 + ((state.nodes.length * 57) % 340);
+      state.nodes.push({
+        id,
+        label,
+        cls: document.getElementById("new-node-class").value,
+        x,
+        y,
+        role: "T3",
+        source: "source-needed",
+        client_added: true
+      });
+      state.edits.push({ type: "add-node", node_id: id, claim_status: "source-needed" });
+      input.value = "";
+      render();
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(readout(), null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "route-state-network-planner-readout.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function reset() {
+      state = JSON.parse(JSON.stringify(seed));
+      render();
+    }
+
+    function render() {
+      renderMap();
+      renderNodes();
+      renderLinks();
+      renderDials();
+      renderSelectedLink();
+      renderOutputLists();
+      renderReadout();
+    }
+
+    document.getElementById("add-node").addEventListener("click", addNode);
+    document.getElementById("export-json").addEventListener("click", exportJson);
+    document.getElementById("reset-session").addEventListener("click", reset);
+    render();
+  </script>
+</body>
+</html>

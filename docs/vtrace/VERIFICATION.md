@@ -164,6 +164,7 @@ game, release, or public-readiness claims.
 | ROUTE competitive landscape report exists. | `docs/reports/route-competitive-landscape-report.md` | draft; competitive-positioning hypothesis; customer, procurement, market-share, displacement, endorsement, ROI, and validation claims held |
 | ROUTE first client wedge package exists. | `docs/briefs/route-first-client-wedge-package.md` | draft; sales-readiness screen; customer, qualified-lead, procurement, endorsement, market-demand, ROI, and validation claims held |
 | State network planner UI brief exists. | `docs/briefs/state-network-planner-ui-brief.md` | draft; editable UI concept; implementation, public-readiness, client-use, agency acceptance, legal-SLA, ROI, demand, construction, replacement, and validation claims held |
+| State network planner prototype exists. | `docs/planner/state-network-planner.html` | draft; static Iowa sample workbench; client-use, agency acceptance, public-readiness, legal-SLA, ROI, demand, construction, replacement, and validation claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -507,6 +508,12 @@ state network, lets the client add places, change tiers, adjust planning dials,
 compare scenarios, inspect evidence holds, and export a readout, while
 implementation, public-readiness, client-use, agency acceptance, legal-SLA,
 ROI, demand, construction-readiness, GIS/model replacement, and external-review
+claims remain held.
+The state network planner prototype implements the first static workbench for
+the 90-day diagnostic: an Iowa sample network, editable places, tier changes,
+planning dials, package sequence, promise backlog, evidence holds, and JSON
+export, while client-use, agency acceptance, public-readiness, legal-SLA, ROI,
+demand, construction-readiness, GIS/model replacement, and external-review
 claims remain held.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
