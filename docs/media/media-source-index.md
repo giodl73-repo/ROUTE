@@ -249,6 +249,7 @@ public-readiness, external-readiness, or approval.
 | China kernel application | `docs/reviews/international-china-kernel-application-001.md` |
 | China source payload access | `docs/reviews/international-china-source-payload-access-001.md` |
 | China parser preflight | `docs/reviews/international-china-parser-preflight-001.md` |
+| China parser dry run | `docs/reviews/international-china-parser-dry-run-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
 | Canada adapter source pack | `docs/reviews/international-canada-adapter-source-pack-001.md` |
