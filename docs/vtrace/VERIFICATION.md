@@ -136,6 +136,7 @@ game, release, or public-readiness claims.
 | International Japan parser extraction candidates 001 exists. | `docs/reviews/international-japan-parser-extraction-candidates-001.md`, `data/international-japan-parser-extraction-candidates-001.csv`, `tools/check_japan_parser_extraction_candidates.py`, `npm run check:japan:extract` | draft; extraction candidates ready; link source-needed |
 | International Japan source content row validation 001 exists. | `docs/reviews/international-japan-source-content-row-validation-001.md`, `data/international-japan-source-content-row-validation-001.csv`, `tools/check_japan_source_content_row_validation.py`, `npm run check:japan:content-row-validation` | draft; content rows matched; source-row validation blocked |
 | International Japan content row role review 001 exists. | `docs/reviews/international-japan-content-row-role-review-001.md`, `data/international-japan-content-row-role-review-001.csv`, `tools/check_japan_content_row_role_review.py`, `npm run check:japan:content-row-role-review` | draft; role review pass-with-holds |
+| International Japan geometry policy 001 exists. | `docs/reviews/international-japan-geometry-policy-001.md`, `data/international-japan-geometry-policy-001.csv`, `tools/check_japan_geometry_policy.py`, `npm run check:japan:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
@@ -330,6 +331,11 @@ The Japan content-row role review accepts matched content rows only for internal
 planning and keeps source-row validation, fixture replacement, parsed-adapter,
 geometry, disaster-readiness, SLA, ROI, validation, readiness, and
 internal-proof claims held.
+
+The Japan geometry-policy gate rejects geometry for the current candidate set,
+keeps GSI road-feature intake source-needed, and holds map, topology, fixture,
+parsed-adapter, disaster-readiness, SLA, ROI, validation, readiness, and
+internal-proof claims.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
