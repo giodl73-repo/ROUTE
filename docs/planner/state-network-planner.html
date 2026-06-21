@@ -388,6 +388,25 @@
       padding-left: 8px;
     }
 
+    .readout-card {
+      border-left: 4px solid var(--held);
+      padding-left: 8px;
+    }
+
+    .readout-actions {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .copy-status {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     @media (max-width: 1050px) {
       main {
         grid-template-columns: 1fr;
@@ -521,6 +540,13 @@
 
         <h2 style="margin-top:14px">Selected Corridor</h2>
         <div id="selected-link-box" class="edit-box"></div>
+
+        <h2 style="margin-top:14px">Leadership Readout</h2>
+        <div id="leadership-readout" class="list"></div>
+        <div class="readout-actions">
+          <button type="button" id="copy-summary" title="Copy leadership summary">Copy Summary</button>
+          <span id="copy-status" class="copy-status" aria-live="polite"></span>
+        </div>
 
         <h2 style="margin-top:14px">Change Log</h2>
         <div id="edit-log" class="list"></div>
@@ -882,6 +908,10 @@
       if (edit.type === "tier-change") return `${edit.link_id}; ${edit.tier}; ${edit.claim_status}`;
       if (edit.type === "move-node") return `${edit.node_id}; schematic position changed; ${edit.claim_status}`;
       if (edit.type === "dial") return `${edit.key}: ${edit.value}; ${edit.claim_status}`;
+      if (edit.type === "save-session") return `${edit.region_id}; saved to browser storage; ${edit.claim_status}`;
+      if (edit.type === "load-session") return `${edit.region_id}; loaded from browser storage; ${edit.claim_status}`;
+      if (edit.type === "import-session") return `${edit.region_id}; imported planner JSON; ${edit.claim_status}`;
+      if (edit.type === "copy-summary") return `${edit.region_id}; copied leadership summary; ${edit.claim_status}`;
       return JSON.stringify(edit);
     }
 
@@ -914,6 +944,92 @@
         "Package sequence is not funding eligibility or construction readiness.",
         "Map view is structural, not proof."
       ];
+    }
+
+    function nextProofAsks() {
+      if (state.regionId === "texas") {
+        return [
+          "Confirm the top border, port, energy, and megaregion outcomes with the client.",
+          "Load source rows for candidate border, port, Gulf Coast, and Panhandle corridors.",
+          "Review whether resilience overlays should be treated as alternates or recovery packages."
+        ];
+      }
+      return [
+        "Confirm the top city, freight, rural, hospital/campus, and terminal outcomes with the client.",
+        "Load source rows for source-needed rural, terminal, and gateway corridors.",
+        "Review whether resilience overlays should be treated as alternates or recovery packages."
+      ];
+    }
+
+    function changeRows() {
+      if (!state.edits.length) return ["Suggested network loaded; no client changes yet."];
+      return state.edits.slice(-5).map(editSummary);
+    }
+
+    function selectedCorridorLabel() {
+      const link = selectedLink();
+      if (!link) return "No selected corridor.";
+      const a = node(link.from);
+      const b = node(link.to);
+      if (!a || !b) return "No selected corridor.";
+      return `${a.label} to ${b.label}: ${link.tier}; ${link.source}; ${link.note}`;
+    }
+
+    function recommendationText() {
+      const emphasis = Object.entries(state.dials).sort((a, b) => b[1] - a[1])[0];
+      const packageName = packageRows()[0]?.name || "Initial planning package";
+      return `Advance ${packageName.toLowerCase()} for ${state.scenarioLabel}; use ${emphasis[0]} as the first workshop lens while keeping SLA, ROI, funding, and map-proof claims held.`;
+    }
+
+    function leadershipReadout() {
+      return {
+        recommendation: recommendationText(),
+        selected_corridor: selectedCorridorLabel(),
+        package_sequence: packageRows().map((row) => row.name),
+        recent_changes: changeRows(),
+        next_proof_asks: nextProofAsks(),
+        held_claims: holdRows()
+      };
+    }
+
+    function leadershipSummaryText() {
+      const readoutRows = leadershipReadout();
+      return [
+        `${state.title} - Leadership Readout`,
+        "",
+        `Recommendation: ${readoutRows.recommendation}`,
+        `Selected corridor: ${readoutRows.selected_corridor}`,
+        "",
+        "Package sequence:",
+        ...readoutRows.package_sequence.map((row, index) => `${index + 1}. ${row}`),
+        "",
+        "Recent changes:",
+        ...readoutRows.recent_changes.map((row) => `- ${row}`),
+        "",
+        "Next proof asks:",
+        ...readoutRows.next_proof_asks.map((row) => `- ${row}`),
+        "",
+        "Held claims:",
+        ...readoutRows.held_claims.map((row) => `- ${row}`)
+      ].join("\n");
+    }
+
+    function renderLeadershipReadout() {
+      const root = document.getElementById("leadership-readout");
+      const rows = leadershipReadout();
+      root.innerHTML = "";
+      [
+        ["Recommendation", rows.recommendation],
+        ["Selected corridor", rows.selected_corridor],
+        ["Recent changes", rows.recent_changes.join(" | ")],
+        ["Next proof asks", rows.next_proof_asks.join(" | ")],
+        ["Held claims", rows.held_claims.slice(0, 3).join(" | ")]
+      ].forEach(([title, body]) => {
+        const item = document.createElement("article");
+        item.className = "item readout-card";
+        item.innerHTML = `<h3>${title}</h3><p class="meta">${body}</p>`;
+        root.appendChild(item);
+      });
     }
 
     function renderOutputLists() {
@@ -961,6 +1077,7 @@
         links: state.links,
         packages: packageRows(),
         promises: promiseRows(),
+        leadership_readout: leadershipReadout(),
         evidence_holds: holdRows(),
         edits: state.edits
       };
@@ -1079,6 +1196,32 @@
       URL.revokeObjectURL(url);
     }
 
+    async function copySummary() {
+      const text = leadershipSummaryText();
+      const status = document.getElementById("copy-status");
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const field = document.createElement("textarea");
+          field.value = text;
+          field.setAttribute("readonly", "");
+          field.style.position = "fixed";
+          field.style.left = "-9999px";
+          document.body.appendChild(field);
+          field.select();
+          document.execCommand("copy");
+          field.remove();
+        }
+        status.textContent = "Copied.";
+        state.edits.push({ type: "copy-summary", region_id: state.regionId, claim_status: "internal-readout" });
+      } catch (error) {
+        status.textContent = "Copy unavailable; use JSON export.";
+        state.edits.push({ type: "copy-summary", region_id: state.regionId, claim_status: `failed: ${error.message}` });
+      }
+      render();
+    }
+
     function applyImportedReadout(payload) {
       if (!payload || !payload.session || !Array.isArray(payload.nodes) || !Array.isArray(payload.links) || !payload.dials) {
         throw new Error("Planner JSON is missing required session, nodes, links, or dials fields.");
@@ -1151,6 +1294,7 @@
       renderCorridorControls();
       renderDials();
       renderSelectedLink();
+      renderLeadershipReadout();
       renderEditLog();
       renderOutputLists();
       renderReadout();
@@ -1162,6 +1306,7 @@
     document.getElementById("load-session").addEventListener("click", loadSession);
     document.getElementById("import-json").addEventListener("change", importJson);
     document.getElementById("export-json").addEventListener("click", exportJson);
+    document.getElementById("copy-summary").addEventListener("click", copySummary);
     document.getElementById("reset-session").addEventListener("click", reset);
     document.getElementById("fixture-select").addEventListener("change", (event) => {
       activeFixtureId = event.target.value;
