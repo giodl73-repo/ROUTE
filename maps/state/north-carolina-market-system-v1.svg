@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">North Carolina Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Charlotte/Raleigh growth spine, Triad hub, coastal ports, military/coastal access, Asheville/mountain access,</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">and eastern rural service.</text>
+<path d="M141.0 657.9 L485.6 485.6 L988.2 471.3 L1419.0 528.7 L1404.6 744.1 L1060.0 859.0 L629.2 830.3 L313.3 701.0 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="657.94382022472" cy="643.5898876404498" rx="172.31460674157336" ry="100.5168539325847" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="503.6" y="573.1" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Charlotte / Piedmont</text>
+<ellipse cx="959.4943820224719" cy="557.432584269663" rx="129.23595505618056" ry="86.15730337078668" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="848.3" y="501.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Research Triangle</text>
+<ellipse cx="772.8202247191016" cy="543.0730337078651" rx="129.2359550561805" ry="86.15730337078668" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="661.6" y="486.9" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Triad hub</text>
+<ellipse cx="1146.1685393258422" cy="686.6685393258426" rx="229.7528089887632" ry="143.5955056179775" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="934.4" y="573.1" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Coastal / military</text>
+<ellipse cx="385.112359550562" cy="600.5112359550559" rx="143.59550561797747" ry="100.51685393258467" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="259.5" y="530.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Mountain access</text>
+<path d="M1068.6 797.2 Q1142.0 728.7 1242.4 726.9" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Wilmington to Morehead City: coastal port-to-port resilience access</title></path>
+<path d="M933.6 679.5 Q1013.0 724.8 1068.6 797.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Fayetteville to Wilmington: Fayetteville to Wilmington access</title></path>
+<path d="M968.1 574.7 Q1059.3 586.9 1150.5 599.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Raleigh-Durham to Greenville: Triangle to eastern North Carolina access</title></path>
+<path d="M1150.5 599.1 Q1181.8 673.5 1242.4 726.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Greenville to Morehead City: eastern NC to coastal port access</title></path>
+<path d="M1305.6 421.0 Q1121.9 465.1 968.1 574.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Norfolk gateway to Raleigh-Durham: Norfolk gateway to Triangle access</title></path>
+<path d="M652.2 653.6 Q705.1 565.2 803.0 533.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Charlotte to Greensboro: Charlotte to Triad reliability</title></path>
+<path d="M803.0 533.0 Q889.9 536.4 968.1 574.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Greensboro to Raleigh-Durham: Triad to Research Triangle reliability</title></path>
+<path d="M968.1 574.7 Q1018.4 686.0 1068.6 797.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Raleigh-Durham to Wilmington: Research Triangle to Wilmington port reliability</title></path>
+<path d="M652.2 653.6 Q814.5 631.6 968.1 574.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Charlotte to Raleigh-Durham: major metro pair reliability</title></path>
+<path d="M652.2 653.6 Q537.0 591.9 406.7 600.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Charlotte to Asheville: Charlotte to Asheville reliability</title></path>
+<path d="M968.1 574.7 Q985.1 638.3 933.6 679.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Raleigh-Durham to Fayetteville: Triangle to Fayetteville reliability</title></path>
+<circle cx="652.2" cy="653.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="670.2" y="677.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Charlotte</text>
+<text x="670.2" y="695.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CLT</text>
+<circle cx="803.0" cy="533.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="715.0" y="525.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Greensboro</text>
+<text x="715.0" y="543.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">GSO</text>
+<circle cx="968.1" cy="574.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="986.1" y="556.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Raleigh-Durham</text>
+<text x="986.1" y="574.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">RDU</text>
+<circle cx="1068.6" cy="797.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1086.6" y="817.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Wilmington</text>
+<text x="1086.6" y="835.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">WIL</text>
+<circle cx="406.7" cy="600.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="318.7" y="608.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Asheville</text>
+<text x="318.7" y="626.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AVL</text>
+<circle cx="933.6" cy="679.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="951.6" y="701.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Fayetteville</text>
+<text x="951.6" y="719.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">FAY</text>
+<circle cx="1150.5" cy="599.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1166.5" y="591.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Greenville</text>
+<text x="1166.5" y="609.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">GRN</text>
+<circle cx="1242.4" cy="726.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1260.4" y="744.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Morehead City</text>
+<text x="1260.4" y="762.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MHC</text>
+<circle cx="1305.6" cy="421.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1323.6" y="403.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Norfolk gateway</text>
+<text x="1323.6" y="421.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NOR</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Piedmont growth spine: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port access spine: 1 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Charlotte-Triangle express market: 1 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">mountain access: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">military / coastal access: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">coastal connector: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">eastern rural service: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">coastal port connector: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 6 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 4 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">9 nodes, 11 candidate links, 1 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows North Carolina as growth spine, research, Triad, port/coastal,</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">military, mountain, and eastern access promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank Charlotte-Raleigh reliability, Triad access, Wilmington port,</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">military/coastal access, mountain resilience, and eastern rural</text>
+<text x="1592.0" y="1102.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">coverage.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official NCDOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

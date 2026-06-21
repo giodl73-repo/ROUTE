@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Pennsylvania Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Philadelphia gateway, Harrisburg hub, Pittsburgh/Allegheny access, Northeast PA, Erie/Lake Erie, Lehigh</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">Valley, and port feeders.</text>
+<path d="M200.0 374.6 L1360.0 433.6 L1360.0 807.1 L1281.4 885.8 L907.8 885.8 L219.6 885.8 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="1261.707692307693" cy="826.7846153846152" rx="157.29230769230708" ry="98.30769230769226" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="1122.4" y="758.5" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Philadelphia gateway</text>
+<ellipse cx="927.4615384615385" cy="767.8000000000004" rx="176.95384615384734" ry="117.96923076923099" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="768.5" y="679.8" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Harrisburg hub</text>
+<ellipse cx="317.9538461538473" cy="748.1384615384617" rx="176.95384615384728" ry="137.63076923076977" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="159.0" y="640.5" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Allegheny / Pittsburgh</text>
+<ellipse cx="1202.723076923078" cy="630.1692307692306" rx="196.61538461538464" ry="137.63076923076977" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="1024.1" y="522.5" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Northeast / Lehigh</text>
+<ellipse cx="317.9538461538473" cy="433.55384615384605" rx="157.29230769230713" ry="78.64615384615357" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="178.7" y="384.9" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Lake Erie access</text>
+<path d="M1267.6 836.6 Q1302.8 826.4 1273.5 848.4" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Philadelphia to Port of Philadelphia: Philadelphia terminal access</title></path>
+<path d="M929.4 773.7 Q779.0 766.9 634.5 724.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Harrisburg to Altoona: Harrisburg to Altoona mountain access</title></path>
+<path d="M634.5 724.5 Q477.2 732.4 319.9 740.3" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Altoona to Pittsburgh: Altoona to Pittsburgh mountain access</title></path>
+<path d="M1171.3 549.6 Q1038.1 648.4 929.4 773.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Scranton to Harrisburg: Northeast PA to capital access</title></path>
+<path d="M300.3 408.0 Q244.1 392.5 215.7 443.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Erie to Ohio gateway: Erie to western gateway access</title></path>
+<path d="M1267.6 836.6 Q1091.9 840.5 929.4 773.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Philadelphia to Harrisburg: Philadelphia to Harrisburg reliability</title></path>
+<path d="M929.4 773.7 Q623.7 775.0 319.9 740.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Harrisburg to Pittsburgh: Harrisburg to Pittsburgh reliability</title></path>
+<path d="M1267.6 836.6 Q1236.1 772.7 1204.7 708.8" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Philadelphia to Allentown: Philadelphia to Lehigh Valley reliability</title></path>
+<path d="M1204.7 708.8 Q1205.6 625.5 1171.3 549.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Allentown to Scranton: Lehigh Valley to Scranton reliability</title></path>
+<path d="M319.9 740.3 Q346.0 572.0 300.3 408.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Pittsburgh to Erie: Pittsburgh to Erie reliability</title></path>
+<circle cx="1267.6" cy="836.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1285.6" y="860.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Philadelphia</text>
+<text x="1285.6" y="878.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PHL</text>
+<circle cx="929.4" cy="773.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="945.4" y="765.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Harrisburg</text>
+<text x="945.4" y="783.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HBG</text>
+<circle cx="319.9" cy="740.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="229.9" y="748.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Pittsburgh</text>
+<text x="229.9" y="766.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PIT</text>
+<circle cx="1204.7" cy="708.8" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1222.7" y="730.8" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Allentown</text>
+<text x="1222.7" y="748.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ALN</text>
+<circle cx="1171.3" cy="549.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1189.3" y="531.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Scranton</text>
+<text x="1189.3" y="549.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SCR</text>
+<circle cx="300.3" cy="408.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="318.3" y="390.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Erie</text>
+<text x="318.3" y="408.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ERI</text>
+<circle cx="634.5" cy="724.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="652.5" y="706.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Altoona</text>
+<text x="652.5" y="724.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ALT</text>
+<circle cx="1273.5" cy="848.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1173.5" y="838.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Port of Philadelphia</text>
+<text x="1173.5" y="856.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PTP</text>
+<circle cx="215.7" cy="443.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="117.7" y="451.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ohio gateway</text>
+<text x="117.7" y="469.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">OGH</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Allegheny resilience: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Philadelphia-to-capital spine: 1 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">cross-state spine: 1 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Lehigh Valley connector: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Northeast PA connector: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Lake Erie access: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Northeast-to-capital connector: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port feeder: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 5 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 4 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">9 nodes, 10 candidate links, 1 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows Pennsylvania as two major metro anchors plus central hub, port,</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">mountain, Northeast, and Lake Erie promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank Philadelphia access, Pittsburgh reliability, Harrisburg sorting,</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Lehigh/Northeast PA, Erie, port feeders, and mountain resilience.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official PennDOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>
