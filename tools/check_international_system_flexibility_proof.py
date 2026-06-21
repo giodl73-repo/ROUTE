@@ -25,6 +25,7 @@ FIELDS = [
 REQUIRED_DECISIONS = {
     "depth_instance_complete_external_validation_held",
     "adaptive_branch_complete_fixture_replacement_held",
+    "adaptive_branch_complete_source_row_validation_held",
     "gap_detected_without_false_promotion",
     "breadth_instance_complete_validation_held",
 }
@@ -62,8 +63,8 @@ def main() -> int:
     failures: list[str] = []
     if fields != FIELDS:
         failures.append("international flexibility proof columns do not match contract")
-    if len(rows) != 4:
-        failures.append("international flexibility proof must have four rows")
+    if len(rows) != 5:
+        failures.append("international flexibility proof must have five rows")
     decisions = {row["flexibility_decision"] for row in rows}
     if decisions != REQUIRED_DECISIONS:
         failures.append(f"flexibility decisions mismatch: {sorted(decisions)}")
@@ -71,8 +72,12 @@ def main() -> int:
         failures.append("flexibility proof must include Canada depth instance")
     if not any(row["region_or_surface"] == "EU Rhine-Alpine" for row in rows):
         failures.append("flexibility proof must include EU adaptive branch")
+    if not any(row["region_or_surface"] == "India" for row in rows):
+        failures.append("flexibility proof must include India adaptive branch")
     if not any("current corridor scope" in row["next_action"] for row in rows):
         failures.append("flexibility proof must name EU rebase next action")
+    if not any("source-row validation" in row["next_action"] and row["region_or_surface"] == "India" for row in rows):
+        failures.append("flexibility proof must name India source-row validation hold")
     for row in rows:
         missing = REQUIRED_BLOCKS - set(row["blocked_claims"].split(";"))
         if missing:
