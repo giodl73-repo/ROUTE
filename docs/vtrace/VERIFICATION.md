@@ -153,6 +153,7 @@ game, release, or public-readiness claims.
 | International China parser extraction candidates 001 exists. | `docs/reviews/international-china-parser-extraction-candidates-001.md`, `data/international-china-parser-extraction-candidates-001.csv`, `tools/check_china_parser_extraction_candidates.py`, `npm run check:china:extract` | draft; extraction candidates ready; source-row validation blocked |
 | State highway system pilot Iowa 001 exists. | `docs/reviews/state-highway-system-pilot-iowa-001.md`, `data/state-highway-system-pilot-iowa-001.csv`, `tools/check_iowa_state_highway_pilot.py`, `npm run check:state:iowa-pilot` | draft; state-use pilot ready; authority and validation held |
 | State highway Iowa source pack 001 exists. | `docs/reviews/state-highway-iowa-source-pack-001.md`, `data/state-highway-iowa-source-pack-001.csv`, `tools/check_iowa_state_source_pack.py`, `npm run check:state:iowa-source-pack` | draft; source-pack preflight ready; promotion held |
+| Iowa state service network goals exist. | `docs/briefs/iowa-state-service-network-goals.md` | draft; product-facing state promise design brief; legal SLA and official-plan claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -434,6 +435,12 @@ wedge by naming roadway inventory, freight/economic context, Iowa 511 operating
 events, program/delivery context, asset/maintenance context, scenario fixture,
 and held service-target source families while keeping promotion, official-plan,
 endorsement, construction, SLA, ROI, validation, and readiness claims blocked.
+The Iowa state service network goals brief records the product pivot: ROUTE is
+sold as service-network promise design for a state client, with source and
+evidence discipline treated as backend quality control rather than the headline
+offer. It proposes Iowa tier roles, resilience promises, investment packages,
+and an operating dashboard while holding official-plan, construction, legal-SLA,
+funding, ROI, clearance, public-readiness, and validation claims.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,

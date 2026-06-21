@@ -258,6 +258,7 @@ public-readiness, external-readiness, or approval.
 | China parser extraction candidates | `docs/reviews/international-china-parser-extraction-candidates-001.md` |
 | Iowa state highway system pilot | `docs/reviews/state-highway-system-pilot-iowa-001.md` |
 | Iowa state highway source pack | `docs/reviews/state-highway-iowa-source-pack-001.md` |
+| Iowa state service network goals | `docs/briefs/iowa-state-service-network-goals.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International adaptive proof closeout | `docs/reviews/international-adaptive-proof-closeout-001.md` |
 | International next source-row gate | `docs/reviews/international-next-source-row-gate-001.md` |
