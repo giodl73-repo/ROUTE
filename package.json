@@ -68,6 +68,7 @@
     "check:india:geometry-policy": "python tools/build_india_geometry_policy.py && python tools/check_india_geometry_policy.py",
     "check:india:fixture-blocker": "python tools/build_india_adapter_source_pack.py && python tools/build_india_source_payload_access.py && python tools/probe_india_source_payloads.py && python tools/build_india_source_field_inventory.py && python tools/build_india_parser_preflight.py && python tools/build_india_parser_dry_run.py && python tools/build_india_source_row_validation.py && python tools/build_india_role_review.py && python tools/build_india_geometry_policy.py && python tools/build_india_fixture_blocker.py && python tools/check_india_role_review.py && python tools/check_india_geometry_policy.py && python tools/check_india_fixture_blocker.py",
     "check:india:source-content-sample": "python tools/build_india_source_content_sample.py && python tools/check_india_source_content_sample.py",
+    "check:india:extract": "python tools/build_india_source_content_sample.py && python tools/build_india_parser_extraction_candidates.py && python tools/check_india_source_content_sample.py && python tools/check_india_parser_extraction_candidates.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

@@ -225,6 +225,7 @@ public-readiness, external-readiness, or approval.
 | India geometry policy | `docs/reviews/international-india-geometry-policy-001.md` |
 | India fixture blocker | `docs/reviews/international-india-fixture-blocker-001.md` |
 | India source content sample | `docs/reviews/international-india-source-content-sample-001.md` |
+| India parser extraction candidates | `docs/reviews/international-india-parser-extraction-candidates-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
