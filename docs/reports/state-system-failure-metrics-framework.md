@@ -8,6 +8,7 @@ author: codex
 created: 2026-06-21
 updated: 2026-06-21
 sources:
+  - data/full-state-system-tierization-template.csv
   - data/state-system-failure-metric-menu.csv
   - data/state-system-failure-scorecard-template.csv
   - data/throughput-proof-matrix.csv
@@ -101,7 +102,8 @@ Missouri:
 
 The next state-facing deliverable should be a scorecard, not another static map:
 
-1. Priority promises from the state map.
+1. Full state-system tierization rows, not only priority promises from the state
+   map.
 2. Failure modes that can break each promise.
 3. Alternate-route penalty and state-system redundancy questions.
 4. Interchange, terminal, bridge, pass, work-zone, and rural isolation flags.
@@ -114,6 +116,11 @@ The first implementation should fill the scorecard template with no numeric
 scores unless the source posture permits it. A useful first client packet can
 still be valuable with `not-scored` rows when those rows identify the exact
 source, workshop decision, or operating history needed to score the failure.
+
+The scorecard should attach to every relevant `T1`, `T2`, `T3`, `T4`, `R`, and
+`M` row in the full-state tierization table. Segments with no promoted service
+role still matter because they explain whether a state highway is truly
+maintenance-only or whether it is an unrecognized redundancy route.
 
 ## Held Claims
 
