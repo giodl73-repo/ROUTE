@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Georgia Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Atlanta hub, central Georgia, Savannah port spine, Augusta/east Georgia, Columbus/west Georgia, south</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">Georgia, and coastal resilience.</text>
+<path d="M334.3 208.5 L1263.7 227.5 L1244.7 777.5 L1111.9 1024.1 L467.0 1043.1 L353.2 644.7 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="561.870967741933" cy="455.0645161290313" rx="189.67741935483878" ry="151.74193548387052" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="390.2" y="333.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Atlanta hub</text>
+<ellipse cx="960.1935483870959" cy="701.6451612903224" rx="322.4516129032264" ry="189.67741935483875" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="655.7" y="542.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Port spine</text>
+<ellipse cx="903.2903225806449" cy="492.99999999999955" rx="265.5483870967753" ry="151.7419354838705" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="655.7" y="371.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">East Georgia</text>
+<ellipse cx="485.9999999999991" cy="644.7419354838701" rx="208.64516129032157" ry="189.67741935483878" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="295.4" y="485.1" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">West Georgia</text>
+<ellipse cx="751.5483870967718" cy="929.2580645161289" rx="284.51612903225816" ry="151.74193548387115" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="485.0" y="807.5" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">South Georgia</text>
+<path d="M1180.2 752.9 Q1210.4 732.1 1189.7 762.3" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Port of Savannah to Savannah: Savannah terminal access</title></path>
+<path d="M707.9 618.2 Q674.2 744.7 607.4 857.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Macon to Albany: central to southwest Georgia access</title></path>
+<path d="M607.4 857.2 Q690.9 928.3 774.3 999.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Albany to Valdosta: south Georgia reliability</title></path>
+<path d="M774.3 999.4 Q990.9 896.5 1189.7 762.3" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Valdosta to Savannah: south Georgia to port access</title></path>
+<path d="M1189.7 762.3 Q1118.7 836.3 1113.8 938.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Savannah to Brunswick: coastal port and resilience access</title></path>
+<path d="M563.8 445.6 Q652.6 391.3 755.3 407.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Atlanta to Athens: northeast Georgia institutional access</title></path>
+<path d="M563.8 445.6 Q649.7 520.3 707.9 618.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Atlanta to Macon: Atlanta to central Georgia reliability</title></path>
+<path d="M707.9 618.2 Q948.8 690.3 1189.7 762.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Macon to Savannah: central Georgia to Savannah port reliability</title></path>
+<path d="M563.8 445.6 Q791.2 490.0 1022.8 498.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Atlanta to Augusta: Atlanta to Augusta reliability</title></path>
+<path d="M563.8 445.6 Q474.2 552.7 450.0 690.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Atlanta to Columbus: Atlanta to Columbus reliability</title></path>
+<path d="M563.8 445.6 Q447.1 343.1 389.3 199.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Atlanta to Chattanooga gateway: Atlanta to northwest gateway reliability</title></path>
+<circle cx="563.8" cy="445.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="581.8" y="427.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Atlanta</text>
+<text x="581.8" y="445.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ATL</text>
+<circle cx="707.9" cy="618.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="725.9" y="636.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Macon</text>
+<text x="725.9" y="654.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MAC</text>
+<circle cx="1189.7" cy="762.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1207.7" y="744.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Savannah</text>
+<text x="1207.7" y="762.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SAV</text>
+<circle cx="1022.8" cy="498.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1038.8" y="490.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Augusta</text>
+<text x="1038.8" y="508.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AUG</text>
+<circle cx="450.0" cy="690.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="466.0" y="682.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Columbus</text>
+<text x="466.0" y="700.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">COL</text>
+<circle cx="389.3" cy="199.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="407.3" y="181.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Chattanooga gateway</text>
+<text x="407.3" y="199.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHA</text>
+<circle cx="607.4" cy="857.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="623.4" y="849.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Albany</text>
+<text x="623.4" y="867.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ALB</text>
+<circle cx="774.3" cy="999.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="792.3" y="1023.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Valdosta</text>
+<text x="792.3" y="1041.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">VLD</text>
+<circle cx="1113.8" cy="938.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1131.8" y="958.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Brunswick</text>
+<text x="1131.8" y="976.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BRU</text>
+<circle cx="1180.2" cy="752.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1068.2" y="758.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Port of Savannah</text>
+<text x="1068.2" y="776.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PTG</text>
+<circle cx="755.3" cy="407.6" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="771.3" y="399.6" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Athens</text>
+<text x="771.3" y="417.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ATH</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">south Georgia connector: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Atlanta-to-central spine: 1 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port spine: 1 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">east Georgia connector: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">west Georgia connector: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northwest gateway: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southwest Georgia connector: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">coastal port connector: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 5 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 5 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">11 nodes, 11 candidate links, 1 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows Georgia as Atlanta hub, port spine, east/west Georgia, south</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Georgia, coastal and gateway promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank Atlanta reliability, Savannah port access, Augusta/Columbus</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">connectors, South Georgia, coastal resilience, and terminal access.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official GDOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

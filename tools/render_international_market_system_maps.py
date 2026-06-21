@@ -208,6 +208,85 @@ CONFIG = {
             "EKA": (18, -18),
         },
     },
+    "new-york": {
+        "title": "New York Candidate Market-System Map",
+        "subtitle": "2D state service-market view: downstate gateway, Hudson spine, Thruway/upstate cities, Southern Tier, North Country, ports, and cross-Hudson access.",
+        "output": "state/new-york-market-system-v1.svg",
+        "outline_lonlat": [(-79.8, 42.1), (-78.9, 43.5), (-76.0, 44.1), (-73.2, 45.0), (-71.8, 42.8), (-73.9, 40.5), (-76.6, 41.8)],
+        "zones_lonlat": [
+            ("Downstate gateway", -73.9, 40.9, 0.8, 0.6, "#c2410c"),
+            ("Hudson spine", -73.8, 42.0, 0.6, 1.4, "#16a34a"),
+            ("Thruway / upstate spine", -76.4, 43.0, 2.6, 0.7, "#2563eb"),
+            ("Southern Tier", -76.8, 42.0, 2.0, 0.5, "#0f766e"),
+            ("North Country", -74.8, 44.2, 1.6, 0.6, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows New York as downstate gateway, upstate spine, Southern Tier, and North Country promises."),
+            ("Client workshop", "Rank downstate access, port/cross-Hudson, Thruway reliability, western gateway, Southern Tier, and northern access."),
+            ("Still held", "Official NYSDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "NYC": (18, 30),
+            "NWK": (-112, -8),
+            "LI": (18, -18),
+            "ALB": (18, -18),
+            "BUF": (-80, 10),
+            "PLB": (18, -18),
+            "WAT": (18, -18),
+        },
+    },
+    "illinois": {
+        "title": "Illinois Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Chicago gateway, northern Illinois, central spine, university markets, Mississippi/Metro East, southern Illinois, and river confluence.",
+        "output": "state/illinois-market-system-v1.svg",
+        "outline_lonlat": [(-91.6, 42.5), (-87.4, 42.5), (-87.5, 39.0), (-89.1, 37.0), (-91.5, 39.5)],
+        "zones_lonlat": [
+            ("Chicago gateway", -87.8, 41.7, 1.0, 0.8, "#c2410c"),
+            ("Central Illinois spine", -89.2, 40.2, 1.4, 1.3, "#16a34a"),
+            ("University markets", -88.7, 40.2, 1.1, 0.8, "#2563eb"),
+            ("Mississippi / Metro East", -90.3, 39.0, 1.0, 1.2, "#0f766e"),
+            ("Southern Illinois", -89.2, 37.6, 1.0, 0.8, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Illinois as Chicago gateway, central-state, university, Mississippi, and southern river promises."),
+            ("Client workshop", "Rank Chicago access, central Illinois spine, university markets, Metro East, western coverage, and southern river access."),
+            ("Still held", "Official IDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "CHI": (18, -18),
+            "RFD": (-88, -8),
+            "STL": (18, 24),
+            "CAI": (18, 20),
+            "QCY": (-78, 8),
+        },
+    },
+    "georgia": {
+        "title": "Georgia Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Atlanta hub, central Georgia, Savannah port spine, Augusta/east Georgia, Columbus/west Georgia, south Georgia, and coastal resilience.",
+        "output": "state/georgia-market-system-v1.svg",
+        "outline_lonlat": [(-85.6, 35.0), (-80.7, 34.9), (-80.8, 32.0), (-81.5, 30.7), (-84.9, 30.6), (-85.5, 32.7)],
+        "zones_lonlat": [
+            ("Atlanta hub", -84.4, 33.7, 1.0, 0.8, "#16a34a"),
+            ("Port spine", -82.3, 32.4, 1.7, 1.0, "#0f766e"),
+            ("East Georgia", -82.6, 33.5, 1.4, 0.8, "#2563eb"),
+            ("West Georgia", -84.8, 32.7, 1.1, 1.0, "#c2410c"),
+            ("South Georgia", -83.4, 31.2, 1.5, 0.8, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Georgia as Atlanta hub, port spine, east/west Georgia, south Georgia, coastal and gateway promises."),
+            ("Client workshop", "Rank Atlanta reliability, Savannah port access, Augusta/Columbus connectors, South Georgia, coastal resilience, and terminal access."),
+            ("Still held", "Official GDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "ATL": (18, -18),
+            "MAC": (18, 18),
+            "SAV": (18, -18),
+            "PTG": (-112, 6),
+            "BRU": (18, 20),
+            "CHA": (18, -18),
+            "VLD": (18, 24),
+        },
+    },
     "canada": {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
@@ -446,7 +525,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india", "texas", "iowa", "florida", "california", "canada"]:
+    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 
