@@ -4,68 +4,68 @@
 <text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Texas Candidate Market-System Map</text>
 <text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Triangle reliability, border gateways, Gulf ports, Permian energy access, Panhandle resilience, and rural</text>
 <text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">connectors.</text>
-<path d="M250 160 L590 150 L690 250 L850 290 L1175 555 L1105 760 L960 810 L885 920 L720 950 L630 1170 L530 1165 L410 1015 L260 950 L165 800 L90 770 L145 665 L225 575 L225 455 L345 365 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
-<ellipse cx="620" cy="560" rx="260.0" ry="190.0" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="378.0" y="400.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Texas Triangle</text>
-<ellipse cx="865" cy="735" rx="210.0" ry="135.0" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="673.0" y="630.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Gulf ports</text>
-<ellipse cx="505" cy="885" rx="250.0" ry="150.0" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="273.0" y="765.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Border gateways</text>
-<ellipse cx="365" cy="570" rx="180.0" ry="135.0" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="203.0" y="465.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Permian energy</text>
-<ellipse cx="410" cy="250" rx="210.0" ry="110.0" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="218.0" y="175.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Panhandle resilience</text>
-<path d="M636.2 199.0 Q660.2 354.6 612.5 504.7" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Amarillo to Midland-Odessa: Panhandle-energy alternate branch</title></path>
-<path d="M1274.9 719.5 Q1258.8 735.4 1247.5 715.7" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Port Houston to Houston: Port Houston terminal access</title></path>
-<path d="M1247.5 715.7 Q1306.2 700.6 1364.8 685.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Houston to Beaumont: Gulf industrial port access</title></path>
-<path d="M1247.5 715.7 Q1138.9 795.5 1055.4 901.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Houston to Corpus Christi: coastal port market access</title></path>
-<path d="M1055.4 901.2 Q1015.2 989.4 1046.9 1081.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Corpus Christi to Brownsville: lower coast port access</title></path>
-<path d="M952.2 747.9 Q936.3 855.1 856.7 928.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 San Antonio to Laredo: border gateway reliability</title></path>
-<path d="M856.7 928.6 Q963.0 990.8 1046.9 1081.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Laredo to Brownsville: south border market continuity</title></path>
-<path d="M195.2 526.4 Q403.8 515.6 612.5 504.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 El Paso to Midland-Odessa: west Texas energy access</title></path>
-<path d="M612.5 504.7 Q854.2 479.3 1089.5 418.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Midland-Odessa to Dallas-Fort Worth: energy-to-market access</title></path>
-<path d="M636.2 199.0 Q847.1 341.2 1089.5 418.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Amarillo to Dallas-Fort Worth: Panhandle-to-market resilience</title></path>
-<path d="M1055.4 901.2 Q973.9 844.6 952.2 747.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Corpus Christi to San Antonio: port-to-inland reliability</title></path>
-<path d="M1089.5 418.6 Q1073.7 547.6 1023.2 667.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Dallas-Fort Worth to Austin: Triangle north-central reliability</title></path>
-<path d="M1023.2 667.4 Q987.7 707.7 952.2 747.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Austin to San Antonio: central-to-south metro reliability</title></path>
-<path d="M952.2 747.9 Q1101.8 749.7 1247.5 715.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 San Antonio to Houston: south-to-Gulf market access</title></path>
-<path d="M1247.5 715.7 Q1200.3 550.2 1089.5 418.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Houston to Dallas-Fort Worth: Gulf-to-North Texas reliability</title></path>
-<circle cx="1089.5" cy="418.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1107.5" y="400.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Dallas-Fort Worth</text>
-<text x="1107.5" y="418.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DFW</text>
-<circle cx="1023.2" cy="667.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1041.2" y="649.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Austin</text>
-<text x="1041.2" y="667.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AUS</text>
-<circle cx="952.2" cy="747.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="970.2" y="771.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">San Antonio</text>
-<text x="970.2" y="789.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SAT</text>
-<circle cx="1247.5" cy="715.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1265.5" y="697.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Houston</text>
-<text x="1265.5" y="715.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HOU</text>
-<circle cx="1364.8" cy="685.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1380.8" y="677.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Beaumont</text>
-<text x="1380.8" y="695.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BEA</text>
-<circle cx="1055.4" cy="901.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1073.4" y="925.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Corpus Christi</text>
-<text x="1073.4" y="943.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">COR</text>
-<circle cx="1046.9" cy="1081.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1064.9" y="1105.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Brownsville</text>
-<text x="1064.9" y="1123.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BRW</text>
-<circle cx="856.7" cy="928.6" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="764.7" y="936.6" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Laredo</text>
-<text x="764.7" y="954.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LRD</text>
-<circle cx="195.2" cy="526.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="213.2" y="546.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">El Paso</text>
-<text x="213.2" y="564.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ELP</text>
-<circle cx="612.5" cy="504.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="628.5" y="496.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Midland-Odessa</text>
-<text x="628.5" y="514.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MID</text>
-<circle cx="636.2" cy="199.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="652.2" y="191.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Amarillo</text>
-<text x="652.2" y="209.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AMA</text>
-<circle cx="1274.9" cy="719.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1290.9" y="711.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Port Houston</text>
-<text x="1290.9" y="729.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PTX</text>
+<path d="M224.7 574.7 L535.0 199.0 L780.0 199.0 L861.7 395.0 L1261.8 493.0 L1302.7 754.3 L1065.8 983.0 L992.3 1081.0 L804.5 958.5 L575.8 811.5 L388.0 713.5 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="1025.0" cy="689.0" rx="261.33333333333354" ry="195.99999999999986" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="781.7" y="523.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Texas Triangle</text>
+<ellipse cx="1106.6666666666665" cy="844.1666666666667" rx="228.6666666666664" ry="147.00000000000006" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="896.0" y="727.2" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Gulf ports</text>
+<ellipse cx="828.9999999999995" cy="925.8333333333334" rx="261.3333333333335" ry="147.00000000000006" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="585.7" y="808.8" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Border gateways</text>
+<ellipse cx="575.8333333333334" cy="591.0" rx="187.83333333333306" ry="147.0" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="406.0" y="474.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Permian energy</text>
+<ellipse cx="665.6666666666663" cy="313.3333333333332" rx="220.5000000000002" ry="114.3333333333332" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="463.2" y="229.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Panhandle resilience</text>
+<path d="M630.6 311.7 Q656.2 446.4 610.1 575.5" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Amarillo to Midland-Odessa: Panhandle-energy alternate branch</title></path>
+<path d="M1181.8 760.9 Q1167.5 777.1 1158.1 757.6" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Port Houston to Houston: Port Houston terminal access</title></path>
+<path d="M992.3 917.7 Q988.7 995.2 985.0 1072.8" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Corpus Christi to Brownsville: lower coast port access</title></path>
+<path d="M820.8 941.3 Q891.7 1021.1 985.0 1072.8" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Laredo to Brownsville: south border market continuity</title></path>
+<path d="M250.0 594.3 Q431.9 620.8 610.1 575.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 El Paso to Midland-Odessa: west Texas energy access</title></path>
+<path d="M630.6 311.7 Q841.8 374.0 1021.7 501.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Amarillo to Dallas-Fort Worth: Panhandle-to-market resilience</title></path>
+<path d="M992.3 917.7 Q932.9 861.6 903.3 785.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Corpus Christi to San Antonio: port-to-inland reliability</title></path>
+<path d="M1021.7 501.2 Q993.1 608.6 964.6 716.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Dallas-Fort Worth to Austin: Triangle north-central reliability</title></path>
+<path d="M964.6 716.0 Q920.4 738.7 903.3 785.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Austin to San Antonio: central-to-south metro reliability</title></path>
+<path d="M903.3 785.4 Q1034.6 807.3 1158.1 757.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 San Antonio to Houston: south-to-Gulf market access</title></path>
+<path d="M1158.1 757.6 Q1058.1 646.3 1021.7 501.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Houston to Dallas-Fort Worth: Gulf-to-North Texas reliability</title></path>
+<path d="M1158.1 757.6 Q1204.3 727.1 1259.4 731.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Houston to Beaumont: Gulf industrial port access</title></path>
+<path d="M1158.1 757.6 Q1075.2 837.6 992.3 917.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Houston to Corpus Christi: coastal port market access</title></path>
+<path d="M903.3 785.4 Q846.2 854.9 820.8 941.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 San Antonio to Laredo: border gateway reliability</title></path>
+<path d="M610.1 575.5 Q822.3 573.8 1021.7 501.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Midland-Odessa to Dallas-Fort Worth: energy-to-market access</title></path>
+<circle cx="1021.7" cy="501.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1039.7" y="483.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Dallas-Fort Worth</text>
+<text x="1039.7" y="501.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DFW</text>
+<circle cx="964.6" cy="716.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="982.6" y="698.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Austin</text>
+<text x="982.6" y="716.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AUS</text>
+<circle cx="903.3" cy="785.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="921.3" y="809.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">San Antonio</text>
+<text x="921.3" y="827.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SAT</text>
+<circle cx="1158.1" cy="757.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1176.1" y="739.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Houston</text>
+<text x="1176.1" y="757.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HOU</text>
+<circle cx="1259.4" cy="731.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1275.4" y="723.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Beaumont</text>
+<text x="1275.4" y="741.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BEA</text>
+<circle cx="992.3" cy="917.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1010.3" y="941.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Corpus Christi</text>
+<text x="1010.3" y="959.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">COR</text>
+<circle cx="985.0" cy="1072.8" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1003.0" y="1096.8" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Brownsville</text>
+<text x="1003.0" y="1114.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BRW</text>
+<circle cx="820.8" cy="941.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="728.8" y="949.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Laredo</text>
+<text x="728.8" y="967.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LRD</text>
+<circle cx="250.0" cy="594.3" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="268.0" y="614.3" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">El Paso</text>
+<text x="268.0" y="632.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ELP</text>
+<circle cx="610.1" cy="575.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="626.1" y="567.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Midland-Odessa</text>
+<text x="626.1" y="585.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MID</text>
+<circle cx="630.6" cy="311.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="646.6" y="303.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Amarillo</text>
+<text x="646.6" y="321.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AMA</text>
+<circle cx="1181.8" cy="760.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1197.8" y="752.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Port Houston</text>
+<text x="1197.8" y="770.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PTX</text>
 <rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
 <text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
@@ -79,9 +79,9 @@
 <text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Gulf-to-inland connector: 1 candidate promises</text>
 <text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
 <line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
-<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 4 links - T1 candidate trunk promise</text>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 8 links - T1 candidate trunk promise</text>
 <line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
-<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 9 links - T2 candidate market connector</text>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 5 links - T2 candidate market connector</text>
 <line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
 <text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 2 links - T3 candidate access / terminal feeder</text>
 <text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>

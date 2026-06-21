@@ -35,13 +35,13 @@ CONFIG = {
         "title": "China Candidate Market-System Map",
         "subtitle": "2D service-market view: coastal export belts, central inland spines, Yangtze access, western connectors, and terminal feeders.",
         "output": "international/china-market-system-v1.svg",
-        "outline": "M230 165 L520 118 L845 160 L1105 245 L1320 430 L1280 682 L1145 842 L876 915 L692 840 L486 870 L326 760 L190 548 L150 330 Z",
-        "zones": [
-            ("North / capital-port", 610, 280, 420, 210, "#1d4ed8"),
-            ("Yangtze Delta", 910, 565, 370, 200, "#0f766e"),
-            ("Central inland", 650, 650, 360, 310, "#16a34a"),
-            ("Pearl River export", 780, 930, 360, 180, "#c2410c"),
-            ("Western inland", 330, 700, 380, 300, "#7c3aed"),
+        "outline_lonlat": [(101.5, 41.8), (108.5, 43.0), (117.0, 42.2), (123.8, 39.0), (125.2, 33.8), (123.2, 28.2), (119.0, 23.4), (113.0, 21.6), (106.0, 24.0), (101.8, 29.4), (102.8, 36.0)],
+        "zones_lonlat": [
+            ("North / capital-port", 117.0, 38.0, 5.8, 3.0, "#1d4ed8"),
+            ("Yangtze Delta", 120.0, 31.0, 4.6, 2.3, "#0f766e"),
+            ("Central inland", 113.0, 31.0, 5.4, 4.0, "#16a34a"),
+            ("Pearl River export", 114.0, 23.4, 4.6, 2.1, "#c2410c"),
+            ("Western inland", 105.5, 30.0, 4.8, 4.1, "#7c3aed"),
         ],
         "callouts": [
             ("Why this sells", "Shows China as multiple service markets, not one coast-to-coast line."),
@@ -59,13 +59,13 @@ CONFIG = {
         "title": "India Candidate Market-System Map",
         "subtitle": "2D service-market view: northwest industrial spine, western ports, central sorting hubs, east coast loop, south market access, and northeast branch.",
         "output": "international/india-market-system-v1.svg",
-        "outline": "M570 120 L760 205 L892 350 L860 550 L945 760 L815 1035 L650 1155 L540 1015 L470 810 L335 725 L280 555 L365 370 Z",
-        "zones": [
-            ("Northwest industrial", 390, 220, 360, 270, "#16a34a"),
-            ("Western port spine", 360, 500, 310, 300, "#0f766e"),
-            ("Central sorting", 570, 560, 300, 290, "#2563eb"),
-            ("East coast loop", 760, 570, 360, 420, "#c2410c"),
-            ("South market", 530, 850, 360, 270, "#7c3aed"),
+        "outline_lonlat": [(74.5, 29.6), (80.8, 29.0), (86.6, 26.4), (91.0, 24.0), (87.2, 20.8), (83.4, 16.2), (80.2, 12.2), (78.0, 8.4), (74.8, 12.0), (72.0, 18.4), (72.5, 23.3)],
+        "zones_lonlat": [
+            ("Northwest industrial", 75.4, 26.0, 4.3, 3.8, "#16a34a"),
+            ("Western port spine", 72.9, 20.5, 3.0, 4.0, "#0f766e"),
+            ("Central sorting", 78.5, 20.8, 3.5, 4.2, "#2563eb"),
+            ("East coast loop", 84.5, 18.8, 4.6, 6.0, "#c2410c"),
+            ("South market", 77.4, 13.0, 4.0, 3.4, "#7c3aed"),
         ],
         "callouts": [
             ("Why this sells", "Shows India as a portfolio of market promises, not a single diagonal corridor."),
@@ -87,13 +87,13 @@ CONFIG = {
         "title": "Texas Candidate Market-System Map",
         "subtitle": "2D state service-market view: Triangle reliability, border gateways, Gulf ports, Permian energy access, Panhandle resilience, and rural connectors.",
         "output": "state/texas-market-system-v1.svg",
-        "outline": "M250 160 L590 150 L690 250 L850 290 L1175 555 L1105 760 L960 810 L885 920 L720 950 L630 1170 L530 1165 L410 1015 L260 950 L165 800 L90 770 L145 665 L225 575 L225 455 L345 365 Z",
-        "zones": [
-            ("Texas Triangle", 620, 560, 520, 380, "#16a34a"),
-            ("Gulf ports", 865, 735, 420, 270, "#0f766e"),
-            ("Border gateways", 505, 885, 500, 300, "#c2410c"),
-            ("Permian energy", 365, 570, 360, 270, "#7c3aed"),
-            ("Panhandle resilience", 410, 250, 420, 220, "#2563eb"),
+        "outline_lonlat": [(-106.8, 32.0), (-103.0, 36.6), (-100.0, 36.6), (-99.0, 34.2), (-94.1, 33.0), (-93.6, 29.8), (-96.5, 27.0), (-97.4, 25.8), (-99.7, 27.3), (-102.5, 29.1), (-104.8, 30.3)],
+        "zones_lonlat": [
+            ("Texas Triangle", -97.0, 30.6, 3.2, 2.4, "#16a34a"),
+            ("Gulf ports", -96.0, 28.7, 2.8, 1.8, "#0f766e"),
+            ("Border gateways", -99.4, 27.7, 3.2, 1.8, "#c2410c"),
+            ("Permian energy", -102.5, 31.8, 2.3, 1.8, "#7c3aed"),
+            ("Panhandle resilience", -101.4, 35.2, 2.7, 1.4, "#2563eb"),
         ],
         "callouts": [
             ("Why this sells", "Shows Texas as a portfolio of metro, port, border, energy, and resilience promises."),
@@ -115,13 +115,13 @@ CONFIG = {
         "title": "Iowa Candidate Market-System Map",
         "subtitle": "2D state service-market view: I-80 spine, Des Moines hub, eastern production corridor, rural access, river gateways, and north-south resilience.",
         "output": "state/iowa-market-system-v1.svg",
-        "outline": "M180 215 L1125 190 L1175 295 L1155 470 L1205 610 L1158 805 L1040 870 L820 855 L665 900 L495 860 L310 888 L200 805 L145 610 L185 455 Z",
-        "zones": [
-            ("I-80 service spine", 640, 585, 760, 220, "#16a34a"),
-            ("Central Iowa hub", 560, 520, 310, 250, "#2563eb"),
-            ("Eastern production", 845, 500, 360, 300, "#0f766e"),
-            ("Northern rural access", 585, 315, 650, 190, "#7c3aed"),
-            ("River gateways", 225, 585, 230, 300, "#c2410c"),
+        "outline_lonlat": [(-96.8, 43.6), (-90.0, 43.6), (-90.1, 42.5), (-89.9, 41.5), (-90.2, 40.5), (-91.6, 40.3), (-93.6, 40.4), (-95.9, 40.6), (-96.6, 41.5), (-96.7, 42.5)],
+        "zones_lonlat": [
+            ("I-80 service spine", -93.2, 41.6, 3.0, 0.55, "#16a34a"),
+            ("Central Iowa hub", -93.6, 41.8, 1.2, 0.8, "#2563eb"),
+            ("Eastern production", -91.5, 42.1, 1.4, 0.9, "#0f766e"),
+            ("Northern rural access", -93.3, 43.0, 3.0, 0.6, "#7c3aed"),
+            ("River gateways", -95.9, 41.7, 1.0, 1.1, "#c2410c"),
         ],
         "callouts": [
             ("Why this sells", "Shows a state DOT how ROUTE turns a highway map into service promises and proof asks."),
@@ -141,14 +141,19 @@ CONFIG = {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
         "output": "international/canada-market-system-v1.svg",
-        "outline": "M95 205 L330 125 L610 160 L820 120 L1080 190 L1325 180 L1370 350 L1240 455 L1310 650 L1195 805 L955 855 L760 785 L540 840 L300 755 L125 590 Z",
-        "zones": [
-            ("Pacific gateway", 255, 520, 260, 280, "#0f766e"),
-            ("Prairie spine", 530, 520, 520, 260, "#16a34a"),
-            ("Great Lakes / St. Lawrence", 920, 665, 460, 250, "#2563eb"),
-            ("Atlantic access", 1190, 630, 280, 230, "#c2410c"),
-            ("Northern service", 610, 300, 680, 220, "#7c3aed"),
+        "lat_scale": 1.9,
+        "outline_lonlat": [(-132.0, 55.8), (-122.0, 58.0), (-112.0, 56.2), (-100.0, 57.6), (-84.0, 51.0), (-72.0, 48.5), (-62.0, 46.0), (-69.0, 43.0), (-82.0, 42.0), (-97.0, 49.0), (-114.0, 50.0), (-124.0, 48.6)],
+        "zones_lonlat": [
+            ("Pacific gateway", -124.0, 50.2, 4.5, 2.5, "#0f766e"),
+            ("Prairie spine", -106.0, 51.0, 11.0, 2.3, "#16a34a"),
+            ("Great Lakes / St. Lawrence", -78.0, 44.8, 7.8, 2.2, "#2563eb"),
+            ("Atlantic access", -66.5, 45.0, 4.6, 1.8, "#c2410c"),
+            ("Northern service", -105.0, 54.8, 18.0, 2.5, "#7c3aed"),
         ],
+        "zone_label_offsets": {
+            "Northern service": (90, -42),
+            "Pacific gateway": (0, 18),
+        },
         "callouts": [
             ("Why this sells", "Shows Canada as gateway, prairie, Great Lakes, Atlantic, and northern service markets."),
             ("Client workshop", "Rank port gateways, prairie reliability, cross-country trunk continuity, northern access, winter resilience, and resource links."),
@@ -215,9 +220,20 @@ def collect_nodes(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
     return nodes
 
 
-def project(nodes: dict[str, dict[str, str]]) -> dict[str, tuple[float, float]]:
-    lons = [float(n["lon"]) for n in nodes.values()]
-    lats = [float(n["lat"]) for n in nodes.values()]
+def projection_points(cfg: dict[str, object], nodes: dict[str, dict[str, str]]) -> list[tuple[float, float]]:
+    lat_scale = float(cfg.get("lat_scale", 1.0))
+    points = [(float(n["lon"]), float(n["lat"]) * lat_scale) for n in nodes.values()]
+    points.extend((lon, lat * lat_scale) for lon, lat in cfg.get("outline_lonlat", []))
+    for _label, lon, lat, rx, ry, _color in cfg.get("zones_lonlat", []):
+        points.extend([(lon - rx, (lat - ry) * lat_scale), (lon + rx, (lat + ry) * lat_scale)])
+    return points
+
+
+def projector(cfg: dict[str, object], nodes: dict[str, dict[str, str]]):
+    points = projection_points(cfg, nodes)
+    lat_scale = float(cfg.get("lat_scale", 1.0))
+    lons = [point[0] for point in points]
+    lats = [point[1] for point in points]
     min_lon, max_lon = min(lons), max(lons)
     min_lat, max_lat = min(lats), max(lats)
     scale = min(MAP_W / (max_lon - min_lon), MAP_H / (max_lat - min_lat)) * 0.9
@@ -225,10 +241,42 @@ def project(nodes: dict[str, dict[str, str]]) -> dict[str, tuple[float, float]]:
     used_h = (max_lat - min_lat) * scale
     x0 = MAP_X + (MAP_W - used_w) / 2
     y0 = MAP_Y + (MAP_H - used_h) / 2
+
+    def project_point(lon: float, lat: float) -> tuple[float, float]:
+        scaled_lat = lat * lat_scale
+        return x0 + (lon - min_lon) * scale, y0 + (max_lat - scaled_lat) * scale
+
+    return project_point
+
+
+def project_nodes(cfg: dict[str, object], nodes: dict[str, dict[str, str]]) -> dict[str, tuple[float, float]]:
+    project_point = projector(cfg, nodes)
     return {
-        node_id: (x0 + (float(n["lon"]) - min_lon) * scale, y0 + (max_lat - float(n["lat"])) * scale)
+        node_id: project_point(float(n["lon"]), float(n["lat"]))
         for node_id, n in nodes.items()
     }
+
+
+def projected_outline(cfg: dict[str, object], nodes: dict[str, dict[str, str]]) -> str:
+    points = cfg.get("outline_lonlat", [])
+    if not points:
+        return str(cfg.get("outline", ""))
+    project_point = projector(cfg, nodes)
+    projected = [project_point(lon, lat) for lon, lat in points]
+    head = projected[0]
+    tail = " ".join(f"L{x:.1f} {y:.1f}" for x, y in projected[1:])
+    return f"M{head[0]:.1f} {head[1]:.1f} {tail} Z"
+
+
+def projected_zone(cfg: dict[str, object], nodes: dict[str, dict[str, str]], zone: tuple[str, float, float, float, float, str]) -> tuple[str, float, float, float, float, str]:
+    label, lon, lat, rx_lon, ry_lat, color = zone
+    project_point = projector(cfg, nodes)
+    cx, cy = project_point(lon, lat)
+    x1, _ = project_point(lon - rx_lon, lat)
+    x2, _ = project_point(lon + rx_lon, lat)
+    _, y1 = project_point(lon, lat - ry_lat)
+    _, y2 = project_point(lon, lat + ry_lat)
+    return label, cx, cy, abs(x2 - x1) / 2, abs(y2 - y1) / 2, color
 
 
 def path_between(x1: float, y1: float, x2: float, y2: float, bend: float) -> str:
@@ -247,7 +295,7 @@ def path_between(x1: float, y1: float, x2: float, y2: float, bend: float) -> str
 def render(country: str, rows: list[dict[str, str]]) -> Path:
     cfg = CONFIG[country]
     nodes = collect_nodes(rows)
-    coords = project(nodes)
+    coords = project_nodes(cfg, nodes)
     counts = Counter(row["tier"] for row in rows)
     layers = Counter(row["market_layer"] for row in rows)
     source_needed = sum(1 for row in rows if row["evidence_label"] == "source-needed")
@@ -260,12 +308,14 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
         f'<rect x="28" y="28" width="{W-56}" height="{H-56}" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>',
         text(70, 86, cfg["title"], 38, "#111827", 700),
         *multiline(70, 124, cfg["subtitle"], 17, 1300, "#475569"),
-        f'<path d="{cfg["outline"]}" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>',
+        f'<path d="{projected_outline(cfg, nodes)}" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>',
     ]
 
-    for label, x, y, w, h, color in cfg["zones"]:
-        svg.append(f'<ellipse cx="{x}" cy="{y}" rx="{w/2}" ry="{h/2}" fill="{color}" opacity="0.08" stroke="{color}" stroke-width="2" stroke-dasharray="8 8"/>')
-        svg.append(text(x - w / 2 + 18, max(y - h / 2 + 30, 175), label, 17, color, 700))
+    for zone in cfg.get("zones_lonlat", cfg.get("zones", [])):
+        label, x, y, rx, ry, color = projected_zone(cfg, nodes, zone) if len(zone) == 6 and isinstance(zone[1], float) else zone
+        label_dx, label_dy = cfg.get("zone_label_offsets", {}).get(label, (0, 0))
+        svg.append(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="{color}" opacity="0.08" stroke="{color}" stroke-width="2" stroke-dasharray="8 8"/>')
+        svg.append(text(x - rx + 18 + label_dx, max(y - ry + 30 + label_dy, 175), label, 17, color, 700))
 
     # Draw lower tiers first so trunk promises remain visually dominant.
     ordered = sorted(rows, key=lambda row: {"T3": 0, "T2": 1, "T1": 2}[row["tier"]])

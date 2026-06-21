@@ -3,104 +3,104 @@
 <rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
 <text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">China Candidate Market-System Map</text>
 <text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D service-market view: coastal export belts, central inland spines, Yangtze access, western connectors, and terminal feeders.</text>
-<path d="M230 165 L520 118 L845 160 L1105 245 L1320 430 L1280 682 L1145 842 L876 915 L692 840 L486 870 L326 760 L190 548 L150 330 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
-<ellipse cx="610" cy="280" rx="210.0" ry="105.0" fill="#1d4ed8" opacity="0.08" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="418.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8" text-anchor="start">North / capital-port</text>
-<ellipse cx="910" cy="565" rx="185.0" ry="100.0" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="743.0" y="495.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Yangtze Delta</text>
-<ellipse cx="650" cy="650" rx="180.0" ry="155.0" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="488.0" y="525.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Central inland</text>
-<ellipse cx="780" cy="930" rx="180.0" ry="90.0" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="618.0" y="870.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Pearl River export</text>
-<ellipse cx="330" cy="700" rx="190.0" ry="150.0" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
-<text x="158.0" y="580.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Western inland</text>
-<path d="M1165.6 745.3 Q1123.8 770.8 1101.9 727.0" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Ningbo to Hangzhou: delta port feeder access</title></path>
-<path d="M832.2 1078.7 Q831.6 1097.4 822.6 1081.0" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Yantian to Shenzhen: export terminal access</title></path>
-<path d="M308.3 973.8 Q336.7 841.3 365.1 708.7" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Kunming to Chengdu: southwest resilience branch</title></path>
-<path d="M1161.9 683.0 Q1106.1 646.9 1039.7 645.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Shanghai to Nanjing: delta redundancy and inland access</title></path>
-<path d="M1039.7 645.0 Q925.6 644.5 834.0 712.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Nanjing to Wuhan: Yangtze inland access</title></path>
-<path d="M834.0 712.4 Q661.1 771.6 478.7 759.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Wuhan to Chongqing: upper Yangtze market access</title></path>
-<path d="M478.7 759.5 Q414.5 750.5 365.1 708.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Chongqing to Chengdu: western inland reliability</title></path>
-<path d="M802.9 521.9 Q695.5 531.2 588.1 540.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Zhengzhou to Xi&#x27;an: central-to-northwest access</title></path>
-<path d="M588.1 540.6 Q465.8 610.3 365.1 708.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Xi&#x27;an to Chengdu: northwest-to-west market access</title></path>
-<path d="M1112.0 461.4 Q1043.7 412.7 962.7 434.8" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Qingdao to Jinan: Shandong port-to-inland access</title></path>
-<path d="M1168.3 331.3 Q1179.5 246.0 1251.7 199.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Dalian to Shenyang: northeast port and industry access</title></path>
-<path d="M1251.7 199.0 Q1095.6 259.9 930.2 286.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Shenyang to Beijing: northeast-to-capital access</title></path>
-<path d="M930.2 286.0 Q948.3 303.9 966.4 321.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Beijing to Tianjin: reliable capital-region port access</title></path>
-<path d="M966.4 321.7 Q946.6 377.7 962.7 434.8" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Tianjin to Jinan: north coast to Shandong reliability</title></path>
-<path d="M962.7 434.8 Q967.4 552.3 1039.7 645.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Jinan to Nanjing: coastal-to-Yangtze continuity</title></path>
-<path d="M1039.7 645.0 Q1111.5 629.7 1161.9 683.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Nanjing to Shanghai: Yangtze Delta trunk reliability</title></path>
-<path d="M1161.9 683.0 Q1142.6 719.5 1101.9 727.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Shanghai to Hangzhou: delta to coastal manufacturing reliability</title></path>
-<path d="M1101.9 727.0 Q1082.2 822.9 1062.6 918.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Hangzhou to Fuzhou: coastal industrial continuity</title></path>
-<path d="M1062.6 918.9 Q932.5 985.0 822.6 1081.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Fuzhou to Shenzhen: south coast export reliability</title></path>
-<path d="M822.6 1081.0 Q825.6 1038.5 786.0 1054.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Shenzhen to Guangzhou: export gateway metro reliability</title></path>
-<path d="M930.2 286.0 Q898.2 421.0 802.9 521.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Beijing to Zhengzhou: capital to central hub reliability</title></path>
-<path d="M802.9 521.9 Q836.2 614.2 834.0 712.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Zhengzhou to Wuhan: central market trunk reliability</title></path>
-<path d="M834.0 712.4 Q802.7 766.4 771.3 820.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Wuhan to Changsha: central manufacturing continuity</title></path>
-<path d="M771.3 820.4 Q760.7 938.3 786.0 1054.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Changsha to Guangzhou: central-to-export gateway reliability</title></path>
-<circle cx="930.2" cy="286.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="946.2" y="278.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Beijing</text>
-<text x="946.2" y="296.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BEI</text>
-<circle cx="966.4" cy="321.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="984.4" y="341.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Tianjin</text>
-<text x="984.4" y="359.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">TJN</text>
-<circle cx="962.7" cy="434.8" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="978.7" y="426.8" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Jinan</text>
-<text x="978.7" y="444.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">JIN</text>
-<circle cx="1039.7" cy="645.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1055.7" y="637.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Nanjing</text>
-<text x="1055.7" y="655.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NKG</text>
-<circle cx="1161.9" cy="683.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1177.9" y="675.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Shanghai</text>
-<text x="1177.9" y="693.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SHG</text>
-<circle cx="1101.9" cy="727.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1117.9" y="719.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Hangzhou</text>
-<text x="1117.9" y="737.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HGH</text>
-<circle cx="1062.6" cy="918.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="1078.6" y="910.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Fuzhou</text>
-<text x="1078.6" y="928.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">FUZ</text>
-<circle cx="822.6" cy="1081.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="838.6" y="1099.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Shenzhen</text>
-<text x="838.6" y="1117.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SZX</text>
-<circle cx="786.0" cy="1054.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="802.0" y="1036.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Guangzhou</text>
-<text x="802.0" y="1054.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">GZ</text>
-<circle cx="802.9" cy="521.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="818.9" y="513.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Zhengzhou</text>
-<text x="818.9" y="531.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ZZH</text>
-<circle cx="834.0" cy="712.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="850.0" y="704.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Wuhan</text>
-<text x="850.0" y="722.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">WUH</text>
-<circle cx="771.3" cy="820.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
-<text x="787.3" y="812.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Changsha</text>
-<text x="787.3" y="830.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CSX</text>
-<circle cx="478.7" cy="759.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="494.7" y="751.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Chongqing</text>
-<text x="494.7" y="769.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHQ</text>
-<circle cx="365.1" cy="708.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="381.1" y="700.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Chengdu</text>
-<text x="381.1" y="718.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CDU</text>
-<circle cx="588.1" cy="540.6" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="604.1" y="532.6" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Xi&#x27;an</text>
-<text x="604.1" y="550.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">XIY</text>
-<circle cx="1112.0" cy="461.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1128.0" y="453.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Qingdao</text>
-<text x="1128.0" y="471.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">QDG</text>
-<circle cx="1168.3" cy="331.3" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1184.3" y="323.3" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Dalian</text>
-<text x="1184.3" y="341.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DAL</text>
-<circle cx="1251.7" cy="199.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1267.7" y="191.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Shenyang</text>
-<text x="1267.7" y="209.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SHE</text>
-<circle cx="1165.6" cy="745.3" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="1181.6" y="737.3" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ningbo</text>
-<text x="1181.6" y="755.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NGB</text>
-<circle cx="832.2" cy="1078.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="850.2" y="1112.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Yantian</text>
-<text x="850.2" y="1130.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">YTN</text>
-<circle cx="308.3" cy="973.8" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-<text x="324.3" y="965.8" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Kunming</text>
-<text x="324.3" y="983.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">KMG</text>
+<path d="M314.6 247.8 L599.1 199.0 L944.6 231.5 L1221.0 361.6 L1277.9 572.9 L1196.6 800.5 L1025.9 995.6 L782.0 1068.8 L497.5 971.3 L326.8 751.8 L367.5 483.5 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="944.6129032258063" cy="402.22580645161287" rx="235.7419354838708" ry="121.93548387096774" fill="#1d4ed8" opacity="0.08" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="726.9" y="310.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8" text-anchor="start">North / capital-port</text>
+<ellipse cx="1066.5483870967741" cy="686.741935483871" rx="186.96774193548362" ry="93.48387096774195" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="897.6" y="623.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Yangtze Delta</text>
+<ellipse cx="782.032258064516" cy="686.741935483871" rx="219.48387096774212" ry="162.5806451612903" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="580.5" y="554.2" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Central inland</text>
+<ellipse cx="822.6774193548385" cy="995.6451612903226" rx="186.96774193548367" ry="85.35483870967744" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="653.7" y="940.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Pearl River export</text>
+<ellipse cx="477.19354838709666" cy="727.3870967741935" rx="195.09677419354824" ry="166.64516129032262" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="300.1" y="590.7" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Western inland</text>
+<path d="M1129.5 732.7 Q1091.3 759.1 1073.1 716.4" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Ningbo to Hangzhou: delta port feeder access</title></path>
+<path d="M833.7 1028.6 Q833.6 1047.1 825.1 1030.6" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Yantian to Shenzhen: export terminal access</title></path>
+<path d="M368.7 935.5 Q393.9 817.8 419.1 700.2" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Kunming to Chengdu: southwest resilience branch</title></path>
+<path d="M835.3 703.4 Q675.2 706.5 519.9 745.3" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Wuhan to Chongqing: upper Yangtze market access</title></path>
+<path d="M807.6 534.3 Q709.2 506.8 617.0 551.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Zhengzhou to Xi&#x27;an: central-to-northwest access</title></path>
+<path d="M617.0 551.0 Q539.7 654.3 419.1 700.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Xi&#x27;an to Chengdu: northwest-to-west market access</title></path>
+<path d="M1082.0 480.7 Q1012.6 486.6 949.5 457.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Qingdao to Jinan: Shandong port-to-inland access</title></path>
+<path d="M1132.0 365.2 Q1169.0 306.5 1206.0 247.8" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Dalian to Shenyang: northeast port and industry access</title></path>
+<path d="M1206.0 247.8 Q1058.6 269.0 920.6 325.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Shenyang to Beijing: northeast-to-capital access</title></path>
+<path d="M920.6 325.0 Q911.4 366.5 952.7 356.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Beijing to Tianjin: reliable capital-region port access</title></path>
+<path d="M952.7 356.7 Q987.1 408.1 949.5 457.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Tianjin to Jinan: north coast to Shandong reliability</title></path>
+<path d="M949.5 457.1 Q1000.5 544.2 1017.8 643.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Jinan to Nanjing: coastal-to-Yangtze continuity</title></path>
+<path d="M1017.8 643.7 Q1072.0 660.5 1126.3 677.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Nanjing to Shanghai: Yangtze Delta trunk reliability</title></path>
+<path d="M1126.3 677.4 Q1089.0 682.4 1073.1 716.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Shanghai to Hangzhou: delta to coastal manufacturing reliability</title></path>
+<path d="M1073.1 716.4 Q1020.3 794.3 1038.1 886.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Hangzhou to Fuzhou: coastal industrial continuity</title></path>
+<path d="M1038.1 886.7 Q951.8 988.5 825.1 1030.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Fuzhou to Shenzhen: south coast export reliability</title></path>
+<path d="M825.1 1030.6 Q798.2 1033.1 792.6 1006.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Shenzhen to Guangzhou: export gateway metro reliability</title></path>
+<path d="M920.6 325.0 Q864.1 429.7 807.6 534.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Beijing to Zhengzhou: capital to central hub reliability</title></path>
+<path d="M807.6 534.3 Q803.7 621.8 835.3 703.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Zhengzhou to Wuhan: central market trunk reliability</title></path>
+<path d="M835.3 703.4 Q776.3 733.3 779.6 799.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Wuhan to Changsha: central manufacturing continuity</title></path>
+<path d="M779.6 799.3 Q822.0 900.7 792.6 1006.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Changsha to Guangzhou: central-to-export gateway reliability</title></path>
+<path d="M1126.3 677.4 Q1066.7 677.7 1017.8 643.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Shanghai to Nanjing: delta redundancy and inland access</title></path>
+<path d="M1017.8 643.7 Q926.5 673.5 835.3 703.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Nanjing to Wuhan: Yangtze inland access</title></path>
+<path d="M519.9 745.3 Q476.8 706.3 419.1 700.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Chongqing to Chengdu: western inland reliability</title></path>
+<circle cx="920.6" cy="325.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="936.6" y="317.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Beijing</text>
+<text x="936.6" y="335.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BEI</text>
+<circle cx="952.7" cy="356.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="970.7" y="376.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Tianjin</text>
+<text x="970.7" y="394.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">TJN</text>
+<circle cx="949.5" cy="457.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="965.5" y="449.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Jinan</text>
+<text x="965.5" y="467.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">JIN</text>
+<circle cx="1017.8" cy="643.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1033.8" y="635.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Nanjing</text>
+<text x="1033.8" y="653.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NKG</text>
+<circle cx="1126.3" cy="677.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1142.3" y="669.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Shanghai</text>
+<text x="1142.3" y="687.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SHG</text>
+<circle cx="1073.1" cy="716.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1089.1" y="708.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Hangzhou</text>
+<text x="1089.1" y="726.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HGH</text>
+<circle cx="1038.1" cy="886.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1054.1" y="878.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Fuzhou</text>
+<text x="1054.1" y="896.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">FUZ</text>
+<circle cx="825.1" cy="1030.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="841.1" y="1048.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Shenzhen</text>
+<text x="841.1" y="1066.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SZX</text>
+<circle cx="792.6" cy="1006.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="808.6" y="988.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Guangzhou</text>
+<text x="808.6" y="1006.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">GZ</text>
+<circle cx="807.6" cy="534.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="823.6" y="526.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Zhengzhou</text>
+<text x="823.6" y="544.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ZZH</text>
+<circle cx="835.3" cy="703.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="851.3" y="695.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Wuhan</text>
+<text x="851.3" y="713.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">WUH</text>
+<circle cx="779.6" cy="799.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="795.6" y="791.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Changsha</text>
+<text x="795.6" y="809.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CSX</text>
+<circle cx="519.9" cy="745.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="535.9" y="737.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Chongqing</text>
+<text x="535.9" y="755.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHQ</text>
+<circle cx="419.1" cy="700.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="435.1" y="692.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Chengdu</text>
+<text x="435.1" y="710.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CDU</text>
+<circle cx="617.0" cy="551.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="633.0" y="543.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Xi&#x27;an</text>
+<text x="633.0" y="561.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">XIY</text>
+<circle cx="1082.0" cy="480.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1098.0" y="472.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Qingdao</text>
+<text x="1098.0" y="490.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">QDG</text>
+<circle cx="1132.0" cy="365.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1148.0" y="357.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Dalian</text>
+<text x="1148.0" y="375.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DAL</text>
+<circle cx="1206.0" cy="247.8" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1222.0" y="239.8" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Shenyang</text>
+<text x="1222.0" y="257.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SHE</text>
+<circle cx="1129.5" cy="732.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1145.5" y="724.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ningbo</text>
+<text x="1145.5" y="742.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NGB</text>
+<circle cx="833.7" cy="1028.6" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="851.7" y="1062.6" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Yantian</text>
+<text x="851.7" y="1080.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">YTN</text>
+<circle cx="368.7" cy="935.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="384.7" y="927.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Kunming</text>
+<text x="384.7" y="945.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">KMG</text>
 <rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
 <text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
@@ -114,9 +114,9 @@
 <text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Pearl River gateway: 1 candidate promises</text>
 <text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
 <line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
-<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 12 links - T1 candidate trunk promise</text>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 15 links - T1 candidate trunk promise</text>
 <line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
-<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 9 links - T2 candidate market connector</text>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 6 links - T2 candidate market connector</text>
 <line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
 <text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 3 links - T3 candidate access / terminal feeder</text>
 <text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
