@@ -81,6 +81,17 @@ def main() -> None:
         },
         {
             "proof_id": "FLEX-005",
+            "region_or_surface": "Japan",
+            "kernel_step": "source_custody_to_source_needed_blocker",
+            "observed_variation": "MLIT and e-Stat content supports bounded content candidates while GSI road-link metadata remains source-needed for link extraction",
+            "system_response": "Japan advances through source pack, parser contract, dry run, extraction candidates, content-row validation, role review, geometry policy, fixture blocker, and adaptive closeout",
+            "flexibility_decision": "adaptive_branch_complete_source_row_validation_held",
+            "evidence_artifacts": "docs/reviews/international-japan-adaptive-proof-closeout-001.md;data/international-japan-adaptive-proof-closeout-001.csv",
+            "blocked_claims": BLOCKED,
+            "next_action": "resolve GSI road-link source custody or alternative accepted road-feature rows before source-row validation or fixture replacement",
+        },
+        {
+            "proof_id": "FLEX-006",
             "region_or_surface": "multi-region maps",
             "kernel_step": "adapter_to_map_fixture",
             "observed_variation": "Canada, EU, India, Japan, and China produce comparable held-claim schematic fixtures from different geography and governance patterns",

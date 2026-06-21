@@ -480,7 +480,8 @@ source-content rows, but not Canada-equivalent road-feature rows or an approved
 current-corridor fixture scope.
 The international flexibility proof gate now records the larger product result:
 Canada proves depth, EU proves adaptive branching under source mismatch, India
-proves adaptive content-row branching, and the multi-region map fixtures prove
+proves adaptive content-row branching, Japan proves adaptive branching with a
+source-needed road-link blocker, and the multi-region map fixtures prove
 breadth while official, SLA, ROI, validation, public-readiness, and
 external-readiness claims remain held.
 The EU Rhine-Alpine road-feature source-selection gate now selects GISCO road
