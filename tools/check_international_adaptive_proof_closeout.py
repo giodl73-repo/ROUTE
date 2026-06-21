@@ -75,8 +75,8 @@ def main() -> int:
         failures.append(f"international adaptive closeout lanes mismatch: {sorted(lanes)}")
     if not any(row["proof_lane"] == "Canada" and "depth" in row["depth_level"] for row in rows):
         failures.append("international adaptive closeout must preserve Canada as depth proof")
-    if not any(row["proof_lane"] == "China" and "dry_run_depth" in row["depth_level"] for row in rows):
-        failures.append("international adaptive closeout must preserve China as dry-run-depth proof")
+    if not any(row["proof_lane"] == "China" and "content_depth_started" in row["depth_level"] for row in rows):
+        failures.append("international adaptive closeout must preserve China as content-depth-started proof with source-row validation held")
     if not any(row["proof_lane"] == "multi-region maps" and "breadth" in row["depth_level"] for row in rows):
         failures.append("international adaptive closeout must preserve map breadth as a fixture only")
     for row in rows:

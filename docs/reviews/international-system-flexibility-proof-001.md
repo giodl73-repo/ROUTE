@@ -44,8 +44,9 @@ geometry policy, and fixture blocker while GSI road-link source custody,
 source-row validation, fixture replacement, and internal proof remain blocked.
 
 China demonstrates a fourth adaptive path: source custody and parser contracts
-can advance to role-reviewed dry-run rows while content-depth, source-row
-validation, fixture replacement, and geometry remain held.
+can advance through role-reviewed dry-run rows into bounded source-content
+samples and extraction candidates while source-row validation, fixture
+replacement, accepted geometry, and depth-proof claims remain held.
 
 The map pilots demonstrate breadth: the same adapter-to-map workflow can render
 held-claim fixtures across multiple country and regional shapes, but maps remain

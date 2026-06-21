@@ -21,8 +21,10 @@ sources:
 The international proof ladder is complete as a bounded portability proof.
 
 Canada is the depth proof. EU, India, Japan, and China show different adaptive
-branches under different evidence conditions. The map set shows breadth only.
-The closeout deliberately keeps those proof levels separate.
+branches under different evidence conditions. China now reaches bounded
+source-content and extraction-candidate depth, but source-row validation and
+fixture replacement remain blocked. The map set shows breadth only. The
+closeout deliberately keeps those proof levels separate.
 
 ## Boundary
 
