@@ -392,15 +392,20 @@
   <div class="app">
     <header>
       <div>
-        <h1>Iowa State Network Planner</h1>
-        <p class="subhead">Prototype session: candidate network, editable priorities, held-claim export</p>
+        <h1 id="planner-title">Iowa State Network Planner</h1>
+        <p class="subhead" id="planner-subhead">Prototype session: candidate network, editable priorities, held-claim export</p>
         <div class="badges" aria-label="Session posture">
           <span class="badge held"><strong>Posture</strong> prototype</span>
           <span class="badge warn"><strong>SLA</strong> held</span>
-          <span class="badge"><strong>Scenario</strong> Iowa sample</span>
+          <span class="badge"><strong>Scenario</strong> <span id="scenario-label">Iowa sample</span></span>
         </div>
       </div>
       <div class="top-actions">
+        <label for="fixture-select">State package</label>
+        <select id="fixture-select" aria-label="State package">
+          <option value="iowa">Iowa sample</option>
+          <option value="texas">Texas sample</option>
+        </select>
         <button type="button" id="reset-session" title="Reset session">Reset</button>
         <button type="button" id="export-json" title="Export readout JSON">Export JSON</button>
       </div>
@@ -412,7 +417,7 @@
         <div class="edit-box">
           <div class="form-row">
             <label for="new-node-label">Add place</label>
-            <input id="new-node-label" type="text" placeholder="Council Bluffs terminal">
+            <input id="new-node-label" type="text" placeholder="Add terminal, rural region, or gateway">
           </div>
           <div class="form-row">
             <label for="new-node-class">Class</label>
@@ -442,7 +447,7 @@
         </div>
 
         <div class="map-shell">
-          <svg id="network-map" viewBox="0 0 900 560" role="img" aria-label="Iowa candidate state service network"></svg>
+          <svg id="network-map" viewBox="0 0 900 560" role="img" aria-label="Candidate state service network"></svg>
         </div>
 
         <div class="tray" aria-label="Session output tray">
@@ -475,43 +480,82 @@
   </div>
 
   <script>
-    const seed = {
-      nodes: [
-        { id: "des-moines", label: "Des Moines", cls: "city", x: 455, y: 284, role: "T1", source: "heuristic" },
-        { id: "ames", label: "Ames", cls: "city", x: 438, y: 212, role: "T2", source: "heuristic" },
-        { id: "cedar-rapids", label: "Cedar Rapids", cls: "city", x: 630, y: 245, role: "T2", source: "heuristic" },
-        { id: "iowa-city", label: "Iowa City", cls: "city", x: 682, y: 312, role: "T2", source: "heuristic" },
-        { id: "quad-cities", label: "Quad Cities", cls: "gateway", x: 780, y: 330, role: "T2", source: "source-needed" },
-        { id: "council-bluffs", label: "Council Bluffs", cls: "gateway", x: 170, y: 298, role: "T1", source: "heuristic" },
-        { id: "sioux-city", label: "Sioux City", cls: "freight node", x: 205, y: 126, role: "T2", source: "heuristic" },
-        { id: "waterloo", label: "Waterloo", cls: "city", x: 568, y: 152, role: "T2", source: "heuristic" },
-        { id: "mason-city", label: "Mason City", cls: "rural region", x: 424, y: 86, role: "T3", source: "source-needed" },
-        { id: "ottumwa", label: "Ottumwa", cls: "rural region", x: 555, y: 414, role: "T3", source: "source-needed" }
-      ],
-      links: [
-        { id: "cb-dsm", from: "council-bluffs", to: "des-moines", tier: "T1", source: "heuristic", note: "I-80 west spine" },
-        { id: "dsm-qc", from: "des-moines", to: "quad-cities", tier: "T1", source: "heuristic", note: "I-80 east spine" },
-        { id: "dsm-ames", from: "des-moines", to: "ames", tier: "T2", source: "heuristic", note: "I-35 / central connector" },
-        { id: "ames-mason", from: "ames", to: "mason-city", tier: "T3", source: "source-needed", note: "northern access" },
-        { id: "dsm-cr", from: "des-moines", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "regional access" },
-        { id: "cr-ic", from: "cedar-rapids", to: "iowa-city", tier: "T2", source: "heuristic", note: "eastern metro connector" },
-        { id: "dsm-ottumwa", from: "des-moines", to: "ottumwa", tier: "T3", source: "source-needed", note: "southeast access" },
-        { id: "sioux-dsm", from: "sioux-city", to: "des-moines", tier: "R", source: "source-needed", note: "resilience / north-south alternate" },
-        { id: "waterloo-cr", from: "waterloo", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "northeast production connector" }
-      ],
-      dials: {
-        reliability: 72,
-        freight: 64,
-        rural: 58,
-        resilience: 66,
-        assetDebt: 44,
-        capital: 38
+    const fixtures = {
+      iowa: {
+        title: "Iowa State Network Planner",
+        subhead: "Prototype session: candidate network, editable priorities, held-claim export",
+        scenarioLabel: "Iowa sample",
+        regionId: "iowa",
+        clientId: "sample-iowa",
+        background: "iowa",
+        nodes: [
+          { id: "des-moines", label: "Des Moines", cls: "city", x: 455, y: 284, role: "T1", source: "heuristic" },
+          { id: "ames", label: "Ames", cls: "city", x: 438, y: 212, role: "T2", source: "heuristic" },
+          { id: "cedar-rapids", label: "Cedar Rapids", cls: "city", x: 630, y: 245, role: "T2", source: "heuristic" },
+          { id: "iowa-city", label: "Iowa City", cls: "city", x: 682, y: 312, role: "T2", source: "heuristic" },
+          { id: "quad-cities", label: "Quad Cities", cls: "gateway", x: 780, y: 330, role: "T2", source: "source-needed" },
+          { id: "council-bluffs", label: "Council Bluffs", cls: "gateway", x: 170, y: 298, role: "T1", source: "heuristic" },
+          { id: "sioux-city", label: "Sioux City", cls: "freight node", x: 205, y: 126, role: "T2", source: "heuristic" },
+          { id: "waterloo", label: "Waterloo", cls: "city", x: 568, y: 152, role: "T2", source: "heuristic" },
+          { id: "mason-city", label: "Mason City", cls: "rural region", x: 424, y: 86, role: "T3", source: "source-needed" },
+          { id: "ottumwa", label: "Ottumwa", cls: "rural region", x: 555, y: 414, role: "T3", source: "source-needed" }
+        ],
+        links: [
+          { id: "cb-dsm", from: "council-bluffs", to: "des-moines", tier: "T1", source: "heuristic", note: "I-80 west spine" },
+          { id: "dsm-qc", from: "des-moines", to: "quad-cities", tier: "T1", source: "heuristic", note: "I-80 east spine" },
+          { id: "dsm-ames", from: "des-moines", to: "ames", tier: "T2", source: "heuristic", note: "I-35 / central connector" },
+          { id: "ames-mason", from: "ames", to: "mason-city", tier: "T3", source: "source-needed", note: "northern access" },
+          { id: "dsm-cr", from: "des-moines", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "regional access" },
+          { id: "cr-ic", from: "cedar-rapids", to: "iowa-city", tier: "T2", source: "heuristic", note: "eastern metro connector" },
+          { id: "dsm-ottumwa", from: "des-moines", to: "ottumwa", tier: "T3", source: "source-needed", note: "southeast access" },
+          { id: "sioux-dsm", from: "sioux-city", to: "des-moines", tier: "R", source: "source-needed", note: "resilience / north-south alternate" },
+          { id: "waterloo-cr", from: "waterloo", to: "cedar-rapids", tier: "T2", source: "heuristic", note: "northeast production connector" }
+        ],
+        dials: { reliability: 72, freight: 64, rural: 58, resilience: 66, assetDebt: 44, capital: 38 },
+        selectedLinkId: "cb-dsm",
+        edits: []
       },
-      selectedLinkId: "cb-dsm",
-      edits: []
+      texas: {
+        title: "Texas State Network Planner",
+        subhead: "Prototype session: megaregion, border, port, energy, and resilience dials",
+        scenarioLabel: "Texas sample",
+        regionId: "texas",
+        clientId: "sample-texas",
+        background: "texas",
+        nodes: [
+          { id: "dfw", label: "Dallas-Fort Worth", cls: "megaregion", x: 455, y: 180, role: "T1", source: "heuristic" },
+          { id: "austin", label: "Austin", cls: "city", x: 492, y: 292, role: "T1", source: "heuristic" },
+          { id: "san-antonio", label: "San Antonio", cls: "city", x: 470, y: 355, role: "T1", source: "heuristic" },
+          { id: "houston", label: "Houston", cls: "port gateway", x: 650, y: 326, role: "T1", source: "heuristic" },
+          { id: "beaumont", label: "Beaumont", cls: "port gateway", x: 735, y: 302, role: "T2", source: "source-needed" },
+          { id: "laredo", label: "Laredo", cls: "border gateway", x: 365, y: 438, role: "T2", source: "heuristic" },
+          { id: "el-paso", label: "El Paso", cls: "border gateway", x: 126, y: 314, role: "T2", source: "heuristic" },
+          { id: "amarillo", label: "Amarillo", cls: "rural region", x: 360, y: 70, role: "T3", source: "source-needed" },
+          { id: "midland-odessa", label: "Midland-Odessa", cls: "energy region", x: 278, y: 244, role: "T2", source: "source-needed" },
+          { id: "corpus-christi", label: "Corpus Christi", cls: "port gateway", x: 525, y: 472, role: "T2", source: "source-needed" },
+          { id: "brownsville", label: "Brownsville", cls: "border/port gateway", x: 565, y: 522, role: "T3", source: "source-needed" }
+        ],
+        links: [
+          { id: "dfw-austin", from: "dfw", to: "austin", tier: "T1", source: "heuristic", note: "I-35 central spine" },
+          { id: "austin-sa", from: "austin", to: "san-antonio", tier: "T1", source: "heuristic", note: "I-35 south spine" },
+          { id: "sa-laredo", from: "san-antonio", to: "laredo", tier: "T2", source: "heuristic", note: "border gateway connector" },
+          { id: "dfw-houston", from: "dfw", to: "houston", tier: "T1", source: "heuristic", note: "megaregion freight spine" },
+          { id: "houston-beaumont", from: "houston", to: "beaumont", tier: "T2", source: "source-needed", note: "Gulf port / refinery access" },
+          { id: "houston-corpus", from: "houston", to: "corpus-christi", tier: "T2", source: "source-needed", note: "Gulf port connector" },
+          { id: "corpus-brownsville", from: "corpus-christi", to: "brownsville", tier: "T3", source: "source-needed", note: "lower coast access" },
+          { id: "elpaso-midland", from: "el-paso", to: "midland-odessa", tier: "T2", source: "heuristic", note: "western energy connector" },
+          { id: "midland-dfw", from: "midland-odessa", to: "dfw", tier: "T2", source: "source-needed", note: "energy-to-market connector" },
+          { id: "amarillo-dfw", from: "amarillo", to: "dfw", tier: "R", source: "source-needed", note: "panhandle resilience branch" },
+          { id: "sa-corpus", from: "san-antonio", to: "corpus-christi", tier: "T2", source: "source-needed", note: "port access connector" }
+        ],
+        dials: { reliability: 76, freight: 82, rural: 52, resilience: 74, assetDebt: 48, capital: 54 },
+        selectedLinkId: "dfw-austin",
+        edits: []
+      }
     };
 
-    let state = JSON.parse(JSON.stringify(seed));
+    let activeFixtureId = "iowa";
+    let state = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
     const tierColors = { T1: "#0f5f78", T2: "#2d7b4f", T3: "#94611b", T4: "#6b7280", R: "#9a3b52" };
     const tierWidths = { T1: 13, T2: 9, T3: 6, T4: 5, R: 7 };
 
@@ -613,6 +657,14 @@
     }
 
     function renderStateBackground(svg) {
+      if (state.background === "texas") {
+        renderTexasBackground(svg);
+        return;
+      }
+      renderIowaBackground(svg);
+    }
+
+    function renderIowaBackground(svg) {
       appendPath(svg, "M142 92 L755 86 C773 119 775 154 766 188 C788 218 792 256 775 292 C794 335 787 382 760 421 C710 441 651 448 595 442 C536 461 471 463 412 448 C355 460 292 453 240 427 C197 432 161 414 146 376 C126 331 128 292 144 251 C130 209 128 167 142 92 Z", "state-outline");
       appendPath(svg, "M162 110 C145 157 150 197 166 234 C146 277 145 324 166 374 C180 404 205 419 239 426", "state-river");
       appendPath(svg, "M756 91 C776 137 774 177 759 211 C786 248 787 292 765 333 C786 369 775 407 758 421", "state-river");
@@ -627,6 +679,23 @@
       svg.appendChild(textSvg(458, 343, "Central Spine", "region-label"));
       svg.appendChild(textSvg(640, 390, "Eastern Gateway", "region-label"));
       svg.appendChild(textSvg(184, 474, "Schematic Iowa background; not a surveyed map or proof of route geometry.", "background-note"));
+    }
+
+    function renderTexasBackground(svg) {
+      appendPath(svg, "M332 44 L506 42 L548 91 L620 110 L704 188 L777 244 L760 323 L704 352 L662 407 L602 430 L574 526 L520 528 L474 467 L393 455 L326 398 L254 372 L186 332 L96 320 L130 276 L167 242 L181 189 L238 154 L274 98 Z", "state-outline");
+      appendPath(svg, "M116 319 C184 342 248 369 319 402 C397 442 463 471 520 528", "state-river");
+      appendPath(svg, "M704 188 C738 226 760 261 759 318 C738 337 715 349 704 352", "state-river");
+
+      [230, 340, 450, 560, 670].forEach((x) => appendLine(svg, x, 86, x, 492, "state-grid"));
+      [132, 210, 288, 366, 444].forEach((y) => appendLine(svg, 126, y, 748, y, "state-grid"));
+
+      svg.appendChild(textSvg(304, 126, "Panhandle", "region-label"));
+      svg.appendChild(textSvg(240, 270, "Permian / West", "region-label"));
+      svg.appendChild(textSvg(448, 208, "North Texas", "region-label"));
+      svg.appendChild(textSvg(450, 340, "Central Texas", "region-label"));
+      svg.appendChild(textSvg(648, 278, "Gulf Coast", "region-label"));
+      svg.appendChild(textSvg(386, 470, "Border / South", "region-label"));
+      svg.appendChild(textSvg(154, 536, "Schematic Texas background; not a surveyed map or proof of route geometry.", "background-note"));
     }
 
     function renderNodes() {
@@ -711,7 +780,7 @@
       const rows = [
         { name: "Operations quick wins", basis: "incident playbook, work-zone sequencing, dashboard spec" },
         { name: "Spine reliability package", basis: "T1 candidate links and recovery promises" },
-        { name: "Rural and terminal access package", basis: "T3/T4 source-needed rows and client additions" }
+        { name: state.regionId === "texas" ? "Border, port, and rural access package" : "Rural and terminal access package", basis: "T3/T4 source-needed rows and client additions" }
       ];
       if (state.dials.resilience > 60) rows.splice(1, 0, { name: "Resilience hardening package", basis: "R overlay, closure alternates, evacuation/recovery targets" });
       if (state.dials.capital > 65) rows.push({ name: "Long-range capital package", basis: "candidate only; construction and funding held" });
@@ -770,8 +839,8 @@
     function readout() {
       return {
         session: {
-          client_id: "sample-iowa",
-          region_id: "iowa",
+          client_id: state.clientId,
+          region_id: state.regionId,
           scenario_id: "state-network-planner-prototype-001",
           evidence_posture: "prototype; held claims visible",
           export_status: "internal"
@@ -819,7 +888,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "route-state-network-planner-readout.json";
+      link.download = `route-${state.regionId}-network-planner-readout.json`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -827,11 +896,15 @@
     }
 
     function reset() {
-      state = JSON.parse(JSON.stringify(seed));
+      state = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
       render();
     }
 
     function render() {
+      document.getElementById("planner-title").textContent = state.title;
+      document.getElementById("planner-subhead").textContent = state.subhead;
+      document.getElementById("scenario-label").textContent = state.scenarioLabel;
+      document.getElementById("network-map").setAttribute("aria-label", `${state.regionId} candidate state service network`);
       renderMap();
       renderNodes();
       renderLinks();
@@ -844,6 +917,10 @@
     document.getElementById("add-node").addEventListener("click", addNode);
     document.getElementById("export-json").addEventListener("click", exportJson);
     document.getElementById("reset-session").addEventListener("click", reset);
+    document.getElementById("fixture-select").addEventListener("change", (event) => {
+      activeFixtureId = event.target.value;
+      reset();
+    });
     render();
   </script>
 </body>
