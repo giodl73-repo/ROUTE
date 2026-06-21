@@ -252,6 +252,7 @@ public-readiness, external-readiness, or approval.
 | China parser dry run | `docs/reviews/international-china-parser-dry-run-001.md` |
 | China dry-run role review | `docs/reviews/international-china-dry-run-role-review-001.md` |
 | China fixture blocker | `docs/reviews/international-china-fixture-blocker-001.md` |
+| China geometry policy | `docs/reviews/international-china-geometry-policy-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
 | Canada adapter source pack | `docs/reviews/international-canada-adapter-source-pack-001.md` |
