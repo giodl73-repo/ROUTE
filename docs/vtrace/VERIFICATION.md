@@ -151,6 +151,7 @@ game, release, or public-readiness claims.
 | International China adaptive proof closeout 001 exists. | `docs/reviews/international-china-adaptive-proof-closeout-001.md`, `data/international-china-adaptive-proof-closeout-001.csv`, `tools/check_china_adaptive_proof_closeout.py`, `npm run check:china:adaptive-closeout` | draft; dry-run-depth adaptive proof complete; Canada/India/Japan depth not claimed |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
+| International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
 | International Canada parser preflight 001 exists. | `docs/reviews/international-canada-parser-preflight-001.md`, `data/international-canada-parser-preflight-001.csv` | draft; Canada parser preflight ready; implementation held |
@@ -418,6 +419,10 @@ distinct levels: Canada depth, EU/India/Japan adaptive branches, China
 dry-run-depth, and map breadth, while blocking equal-depth, official, approval,
 policy alignment, geometry, SLA, ROI, validation, readiness, and external
 claims.
+The international next source-row gate selects China source-content sampling as
+the next breadth-deepening step, keeps EU road-link endpoint custody and Canada
+external packet work as alternates, and preserves equal-depth, official, SLA,
+ROI, validation, readiness, and external-claim holds.
 The international source-bound next step adds a cross-region scoring rubric and
 adapter source-pack template so future promotion work starts with source
 custody, field mapping, role review, and claim scans instead of treating maps

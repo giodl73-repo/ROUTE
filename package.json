@@ -27,6 +27,7 @@
     "check:international:proof-kernel": "python tools/build_international_adapter_proof_kernel.py && python tools/check_international_adapter_proof_kernel.py",
     "check:international:flexibility-proof": "python tools/build_international_system_flexibility_proof.py && python tools/check_international_system_flexibility_proof.py",
     "check:international:adaptive-closeout": "python tools/build_international_system_flexibility_proof.py && python tools/build_international_adaptive_proof_closeout.py && python tools/check_international_system_flexibility_proof.py && python tools/check_international_adaptive_proof_closeout.py",
+    "check:international:next-source-row": "python tools/build_international_next_source_row_gate.py && python tools/check_international_next_source_row_gate.py",
     "check:eu:source-pack": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py",
     "check:eu:kernel-application": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/build_eu_rhine_alpine_kernel_application.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_kernel_application.py",
     "check:eu:parser-preflight": "python tools/build_eu_rhine_alpine_adapter_source_pack.py && python tools/build_eu_rhine_alpine_parser_preflight.py && python tools/check_eu_rhine_alpine_adapter_source_pack.py && python tools/check_eu_rhine_alpine_parser_preflight.py",

@@ -256,6 +256,7 @@ public-readiness, external-readiness, or approval.
 | China adaptive proof closeout | `docs/reviews/international-china-adaptive-proof-closeout-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International adaptive proof closeout | `docs/reviews/international-adaptive-proof-closeout-001.md` |
+| International next source-row gate | `docs/reviews/international-next-source-row-gate-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
 | Canada adapter source pack | `docs/reviews/international-canada-adapter-source-pack-001.md` |
 | Canada parser preflight | `docs/reviews/international-canada-parser-preflight-001.md` |
@@ -284,6 +285,7 @@ public-readiness, external-readiness, or approval.
 | International adapter proof kernel | `docs/reports/international-adapter-proof-kernel-report.md` |
 | International system flexibility proof | `docs/reviews/international-system-flexibility-proof-001.md` |
 | International adaptive proof closeout | `docs/reviews/international-adaptive-proof-closeout-001.md` |
+| International next source-row gate | `docs/reviews/international-next-source-row-gate-001.md` |
 | Canada port authority packet preflight | `docs/reviews/international-canada-port-authority-packet-preflight-001.md` |
 | External rehearsal selection | `docs/how-to/external-rehearsal-packet-selection-runbook.md` |
 | External rehearsal candidate | `docs/reviews/external-rehearsal-packet-candidate-001.md` |
