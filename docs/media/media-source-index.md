@@ -238,6 +238,7 @@ public-readiness, external-readiness, or approval.
 | Japan source content sample | `docs/reviews/international-japan-source-content-sample-001.md` |
 | Japan parser preflight | `docs/reviews/international-japan-parser-preflight-001.md` |
 | Japan parser dry run | `docs/reviews/international-japan-parser-dry-run-001.md` |
+| Japan parser extraction candidates | `docs/reviews/international-japan-parser-extraction-candidates-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
