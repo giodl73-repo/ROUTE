@@ -70,6 +70,7 @@
     "check:india:source-content-sample": "python tools/build_india_source_content_sample.py && python tools/check_india_source_content_sample.py",
     "check:india:extract": "python tools/build_india_source_content_sample.py && python tools/build_india_parser_extraction_candidates.py && python tools/check_india_source_content_sample.py && python tools/check_india_parser_extraction_candidates.py",
     "check:india:content-row-validation": "python tools/build_india_source_content_sample.py && python tools/build_india_parser_extraction_candidates.py && python tools/build_india_source_content_row_validation.py && python tools/check_india_source_content_sample.py && python tools/check_india_parser_extraction_candidates.py && python tools/check_india_source_content_row_validation.py",
+    "check:india:content-row-role-review": "python tools/build_india_source_content_sample.py && python tools/build_india_parser_extraction_candidates.py && python tools/build_india_source_content_row_validation.py && python tools/build_india_content_row_role_review.py && python tools/check_india_source_content_row_validation.py && python tools/check_india_content_row_role_review.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
