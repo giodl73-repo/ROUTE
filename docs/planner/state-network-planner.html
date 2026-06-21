@@ -344,6 +344,17 @@
       accent-color: var(--accent);
     }
 
+    input[type="file"] {
+      max-width: 170px;
+      font-size: 12px;
+    }
+
+    .import-label {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+    }
+
     .form-row {
       display: grid;
       gap: 6px;
@@ -419,6 +430,10 @@
           <option value="iowa">Iowa sample</option>
           <option value="texas">Texas sample</option>
         </select>
+        <button type="button" id="save-session" title="Save session locally">Save</button>
+        <button type="button" id="load-session" title="Load saved session">Load</button>
+        <label for="import-json" class="import-label">Import JSON</label>
+        <input id="import-json" type="file" accept="application/json">
         <button type="button" id="reset-session" title="Reset session">Reset</button>
         <button type="button" id="export-json" title="Export readout JSON">Export JSON</button>
       </div>
@@ -591,6 +606,7 @@
       }
     };
 
+    const storageKey = "route-state-network-planner-session";
     let activeFixtureId = "iowa";
     let state = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
     let dragState = null;
@@ -934,6 +950,7 @@
         session: {
           client_id: state.clientId,
           region_id: state.regionId,
+          fixture_id: activeFixtureId,
           scenario_id: "state-network-planner-prototype-001",
           evidence_posture: "prototype; held claims visible",
           export_status: "internal"
@@ -1062,6 +1079,62 @@
       URL.revokeObjectURL(url);
     }
 
+    function applyImportedReadout(payload) {
+      if (!payload || !payload.session || !Array.isArray(payload.nodes) || !Array.isArray(payload.links) || !payload.dials) {
+        throw new Error("Planner JSON is missing required session, nodes, links, or dials fields.");
+      }
+      const fixtureId = fixtures[payload.session.fixture_id] ? payload.session.fixture_id : payload.session.region_id;
+      activeFixtureId = fixtures[fixtureId] ? fixtureId : "iowa";
+      document.getElementById("fixture-select").value = activeFixtureId;
+      const base = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
+      state = {
+        ...base,
+        clientId: payload.session.client_id || base.clientId,
+        regionId: payload.session.region_id || base.regionId,
+        nodes: payload.nodes,
+        links: payload.links,
+        dials: payload.dials,
+        selectedLinkId: payload.selected_link?.id || payload.links[0]?.id || base.selectedLinkId,
+        edits: payload.edits || []
+      };
+      state.edits.push({ type: "import-session", region_id: state.regionId, claim_status: "internal-session" });
+      render();
+    }
+
+    function saveSession() {
+      localStorage.setItem(storageKey, JSON.stringify(readout()));
+      state.edits.push({ type: "save-session", region_id: state.regionId, claim_status: "browser-local" });
+      render();
+    }
+
+    function loadSession() {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) {
+        state.edits.push({ type: "load-session", region_id: state.regionId, claim_status: "no-saved-session" });
+        render();
+        return;
+      }
+      applyImportedReadout(JSON.parse(saved));
+      state.edits.push({ type: "load-session", region_id: state.regionId, claim_status: "browser-local" });
+      render();
+    }
+
+    function importJson(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          applyImportedReadout(JSON.parse(String(reader.result)));
+        } catch (error) {
+          state.edits.push({ type: "import-session", region_id: state.regionId, claim_status: `failed: ${error.message}` });
+          render();
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
     function reset() {
       state = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
       render();
@@ -1085,6 +1158,9 @@
 
     document.getElementById("add-node").addEventListener("click", addNode);
     document.getElementById("add-link").addEventListener("click", addLink);
+    document.getElementById("save-session").addEventListener("click", saveSession);
+    document.getElementById("load-session").addEventListener("click", loadSession);
+    document.getElementById("import-json").addEventListener("change", importJson);
     document.getElementById("export-json").addEventListener("click", exportJson);
     document.getElementById("reset-session").addEventListener("click", reset);
     document.getElementById("fixture-select").addEventListener("change", (event) => {
