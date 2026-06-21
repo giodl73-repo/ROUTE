@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Iowa Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: I-80 spine, Des Moines hub, eastern production corridor, rural access, river gateways, and north-south</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">resilience.</text>
+<path d="M180 215 L1125 190 L1175 295 L1155 470 L1205 610 L1158 805 L1040 870 L820 855 L665 900 L495 860 L310 888 L200 805 L145 610 L185 455 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="640" cy="585" rx="380.0" ry="110.0" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="278.0" y="505.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">I-80 service spine</text>
+<ellipse cx="560" cy="520" rx="155.0" ry="125.0" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="423.0" y="425.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Central Iowa hub</text>
+<ellipse cx="845" cy="500" rx="180.0" ry="150.0" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="683.0" y="380.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Eastern production</text>
+<ellipse cx="585" cy="315" rx="325.0" ry="95.0" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="278.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Northern rural access</text>
+<ellipse cx="225" cy="585" rx="115.0" ry="150.0" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="128.0" y="465.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">River gateways</text>
+<path d="M751.5 652.1 Q763.9 516.5 843.7 406.1" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Ames to Mason City: northern rural access promise</title></path>
+<path d="M843.7 406.1 Q949.1 464.3 1032.5 551.1" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Mason City to Waterloo: northern coverage connector</title></path>
+<path d="M751.5 748.7 Q884.3 811.3 1017.2 873.9" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Des Moines to Ottumwa: southeast rural access promise</title></path>
+<path d="M751.5 748.7 Q769.5 700.4 751.5 652.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Ames: central university and labor-market access</title></path>
+<path d="M751.5 748.7 Q972.6 741.2 1179.6 663.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Cedar Rapids: eastern production connector</title></path>
+<path d="M1179.6 663.1 Q1228.0 683.8 1210.4 733.3" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Cedar Rapids to Iowa City: eastern metro-production reliability</title></path>
+<path d="M1032.5 551.1 Q1117.0 592.7 1179.6 663.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Waterloo to Cedar Rapids: northeast production connector</title></path>
+<path d="M141.0 548.9 Q446.2 648.8 751.5 748.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Sioux City to Des Moines: northwest-to-central resilience</title></path>
+<path d="M751.5 748.7 Q1081.7 666.0 1401.4 548.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Dubuque: northeast river gateway access</title></path>
+<path d="M1401.4 548.9 Q1374.3 659.4 1419.0 764.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Dubuque to Quad Cities: eastern river corridor resilience</title></path>
+<path d="M259.6 821.2 Q500.3 749.3 751.5 748.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Council Bluffs to Des Moines: western gateway to central hub reliability</title></path>
+<path d="M751.5 748.7 Q980.3 723.0 1210.4 733.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Des Moines to Iowa City: central-to-eastern reliability</title></path>
+<path d="M1210.4 733.3 Q1314.7 748.7 1419.0 764.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Iowa City to Quad Cities: eastern river gateway reliability</title></path>
+<circle cx="259.6" cy="821.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="139.6" y="829.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Council Bluffs</text>
+<text x="139.6" y="847.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CB</text>
+<circle cx="751.5" cy="748.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="769.5" y="728.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Des Moines</text>
+<text x="769.5" y="746.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DSM</text>
+<circle cx="1210.4" cy="733.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1228.4" y="753.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Iowa City</text>
+<text x="1228.4" y="771.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">IC</text>
+<circle cx="1419.0" cy="764.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1439.0" y="776.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Quad Cities</text>
+<text x="1439.0" y="794.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">QC</text>
+<circle cx="751.5" cy="652.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="769.5" y="634.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ames</text>
+<text x="769.5" y="652.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AMES</text>
+<circle cx="843.7" cy="406.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="859.7" y="398.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Mason City</text>
+<text x="859.7" y="416.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MCW</text>
+<circle cx="1179.6" cy="663.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1197.6" y="645.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Cedar Rapids</text>
+<text x="1197.6" y="663.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CR</text>
+<circle cx="1032.5" cy="551.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1048.5" y="543.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Waterloo</text>
+<text x="1048.5" y="561.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">WAT</text>
+<circle cx="141.0" cy="548.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="157.0" y="540.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Sioux City</text>
+<text x="157.0" y="558.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SUX</text>
+<circle cx="1017.2" cy="873.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1033.2" y="865.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ottumwa</text>
+<text x="1033.2" y="883.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">OTM</text>
+<circle cx="1401.4" cy="548.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1417.4" y="540.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Dubuque</text>
+<text x="1417.4" y="558.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DBQ</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">I-80 service spine: 3 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">eastern production: 3 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northern rural access: 2 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">river gateways: 2 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Central Iowa hub: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">north-south resilience: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southeast rural access: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 3 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 7 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 3 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">11 nodes, 13 candidate links, 3 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows a state DOT how ROUTE turns a highway map into service promises</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">and proof asks.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank spine reliability, rural access, terminal links,</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">university/hospital access, flood/snow resilience, and river gateways.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official state plan, legal SLAs, construction, cost, ROI, eligibility,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

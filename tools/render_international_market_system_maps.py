@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render presentation-grade international market-system maps.
+"""Render presentation-grade country and state market-system maps.
 
 These maps are designed to show whether ROUTE can tell a richer country story:
 spines, ports, inland hubs, lateral connectors, terminal feeders, and held proof
@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT = ROOT / "data" / "international-market-system-map-v1.csv"
-OUT_DIR = ROOT / "maps" / "international"
+OUT_DIR = ROOT / "maps"
 W = 2200
 H = 1320
 MAP_X = 70
@@ -34,7 +34,7 @@ CONFIG = {
     "china": {
         "title": "China Candidate Market-System Map",
         "subtitle": "2D service-market view: coastal export belts, central inland spines, Yangtze access, western connectors, and terminal feeders.",
-        "output": "china-market-system-v1.svg",
+        "output": "international/china-market-system-v1.svg",
         "outline": "M230 165 L520 118 L845 160 L1105 245 L1320 430 L1280 682 L1145 842 L876 915 L692 840 L486 870 L326 760 L190 548 L150 330 Z",
         "zones": [
             ("North / capital-port", 610, 280, 420, 210, "#1d4ed8"),
@@ -58,7 +58,7 @@ CONFIG = {
     "india": {
         "title": "India Candidate Market-System Map",
         "subtitle": "2D service-market view: northwest industrial spine, western ports, central sorting hubs, east coast loop, south market access, and northeast branch.",
-        "output": "india-market-system-v1.svg",
+        "output": "international/india-market-system-v1.svg",
         "outline": "M570 120 L760 205 L892 350 L860 550 L945 760 L815 1035 L650 1155 L540 1015 L470 810 L335 725 L280 555 L365 370 Z",
         "zones": [
             ("Northwest industrial", 390, 220, 360, 270, "#16a34a"),
@@ -81,6 +81,92 @@ CONFIG = {
             "HYD": (22, 20),
             "DEL": (20, -16),
             "JAI": (20, 18),
+        },
+    },
+    "texas": {
+        "title": "Texas Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Triangle reliability, border gateways, Gulf ports, Permian energy access, Panhandle resilience, and rural connectors.",
+        "output": "state/texas-market-system-v1.svg",
+        "outline": "M250 160 L590 150 L690 250 L850 290 L1175 555 L1105 760 L960 810 L885 920 L720 950 L630 1170 L530 1165 L410 1015 L260 950 L165 800 L90 770 L145 665 L225 575 L225 455 L345 365 Z",
+        "zones": [
+            ("Texas Triangle", 620, 560, 520, 380, "#16a34a"),
+            ("Gulf ports", 865, 735, 420, 270, "#0f766e"),
+            ("Border gateways", 505, 885, 500, 300, "#c2410c"),
+            ("Permian energy", 365, 570, 360, 270, "#7c3aed"),
+            ("Panhandle resilience", 410, 250, 420, 220, "#2563eb"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Texas as a portfolio of metro, port, border, energy, and resilience promises."),
+            ("Client workshop", "Rank Triangle reliability, border clearance access, Gulf port access, Permian market access, evacuation, and rural coverage."),
+            ("Still held", "Official TxDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "DFW": (18, -18),
+            "AUS": (18, -18),
+            "SAT": (18, 24),
+            "HOU": (18, -18),
+            "COR": (18, 24),
+            "BRW": (18, 24),
+            "LRD": (-92, 8),
+            "ELP": (18, 20),
+        },
+    },
+    "iowa": {
+        "title": "Iowa Candidate Market-System Map",
+        "subtitle": "2D state service-market view: I-80 spine, Des Moines hub, eastern production corridor, rural access, river gateways, and north-south resilience.",
+        "output": "state/iowa-market-system-v1.svg",
+        "outline": "M180 215 L1125 190 L1175 295 L1155 470 L1205 610 L1158 805 L1040 870 L820 855 L665 900 L495 860 L310 888 L200 805 L145 610 L185 455 Z",
+        "zones": [
+            ("I-80 service spine", 640, 585, 760, 220, "#16a34a"),
+            ("Central Iowa hub", 560, 520, 310, 250, "#2563eb"),
+            ("Eastern production", 845, 500, 360, 300, "#0f766e"),
+            ("Northern rural access", 585, 315, 650, 190, "#7c3aed"),
+            ("River gateways", 225, 585, 230, 300, "#c2410c"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows a state DOT how ROUTE turns a highway map into service promises and proof asks."),
+            ("Client workshop", "Rank spine reliability, rural access, terminal links, university/hospital access, flood/snow resilience, and river gateways."),
+            ("Still held", "Official state plan, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "DSM": (18, -20),
+            "AMES": (18, -18),
+            "CB": (-120, 8),
+            "QC": (20, 12),
+            "IC": (18, 20),
+            "CR": (18, -18),
+        },
+    },
+    "canada": {
+        "title": "Canada Candidate Market-System Map",
+        "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
+        "output": "international/canada-market-system-v1.svg",
+        "outline": "M95 205 L330 125 L610 160 L820 120 L1080 190 L1325 180 L1370 350 L1240 455 L1310 650 L1195 805 L955 855 L760 785 L540 840 L300 755 L125 590 Z",
+        "zones": [
+            ("Pacific gateway", 255, 520, 260, 280, "#0f766e"),
+            ("Prairie spine", 530, 520, 520, 260, "#16a34a"),
+            ("Great Lakes / St. Lawrence", 920, 665, 460, 250, "#2563eb"),
+            ("Atlantic access", 1190, 630, 280, 230, "#c2410c"),
+            ("Northern service", 610, 300, 680, 220, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Canada as gateway, prairie, Great Lakes, Atlantic, and northern service markets."),
+            ("Client workshop", "Rank port gateways, prairie reliability, cross-country trunk continuity, northern access, winter resilience, and resource links."),
+            ("Still held", "Official Canadian designation, legal SLAs, construction, cost, ROI, eligibility, endorsement, external validation, and public readiness."),
+        ],
+        "label_offsets": {
+            "YVR": (18, 36),
+            "SEA": (18, -24),
+            "CGY": (18, -18),
+            "EDM": (18, -18),
+            "REG": (18, 20),
+            "WPG": (18, -18),
+            "TOR": (18, 20),
+            "WSR": (18, 24),
+            "OTT": (-78, -16),
+            "MTL": (18, -28),
+            "QC": (18, -12),
+            "HFX": (18, 20),
         },
     },
 }
@@ -166,6 +252,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
     layers = Counter(row["market_layer"] for row in rows)
     source_needed = sum(1 for row in rows if row["evidence_label"] == "source-needed")
     out = OUT_DIR / cfg["output"]
+    out.parent.mkdir(parents=True, exist_ok=True)
 
     svg: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
@@ -223,9 +310,9 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
     proof = f"{len(nodes)} nodes, {len(rows)} candidate links, {source_needed} source-needed access links. Review surface only."
     svg.extend(multiline(panel_x + 52, 914, proof, 15, 470, "#475569"))
     for idx, (title, body) in enumerate(cfg["callouts"]):
-        y = 1002 + idx * 70
+        y = 980 + idx * 60
         svg.append(text(panel_x + 52, y, title, 15, "#111827", 700))
-        svg.extend(multiline(panel_x + 52, y + 24, body, 13, 470, "#475569"))
+        svg.extend(multiline(panel_x + 52, y + 22, body, 12, 470, "#475569"))
 
     svg.append(text(70, H - 72, "Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.", 16, "#92400e", 700))
     svg.append(text(70, H - 42, "Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.", 14, "#64748b"))
@@ -238,7 +325,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india"]:
+    for country in ["china", "india", "texas", "iowa", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 

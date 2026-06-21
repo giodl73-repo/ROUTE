@@ -21,8 +21,8 @@ sources:
 
 ## Scope
 
-This upgrade replaces sparse country corridor diagrams with richer 2D
-market-system presentation maps for China and India.
+This upgrade replaces sparse corridor diagrams with richer 2D market-system
+presentation maps for China, India, Texas, Iowa, and Canada.
 
 The maps show trunk promises, regional market connectors, port and terminal
 feeders, lateral resilience paths, and held proof gaps. They are client
@@ -41,6 +41,9 @@ inland hubs, lateral choices, terminal access, and regional coverage.
 |---|---|---|
 | China | `maps/international/china-market-system-v1.svg` | Presentation-grade market-system discovery surface |
 | India | `maps/international/india-market-system-v1.svg` | Presentation-grade market-system discovery surface |
+| Texas | `maps/state/texas-market-system-v1.svg` | Presentation-grade state service-market discovery surface |
+| Iowa | `maps/state/iowa-market-system-v1.svg` | Presentation-grade state service-market discovery surface |
+| Canada | `maps/international/canada-market-system-v1.svg` | Presentation-grade national service-market discovery surface |
 
 PNG previews are written beside the SVGs and indexed in
 `data/international-market-system-map-export-001.csv`.
@@ -49,7 +52,7 @@ PNG previews are written beside the SVGs and indexed in
 
 | Check | Result |
 |---|---|
-| China and India SVGs render from one command. | pass |
+| China, India, Texas, Iowa, and Canada SVGs render from one command. | pass |
 | PNG previews exist at 2200 x 1320. | pass |
 | Maps show multiple market layers instead of sparse linear corridor strings. | pass |
 | Held-claim posture is visible in each map and export manifest. | pass |
