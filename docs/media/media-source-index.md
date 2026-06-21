@@ -230,6 +230,7 @@ public-readiness, external-readiness, or approval.
 | India content row role review | `docs/reviews/international-india-content-row-role-review-001.md` |
 | India adaptive proof closeout | `docs/reviews/international-india-adaptive-proof-closeout-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
+| Japan adapter source pack | `docs/reviews/international-japan-adapter-source-pack-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |
