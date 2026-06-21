@@ -243,6 +243,7 @@ public-readiness, external-readiness, or approval.
 | Japan content row role review | `docs/reviews/international-japan-content-row-role-review-001.md` |
 | Japan geometry policy | `docs/reviews/international-japan-geometry-policy-001.md` |
 | Japan fixture blocker | `docs/reviews/international-japan-fixture-blocker-001.md` |
+| Japan adaptive proof closeout | `docs/reviews/international-japan-adaptive-proof-closeout-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International source-bound next step | `docs/templates/source-packs/international-adapter-source-pack-template.md` |

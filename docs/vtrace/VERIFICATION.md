@@ -138,6 +138,7 @@ game, release, or public-readiness claims.
 | International Japan content row role review 001 exists. | `docs/reviews/international-japan-content-row-role-review-001.md`, `data/international-japan-content-row-role-review-001.csv`, `tools/check_japan_content_row_role_review.py`, `npm run check:japan:content-row-role-review` | draft; role review pass-with-holds |
 | International Japan geometry policy 001 exists. | `docs/reviews/international-japan-geometry-policy-001.md`, `data/international-japan-geometry-policy-001.csv`, `tools/check_japan_geometry_policy.py`, `npm run check:japan:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
 | International Japan fixture blocker 001 exists. | `docs/reviews/international-japan-fixture-blocker-001.md`, `data/international-japan-fixture-blocker-001.csv`, `tools/check_japan_fixture_blocker.py`, `npm run check:japan:fixture-blocker` | draft; fixture replacement blocked |
+| International Japan adaptive proof closeout 001 exists. | `docs/reviews/international-japan-adaptive-proof-closeout-001.md`, `data/international-japan-adaptive-proof-closeout-001.csv`, `tools/check_japan_adaptive_proof_closeout.py`, `npm run check:japan:adaptive-closeout` | draft; adaptive proof complete; Canada depth not claimed |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
@@ -342,6 +343,12 @@ The Japan fixture-blocker gate records that replacement remains blocked by
 content-only rows, GSI link source custody, source-row validation, and
 no-geometry posture while preserving SLA, ROI, validation, readiness, and
 internal-proof holds.
+
+The Japan adaptive closeout completes Japan as a portability proof: stronger
+than map-only replication because it reaches content candidates and a
+source-needed GSI road-link blocker, weaker than Canada because source-row
+validation, fixture replacement, target posture, geometry, and internal proof
+remain held.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
