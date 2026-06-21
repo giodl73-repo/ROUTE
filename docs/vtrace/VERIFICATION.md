@@ -159,6 +159,7 @@ game, release, or public-readiness claims.
 | Iowa service network pitch exists. | `docs/decks/iowa-service-network-pitch.md` | draft; client-facing opening pitch; legal SLA and official-plan claims held |
 | Iowa service network sample readout exists. | `docs/briefs/iowa-service-network-sample-readout.md` | draft; illustrative client readout; Iowa endorsement and legal SLA claims held |
 | Texas state service network goals exist. | `docs/briefs/texas-state-service-network-goals.md` | draft; product-facing state promise design brief; legal SLA and official-plan claims held |
+| Texas state service network offer exists. | `docs/briefs/texas-state-service-network-offer.md` | draft; client-facing 90-day offer; legal SLA and official-plan claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -471,6 +472,12 @@ product pattern to a harder scale test: megaregions, ports, border gateways,
 energy logistics, rural access, emergency movement, and Gulf resilience, while
 holding official-plan, legal SLA, construction, funding, clearance, ROI,
 endorsement, validation, and public-readiness claims.
+The Texas state service network offer turns that product goal into a 90-day
+client package: priority intake, tier design, promise design, resilience
+blueprint, investment packaging, dashboard design, and buyer value for
+transportation, freight, regional, emergency, and program leaders, while
+holding official-plan, legal SLA, engineering, construction, funding,
+clearance, ROI, endorsement, validation, and public-readiness claims.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
