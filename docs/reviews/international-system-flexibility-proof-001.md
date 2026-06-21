@@ -6,7 +6,7 @@ status: draft
 rubric_version: v1.0
 author: codex
 created: 2026-06-20
-updated: 2026-06-20
+updated: 2026-06-21
 sources:
   - tools/build_international_system_flexibility_proof.py
   - tools/check_international_system_flexibility_proof.py
@@ -14,6 +14,7 @@ sources:
   - docs/reports/international-adapter-proof-kernel-report.md
   - docs/reviews/international-canada-internal-adapter-proof-001.md
   - docs/reviews/international-eu-rhine-alpine-current-corridor-rebase-001.md
+  - docs/reviews/international-japan-adaptive-proof-closeout-001.md
 ---
 
 # International System Flexibility Proof 001
@@ -35,6 +36,11 @@ current-corridor rebase gate, and a parity-gap ledger.
 India demonstrates a second adaptive path: source content can advance into
 extraction candidates, content-row traceability, role review, and closeout while
 source-row validation and fixture replacement remain blocked.
+
+Japan demonstrates a third adaptive path: source content can advance through
+parser dry run, extraction candidates, content-row traceability, role review,
+geometry policy, and fixture blocker while GSI road-link source custody,
+source-row validation, fixture replacement, and internal proof remain blocked.
 
 The map pilots demonstrate breadth: the same adapter-to-map workflow can render
 held-claim fixtures across multiple country and regional shapes, but maps remain

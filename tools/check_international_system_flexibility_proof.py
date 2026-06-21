@@ -63,8 +63,8 @@ def main() -> int:
     failures: list[str] = []
     if fields != FIELDS:
         failures.append("international flexibility proof columns do not match contract")
-    if len(rows) != 5:
-        failures.append("international flexibility proof must have five rows")
+    if len(rows) != 6:
+        failures.append("international flexibility proof must have six rows")
     decisions = {row["flexibility_decision"] for row in rows}
     if decisions != REQUIRED_DECISIONS:
         failures.append(f"flexibility decisions mismatch: {sorted(decisions)}")
@@ -74,10 +74,14 @@ def main() -> int:
         failures.append("flexibility proof must include EU adaptive branch")
     if not any(row["region_or_surface"] == "India" for row in rows):
         failures.append("flexibility proof must include India adaptive branch")
+    if not any(row["region_or_surface"] == "Japan" for row in rows):
+        failures.append("flexibility proof must include Japan adaptive branch")
     if not any("current corridor scope" in row["next_action"] for row in rows):
         failures.append("flexibility proof must name EU rebase next action")
     if not any("source-row validation" in row["next_action"] and row["region_or_surface"] == "India" for row in rows):
         failures.append("flexibility proof must name India source-row validation hold")
+    if not any("GSI road-link source custody" in row["next_action"] and row["region_or_surface"] == "Japan" for row in rows):
+        failures.append("flexibility proof must name Japan GSI source-custody hold")
     for row in rows:
         missing = REQUIRED_BLOCKS - set(row["blocked_claims"].split(";"))
         if missing:
