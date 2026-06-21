@@ -161,6 +161,7 @@ game, release, or public-readiness claims.
 | Texas state service network goals exist. | `docs/briefs/texas-state-service-network-goals.md` | draft; product-facing state promise design brief; legal SLA and official-plan claims held |
 | Texas state service network offer exists. | `docs/briefs/texas-state-service-network-offer.md` | draft; client-facing 90-day offer; legal SLA and official-plan claims held |
 | ROUTE business model report exists. | `docs/reports/route-business-model-report.md` | draft; consultative-product hypothesis; customer, procurement, endorsement, ROI, and validation claims held |
+| ROUTE competitive landscape report exists. | `docs/reports/route-competitive-landscape-report.md` | draft; competitive-positioning hypothesis; customer, procurement, market-share, displacement, endorsement, ROI, and validation claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -485,6 +486,13 @@ managed lanes, freight corridors, and DOT innovation teams before moving toward
 retainers or software, while holding customer, procurement, market-share,
 operator endorsement, legal-SLA, demand, ROI, funding, public-readiness, and
 validation claims.
+The ROUTE competitive landscape report records the category hypothesis: ROUTE
+should not replace mobility-data vendors, GIS/LRS systems, demand models,
+engineering design software, operations platforms, or consulting authority; it
+should package those inputs into service-network decisions, promise holds,
+resilience obligations, investment sequencing, and dashboard specifications
+while holding customer, procurement, market-share, displacement, endorsement,
+legal-SLA, demand, ROI, funding, public-readiness, and validation claims.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
