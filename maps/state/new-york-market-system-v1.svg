@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">New York Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: downstate gateway, Hudson spine, Thruway/upstate cities, Southern Tier, North Country, ports, and</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">cross-Hudson access.</text>
+<path d="M141.0 727.9 L284.8 504.2 L748.0 408.4 L1195.3 264.6 L1419.0 616.0 L1083.5 983.5 L652.2 775.8 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="1083.5249999999987" cy="919.5625" rx="127.79999999999956" ry="95.85000000000025" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="973.7" y="853.7" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Downstate gateway</text>
+<ellipse cx="1099.5" cy="743.8374999999997" rx="95.84999999999906" ry="223.64999999999975" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="1021.7" y="550.2" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Hudson spine</text>
+<ellipse cx="684.1499999999986" cy="584.0874999999997" rx="415.3499999999991" ry="111.82500000000041" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="286.8" y="502.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Thruway / upstate spine</text>
+<ellipse cx="620.25" cy="743.8374999999997" rx="319.5" ry="79.875" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="318.8" y="694.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Southern Tier</text>
+<ellipse cx="939.75" cy="392.3874999999993" rx="255.59999999999906" ry="95.85000000000022" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="702.2" y="326.5" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">North Country</text>
+<path d="M762.4 429.1 Q778.1 511.7 724.1 576.1" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Watertown to Syracuse: northern rural and border access</title></path>
+<path d="M1066.0 949.9 Q1049.9 965.2 1040.4 945.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 New York City to Newark gateway: port and cross-Hudson access</title></path>
+<path d="M1105.9 640.0 Q934.2 683.9 762.4 727.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Albany to Binghamton: capital to Southern Tier access</title></path>
+<path d="M762.4 727.9 Q690.3 710.7 618.7 729.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Binghamton to Elmira: Southern Tier reliability</title></path>
+<path d="M618.7 729.5 Q466.3 632.0 288.0 601.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Elmira to Buffalo: Southern Tier to Buffalo access</title></path>
+<path d="M1105.9 640.0 Q1095.1 470.9 1155.4 312.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Albany to Plattsburgh: North Country access</title></path>
+<path d="M1066.0 949.9 Q1055.2 869.2 1080.3 791.8" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 New York City to Poughkeepsie: lower Hudson access</title></path>
+<path d="M1066.0 949.9 Q1085.9 795.0 1105.9 640.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 New York City to Albany: downstate to capital reliability</title></path>
+<path d="M1105.9 640.0 Q918.0 590.3 724.1 576.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Albany to Syracuse: capital to Central New York reliability</title></path>
+<path d="M724.1 576.1 Q610.2 531.4 490.9 558.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Syracuse to Rochester: Central New York to Rochester reliability</title></path>
+<path d="M490.9 558.5 Q396.9 615.3 288.0 601.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Rochester to Buffalo: Rochester to Buffalo gateway reliability</title></path>
+<path d="M1066.0 949.9 Q1134.6 925.6 1206.5 937.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 New York City to Long Island: downstate metro reliability</title></path>
+<circle cx="1066.0" cy="949.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1084.0" y="979.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">New York City</text>
+<text x="1084.0" y="997.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NYC</text>
+<circle cx="1105.9" cy="640.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1123.9" y="622.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Albany</text>
+<text x="1123.9" y="640.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ALB</text>
+<circle cx="724.1" cy="576.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="740.1" y="568.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Syracuse</text>
+<text x="740.1" y="586.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SYR</text>
+<circle cx="490.9" cy="558.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="506.9" y="550.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Rochester</text>
+<text x="506.9" y="568.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ROC</text>
+<circle cx="288.0" cy="601.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="208.0" y="611.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Buffalo</text>
+<text x="208.0" y="629.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BUF</text>
+<circle cx="1206.5" cy="937.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1224.5" y="919.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Long Island</text>
+<text x="1224.5" y="937.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LI</text>
+<circle cx="1040.4" cy="945.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="928.4" y="937.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Newark gateway</text>
+<text x="928.4" y="955.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NWK</text>
+<circle cx="762.4" cy="727.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="778.4" y="719.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Binghamton</text>
+<text x="778.4" y="737.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BIN</text>
+<circle cx="618.7" cy="729.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="634.7" y="721.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Elmira</text>
+<text x="634.7" y="739.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ELM</text>
+<circle cx="1155.4" cy="312.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1173.4" y="294.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Plattsburgh</text>
+<text x="1173.4" y="312.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PLB</text>
+<circle cx="762.4" cy="429.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="780.4" y="411.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Watertown</text>
+<text x="780.4" y="429.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">WAT</text>
+<circle cx="1080.3" cy="791.8" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1096.3" y="783.8" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Poughkeepsie</text>
+<text x="1096.3" y="801.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">POU</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Thruway / upstate spine: 3 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southern tier connector: 3 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Hudson spine: 2 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">downstate metro belt: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port / cross-Hudson gateway: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">north country connector: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">north country access: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 5 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 6 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">12 nodes, 12 candidate links, 2 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows New York as downstate gateway, upstate spine, Southern Tier, and</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">North Country promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank downstate access, port/cross-Hudson, Thruway reliability, western</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">gateway, Southern Tier, and northern access.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official NYSDOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

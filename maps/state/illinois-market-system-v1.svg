@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Illinois Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Chicago gateway, northern Illinois, central spine, university markets, Mississippi/Metro East, southern</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">Illinois, and river confluence.</text>
+<path d="M408.6 199.0 L1058.5 199.0 L1043.1 740.6 L795.5 1050.1 L424.1 663.2 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="996.6315789473684" cy="322.7894736842101" rx="154.7368421052633" ry="123.78947368421021" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="859.9" y="229.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Chicago gateway</text>
+<ellipse cx="779.9999999999989" cy="554.8947368421051" rx="216.63157894736952" ry="201.1578947368418" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="581.4" y="383.7" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Central Illinois spine</text>
+<ellipse cx="857.3684210526305" cy="554.8947368421051" rx="170.2105263157888" ry="123.78947368421018" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="705.2" y="461.1" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">University markets</text>
+<ellipse cx="609.7894736842102" cy="740.5789473684215" rx="154.73684210526332" ry="185.68421052631635" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="473.1" y="584.9" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Mississippi / Metro East</text>
+<ellipse cx="779.9999999999989" cy="957.2105263157898" rx="154.7368421052633" ry="123.78947368421018" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="643.3" y="863.4" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Southern Illinois</text>
+<path d="M776.9 937.1 Q815.9 990.8 783.1 1048.5" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Carbondale to Cairo: southern river gateway access</title></path>
+<path d="M797.0 234.6 Q630.3 427.6 438.0 595.1" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Rockford to Quincy: western Illinois resilience branch</title></path>
+<path d="M928.5 567.3 Q975.7 431.1 1022.9 294.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Champaign-Urbana to Chicago: eastern Illinois to Chicago access</title></path>
+<path d="M625.3 797.8 Q688.9 880.7 776.9 937.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Metro East / St. Louis to Carbondale: southern Illinois access</title></path>
+<path d="M438.0 595.1 Q570.9 643.4 710.4 619.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Quincy to Springfield: western Illinois to capital access</title></path>
+<path d="M1022.9 294.9 Q900.7 299.5 797.0 234.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Chicago to Rockford: Chicago to Rockford reliability</title></path>
+<path d="M1022.9 294.9 Q880.6 402.4 719.7 479.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Chicago to Peoria: Chicago to central Illinois reliability</title></path>
+<path d="M719.7 479.1 Q715.0 549.5 710.4 619.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Peoria to Springfield: central Illinois to capital reliability</title></path>
+<path d="M710.4 619.9 Q651.6 701.1 625.3 797.8" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Springfield to Metro East / St. Louis: capital to Mississippi gateway reliability</title></path>
+<path d="M1022.9 294.9 Q891.9 378.2 812.5 511.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Chicago to Bloomington-Normal: Chicago to Bloomington-Normal reliability</title></path>
+<path d="M812.5 511.6 Q886.1 507.0 928.5 567.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Bloomington-Normal to Champaign-Urbana: central university and production access</title></path>
+<circle cx="1022.9" cy="294.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1040.9" y="276.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Chicago</text>
+<text x="1040.9" y="294.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHI</text>
+<circle cx="797.0" cy="234.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="709.0" y="226.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Rockford</text>
+<text x="709.0" y="244.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">RFD</text>
+<circle cx="719.7" cy="479.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="735.7" y="471.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Peoria</text>
+<text x="735.7" y="489.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PEO</text>
+<circle cx="710.4" cy="619.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="726.4" y="611.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Springfield</text>
+<text x="726.4" y="629.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SPI</text>
+<circle cx="625.3" cy="797.8" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="643.3" y="821.8" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Metro East / St. Louis</text>
+<text x="643.3" y="839.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">STL</text>
+<circle cx="812.5" cy="511.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="828.5" y="503.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Bloomington-Normal</text>
+<text x="828.5" y="521.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BNG</text>
+<circle cx="928.5" cy="567.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="944.5" y="559.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Champaign-Urbana</text>
+<text x="944.5" y="577.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHM</text>
+<circle cx="776.9" cy="937.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="792.9" y="929.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Carbondale</text>
+<text x="792.9" y="947.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CAR</text>
+<circle cx="783.1" cy="1048.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="801.1" y="1068.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Cairo</text>
+<text x="801.1" y="1086.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CAI</text>
+<circle cx="438.0" cy="595.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="360.0" y="603.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Quincy</text>
+<text x="360.0" y="621.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">QCY</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">central Illinois spine: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northern Illinois market: 1 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Mississippi gateway: 1 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">I-55 / state spine: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">I-74 / university-market connector: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">eastern Illinois connector: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southern Illinois connector: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Ohio/Mississippi confluence: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 6 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 3 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 2 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">10 nodes, 11 candidate links, 2 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows Illinois as Chicago gateway, central-state, university,</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Mississippi, and southern river promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank Chicago access, central Illinois spine, university markets, Metro</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">East, western coverage, and southern river access.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official IDOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>
