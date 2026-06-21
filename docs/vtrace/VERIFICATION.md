@@ -146,6 +146,7 @@ game, release, or public-readiness claims.
 | International China parser preflight 001 exists. | `docs/reviews/international-china-parser-preflight-001.md`, `data/international-china-parser-preflight-001.csv`, `data/international-china-parser-output-contract-001.csv`, `tools/check_china_parser_preflight.py`, `npm run check:china:parser-preflight` | draft; parser preflight ready; implementation held |
 | International China parser dry run 001 exists. | `docs/reviews/international-china-parser-dry-run-001.md`, `data/china_source_link_candidates.csv`, `data/china_source_need_candidates.csv`, `data/china_source_node_candidates.csv`, `data/china_service_target_candidates.csv`, `data/china_adapter_evidence_labels.csv`, `data/china_adapter_review_backlog.csv`, `tools/check_china_parser_dry_run.py`, `npm run check:china:parser-dry-run` | draft; dry-run fixture emitted; fixture replacement held |
 | International China dry-run role review 001 exists. | `docs/reviews/international-china-dry-run-role-review-001.md`, `data/international-china-dry-run-role-review-001.csv`, `tools/check_china_dry_run_role_review.py`, `npm run check:china:dry-run-role-review` | draft; role review pass-with-holds; source-row validation blocked |
+| International China fixture blocker 001 exists. | `docs/reviews/international-china-fixture-blocker-001.md`, `data/international-china-fixture-blocker-001.csv`, `tools/check_china_fixture_blocker.py`, `npm run check:china:fixture-blocker` | draft; fixture replacement blocked |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
@@ -390,6 +391,11 @@ The China dry-run role review accepts the dry-run tables for internal planning
 only, with source-row validation, fixture replacement, parsed adapter, official,
 policy alignment, geometry, SLA, ROI, validation, readiness, and internal-proof
 claims still blocked.
+The China fixture blocker records that replacement remains blocked because rows
+are dry-run context-only, source-candidate, heuristic-held, or held assumptions,
+with geometry not accepted and source-row validation, parsed adapter, official,
+policy alignment, SLA, ROI, validation, readiness, and internal-proof claims
+still blocked.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
