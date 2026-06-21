@@ -55,6 +55,7 @@ conversion from familiar geography into a structured service portfolio:
 | Evidence posture | Prevents the map from implying official priority, construction readiness, legal SLA, numeric ROI, funding eligibility, compliance, endorsement, or validation. |
 | Market-layer inventory | Lets a client see whether the draft overweights metro growth, freight, ports, rural access, resilience, or terminal feeders. |
 | Editability | Gives a state a practical workshop question: "What are your top places to connect, and what promise should each tier carry?" |
+| Failure metrics | Converts known pain into measurable questions: interchange exposure, alternate-route penalty, interstate overreliance, state-system redundancy, terminal friction, rural isolation, and recovery evidence gaps. |
 
 ## What Should Be Clear In A Client Meeting
 
@@ -68,6 +69,21 @@ official plan. It should leave with a clearer decision table:
 | Which promises are top tier? | T1/T2/T3 draft hierarchy. |
 | What evidence is missing? | Source-needed rows and held-claim posture. |
 | What changes if priorities shift? | Regenerated map, SLA slate, proof docket, and review packet. |
+| Where is the current system failing or fragile? | A bounded metric scorecard with evidence posture, not unsupported deficiency claims. |
+
+## Failure Metrics Layer
+
+The map package needs a scorecard layer because a state-facing sale is weak if
+it only says "these corridors matter." The stronger offer is:
+
+> Give us your priority places and unacceptable failures. ROUTE will show where
+> the current network appears overconcentrated, where alternates impose too much
+> service penalty, where state highways may need a redundancy role, and where
+> evidence is missing before any SLA can be promoted.
+
+The metric definitions are in
+`docs/reports/state-system-failure-metrics-framework.md` and
+`data/state-system-failure-metric-menu.csv`.
 
 ## Slate 005 Examples
 
