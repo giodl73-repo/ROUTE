@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">Ohio Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: 3C urban spine, Lake Erie belt, Dayton logistics, Toledo/Detroit gateway, Appalachian access, river gateways,</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">and manufacturing connectors.</text>
+<path d="M283.7 341.1 L1276.3 296.0 L1276.3 589.2 L1005.6 950.2 L802.6 1063.0 L306.3 927.6 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="847.6726342710992" cy="679.4757033248076" rx="315.80562659846714" ry="248.13299232736625" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="549.9" y="461.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">3C urban spine</text>
+<ellipse cx="892.7877237851663" cy="408.7851662404093" rx="383.4782608695662" ry="112.78772378516632" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="527.3" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Lake Erie belt</text>
+<ellipse cx="464.19437340153615" cy="814.8209718670075" rx="203.01790281330074" ry="157.90281329923351" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="279.2" y="686.9" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Southwest logistics</text>
+<ellipse cx="1073.248081841432" cy="814.8209718670075" rx="225.57544757033259" ry="203.0179028132991" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="865.7" y="641.8" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">Appalachian access</text>
+<ellipse cx="689.769820971869" cy="950.1662404092074" rx="338.36317135549905" ry="112.78772378516635" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="369.4" y="867.4" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">River gateways</text>
+<path d="M820.6 553.2 Q798.6 661.6 714.6 733.6" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Mansfield to Columbus: north-central Ohio access</title></path>
+<path d="M586.0 352.4 Q629.1 264.9 701.0 199.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Toledo to Detroit gateway: Toledo to Detroit regional access</title></path>
+<path d="M1046.2 481.0 Q1144.3 478.7 1242.4 476.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Akron to Youngstown: Akron to Youngstown access</title></path>
+<path d="M714.6 733.6 Q758.5 913.3 836.4 1081.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Columbus to Huntington gateway: Columbus to Ohio River gateway</title></path>
+<path d="M371.7 927.6 Q592.8 1038.5 836.4 1081.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Cincinnati to Huntington gateway: south Ohio river continuity</title></path>
+<path d="M1007.8 386.2 Q888.7 583.1 714.6 733.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Cleveland to Columbus: Cleveland to Columbus reliability</title></path>
+<path d="M714.6 733.6 Q552.0 846.3 371.7 927.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Columbus to Cincinnati: Columbus to Cincinnati reliability</title></path>
+<path d="M371.7 927.6 Q407.8 853.2 443.9 778.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Cincinnati to Dayton: Cincinnati to Dayton reliability</title></path>
+<path d="M443.9 778.7 Q582.2 773.9 714.6 733.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Dayton to Columbus: Dayton to Columbus reliability</title></path>
+<path d="M1007.8 386.2 Q799.8 333.4 586.0 352.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Cleveland to Toledo: Cleveland to Toledo reliability</title></path>
+<path d="M1007.8 386.2 Q1060.4 420.1 1046.2 481.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Cleveland to Akron: Cleveland to Akron reliability</title></path>
+<circle cx="1007.8" cy="386.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1025.8" y="368.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Cleveland</text>
+<text x="1025.8" y="386.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CLE</text>
+<circle cx="714.6" cy="733.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="732.6" y="715.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Columbus</text>
+<text x="732.6" y="733.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CBU</text>
+<circle cx="371.7" cy="927.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="389.7" y="953.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Cincinnati</text>
+<text x="389.7" y="971.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CIN</text>
+<circle cx="443.9" cy="778.7" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="351.9" y="784.7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Dayton</text>
+<text x="351.9" y="802.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DAY</text>
+<circle cx="586.0" cy="352.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="604.0" y="334.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Toledo</text>
+<text x="604.0" y="352.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">TOL</text>
+<circle cx="701.0" cy="199.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="717.0" y="191.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Detroit gateway</text>
+<text x="717.0" y="209.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DET</text>
+<circle cx="1046.2" cy="481.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="1064.2" y="501.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Akron</text>
+<text x="1064.2" y="519.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AKR</text>
+<circle cx="1242.4" cy="476.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1260.4" y="458.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Youngstown</text>
+<text x="1260.4" y="476.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">YNG</text>
+<circle cx="836.4" cy="1081.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="854.4" y="1103.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Huntington gateway</text>
+<text x="854.4" y="1121.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HUN</text>
+<circle cx="820.6" cy="553.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="836.6" y="545.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Mansfield</text>
+<text x="836.6" y="563.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MFD</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">3C urban spine: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southwest logistics: 1 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">west-central connector: 1 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Lake Erie belt: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Detroit gateway: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northeast Ohio belt: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northeast manufacturing connector: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Appalachian / river access: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 6 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 4 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">10 nodes, 11 candidate links, 1 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows Ohio as a dense statewide service mesh: 3C, Lake Erie, Dayton,</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Toledo/Detroit, river, and Appalachian access.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank 3C reliability, Lake Erie manufacturing, Dayton logistics,</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Toledo/Detroit gateway, river gateways, and Appalachian access.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official ODOT priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

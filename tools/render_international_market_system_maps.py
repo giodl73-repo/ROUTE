@@ -287,6 +287,90 @@ CONFIG = {
             "VLD": (18, 24),
         },
     },
+    "pennsylvania": {
+        "title": "Pennsylvania Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Philadelphia gateway, Harrisburg hub, Pittsburgh/Allegheny access, Northeast PA, Erie/Lake Erie, Lehigh Valley, and port feeders.",
+        "output": "state/pennsylvania-market-system-v1.svg",
+        "outline_lonlat": [(-80.6, 42.3), (-74.7, 42.0), (-74.7, 40.1), (-75.1, 39.7), (-77.0, 39.7), (-80.5, 39.7)],
+        "zones_lonlat": [
+            ("Philadelphia gateway", -75.2, 40.0, 0.8, 0.5, "#c2410c"),
+            ("Harrisburg hub", -76.9, 40.3, 0.9, 0.6, "#16a34a"),
+            ("Allegheny / Pittsburgh", -80.0, 40.4, 0.9, 0.7, "#2563eb"),
+            ("Northeast / Lehigh", -75.5, 41.0, 1.0, 0.7, "#0f766e"),
+            ("Lake Erie access", -80.0, 42.0, 0.8, 0.4, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Pennsylvania as two major metro anchors plus central hub, port, mountain, Northeast, and Lake Erie promises."),
+            ("Client workshop", "Rank Philadelphia access, Pittsburgh reliability, Harrisburg sorting, Lehigh/Northeast PA, Erie, port feeders, and mountain resilience."),
+            ("Still held", "Official PennDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "PHL": (18, 24),
+            "PTP": (-100, -10),
+            "PIT": (-90, 8),
+            "ERI": (18, -18),
+            "OGH": (-98, 8),
+            "SCR": (18, -18),
+            "ALN": (18, 22),
+            "ALT": (18, -18),
+        },
+    },
+    "ohio": {
+        "title": "Ohio Candidate Market-System Map",
+        "subtitle": "2D state service-market view: 3C urban spine, Lake Erie belt, Dayton logistics, Toledo/Detroit gateway, Appalachian access, river gateways, and manufacturing connectors.",
+        "output": "state/ohio-market-system-v1.svg",
+        "outline_lonlat": [(-84.9, 41.7), (-80.5, 41.9), (-80.5, 40.6), (-81.7, 39.0), (-82.6, 38.5), (-84.8, 39.1)],
+        "zones_lonlat": [
+            ("3C urban spine", -82.4, 40.2, 1.4, 1.1, "#16a34a"),
+            ("Lake Erie belt", -82.2, 41.4, 1.7, 0.5, "#2563eb"),
+            ("Southwest logistics", -84.1, 39.6, 0.9, 0.7, "#c2410c"),
+            ("Appalachian access", -81.4, 39.6, 1.0, 0.9, "#7c3aed"),
+            ("River gateways", -83.1, 39.0, 1.5, 0.5, "#0f766e"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Ohio as a dense statewide service mesh: 3C, Lake Erie, Dayton, Toledo/Detroit, river, and Appalachian access."),
+            ("Client workshop", "Rank 3C reliability, Lake Erie manufacturing, Dayton logistics, Toledo/Detroit gateway, river gateways, and Appalachian access."),
+            ("Still held", "Official ODOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "CLE": (18, -18),
+            "CBU": (18, -18),
+            "CIN": (18, 26),
+            "DAY": (-92, 6),
+            "TOL": (18, -18),
+            "AKR": (18, 20),
+            "YNG": (18, -18),
+            "HUN": (18, 22),
+        },
+    },
+    "north-carolina": {
+        "title": "North Carolina Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Charlotte/Raleigh growth spine, Triad hub, coastal ports, military/coastal access, Asheville/mountain access, and eastern rural service.",
+        "output": "state/north-carolina-market-system-v1.svg",
+        "outline_lonlat": [(-84.4, 35.2), (-82.0, 36.4), (-78.5, 36.5), (-75.5, 36.1), (-75.6, 34.6), (-78.0, 33.8), (-81.0, 34.0), (-83.2, 34.9)],
+        "zones_lonlat": [
+            ("Charlotte / Piedmont", -80.8, 35.3, 1.2, 0.7, "#16a34a"),
+            ("Research Triangle", -78.7, 35.9, 0.9, 0.6, "#2563eb"),
+            ("Triad hub", -80.0, 36.0, 0.9, 0.6, "#0f766e"),
+            ("Coastal / military", -77.4, 35.0, 1.6, 1.0, "#c2410c"),
+            ("Mountain access", -82.7, 35.6, 1.0, 0.7, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows North Carolina as growth spine, research, Triad, port/coastal, military, mountain, and eastern access promises."),
+            ("Client workshop", "Rank Charlotte-Raleigh reliability, Triad access, Wilmington port, military/coastal access, mountain resilience, and eastern rural coverage."),
+            ("Still held", "Official NCDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "CLT": (18, 24),
+            "RDU": (18, -18),
+            "GSO": (-88, -8),
+            "AVL": (-88, 8),
+            "WIL": (18, 20),
+            "FAY": (18, 22),
+            "MHC": (18, 18),
+            "NOR": (18, -18),
+        },
+    },
     "canada": {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
@@ -525,7 +609,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "canada"]:
+    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "pennsylvania", "ohio", "north-carolina", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 
