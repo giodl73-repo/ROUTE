@@ -227,6 +227,7 @@ public-readiness, external-readiness, or approval.
 | India source content sample | `docs/reviews/international-india-source-content-sample-001.md` |
 | India parser extraction candidates | `docs/reviews/international-india-parser-extraction-candidates-001.md` |
 | India source content row validation | `docs/reviews/international-india-source-content-row-validation-001.md` |
+| India content row role review | `docs/reviews/international-india-content-row-role-review-001.md` |
 | Japan hierarchy iteration | `docs/reviews/international-japan-hierarchy-iteration-001.md` |
 | China hierarchy iteration | `docs/reviews/international-china-hierarchy-iteration-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
