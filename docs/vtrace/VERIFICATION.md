@@ -428,9 +428,9 @@ construction, ROI, eligibility, compliance, endorsement, public-readiness,
 external-readiness, and validation holds.
 The international adaptive proof closeout packages the full proof ladder as
 distinct levels: Canada depth, EU/India/Japan adaptive branches, China
-dry-run-depth, and map breadth, while blocking equal-depth, official, approval,
-policy alignment, geometry, SLA, ROI, validation, readiness, and external
-claims.
+content-depth-started branch, and map breadth, while blocking equal-depth,
+official, approval, policy alignment, geometry, SLA, ROI, validation, readiness,
+and external claims.
 The international next source-row gate selects China source-content sampling as
 the next breadth-deepening step, keeps EU road-link endpoint custody and Canada
 external packet work as alternates, and preserves equal-depth, official, SLA,
@@ -554,9 +554,10 @@ current-corridor fixture scope.
 The international flexibility proof gate now records the larger product result:
 Canada proves depth, EU proves adaptive branching under source mismatch, India
 proves adaptive content-row branching, Japan proves adaptive branching with a
-source-needed road-link blocker, China proves dry-run-depth adaptive branching,
-and the multi-region map fixtures prove breadth while official, SLA, ROI,
-validation, public-readiness, and external-readiness claims remain held.
+source-needed road-link blocker, China proves content-depth-started adaptive
+branching with source-row validation held, and the multi-region map fixtures
+prove breadth while official, SLA, ROI, validation, public-readiness, and
+external-readiness claims remain held.
 The EU Rhine-Alpine road-feature source-selection gate now selects GISCO road
 and port-node source families for next metadata probes while keeping geometry,
 fixture replacement, terminal performance, SLA, ROI, validation, and readiness

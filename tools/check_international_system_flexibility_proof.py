@@ -26,7 +26,7 @@ REQUIRED_DECISIONS = {
     "depth_instance_complete_external_validation_held",
     "adaptive_branch_complete_fixture_replacement_held",
     "adaptive_branch_complete_source_row_validation_held",
-    "dry_run_depth_adaptive_branch_complete_deeper_proof_held",
+    "content_depth_started_source_row_validation_held",
     "gap_detected_without_false_promotion",
     "breadth_instance_complete_validation_held",
 }
@@ -78,15 +78,15 @@ def main() -> int:
     if not any(row["region_or_surface"] == "Japan" for row in rows):
         failures.append("flexibility proof must include Japan adaptive branch")
     if not any(row["region_or_surface"] == "China" for row in rows):
-        failures.append("flexibility proof must include China dry-run-depth adaptive branch")
+        failures.append("flexibility proof must include China content-depth-started adaptive branch")
     if not any("current corridor scope" in row["next_action"] for row in rows):
         failures.append("flexibility proof must name EU rebase next action")
     if not any("source-row validation" in row["next_action"] and row["region_or_surface"] == "India" for row in rows):
         failures.append("flexibility proof must name India source-row validation hold")
     if not any("GSI road-link source custody" in row["next_action"] and row["region_or_surface"] == "Japan" for row in rows):
         failures.append("flexibility proof must name Japan GSI source-custody hold")
-    if not any("content-depth proof" in row["next_action"] and row["region_or_surface"] == "China" for row in rows):
-        failures.append("flexibility proof must name China content-depth hold")
+    if not any("source-row validation" in row["next_action"] and row["region_or_surface"] == "China" for row in rows):
+        failures.append("flexibility proof must name China source-row validation hold")
     for row in rows:
         missing = REQUIRED_BLOCKS - set(row["blocked_claims"].split(";"))
         if missing:
