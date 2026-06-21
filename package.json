@@ -94,6 +94,7 @@
     "check:china:dry-run-role-review": "python tools/build_china_parser_dry_run.py && python tools/build_china_dry_run_role_review.py && python tools/check_china_parser_dry_run.py && python tools/check_china_dry_run_role_review.py",
     "check:china:fixture-blocker": "python tools/build_china_parser_dry_run.py && python tools/build_china_dry_run_role_review.py && python tools/build_china_fixture_blocker.py && python tools/check_china_dry_run_role_review.py && python tools/check_china_fixture_blocker.py",
     "check:china:geometry-policy": "python tools/build_china_geometry_policy.py && python tools/check_china_geometry_policy.py",
+    "check:china:adaptive-closeout": "python tools/build_china_parser_dry_run.py && python tools/build_china_dry_run_role_review.py && python tools/build_china_fixture_blocker.py && python tools/build_china_geometry_policy.py && python tools/build_china_adaptive_proof_closeout.py && python tools/check_china_fixture_blocker.py && python tools/check_china_geometry_policy.py && python tools/check_china_adaptive_proof_closeout.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

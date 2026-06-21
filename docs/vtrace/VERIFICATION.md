@@ -148,6 +148,7 @@ game, release, or public-readiness claims.
 | International China dry-run role review 001 exists. | `docs/reviews/international-china-dry-run-role-review-001.md`, `data/international-china-dry-run-role-review-001.csv`, `tools/check_china_dry_run_role_review.py`, `npm run check:china:dry-run-role-review` | draft; role review pass-with-holds; source-row validation blocked |
 | International China fixture blocker 001 exists. | `docs/reviews/international-china-fixture-blocker-001.md`, `data/international-china-fixture-blocker-001.csv`, `tools/check_china_fixture_blocker.py`, `npm run check:china:fixture-blocker` | draft; fixture replacement blocked |
 | International China geometry policy 001 exists. | `docs/reviews/international-china-geometry-policy-001.md`, `data/international-china-geometry-policy-001.csv`, `tools/check_china_geometry_policy.py`, `npm run check:china:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
+| International China adaptive proof closeout 001 exists. | `docs/reviews/international-china-adaptive-proof-closeout-001.md`, `data/international-china-adaptive-proof-closeout-001.csv`, `tools/check_china_adaptive_proof_closeout.py`, `npm run check:china:adaptive-closeout` | draft; dry-run-depth adaptive proof complete; Canada/India/Japan depth not claimed |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
@@ -401,6 +402,11 @@ The China geometry policy rejects geometry for the current dry-run candidates
 and blocks map overlay, topology proof, fixture replacement, parsed adapter,
 official, policy alignment, terminal performance, SLA, ROI, validation,
 readiness, and internal-proof claims.
+The China adaptive closeout completes China as a dry-run-depth portability
+proof: stronger than map-only replication, weaker than India/Japan content-depth
+adaptive proof and Canada depth proof, and still blocking source-row validation,
+fixture replacement, parsed adapter, geometry, SLA, ROI, validation, readiness,
+and internal-proof claims.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
@@ -525,9 +531,9 @@ current-corridor fixture scope.
 The international flexibility proof gate now records the larger product result:
 Canada proves depth, EU proves adaptive branching under source mismatch, India
 proves adaptive content-row branching, Japan proves adaptive branching with a
-source-needed road-link blocker, and the multi-region map fixtures prove
-breadth while official, SLA, ROI, validation, public-readiness, and
-external-readiness claims remain held.
+source-needed road-link blocker, China proves dry-run-depth adaptive branching,
+and the multi-region map fixtures prove breadth while official, SLA, ROI,
+validation, public-readiness, and external-readiness claims remain held.
 The EU Rhine-Alpine road-feature source-selection gate now selects GISCO road
 and port-node source families for next metadata probes while keeping geometry,
 fixture replacement, terminal performance, SLA, ROI, validation, and readiness
