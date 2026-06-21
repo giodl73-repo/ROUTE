@@ -461,6 +461,88 @@ CONFIG = {
             "SHOW": (18, 22),
         },
     },
+    "colorado": {
+        "title": "Colorado Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Front Range spine, Denver hub, mountain-pass resilience, Western Slope access, Pueblo/southern gateway, plains freight, and airport feeders.",
+        "output": "state/colorado-market-system-v1.svg",
+        "outline_lonlat": [(-109.1, 41.0), (-102.0, 41.0), (-102.0, 37.0), (-109.1, 37.0)],
+        "zones_lonlat": [
+            ("Front Range spine", -104.9, 39.5, 0.8, 1.8, "#16a34a"),
+            ("Denver hub", -104.9, 39.8, 0.9, 0.7, "#2563eb"),
+            ("Mountain-pass resilience", -106.5, 39.3, 1.4, 1.0, "#7c3aed"),
+            ("Western Slope access", -108.0, 39.0, 0.9, 1.0, "#0f766e"),
+            ("Southern gateway", -104.7, 38.0, 0.9, 0.7, "#c2410c"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Colorado as Front Range growth, airport/logistics, mountain-pass resilience, Western Slope, plains, and southern gateway promises."),
+            ("Client workshop", "Rank Denver reliability, Front Range spine, I-70 mountain access, Western Slope, Pueblo/southern gateway, plains freight, and airport feeders."),
+            ("Still held", "Official CDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "DEN": (18, -18),
+            "DIA": (18, 28),
+            "COS": (18, 22),
+            "PUE": (18, 24),
+            "FTC": (18, -18),
+            "GJT": (-106, 8),
+            "EGL": (18, -18),
+            "LIM": (18, -18),
+        },
+    },
+    "tennessee": {
+        "title": "Tennessee Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Memphis freight gateway, Nashville hub, Knoxville/Chattanooga east spine, Tri-Cities access, Mississippi river, and Appalachian resilience.",
+        "output": "state/tennessee-market-system-v1.svg",
+        "outline_lonlat": [(-90.3, 36.7), (-81.6, 36.6), (-82.0, 35.0), (-85.0, 35.0), (-90.3, 35.0)],
+        "zones_lonlat": [
+            ("Memphis freight gateway", -90.0, 35.3, 0.8, 0.6, "#c2410c"),
+            ("Nashville hub", -86.8, 36.1, 1.0, 0.7, "#16a34a"),
+            ("East Tennessee spine", -84.2, 35.8, 1.6, 0.7, "#2563eb"),
+            ("Appalachian access", -82.7, 36.2, 1.0, 0.5, "#7c3aed"),
+            ("River / west coverage", -88.8, 35.8, 1.3, 0.6, "#0f766e"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Tennessee as Memphis logistics, Nashville hub, east-state spine, Appalachian access, river freight, and rural coverage promises."),
+            ("Client workshop", "Rank Memphis gateway, Nashville reliability, Knoxville/Chattanooga, Tri-Cities, river access, rural west coverage, and mountain resilience."),
+            ("Still held", "Official TDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "MEM": (18, 22),
+            "PTM": (-110, -10),
+            "NSH": (18, -18),
+            "KNX": (18, -18),
+            "CHA": (18, 24),
+            "TRI": (18, -18),
+            "JCK": (18, -18),
+        },
+    },
+    "missouri": {
+        "title": "Missouri Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Kansas City/St. Louis bookends, I-70 spine, Springfield southwest access, Columbia hub, Mississippi/Missouri river gateways, and Ozark resilience.",
+        "output": "state/missouri-market-system-v1.svg",
+        "outline_lonlat": [(-95.8, 40.6), (-89.1, 40.6), (-89.1, 36.0), (-91.7, 36.0), (-94.6, 36.5), (-95.8, 38.0)],
+        "zones_lonlat": [
+            ("I-70 statewide spine", -92.3, 38.9, 2.7, 0.7, "#16a34a"),
+            ("Kansas City gateway", -94.6, 39.1, 0.9, 0.7, "#2563eb"),
+            ("St. Louis gateway", -90.2, 38.6, 0.9, 0.7, "#c2410c"),
+            ("Southwest / Ozarks", -93.4, 37.3, 1.2, 0.8, "#7c3aed"),
+            ("River access", -90.8, 37.8, 1.2, 1.1, "#0f766e"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Missouri as two national gateways, I-70 state spine, Columbia hub, Springfield/Ozarks, river freight, and southern access promises."),
+            ("Client workshop", "Rank KC-STL reliability, Columbia access, Springfield/Ozarks, Mississippi/Missouri river gateways, southeast access, and rural resilience."),
+            ("Still held", "Official MoDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "KC": (-98, 8),
+            "STL": (18, 24),
+            "COL": (18, -18),
+            "JEF": (18, 22),
+            "SGF": (18, 24),
+            "JLN": (-90, 8),
+            "CGR": (18, 24),
+        },
+    },
     "canada": {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
@@ -699,7 +781,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "pennsylvania", "ohio", "north-carolina", "michigan", "washington", "arizona", "canada"]:
+    for country in ["china", "india", "texas", "iowa", "florida", "california", "new-york", "illinois", "georgia", "pennsylvania", "ohio", "north-carolina", "michigan", "washington", "arizona", "colorado", "tennessee", "missouri", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 
