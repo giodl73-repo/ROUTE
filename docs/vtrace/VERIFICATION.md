@@ -144,6 +144,7 @@ game, release, or public-readiness claims.
 | International China kernel application 001 exists. | `docs/reviews/international-china-kernel-application-001.md`, `data/international-china-kernel-application-001.csv`, `tools/check_china_kernel_application.py`, `npm run check:china:kernel-application` | draft; source custody started; promotion held |
 | International China source payload access 001 exists. | `docs/reviews/international-china-source-payload-access-001.md`, `data/international-china-source-payload-access-001.csv`, `tools/check_china_source_payload_access.py`, `npm run check:china:payload-access` | draft; payload access manifest ready; evidence not accepted |
 | International China parser preflight 001 exists. | `docs/reviews/international-china-parser-preflight-001.md`, `data/international-china-parser-preflight-001.csv`, `data/international-china-parser-output-contract-001.csv`, `tools/check_china_parser_preflight.py`, `npm run check:china:parser-preflight` | draft; parser preflight ready; implementation held |
+| International China parser dry run 001 exists. | `docs/reviews/international-china-parser-dry-run-001.md`, `data/china_source_link_candidates.csv`, `data/china_source_need_candidates.csv`, `data/china_source_node_candidates.csv`, `data/china_service_target_candidates.csv`, `data/china_adapter_evidence_labels.csv`, `data/china_adapter_review_backlog.csv`, `tools/check_china_parser_dry_run.py`, `npm run check:china:parser-dry-run` | draft; dry-run fixture emitted; fixture replacement held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
@@ -379,6 +380,11 @@ links, need candidates, node candidates, held service targets, labels, and role
 backlog while keeping implementation, source-row validation, fixture
 replacement, official, policy alignment, SLA, ROI, validation, readiness, and
 internal-proof claims held.
+The China parser dry run emits contract-shaped internal fixture tables with
+context-only, source-candidate, heuristic-held, held, and carry-forward labels
+while preserving parser implementation, accepted source-row, fixture
+replacement, official, policy alignment, geometry, SLA, ROI, validation,
+readiness, and internal-proof holds.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,

@@ -1,0 +1,5 @@
+role_lane,review_question,trigger_output,required_before,hold_claims,result
+Scope Keeper,Does China remain a source-custody dry run rather than validation?,all output tables,any use beyond internal inspection,official_corridor_designation;policy_alignment;external_validation,pending
+Citation Auditor,"Do China rows preserve owner, date, access note, label, and blocked claims?",all output tables,parser implementation closeout,validation;endorsement;external_validation,pending
+Schematic Cartographer,Could standards or heuristic rows be mistaken for accepted geometry or map proof?,china_source_link_candidates,any map overlay or fixture replacement,geometry_acceptance;topology_proof;official_corridor_designation,pending
+V&V,Does every China row have a matching evidence-label row?,china_adapter_evidence_labels,parser dry-run closeout,validation;public_readiness;external_readiness,pending
