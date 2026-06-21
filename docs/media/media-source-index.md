@@ -180,6 +180,7 @@ public-readiness, external-readiness, or approval.
 | ROUTE business model report | `docs/reports/route-business-model-report.md` |
 | ROUTE competitive landscape report | `docs/reports/route-competitive-landscape-report.md` |
 | ROUTE first client wedge package | `docs/briefs/route-first-client-wedge-package.md` |
+| State network planner UI brief | `docs/briefs/state-network-planner-ui-brief.md` |
 | Canada source-adapter preflight | `docs/reviews/international-canada-source-adapter-preflight-001.md` |
 | Canada adapter readiness | `docs/reviews/international-canada-source-adapter-readiness-001.md` |
 | Canada candidate hierarchy map | `docs/reviews/international-canada-candidate-hierarchy-map-001.md` |
