@@ -259,6 +259,19 @@
     .node-sub {
       font-size: 10px;
       fill: var(--muted);
+      pointer-events: none;
+    }
+
+    .node-label {
+      pointer-events: none;
+    }
+
+    .node-handle {
+      cursor: grab;
+    }
+
+    .node-handle:active {
+      cursor: grabbing;
     }
 
     .link-label {
@@ -431,6 +444,27 @@
           </div>
           <button type="button" id="add-node">Add</button>
         </div>
+        <div class="edit-box" style="margin-top:10px">
+          <div class="form-row">
+            <label for="new-link-from">Add corridor from</label>
+            <select id="new-link-from"></select>
+          </div>
+          <div class="form-row">
+            <label for="new-link-to">To</label>
+            <select id="new-link-to"></select>
+          </div>
+          <div class="form-row">
+            <label for="new-link-tier">Candidate tier</label>
+            <select id="new-link-tier">
+              <option>T1</option>
+              <option>T2</option>
+              <option>T3</option>
+              <option>T4</option>
+              <option>R</option>
+            </select>
+          </div>
+          <button type="button" id="add-link">Add corridor</button>
+        </div>
         <h2 style="margin-top:14px">Places</h2>
         <div id="node-list" class="list"></div>
         <h2 style="margin-top:14px">Corridors</h2>
@@ -472,6 +506,9 @@
 
         <h2 style="margin-top:14px">Selected Corridor</h2>
         <div id="selected-link-box" class="edit-box"></div>
+
+        <h2 style="margin-top:14px">Change Log</h2>
+        <div id="edit-log" class="list"></div>
 
         <h2 style="margin-top:14px">Readout Export</h2>
         <textarea id="readout" readonly aria-label="Planner readout JSON"></textarea>
@@ -556,6 +593,7 @@
 
     let activeFixtureId = "iowa";
     let state = JSON.parse(JSON.stringify(fixtures[activeFixtureId]));
+    let dragState = null;
     const tierColors = { T1: "#0f5f78", T2: "#2d7b4f", T3: "#94611b", T4: "#6b7280", R: "#9a3b52" };
     const tierWidths = { T1: 13, T2: 9, T3: 6, T4: 5, R: 7 };
 
@@ -625,16 +663,22 @@
         circle.setAttribute("cx", n.x);
         circle.setAttribute("cy", n.y);
         circle.setAttribute("r", n.role === "T1" ? "15" : "12");
+        circle.setAttribute("class", "node-handle");
+        circle.setAttribute("data-node-id", n.id);
         circle.setAttribute("fill", "#ffffff");
         circle.setAttribute("stroke", tierColors[n.role] || "#18212b");
         circle.setAttribute("stroke-width", n.source === "source-needed" ? "3" : "4");
         if (n.source === "source-needed") {
           circle.setAttribute("stroke-dasharray", "4 4");
         }
+        circle.addEventListener("pointerdown", (event) => startNodeDrag(event, n.id));
         svg.appendChild(circle);
         svg.appendChild(textSvg(n.x + 16, n.y - 6, n.label, "node-label"));
         svg.appendChild(textSvg(n.x + 16, n.y + 10, `${n.role} / ${n.cls}`, "node-sub"));
       }
+      svg.onpointermove = moveNodeDrag;
+      svg.onpointerup = endNodeDrag;
+      svg.onpointerleave = endNodeDrag;
     }
 
     function appendPath(svg, d, cls) {
@@ -726,6 +770,27 @@
       }
     }
 
+    function renderCorridorControls() {
+      const from = document.getElementById("new-link-from");
+      const to = document.getElementById("new-link-to");
+      const fromValue = from.value;
+      const toValue = to.value;
+      from.innerHTML = "";
+      to.innerHTML = "";
+      for (const n of state.nodes) {
+        const optionA = document.createElement("option");
+        optionA.value = n.id;
+        optionA.textContent = n.label;
+        from.appendChild(optionA);
+        const optionB = document.createElement("option");
+        optionB.value = n.id;
+        optionB.textContent = n.label;
+        to.appendChild(optionB);
+      }
+      from.value = state.nodes.some((n) => n.id === fromValue) ? fromValue : state.nodes[0]?.id || "";
+      to.value = state.nodes.some((n) => n.id === toValue) ? toValue : state.nodes[1]?.id || state.nodes[0]?.id || "";
+    }
+
     function renderDials() {
       const labels = [
         ["reliability", "Reliability"],
@@ -774,6 +839,34 @@
           render();
         });
       }
+    }
+
+    function renderEditLog() {
+      const root = document.getElementById("edit-log");
+      root.innerHTML = "";
+      const rows = state.edits.slice(-8).reverse();
+      if (!rows.length) {
+        const item = document.createElement("article");
+        item.className = "item";
+        item.innerHTML = `<p class="meta">No client edits yet. Suggested network is loaded.</p>`;
+        root.appendChild(item);
+        return;
+      }
+      for (const edit of rows) {
+        const item = document.createElement("article");
+        item.className = "item";
+        item.innerHTML = `<h3>${edit.type}</h3><p class="meta">${editSummary(edit)}</p>`;
+        root.appendChild(item);
+      }
+    }
+
+    function editSummary(edit) {
+      if (edit.type === "add-node") return `${edit.node_id}; ${edit.claim_status}`;
+      if (edit.type === "add-link") return `${edit.link_id}; ${edit.tier}; ${edit.claim_status}`;
+      if (edit.type === "tier-change") return `${edit.link_id}; ${edit.tier}; ${edit.claim_status}`;
+      if (edit.type === "move-node") return `${edit.node_id}; schematic position changed; ${edit.claim_status}`;
+      if (edit.type === "dial") return `${edit.key}: ${edit.value}; ${edit.claim_status}`;
+      return JSON.stringify(edit);
     }
 
     function packageRows() {
@@ -883,6 +976,80 @@
       render();
     }
 
+    function addLink() {
+      const from = document.getElementById("new-link-from").value;
+      const to = document.getElementById("new-link-to").value;
+      const tier = document.getElementById("new-link-tier").value;
+      if (!from || !to || from === to) return;
+      const idBase = `${from}-${to}`;
+      let id = idBase;
+      let count = 2;
+      while (state.links.some((link) => link.id === id)) {
+        id = `${idBase}-${count}`;
+        count += 1;
+      }
+      state.links.push({
+        id,
+        from,
+        to,
+        tier,
+        source: "source-needed",
+        note: "client-added corridor"
+      });
+      state.selectedLinkId = id;
+      state.edits.push({ type: "add-link", link_id: id, from, to, tier, claim_status: "source-needed" });
+      render();
+    }
+
+    function svgPoint(event) {
+      const svg = document.getElementById("network-map");
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      return point.matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    function startNodeDrag(event, nodeId) {
+      const n = node(nodeId);
+      if (!n) return;
+      const point = svgPoint(event);
+      dragState = {
+        nodeId,
+        startX: n.x,
+        startY: n.y,
+        offsetX: point.x - n.x,
+        offsetY: point.y - n.y
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    function moveNodeDrag(event) {
+      if (!dragState) return;
+      const n = node(dragState.nodeId);
+      if (!n) return;
+      const point = svgPoint(event);
+      n.x = Math.max(70, Math.min(830, point.x - dragState.offsetX));
+      n.y = Math.max(50, Math.min(525, point.y - dragState.offsetY));
+      renderMap();
+      renderReadout();
+    }
+
+    function endNodeDrag() {
+      if (!dragState) return;
+      const n = node(dragState.nodeId);
+      if (n && (Math.abs(n.x - dragState.startX) > 1 || Math.abs(n.y - dragState.startY) > 1)) {
+        state.edits.push({
+          type: "move-node",
+          node_id: n.id,
+          x: Math.round(n.x),
+          y: Math.round(n.y),
+          claim_status: "schematic-only"
+        });
+      }
+      dragState = null;
+      render();
+    }
+
     function exportJson() {
       const blob = new Blob([JSON.stringify(readout(), null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -908,13 +1075,16 @@
       renderMap();
       renderNodes();
       renderLinks();
+      renderCorridorControls();
       renderDials();
       renderSelectedLink();
+      renderEditLog();
       renderOutputLists();
       renderReadout();
     }
 
     document.getElementById("add-node").addEventListener("click", addNode);
+    document.getElementById("add-link").addEventListener("click", addLink);
     document.getElementById("export-json").addEventListener("click", exportJson);
     document.getElementById("reset-session").addEventListener("click", reset);
     document.getElementById("fixture-select").addEventListener("change", (event) => {
