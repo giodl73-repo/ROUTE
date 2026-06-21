@@ -123,6 +123,7 @@ game, release, or public-readiness claims.
 | International India parser extraction candidates 001 exists. | `docs/reviews/international-india-parser-extraction-candidates-001.md`, `data/international-india-parser-extraction-candidates-001.csv`, `tools/check_india_parser_extraction_candidates.py`, `npm run check:india:extract` | draft; extraction candidates ready; fixture replacement blocked |
 | International India source content row validation 001 exists. | `docs/reviews/international-india-source-content-row-validation-001.md`, `data/international-india-source-content-row-validation-001.csv`, `tools/check_india_source_content_row_validation.py`, `npm run check:india:content-row-validation` | draft; content rows matched; source-row validation blocked |
 | International India content row role review 001 exists. | `docs/reviews/international-india-content-row-role-review-001.md`, `data/international-india-content-row-role-review-001.csv`, `tools/check_india_content_row_role_review.py`, `npm run check:india:content-row-role-review` | draft; pass with holds; source-row validation blocked |
+| International India adaptive proof closeout 001 exists. | `docs/reviews/international-india-adaptive-proof-closeout-001.md`, `data/international-india-adaptive-proof-closeout-001.csv`, `tools/check_india_adaptive_proof_closeout.py`, `npm run check:india:adaptive-closeout` | draft; adaptive proof complete; Canada depth not claimed |
 | International Japan hierarchy iteration 001 exists. | `docs/reviews/international-japan-hierarchy-iteration-001.md`, `data/international-japan-scorecard-001.csv`, `data/international-japan-candidate-hierarchy-v2.csv`, `maps/international/japan-candidate-hierarchy-v2.svg` | draft; Japan hierarchy v2 generated; validation held |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
@@ -271,6 +272,9 @@ fixture replacement blocked.
 The India content-row role review now passes those matched rows only with holds,
 keeping source-row validation, fixture replacement, adapter promotion, geometry,
 SLA, ROI, validation, readiness, and internal-proof claims blocked.
+The India adaptive closeout now completes India as a portability proof: stronger
+than map-only replication because it reaches source-content candidates, weaker
+than Canada because source-row validation and fixture replacement remain blocked.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
