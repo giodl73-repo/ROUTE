@@ -157,6 +157,7 @@ game, release, or public-readiness claims.
 | Iowa state service network offer exists. | `docs/briefs/iowa-state-service-network-offer.md` | draft; client-facing 90-day offer; legal SLA and official-plan claims held |
 | Iowa service network discovery workshop exists. | `docs/briefs/iowa-service-network-discovery-workshop.md` | draft; client-facing intake worksheet; legal SLA and official-plan claims held |
 | Iowa service network pitch exists. | `docs/decks/iowa-service-network-pitch.md` | draft; client-facing opening pitch; legal SLA and official-plan claims held |
+| Iowa service network sample readout exists. | `docs/briefs/iowa-service-network-sample-readout.md` | draft; illustrative client readout; Iowa endorsement and legal SLA claims held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -459,6 +460,11 @@ package: service question, offer, tier roles, candidate promises, 90-day
 package, leader outputs, non-claims, and close into the discovery workshop,
 while keeping legal SLA, official-plan, construction, funding, ROI, clearance,
 validation, and public-readiness claims held.
+The Iowa service network sample readout demonstrates the expected post-workshop
+output: sample priorities, draft tiers, promise backlog, resilience agenda,
+30/60/90 package, dashboard questions, and unresolved tradeoffs, while holding
+Iowa endorsement, adoption, legal SLA, construction, funding, clearance, ROI,
+validation, and public-readiness claims.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
