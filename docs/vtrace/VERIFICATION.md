@@ -149,6 +149,7 @@ game, release, or public-readiness claims.
 | International China fixture blocker 001 exists. | `docs/reviews/international-china-fixture-blocker-001.md`, `data/international-china-fixture-blocker-001.csv`, `tools/check_china_fixture_blocker.py`, `npm run check:china:fixture-blocker` | draft; fixture replacement blocked |
 | International China geometry policy 001 exists. | `docs/reviews/international-china-geometry-policy-001.md`, `data/international-china-geometry-policy-001.csv`, `tools/check_china_geometry_policy.py`, `npm run check:china:geometry-policy` | draft; geometry rejected for current candidates; fixture replacement held |
 | International China adaptive proof closeout 001 exists. | `docs/reviews/international-china-adaptive-proof-closeout-001.md`, `data/international-china-adaptive-proof-closeout-001.csv`, `tools/check_china_adaptive_proof_closeout.py`, `npm run check:china:adaptive-closeout` | draft; dry-run-depth adaptive proof complete; Canada/India/Japan depth not claimed |
+| International China source content sample 001 exists. | `docs/reviews/international-china-source-content-sample-001.md`, `data/international-china-source-content-sample-001.csv`, `tools/check_china_source_content_sample.py`, `npm run check:china:source-content-sample` | draft; source content sampled; source-row validation blocked |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International adaptive proof closeout 001 exists. | `docs/reviews/international-adaptive-proof-closeout-001.md`, `data/international-adaptive-proof-closeout-001.csv`, `tools/check_international_adaptive_proof_closeout.py`, `npm run check:international:adaptive-closeout` | draft; proof ladder complete; validation held |
 | International next source-row gate 001 exists. | `docs/reviews/international-next-source-row-gate-001.md`, `data/international-next-source-row-gate-001.csv`, `tools/check_international_next_source_row_gate.py`, `npm run check:international:next-source-row` | draft; China source-content sample selected next; equal-depth claim blocked |
@@ -409,6 +410,11 @@ proof: stronger than map-only replication, weaker than India/Japan content-depth
 adaptive proof and Canada depth proof, and still blocking source-row validation,
 fixture replacement, parsed adapter, geometry, SLA, ROI, validation, readiness,
 and internal-proof claims.
+The China source-content sample begins the selected breadth-deepening step by
+recording ministry, plan, statistics, standards, and port/waterway context as
+bounded content candidates only, while keeping policy alignment, design
+geometry, source-row validation, fixture replacement, parsed adapter, SLA, ROI,
+validation, readiness, and internal-proof claims blocked.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,

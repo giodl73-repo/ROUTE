@@ -254,6 +254,7 @@ public-readiness, external-readiness, or approval.
 | China fixture blocker | `docs/reviews/international-china-fixture-blocker-001.md` |
 | China geometry policy | `docs/reviews/international-china-geometry-policy-001.md` |
 | China adaptive proof closeout | `docs/reviews/international-china-adaptive-proof-closeout-001.md` |
+| China source content sample | `docs/reviews/international-china-source-content-sample-001.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International adaptive proof closeout | `docs/reviews/international-adaptive-proof-closeout-001.md` |
 | International next source-row gate | `docs/reviews/international-next-source-row-gate-001.md` |
