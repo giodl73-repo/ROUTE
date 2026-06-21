@@ -81,6 +81,7 @@
     "check:japan:parser-preflight": "python tools/build_japan_source_field_inventory.py && python tools/build_japan_parser_preflight.py && python tools/check_japan_source_field_inventory.py && python tools/check_japan_parser_preflight.py",
     "check:japan:parser-dry-run": "python tools/build_japan_parser_preflight.py && python tools/build_japan_parser_dry_run.py && python tools/check_japan_parser_preflight.py && python tools/check_japan_parser_dry_run.py",
     "check:japan:extract": "python tools/build_japan_source_content_sample.py && python tools/build_japan_parser_preflight.py && python tools/build_japan_parser_extraction_candidates.py && python tools/check_japan_source_content_sample.py && python tools/check_japan_parser_preflight.py && python tools/check_japan_parser_extraction_candidates.py",
+    "check:japan:content-row-validation": "python tools/build_japan_source_content_sample.py && python tools/build_japan_parser_preflight.py && python tools/build_japan_parser_extraction_candidates.py && python tools/build_japan_source_content_row_validation.py && python tools/check_japan_parser_extraction_candidates.py && python tools/check_japan_source_content_row_validation.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
