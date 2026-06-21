@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">India Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D service-market view: northwest industrial spine, western ports, central sorting hubs, east coast loop, south market access, and</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">northeast branch.</text>
+<path d="M570 120 L760 205 L892 350 L860 550 L945 760 L815 1035 L650 1155 L540 1015 L470 810 L335 725 L280 555 L365 370 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="390" cy="220" rx="180.0" ry="135.0" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="228.0" y="175.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Northwest industrial</text>
+<ellipse cx="360" cy="500" rx="155.0" ry="150.0" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="223.0" y="380.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Western port spine</text>
+<ellipse cx="570" cy="560" rx="150.0" ry="145.0" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="438.0" y="445.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Central sorting</text>
+<ellipse cx="760" cy="570" rx="180.0" ry="210.0" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="598.0" y="390.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">East coast loop</text>
+<ellipse cx="530" cy="850" rx="180.0" ry="135.0" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="368.0" y="745.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">South market</text>
+<path d="M371.0 628.2 Q337.7 642.4 367.9 622.4" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 JNPT/Mumbai Port to Mumbai: western port terminal access</title></path>
+<path d="M698.5 881.5 Q714.6 890.4 696.2 889.0" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Ennore/Chennai Port to Chennai: south port terminal access</title></path>
+<path d="M601.2 1081.0 Q648.7 985.0 696.2 889.0" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Tuticorin to Chennai: southern port access</title></path>
+<path d="M1205.9 308.8 Q1117.7 375.7 1055.7 467.4" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Guwahati to Kolkata: northeast resilience and market access</title></path>
+<path d="M560.3 199.0 Q628.0 270.7 726.5 277.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Delhi to Lucknow: north India regional access</title></path>
+<path d="M726.5 277.2 Q829.9 270.7 912.6 333.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Lucknow to Patna: eastern market access</title></path>
+<path d="M912.6 333.2 Q996.5 387.2 1055.7 467.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Patna to Kolkata: eastern port/market access</title></path>
+<path d="M1055.7 467.4 Q999.3 517.8 942.8 568.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Kolkata to Bhubaneswar: east coast continuity</title></path>
+<path d="M942.8 568.2 Q873.9 613.7 830.9 684.2" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Bhubaneswar to Visakhapatnam: east coast port and industrial access</title></path>
+<path d="M830.9 684.2 Q733.5 766.9 696.2 889.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Visakhapatnam to Chennai: east-to-south market continuity</title></path>
+<path d="M643.8 530.5 Q666.0 619.7 617.2 697.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Nagpur to Hyderabad: central distribution access</title></path>
+<path d="M643.8 530.5 Q592.4 494.8 569.2 436.7" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Nagpur to Bhopal: central India alternate access</title></path>
+<path d="M569.2 436.7 Q564.7 317.9 560.3 199.0" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Bhopal to Delhi: central-to-capital alternate access</title></path>
+<path d="M560.3 199.0 Q514.9 225.2 497.2 274.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Delhi to Jaipur: capital-to-industrial reliability</title></path>
+<path d="M497.2 274.5 Q397.9 338.0 354.1 447.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Jaipur to Ahmedabad: industrial corridor continuity</title></path>
+<path d="M354.1 447.4 Q396.9 532.1 367.9 622.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Ahmedabad to Mumbai: western industrial-to-port reliability</title></path>
+<path d="M367.9 622.4 Q398.6 619.3 411.4 647.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Mumbai to Pune: metro-industrial reliability</title></path>
+<path d="M411.4 647.3 Q514.3 672.4 617.2 697.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Pune to Hyderabad: west-to-south market continuity</title></path>
+<path d="M617.2 697.5 Q579.5 792.1 577.2 893.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Hyderabad to Bengaluru: south market reliability</title></path>
+<path d="M577.2 893.9 Q638.2 927.5 696.2 889.0" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Bengaluru to Chennai: south inland-to-port reliability</title></path>
+<circle cx="560.3" cy="199.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="580.3" y="183.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Delhi</text>
+<text x="580.3" y="201.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DEL</text>
+<circle cx="497.2" cy="274.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="517.2" y="292.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Jaipur</text>
+<text x="517.2" y="310.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">JAI</text>
+<circle cx="354.1" cy="447.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="370.1" y="439.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Ahmedabad</text>
+<text x="370.1" y="457.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">AMD</text>
+<circle cx="367.9" cy="622.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="383.9" y="598.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Mumbai</text>
+<text x="383.9" y="616.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MUM</text>
+<circle cx="411.4" cy="647.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="431.4" y="677.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Pune</text>
+<text x="431.4" y="695.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PUN</text>
+<circle cx="617.2" cy="697.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="639.2" y="717.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Hyderabad</text>
+<text x="639.2" y="735.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">HYD</text>
+<circle cx="577.2" cy="893.9" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="593.2" y="885.9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Bengaluru</text>
+<text x="593.2" y="903.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BLR</text>
+<circle cx="696.2" cy="889.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="718.2" y="915.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Chennai</text>
+<text x="718.2" y="933.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CHN</text>
+<circle cx="726.5" cy="277.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="742.5" y="269.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Lucknow</text>
+<text x="742.5" y="287.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LKO</text>
+<circle cx="912.6" cy="333.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="928.6" y="325.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Patna</text>
+<text x="928.6" y="343.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">PTN</text>
+<circle cx="1055.7" cy="467.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1071.7" y="459.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Kolkata</text>
+<text x="1071.7" y="477.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">KOL</text>
+<circle cx="942.8" cy="568.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="958.8" y="560.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Bhubaneswar</text>
+<text x="958.8" y="578.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BBS</text>
+<circle cx="830.9" cy="684.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="846.9" y="676.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Visakhapatnam</text>
+<text x="846.9" y="694.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">VIZ</text>
+<circle cx="643.8" cy="530.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="659.8" y="522.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Nagpur</text>
+<text x="659.8" y="540.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">NGP</text>
+<circle cx="569.2" cy="436.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="585.2" y="428.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Bhopal</text>
+<text x="585.2" y="446.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BPL</text>
+<circle cx="371.0" cy="628.2" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="251.0" y="634.2" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">JNPT/Mumbai Port</text>
+<text x="251.0" y="652.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">MUN</text>
+<circle cx="698.5" cy="881.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="720.5" y="857.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Ennore/Chennai Port</text>
+<text x="720.5" y="875.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">ENN</text>
+<circle cx="601.2" cy="1081.0" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="617.2" y="1073.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Tuticorin</text>
+<text x="617.2" y="1091.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">TUT</text>
+<circle cx="1205.9" cy="308.8" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1221.9" y="300.8" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Guwahati</text>
+<text x="1221.9" y="318.8" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">GUW</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">east coast connector: 3 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northwest industrial spine: 2 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">central resilience connector: 2 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port feeder: 2 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">western port spine: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">western metro-industrial spine: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">west-south inland spine: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">south technology-market spine: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 7 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 9 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 4 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">19 nodes, 20 candidate links, 4 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1026.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">Shows India as a portfolio of market promises, not a single</text>
+<text x="1592.0" y="1047.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">diagonal corridor.</text>
+<text x="1592.0" y="1072.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1096.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">Rank industrial spine, port access, east-coast loop, central</text>
+<text x="1592.0" y="1117.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">sorting, northeast access, and monsoon resilience.</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1166.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">Official route roles, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1187.0" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="start">eligibility, external validation, and public readiness.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>
