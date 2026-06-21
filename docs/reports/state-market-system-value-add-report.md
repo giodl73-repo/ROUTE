@@ -56,6 +56,7 @@ conversion from familiar geography into a structured service portfolio:
 | Market-layer inventory | Lets a client see whether the draft overweights metro growth, freight, ports, rural access, resilience, or terminal feeders. |
 | Editability | Gives a state a practical workshop question: "What are your top places to connect, and what promise should each tier carry?" |
 | Failure metrics | Converts known pain into measurable questions: interchange exposure, alternate-route penalty, interstate overreliance, state-system redundancy, terminal friction, rural isolation, and recovery evidence gaps. |
+| Full-system tierization | Forces every state-system segment to receive a service role or a non-promotion reason, so the package does not cherry-pick only attractive corridors. |
 
 ## What Should Be Clear In A Client Meeting
 
@@ -84,6 +85,10 @@ it only says "these corridors matter." The stronger offer is:
 The metric definitions are in
 `docs/reports/state-system-failure-metrics-framework.md` and
 `data/state-system-failure-metric-menu.csv`.
+
+The full-inventory tierization pattern is defined in
+`docs/reports/full-state-system-tierization-framework.md`. That layer is what
+turns ROUTE from a selected-corridor story into a state-system audit.
 
 ## Slate 005 Examples
 
