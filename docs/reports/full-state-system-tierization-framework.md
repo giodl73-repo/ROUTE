@@ -11,6 +11,8 @@ sources:
   - data/full-state-system-tier-role-taxonomy.csv
   - data/full-state-system-tierization-template.csv
   - data/full-state-system-tierization-iowa-sample.csv
+  - data/full-state-system-tierization-slate-001.csv
+  - data/full-state-system-tierization-slate-001-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -102,6 +104,20 @@ not a complete Iowa inventory. It shows the intended pattern:
 - DSM airport access as `T4`;
 - one low-volume state segment as `M` to prove that full tierization includes
   non-promotion.
+
+## Slate 001
+
+`data/full-state-system-tierization-slate-001.csv` applies the same pattern to
+Texas, California, Florida, and Iowa. It is still a sample, not a full
+source-backed inventory, but it changes the state artifacts from corridor
+selection to role assignment:
+
+- each state has `T1`, `T2`, `T3`, `T4`, and `R` rows;
+- each state includes at least one row that keeps a segment in `M` or `X` rather
+  than promoting it;
+- the scorecard in
+  `data/full-state-system-tierization-slate-001-scorecard.csv` attaches failure
+  metrics to the tierization rows.
 
 ## Evidence Boundary
 
