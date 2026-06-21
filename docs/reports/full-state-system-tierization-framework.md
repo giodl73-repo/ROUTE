@@ -23,6 +23,8 @@ sources:
   - data/full-state-system-tierization-slate-005-scorecard.csv
   - data/full-state-system-tierization-slate-006.csv
   - data/full-state-system-tierization-slate-006-scorecard.csv
+  - data/full-state-system-tierization-slate-007.csv
+  - data/full-state-system-tierization-slate-007-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -167,6 +169,13 @@ outside-scope rows.
 Oregon, Alabama, Kentucky, and Massachusetts. It emphasizes coastal isolation,
 Columbia Gorge and Gulf access, state parkway redundancy, air-cargo terminal
 access, dense New England constraints, and explicit outside-scope rows.
+
+## Slate 007
+
+`data/full-state-system-tierization-slate-007.csv` extends the redo pattern to
+Indiana, South Carolina, Maryland, and Nevada. It emphasizes crossroads
+redundancy, coastal evacuation, compact bridge/tunnel and port systems, desert
+connectivity, sparse-service access, and explicit maintenance or exclusion rows.
 
 ## Evidence Boundary
 
