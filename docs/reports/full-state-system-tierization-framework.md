@@ -25,6 +25,8 @@ sources:
   - data/full-state-system-tierization-slate-006-scorecard.csv
   - data/full-state-system-tierization-slate-007.csv
   - data/full-state-system-tierization-slate-007-scorecard.csv
+  - data/full-state-system-tierization-slate-008.csv
+  - data/full-state-system-tierization-slate-008-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -176,6 +178,13 @@ access, dense New England constraints, and explicit outside-scope rows.
 Indiana, South Carolina, Maryland, and Nevada. It emphasizes crossroads
 redundancy, coastal evacuation, compact bridge/tunnel and port systems, desert
 connectivity, sparse-service access, and explicit maintenance or exclusion rows.
+
+## Slate 008
+
+`data/full-state-system-tierization-slate-008.csv` extends the redo pattern to
+Oklahoma, Arkansas, Mississippi, and New Jersey. It emphasizes plains
+crossroads, Delta and Ozark access, Gulf and river freight, dense turnpike/port
+systems, shore evacuation, and explicit maintenance or exclusion rows.
 
 ## Evidence Boundary
 
