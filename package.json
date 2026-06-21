@@ -77,6 +77,7 @@
     "check:japan:payload-access": "python tools/build_japan_adapter_source_pack.py && python tools/build_japan_source_payload_access.py && python tools/check_japan_adapter_source_pack.py && python tools/check_japan_source_payload_access.py",
     "check:japan:payload-probe": "python tools/build_japan_adapter_source_pack.py && python tools/build_japan_source_payload_access.py && python tools/probe_japan_source_payloads.py && python tools/check_japan_source_payload_access.py && python tools/check_japan_source_payload_probe.py",
     "check:japan:field-inventory": "python tools/build_japan_adapter_source_pack.py && python tools/build_japan_source_payload_access.py && python tools/probe_japan_source_payloads.py && python tools/build_japan_source_field_inventory.py && python tools/check_japan_source_payload_probe.py && python tools/check_japan_source_field_inventory.py",
+    "check:japan:source-content-sample": "python tools/build_japan_source_content_sample.py && python tools/check_japan_source_content_sample.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

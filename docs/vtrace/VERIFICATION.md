@@ -130,6 +130,7 @@ game, release, or public-readiness claims.
 | International Japan source payload access 001 exists. | `docs/reviews/international-japan-source-payload-access-001.md`, `data/international-japan-source-payload-access-001.csv`, `tools/check_japan_source_payload_access.py`, `npm run check:japan:payload-access` | draft; payload access manifest ready; evidence not accepted |
 | International Japan source payload probe 001 exists. | `docs/reviews/international-japan-source-payload-probe-001.md`, `data/international-japan-source-payload-probe-001.csv`, `tools/check_japan_source_payload_probe.py`, `npm run check:japan:payload-probe` | draft; HTTP metadata recorded; evidence not accepted |
 | International Japan source field inventory 001 exists. | `docs/reviews/international-japan-source-field-inventory-001.md`, `data/international-japan-source-field-inventory-001.csv`, `tools/check_japan_source_field_inventory.py`, `npm run check:japan:field-inventory` | draft; candidate fields ready; evidence not accepted |
+| International Japan source content sample 001 exists. | `docs/reviews/international-japan-source-content-sample-001.md`, `data/international-japan-source-content-sample-001.csv`, `tools/check_japan_source_content_sample.py`, `npm run check:japan:source-content-sample` | draft; bounded content candidates ready; GSI source-needed |
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
@@ -294,6 +295,11 @@ sources while keeping payload evidence not accepted and parsing held.
 The Japan field-inventory gate now records candidate field groups while keeping
 the GSI transportation source-needed and all parser, fixture, geometry, SLA,
 ROI, validation, and readiness claims held.
+
+The Japan source-content sample records bounded MLIT/e-Stat content candidates
+while keeping GSI road-feature metadata source-needed and all source-row,
+fixture, parsed-adapter, geometry, SLA, ROI, validation, readiness, and
+internal-proof claims held.
 The Japan hierarchy iteration applies the loop to a fourth region and repairs
 Pacific Belt trunk tiering while preserving official-corridor, ministry
 approval, SLA, disaster-readiness, construction, ROI, eligibility, compliance,
