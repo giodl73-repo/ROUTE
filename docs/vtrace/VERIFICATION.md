@@ -142,6 +142,7 @@ game, release, or public-readiness claims.
 | International China hierarchy iteration 001 exists. | `docs/reviews/international-china-hierarchy-iteration-001.md`, `data/international-china-scorecard-001.csv`, `data/international-china-candidate-hierarchy-v2.csv`, `maps/international/china-candidate-hierarchy-v2.svg` | draft; China hierarchy v2 generated; validation held |
 | International China adapter source pack 001 exists. | `docs/reviews/international-china-adapter-source-pack-001.md`, `data/international-china-adapter-source-pack-001.csv`, `tools/check_china_adapter_source_pack.py`, `npm run check:china:source-pack` | draft; source-pack preflight ready; promotion held |
 | International China kernel application 001 exists. | `docs/reviews/international-china-kernel-application-001.md`, `data/international-china-kernel-application-001.csv`, `tools/check_china_kernel_application.py`, `npm run check:china:kernel-application` | draft; source custody started; promotion held |
+| International China source payload access 001 exists. | `docs/reviews/international-china-source-payload-access-001.md`, `data/international-china-source-payload-access-001.csv`, `tools/check_china_source_payload_access.py`, `npm run check:china:payload-access` | draft; payload access manifest ready; evidence not accepted |
 | International hierarchy replication closeout 001 exists. | `docs/reviews/international-hierarchy-replication-closeout-001.md`, `data/international-hierarchy-replication-summary-001.csv` | draft; five-region hierarchy replication ladder complete; validation held |
 | International source-bound next step 001 exists. | `data/international-cross-region-scoring-rubric-001.csv`, `docs/templates/source-packs/international-adapter-source-pack-template.md` | draft; scoring rubric and adapter source-pack template ready; promotion held |
 | International Canada adapter source pack 001 exists. | `docs/reviews/international-canada-adapter-source-pack-001.md`, `data/international-canada-adapter-source-pack-001.csv` | draft; Canada source pack declared; parser promotion held |
@@ -368,6 +369,10 @@ The China kernel-application gate records source custody as started while
 keeping parser contract, fixture replacement, target posture, review packet,
 official, policy alignment, geometry, SLA, ROI, validation, readiness, and
 internal-proof claims held.
+The China payload-access manifest separates official URL cache candidates from
+the local hierarchy fixture and held service-target row while keeping evidence
+not accepted and parser, fixture, official, policy alignment, geometry, SLA,
+ROI, validation, readiness, and internal-proof claims held.
 The international hierarchy replication closeout summarizes the five-region
 ladder and records the recurring trunk-versus-access repair pattern while
 preserving official-network, country/regional approval, policy alignment, SLA,
