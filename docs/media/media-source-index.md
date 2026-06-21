@@ -263,6 +263,7 @@ public-readiness, external-readiness, or approval.
 | Iowa service network discovery workshop | `docs/briefs/iowa-service-network-discovery-workshop.md` |
 | Iowa service network pitch | `docs/decks/iowa-service-network-pitch.md` |
 | Iowa service network sample readout | `docs/briefs/iowa-service-network-sample-readout.md` |
+| Texas state service network goals | `docs/briefs/texas-state-service-network-goals.md` |
 | International hierarchy replication closeout | `docs/reviews/international-hierarchy-replication-closeout-001.md` |
 | International adaptive proof closeout | `docs/reviews/international-adaptive-proof-closeout-001.md` |
 | International next source-row gate | `docs/reviews/international-next-source-row-gate-001.md` |
