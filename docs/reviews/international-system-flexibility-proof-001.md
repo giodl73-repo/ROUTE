@@ -32,6 +32,10 @@ match Canada, ROUTE does not force parity. It branches into source-content
 sampling, no-geometry extraction candidates, source-content row validation, a
 current-corridor rebase gate, and a parity-gap ledger.
 
+India demonstrates a second adaptive path: source content can advance into
+extraction candidates, content-row traceability, role review, and closeout while
+source-row validation and fixture replacement remain blocked.
+
 The map pilots demonstrate breadth: the same adapter-to-map workflow can render
 held-claim fixtures across multiple country and regional shapes, but maps remain
 illustrations, not proof.

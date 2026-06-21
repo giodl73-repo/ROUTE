@@ -70,6 +70,17 @@ def main() -> None:
         },
         {
             "proof_id": "FLEX-004",
+            "region_or_surface": "India",
+            "kernel_step": "source_custody_to_content_row_traceability",
+            "observed_variation": "official highway and port source content supports bounded content candidates but does not yet provide accepted road-link, terminal, or statistics table rows",
+            "system_response": "India advances through source pack, parser contract, fixture blocker, source-content sample, extraction candidates, content-row validation, role review, and adaptive closeout",
+            "flexibility_decision": "adaptive_branch_complete_source_row_validation_held",
+            "evidence_artifacts": "docs/reviews/international-india-adaptive-proof-closeout-001.md;data/international-india-adaptive-proof-closeout-001.csv",
+            "blocked_claims": BLOCKED,
+            "next_action": "select accepted road-link port-node or statistics table rows before source-row validation or fixture replacement",
+        },
+        {
+            "proof_id": "FLEX-005",
             "region_or_surface": "multi-region maps",
             "kernel_step": "adapter_to_map_fixture",
             "observed_variation": "Canada, EU, India, Japan, and China produce comparable held-claim schematic fixtures from different geography and governance patterns",
