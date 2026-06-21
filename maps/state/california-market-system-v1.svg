@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2200 1320" width="2200" height="1320">
+<rect width="2200" height="1320" fill="#f8fafc"/>
+<rect x="28" y="28" width="2144" height="1264" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="70.0" y="86.0" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#111827" text-anchor="start">California Candidate Market-System Map</text>
+<text x="70.0" y="124.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">2D state service-market view: Bay Area, capital access, Central Valley logistics, Southern California, ports, north coast, and coastal</text>
+<text x="70.0" y="149.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">connectors.</text>
+<path d="M311.4 217.4 L715.7 199.0 L1248.6 851.3 L982.1 1081.0 L724.9 897.2 L476.8 594.1 L329.8 346.0 Z" fill="#eef6f0" stroke="#94a3b8" stroke-width="2" opacity="0.92"/>
+<ellipse cx="522.7500000000009" cy="603.2499999999998" rx="82.68750000000051" ry="64.31250000000023" fill="#0f766e" opacity="0.08" stroke="#0f766e" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="458.1" y="568.9" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e" text-anchor="start">Bay Area</text>
+<ellipse cx="559.5000000000002" cy="465.43749999999983" rx="119.43749999999972" ry="147.00000000000014" fill="#2563eb" opacity="0.08" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="458.1" y="348.4" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#2563eb" text-anchor="start">Capital / north access</text>
+<ellipse cx="715.6875000000005" cy="695.1249999999998" rx="110.25000000000023" ry="211.31249999999972" fill="#16a34a" opacity="0.08" stroke="#16a34a" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="623.4" y="513.8" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#16a34a" text-anchor="start">Central Valley</text>
+<ellipse cx="917.8125000000007" cy="952.3750000000001" rx="137.8125" ry="110.25000000000028" fill="#c2410c" opacity="0.08" stroke="#c2410c" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="798.0" y="872.1" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#c2410c" text-anchor="start">Southern California</text>
+<ellipse cx="421.68750000000017" cy="346.0000000000001" rx="101.06249999999946" ry="82.68749999999989" fill="#7c3aed" opacity="0.08" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 8"/>
+<text x="338.6" y="293.3" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="start">North coast resilience</text>
+<path d="M496.1 328.5 Q410.6 354.6 333.5 309.3" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Redding to Eureka: north coast resilience access</title></path>
+<path d="M507.1 584.9 Q503.8 603.9 493.4 587.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Oakland to San Francisco: Bay Area port access</title></path>
+<path d="M882.0 955.1 Q879.7 942.3 877.4 929.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Long Beach to Los Angeles: LA/Long Beach port access</title></path>
+<path d="M578.8 513.2 Q553.9 413.5 496.1 328.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Sacramento to Redding: northern California access</title></path>
+<path d="M735.0 682.3 Q664.1 730.9 655.1 816.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Fresno to San Luis Obispo: Central Valley to Central Coast access</title></path>
+<path d="M655.1 816.4 Q782.5 840.8 877.4 929.4" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 San Luis Obispo to Los Angeles: Central Coast to Los Angeles reliability</title></path>
+<path d="M493.4 587.6 Q524.2 536.8 578.8 513.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 San Francisco to Sacramento: Bay Area to capital reliability</title></path>
+<path d="M578.8 513.2 Q588.0 541.7 597.2 570.2" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Sacramento to Stockton: capital to Central Valley reliability</title></path>
+<path d="M597.2 570.2 Q654.7 640.2 735.0 682.3" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Stockton to Fresno: north valley to Fresno reliability</title></path>
+<path d="M735.0 682.3 Q739.0 762.8 805.7 808.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Fresno to Bakersfield: south valley reliability</title></path>
+<path d="M805.7 808.1 Q872.5 850.5 877.4 929.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Bakersfield to Los Angeles: valley to Los Angeles reliability</title></path>
+<path d="M877.4 929.4 Q941.0 979.2 976.6 1051.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Los Angeles to San Diego: Los Angeles to San Diego reliability</title></path>
+<path d="M877.4 929.4 Q916.4 928.9 955.5 928.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Los Angeles to Inland Empire: LA to Inland Empire reliability</title></path>
+<path d="M493.4 587.6 Q506.4 621.4 542.0 627.1" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 San Francisco to San Jose: Bay Area urban-market reliability</title></path>
+<circle cx="493.4" cy="587.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="381.4" y="565.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">San Francisco</text>
+<text x="381.4" y="583.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SF</text>
+<circle cx="578.8" cy="513.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="596.8" y="495.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Sacramento</text>
+<text x="596.8" y="513.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SAC</text>
+<circle cx="597.2" cy="570.2" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="615.2" y="588.2" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Stockton</text>
+<text x="615.2" y="606.2" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">STK</text>
+<circle cx="735.0" cy="682.3" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="751.0" y="674.3" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Fresno</text>
+<text x="751.0" y="692.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">FRE</text>
+<circle cx="805.7" cy="808.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="821.7" y="800.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Bakersfield</text>
+<text x="821.7" y="818.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BAK</text>
+<circle cx="877.4" cy="929.4" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="895.4" y="901.4" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Los Angeles</text>
+<text x="895.4" y="919.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LA</text>
+<circle cx="976.6" cy="1051.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="994.6" y="1075.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">San Diego</text>
+<text x="994.6" y="1093.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SD</text>
+<circle cx="955.5" cy="928.5" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="983.5" y="956.5" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Inland Empire</text>
+<text x="983.5" y="974.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">IE</text>
+<circle cx="542.0" cy="627.1" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="560.0" y="673.1" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">San Jose</text>
+<text x="560.0" y="691.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SJ</text>
+<circle cx="507.1" cy="584.9" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="525.1" y="612.9" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Oakland</text>
+<text x="525.1" y="630.9" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">OAK</text>
+<circle cx="882.0" cy="955.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="774.0" y="965.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Long Beach</text>
+<text x="774.0" y="983.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">LGB</text>
+<circle cx="496.1" cy="328.5" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="514.1" y="310.5" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Redding</text>
+<text x="514.1" y="328.5" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">RDD</text>
+<circle cx="333.5" cy="309.3" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="351.5" y="291.3" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Eureka</text>
+<text x="351.5" y="309.3" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">EKA</text>
+<circle cx="655.1" cy="816.4" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="671.1" y="808.4" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">San Luis Obispo</text>
+<text x="671.1" y="826.4" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SLO</text>
+<rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
+<text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
+<text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Central Valley spine: 3 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">port feeder: 2 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">coastal connector: 2 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Northern California megaregion: 1 candidate promises</text>
+<text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">statewide north-south spine: 1 candidate promises</text>
+<text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Southern California spine: 1 candidate promises</text>
+<text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Southern California logistics: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Bay Area market: 1 candidate promises</text>
+<text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
+<line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 8 links - T1 candidate trunk promise</text>
+<line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 5 links - T2 candidate market connector</text>
+<line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 1 links - T3 candidate access / terminal feeder</text>
+<text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">14 nodes, 14 candidate links, 3 source-needed access</text>
+<text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
+<text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
+<text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows California as megaregion, port, valley, coastal, and resilience</text>
+<text x="1592.0" y="1022.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">promises.</text>
+<text x="1592.0" y="1040.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Client workshop</text>
+<text x="1592.0" y="1062.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Rank Bay Area, Central Valley logistics, Southern California, ports,</text>
+<text x="1592.0" y="1082.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">north access, coastal connectors, wildfire and seismic resilience.</text>
+<text x="1592.0" y="1100.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Still held</text>
+<text x="1592.0" y="1122.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Official Caltrans priority, legal SLAs, construction, cost, ROI,</text>
+<text x="1592.0" y="1142.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">eligibility, endorsement, and validation.</text>
+<text x="70.0" y="1248.0" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#92400e" text-anchor="start">Held claims: official network, legal SLA, construction readiness, costs, numeric ROI, funding eligibility, compliance, endorsement, external validation, and public readiness.</text>
+<text x="70.0" y="1278.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#64748b" text-anchor="start">Use as a client discovery surface: replace heuristic rows with country-specific source rows before making stronger claims.</text>
+</svg>

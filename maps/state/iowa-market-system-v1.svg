@@ -18,16 +18,22 @@
 <path d="M739.8 625.4 Q744.5 510.5 816.5 420.9" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Ames to Mason City: northern rural access promise</title></path>
 <path d="M816.5 420.9 Q906.0 466.9 973.5 541.4" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Mason City to Waterloo: northern coverage connector</title></path>
 <path d="M739.8 705.7 Q850.3 757.8 960.7 809.8" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Des Moines to Ottumwa: southeast rural access promise</title></path>
-<path d="M1095.8 634.5 Q1092.1 670.9 1121.4 692.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Cedar Rapids to Iowa City: eastern metro-production reliability</title></path>
-<path d="M973.5 541.4 Q1012.9 616.6 1095.8 634.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Waterloo to Cedar Rapids: northeast production connector</title></path>
-<path d="M739.8 705.7 Q999.5 588.2 1280.2 539.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Dubuque: northeast river gateway access</title></path>
-<path d="M1280.2 539.6 Q1305.5 627.6 1294.9 718.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Dubuque to Quad Cities: eastern river corridor resilience</title></path>
+<path d="M462.3 422.7 Q639.5 439.8 816.5 420.9" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Spencer to Mason City: northwest-to-north rural coverage</title></path>
+<path d="M232.3 539.6 Q363.6 513.3 462.3 422.7" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round" opacity="0.78" stroke-dasharray="10 9"><title>T3 Sioux City to Spencer: northwest rural coverage</title></path>
+<path d="M1095.8 634.5 Q1141.6 649.3 1121.4 692.9" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Cedar Rapids to Iowa City: eastern metro-production reliability</title></path>
+<path d="M973.5 541.4 Q1045.6 573.6 1095.8 634.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Waterloo to Cedar Rapids: northeast production connector</title></path>
+<path d="M739.8 705.7 Q1010.0 622.7 1280.2 539.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Dubuque: northeast river gateway access</title></path>
+<path d="M1280.2 539.6 Q1269.6 630.5 1294.9 718.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Dubuque to Quad Cities: eastern river corridor resilience</title></path>
+<path d="M637.6 539.6 Q434.9 503.6 232.3 539.6" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Fort Dodge to Sioux City: northwest city-pair access</title></path>
+<path d="M739.8 705.7 Q979.6 742.6 1198.1 848.1" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Des Moines to Burlington: southeast river gateway access</title></path>
+<path d="M1198.1 848.1 Q1232.0 772.6 1294.9 718.5" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.78"><title>T2 Burlington to Quad Cities: southeast-to-east river continuity</title></path>
 <path d="M330.9 766.0 Q535.4 735.8 739.8 705.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Council Bluffs to Des Moines: western gateway to central hub reliability</title></path>
 <path d="M739.8 705.7 Q931.2 717.3 1121.4 692.9" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Des Moines to Iowa City: central-to-eastern reliability</title></path>
 <path d="M1121.4 692.9 Q1202.9 741.3 1294.9 718.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Iowa City to Quad Cities: eastern river gateway reliability</title></path>
 <path d="M739.8 705.7 Q703.8 665.6 739.8 625.4" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Des Moines to Ames: central university and labor-market access</title></path>
 <path d="M739.8 705.7 Q914.3 652.5 1095.8 634.5" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Des Moines to Cedar Rapids: eastern production connector</title></path>
 <path d="M232.3 539.6 Q486.1 622.7 739.8 705.7" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Sioux City to Des Moines: northwest-to-central resilience</title></path>
+<path d="M739.8 705.7 Q704.0 613.2 637.6 539.6" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" opacity="0.78"><title>T1 Des Moines to Fort Dodge: north-central city access</title></path>
 <circle cx="330.9" cy="766.0" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
 <text x="210.9" y="774.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Council Bluffs</text>
 <text x="210.9" y="792.0" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">CB</text>
@@ -61,25 +67,35 @@
 <circle cx="1280.2" cy="539.6" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
 <text x="1296.2" y="531.6" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Dubuque</text>
 <text x="1296.2" y="549.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">DBQ</text>
+<circle cx="637.6" cy="539.6" r="15" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+<text x="653.6" y="531.6" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Fort Dodge</text>
+<text x="653.6" y="549.6" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">FDG</text>
+<circle cx="1198.1" cy="848.1" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="1214.1" y="840.1" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Burlington</text>
+<text x="1214.1" y="858.1" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">BNG</text>
+<circle cx="462.3" cy="422.7" r="10" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+<text x="478.3" y="414.7" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#111827" text-anchor="start">Spencer</text>
+<text x="478.3" y="432.7" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">SPN</text>
 <rect x="1540" y="150" width="580" height="980" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="1574.0" y="205.0" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#111827" text-anchor="start">What this module demonstrates</text>
 <text x="1574.0" y="250.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Market layers</text>
 <text x="1592.0" y="284.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">I-80 service spine: 3 candidate promises</text>
-<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">eastern production: 3 candidate promises</text>
-<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northern rural access: 2 candidate promises</text>
-<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">river gateways: 2 candidate promises</text>
+<text x="1592.0" y="326.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">northern rural access: 3 candidate promises</text>
+<text x="1592.0" y="368.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">eastern production: 3 candidate promises</text>
+<text x="1592.0" y="410.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">river gateways: 3 candidate promises</text>
 <text x="1592.0" y="452.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Central Iowa hub: 1 candidate promises</text>
 <text x="1592.0" y="494.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">north-south resilience: 1 candidate promises</text>
 <text x="1592.0" y="536.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">southeast rural access: 1 candidate promises</text>
+<text x="1592.0" y="578.0" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">north-central access: 1 candidate promises</text>
 <text x="1574.0" y="650.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Tier mix</text>
 <line x1="1592" y1="690" x2="1670" y2="690" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
-<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 6 links - T1 candidate trunk promise</text>
+<text x="1692.0" y="695.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T1: 7 links - T1 candidate trunk promise</text>
 <line x1="1592" y1="744" x2="1670" y2="744" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>
-<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 4 links - T2 candidate market connector</text>
+<text x="1692.0" y="749.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T2: 7 links - T2 candidate market connector</text>
 <line x1="1592" y1="798" x2="1670" y2="798" stroke="#d97706" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>
-<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 3 links - T3 candidate access / terminal feeder</text>
+<text x="1692.0" y="803.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">T3: 5 links - T3 candidate access / terminal feeder</text>
 <text x="1574.0" y="880.0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#334155" text-anchor="start">Proof posture</text>
-<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">11 nodes, 13 candidate links, 3 source-needed access</text>
+<text x="1592.0" y="914.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">14 nodes, 19 candidate links, 5 source-needed access</text>
 <text x="1592.0" y="937.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#475569" text-anchor="start">links. Review surface only.</text>
 <text x="1592.0" y="980.0" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827" text-anchor="start">Why this sells</text>
 <text x="1592.0" y="1002.0" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="start">Shows a state DOT how ROUTE turns a highway map into service promises</text>

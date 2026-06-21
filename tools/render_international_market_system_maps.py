@@ -147,6 +147,67 @@ CONFIG = {
             "CR": (18, -18),
         },
     },
+    "florida": {
+        "title": "Florida Candidate Market-System Map",
+        "subtitle": "2D state service-market view: north-south peninsula spine, I-4/Central Florida, Gulf Coast, South Florida urban belt, Panhandle, ports, and Keys resilience.",
+        "output": "state/florida-market-system-v1.svg",
+        "outline_lonlat": [(-87.6, 30.8), (-81.2, 30.8), (-80.0, 29.2), (-80.1, 26.5), (-80.2, 25.2), (-81.8, 24.5), (-82.9, 26.3), (-83.1, 28.2), (-84.4, 29.8)],
+        "zones_lonlat": [
+            ("Peninsula spine", -81.0, 27.4, 0.9, 2.6, "#16a34a"),
+            ("I-4 / Central Florida", -82.0, 28.1, 1.2, 0.8, "#2563eb"),
+            ("Gulf Coast", -82.4, 27.1, 1.0, 1.4, "#0f766e"),
+            ("South Florida urban belt", -80.2, 26.0, 0.7, 1.0, "#c2410c"),
+            ("Panhandle", -85.2, 30.2, 2.4, 0.6, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows Florida as peninsula, Gulf, South Florida, Panhandle, port, tourism, and resilience promises."),
+            ("Client workshop", "Rank I-4, peninsula reliability, South Florida access, Gulf Coast growth, Panhandle continuity, port access, evacuation, and Keys resilience."),
+            ("Still held", "Official FDOT priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "JAX": (18, -18),
+            "ORL": (18, -18),
+            "TPA": (-88, 8),
+            "SRQ": (-92, 10),
+            "FMY": (18, 20),
+            "MIA": (18, 38),
+            "PB": (18, -28),
+            "PMI": (-108, -12),
+            "PCV": (18, 20),
+            "EYW": (18, 20),
+        },
+    },
+    "california": {
+        "title": "California Candidate Market-System Map",
+        "subtitle": "2D state service-market view: Bay Area, capital access, Central Valley logistics, Southern California, ports, north coast, and coastal connectors.",
+        "output": "state/california-market-system-v1.svg",
+        "outline_lonlat": [(-124.4, 41.8), (-120.0, 42.0), (-114.2, 34.9), (-117.1, 32.4), (-119.9, 34.4), (-122.6, 37.7), (-124.2, 40.4)],
+        "zones_lonlat": [
+            ("Bay Area", -122.1, 37.6, 0.9, 0.7, "#0f766e"),
+            ("Capital / north access", -121.7, 39.1, 1.3, 1.6, "#2563eb"),
+            ("Central Valley", -120.0, 36.6, 1.2, 2.3, "#16a34a"),
+            ("Southern California", -117.8, 33.8, 1.5, 1.2, "#c2410c"),
+            ("North coast resilience", -123.2, 40.4, 1.1, 0.9, "#7c3aed"),
+        ],
+        "callouts": [
+            ("Why this sells", "Shows California as megaregion, port, valley, coastal, and resilience promises."),
+            ("Client workshop", "Rank Bay Area, Central Valley logistics, Southern California, ports, north access, coastal connectors, wildfire and seismic resilience."),
+            ("Still held", "Official Caltrans priority, legal SLAs, construction, cost, ROI, eligibility, endorsement, and validation."),
+        ],
+        "label_offsets": {
+            "SF": (-112, -22),
+            "OAK": (18, 28),
+            "SJ": (18, 46),
+            "SAC": (18, -18),
+            "STK": (18, 18),
+            "LA": (18, -28),
+            "LGB": (-108, 10),
+            "IE": (28, 28),
+            "SD": (18, 24),
+            "RDD": (18, -18),
+            "EKA": (18, -18),
+        },
+    },
     "canada": {
         "title": "Canada Candidate Market-System Map",
         "subtitle": "2D national service-market view: Pacific gateway, prairie spine, Great Lakes/St. Lawrence, Atlantic access, northern service, and resource connectors.",
@@ -385,7 +446,7 @@ def render(country: str, rows: list[dict[str, str]]) -> Path:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     by_country = read_rows()
-    for country in ["china", "india", "texas", "iowa", "canada"]:
+    for country in ["china", "india", "texas", "iowa", "florida", "california", "canada"]:
         out = render(country, by_country[country])
         print(f"rendered {out}")
 
