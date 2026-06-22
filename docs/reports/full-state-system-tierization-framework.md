@@ -33,6 +33,9 @@ sources:
   - data/full-state-system-tierization-slate-010-scorecard.csv
   - data/state-tierization-fit-role-vector-profile-001.csv
   - data/state-tierization-fit-state-coverage-001.csv
+  - data/state-source-inventory-adapter-field-contract-001.csv
+  - data/state-source-inventory-adapter-row-contract-001.csv
+  - data/state-source-inventory-adapter-precheck-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -219,6 +222,21 @@ This is a heuristic fitting layer. It shows that ROUTE can represent the
 complexity consistently across the current state samples, but it still requires
 source road inventory, client priority nodes, and evidence review before any
 state-specific role is promoted.
+
+## Source Inventory Adapter Contract 001
+
+`data/state-source-inventory-adapter-field-contract-001.csv`,
+`data/state-source-inventory-adapter-row-contract-001.csv`, and
+`data/state-source-inventory-adapter-precheck-001.csv` define the generic source
+package a state, consultant, port, airport, MPO, or private infrastructure
+operator must provide before ROUTE applies the fit kernel to a real inventory.
+
+The contract covers segment identity, topology, jurisdiction, road class,
+priority nodes, alternate-route relationships, restrictions, observed failures,
+terminal access, and non-promotion reasons. It keeps the first ingest posture at
+`source-needed` and blocks full-inventory, official-tier, SLA, ROI, approval,
+construction, validation, and public-readiness claims until source review is
+complete.
 
 ## Evidence Boundary
 
