@@ -1,0 +1,8 @@
+input_id,input_class,early_mode,later_mode,required_for_tabletop,hold_if_missing
+DCR-IN-001,service hierarchy,existing diagnostic or candidate state package,maintained route/node promise ledger,yes,tabletop cannot name promise-at-risk rows
+DCR-IN-002,incident or closure event,staged event row,DOT or operator incident feed,yes,tabletop cannot run switch simulation
+DCR-IN-003,weather or hazard context,staged hazard assumption,weather flood fire or winter feed,no,weather resilience stays generic
+DCR-IN-004,EV charging and range assumptions,known station/rest-area inventory plus outage assumption,charger status queue utility or fleet telemetry,no,EV support remains illustrative
+DCR-IN-005,signage and routing inventory,candidate message-board or detour playbook,operator traveler-info or sign system,no,signage output remains message intent only
+DCR-IN-006,asset condition context,known pavement bridge charging rest or parking blocker,agency asset system or inspection refresh,no,asset posture remains evidence-needed
+DCR-IN-007,evidence boundary,held-claim list and source posture ledger,maintained evidence ledger,yes,tabletop cannot export claim-safe readout
