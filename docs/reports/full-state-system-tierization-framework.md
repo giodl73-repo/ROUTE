@@ -69,6 +69,10 @@ sources:
   - data/state-texas-buyer-review-agenda-001.csv
   - data/state-texas-buyer-source-request-001.csv
   - data/state-texas-buyer-objection-response-001.csv
+  - data/state-texas-pilot-kickoff-checklist-001.csv
+  - data/state-texas-pilot-kickoff-risk-register-001.csv
+  - data/state-texas-pilot-kickoff-artifact-register-001.csv
+  - data/state-texas-pilot-kickoff-exit-criteria-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -396,6 +400,17 @@ meeting agenda, source request language, and safe objection responses while
 keeping adoption, price, procurement, official-plan, legal-SLA, construction,
 numeric ROI, endorsement, validation, public-readiness, and full-inventory
 claims held.
+
+## Texas Pilot Kickoff Readiness 001
+
+`data/state-texas-pilot-kickoff-checklist-001.csv`,
+`data/state-texas-pilot-kickoff-risk-register-001.csv`,
+`data/state-texas-pilot-kickoff-artifact-register-001.csv`, and
+`data/state-texas-pilot-kickoff-exit-criteria-001.csv` define the start gate
+after a Texas sponsor conversation. The package requires sponsor, scope, source
+owner, data-handling, review-cadence, and claim-boundary confirmation before a
+paid pilot can start; otherwise it routes the opportunity to workshop-only,
+procurement hold, source hold, or claim-pressure hold.
 
 ## Evidence Boundary
 
