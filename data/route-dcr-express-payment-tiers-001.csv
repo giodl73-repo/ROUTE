@@ -1,0 +1,4 @@
+tier_id,tier_name,simulated_price_usd,service_promise,allowed_use,held_claims
+standard,Standard,0,"Baseline advisory route and status readout.","Default service posture with no payment signal.","pricing_authority|collection|revenue_guarantee|equity_policy|guaranteed_sla"
+priority,Priority advisory,45,"Faster advisory review and priority route-option packet.","Simulate willingness to pay for faster operator-reviewed guidance.","pricing_authority|collection|refund_policy|revenue_guarantee|equity_policy|guaranteed_sla"
+verified,Verified window,120,"Verified service-window advisory with source-needed proof rows.","Simulate premium demand for a verified window without guaranteeing delivery.","pricing_authority|collection|refund_policy|revenue_guarantee|equity_policy|guaranteed_sla|public_readiness"

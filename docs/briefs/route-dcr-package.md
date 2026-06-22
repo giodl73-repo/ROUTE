@@ -11,6 +11,7 @@ sources:
   - docs/briefs/route-operating-layer-value.md
   - docs/briefs/route-dcr-pilot-scope-001.md
   - docs/briefs/route-dcr-renewal-gate-001.md
+  - docs/briefs/route-dcr-express-payment-policy-001.md
   - docs/dcr/browser/route-dcr-cockpit.html
   - docs/briefs/state-network-planner-ui-brief.md
   - docs/reports/route-business-model-report.md
@@ -62,6 +63,12 @@ from a static readout to a maintained decision environment.
 The first cockpit surface is `docs/dcr/browser/route-dcr-cockpit.html`. It is a
 simulated DCR workbench with signal injection, scenario time, switch controls,
 operator review state, map posture, and claim-safe readout export.
+
+The express payment policy is
+`docs/briefs/route-dcr-express-payment-policy-001.md`. It keeps tiered express
+service, paid-request proxies, and revenue proxies separate from pricing
+authority, payment collection, refund policy, equity approval, and revenue
+guarantees.
 
 ## DCR Decisions
 
