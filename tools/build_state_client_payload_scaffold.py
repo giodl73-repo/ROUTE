@@ -77,6 +77,34 @@ def build_segments() -> None:
             "source_ref": "client-source-road-inventory",
             "client_notes": "example regional connector row",
         },
+        {
+            "source_segment_id": "state-segment-003",
+            "route_label": "LOCAL-ACCESS",
+            "from_ref": "terminal-a",
+            "to_ref": "city-a",
+            "owner_or_jurisdiction": "local-or-terminal",
+            "road_class": "terminal-access",
+            "priority_node_refs": "node-terminal-a|node-city-a",
+            "parallel_or_alternate_refs": "",
+            "restriction_refs": "restriction-002",
+            "observed_failure_refs": "restriction-002",
+            "source_ref": "client-source-road-inventory",
+            "client_notes": "example terminal access row",
+        },
+        {
+            "source_segment_id": "state-segment-099",
+            "route_label": "SR-99",
+            "from_ref": "local-a",
+            "to_ref": "local-b",
+            "owner_or_jurisdiction": "state-dot",
+            "road_class": "state-highway",
+            "priority_node_refs": "",
+            "parallel_or_alternate_refs": "",
+            "restriction_refs": "",
+            "observed_failure_refs": "",
+            "source_ref": "client-source-road-inventory",
+            "client_notes": "example maintained non-promotion row",
+        },
     ]
     write_csv(SEGMENTS, fields, rows)
 
@@ -99,6 +127,22 @@ def build_nodes() -> None:
             "jurisdiction": "example-state",
             "source_ref": "client-priority-node-list",
             "client_priority": "terminal-access",
+        },
+        {
+            "node_id": "node-city-b",
+            "node_label": "City B",
+            "node_class": "city",
+            "jurisdiction": "example-state",
+            "source_ref": "client-priority-node-list",
+            "client_priority": "statewide",
+        },
+        {
+            "node_id": "node-regional-market",
+            "node_label": "Regional Market",
+            "node_class": "regional-market",
+            "jurisdiction": "example-state",
+            "source_ref": "client-priority-node-list",
+            "client_priority": "regional",
         },
     ]
     write_csv(NODES, fields, rows)
@@ -336,6 +380,8 @@ and failures, and non-promotion coverage.
 | Payload templates | 5 |
 | Manifest rows | 5 |
 | Template preflight rows | 5 |
+| Segment sample rows | 4 |
+| Priority node sample rows | 4 |
 | Client data status | not-provided |
 
 ## Evidence Boundary
