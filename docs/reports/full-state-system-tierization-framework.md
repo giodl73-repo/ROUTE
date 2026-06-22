@@ -29,6 +29,8 @@ sources:
   - data/full-state-system-tierization-slate-008-scorecard.csv
   - data/full-state-system-tierization-slate-009.csv
   - data/full-state-system-tierization-slate-009-scorecard.csv
+  - data/full-state-system-tierization-slate-010.csv
+  - data/full-state-system-tierization-slate-010-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -194,6 +196,13 @@ systems, shore evacuation, and explicit maintenance or exclusion rows.
 Utah, New Mexico, Idaho, and Maine. It emphasizes intermountain trunks, border
 and airport access, sparse rural continuity, winter pass recovery,
 forest/agricultural access, and explicit maintenance rows.
+
+## Slate 010
+
+`data/full-state-system-tierization-slate-010.csv` extends the redo pattern to
+Kansas, Nebraska, North Dakota, and Montana. It emphasizes plains and northern
+tier trunks, agriculture and energy access, sparse rural continuity, mountain
+and winter recovery, terminal access, and explicit maintenance rows.
 
 ## Evidence Boundary
 
