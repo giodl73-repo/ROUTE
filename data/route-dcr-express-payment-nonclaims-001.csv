@@ -1,0 +1,11 @@
+blocked_claim,blocked_language,allowed_language
+pricing_authority,"ROUTE sets or approves official prices.","ROUTE can simulate pricing tiers for owner review."
+collection,"ROUTE collects payments or operates a payment rail.","ROUTE can model payment demand and document collection authority requirements."
+refund_policy,"ROUTE defines binding refund or missed-window terms.","ROUTE can hold refund-policy rows for operator and legal review."
+revenue_guarantee,"ROUTE guarantees revenue from express service.","ROUTE can show a simulated revenue proxy with evidence and authority holds."
+equity_policy,"ROUTE proves the express tier is equitable or publicly ready.","ROUTE can flag equity and public-readiness review needs."
+guaranteed_sla,"ROUTE guarantees faster service, arrival, delivery, or response windows.","ROUTE can simulate service-window advisories with legal-SLA holds."
+procurement_readiness,"ROUTE proves procurement readiness for payment operations.","ROUTE can identify procurement and payment-custody gates."
+roi,"ROUTE proves ROI from express payments.","ROUTE can define the evidence contract for later ROI review."
+traffic_control,"ROUTE controls access lanes, signs, routing, or field devices for paying users.","ROUTE can recommend advisory posture for authorized operator review."
+public_readiness,"ROUTE proves public launch readiness for express service.","ROUTE can prepare claim-safe language for buyer approval."
