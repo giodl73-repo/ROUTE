@@ -1,0 +1,12 @@
+node_id,node_label,node_class,jurisdiction,source_ref,client_priority
+tx-node-dallas-fort-worth,Dallas-Fort Worth,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-austin,Austin,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-san-antonio,San Antonio,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-houston,Houston,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-amarillo,Amarillo,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-abilene,Abilene,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-rio-grande-valley,Rio Grande Valley,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-port-houston,Port Houston,terminal_or_port,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-houston-tier-node,Houston tier node,city_or_gateway,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-rural-a,rural-a,rural_reference,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed
+tx-node-rural-b,rural-b,rural_reference,texas,existing ROUTE Texas slate sample; client source not supplied,client-review-needed

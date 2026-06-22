@@ -48,6 +48,8 @@ sources:
   - data/state-client-intake-packet-001.csv
   - data/state-client-intake-workshop-agenda-001.csv
   - data/state-client-intake-held-claims-001.csv
+  - data/state-texas-client-like-candidate-tierization-001.csv
+  - data/state-texas-client-like-closeout-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -304,6 +306,14 @@ source-backed full-inventory claims held.
 client conversation. The packet names the fillable templates, workshop
 questions, safe language, and stop conditions for moving from sample rows to a
 filled source-backed client payload.
+
+## Texas Client-Like Payload Pilot 001
+
+`data/state-texas-client-like-candidate-tierization-001.csv` and
+`data/state-texas-client-like-closeout-001.csv` run the pathway against
+Texas-shaped rows derived from the bounded Texas slate. The pilot confirms the
+pipeline can process Texas statewide, regional, rural, terminal, resilience, and
+non-promotion roles while keeping source custody and promotion held.
 
 ## Evidence Boundary
 
