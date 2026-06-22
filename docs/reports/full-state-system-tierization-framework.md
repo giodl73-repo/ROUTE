@@ -45,6 +45,9 @@ sources:
   - data/state-payload-role-review-summary-001.csv
   - data/state-payload-promotion-closeout-001.csv
   - data/state-payload-promotion-next-actions-001.csv
+  - data/state-client-intake-packet-001.csv
+  - data/state-client-intake-workshop-agenda-001.csv
+  - data/state-client-intake-held-claims-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -292,6 +295,15 @@ pathway for delivery and sales use. The closeout marks the chain ready for
 client intake and internal demonstration, while keeping public promotion,
 official tier assignment, SLA, ROI, construction, approval, validation, and
 source-backed full-inventory claims held.
+
+## Client Intake Packet 001
+
+`data/state-client-intake-packet-001.csv`,
+`data/state-client-intake-workshop-agenda-001.csv`, and
+`data/state-client-intake-held-claims-001.csv` package the pathway for a first
+client conversation. The packet names the fillable templates, workshop
+questions, safe language, and stop conditions for moving from sample rows to a
+filled source-backed client payload.
 
 ## Evidence Boundary
 
