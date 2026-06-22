@@ -10,7 +10,8 @@ Kind: deck
 Owner: route-comms
 
 Truth label: sales-ready / evidence-bounded. This deck sells the ROUTE state
-service-network diagnostic and Texas paid-pilot pathway. It does not claim
+service-network diagnostic, DCR expansion path, and Texas paid-pilot pathway.
+It does not claim
 TxDOT endorsement, official-plan status, legal SLA readiness, construction
 readiness, numeric ROI, procurement readiness, validation, public readiness, or
 source-backed full inventory.
@@ -411,6 +412,44 @@ td, th {
 
 ---
 
+## DCR turns the package into operations
+
+<div class="grid3">
+  <div class="card good">
+    <h3>Monitor the promise</h3>
+    <p>Track reliability, incidents, closures, assets, terminal access, EV charging stress, and evidence drift.</p>
+  </div>
+  <div class="card good">
+    <h3>Simulate the switch</h3>
+    <p>Replay closure, weather, EV range, signage, detour, terminal, and package scenarios before committing.</p>
+  </div>
+  <div class="card good">
+    <h3>Export the decision</h3>
+    <p>Produce claim-safe readouts for reroute, signage, EV support, recovery, access, asset, or investment posture.</p>
+  </div>
+</div>
+
+<div class="takeaway">DCR is the recurring product: the Decision Control Room for the service network.</div>
+
+---
+
+## What DCR decides
+
+<table>
+  <thead><tr><th>Decision</th><th>Trigger</th><th>Output</th></tr></thead>
+  <tbody>
+    <tr><td>Reroute</td><td>Closure, degradation, restriction, shared hazard</td><td>Preferred alternate and blocked alternates</td></tr>
+    <tr><td>Signage</td><td>Drivers need earlier route, charge, or detour choice</td><td>Message intent, location theme, and timing</td></tr>
+    <tr><td>EV support</td><td>Charger outage, detour length, weather range loss</td><td>EV-sensitive path and staging/support note</td></tr>
+    <tr><td>Recovery</td><td>Incident duration exceeds target window</td><td>Escalation, staging, and communication posture</td></tr>
+    <tr><td>Investment</td><td>Recurring monitored failures outrank old sequence</td><td>Re-ranked operations, asset, access, resilience, or capital package</td></tr>
+  </tbody>
+</table>
+
+<div class="takeaway">ROUTE recommends and documents. The operator retains authority.</div>
+
+---
+
 ## The kickoff gate protects the buyer
 
 <div class="gate">
@@ -457,10 +496,10 @@ td, th {
 <div class="grid3">
   <div class="card blue"><h3>Pick the pilot scope</h3><p>State, authority, corridor, port region, gateway, or freight coalition.</p></div>
   <div class="card blue"><h3>Name source owners</h3><p>Segment inventory, priority nodes, failure evidence, terminal access, non-promotion, claim boundary.</p></div>
-  <div class="card blue"><h3>Accept the boundaries</h3><p>No official-plan, legal-SLA, construction, numeric ROI, validation, approval, or public-readiness claim.</p></div>
+  <div class="card blue"><h3>Choose the path</h3><p>Diagnostic first, DCR tabletop, 30-90 day DCR pilot, or workshop-only hold.</p></div>
 </div>
 
-<div class="cta">Start with a bounded service-network diagnostic.</div>
+<div class="cta">Start with a bounded service-network diagnostic, then keep it alive with DCR.</div>
 
 ---
 

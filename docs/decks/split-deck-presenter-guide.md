@@ -39,7 +39,7 @@ sources:
 |---|---|---|
 | Political, funder, state, or public meeting | `interstate-2-0-pitch.pptx` | Sell the Interstate 2.0 vision without naming ROUTE. |
 | Technical sponsor, analyst, or implementation follow-up | `route-technology-story.pptx` | Explain how ROUTE makes the vision inspectable, refinable, and evidence-bounded. |
-| State, authority, port, turnpike, or paid-pilot buyer conversation | `route-state-service-network-sales.md` | Sell the state service-network diagnostic, source-owner path, and kickoff gate. |
+| State, authority, port, turnpike, or paid-pilot buyer conversation | `route-state-service-network-sales.md` | Sell the state service-network diagnostic, DCR expansion path, source-owner path, and kickoff gate. |
 
 Do not open with ROUTE unless the audience already asked about the technology.
 The first deck is the vision. The second deck is the machinery. The third deck

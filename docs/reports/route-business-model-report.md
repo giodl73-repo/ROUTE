@@ -12,6 +12,8 @@ sources:
   - docs/briefs/iowa-service-network-sample-readout.md
   - docs/briefs/texas-state-service-network-goals.md
   - docs/briefs/texas-state-service-network-offer.md
+  - docs/briefs/route-operating-layer-value.md
+  - docs/briefs/route-dcr-package.md
   - docs/reports/route-roi-cost-framework.md
   - docs/reports/route-evidence-posture.md
 external_sources:
@@ -41,13 +43,19 @@ specification, and evidence boundaries.
 | Stage | Product | Buyer Commitment | ROUTE Output |
 |---|---|---|---|
 | 1 | Paid 90-day diagnostic | Fixed-fee scoped package | Discovery workshop, tier model, promise backlog, resilience blueprint, investment sequence, dashboard spec |
-| 2 | Follow-on advisory retainer | Quarterly or annual support | Scenario refreshes, executive readouts, package updates, evidence gates, partner coordination |
+| 2 | Operating playbook and advisory retainer | Quarterly, annual, or event-driven support | Monitoring questions, resilience switch playbooks, signage/routing guidance, EV constraint scenarios, executive readouts, package updates, evidence gates, partner coordination |
 | 3 | Repeatable product templates | Sector-specific playbooks | Turnpike, port, border, freight-corridor, state DOT, MPO, and industrial-zone packages |
-| 4 | Platform / SaaS | Subscription only after workflow repeats | Hosted scenario surfaces, dashboard specs, evidence status, readout generation, package versioning |
+| 4 | DCR decision workbench / platform | Subscription only after workflow repeats | Hosted scenario surfaces, monitoring status, resilience switchboard, signage/routing queue, EV support queue, evidence status, readout generation, package versioning |
 
 Do not lead with SaaS. A dashboard subscription too early puts ROUTE in the
 wrong competitive set against traffic analytics, GIS, and performance
 management platforms. ROUTE's early value is the productized decision package.
+
+The enduring value is the maintained operating record after the first package:
+what the network is supposed to promise, which signals show drift, which
+failure modes trigger a resilience switch, which signage, routing, EV support,
+or recovery playbooks are available, which evidence has improved or expired,
+and which package should move next.
 
 ## Buyer Priority
 
