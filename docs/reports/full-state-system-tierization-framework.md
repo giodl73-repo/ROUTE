@@ -55,6 +55,9 @@ sources:
   - data/state-texas-client-intake-source-asks-001.csv
   - data/state-texas-diagnostic-readout-001.csv
   - data/state-texas-diagnostic-scorecard-001.csv
+  - data/state-texas-source-backed-pilot-plan-001.csv
+  - data/state-texas-source-backed-pilot-acceptance-001.csv
+  - data/state-texas-source-backed-pilot-blockers-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -337,6 +340,16 @@ and full-inventory claims.
 sponsor review. The readout names the pipeline result, role spread, resilience
 hooks, source asks, and promotion boundary, with all scorecard rows held for
 source and promotion until a filled Texas payload is supplied.
+
+## Texas Source-Backed Pilot Plan 001
+
+`data/state-texas-source-backed-pilot-plan-001.csv`,
+`data/state-texas-source-backed-pilot-acceptance-001.csv`, and
+`data/state-texas-source-backed-pilot-blockers-001.csv` define the next run once
+Texas supplies filled payload rows. The plan names pilot steps, acceptance
+surfaces, blockers, and stop conditions so the team can run a source-backed
+pilot without promoting unsupported official, SLA, ROI, construction, approval,
+validation, public-readiness, or full-inventory claims.
 
 ## Evidence Boundary
 
