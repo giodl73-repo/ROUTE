@@ -629,6 +629,33 @@
           </section>
 
           <section class="panel">
+            <div class="signal-top">
+              <h2>Scenario Run Plan</h2>
+              <span class="badge info" id="source-status">source-needed</span>
+            </div>
+            <div class="stack" aria-label="Scenario run plan">
+              <article class="signal">
+                <div class="signal-top">
+                  <h3>Trigger</h3>
+                  <span class="badge watch" id="run-trigger-type">event</span>
+                </div>
+                <p class="subhead" id="run-trigger">Primary pass restriction crosses promise-risk threshold.</p>
+              </article>
+              <article class="signal">
+                <div class="signal-top">
+                  <h3>Owner</h3>
+                  <span class="badge info" id="run-owner">DOT operations</span>
+                </div>
+                <p class="subhead" id="run-custody">511 feed owner plus charging-status source owner required.</p>
+              </article>
+              <article class="signal">
+                <h3>Playbook Steps</h3>
+                <ol class="subhead" id="run-steps"></ol>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel">
             <div class="decision-top">
               <h2>Switch Playbook</h2>
               <span class="badge info" id="decision-count">0 reviewed</span>
@@ -671,6 +698,17 @@
         name: "Winter closure and EV stress",
         summary: "T1 mountain pass closure threatens freight promise and EV completion.",
         posture: "Reroute advisory plus EV staging review.",
+        triggerType: "closure",
+        trigger: "Primary pass restriction crosses promise-risk threshold.",
+        owner: "DOT operations",
+        custody: "511 feed owner plus charging-status source owner required.",
+        evidence: "source-needed",
+        steps: [
+          "Confirm closure status and shared hazard exposure.",
+          "Compare base route, alternate route, and blocked EV option.",
+          "Review signage window and EV staging note with operator.",
+          "Export claim-safe leadership readout."
+        ],
         metrics: { risk: 46, flow: 91, ev: 72, recovery: 42, signage: 2, express: 38, holds: 5 },
         signals: [
           ["Closure", "risk", 72, "Primary pass restricted; alternate independence needs review."],
@@ -685,6 +723,17 @@
         name: "Terminal access disruption",
         summary: "Port gate queue and local restriction threaten last-mile promise.",
         posture: "Terminal access posture plus truck routing advisory.",
+        triggerType: "terminal",
+        trigger: "Gate queue and local restriction cross access-promise threshold.",
+        owner: "Port operations",
+        custody: "Terminal queue owner plus local truck-route authority required.",
+        evidence: "source-needed",
+        steps: [
+          "Confirm terminal queue row and local restriction row.",
+          "Compare staging, truck route, and blocked access option.",
+          "Review signage and operator communication posture.",
+          "Hold endorsement and public-readiness language."
+        ],
         metrics: { risk: 52, flow: 84, ev: 79, recovery: 55, signage: 3, express: 46, holds: 6 },
         signals: [
           ["Terminal", "risk", 76, "Gate queue exceeds review threshold."],
@@ -699,6 +748,17 @@
         name: "Managed-lane incident recovery",
         summary: "Incident blocks priced lane and degrades recovery promise.",
         posture: "Recovery posture plus communications readout.",
+        triggerType: "incident",
+        trigger: "Managed-lane incident exceeds recovery target.",
+        owner: "Concession operations",
+        custody: "Incident log owner plus tolling/pricing authority required.",
+        evidence: "operator-review",
+        steps: [
+          "Confirm incident status and priced-lane restriction.",
+          "Compare recovery, communications, and express-payment posture.",
+          "Review tolling/pricing authority holds.",
+          "Export operator-reviewed switch packet."
+        ],
         metrics: { risk: 59, flow: 78, ev: 83, recovery: 68, signage: 2, express: 62, holds: 5 },
         signals: [
           ["Incident", "risk", 80, "Managed lane blocked at merge area."],
@@ -713,6 +773,17 @@
         name: "Recurring freight bottleneck",
         summary: "Repeated peak-period queue outranks current package sequence.",
         posture: "Investment posture plus package sensitivity simulation.",
+        triggerType: "recurring",
+        trigger: "Repeated peak-period queue crosses freight-promise proxy.",
+        owner: "Freight corridor sponsor",
+        custody: "Probe data owner plus carrier advisory source required.",
+        evidence: "heuristic",
+        steps: [
+          "Confirm recurring delay window and freight movement affected.",
+          "Compare operations package, asset package, and express-service option.",
+          "Review ROI and revenue proxy holds.",
+          "Update renewal backlog for quarterly review."
+        ],
         metrics: { risk: 41, flow: 87, ev: 86, recovery: 39, signage: 1, express: 54, holds: 4 },
         signals: [
           ["Reliability", "watch", 61, "Recurring delay crosses planning target."],
@@ -824,6 +895,18 @@
       document.getElementById("active-case").textContent = scenario.name;
       document.getElementById("case-summary").textContent = scenario.summary;
       document.getElementById("recommended-posture").textContent = scenario.posture;
+      document.getElementById("run-trigger-type").textContent = scenario.triggerType;
+      document.getElementById("run-trigger").textContent = scenario.trigger;
+      document.getElementById("run-owner").textContent = scenario.owner;
+      document.getElementById("run-custody").textContent = scenario.custody;
+      document.getElementById("source-status").textContent = scenario.evidence;
+      const steps = document.getElementById("run-steps");
+      steps.innerHTML = "";
+      for (const step of scenario.steps) {
+        const item = document.createElement("li");
+        item.textContent = step;
+        steps.appendChild(item);
+      }
     }
 
     function renderSignals() {
@@ -911,6 +994,10 @@
         ["revenue_proxy", `$${metrics.revenueProxy}`],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
+        ["scenario_trigger", currentScenario().trigger],
+        ["operator_owner", currentScenario().owner],
+        ["source_custody", currentScenario().custody],
+        ["evidence_status", currentScenario().evidence],
         ["operator_status", state.operatorStatus],
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
         ["pending_or_held_switches", state.decisions.filter((item) => item.status !== "approved").map((item) => `${item.label}: ${item.status}`).join("; ") || "none"],
