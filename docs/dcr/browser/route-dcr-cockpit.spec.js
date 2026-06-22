@@ -16,6 +16,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#promise-risk")).toHaveText("46");
     await expect(page.locator("#signal-count")).toHaveText("6 active");
     await expect(page.locator("#express-demand")).toHaveText("38%");
+    await expect(page.locator("#paid-requests")).toHaveText("0");
+    await expect(page.locator("#revenue-proxy")).toHaveText("$0");
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
   });
@@ -65,9 +67,20 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Express service payment advisory created from simulated signal review.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pending_or_held_switches,"Express service payment advisory: pending"/);
 
+    await page.getByRole("button", { name: "Priority advisory $45" }).click();
+    await expect(page.locator("#paid-requests")).toHaveText("8");
+    await expect(page.locator("#revenue-proxy")).toHaveText("$360");
+    await expect(page.getByText("Priority advisory is simulated at $45.")).toBeVisible();
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_status,"simulated only; owner authority required"/);
+
     await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
     await expect(page.locator("#decision-count")).toHaveText("1 reviewed");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/approved_switches,"Express service payment advisory"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_authority; revenue_guarantee/);
+
+    await page.getByRole("button", { name: "Verified window $120" }).click();
+    await expect(page.locator("#paid-requests")).toHaveText("5");
+    await expect(page.locator("#revenue-proxy")).toHaveText("$600");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/express_tier,"Verified window"/);
   });
 });

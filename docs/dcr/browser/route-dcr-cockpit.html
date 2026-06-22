@@ -217,6 +217,18 @@
       gap: 8px;
     }
 
+    .tier-grid {
+      display: grid;
+      gap: 6px;
+    }
+
+    .tier-button {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      text-align: left;
+    }
+
     label {
       display: grid;
       gap: 4px;
@@ -527,6 +539,16 @@
           </section>
 
           <section class="panel">
+            <h2>Express Service</h2>
+            <div class="tier-grid" aria-label="Express payment tiers">
+              <button type="button" class="tier-button" data-tier="standard" aria-pressed="true"><span>Standard</span><strong>$0</strong></button>
+              <button type="button" class="tier-button" data-tier="priority" aria-pressed="false"><span>Priority advisory</span><strong>$45</strong></button>
+              <button type="button" class="tier-button" data-tier="verified" aria-pressed="false"><span>Verified window</span><strong>$120</strong></button>
+            </div>
+            <p class="subhead" id="pricing-boundary">Pricing is simulated. Tolling, collection, refunds, equity policy, and revenue claims require owner authority.</p>
+          </section>
+
+          <section class="panel">
             <h2>Operator Boundary</h2>
             <div class="controls">
               <button type="button" id="approve-operator">Approve Reviewed Switch</button>
@@ -546,6 +568,8 @@
           <div class="metric"><span>Recovery Window</span><strong id="recovery-window">42m</strong></div>
           <div class="metric"><span>Signage Queue</span><strong id="signage-queue">2</strong></div>
           <div class="metric"><span>Express Demand</span><strong id="express-demand">38%</strong></div>
+          <div class="metric"><span>Paid Requests</span><strong id="paid-requests">0</strong></div>
+          <div class="metric"><span>Revenue Proxy</span><strong id="revenue-proxy">$0</strong></div>
           <div class="metric"><span>Evidence Holds</span><strong id="evidence-holds">5</strong></div>
           <div class="metric"><span>Renewal Signal</span><strong id="renewal-signal">active</strong></div>
         </div>
@@ -717,6 +741,7 @@
       speed: 1,
       selectedSwitch: null,
       operatorStatus: "pending",
+      paymentTier: "standard",
       decisions: [],
       log: ["00:00 DCR started in advisory simulation mode."]
     };
@@ -747,6 +772,8 @@
       const base = currentScenario().metrics;
       const drift = Math.min(18, Math.floor(state.minute / 10));
       const mitigation = state.decisions.filter((item) => item.status === "approved").length * 5;
+      const tier = expressTier();
+      const paidRequests = Math.max(0, Math.round((base.express + drift) * tier.capture));
       return {
         risk: Math.max(12, Math.min(96, base.risk + drift - mitigation)),
         flow: Math.max(42, Math.min(99, base.flow - Math.floor(drift / 2) + mitigation)),
@@ -754,8 +781,19 @@
         recovery: Math.max(12, base.recovery + drift - (hasDecision("recovery") ? 12 : 0)),
         signage: Math.max(0, base.signage + (hasDecision("signage") ? -1 : 0)),
         express: Math.max(10, Math.min(96, base.express + drift + (hasDecision("express") ? 6 : 0))),
+        paidRequests,
+        revenueProxy: paidRequests * tier.price,
         holds: Math.max(3, base.holds - state.decisions.filter((item) => item.status === "approved").length)
       };
+    }
+
+    function expressTier() {
+      const tiers = {
+        standard: { label: "Standard", price: 0, capture: 0 },
+        priority: { label: "Priority advisory", price: 45, capture: 0.22 },
+        verified: { label: "Verified window", price: 120, capture: 0.12 }
+      };
+      return tiers[state.paymentTier];
     }
 
     function hasDecision(kind) {
@@ -771,6 +809,8 @@
       document.getElementById("recovery-window").textContent = `${metrics.recovery}m`;
       document.getElementById("signage-queue").textContent = String(metrics.signage);
       document.getElementById("express-demand").textContent = `${metrics.express}%`;
+      document.getElementById("paid-requests").textContent = String(metrics.paidRequests);
+      document.getElementById("revenue-proxy").textContent = `$${metrics.revenueProxy.toLocaleString("en-US")}`;
       document.getElementById("evidence-holds").textContent = String(metrics.holds);
       document.getElementById("renewal-signal").textContent = state.decisions.length > 1 || state.minute > 20 ? "strong" : "active";
       document.getElementById("incident-node").setAttribute("r", String(18 + Math.min(18, metrics.risk / 6)));
@@ -866,6 +906,10 @@
         ["ev_confidence", `${metrics.ev}%`],
         ["recovery_window", `${metrics.recovery}m`],
         ["express_demand", `${metrics.express}%`],
+        ["express_tier", expressTier().label],
+        ["paid_requests", metrics.paidRequests],
+        ["revenue_proxy", `$${metrics.revenueProxy}`],
+        ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["operator_status", state.operatorStatus],
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
@@ -904,6 +948,15 @@
       document.getElementById("operator-boundary").textContent = text;
     }
 
+    function renderPaymentTier() {
+      const tier = expressTier();
+      for (const button of document.querySelectorAll("button[data-tier]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.tier === state.paymentTier));
+      }
+      document.getElementById("pricing-boundary").textContent =
+        `${tier.label} is simulated at $${tier.price}. Tolling, collection, refunds, equity policy, and revenue claims require owner authority.`;
+    }
+
     function renderAll() {
       renderScenario();
       renderMetrics();
@@ -912,6 +965,7 @@
       renderReadout();
       renderLog();
       renderBoundary();
+      renderPaymentTier();
     }
 
     function stepSimulation() {
@@ -945,8 +999,19 @@
       state.minute = 0;
       state.selectedSwitch = null;
       state.operatorStatus = "pending";
+      state.paymentTier = "standard";
       state.decisions = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
+      renderAll();
+    }
+
+    function selectTier(tier) {
+      state.paymentTier = tier;
+      state.log.push(`${formatClock()} express service tier simulated: ${expressTier().label}.`);
+      if (tier !== "standard" && !state.decisions.some((item) => item.kind === "express")) {
+        createDecision("express");
+        return;
+      }
       renderAll();
     }
 
@@ -1054,6 +1119,9 @@
     }
     for (const button of document.querySelectorAll("button[data-switch]")) {
       button.addEventListener("click", () => createDecision(button.dataset.switch));
+    }
+    for (const button of document.querySelectorAll("button[data-tier]")) {
+      button.addEventListener("click", () => selectTier(button.dataset.tier));
     }
     for (const button of document.querySelectorAll("button[data-view]")) {
       button.addEventListener("click", () => setView(button.dataset.view));

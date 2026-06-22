@@ -55,7 +55,7 @@ from a static readout to a maintained decision environment.
 | Resilience switchboard | Converts triggers into governed reroute, recovery, access, EV, signage, communications, or investment posture | Recommended switch packet |
 | Signage and routing queue | Helps decide what drivers, truckers, EV users, or local access users should see before a bad route choice | Message-board and route-split advisory |
 | EV support queue | Flags range, charger, rest-area, staging, queue, and utility risks | EV-sensitive reroute or support note |
-| Express service/payment queue | Simulates operator willingness to pay for faster or more reliable service without setting price or collecting payment | Express service advisory and pricing-authority hold |
+| Express service/payment queue | Simulates operator willingness to pay for faster or more reliable service with standard, priority advisory, and verified-window tiers | Express service advisory, paid-request proxy, revenue proxy, pricing-authority hold, equity hold, and revenue-guarantee hold |
 | Evidence boundary ledger | Shows source-backed, heuristic, source-needed, held, expired, and unsafe-to-repeat claims | Claim-safe executive language |
 | Executive readout exporter | Produces board, authority, sponsor, or leadership summaries | Bounded decision memo |
 
@@ -70,7 +70,7 @@ operator review state, map posture, and claim-safe readout export.
 | Reroute | Closure, severe degradation, route restriction, shared hazard, or terminal access failure | Preferred alternate, blocked alternates, evidence label, and operator approval need |
 | Signage | Drivers need earlier lane, route, charge, staging, or detour choice | Signage location theme, message intent, timing, and non-claim boundary |
 | EV routing | Detour distance, charger outage, weather range loss, queue risk, or heavy-duty charging gap | EV-safe path, charging/staging note, and source-needed rows |
-| Express service | Operators want faster, verified, or priority service during recurring congestion or disruption | Express-service posture, payment-demand signal, pricing-authority hold, equity hold, and revenue-guarantee hold |
+| Express service | Operators want faster, verified, or priority service during recurring congestion or disruption | Express-service posture, payment-demand signal, tier simulation, paid-request proxy, revenue proxy, pricing-authority hold, equity hold, and revenue-guarantee hold |
 | Recovery | Incident duration or queue risk exceeds recovery target | Escalation path, staging option, clearance priority, and communication posture |
 | Asset | Pavement, bridge, rest, charging, parking, or WIM issue threatens tier promise | Repair/funding evidence queue update |
 | Terminal/access | Port, rail, airport, border, warehouse, hospital, campus, or rural access path fails | Local access posture and package-sequence change |
