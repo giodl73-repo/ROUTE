@@ -1,0 +1,13 @@
+blocked_claim,blocked_language,allowed_language
+traffic_control,"ROUTE controls traffic or field devices.","ROUTE recommends advisory posture for authorized operator review."
+legal_detour,"ROUTE issues legal detours.","ROUTE compares route options and records approval needs."
+incident_command,"ROUTE commands incident response.","ROUTE supports postures and readouts for authorized responders or operators."
+guaranteed_sla,"ROUTE guarantees service windows.","ROUTE maintains planning promises and SLA holds."
+ev_availability,"ROUTE guarantees EV charging or range completion.","ROUTE flags EV support risk and source-needed charging evidence."
+construction,"ROUTE proves what should be built.","ROUTE links monitored failures to package and evidence queues."
+roi,"ROUTE proves ROI from the pilot.","ROUTE defines evidence needed for later benefit and cost claims."
+endorsement,"A state, authority, operator, or sponsor has validated ROUTE.","ROUTE uses validation language only when explicit external review records support it."
+public_readiness,"The pilot is ready for public announcement or policy adoption.","ROUTE holds public language until separate buyer approval and claim review."
+procurement_readiness,"The pilot proves procurement readiness.","ROUTE holds procurement-readiness claims for buyer process, budget, and legal review."
+live_integration,"ROUTE is integrated into live operations.","ROUTE can use approved feeds or manual loads as advisory inputs."
+automated_control,"ROUTE automatically switches routes, signs, or operations.","ROUTE prepares switch options for human review."

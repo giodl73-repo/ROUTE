@@ -1,0 +1,7 @@
+cadence_id,frequency,trigger,review_surface,pilot_output,held_claims
+weekly_exceptions,weekly,"New or unresolved promise-at-risk rows.",monitored signal ledger,exception digest,"traffic_control|guaranteed_sla|automated_control"
+monthly_simulation,monthly,"Closure, incident, EV, signage, terminal, or package scenario selected by buyer.",simulation bench,simulation comparison packet,"legal_detour|ev_availability|roi"
+event_driven_review,event-driven,"Closure, weather, charger outage, terminal disruption, recurring bottleneck, or leadership concern.",resilience switchboard,event review memo,"incident_command|public_readiness|endorsement"
+operator_review,biweekly,"Switch option needs review or action boundary decision.",switch playbook register,operator review queue,"traffic_control|legal_detour|automated_control"
+executive_readout,monthly,"Sponsor or leadership needs a bounded status update.",evidence boundary ledger,claim-safe readout,"roi|endorsement|procurement_readiness"
+quarterly_closeout,end-of-pilot,"Pilot period reaches renewal gate.",all pilot ledgers,renewal recommendation,"construction|roi|public_readiness|live_integration"
