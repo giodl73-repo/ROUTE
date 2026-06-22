@@ -58,6 +58,9 @@ sources:
   - data/state-texas-source-backed-pilot-plan-001.csv
   - data/state-texas-source-backed-pilot-acceptance-001.csv
   - data/state-texas-source-backed-pilot-blockers-001.csv
+  - data/state-texas-source-owner-docket-001.csv
+  - data/state-texas-source-custody-checklist-001.csv
+  - data/state-texas-source-handoff-decision-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -350,6 +353,17 @@ Texas supplies filled payload rows. The plan names pilot steps, acceptance
 surfaces, blockers, and stop conditions so the team can run a source-backed
 pilot without promoting unsupported official, SLA, ROI, construction, approval,
 validation, public-readiness, or full-inventory claims.
+
+## Texas Source Owner Custody Docket 001
+
+`data/state-texas-source-owner-docket-001.csv`,
+`data/state-texas-source-custody-checklist-001.csv`, and
+`data/state-texas-source-handoff-decision-001.csv` convert the Texas pilot plan
+into a working source-owner docket. The docket names owner roles for segment
+inventory, priority nodes, failure evidence, terminal access, non-promotion, and
+claim boundary review; then it gates source identity, row traceability, pilot
+scope, review disposition, and handoff decisions before any source-backed fit or
+promotion step can run.
 
 ## Evidence Boundary
 
