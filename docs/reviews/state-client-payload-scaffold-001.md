@@ -34,6 +34,8 @@ and failures, and non-promotion coverage.
 | Payload templates | 5 |
 | Manifest rows | 5 |
 | Template preflight rows | 5 |
+| Segment sample rows | 4 |
+| Priority node sample rows | 4 |
 | Client data status | not-provided |
 
 ## Evidence Boundary

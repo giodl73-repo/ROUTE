@@ -1,3 +1,5 @@
 source_segment_id,route_label,from_ref,to_ref,owner_or_jurisdiction,road_class,priority_node_refs,parallel_or_alternate_refs,restriction_refs,observed_failure_refs,source_ref,client_notes
 state-segment-001,I-00,city-a,city-b,state-dot,interstate,node-city-a|node-city-b,state-segment-002,restriction-001,failure-001,client-source-road-inventory,example statewide trunk row
 state-segment-002,SR-00,city-b,regional-market,state-dot,state-highway,node-city-b|node-regional-market,state-segment-001,,,client-source-road-inventory,example regional connector row
+state-segment-003,LOCAL-ACCESS,terminal-a,city-a,local-or-terminal,terminal-access,node-terminal-a|node-city-a,,restriction-002,restriction-002,client-source-road-inventory,example terminal access row
+state-segment-099,SR-99,local-a,local-b,state-dot,state-highway,,,,,client-source-road-inventory,example maintained non-promotion row

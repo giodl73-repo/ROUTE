@@ -1,3 +1,5 @@
 node_id,node_label,node_class,jurisdiction,source_ref,client_priority
 node-city-a,City A,city,example-state,client-priority-node-list,statewide
 node-terminal-a,Terminal A,port_or_airport_or_freight_terminal,example-state,client-priority-node-list,terminal-access
+node-city-b,City B,city,example-state,client-priority-node-list,statewide
+node-regional-market,Regional Market,regional-market,example-state,client-priority-node-list,regional

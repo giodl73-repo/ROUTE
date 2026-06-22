@@ -38,6 +38,7 @@ sources:
   - data/state-source-inventory-adapter-precheck-001.csv
   - data/state-client-payload-manifest-001.csv
   - data/state-client-payload-preflight-001.csv
+  - data/state-client-payload-preflight-evaluation-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -251,6 +252,15 @@ The scaffold is the first handoff shape for a state, consultant, authority, or
 private operator. It validates only template readiness. Client data remains
 `not-provided` until a real payload is filled, source references are attached,
 and the adapter preflight is rerun against those rows.
+
+## Client Payload Preflight Evaluation 001
+
+`data/state-client-payload-preflight-evaluation-001.csv` reads the scaffolded
+payload templates and checks manifest completeness, segment shape, priority-node
+references, terminal-access references, restriction/failure references, and
+non-promotion references. It deliberately keeps source custody and promotion
+readiness held because the rows are sample templates, not a filled client
+payload.
 
 ## Evidence Boundary
 
