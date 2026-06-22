@@ -31,6 +31,8 @@ sources:
   - data/full-state-system-tierization-slate-009-scorecard.csv
   - data/full-state-system-tierization-slate-010.csv
   - data/full-state-system-tierization-slate-010-scorecard.csv
+  - data/state-tierization-fit-role-vector-profile-001.csv
+  - data/state-tierization-fit-state-coverage-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -203,6 +205,20 @@ forest/agricultural access, and explicit maintenance rows.
 Kansas, Nebraska, North Dakota, and Montana. It emphasizes plains and northern
 tier trunks, agriculture and energy access, sparse rural continuity, mountain
 and winter recovery, terminal access, and explicit maintenance rows.
+
+## Fit Kernel 001
+
+`data/state-tierization-fit-role-vector-profile-001.csv` and
+`data/state-tierization-fit-state-coverage-001.csv` convert the slate set into a
+bounded role-assignment fit profile. The profile extracts six reusable signal
+families: statewide trunk/gateway, regional redundancy/load shedding, rural
+access continuity, terminal/local access, resilience/recovery exposure, and
+maintenance/non-promotion.
+
+This is a heuristic fitting layer. It shows that ROUTE can represent the
+complexity consistently across the current state samples, but it still requires
+source road inventory, client priority nodes, and evidence review before any
+state-specific role is promoted.
 
 ## Evidence Boundary
 
