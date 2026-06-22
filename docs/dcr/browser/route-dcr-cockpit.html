@@ -550,11 +550,20 @@
 
           <section class="panel">
             <h2>Operator Boundary</h2>
+            <label>Active role
+              <select id="role-select" aria-label="Active role">
+                <option value="planner">Planner</option>
+                <option value="operator">Operator</option>
+                <option value="payment">Payment owner</option>
+                <option value="executive">Executive sponsor</option>
+              </select>
+            </label>
             <div class="controls">
               <button type="button" id="approve-operator">Approve Reviewed Switch</button>
               <button type="button" id="hold-operator" class="danger">Hold For Authority</button>
             </div>
             <p class="subhead" id="operator-boundary">No operator approval has been recorded for the current switch packet.</p>
+            <p class="subhead" id="role-boundary">Planner can create advisory packets but cannot approve field, payment, or public language.</p>
           </section>
         </div>
       </aside>
@@ -813,6 +822,7 @@
       selectedSwitch: null,
       operatorStatus: "pending",
       paymentTier: "standard",
+      activeRole: "planner",
       decisions: [],
       log: ["00:00 DCR started in advisory simulation mode."]
     };
@@ -998,6 +1008,8 @@
         ["operator_owner", currentScenario().owner],
         ["source_custody", currentScenario().custody],
         ["evidence_status", currentScenario().evidence],
+        ["active_role", roleLabel(state.activeRole)],
+        ["role_authority", roleAuthority(state.activeRole)],
         ["operator_status", state.operatorStatus],
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
         ["pending_or_held_switches", state.decisions.filter((item) => item.status !== "approved").map((item) => `${item.label}: ${item.status}`).join("; ") || "none"],
@@ -1035,6 +1047,42 @@
       document.getElementById("operator-boundary").textContent = text;
     }
 
+    function roleLabel(role) {
+      const labels = {
+        planner: "Planner",
+        operator: "Operator",
+        payment: "Payment owner",
+        executive: "Executive sponsor"
+      };
+      return labels[role];
+    }
+
+    function roleAuthority(role) {
+      const authority = {
+        planner: "can create advisory packets only",
+        operator: "can approve operational switch packets",
+        payment: "can approve express payment posture",
+        executive: "can approve executive readout language"
+      };
+      return authority[role];
+    }
+
+    function canApprove(role, decision) {
+      if (!decision) return false;
+      if (role === "operator") {
+        return ["reroute", "signage", "ev", "recovery", "asset"].includes(decision.kind);
+      }
+      if (role === "payment") return decision.kind === "express";
+      if (role === "executive") return decision.kind === "communication";
+      return false;
+    }
+
+    function renderRole() {
+      document.getElementById("role-select").value = state.activeRole;
+      document.getElementById("role-boundary").textContent =
+        `${roleLabel(state.activeRole)} ${roleAuthority(state.activeRole)}.`;
+    }
+
     function renderPaymentTier() {
       const tier = expressTier();
       for (const button of document.querySelectorAll("button[data-tier]")) {
@@ -1052,6 +1100,7 @@
       renderReadout();
       renderLog();
       renderBoundary();
+      renderRole();
       renderPaymentTier();
     }
 
@@ -1087,6 +1136,7 @@
       state.selectedSwitch = null;
       state.operatorStatus = "pending";
       state.paymentTier = "standard";
+      state.activeRole = "planner";
       state.decisions = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
       renderAll();
@@ -1142,10 +1192,18 @@
     function approveCurrent() {
       const target = state.decisions.find((item) => item.kind === state.selectedSwitch) || state.decisions[0];
       if (!target || target.kind === "none") return;
+      if (!canApprove(state.activeRole, target)) {
+        target.status = "blocked";
+        target.boundary = `Held for ${roleLabel(state.activeRole)} authority mismatch. ${roleLabel(state.activeRole)} ${roleAuthority(state.activeRole)}.`;
+        state.operatorStatus = "held";
+        state.log.push(`${formatClock()} role hold: ${roleLabel(state.activeRole)} cannot approve ${target.label}.`);
+        renderAll();
+        return;
+      }
       target.status = "approved";
-      target.boundary = "Operator-reviewed advisory. ROUTE still does not command field devices.";
+      target.boundary = `${roleLabel(state.activeRole)} reviewed advisory. ROUTE still does not command field devices, set prices, or publish claims.`;
       state.operatorStatus = "approved";
-      state.log.push(`${formatClock()} operator reviewed: ${target.label}.`);
+      state.log.push(`${formatClock()} ${roleLabel(state.activeRole)} reviewed: ${target.label}.`);
       renderAll();
     }
 
@@ -1190,6 +1248,11 @@
     document.getElementById("speed-range").addEventListener("input", (event) => {
       state.speed = Number(event.target.value);
       schedule();
+    });
+    document.getElementById("role-select").addEventListener("change", (event) => {
+      state.activeRole = event.target.value;
+      state.log.push(`${formatClock()} active role changed to ${roleLabel(state.activeRole)}.`);
+      renderAll();
     });
     document.getElementById("play-pause").addEventListener("click", () => setRunning(!state.running));
     document.getElementById("step").addEventListener("click", stepSimulation);

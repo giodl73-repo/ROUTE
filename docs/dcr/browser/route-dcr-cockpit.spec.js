@@ -33,10 +33,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Reroute advisory created from simulated signal review.")).toBeVisible();
     await expect(page.locator("#decision-count")).toHaveText("0 reviewed");
 
+    await page.getByLabel("Active role").selectOption("operator");
     await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
     await expect(page.locator("#decision-count")).toHaveText("1 reviewed");
-    await expect(page.getByText("Operator-reviewed advisory. ROUTE still does not command field devices.")).toBeVisible();
+    await expect(page.getByText("Operator reviewed advisory. ROUTE still does not command field devices, set prices, or publish claims.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_status,"approved"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_role,"Operator"/);
   });
 
   test("scenario and injected signals update cockpit state and readout export", async ({ page }) => {
@@ -79,6 +81,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Priority advisory is simulated at $45.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_status,"simulated only; owner authority required"/);
 
+    await page.getByLabel("Active role").selectOption("payment");
     await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
     await expect(page.locator("#decision-count")).toHaveText("1 reviewed");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/approved_switches,"Express service payment advisory"/);
@@ -88,5 +91,22 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#paid-requests")).toHaveText("5");
     await expect(page.locator("#revenue-proxy")).toHaveText("$600");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/express_tier,"Verified window"/);
+  });
+
+  test("role permissions block mismatched approvals", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
+
+    await page.getByRole("button", { name: "Payment" }).click();
+    await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
+    await expect(page.getByText("Held for Planner authority mismatch. Planner can create advisory packets only.")).toBeVisible();
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_status,"held"/);
+
+    await page.getByLabel("Active role").selectOption("payment");
+    await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
+    await expect(page.getByText("Payment owner reviewed advisory. ROUTE still does not command field devices, set prices, or publish claims.")).toBeVisible();
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_role,"Payment owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/role_authority,"can approve express payment posture"/);
   });
 });
