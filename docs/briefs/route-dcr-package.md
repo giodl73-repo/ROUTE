@@ -9,6 +9,7 @@ created: 2026-06-22
 updated: 2026-06-22
 sources:
   - docs/briefs/route-operating-layer-value.md
+  - docs/briefs/route-dcr-pilot-scope-001.md
   - docs/briefs/state-network-planner-ui-brief.md
   - docs/reports/route-business-model-report.md
   - docs/reports/route-competitive-landscape-report.md
@@ -87,7 +88,7 @@ The DCR can start with staged scenarios and mature into live feeds.
 | Package | Buyer | Deliverable |
 |---|---|---|
 | DCR tabletop | Any first buyer | One-day simulation using staged events and the service-network diagnostic. |
-| DCR pilot | Toll, port, managed-lane, state, or MPO buyer | 30-90 day monitored pilot with one corridor, terminal, or state package. |
+| DCR pilot | Toll, port, managed-lane, state, or MPO buyer | 30-90 day monitored pilot with one corridor, terminal, managed lane, gateway, or state package. |
 | DCR quarterly review | Retainer buyer | Monitoring exceptions, simulations, switch playbooks, evidence updates, and executive readout. |
 | DCR event review | Buyer after a disruption | Post-event replay, missed promise, switch option, signage/routing, EV, and package implications. |
 | DCR workbench | Mature buyer | Hosted or local decision surface with scenarios, exports, and evidence ledger. |

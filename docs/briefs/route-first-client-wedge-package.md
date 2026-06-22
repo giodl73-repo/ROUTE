@@ -16,6 +16,7 @@ sources:
   - docs/briefs/texas-state-service-network-offer.md
   - docs/briefs/route-operating-layer-value.md
   - docs/briefs/route-dcr-package.md
+  - docs/briefs/route-dcr-pilot-scope-001.md
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -111,7 +112,7 @@ The diagnostic should end with a DCR option, not only a static report.
 | DCR Package | Use When | Buyer Value |
 |---|---|---|
 | DCR tabletop | Buyer wants proof before a retained pilot | Rehearse one closure, EV, signage, terminal, or resilience scenario with staged data. |
-| DCR pilot | Buyer has one corridor, port, managed lane, gateway, or state slice | Monitor exceptions, run simulations, and maintain switch playbooks for 30-90 days. |
+| DCR pilot | Buyer has one corridor, port, managed lane, gateway, or state slice | Monitor exceptions, run simulations, review signage/routing and EV support posture, and maintain switch playbooks for 30-90 days. |
 | DCR quarterly review | Buyer needs a recurring decision cadence | Refresh evidence, package sequence, signage/routing posture, EV support posture, and leadership readout. |
 | DCR event review | Buyer has a disruption or near miss | Replay what happened, identify missed promise rows, and update switch options. |
 | DCR workbench | Buyer has repeat use and enough source surfaces | Move from static decks to a maintained decision surface with exports. |
