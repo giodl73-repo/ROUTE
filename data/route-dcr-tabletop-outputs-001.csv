@@ -1,0 +1,7 @@
+output_id,output,contents,buyer_value,boundary,held_claims
+DCR-OUT-001,promise_at_risk_board,affected promise rows routes nodes and evidence labels,buyer sees what service promise is at risk,not a legal SLA or operating guarantee,guaranteed_sla|traffic_control|endorsement|public_readiness
+DCR-OUT-002,switch_option_packet,reroute signage EV recovery access asset or investment options,buyer can compare actions before committing,not an operator command or legal detour,traffic_control|legal_detour|incident_command|endorsement
+DCR-OUT-003,simulation_comparison,base case option case blocked option and evidence posture,buyer can rehearse consequences before a live event,not proof of benefit without source validation,traffic_demand_proof|roi|construction|validation
+DCR-OUT-004,signage_routing_advisory,message intent route-split timing and approval needs,buyer gets a clearer field-communication draft,not field-device command or approved traffic-control language,traffic_control|legal_detour|public_readiness
+DCR-OUT-005,ev_support_note,charger risk range risk staging options and source-needed rows,buyer sees EV-sensitive failure modes,not guarantee of charger availability or fleet completion,ev_availability|guaranteed_sla|endorsement
+DCR-OUT-006,executive_readout,what changed promises at risk switch options holds and next evidence,buyer can brief leadership safely,not validation approval public readiness or endorsement,validation|approval|endorsement|public_readiness

@@ -1,0 +1,10 @@
+nonclaim_id,blocked_claim,safe_language
+DCR-NONCLAIM-001,traffic_control,ROUTE recommends and documents options; the authorized operator controls field devices and instructions.
+DCR-NONCLAIM-002,legal_detour,ROUTE can compare detour options; legal detour designation remains with the road authority.
+DCR-NONCLAIM-003,guaranteed_sla,ROUTE tracks planning promises; legal SLA claims remain held.
+DCR-NONCLAIM-004,ev_availability,ROUTE can flag EV charging and range risk; it does not guarantee charger availability or fleet completion.
+DCR-NONCLAIM-005,incident_command,ROUTE can support recovery posture review; it does not replace incident command.
+DCR-NONCLAIM-006,construction,ROUTE can update package sequence; it does not prove construction readiness.
+DCR-NONCLAIM-007,roi,ROUTE can define the evidence contract; numeric ROI remains held.
+DCR-NONCLAIM-008,endorsement,ROUTE outputs are not agency or operator endorsement without explicit external approval.
+DCR-NONCLAIM-009,public_readiness,DCR tabletop outputs are internal decision artifacts until public-release review closes.
