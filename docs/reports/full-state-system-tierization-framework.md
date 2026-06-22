@@ -27,6 +27,8 @@ sources:
   - data/full-state-system-tierization-slate-007-scorecard.csv
   - data/full-state-system-tierization-slate-008.csv
   - data/full-state-system-tierization-slate-008-scorecard.csv
+  - data/full-state-system-tierization-slate-009.csv
+  - data/full-state-system-tierization-slate-009-scorecard.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -185,6 +187,13 @@ connectivity, sparse-service access, and explicit maintenance or exclusion rows.
 Oklahoma, Arkansas, Mississippi, and New Jersey. It emphasizes plains
 crossroads, Delta and Ozark access, Gulf and river freight, dense turnpike/port
 systems, shore evacuation, and explicit maintenance or exclusion rows.
+
+## Slate 009
+
+`data/full-state-system-tierization-slate-009.csv` extends the redo pattern to
+Utah, New Mexico, Idaho, and Maine. It emphasizes intermountain trunks, border
+and airport access, sparse rural continuity, winter pass recovery,
+forest/agricultural access, and explicit maintenance rows.
 
 ## Evidence Boundary
 
