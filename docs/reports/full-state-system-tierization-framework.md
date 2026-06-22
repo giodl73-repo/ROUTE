@@ -53,6 +53,8 @@ sources:
   - data/state-texas-client-intake-packet-001.csv
   - data/state-texas-client-intake-workshop-agenda-001.csv
   - data/state-texas-client-intake-source-asks-001.csv
+  - data/state-texas-diagnostic-readout-001.csv
+  - data/state-texas-diagnostic-scorecard-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -327,6 +329,14 @@ a client-facing workshop package. The packet asks for Texas segment inventory,
 priority nodes, terminal/failure evidence, and non-promotion reasons while
 holding TxDOT plan, official-tier, SLA, ROI, construction, approval, validation,
 and full-inventory claims.
+
+## Texas Diagnostic Readout 001
+
+`data/state-texas-diagnostic-readout-001.csv` and
+`data/state-texas-diagnostic-scorecard-001.csv` summarize the Texas pilot for a
+sponsor review. The readout names the pipeline result, role spread, resilience
+hooks, source asks, and promotion boundary, with all scorecard rows held for
+source and promotion until a filled Texas payload is supplied.
 
 ## Evidence Boundary
 
