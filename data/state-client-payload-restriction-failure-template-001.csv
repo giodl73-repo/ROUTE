@@ -1,0 +1,3 @@
+restriction_id,segment_ref,restriction_type,failure_metric_ref,source_ref,description,review_status
+restriction-001,state-segment-001,incident_or_closure_or_bottleneck,SSF-002,client-operations-log,example alternate-route penalty evidence row,source-needed
+restriction-002,state-segment-003,terminal_access_constraint,SSF-005,client-terminal-access-log,example terminal access friction evidence row,source-needed

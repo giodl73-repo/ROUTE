@@ -36,6 +36,8 @@ sources:
   - data/state-source-inventory-adapter-field-contract-001.csv
   - data/state-source-inventory-adapter-row-contract-001.csv
   - data/state-source-inventory-adapter-precheck-001.csv
+  - data/state-client-payload-manifest-001.csv
+  - data/state-client-payload-preflight-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -237,6 +239,18 @@ terminal access, and non-promotion reasons. It keeps the first ingest posture at
 `source-needed` and blocks full-inventory, official-tier, SLA, ROI, approval,
 construction, validation, and public-readiness claims until source review is
 complete.
+
+## Client Payload Scaffold 001
+
+`data/state-client-payload-manifest-001.csv` and
+`data/state-client-payload-preflight-001.csv` package the adapter contract into
+client-fillable templates for segment inventory, priority nodes, terminal
+access, restriction/failure evidence, and non-promotion coverage.
+
+The scaffold is the first handoff shape for a state, consultant, authority, or
+private operator. It validates only template readiness. Client data remains
+`not-provided` until a real payload is filled, source references are attached,
+and the adapter preflight is rerun against those rows.
 
 ## Evidence Boundary
 
