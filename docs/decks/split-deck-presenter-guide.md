@@ -10,6 +10,7 @@ updated: 2026-06-16
 sources:
   - docs/decks/interstate-2-0-pitch.md
   - docs/decks/route-technology-story.md
+  - docs/decks/route-state-service-network-sales.md
   - docs/briefs/funder-value-brief.md
   - docs/briefs/state-value-brief.md
   - docs/briefs/industry-value-brief.md
@@ -38,9 +39,12 @@ sources:
 |---|---|---|
 | Political, funder, state, or public meeting | `interstate-2-0-pitch.pptx` | Sell the Interstate 2.0 vision without naming ROUTE. |
 | Technical sponsor, analyst, or implementation follow-up | `route-technology-story.pptx` | Explain how ROUTE makes the vision inspectable, refinable, and evidence-bounded. |
+| State, authority, port, turnpike, or paid-pilot buyer conversation | `route-state-service-network-sales.md` | Sell the state service-network diagnostic, source-owner path, and kickoff gate. |
 
 Do not open with ROUTE unless the audience already asked about the technology.
-The first deck is the vision. The second deck is the machinery.
+The first deck is the vision. The second deck is the machinery. The third deck
+is the buyer-facing product motion when the audience is ready to discuss a
+bounded diagnostic.
 
 ## Core Talk Track
 
@@ -140,6 +144,39 @@ Then open the ROUTE technology deck.
 | "Why should anyone trust the score?" | "Do not trust the total alone. The total is an index for review; dimensions, confidence, and sensitivity decide whether a claim can move." |
 | "Can we reproduce and challenge the artifacts?" | "You can inspect the current command capture and verification gate. L1/L2 release evidence is still held where public, browser, game, or readiness claims are made." |
 | "Why not show every technical detail?" | "This deck sells the refinement engine. Detailed artifacts belong in the demo runbook and evidence package." |
+
+## Deck C: State Service-Network Sales
+
+Use `docs/decks/route-state-service-network-sales.md` only after the audience is
+ready to talk about a state, authority, corridor, port, gateway, turnpike, or
+freight-coalition pilot. This deck is for a buyer conversation, not a public
+announcement.
+
+| Slide | Talk Track | Do Not Say |
+|---|---|---|
+| 1. Sell the network job | "ROUTE turns a state or authority's priorities into a service hierarchy, failure ledger, evidence boundary, and paid pilot path." | This is an official state plan. |
+| 2. Buyer already has maps | "The gap is not cartography. The gap is role, promise, failure, evidence, and next decision." | The buyer's existing tools are useless. |
+| 3. What ROUTE sells | "Every segment gets a job or a non-promotion reason: trunk, regional connector, rural mesh, terminal, resilience, maintenance, or outside scope." | Every segment should be promoted. |
+| 4. Workflow | "Intake, payload, custody, fit, review, and readout create a controlled path from buyer priorities to internal diagnostic." | ROUTE automatically produces source-backed results. |
+| 5. Texas sale path | "Texas now has a buyer review packet, paid pilot scope, and kickoff readiness gate." | Texas has approved or validated this. |
+| 6. Buyer receives | "The deliverables are a scope sheet, custody ledger, candidate hierarchy, failure scorecard, investment-question backlog, and executive readout." | These deliverables are construction, procurement, or ROI proof. |
+| 7. Future UI | "The eventual product should be a working session where the buyer edits priorities, tiers, dials, and evidence holds." | The UI already exists or replaces GIS/modeling tools. |
+| 8. Kickoff gate | "Do not start until sponsor, scope, source owners, data handling, review cadence, and claim boundary are confirmed." | Start first and clean up evidence later. |
+| 9. Hard questions | "The safe answer preserves held claims: no official plan, public use, legal SLA, numeric ROI, construction recommendation, or source-free start." | Yes to anything the buyer asks for. |
+| 10. Early value | "Even before full inventory, ROUTE exposes missing owners, separates service from politics, and prevents fake certainty." | A partial pilot proves statewide readiness. |
+| 11. First close | "Pick the pilot scope, name source owners, and accept the boundaries." | Adopt ROUTE or endorse the map. |
+| 12. Closing | "The state sells itself when the network job is visible." | The plan is finished. |
+
+## Deck C Objection Handling
+
+| Objection | Response |
+|---|---|
+| "Is this a Texas DOT plan?" | "No. It is a buyer review and diagnostic pathway. TxDOT, approval, validation, and public-readiness claims remain held." |
+| "Can we buy this as a fixed pilot?" | "The deck supports a bounded pilot conversation, but price quote, procurement response, and contracting artifacts are separate commercial work." |
+| "What data do you need first?" | "Segment inventory, priority nodes, failure evidence, terminal access, non-promotion rows, and a claim-boundary owner." |
+| "What if we do not have clean data?" | "Then the pilot starts with source custody and source-needed gaps, not source-backed claims." |
+| "What is the outcome?" | "An internal service hierarchy, custody ledger, failure scorecard, investment-question backlog, and executive readout with evidence holds." |
+| "Can leadership show this publicly?" | "Not from this packet. Public release requires publication scope, claim approval, and release review." |
 
 ## Audience-Specific Emphasis
 
