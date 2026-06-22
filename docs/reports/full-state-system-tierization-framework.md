@@ -43,6 +43,8 @@ sources:
   - data/state-payload-candidate-role-review-001.csv
   - data/state-payload-role-review-evaluation-001.csv
   - data/state-payload-role-review-summary-001.csv
+  - data/state-payload-promotion-closeout-001.csv
+  - data/state-payload-promotion-next-actions-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -281,6 +283,15 @@ candidate transform only until a filled client payload replaces the sample rows.
 role-review readiness. The sample rows pass internal fit checks but remain
 promotion-held because source custody and real client payload review have not
 occurred.
+
+## Payload Promotion Closeout 001
+
+`data/state-payload-promotion-closeout-001.csv` and
+`data/state-payload-promotion-next-actions-001.csv` summarize the state payload
+pathway for delivery and sales use. The closeout marks the chain ready for
+client intake and internal demonstration, while keeping public promotion,
+official tier assignment, SLA, ROI, construction, approval, validation, and
+source-backed full-inventory claims held.
 
 ## Evidence Boundary
 
