@@ -65,6 +65,10 @@ sources:
   - data/state-texas-paid-pilot-deliverables-001.csv
   - data/state-texas-paid-pilot-acceptance-001.csv
   - data/state-texas-paid-pilot-non-fit-001.csv
+  - data/state-texas-buyer-review-decision-001.csv
+  - data/state-texas-buyer-review-agenda-001.csv
+  - data/state-texas-buyer-source-request-001.csv
+  - data/state-texas-buyer-objection-response-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -380,6 +384,18 @@ executive readout, deliverables such as a source custody ledger and candidate
 service hierarchy, acceptance gates, and non-fit responses. It deliberately
 holds price quote, procurement, official-plan, legal-SLA, construction, ROI,
 approval, validation, public-readiness, and full-inventory claims.
+
+## Texas Buyer Review Packet 001
+
+`data/state-texas-buyer-review-decision-001.csv`,
+`data/state-texas-buyer-review-agenda-001.csv`,
+`data/state-texas-buyer-source-request-001.csv`, and
+`data/state-texas-buyer-objection-response-001.csv` package the paid pilot scope
+for a sponsor conversation. The packet gives the buyer a go/no-go decision memo,
+meeting agenda, source request language, and safe objection responses while
+keeping adoption, price, procurement, official-plan, legal-SLA, construction,
+numeric ROI, endorsement, validation, public-readiness, and full-inventory
+claims held.
 
 ## Evidence Boundary
 
