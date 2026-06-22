@@ -327,6 +327,22 @@
       gap: 8px;
     }
 
+    .alert-strip {
+      display: grid;
+      grid-template-columns: minmax(160px, 0.65fr) minmax(220px, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid #e0b879;
+      background: #fff8e8;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .alert-strip strong {
+      font-size: 13px;
+    }
+
     .meter {
       display: grid;
       grid-template-columns: 1fr 42px;
@@ -370,6 +386,19 @@
 
     .decision.blocked {
       box-shadow: inset 3px 0 0 var(--risk);
+    }
+
+    .ops-log {
+      max-height: 210px;
+      overflow: auto;
+      display: grid;
+      gap: 6px;
+    }
+
+    .log-row {
+      font-size: 12px;
+      line-height: 1.35;
+      background: var(--field);
     }
 
     .readout {
@@ -422,6 +451,10 @@
         grid-template-columns: 1fr 1fr;
       }
 
+      .alert-strip {
+        grid-template-columns: 1fr;
+      }
+
       .map-wrap,
       svg {
         min-height: 360px;
@@ -439,7 +472,7 @@
       <div class="badges" aria-label="DCR status">
         <span class="badge info"><strong>Mode</strong> advisory simulation</span>
         <span class="badge watch"><strong>Authority</strong> operator review required</span>
-        <span class="badge risk"><strong>Held</strong> traffic control, legal detour, SLA, EV availability</span>
+        <span class="badge risk"><strong>Held</strong> traffic control, legal detour, SLA, EV availability, pricing authority</span>
       </div>
     </header>
 
@@ -476,6 +509,7 @@
               <button type="button" data-inject="signage">Signage</button>
               <button type="button" data-inject="terminal">Terminal</button>
               <button type="button" data-inject="weather">Weather</button>
+              <button type="button" data-inject="payment">Payment</button>
             </div>
           </section>
 
@@ -487,8 +521,9 @@
               <button type="button" data-switch="ev">EV Support</button>
               <button type="button" data-switch="recovery">Recovery</button>
               <button type="button" data-switch="asset">Asset</button>
+              <button type="button" data-switch="express">Express Service</button>
             </div>
-            <p class="subhead">Switches create advisory packets. They do not command devices or issue legal detours.</p>
+            <p class="subhead">Switches create advisory packets. They do not command devices, issue legal detours, set prices, or collect payments.</p>
           </section>
 
           <section class="panel">
@@ -510,8 +545,15 @@
           <div class="metric"><span>EV Confidence</span><strong id="ev-confidence">72%</strong></div>
           <div class="metric"><span>Recovery Window</span><strong id="recovery-window">42m</strong></div>
           <div class="metric"><span>Signage Queue</span><strong id="signage-queue">2</strong></div>
+          <div class="metric"><span>Express Demand</span><strong id="express-demand">38%</strong></div>
           <div class="metric"><span>Evidence Holds</span><strong id="evidence-holds">5</strong></div>
           <div class="metric"><span>Renewal Signal</span><strong id="renewal-signal">active</strong></div>
+        </div>
+
+        <div class="alert-strip" aria-label="DCR alert ticker">
+          <strong id="alert-title">Watch: Closure</strong>
+          <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
+          <span class="badge watch" id="alert-boundary">advisory only</span>
         </div>
 
         <div class="map-wrap">
@@ -572,6 +614,14 @@
 
           <section class="panel">
             <div class="log-top">
+              <h2>Operating Memory</h2>
+              <span class="badge info" id="log-count">1 row</span>
+            </div>
+            <div class="ops-log" id="ops-log" aria-label="Operating memory"></div>
+          </section>
+
+          <section class="panel">
+            <div class="log-top">
               <h2>Executive Readout</h2>
               <span class="badge risk">claim-safe</span>
             </div>
@@ -587,7 +637,7 @@
 
     <footer>
       <span>DCR boundary: advisory simulation, operator-reviewed action, evidence-backed claim.</span>
-      <span>Blocked claims remain held: traffic control, legal detour, incident command, guaranteed SLA, EV availability, ROI.</span>
+      <span>Blocked claims remain held: traffic control, legal detour, incident command, guaranteed SLA, EV availability, pricing authority, revenue guarantee, ROI.</span>
     </footer>
   </div>
 
@@ -597,12 +647,13 @@
         name: "Winter closure and EV stress",
         summary: "T1 mountain pass closure threatens freight promise and EV completion.",
         posture: "Reroute advisory plus EV staging review.",
-        metrics: { risk: 46, flow: 91, ev: 72, recovery: 42, signage: 2, holds: 5 },
+        metrics: { risk: 46, flow: 91, ev: 72, recovery: 42, signage: 2, express: 38, holds: 5 },
         signals: [
           ["Closure", "risk", 72, "Primary pass restricted; alternate independence needs review."],
           ["Weather", "watch", 58, "Snow band moving across both primary and local bypass."],
           ["EV range", "risk", 64, "Detour length creates source-needed charging row."],
           ["Signage", "watch", 48, "Drivers need earlier route split before grade approach."],
+          ["Express payment", "watch", 44, "Operators may pay for faster verified service, but pricing authority is held."],
           ["Evidence", "watch", 52, "Legal detour and EV availability claims remain held."]
         ]
       },
@@ -610,11 +661,12 @@
         name: "Terminal access disruption",
         summary: "Port gate queue and local restriction threaten last-mile promise.",
         posture: "Terminal access posture plus truck routing advisory.",
-        metrics: { risk: 52, flow: 84, ev: 79, recovery: 55, signage: 3, holds: 6 },
+        metrics: { risk: 52, flow: 84, ev: 79, recovery: 55, signage: 3, express: 46, holds: 6 },
         signals: [
           ["Terminal", "risk", 76, "Gate queue exceeds review threshold."],
           ["Local access", "risk", 67, "Truck path conflicts with restricted local segment."],
           ["Signage", "watch", 55, "Candidate staging message needs operator review."],
+          ["Express payment", "watch", 58, "Terminal operators show premium access demand; payment policy remains source-needed."],
           ["Recovery", "watch", 49, "Window expands without access switch."],
           ["Evidence", "watch", 60, "Public-readiness and endorsement claims held."]
         ]
@@ -623,10 +675,11 @@
         name: "Managed-lane incident recovery",
         summary: "Incident blocks priced lane and degrades recovery promise.",
         posture: "Recovery posture plus communications readout.",
-        metrics: { risk: 59, flow: 78, ev: 83, recovery: 68, signage: 2, holds: 5 },
+        metrics: { risk: 59, flow: 78, ev: 83, recovery: 68, signage: 2, express: 62, holds: 5 },
         signals: [
           ["Incident", "risk", 80, "Managed lane blocked at merge area."],
           ["Recovery", "risk", 71, "Clearance window exceeds accepted target."],
+          ["Express payment", "risk", 70, "Paid faster-service demand rises, but pricing and tolling authority need owner review."],
           ["Communications", "watch", 46, "Leadership language needs bounded claim."],
           ["Signage", "watch", 51, "Route-split timing review needed."],
           ["Evidence", "watch", 54, "Incident-command and SLA claims remain held."]
@@ -636,10 +689,11 @@
         name: "Recurring freight bottleneck",
         summary: "Repeated peak-period queue outranks current package sequence.",
         posture: "Investment posture plus package sensitivity simulation.",
-        metrics: { risk: 41, flow: 87, ev: 86, recovery: 39, signage: 1, holds: 4 },
+        metrics: { risk: 41, flow: 87, ev: 86, recovery: 39, signage: 1, express: 54, holds: 4 },
         signals: [
           ["Reliability", "watch", 61, "Recurring delay crosses planning target."],
           ["Freight", "risk", 66, "Terminal-to-corridor movement misses promise proxy."],
+          ["Express payment", "watch", 63, "Carriers may value verified faster slots; revenue guarantee remains held."],
           ["Asset", "watch", 43, "Pavement and WIM rows need refresh."],
           ["Package", "watch", 57, "Operations package now outranks old capital list."],
           ["Evidence", "watch", 45, "ROI and construction readiness claims held."]
@@ -652,7 +706,8 @@
       signage: "Signage/routing advisory",
       ev: "EV support advisory",
       recovery: "Recovery posture",
-      asset: "Asset and investment posture"
+      asset: "Asset and investment posture",
+      express: "Express service payment advisory"
     };
 
     const state = {
@@ -698,6 +753,7 @@
         ev: Math.max(25, Math.min(98, base.ev - (state.scenario === "winter-closure" ? drift : 0) + (hasDecision("ev") ? 8 : 0))),
         recovery: Math.max(12, base.recovery + drift - (hasDecision("recovery") ? 12 : 0)),
         signage: Math.max(0, base.signage + (hasDecision("signage") ? -1 : 0)),
+        express: Math.max(10, Math.min(96, base.express + drift + (hasDecision("express") ? 6 : 0))),
         holds: Math.max(3, base.holds - state.decisions.filter((item) => item.status === "approved").length)
       };
     }
@@ -714,6 +770,7 @@
       document.getElementById("ev-confidence").textContent = `${metrics.ev}%`;
       document.getElementById("recovery-window").textContent = `${metrics.recovery}m`;
       document.getElementById("signage-queue").textContent = String(metrics.signage);
+      document.getElementById("express-demand").textContent = `${metrics.express}%`;
       document.getElementById("evidence-holds").textContent = String(metrics.holds);
       document.getElementById("renewal-signal").textContent = state.decisions.length > 1 || state.minute > 20 ? "strong" : "active";
       document.getElementById("incident-node").setAttribute("r", String(18 + Math.min(18, metrics.risk / 6)));
@@ -733,9 +790,11 @@
       const root = document.getElementById("signal-list");
       root.innerHTML = "";
       const drift = Math.min(16, Math.floor(state.minute / 8));
+      const alert = [];
       for (const [name, kind, value, body] of currentScenario().signals) {
         const level = Math.max(0, Math.min(100, value + drift - (hasRelevantDecision(name) ? 8 : 0)));
         const cls = statusClass(level);
+        alert.push({ name, cls, level, body });
         const el = document.createElement("article");
         el.className = "signal";
         el.innerHTML = `
@@ -751,6 +810,11 @@
         `;
         root.appendChild(el);
       }
+      const topAlert = alert.sort((a, b) => b.level - a.level)[0];
+      document.getElementById("alert-title").textContent = `${topAlert.cls}: ${topAlert.name}`;
+      document.getElementById("alert-body").textContent = topAlert.body;
+      document.getElementById("alert-boundary").textContent = topAlert.cls === "risk" ? "operator review" : "advisory only";
+      document.getElementById("alert-boundary").className = `badge ${topAlert.cls === "risk" ? "risk" : "watch"}`;
       document.getElementById("signal-count").textContent = `${currentScenario().signals.length} active`;
     }
 
@@ -760,6 +824,7 @@
       if (lower.includes("signage")) return hasDecision("signage");
       if (lower.includes("recovery") || lower.includes("incident")) return hasDecision("recovery");
       if (lower.includes("asset") || lower.includes("package")) return hasDecision("asset");
+      if (lower.includes("express") || lower.includes("payment")) return hasDecision("express");
       if (lower.includes("closure") || lower.includes("local") || lower.includes("terminal")) return hasDecision("reroute");
       return false;
     }
@@ -800,13 +865,29 @@
         ["network_flow", `${metrics.flow}%`],
         ["ev_confidence", `${metrics.ev}%`],
         ["recovery_window", `${metrics.recovery}m`],
+        ["express_demand", `${metrics.express}%`],
         ["recommended_posture", currentScenario().posture],
         ["operator_status", state.operatorStatus],
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
-        ["held_claims", "traffic_control; legal_detour; incident_command; guaranteed_sla; ev_availability; roi"],
+        ["pending_or_held_switches", state.decisions.filter((item) => item.status !== "approved").map((item) => `${item.label}: ${item.status}`).join("; ") || "none"],
+        ["operating_memory_rows", state.log.length],
+        ["latest_event", state.log.at(-1)],
+        ["held_claims", "traffic_control; legal_detour; incident_command; guaranteed_sla; ev_availability; pricing_authority; revenue_guarantee; roi"],
         ["boundary", "advisory simulation; operator-approved action required; evidence-backed claims only"]
       ];
       document.getElementById("readout").value = rows.map(([key, value]) => `${key},${csvCell(value)}`).join("\n");
+    }
+
+    function renderLog() {
+      const root = document.getElementById("ops-log");
+      root.innerHTML = "";
+      for (const event of state.log.slice(-8).reverse()) {
+        const el = document.createElement("div");
+        el.className = "log-row";
+        el.textContent = event;
+        root.appendChild(el);
+      }
+      document.getElementById("log-count").textContent = `${state.log.length} ${state.log.length === 1 ? "row" : "rows"}`;
     }
 
     function csvCell(value) {
@@ -829,6 +910,7 @@
       renderSignals();
       renderDecisions();
       renderReadout();
+      renderLog();
       renderBoundary();
     }
 
@@ -874,12 +956,14 @@
         charger: "Charging source changed",
         signage: "Signage queue updated",
         terminal: "Terminal access exception added",
-        weather: "Weather hazard expanded"
+        weather: "Weather hazard expanded",
+        payment: "Express payment demand changed"
       };
       state.minute += 3;
       state.log.push(`${formatClock()} ${names[kind]}.`);
       if (kind === "charger" && !state.decisions.some((item) => item.kind === "ev")) createDecision("ev");
       if (kind === "signage" && !state.decisions.some((item) => item.kind === "signage")) createDecision("signage");
+      if (kind === "payment" && !state.decisions.some((item) => item.kind === "express")) createDecision("express");
       renderAll();
     }
 
@@ -917,7 +1001,7 @@
       const target = state.decisions.find((item) => item.kind === state.selectedSwitch) || state.decisions[0];
       if (!target || target.kind === "none") return;
       target.status = "blocked";
-      target.boundary = "Held for authority. Traffic control, legal detour, SLA, and EV availability remain blocked claims.";
+      target.boundary = "Held for authority. Traffic control, legal detour, SLA, EV availability, pricing authority, and revenue guarantees remain blocked claims.";
       state.operatorStatus = "held";
       state.log.push(`${formatClock()} held for authority: ${target.label}.`);
       renderAll();
@@ -930,7 +1014,7 @@
       const copy = {
         signals: "Monitoring exceptions, switch packets, and claim boundaries update as the simulation runs.",
         decisions: "Switch playbooks preserve the line between advisory simulation and operator-reviewed action.",
-        evidence: "Evidence labels keep traffic control, legal detours, SLA, EV availability, ROI, and endorsement claims held."
+        evidence: "Evidence labels keep traffic control, legal detours, SLA, EV availability, pricing authority, revenue guarantees, ROI, and endorsement claims held."
       };
       document.getElementById("tab-summary").textContent = copy[view];
     }

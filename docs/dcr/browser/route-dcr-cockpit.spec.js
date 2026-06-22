@@ -14,7 +14,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("traffic control, legal detour, SLA, EV availability")).toBeVisible();
     await expect(page.locator("#active-case")).toHaveText("Winter closure and EV stress");
     await expect(page.locator("#promise-risk")).toHaveText("46");
-    await expect(page.locator("#signal-count")).toHaveText("5 active");
+    await expect(page.locator("#signal-count")).toHaveText("6 active");
+    await expect(page.locator("#express-demand")).toHaveText("38%");
+    await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
   });
 
@@ -45,12 +47,27 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Terminal" }).click();
     await page.getByRole("button", { name: "EV Support" }).click();
     await page.getByRole("button", { name: "Hold For Authority" }).click();
-    await expect(page.getByText("Held for authority. Traffic control, legal detour, SLA, and EV availability remain blocked claims.")).toBeVisible();
+    await expect(page.getByText("Held for authority. Traffic control, legal detour, SLA, EV availability, pricing authority, and revenue guarantees remain blocked claims.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_status,"held"/);
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download CSV" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe("route-dcr-cockpit-readout.csv");
+  });
+
+  test("express payment signal creates a bounded service advisory", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
+
+    await page.getByRole("button", { name: "Payment" }).click();
+    await expect(page.getByText("Express service payment advisory created from simulated signal review.")).toBeVisible();
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/pending_or_held_switches,"Express service payment advisory: pending"/);
+
+    await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
+    await expect(page.locator("#decision-count")).toHaveText("1 reviewed");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/approved_switches,"Express service payment advisory"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_authority; revenue_guarantee/);
   });
 });
