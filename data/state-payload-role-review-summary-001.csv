@@ -1,0 +1,2 @@
+summary_id,surface,candidate_rows,fit_pass_rows,promotion_hold_rows,promotion_fail_rows,decision,next_action,held_claims
+ROLE-SUMMARY-001,generic_state_payload_sample,4,4,4,0,candidate_fit_passed_promotion_held,replace sample rows with accepted client payload and rerun role review evaluation,official_designation|legal_sla|construction|cost|numeric_roi|roi|eligibility|compliance|endorsement|validation|public_readiness|state_approval|source_backed_full_inventory
