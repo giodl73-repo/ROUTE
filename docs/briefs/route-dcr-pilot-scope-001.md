@@ -9,6 +9,7 @@ created: 2026-06-22
 updated: 2026-06-22
 sources:
   - docs/briefs/route-dcr-package.md
+  - docs/briefs/route-dcr-renewal-gate-001.md
   - docs/briefs/route-dcr-tabletop-scope-001.md
   - docs/briefs/route-operating-layer-value.md
   - data/route-dcr-pilot-phases-001.csv
@@ -65,6 +66,11 @@ Core outputs include a monitored signal ledger, promise-at-risk board,
 simulation comparison packets, switch playbook register, signage/routing
 advisory queue, EV support queue, evidence boundary ledger, executive readout,
 and renewal recommendation.
+
+The renewal recommendation must use
+`docs/briefs/route-dcr-renewal-gate-001.md` so continuation is tied to observed
+operating memory, repeated decisions, source gates, event triggers, claim
+boundaries, or operator review rather than a generic platform pitch.
 
 ## Acceptance Gate
 

@@ -10,6 +10,7 @@ updated: 2026-06-22
 sources:
   - docs/briefs/route-operating-layer-value.md
   - docs/briefs/route-dcr-pilot-scope-001.md
+  - docs/briefs/route-dcr-renewal-gate-001.md
   - docs/briefs/state-network-planner-ui-brief.md
   - docs/reports/route-business-model-report.md
   - docs/reports/route-competitive-landscape-report.md
@@ -92,6 +93,17 @@ The DCR can start with staged scenarios and mature into live feeds.
 | DCR quarterly review | Retainer buyer | Monitoring exceptions, simulations, switch playbooks, evidence updates, and executive readout. |
 | DCR event review | Buyer after a disruption | Post-event replay, missed promise, switch option, signage/routing, EV, and package implications. |
 | DCR workbench | Mature buyer | Hosted or local decision surface with scenarios, exports, and evidence ledger. |
+
+## Renewal Logic
+
+The DCR should renew only when the pilot creates operating memory worth
+maintaining: changed service hierarchy rows, repeated decision classes,
+monitoring history, reusable simulations, source gates, switch playbooks,
+evidence-boundary changes, or executive cadence.
+
+The renewal gate is `docs/briefs/route-dcr-renewal-gate-001.md`. It routes the
+buyer to quarterly review, event review, workbench buildout, source integration,
+signage/routing advisory, EV support advisory, or stop/hold.
 
 ## Boundary
 

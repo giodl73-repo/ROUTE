@@ -1,0 +1,11 @@
+asset_id,maintained_asset,what_accumulates,why_buyer_keeps_paying,blocked_claims
+service_hierarchy,Service hierarchy,"Current T1/T2/T3/T4/R roles, affected nodes, and changed priority rows.","Keeps operators and leadership aligned when the network changes.","official_plan|endorsement"
+promise_ledger,Promise ledger,"Planning promises, legal-SLA holds, owners, review dates, and expired language.","Prevents stale promises from becoming unsafe leadership claims.","guaranteed_sla|public_readiness"
+failure_mode_ledger,Failure-mode ledger,"Recurring closures, incidents, access failures, EV risks, asset drift, and recovery gaps.","Names the next operating risks before they become political surprises.","incident_command|traffic_control"
+monitoring_history,Monitoring history,"Exception rows, source status, signal changes, and unresolved holds over time.","Creates a memory of what changed, what repeated, and what stayed blocked.","live_integration|automated_control"
+simulation_library,Simulation library,"Reusable closure, weather, EV, signage, terminal, access, and package scenarios.","Lets the buyer rehearse decisions faster with each cycle.","legal_detour|ev_availability"
+switch_playbooks,Switch playbooks,"Reroute, signage, EV support, recovery, access, communication, asset, and investment postures.","Turns monitoring into governed options instead of improvised reactions.","traffic_control|legal_detour"
+evidence_boundary,Evidence boundary,"Source-backed, heuristic, source-needed, held, expired, and unsafe-to-repeat claim labels.","Protects executive language and sales claims as conditions change.","endorsement|roi|public_readiness"
+executive_cadence,Executive cadence,"Monthly or quarterly readouts, decision logs, renewal asks, and claim holds.","Gives sponsors a repeatable way to show drift, decisions, and next actions.","procurement_readiness|roi"
+source_custody,Source custody,"Approved feeds, manual fixtures, owner contacts, refresh windows, and use limits.","Reduces restart cost and preserves source discipline for future reviews.","live_integration|endorsement"
+renewal_backlog,Renewal backlog,"Next scenarios, source gates, workbench needs, event review triggers, and stopped claims.","Creates a concrete continuation path instead of a vague platform pitch.","roi|construction|procurement_readiness"
