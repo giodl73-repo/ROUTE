@@ -14,6 +14,8 @@ sources:
   - docs/briefs/iowa-service-network-discovery-workshop.md
   - docs/briefs/iowa-service-network-sample-readout.md
   - docs/briefs/texas-state-service-network-offer.md
+  - docs/briefs/route-operating-layer-value.md
+  - docs/briefs/route-dcr-package.md
   - docs/reports/route-evidence-posture.md
 ---
 
@@ -28,6 +30,11 @@ The first buyer should not be the largest possible government program. The
 first buyer should be a narrow operator, authority, coalition, or sponsor with
 a real service-network pain, enough existing data to make a readout useful, and
 enough urgency to pay for a fixed 90-day diagnostic.
+
+The follow-on product should be DCR: a Decision Control Room package that
+keeps the service-network promise alive through monitoring, simulation,
+resilience switching, signage/routing advisories, EV support posture, evidence
+boundaries, and executive readouts.
 
 ## Best First-Client Profile
 
@@ -67,6 +74,7 @@ The meeting should close on one of three paths:
 | Path | Use When | Next Artifact |
 |---|---|---|
 | Diagnostic candidate | Buyer has a bounded corridor, port, managed lane, or state network question. | 90-day scope sheet. |
+| DCR candidate | Buyer already has a monitored corridor, incident pain, EV/signage issue, or recurring resilience question. | DCR tabletop or 30-90 day DCR pilot scope. |
 | Workshop only | Buyer has interest but no paid path yet. | Discovery worksheet and sample readout. |
 | Hold | Buyer wants guaranteed ROI, official route designation, construction proof, or vendor replacement. | Non-fit note and claim-boundary response. |
 
@@ -95,6 +103,24 @@ The first paid diagnostic should return:
 | Investment package sequence | Groups projects or actions by service role and failure mode. |
 | Dashboard specification | Defines what leadership should track without claiming a finished platform. |
 | Executive readout | Gives the buyer a board, authority, sponsor, or leadership-facing story. |
+
+## DCR Expansion Path
+
+The diagnostic should end with a DCR option, not only a static report.
+
+| DCR Package | Use When | Buyer Value |
+|---|---|---|
+| DCR tabletop | Buyer wants proof before a retained pilot | Rehearse one closure, EV, signage, terminal, or resilience scenario with staged data. |
+| DCR pilot | Buyer has one corridor, port, managed lane, gateway, or state slice | Monitor exceptions, run simulations, and maintain switch playbooks for 30-90 days. |
+| DCR quarterly review | Buyer needs a recurring decision cadence | Refresh evidence, package sequence, signage/routing posture, EV support posture, and leadership readout. |
+| DCR event review | Buyer has a disruption or near miss | Replay what happened, identify missed promise rows, and update switch options. |
+| DCR workbench | Buyer has repeat use and enough source surfaces | Move from static decks to a maintained decision surface with exports. |
+
+Do not make DCR sound like traffic-control authority. The close should be:
+
+> We can maintain the decision room that tells you what changed, which service
+> promises are at risk, which switch options are available, and what you can
+> safely tell leadership.
 
 ## First-Call Script
 
@@ -133,6 +159,11 @@ A first-client prospect passes only if it can support all five conditions:
 3. Existing evidence surfaces.
 4. Budget owner, sponsor, or paid pilot route.
 5. Acceptance of claim boundaries.
+
+A DCR prospect should also have at least one recurring operating question:
+incident rerouting, signage, EV charging/range support, terminal access,
+weather resilience, recovery posture, asset drift, or leadership readout
+cadence.
 
 If any condition fails, keep the relationship warm but do not treat it as a
 first-client candidate.
