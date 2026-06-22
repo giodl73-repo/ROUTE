@@ -11,6 +11,7 @@ sources:
   - docs/briefs/route-operating-layer-value.md
   - docs/briefs/route-dcr-pilot-scope-001.md
   - docs/briefs/route-dcr-renewal-gate-001.md
+  - docs/dcr/browser/route-dcr-cockpit.html
   - docs/briefs/state-network-planner-ui-brief.md
   - docs/reports/route-business-model-report.md
   - docs/reports/route-competitive-landscape-report.md
@@ -56,6 +57,10 @@ from a static readout to a maintained decision environment.
 | EV support queue | Flags range, charger, rest-area, staging, queue, and utility risks | EV-sensitive reroute or support note |
 | Evidence boundary ledger | Shows source-backed, heuristic, source-needed, held, expired, and unsafe-to-repeat claims | Claim-safe executive language |
 | Executive readout exporter | Produces board, authority, sponsor, or leadership summaries | Bounded decision memo |
+
+The first cockpit surface is `docs/dcr/browser/route-dcr-cockpit.html`. It is a
+simulated DCR workbench with signal injection, scenario time, switch controls,
+operator review state, map posture, and claim-safe readout export.
 
 ## DCR Decisions
 
