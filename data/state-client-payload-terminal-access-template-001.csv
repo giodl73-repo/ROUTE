@@ -1,0 +1,2 @@
+terminal_id,terminal_class,access_route_ref,nearest_tier_node,source_ref,known_access_constraint_refs
+terminal-a,port_or_airport_or_border_or_industrial,state-segment-003,node-city-a,client-terminal-inventory,restriction-002

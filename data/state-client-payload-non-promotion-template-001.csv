@@ -1,0 +1,2 @@
+source_segment_id,coverage_status,non_promotion_reason,review_owner,source_ref
+state-segment-099,maintained_not_promoted,maintained route with no promoted service role in current package,client-review-owner,client-road-inventory

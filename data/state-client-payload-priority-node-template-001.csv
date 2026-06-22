@@ -1,0 +1,3 @@
+node_id,node_label,node_class,jurisdiction,source_ref,client_priority
+node-city-a,City A,city,example-state,client-priority-node-list,statewide
+node-terminal-a,Terminal A,port_or_airport_or_freight_terminal,example-state,client-priority-node-list,terminal-access
