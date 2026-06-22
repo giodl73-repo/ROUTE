@@ -61,6 +61,10 @@ sources:
   - data/state-texas-source-owner-docket-001.csv
   - data/state-texas-source-custody-checklist-001.csv
   - data/state-texas-source-handoff-decision-001.csv
+  - data/state-texas-paid-pilot-phases-001.csv
+  - data/state-texas-paid-pilot-deliverables-001.csv
+  - data/state-texas-paid-pilot-acceptance-001.csv
+  - data/state-texas-paid-pilot-non-fit-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -364,6 +368,18 @@ inventory, priority nodes, failure evidence, terminal access, non-promotion, and
 claim boundary review; then it gates source identity, row traceability, pilot
 scope, review disposition, and handoff decisions before any source-backed fit or
 promotion step can run.
+
+## Texas Paid Pilot Scope 001
+
+`data/state-texas-paid-pilot-phases-001.csv`,
+`data/state-texas-paid-pilot-deliverables-001.csv`,
+`data/state-texas-paid-pilot-acceptance-001.csv`, and
+`data/state-texas-paid-pilot-non-fit-001.csv` turn the Texas workflow into a
+buyer-facing scope package. The scope defines phases from scope lock through
+executive readout, deliverables such as a source custody ledger and candidate
+service hierarchy, acceptance gates, and non-fit responses. It deliberately
+holds price quote, procurement, official-plan, legal-SLA, construction, ROI,
+approval, validation, public-readiness, and full-inventory claims.
 
 ## Evidence Boundary
 
