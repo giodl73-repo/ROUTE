@@ -18,6 +18,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#express-demand")).toHaveText("38%");
     await expect(page.locator("#paid-requests")).toHaveText("0");
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
+    await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
+    await expect(page.locator("#run-owner")).toHaveText("DOT operations");
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
   });
@@ -45,6 +47,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByLabel("Scenario case").selectOption("terminal-access");
     await expect(page.locator("#active-case")).toHaveText("Terminal access disruption");
     await expect(page.locator("#promise-risk")).toHaveText("52");
+    await expect(page.locator("#run-owner")).toHaveText("Port operations");
+    await expect(page.locator("#source-status")).toHaveText("source-needed");
+    await expect(page.getByLabel("Scenario run plan")).toContainText("Terminal queue owner plus local truck-route authority required.");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_owner,"Port operations"/);
 
     await page.getByRole("button", { name: "Terminal" }).click();
     await page.getByRole("button", { name: "EV Support" }).click();
