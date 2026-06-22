@@ -1,0 +1,2 @@
+closeout_id,surface,candidate_rows,fit_pass_rows,promotion_hold_rows,decision,allowed_use,next_action,held_claims
+TX-CLOSE-001,texas_client_like_payload_pilot,6,6,6,texas_client_like_pipeline_passed_promotion_held,client intake rehearsal and Texas workshop prompt,obtain filled Texas segment node terminal failure and non-promotion payloads,official_designation|legal_sla|construction|cost|numeric_roi|roi|eligibility|compliance|endorsement|validation|public_readiness|state_approval|source_backed_full_inventory
