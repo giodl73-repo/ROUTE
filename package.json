@@ -101,6 +101,7 @@
     "check:china:extract": "python tools/build_china_parser_extraction_candidates.py && python tools/check_china_parser_extraction_candidates.py",
     "check:state:iowa-pilot": "python tools/build_iowa_state_highway_pilot.py && python tools/check_iowa_state_highway_pilot.py",
     "check:state:iowa-source-pack": "python tools/build_iowa_state_source_pack.py && python tools/check_iowa_state_source_pack.py",
+    "check:state:tierization-fit": "python tools/build_state_tierization_fit_kernel.py && python tools/check_state_tierization_fit_kernel.py",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
