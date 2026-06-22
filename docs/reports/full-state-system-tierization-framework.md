@@ -50,6 +50,9 @@ sources:
   - data/state-client-intake-held-claims-001.csv
   - data/state-texas-client-like-candidate-tierization-001.csv
   - data/state-texas-client-like-closeout-001.csv
+  - data/state-texas-client-intake-packet-001.csv
+  - data/state-texas-client-intake-workshop-agenda-001.csv
+  - data/state-texas-client-intake-source-asks-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -314,6 +317,16 @@ filled source-backed client payload.
 Texas-shaped rows derived from the bounded Texas slate. The pilot confirms the
 pipeline can process Texas statewide, regional, rural, terminal, resilience, and
 non-promotion roles while keeping source custody and promotion held.
+
+## Texas Client Intake Packet 001
+
+`data/state-texas-client-intake-packet-001.csv`,
+`data/state-texas-client-intake-workshop-agenda-001.csv`, and
+`data/state-texas-client-intake-source-asks-001.csv` convert the Texas pilot into
+a client-facing workshop package. The packet asks for Texas segment inventory,
+priority nodes, terminal/failure evidence, and non-promotion reasons while
+holding TxDOT plan, official-tier, SLA, ROI, construction, approval, validation,
+and full-inventory claims.
 
 ## Evidence Boundary
 
