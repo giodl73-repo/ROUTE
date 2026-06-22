@@ -1,0 +1,9 @@
+gate_id,gate,pass_condition,renewal_signal,blocked_claims
+asset_changed,Maintained asset changed,"At least one maintained asset has a new row, changed evidence label, or unresolved hold.","Quarterly review or event review can be justified.","roi|procurement_readiness"
+decision_repeated,Decision repeated,"The buyer reviewed the same decision class more than once during pilot.","Workbench, quarterly review, or advisory package has repeat-use evidence.","live_integration|automated_control"
+event_occurred,Event occurred,"A closure, incident, weather, terminal, EV, signage, asset, or leadership event created a new decision row.","Event review has a bounded trigger.","incident_command|traffic_control"
+source_gate_opened,Source gate opened,"A source owner, permission, refresh window, or manual fixture moved from held to usable.","Source integration or quarterly review can lower restart cost.","endorsement|live_integration"
+claim_boundary_mattered,Claim boundary mattered,"At least one claim was held, downgraded, expired, or made safer for leadership language.","Evidence boundary and executive cadence have retained value.","public_readiness|guaranteed_sla"
+operator_review_happened,Operator review happened,"An authorized operator, owner, or sponsor reviewed a switch option or held action.","Switch playbook has governance evidence.","traffic_control|legal_detour"
+no_path_stop,No renewal path,"No maintained asset changed, no event occurred, no repeated decision appeared, and no sponsor wants cadence.","Stop or hold is the correct recommendation.","roi|endorsement|procurement_readiness"
+authority_boundary_preserved,Authority boundary preserved,"Closeout distinguishes advisory simulation, operator-approved action, and evidence-backed claim.","Continuation stays buyer-safe.","traffic_control|legal_detour|automated_control"

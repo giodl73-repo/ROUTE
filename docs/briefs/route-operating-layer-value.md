@@ -9,6 +9,7 @@ created: 2026-06-22
 updated: 2026-06-22
 sources:
   - docs/briefs/route-dcr-package.md
+  - docs/briefs/route-dcr-renewal-gate-001.md
   - docs/reports/route-business-model-report.md
   - docs/reports/route-competitive-landscape-report.md
   - docs/briefs/route-first-client-wedge-package.md
@@ -114,6 +115,12 @@ The enduring value is the maintained state of the system:
 | Switch playbooks | Converts monitoring into bounded decisions instead of improvised reactions. |
 | Package sequence | Keeps investments tied to current service risk, not old project lists. |
 | Executive readout cadence | Gives leaders a repeatable way to see drift, risk, holds, and next actions. |
+
+The renewal gate is simple: keep paying only when the DCR has created operating
+memory that is worth maintaining. That can be a changed asset, repeated
+decision, event trigger, source gate, claim boundary, or operator-reviewed
+switch option. If none of those exist, the correct recommendation is stop or
+hold.
 
 ## Commercial Shape
 
