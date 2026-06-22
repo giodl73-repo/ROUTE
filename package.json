@@ -120,6 +120,7 @@
     "check:dcr:tabletop": "py tools/check_route_dcr_tabletop.py",
     "check:dcr:pilot": "py tools/check_route_dcr_pilot.py",
     "check:dcr:renewal": "py tools/check_route_dcr_renewal.py",
+    "check:dcr:cockpit": "playwright test docs/dcr/browser/route-dcr-cockpit.spec.js --browser=chromium",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",
