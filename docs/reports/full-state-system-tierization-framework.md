@@ -39,6 +39,8 @@ sources:
   - data/state-client-payload-manifest-001.csv
   - data/state-client-payload-preflight-001.csv
   - data/state-client-payload-preflight-evaluation-001.csv
+  - data/state-payload-candidate-tierization-001.csv
+  - data/state-payload-candidate-role-review-001.csv
   - data/state-system-failure-metric-menu.csv
   - docs/reports/state-system-failure-metrics-framework.md
   - docs/reports/state-market-system-value-add-report.md
@@ -261,6 +263,14 @@ references, terminal-access references, restriction/failure references, and
 non-promotion references. It deliberately keeps source custody and promotion
 readiness held because the rows are sample templates, not a filled client
 payload.
+
+## Payload Candidate Tierization 001
+
+`data/state-payload-candidate-tierization-001.csv` and
+`data/state-payload-candidate-role-review-001.csv` apply the fit kernel to the
+generic payload sample and emit candidate `T1`, `T2`, `T4`, and `M` rows. Every
+row remains `source-needed`, every role requires review, and the output is a
+candidate transform only until a filled client payload replaces the sample rows.
 
 ## Evidence Boundary
 
