@@ -860,6 +860,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Resiliency Playbook</h2>
+            <span class="badge info" id="playbook-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Resiliency playbook">
+            <div class="metric"><span>Switch</span><strong id="playbook-switch">monitor</strong></div>
+            <div class="metric"><span>Trigger</span><strong id="playbook-trigger">threshold watch</strong></div>
+            <div class="metric"><span>Justification</span><strong id="playbook-why">risk/flow</strong></div>
+            <div class="metric"><span>Fallback</span><strong id="playbook-fallback">base route</strong></div>
+            <div class="metric"><span>Rollback</span><strong id="playbook-rollback">watch rebound</strong></div>
+            <div class="metric"><span>Authority Gate</span><strong id="playbook-gate">owner approval</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -2019,6 +2034,46 @@
       document.getElementById("workorder-boundary").textContent = workOrder.boundary;
     }
 
+    function resiliencyPlaybook() {
+      const maintenance = maintenanceCase();
+      const workload = operatorWorkload();
+      const dossier = decisionDossier();
+      const postFix = postFixMonitor();
+      const actions = openActionEvents();
+      const approved = state.decisions.find((item) => item.status === "approved");
+      const action = actions[0]?.action || approved?.kind || "monitor";
+      const status = postFix.status === "proving"
+        ? "active"
+        : workload.queue === "source custody" || workload.queue === "role authority"
+          ? "blocked"
+          : actions.length
+            ? "queued"
+            : "draft";
+      return {
+        status,
+        switch: switchLabels[action] || "Monitor only",
+        trigger: actions[0]?.label || (postFix.status === "proving" ? "post-fix proving window" : maintenance.thresholds),
+        why: dossier.why,
+        fallback: dossier.alternatives,
+        rollback: postFix.rollback,
+        gate: status === "active" ? "owner-issued action; monitor rebound" : dossier.blockers,
+        boundary: "playbook is advisory; operator and owner authority required"
+      };
+    }
+
+    function renderResiliencyPlaybook() {
+      const playbook = resiliencyPlaybook();
+      const status = document.getElementById("playbook-status");
+      status.textContent = playbook.status;
+      status.className = `badge ${playbook.status === "active" ? "ok" : playbook.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("playbook-switch").textContent = playbook.switch;
+      document.getElementById("playbook-trigger").textContent = playbook.trigger;
+      document.getElementById("playbook-why").textContent = playbook.why;
+      document.getElementById("playbook-fallback").textContent = playbook.fallback;
+      document.getElementById("playbook-rollback").textContent = playbook.rollback;
+      document.getElementById("playbook-gate").textContent = playbook.gate;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -2033,6 +2088,7 @@
       const watch = watchlist();
       const board = boardPacket();
       const workOrder = workOrderDraft();
+      const playbook = resiliencyPlaybook();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2128,6 +2184,14 @@
         ["workorder_field_step", workOrder.fieldStep],
         ["workorder_proof_link", workOrder.proofLink],
         ["workorder_boundary", workOrder.boundary],
+        ["playbook_status", playbook.status],
+        ["playbook_switch", playbook.switch],
+        ["playbook_trigger", playbook.trigger],
+        ["playbook_justification", playbook.why],
+        ["playbook_fallback", playbook.fallback],
+        ["playbook_rollback", playbook.rollback],
+        ["playbook_authority_gate", playbook.gate],
+        ["playbook_boundary", playbook.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2168,6 +2232,7 @@
       const watch = watchlist();
       const board = boardPacket();
       const workOrder = workOrderDraft();
+      const playbook = resiliencyPlaybook();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2195,6 +2260,7 @@
         `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
         `Board packet: ${board.status}; ask ${board.ask}; sponsor ${board.sponsor}; value ${board.value}; gate ${board.gate}`,
         `Work order draft: ${workOrder.status}; id ${workOrder.id}; issuer ${workOrder.issuer}; gate ${workOrder.releaseGate}; step ${workOrder.fieldStep}`,
+        `Resiliency playbook: ${playbook.status}; switch ${playbook.switch}; trigger ${playbook.trigger}; rollback ${playbook.rollback}; gate ${playbook.gate}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2437,6 +2503,7 @@
       renderWatchlist();
       renderBoardPacket();
       renderWorkOrderDraft();
+      renderResiliencyPlaybook();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2583,6 +2650,7 @@
         watchlist: watchlist(),
         board: boardPacket(),
         workOrder: workOrderDraft(),
+        playbook: resiliencyPlaybook(),
         handoff: handoffText(),
         log: state.log
       };
