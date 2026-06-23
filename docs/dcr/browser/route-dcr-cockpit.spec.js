@@ -361,6 +361,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#traceability-ledger-blocked")).toHaveText("0/3 ready; missing 511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#traceability-ledger-next")).toHaveText("verify 511 closure feed");
     await expect(page.locator("#traceability-ledger-boundary")).toHaveText("traceability ledger only; source owners and field owners remain authoritative");
+    await expect(page.getByLabel("Replay proof")).toContainText("ReplayWinter closure and EV stress; 00:00");
+    await expect(page.locator("#replay-proof-status")).toHaveText("armed");
+    await expect(page.locator("#replay-proof-events")).toHaveText("none");
+    await expect(page.locator("#replay-proof-decisions")).toHaveText("none");
+    await expect(page.locator("#replay-proof-outcome")).toHaveText("standby; 0 resolved; 0 open");
+    await expect(page.locator("#replay-proof-delta")).toHaveText("+0 risk; +0% flow");
+    await expect(page.locator("#replay-proof-trace")).toHaveText("DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD");
+    await expect(page.locator("#replay-proof-boundary")).toHaveText("replay proof is simulated; not live telemetry or field certification");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -424,6 +432,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_owner,"511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_record,"DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/replay_proof_status,"armed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/replay_proof_delta,"\+0 risk; \+0% flow"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -892,6 +902,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#traceability-ledger-blocked")).toHaveText("1/3 ready; missing Charging source owner; Operator message owner");
     await expect(page.locator("#traceability-ledger-next")).toHaveText("verify Charging source owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Traceability ledger: source-held; record DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD; decision clear Charging source owner; custody Charging source owner; not before Operator message owner clears; proof DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; 1\/3; 2 source holds; blocked 1\/3 ready; missing Charging source owner; Operator message owner; next verify Charging source owner/);
+    await expect(page.locator("#replay-proof-status")).toHaveText("proven");
+    await expect(page.locator("#replay-proof-events")).toHaveText("Snow band reduces alternate reliability");
+    await expect(page.locator("#replay-proof-decisions")).toHaveText("Reroute advisory: approved");
+    await expect(page.locator("#replay-proof-outcome")).toHaveText("mitigated; 1 resolved; 0 open");
+    await expect(page.locator("#replay-proof-delta")).toHaveText("-4 risk; +5% flow");
+    await expect(page.locator("#replay-proof-trace")).toHaveText("DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Replay proof: proven; replay Winter closure and EV stress; 00:10; events Snow band reduces alternate reliability; decisions Reroute advisory: approved; outcome mitigated; 1 resolved; 0 open; delta -4 risk; \+5% flow; trace DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -1006,6 +1023,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_log,"approved; continue monitoring"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_status,"source-held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_proof,"DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; 1\/3; 2 source holds"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/replay_proof_status,"proven"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/replay_proof_decisions,"Reroute advisory: approved"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
