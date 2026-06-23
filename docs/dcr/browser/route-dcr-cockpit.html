@@ -645,6 +645,23 @@
           <div class="metric"><span>Renewal Signal</span><strong id="renewal-signal">active</strong></div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Drive SLA Priorities</h2>
+            <span class="badge info" id="drive-sla-status">simulated</span>
+          </div>
+          <div class="metrics" aria-label="Drive SLA priorities">
+            <div class="metric"><span>Drive</span><strong id="drive-sla-endpoints">endpoint to endpoint</strong></div>
+            <div class="metric"><span>Target</span><strong id="drive-sla-target">0m</strong></div>
+            <div class="metric"><span>Current</span><strong id="drive-sla-current">0m</strong></div>
+            <div class="metric"><span>Priority</span><strong id="drive-sla-priority">monitor</strong></div>
+            <div class="metric"><span>Violation</span><strong id="drive-sla-violation">none</strong></div>
+            <div class="metric"><span>Traffic Cause</span><strong id="drive-sla-cause">watch</strong></div>
+            <div class="metric"><span>Mitigation</span><strong id="drive-sla-mitigation">monitor</strong></div>
+            <div class="metric"><span>Release Gate</span><strong id="drive-sla-gate">operator review</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2061,6 +2078,73 @@
       document.getElementById("sla-claim").textContent = sla.claim;
     }
 
+    function driveProfile() {
+      return {
+        "winter-closure": { endpoints: "T1 west gateway -> T1 east gateway", target: 95 },
+        "terminal-access": { endpoints: "Inland yard -> Port gate", target: 42 },
+        "managed-lane": { endpoints: "South merge -> North recovery zone", target: 28 },
+        "freight-bottleneck": { endpoints: "Distribution park -> Freight corridor", target: 36 }
+      }[state.scenario];
+    }
+
+    function topTrafficCause() {
+      const drift = Math.min(16, Math.floor(state.minute / 8));
+      const [name, , value, body] = currentScenario().signals
+        .map((signal) => [signal[0], signal[1], Math.max(0, Math.min(100, signal[2] + drift)), signal[3]])
+        .sort((a, b) => b[2] - a[2])[0];
+      return `${name}: ${body}`;
+    }
+
+    function driveSlaPriorities() {
+      const profile = driveProfile();
+      const metrics = computeMetrics();
+      const fix = fixPackage();
+      const evidence = evidenceDossier();
+      const current = Math.round(
+        profile.target +
+        Math.max(0, metrics.risk - 40) * 1.2 +
+        Math.max(0, 95 - metrics.flow) * 0.8 +
+        Math.max(0, metrics.recovery - 45) * 0.4
+      );
+      const maintained = current <= profile.target + 5 && metrics.risk < 45 && metrics.flow >= 85 && metrics.recovery < 60;
+      const violations = [
+        metrics.risk >= 55 ? `promise risk ${metrics.risk}>=55` : metrics.risk >= 45 ? `promise risk ${metrics.risk}>=45` : "",
+        metrics.flow < 85 ? `flow ${metrics.flow}%<85%` : "",
+        metrics.recovery >= 60 ? `recovery ${metrics.recovery}m>=60m` : ""
+      ].filter(Boolean);
+      const priority = metrics.risk >= 55 || metrics.flow < 85 || metrics.recovery >= 60
+        ? "P1 protect drive SLA"
+        : metrics.risk >= 45
+          ? "P2 mitigate risk"
+          : "P3 maintain watch";
+      return {
+        status: maintained ? "maintained" : "violated",
+        endpoints: profile.endpoints,
+        target: `${profile.target}m +5m buffer`,
+        current: `${current}m`,
+        priority,
+        violation: violations.join("; ") || "none",
+        cause: topTrafficCause(),
+        mitigation: fix.scope,
+        gate: evidence.missing === "none" ? "operator release review" : `verify ${evidence.missing}`
+      };
+    }
+
+    function renderDriveSlaPriorities() {
+      const drive = driveSlaPriorities();
+      const status = document.getElementById("drive-sla-status");
+      status.textContent = drive.status;
+      status.className = `badge ${drive.status === "maintained" ? "ok" : "risk"}`;
+      document.getElementById("drive-sla-endpoints").textContent = drive.endpoints;
+      document.getElementById("drive-sla-target").textContent = drive.target;
+      document.getElementById("drive-sla-current").textContent = drive.current;
+      document.getElementById("drive-sla-priority").textContent = drive.priority;
+      document.getElementById("drive-sla-violation").textContent = drive.violation;
+      document.getElementById("drive-sla-cause").textContent = drive.cause;
+      document.getElementById("drive-sla-mitigation").textContent = drive.mitigation;
+      document.getElementById("drive-sla-gate").textContent = drive.gate;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -2645,6 +2729,7 @@
       const summary = runSummary();
       const score = scenarioScorecard();
       const sla = operatorSla();
+      const drive = driveSlaPriorities();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -2696,6 +2781,15 @@
         ["time_to_mitigate", formatSla(sla.mitigate)],
         ["sla_cycle", `${sla.cycle}m`],
         ["sla_boundary", sla.boundary],
+        ["drive_sla_status", drive.status],
+        ["drive_sla_endpoints", drive.endpoints],
+        ["drive_sla_target", drive.target],
+        ["drive_sla_current", drive.current],
+        ["drive_sla_priority", drive.priority],
+        ["drive_sla_violation", drive.violation],
+        ["drive_sla_cause", drive.cause],
+        ["drive_sla_mitigation", drive.mitigation],
+        ["drive_sla_release_gate", drive.gate],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -2879,6 +2973,7 @@
       const metrics = computeMetrics();
       const summary = runSummary();
       const sla = operatorSla();
+      const drive = driveSlaPriorities();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -2918,6 +3013,7 @@
         `Metrics: risk ${metrics.risk} (${formatSigned(summary.riskChange)}), flow ${metrics.flow}% (${formatSigned(summary.flowChange)}%), evidence ${summary.evidenceReady}/${summary.evidenceTotal}`,
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
+        `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3172,6 +3268,7 @@
       renderRunSummary();
       renderScorecard();
       renderOperatorSla();
+      renderDriveSlaPriorities();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -3330,6 +3427,7 @@
         summary: runSummary(),
         scorecard: scenarioScorecard(),
         sla: operatorSla(),
+        driveSla: driveSlaPriorities(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),

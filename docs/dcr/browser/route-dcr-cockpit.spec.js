@@ -26,6 +26,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Operator SLA")).toContainText("Claimbounded");
     await expect(page.locator("#sla-status")).toHaveText("simulated");
     await expect(page.locator("#sla-detect")).toHaveText("pending");
+    await expect(page.getByLabel("Drive SLA priorities")).toContainText("DriveT1 west gateway -> T1 east gateway");
+    await expect(page.locator("#drive-sla-status")).toHaveText("violated");
+    await expect(page.locator("#drive-sla-target")).toHaveText("95m +5m buffer");
+    await expect(page.locator("#drive-sla-current")).toHaveText("105m");
+    await expect(page.locator("#drive-sla-priority")).toHaveText("P2 mitigate risk");
+    await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 46>=45");
+    await expect(page.locator("#drive-sla-mitigation")).toHaveText("weather-responsive split + EV staging");
     await expect(page.getByLabel("Guidance board")).toContainText("Routemonitor base route");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText("source-needed");
@@ -123,6 +130,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_boundary,"simulated timing; no guaranteed SLA"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"violated"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_current,"105m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -187,6 +196,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#maintenance-fix")).toHaveText("retime gate approach routing");
     await expect(page.locator("#maintenance-priority")).toHaveText("P1");
     await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#drive-sla-endpoints")).toHaveText("Inland yard -> Port gate");
+    await expect(page.locator("#drive-sla-current")).toHaveText("69m");
+    await expect(page.locator("#drive-sla-priority")).toHaveText("P1 protect drive SLA");
+    await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
@@ -294,6 +307,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#sla-status")).toHaveText("mitigated");
     await expect(page.locator("#sla-verify")).toHaveText("0m");
     await expect(page.locator("#sla-mitigate")).toHaveText("0m");
+    await expect(page.locator("#drive-sla-status")).toHaveText("maintained");
+    await expect(page.locator("#drive-sla-current")).toHaveText("97m");
+    await expect(page.locator("#drive-sla-priority")).toHaveText("P3 maintain watch");
+    await expect(page.locator("#drive-sla-violation")).toHaveText("none");
+    await expect(page.locator("#drive-sla-gate")).toHaveText("verify Charging source owner; Operator message owner");
     await expect(page.locator("#guidance-status")).toHaveText("reviewed");
     await expect(page.locator("#guidance-route")).toHaveText("reviewed alternate route");
     await expect(page.locator("#guidance-source")).toHaveText("operator-reviewed");
@@ -367,6 +385,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Drive SLA: maintained; T1 west gateway -> T1 east gateway; current 97m against 95m \+5m buffer; priority P3 maintain watch; violation none; mitigation weather-responsive split \+ EV staging/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -394,6 +413,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/scorecard_grade,"DCR-4"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/time_to_mitigate,"0m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"maintained"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_violation,"none"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
