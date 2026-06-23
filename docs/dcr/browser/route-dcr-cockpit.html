@@ -980,6 +980,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>System Health</h2>
+            <span class="badge info" id="system-health-status">watch</span>
+          </div>
+          <div class="metrics" aria-label="System health">
+            <div class="metric"><span>Signals</span><strong id="system-health-signals">0 active</strong></div>
+            <div class="metric"><span>Source Holds</span><strong id="system-health-holds">0</strong></div>
+            <div class="metric"><span>Controls</span><strong id="system-health-controls">standby</strong></div>
+            <div class="metric"><span>Monitor</span><strong id="system-health-monitor">watch</strong></div>
+            <div class="metric"><span>Next Check</span><strong id="system-health-next">next cycle</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="system-health-boundary">simulation only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1839,6 +1854,42 @@
       document.getElementById("renewal-value-boundary").textContent = renewalValue.boundary;
     }
 
+    function systemHealth() {
+      const workload = operatorWorkload();
+      const closure = closureCriteria();
+      const evidence = evidenceDossier();
+      const signalCount = currentScenario().signals.length;
+      const status = workload.sourceHolds
+        ? "degraded"
+        : closure.status === "closable"
+          ? "ready"
+          : closure.status === "proving"
+            ? "proving"
+            : "watch";
+      return {
+        status,
+        signals: `${signalCount} active`,
+        sourceHolds: String(workload.sourceHolds),
+        controls: workload.openActions ? "operator review" : state.running ? "running" : "paused",
+        monitor: status === "degraded" ? evidence.missing : closure.reopen,
+        next: status === "ready" ? "owner close review" : closure.review,
+        boundary: "system health is simulated; no field-device status claim"
+      };
+    }
+
+    function renderSystemHealth() {
+      const health = systemHealth();
+      const status = document.getElementById("system-health-status");
+      status.textContent = health.status;
+      status.className = `badge ${health.status === "ready" ? "ok" : health.status === "degraded" ? "risk" : "info"}`;
+      document.getElementById("system-health-signals").textContent = health.signals;
+      document.getElementById("system-health-holds").textContent = health.sourceHolds;
+      document.getElementById("system-health-controls").textContent = health.controls;
+      document.getElementById("system-health-monitor").textContent = health.monitor;
+      document.getElementById("system-health-next").textContent = health.next;
+      document.getElementById("system-health-boundary").textContent = health.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2459,6 +2510,7 @@
       const backlog = maintenanceBacklog();
       const approval = ownerApprovalPacket();
       const renewalValue = renewalValueCase();
+      const health = systemHealth();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2611,6 +2663,13 @@
         ["renewal_value_gap", renewalValue.gap],
         ["renewal_value_next_term", renewalValue.next],
         ["renewal_value_boundary", renewalValue.boundary],
+        ["system_health_status", health.status],
+        ["system_health_signals", health.signals],
+        ["system_health_source_holds", health.sourceHolds],
+        ["system_health_controls", health.controls],
+        ["system_health_monitor", health.monitor],
+        ["system_health_next_check", health.next],
+        ["system_health_boundary", health.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2659,6 +2718,7 @@
       const backlog = maintenanceBacklog();
       const approval = ownerApprovalPacket();
       const renewalValue = renewalValueCase();
+      const health = systemHealth();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2694,6 +2754,7 @@
         `Maintenance backlog: ${backlog.status}; ticket ${backlog.ticket}; queue ${backlog.queue}; dependency ${backlog.dependency}; exit ${backlog.exit}`,
         `Owner approval packet: ${approval.status}; owner ${approval.owner}; request ${approval.request}; evidence ${approval.evidence}; decision ${approval.decision}`,
         `Renewal value case: ${renewalValue.status}; ask ${renewalValue.ask}; proof ${renewalValue.proof}; coverage ${renewalValue.coverage}; gap ${renewalValue.gap}`,
+        `System health: ${health.status}; signals ${health.signals}; source holds ${health.sourceHolds}; controls ${health.controls}; monitor ${health.monitor}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2933,6 +2994,7 @@
       renderMaintenanceBacklog();
       renderOwnerApprovalPacket();
       renderRenewalValueCase();
+      renderSystemHealth();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -3087,6 +3149,7 @@
         maintenanceBacklog: maintenanceBacklog(),
         ownerApproval: ownerApprovalPacket(),
         renewalValue: renewalValueCase(),
+        systemHealth: systemHealth(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
