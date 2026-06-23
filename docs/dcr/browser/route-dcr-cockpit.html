@@ -808,6 +808,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Next-Cycle Simulation</h2>
+            <span class="badge info" id="next-cycle-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Next-cycle simulation">
+            <div class="metric"><span>Clear Assumption</span><strong id="next-cycle-clear">source action</strong></div>
+            <div class="metric"><span>Readiness After</span><strong id="next-cycle-readiness">0/0</strong></div>
+            <div class="metric"><span>Remaining Holds</span><strong id="next-cycle-remaining">pending</strong></div>
+            <div class="metric"><span>SLA Posture</span><strong id="next-cycle-sla">monitor</strong></div>
+            <div class="metric"><span>Operator Move</span><strong id="next-cycle-move">monitor</strong></div>
+            <div class="metric"><span>Release Result</span><strong id="next-cycle-release">hold release</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="next-cycle-boundary">simulation only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2578,6 +2594,27 @@
       };
     }
 
+    function nextCycleSimulation() {
+      const gates = currentScenario().gates;
+      const missing = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const readyCount = gates.length - missing.length;
+      const clear = missing[0] || "none";
+      const remaining = missing.slice(1);
+      const drive = driveSlaPriorities();
+      const cascade = priorityCascade(drive, operatorSla());
+      const operatorAction = operatorActionPlan();
+      return {
+        status: missing.length === 0 ? "ready-review" : remaining.length ? "still-held" : "release-review",
+        clear,
+        readiness: `${Math.min(gates.length, readyCount + (missing.length ? 1 : 0))}/${gates.length}`,
+        remaining: remaining.join("; ") || "none",
+        sla: `SLA ${drive.status}; ${cascade.mitigation}`,
+        move: remaining.length ? `verify ${remaining[0]}` : operatorAction.decision === "approved" ? "prepare owner release review" : operatorAction.now,
+        release: remaining.length ? `still held for ${remaining[0]}` : "release review allowed",
+        boundary: "next-cycle simulation only; source owners and field owners remain authoritative"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3231,6 +3268,20 @@
       document.getElementById("operator-action-boundary").textContent = action.boundary;
     }
 
+    function renderNextCycleSimulation() {
+      const simulation = nextCycleSimulation();
+      const status = document.getElementById("next-cycle-status");
+      status.textContent = simulation.status;
+      status.className = `badge ${simulation.status === "release-review" || simulation.status === "ready-review" ? "ok" : "info"}`;
+      document.getElementById("next-cycle-clear").textContent = simulation.clear;
+      document.getElementById("next-cycle-readiness").textContent = simulation.readiness;
+      document.getElementById("next-cycle-remaining").textContent = simulation.remaining;
+      document.getElementById("next-cycle-sla").textContent = simulation.sla;
+      document.getElementById("next-cycle-move").textContent = simulation.move;
+      document.getElementById("next-cycle-release").textContent = simulation.release;
+      document.getElementById("next-cycle-boundary").textContent = simulation.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3803,6 +3854,7 @@
       const sourceClearance = sourceClearancePlan();
       const clearance = clearanceForecast();
       const operatorAction = operatorActionPlan();
+      const nextCycle = nextCycleSimulation();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3944,6 +3996,14 @@
         ["operator_action_decision_state", operatorAction.decision],
         ["operator_action_cadence", operatorAction.cadence],
         ["operator_action_boundary", operatorAction.boundary],
+        ["next_cycle_status", nextCycle.status],
+        ["next_cycle_clear_assumption", nextCycle.clear],
+        ["next_cycle_readiness_after", nextCycle.readiness],
+        ["next_cycle_remaining_holds", nextCycle.remaining],
+        ["next_cycle_sla_posture", nextCycle.sla],
+        ["next_cycle_operator_move", nextCycle.move],
+        ["next_cycle_release_result", nextCycle.release],
+        ["next_cycle_boundary", nextCycle.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4205,6 +4265,7 @@
       const sourceClearance = sourceClearancePlan();
       const clearance = clearanceForecast();
       const operatorAction = operatorActionPlan();
+      const nextCycle = nextCycleSimulation();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4263,6 +4324,7 @@
         `Source clearance plan: ${sourceClearance.status}; next ${sourceClearance.next}; sequence ${sourceClearance.sequence}; readiness ${sourceClearance.readiness}; release ${sourceClearance.release}; renewal ${sourceClearance.renewal}; action ${sourceClearance.action}`,
         `Clearance forecast: ${clearance.status}; clear ${clearance.next}; after readiness ${clearance.readiness}; remaining ${clearance.remaining}; release ${clearance.release}; renewal ${clearance.renewal}; authority ${clearance.authority}`,
         `Operator action plan: ${operatorAction.status}; now ${operatorAction.now}; scope ${operatorAction.scope}; prohibited ${operatorAction.prohibited}; rerun ${operatorAction.rerun}; decision ${operatorAction.decision}; cadence ${operatorAction.cadence}`,
+        `Next-cycle simulation: ${nextCycle.status}; clear ${nextCycle.clear}; readiness ${nextCycle.readiness}; remaining ${nextCycle.remaining}; posture ${nextCycle.sla}; move ${nextCycle.move}; release ${nextCycle.release}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4536,6 +4598,7 @@
       renderSourceClearancePlan();
       renderClearanceForecast();
       renderOperatorActionPlan();
+      renderNextCycleSimulation();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4711,6 +4774,7 @@
         sourceClearance: sourceClearancePlan(),
         clearanceForecast: clearanceForecast(),
         operatorActionPlan: operatorActionPlan(),
+        nextCycleSimulation: nextCycleSimulation(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
