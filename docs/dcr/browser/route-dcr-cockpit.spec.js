@@ -19,6 +19,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#express-demand")).toHaveText("38%");
     await expect(page.locator("#paid-requests")).toHaveText("0");
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
+    await expect(page.getByLabel("Run summary")).toContainText("baseline");
+    await expect(page.locator("#summary-outcome")).toHaveText("standby");
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
     await expect(page.getByLabel("Evidence gates")).toContainText("511 closure feed");
     await expect(page.locator("#gate-count")).toHaveText("0/3 ready");
@@ -104,7 +106,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
     await expect(page.getByText("Held for source custody: 511 closure feed.")).toBeVisible();
     await expect(page.locator("#action-count")).toHaveText("1 open");
+    await expect(page.locator("#summary-outcome")).toHaveText("source-held");
+    await expect(page.locator("#summary-open-work")).toHaveText("1");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/missing_evidence,"511 closure feed; Charging source owner; Operator message owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/run_outcome,"source-held"/);
 
     await page.getByRole("button", { name: "Verify 511 closure feed" }).click();
     await expect(page.locator("#gate-count")).toHaveText("1/3 ready");
@@ -113,8 +118,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#promise-risk")).toHaveText("42");
     await expect(page.locator("#network-flow")).toHaveText("96%");
     await expect(page.locator("#action-count")).toHaveText("0 open");
+    await expect(page.locator("#summary-outcome")).toHaveText("mitigated");
+    await expect(page.locator("#summary-risk-change")).toHaveText("-4");
+    await expect(page.locator("#summary-flow-change")).toHaveText("+5%");
+    await expect(page.locator("#summary-evidence-ready")).toHaveText("1/3");
+    await expect(page.locator("#summary-pilot-value")).toHaveText("proof-ready");
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
   });
 
   test("express payment signal creates a bounded service advisory", async ({ page }) => {
