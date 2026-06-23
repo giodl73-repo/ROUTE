@@ -45,6 +45,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-map-delta")).toHaveText("+10m");
     await expect(page.locator("#tier-map-validation")).toHaveText("tier SLA breach simulated");
     await expect(page.locator("#tier-map-boundary")).toHaveText("US tier map fixture only; no live network validation");
+    await expect(page.locator("#tier-route-overlay")).toContainText("SAC -> SLC; T1 via I-5;I-15");
+    await expect(page.locator("#tier-route-overlay")).toContainText("SAC;CENTRAL_VALLEY;LA;BARSTOW;LAS_VEGAS");
+    await expect(page.locator("#tier-origin-label")).toHaveText("SAC");
+    await expect(page.locator("#tier-dest-label")).toHaveText("SLC");
+    await expect(page.locator("#tier-incident-label")).toHaveText("closure risk");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -219,6 +224,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-map-path")).toHaveText("T1 via I-10");
     await expect(page.locator("#tier-map-window")).toHaveText("6h local");
     await expect(page.locator("#tier-map-delta")).toHaveText("+27m");
+    await expect(page.locator("#tier-route-overlay")).toContainText("HOU -> BEAUMONT; T1 via I-10; HOU;BEAUMONT");
+    await expect(page.locator("#tier-origin-label")).toHaveText("HOU");
+    await expect(page.locator("#tier-dest-label")).toHaveText("BEAUMONT");
+    await expect(page.locator("#tier-incident-label")).toHaveText("gate queue");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");

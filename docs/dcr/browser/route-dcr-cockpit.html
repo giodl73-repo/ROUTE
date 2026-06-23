@@ -689,6 +689,7 @@
           <div class="map-overlay" aria-label="Map status overlay">
             <div class="overlay-card"><strong id="active-case">Winter closure and EV stress</strong><br><span id="case-summary">T1 mountain pass closure threatens freight promise and EV completion.</span></div>
             <div class="overlay-card"><strong>Recommended posture</strong><br><span id="recommended-posture">Reroute advisory plus EV staging review.</span></div>
+            <div class="overlay-card"><strong>Tier route simulation</strong><br><span id="tier-route-overlay">SAC -> SLC on T1 fixture row.</span></div>
           </div>
           <svg viewBox="0 0 960 560" role="img" aria-label="Simulated service network">
             <defs>
@@ -703,13 +704,14 @@
             <circle id="ev-node" cx="664" cy="350" r="19" fill="#ffffff" stroke="var(--info)" stroke-width="5"></circle>
             <circle id="terminal-node" cx="200" cy="362" r="18" fill="#ffffff" stroke="var(--watch)" stroke-width="5"></circle>
             <rect id="signage-zone" x="362" y="155" width="142" height="48" fill="#fff8e8" stroke="var(--watch)" stroke-width="3" stroke-dasharray="7 6"></rect>
-            <text x="86" y="263" class="map-label">T1 west gateway</text>
-            <text x="720" y="238" class="map-label">T1 east gateway</text>
-            <text x="508" y="335" class="map-label">closure risk</text>
-            <text x="640" y="392" class="map-note">EV staging / charging source-needed</text>
-            <text x="165" y="405" class="map-note">terminal access stress</text>
-            <text x="366" y="146" class="map-note">candidate signage window</text>
-            <path d="M 640 350 L 610 365" stroke="var(--info)" stroke-width="3" marker-end="url(#arrow)"></path>
+            <circle id="tier-progress-node" cx="116" cy="278" r="10" fill="#172026" stroke="#ffffff" stroke-width="4"></circle>
+            <text id="tier-origin-label" x="86" y="263" class="map-label">SAC</text>
+            <text id="tier-dest-label" x="720" y="238" class="map-label">SLC</text>
+            <text id="tier-incident-label" x="508" y="335" class="map-label">closure risk</text>
+            <text id="tier-service-note" x="640" y="392" class="map-note">EV staging / charging source-needed</text>
+            <text id="tier-access-note" x="165" y="405" class="map-note">terminal access stress</text>
+            <text id="tier-signage-note" x="366" y="146" class="map-note">candidate signage window</text>
+            <path id="tier-support-arrow" d="M 640 350 L 610 365" stroke="var(--info)" stroke-width="3" marker-end="url(#arrow)"></path>
           </svg>
         </div>
 
@@ -2173,7 +2175,25 @@
           freightP95: "25.3h",
           fullI20P95: "21.5h",
           stopGap: "sla-stop-rhythm-ok",
-          evidence: "heuristic-planning"
+          evidence: "heuristic-planning",
+          map: {
+            primary: "M 80 282 C 240 170, 410 172, 520 282 S 760 395, 890 250",
+            alternate: "M 92 370 C 250 430, 438 438, 610 365 S 815 280, 890 318",
+            local: "M 130 210 C 300 260, 500 258, 805 172",
+            incident: [515, 282],
+            ev: [664, 350],
+            terminal: [200, 362],
+            signage: [362, 155, 142, 48],
+            progress: [[116, 278], [515, 282], [868, 253]],
+            labels: {
+              origin: ["SAC", 86, 263],
+              dest: ["SLC", 720, 238],
+              incident: ["closure risk", 508, 335],
+              service: ["EV staging / charging source-needed", 640, 392],
+              access: ["Barstow relay check", 165, 405],
+              signage: ["candidate signage window", 366, 146]
+            }
+          }
         },
         "terminal-access": {
           source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
@@ -2184,7 +2204,25 @@
           freightP95: "1.9h",
           fullI20P95: "1.7h",
           stopGap: "sla-stop-rhythm-ok",
-          evidence: "heuristic-planning"
+          evidence: "heuristic-planning",
+          map: {
+            primary: "M 110 328 C 245 330, 402 312, 566 256 S 785 206, 878 232",
+            alternate: "M 118 390 C 284 430, 482 405, 665 332 S 812 285, 884 306",
+            local: "M 136 252 C 320 235, 540 235, 808 164",
+            incident: [318, 320],
+            ev: [664, 332],
+            terminal: [176, 330],
+            signage: [244, 238, 156, 52],
+            progress: [[124, 328], [318, 320], [858, 232]],
+            labels: {
+              origin: ["HOU", 92, 306],
+              dest: ["BEAUMONT", 704, 222],
+              incident: ["gate queue", 292, 371],
+              service: ["truck route authority-needed", 602, 374],
+              access: ["terminal access stress", 142, 374],
+              signage: ["approach signage window", 250, 228]
+            }
+          }
         },
         "managed-lane": {
           source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
@@ -2195,7 +2233,25 @@
           freightP95: "2.3h",
           fullI20P95: "2.0h",
           stopGap: "sla-stop-rhythm-ok",
-          evidence: "heuristic-planning"
+          evidence: "heuristic-planning",
+          map: {
+            primary: "M 82 300 C 206 255, 338 250, 484 294 S 708 346, 888 276",
+            alternate: "M 94 376 C 248 412, 396 402, 550 354 S 760 310, 892 330",
+            local: "M 126 232 C 286 220, 486 206, 810 188",
+            incident: [486, 294],
+            ev: [622, 352],
+            terminal: [178, 350],
+            signage: [398, 210, 144, 48],
+            progress: [[110, 292], [486, 294], [864, 278]],
+            labels: {
+              origin: ["LA", 88, 282],
+              dest: ["BARSTOW", 730, 260],
+              incident: ["clearance slip", 460, 342],
+              service: ["shoulder review", 598, 394],
+              access: ["merge stress", 150, 392],
+              signage: ["managed lane message", 404, 200]
+            }
+          }
         },
         "freight-bottleneck": {
           source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
@@ -2206,7 +2262,25 @@
           freightP95: "11.7h",
           fullI20P95: "9.9h",
           stopGap: "sla-stop-rhythm-ok",
-          evidence: "heuristic-planning"
+          evidence: "heuristic-planning",
+          map: {
+            primary: "M 88 338 C 210 290, 330 298, 442 346 S 670 430, 876 260",
+            alternate: "M 98 420 C 250 474, 436 468, 598 394 S 792 292, 886 326",
+            local: "M 130 238 C 304 280, 506 266, 808 180",
+            incident: [442, 346],
+            ev: [628, 394],
+            terminal: [192, 384],
+            signage: [320, 230, 168, 52],
+            progress: [[114, 330], [442, 346], [852, 270]],
+            labels: {
+              origin: ["HOU", 90, 320],
+              dest: ["DAL", 740, 250],
+              incident: ["freight queue", 418, 394],
+              service: ["package priority review", 586, 436],
+              access: ["distribution park", 154, 426],
+              signage: ["freight routing signs", 326, 220]
+            }
+          }
         }
       }[state.scenario];
     }
@@ -2237,10 +2311,59 @@
         fullI20P95: fixture.fullI20P95,
         stopGap: fixture.stopGap,
         evidence: fixture.evidence,
+        map: fixture.map,
         delta,
         validation,
         boundary: "US tier map fixture only; no live network validation"
       };
+    }
+
+    function setTextLabel(id, label) {
+      const node = document.getElementById(id);
+      node.textContent = label[0];
+      node.setAttribute("x", String(label[1]));
+      node.setAttribute("y", String(label[2]));
+    }
+
+    function interpolateProgress(points) {
+      const progress = (state.minute % 60) / 60;
+      const segmentProgress = progress < 0.5 ? progress * 2 : (progress - 0.5) * 2;
+      const start = progress < 0.5 ? points[0] : points[1];
+      const end = progress < 0.5 ? points[1] : points[2];
+      return [
+        Math.round(start[0] + ((end[0] - start[0]) * segmentProgress)),
+        Math.round(start[1] + ((end[1] - start[1]) * segmentProgress))
+      ];
+    }
+
+    function renderTierMapRoute(tier) {
+      const map = tier.map;
+      document.getElementById("primary-route").setAttribute("d", map.primary);
+      document.getElementById("alt-route").setAttribute("d", map.alternate);
+      document.getElementById("local-route").setAttribute("d", map.local);
+      document.getElementById("incident-node").setAttribute("cx", String(map.incident[0]));
+      document.getElementById("incident-node").setAttribute("cy", String(map.incident[1]));
+      document.getElementById("ev-node").setAttribute("cx", String(map.ev[0]));
+      document.getElementById("ev-node").setAttribute("cy", String(map.ev[1]));
+      document.getElementById("terminal-node").setAttribute("cx", String(map.terminal[0]));
+      document.getElementById("terminal-node").setAttribute("cy", String(map.terminal[1]));
+      const signage = document.getElementById("signage-zone");
+      signage.setAttribute("x", String(map.signage[0]));
+      signage.setAttribute("y", String(map.signage[1]));
+      signage.setAttribute("width", String(map.signage[2]));
+      signage.setAttribute("height", String(map.signage[3]));
+      const progress = interpolateProgress(map.progress);
+      document.getElementById("tier-progress-node").setAttribute("cx", String(progress[0]));
+      document.getElementById("tier-progress-node").setAttribute("cy", String(progress[1]));
+      setTextLabel("tier-origin-label", map.labels.origin);
+      setTextLabel("tier-dest-label", map.labels.dest);
+      setTextLabel("tier-incident-label", map.labels.incident);
+      setTextLabel("tier-service-note", map.labels.service);
+      setTextLabel("tier-access-note", map.labels.access);
+      setTextLabel("tier-signage-note", map.labels.signage);
+      document.getElementById("tier-support-arrow").setAttribute("d", `M ${map.ev[0] - 24} ${map.ev[1]} L ${map.progress[1][0]} ${map.progress[1][1]}`);
+      document.getElementById("tier-route-overlay").textContent =
+        `${tier.row}; ${tier.tierPath}; ${tier.stopPath}; ${tier.delta} simulated against drive SLA.`;
     }
 
     function renderTierMapValidation() {
@@ -2256,6 +2379,7 @@
       document.getElementById("tier-map-validation").textContent = tier.validation;
       document.getElementById("tier-map-rhythm").textContent = tier.stopGap;
       document.getElementById("tier-map-boundary").textContent = tier.boundary;
+      renderTierMapRoute(tier);
     }
 
     function renderDriveSlaPriorities() {
