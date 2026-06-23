@@ -936,6 +936,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Counterfactual Value</h2>
+            <span class="badge info" id="counterfactual-value-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Counterfactual value">
+            <div class="metric"><span>Without DCR</span><strong id="counterfactual-without">baseline risk</strong></div>
+            <div class="metric"><span>With DCR</span><strong id="counterfactual-with">monitored run</strong></div>
+            <div class="metric"><span>Delta</span><strong id="counterfactual-delta">+0 risk; +0% flow</strong></div>
+            <div class="metric"><span>Avoided Failure</span><strong id="counterfactual-avoided">pending</strong></div>
+            <div class="metric"><span>Buyer Reason</span><strong id="counterfactual-reason">visibility</strong></div>
+            <div class="metric"><span>Remaining Gap</span><strong id="counterfactual-gap">source evidence</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="counterfactual-boundary">no ROI claim</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2861,6 +2877,28 @@
       };
     }
 
+    function counterfactualValue() {
+      const metrics = computeMetrics();
+      const baseline = baselineMetrics();
+      const summary = runSummary();
+      const assurance = assuranceCase();
+      const renewalBrief = renewalDecisionBrief();
+      const maintenance = maintenanceCase();
+      const riskDelta = metrics.risk - baseline.risk;
+      const flowDelta = metrics.flow - baseline.flow;
+      const improved = riskDelta < 0 || flowDelta > 0 || summary.resolved > 0;
+      return {
+        status: improved ? "proven" : "watch",
+        without: `unmanaged ${maintenance.failure}; risk ${baseline.risk}; flow ${baseline.flow}%`,
+        with: `monitored ${assurance.claim}; risk ${metrics.risk}; flow ${metrics.flow}%`,
+        delta: `${formatSigned(riskDelta)} risk; ${formatSigned(flowDelta)}% flow`,
+        avoided: improved ? `${summary.resolved} resolved; ${renewalBrief.decision}` : renewalBrief.decision,
+        reason: improved ? "keeps SLA proof and source gaps visible" : "turns failures into accountable source work",
+        gap: assurance.caveat,
+        boundary: "counterfactual value is simulated; no ROI, revenue, or guaranteed SLA claim"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3626,6 +3664,20 @@
       document.getElementById("renewal-brief-boundary").textContent = brief.boundary;
     }
 
+    function renderCounterfactualValue() {
+      const value = counterfactualValue();
+      const status = document.getElementById("counterfactual-value-status");
+      status.textContent = value.status;
+      status.className = `badge ${value.status === "proven" ? "ok" : "info"}`;
+      document.getElementById("counterfactual-without").textContent = value.without;
+      document.getElementById("counterfactual-with").textContent = value.with;
+      document.getElementById("counterfactual-delta").textContent = value.delta;
+      document.getElementById("counterfactual-avoided").textContent = value.avoided;
+      document.getElementById("counterfactual-reason").textContent = value.reason;
+      document.getElementById("counterfactual-gap").textContent = value.gap;
+      document.getElementById("counterfactual-boundary").textContent = value.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4206,6 +4258,7 @@
       const assurance = assuranceCase();
       const sponsorProof = sponsorProofPacket();
       const renewalBrief = renewalDecisionBrief();
+      const counterfactual = counterfactualValue();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4411,6 +4464,14 @@
         ["renewal_brief_decision_owner", renewalBrief.owner],
         ["renewal_brief_next_step", renewalBrief.next],
         ["renewal_brief_boundary", renewalBrief.boundary],
+        ["counterfactual_value_status", counterfactual.status],
+        ["counterfactual_value_without_dcr", counterfactual.without],
+        ["counterfactual_value_with_dcr", counterfactual.with],
+        ["counterfactual_value_delta", counterfactual.delta],
+        ["counterfactual_value_avoided_failure", counterfactual.avoided],
+        ["counterfactual_value_buyer_reason", counterfactual.reason],
+        ["counterfactual_value_remaining_gap", counterfactual.gap],
+        ["counterfactual_value_boundary", counterfactual.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4680,6 +4741,7 @@
       const assurance = assuranceCase();
       const sponsorProof = sponsorProofPacket();
       const renewalBrief = renewalDecisionBrief();
+      const counterfactual = counterfactualValue();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4746,6 +4808,7 @@
         `Assurance case: ${assurance.status}; claim ${assurance.claim}; proof ${assurance.proof}; caveat ${assurance.caveat}; decision ${assurance.decision}; value ${assurance.value}; renewal ${assurance.renewal}`,
         `Sponsor proof packet: ${sponsorProof.status}; offer ${sponsorProof.offer}; proof ${sponsorProof.proofLine}; value ${sponsorProof.value}; held ${sponsorProof.held}; ask ${sponsorProof.ask}; next ${sponsorProof.next}`,
         `Renewal decision brief: ${renewalBrief.status}; decision ${renewalBrief.decision}; basis ${renewalBrief.basis}; ask ${renewalBrief.ask}; held ${renewalBrief.held}; owner ${renewalBrief.owner}; next ${renewalBrief.next}`,
+        `Counterfactual value: ${counterfactual.status}; without ${counterfactual.without}; with ${counterfactual.with}; delta ${counterfactual.delta}; avoided ${counterfactual.avoided}; reason ${counterfactual.reason}; gap ${counterfactual.gap}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5027,6 +5090,7 @@
       renderAssuranceCase();
       renderSponsorProofPacket();
       renderRenewalDecisionBrief();
+      renderCounterfactualValue();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5210,6 +5274,7 @@
         assuranceCase: assuranceCase(),
         sponsorProofPacket: sponsorProofPacket(),
         renewalDecisionBrief: renewalDecisionBrief(),
+        counterfactualValue: counterfactualValue(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
