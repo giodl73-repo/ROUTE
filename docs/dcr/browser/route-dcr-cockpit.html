@@ -905,6 +905,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Closure Criteria</h2>
+            <span class="badge info" id="closure-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Closure criteria">
+            <div class="metric"><span>Close When</span><strong id="closure-close">proof clears</strong></div>
+            <div class="metric"><span>Renew When</span><strong id="closure-renew">proof-ready</strong></div>
+            <div class="metric"><span>Reopen When</span><strong id="closure-reopen">risk rebounds</strong></div>
+            <div class="metric"><span>Next Review</span><strong id="closure-review">next cycle</strong></div>
+            <div class="metric"><span>Evidence Gate</span><strong id="closure-evidence">source custody</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="closure-boundary">no close authority</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -2170,6 +2185,43 @@
       document.getElementById("source-escalation-boundary").textContent = escalation.boundary;
     }
 
+    function closureCriteria() {
+      const summary = runSummary();
+      const score = scenarioScorecard();
+      const evidence = evidenceDossier();
+      const postFix = postFixMonitor();
+      const escalation = sourceEscalation();
+      const status = summary.outcome === "mitigated"
+        ? evidence.status === "complete"
+          ? "closable"
+          : "proving"
+        : summary.openActions > 0 || escalation.status !== "clear"
+          ? "open"
+          : "watch";
+      return {
+        status,
+        close: status === "closable" ? "owner accepts proof packet" : `clear ${evidence.missing}`,
+        renew: score.renewal === "renew" ? "package renewal candidate" : "hold renewal",
+        reopen: postFix.rollback,
+        review: postFix.window,
+        evidence: evidence.readiness,
+        boundary: "closure criteria only; owner closes or renews"
+      };
+    }
+
+    function renderClosureCriteria() {
+      const closure = closureCriteria();
+      const status = document.getElementById("closure-status");
+      status.textContent = closure.status;
+      status.className = `badge ${closure.status === "closable" ? "ok" : closure.status === "open" ? "risk" : "info"}`;
+      document.getElementById("closure-close").textContent = closure.close;
+      document.getElementById("closure-renew").textContent = closure.renew;
+      document.getElementById("closure-reopen").textContent = closure.reopen;
+      document.getElementById("closure-review").textContent = closure.review;
+      document.getElementById("closure-evidence").textContent = closure.evidence;
+      document.getElementById("closure-boundary").textContent = closure.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -2187,6 +2239,7 @@
       const playbook = resiliencyPlaybook();
       const evidence = evidenceDossier();
       const escalation = sourceEscalation();
+      const closure = closureCriteria();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2304,6 +2357,13 @@
         ["source_escalation_packet", escalation.packet],
         ["source_escalation_next_proof", escalation.proof],
         ["source_escalation_boundary", escalation.boundary],
+        ["closure_status", closure.status],
+        ["closure_close_when", closure.close],
+        ["closure_renew_when", closure.renew],
+        ["closure_reopen_when", closure.reopen],
+        ["closure_next_review", closure.review],
+        ["closure_evidence_gate", closure.evidence],
+        ["closure_boundary", closure.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2347,6 +2407,7 @@
       const playbook = resiliencyPlaybook();
       const evidence = evidenceDossier();
       const escalation = sourceEscalation();
+      const closure = closureCriteria();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2377,6 +2438,7 @@
         `Resiliency playbook: ${playbook.status}; switch ${playbook.switch}; trigger ${playbook.trigger}; rollback ${playbook.rollback}; gate ${playbook.gate}`,
         `Evidence dossier: ${evidence.status}; readiness ${evidence.readiness}; missing ${evidence.missing}; basis ${evidence.basis}; claim ${evidence.claim}`,
         `Source escalation: ${escalation.status}; owner ${escalation.owner}; due ${escalation.due}; packet ${escalation.packet}; boundary ${escalation.boundary}`,
+        `Closure criteria: ${closure.status}; close ${closure.close}; renew ${closure.renew}; reopen ${closure.reopen}; evidence ${closure.evidence}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2622,6 +2684,7 @@
       renderResiliencyPlaybook();
       renderEvidenceDossier();
       renderSourceEscalation();
+      renderClosureCriteria();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2771,6 +2834,7 @@
         playbook: resiliencyPlaybook(),
         evidenceDossier: evidenceDossier(),
         sourceEscalation: sourceEscalation(),
+        closure: closureCriteria(),
         handoff: handoffText(),
         log: state.log
       };
