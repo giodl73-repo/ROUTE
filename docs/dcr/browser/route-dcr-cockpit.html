@@ -1555,7 +1555,6 @@
       const scenario = currentScenario();
       document.getElementById("active-case").textContent = scenario.name;
       document.getElementById("case-summary").textContent = scenario.summary;
-      document.getElementById("recommended-posture").textContent = scenario.posture;
       document.getElementById("run-trigger-type").textContent = scenario.triggerType;
       document.getElementById("run-trigger").textContent = scenario.trigger;
       document.getElementById("run-owner").textContent = scenario.owner;
@@ -1697,11 +1696,9 @@
       const root = document.getElementById("signal-list");
       root.innerHTML = "";
       const drift = Math.min(16, Math.floor(state.minute / 8));
-      const alert = [];
       for (const [name, kind, value, body] of currentScenario().signals) {
         const level = Math.max(0, Math.min(100, value + drift - (hasRelevantDecision(name) ? 8 : 0)));
         const cls = statusClass(level);
-        alert.push({ name, cls, level, body });
         const el = document.createElement("article");
         el.className = "signal";
         el.innerHTML = `
@@ -1717,11 +1714,6 @@
         `;
         root.appendChild(el);
       }
-      const topAlert = alert.sort((a, b) => b.level - a.level)[0];
-      document.getElementById("alert-title").textContent = `${topAlert.cls}: ${topAlert.name}`;
-      document.getElementById("alert-body").textContent = topAlert.body;
-      document.getElementById("alert-boundary").textContent = topAlert.cls === "risk" ? "operator review" : "advisory only";
-      document.getElementById("alert-boundary").className = `badge ${topAlert.cls === "risk" ? "risk" : "watch"}`;
       document.getElementById("signal-count").textContent = `${currentScenario().signals.length} active`;
     }
 
@@ -2166,6 +2158,16 @@
       document.getElementById("drive-sla-cause").textContent = drive.cause;
       document.getElementById("drive-sla-mitigation").textContent = drive.mitigation;
       document.getElementById("drive-sla-gate").textContent = drive.gate;
+      document.getElementById("recommended-posture").textContent =
+        `${drive.mitigation}; ${drive.status === "maintained" ? "continue monitoring" : drive.gate}`;
+      document.getElementById("alert-title").textContent =
+        `${drive.status}: ${drive.priority}`;
+      document.getElementById("alert-body").textContent =
+        `${drive.endpoints}; current ${drive.current} against ${drive.target}. Cause: ${drive.cause}.`;
+      document.getElementById("alert-boundary").textContent =
+        drive.status === "maintained" ? "monitor" : "operator review";
+      document.getElementById("alert-boundary").className =
+        `badge ${drive.status === "maintained" ? "ok" : "risk"}`;
     }
 
     function uniqueLabels(items) {
