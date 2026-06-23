@@ -744,6 +744,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Renewal Decision Gate</h2>
+            <span class="badge info" id="renewal-gate-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Renewal decision gate">
+            <div class="metric"><span>Decision</span><strong id="renewal-gate-decision">hold</strong></div>
+            <div class="metric"><span>Proof Basis</span><strong id="renewal-gate-proof">pending</strong></div>
+            <div class="metric"><span>Open Blocker</span><strong id="renewal-gate-blocker">source custody</strong></div>
+            <div class="metric"><span>Owner</span><strong id="renewal-gate-owner">sponsor</strong></div>
+            <div class="metric"><span>Allowed Ask</span><strong id="renewal-gate-ask">continue proof</strong></div>
+            <div class="metric"><span>Held Claims</span><strong id="renewal-gate-held">ROI held</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="renewal-gate-boundary">no commitment</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2442,6 +2458,24 @@
       };
     }
 
+    function renewalDecisionGate() {
+      const renewal = renewalValueCase();
+      const sponsor = sponsorPacketDraft();
+      const authority = authorityHandoff();
+      const recovery = recoveryVerification();
+      const blocked = authority.status === "source-held" || recovery.status === "blocked";
+      return {
+        status: blocked ? "held" : sponsor.status === "ready" ? "ready" : "draft",
+        decision: blocked ? "clear source custody before sponsor decision" : sponsor.next,
+        proof: recovery.proof,
+        blocker: blocked ? authority.authorization : "none",
+        owner: blocked ? authority.owner : sponsor.owner,
+        ask: blocked ? "continue proof run" : renewal.ask,
+        held: sponsor.held,
+        boundary: "renewal decision gate only; no ROI, SLA, or renewal commitment"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3039,6 +3073,20 @@
       document.getElementById("recovery-verification-boundary").textContent = recovery.boundary;
     }
 
+    function renderRenewalDecisionGate() {
+      const gate = renewalDecisionGate();
+      const status = document.getElementById("renewal-gate-status");
+      status.textContent = gate.status;
+      status.className = `badge ${gate.status === "ready" ? "ok" : gate.status === "held" ? "risk" : "info"}`;
+      document.getElementById("renewal-gate-decision").textContent = gate.decision;
+      document.getElementById("renewal-gate-proof").textContent = gate.proof;
+      document.getElementById("renewal-gate-blocker").textContent = gate.blocker;
+      document.getElementById("renewal-gate-owner").textContent = gate.owner;
+      document.getElementById("renewal-gate-ask").textContent = gate.ask;
+      document.getElementById("renewal-gate-held").textContent = gate.held;
+      document.getElementById("renewal-gate-boundary").textContent = gate.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3607,6 +3655,7 @@
       const evidenceQueueState = evidenceQueue();
       const authority = authorityHandoff();
       const recovery = recoveryVerification();
+      const renewalGate = renewalDecisionGate();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3716,6 +3765,14 @@
         ["recovery_verification_closure_state", recovery.closure],
         ["recovery_verification_sponsor_proof", recovery.proof],
         ["recovery_verification_boundary", recovery.boundary],
+        ["renewal_gate_status", renewalGate.status],
+        ["renewal_gate_decision", renewalGate.decision],
+        ["renewal_gate_proof_basis", renewalGate.proof],
+        ["renewal_gate_open_blocker", renewalGate.blocker],
+        ["renewal_gate_owner", renewalGate.owner],
+        ["renewal_gate_allowed_ask", renewalGate.ask],
+        ["renewal_gate_held_claims", renewalGate.held],
+        ["renewal_gate_boundary", renewalGate.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3973,6 +4030,7 @@
       const evidenceQueueState = evidenceQueue();
       const authority = authorityHandoff();
       const recovery = recoveryVerification();
+      const renewalGate = renewalDecisionGate();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4027,6 +4085,7 @@
         `Evidence queue: ${evidenceQueueState.status}; owner ${evidenceQueueState.owner}; readiness ${evidenceQueueState.readiness}; missing ${evidenceQueueState.missing}; claim ${evidenceQueueState.claim}; release ${evidenceQueueState.release}; next ${evidenceQueueState.next}`,
         `Authority handoff: ${authority.status}; owner ${authority.owner}; authorization ${authority.authorization}; claim ${authority.claim}; action ${authority.action}; clock ${authority.clock}; sponsor ${authority.sponsor}`,
         `Recovery verification: ${recovery.status}; window ${recovery.window}; target ${recovery.target}; result ${recovery.result}; reopen ${recovery.reopen}; closure ${recovery.closure}; proof ${recovery.proof}`,
+        `Renewal decision gate: ${renewalGate.status}; decision ${renewalGate.decision}; proof ${renewalGate.proof}; blocker ${renewalGate.blocker}; owner ${renewalGate.owner}; ask ${renewalGate.ask}; held ${renewalGate.held}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4296,6 +4355,7 @@
       renderEvidenceQueue();
       renderAuthorityHandoff();
       renderRecoveryVerification();
+      renderRenewalDecisionGate();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4467,6 +4527,7 @@
         evidenceQueue: evidenceQueue(),
         authorityHandoff: authorityHandoff(),
         recoveryVerification: recoveryVerification(),
+        renewalDecisionGate: renewalDecisionGate(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
