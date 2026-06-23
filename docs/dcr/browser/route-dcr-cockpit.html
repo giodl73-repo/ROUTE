@@ -535,6 +535,14 @@
           </section>
 
           <section class="panel">
+            <div class="signal-top">
+              <h2>Renewal Backlog</h2>
+              <span class="badge watch" id="renewal-backlog-count">0 items</span>
+            </div>
+            <div class="stack" id="renewal-backlog" aria-label="Renewal backlog"></div>
+          </section>
+
+          <section class="panel">
             <h2>Scenario</h2>
             <div class="control-grid">
               <label>Case
@@ -1654,6 +1662,71 @@
       document.getElementById("portfolio-scenarios").textContent = String(proof.scenarioCount);
     }
 
+    function renewalBacklog(runs) {
+      const items = [];
+      if (!runs.length) return items;
+      const proofRuns = runs.filter((run) => run.scorecard?.renewal === "renew");
+      const openRuns = runs.filter((run) => (run.summary?.openActions || 0) > 0);
+      const missingScenarios = Object.keys(scenarios).filter((scenarioId) =>
+        !runs.some((run) => run.scenario === scenarioId && run.scorecard?.grade === "DCR-4")
+      );
+      if (proofRuns.length) {
+        items.push({
+          label: "Renew proven DCR coverage",
+          status: "renew",
+          body: `${proofRuns.length} proof-ready run${proofRuns.length === 1 ? "" : "s"} ready for renewal evidence.`
+        });
+      }
+      if (openRuns.length) {
+        const openWork = openRuns.reduce((total, run) => total + (run.summary?.openActions || 0), 0);
+        items.push({
+          label: "Close unresolved operating work",
+          status: "work",
+          body: `${openWork} open action${openWork === 1 ? "" : "s"} remain across saved runs.`
+        });
+      }
+      if (missingScenarios.length) {
+        items.push({
+          label: "Expand scenario coverage",
+          status: "watch",
+          body: `${missingScenarios.length} scenario${missingScenarios.length === 1 ? "" : "s"} still lack DCR-4 proof.`
+        });
+      }
+      return items;
+    }
+
+    function renderRenewalBacklog() {
+      const root = document.getElementById("renewal-backlog");
+      root.innerHTML = "";
+      const items = renewalBacklog(readStoredRuns());
+      if (!items.length) {
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>No saved renewal work</h3>
+            <span class="badge info">empty</span>
+          </div>
+          <p class="subhead">Save proof-ready runs to create renewal evidence and coverage backlog.</p>
+        `;
+        root.appendChild(el);
+      }
+      for (const item of items) {
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>${item.label}</h3>
+            <span class="badge ${item.status === "renew" ? "ok" : item.status === "work" ? "risk" : "watch"}">${item.status}</span>
+          </div>
+          <p class="subhead">${item.body}</p>
+        `;
+        root.appendChild(el);
+      }
+      document.getElementById("renewal-backlog-count").textContent =
+        `${items.length} ${items.length === 1 ? "item" : "items"}`;
+    }
+
     function renderPaymentTier() {
       const tier = expressTier();
       for (const button of document.querySelectorAll("button[data-tier]")) {
@@ -1681,6 +1754,7 @@
       renderAccount();
       renderRunLibrary();
       renderPortfolioProof();
+      renderRenewalBacklog();
       renderPaymentTier();
       renderDirector();
     }
