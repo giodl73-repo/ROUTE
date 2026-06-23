@@ -36,6 +36,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Maintenance case")).toContainText("Measured Failurecorridor reliability failure");
     await expect(page.locator("#maintenance-fix")).toHaveText("weather-responsive split + EV staging");
     await expect(page.locator("#maintenance-priority")).toHaveText("P2");
+    await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 46>=45");
+    await expect(page.locator("#maintenance-evidence")).toHaveText("511 closure feed; Charging source owner; Operator message owner");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -54,6 +56,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_thresholds,"risk 46>=45"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -90,6 +93,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#maintenance-failure")).toHaveText("intersection access failure");
     await expect(page.locator("#maintenance-fix")).toHaveText("retime gate approach routing");
     await expect(page.locator("#maintenance-priority")).toHaveText("P1");
+    await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 52>=45; flow 84%<85%");
 
     await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
@@ -177,13 +181,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workload-source")).toHaveText("2");
     await expect(page.locator("#workload-next")).toHaveText("verify Charging source owner");
     await expect(page.locator("#maintenance-status")).toHaveText("validated");
-    await expect(page.locator("#maintenance-justification")).toHaveText("risk 42; flow 96%; recovery 43m");
+    await expect(page.locator("#maintenance-thresholds")).toHaveText("none crossed");
+    await expect(page.locator("#maintenance-evidence")).toHaveText("Charging source owner; Operator message owner");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
-    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
@@ -194,6 +199,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_fix,"weather-responsive split \+ EV staging"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_justification,"risk 42; flow 96%; recovery 43m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_evidence_gap,"Charging source owner; Operator message owner"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
