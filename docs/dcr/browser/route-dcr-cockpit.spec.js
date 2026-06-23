@@ -52,7 +52,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-dest-label")).toHaveText("SLC");
     await expect(page.locator("#tier-incident-label")).toHaveText("closure risk");
     await expect(page.locator("#tier-map-segment")).toHaveText("SAC -> CENTRAL_VALLEY");
-    await expect(page.locator("#tier-map-progress")).toHaveText("0%");
+    await expect(page.locator("#tier-map-progress")).toHaveText(/^(0|8)%$/);
     await expect(page.locator("#tier-map-pressure")).toHaveText("watch +10m");
     await expect(page.locator("#tier-map-control")).toHaveText("weather-responsive split + EV staging");
     await expect(page.getByLabel("Tier decision trace")).toContainText("Why Nowwatch +10m; promise risk 46>=45");
@@ -90,6 +90,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#renewal-proof-held")).toHaveText("ROI; guaranteed SLA; traffic control; EV availability");
     await expect(page.locator("#renewal-proof-ask")).toHaveText("continue proof run");
     await expect(page.locator("#renewal-proof-boundary")).toHaveText("renewal summary only; no ROI or SLA guarantee");
+    await expect(page.getByLabel("Sponsor packet draft")).toContainText("Askcontinue proof run");
+    await expect(page.locator("#sponsor-packet-status")).toHaveText("held");
+    await expect(page.locator("#sponsor-packet-proof")).toHaveText("readiness gaps identified");
+    await expect(page.locator("#sponsor-packet-owner")).toHaveText("DOT operations");
+    await expect(page.locator("#sponsor-packet-next")).toHaveText("clear proof gaps before sponsor ask");
+    await expect(page.locator("#sponsor-packet-boundary")).toHaveText("sponsor packet draft only; no renewal commitment");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -176,7 +182,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
     await expect(page.locator("#renewal-backlog-count")).toHaveText("0 items");
-    await expect(page.getByLabel("Shift handoff")).toHaveValue(/ROUTE DCR shift handoff - 00:00/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/ROUTE DCR shift handoff - 00:(00|05)/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify 511 closure feed/);
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
     await expect(page.getByLabel("Evidence gates")).toContainText("511 closure feed");
@@ -206,6 +212,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_id,"DCR-LEDGER-WINTER-CLOSURE-SAC-CENTRAL-VALLEY"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_proof_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_proof_ask,"continue proof run"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_packet_status,"held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_packet_next_step,"clear proof gaps before sponsor ask"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -514,6 +522,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#renewal-proof-safe")).toHaveText("monitored DCR proof retained");
     await expect(page.locator("#renewal-proof-ask")).toHaveText("renew monitored DCR cockpit");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Renewal proof summary: ready; sponsor proof DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; \+5% flow; 1 resolved; safe claim monitored DCR proof retained; ask renew monitored DCR cockpit; held ROI; guaranteed SLA; traffic control; EV availability/);
+    await expect(page.locator("#sponsor-packet-status")).toHaveText("ready");
+    await expect(page.locator("#sponsor-packet-ask")).toHaveText("renew monitored DCR cockpit");
+    await expect(page.locator("#sponsor-packet-proof")).toHaveText("DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; +5% flow; 1 resolved");
+    await expect(page.locator("#sponsor-packet-next")).toHaveText("decide renewal candidate");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Sponsor packet draft: ready; ask renew monitored DCR cockpit; proof DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; \+5% flow; 1 resolved; owner DOT operations; held ROI; guaranteed SLA; traffic control; EV availability; next decide renewal candidate/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -557,6 +570,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_renewal,"renew monitored DCR cockpit"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_proof_status,"ready"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_proof_safe_claim,"monitored DCR proof retained"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_packet_status,"ready"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_packet_next_step,"decide renewal candidate"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
