@@ -890,6 +890,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Source Escalation</h2>
+            <span class="badge info" id="source-escalation-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Source escalation">
+            <div class="metric"><span>Owner</span><strong id="source-escalation-owner">source owner</strong></div>
+            <div class="metric"><span>Reason</span><strong id="source-escalation-reason">evidence gap</strong></div>
+            <div class="metric"><span>Due</span><strong id="source-escalation-due">next cycle</strong></div>
+            <div class="metric"><span>Packet</span><strong id="source-escalation-packet">hold packet</strong></div>
+            <div class="metric"><span>Next Proof</span><strong id="source-escalation-proof">source row</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="source-escalation-boundary">no source claim</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -2124,6 +2139,37 @@
       document.getElementById("evidence-dossier-boundary").textContent = evidence.boundary;
     }
 
+    function sourceEscalation() {
+      const evidence = evidenceDossier();
+      const workload = operatorWorkload();
+      const maintenance = maintenanceCase();
+      const missing = currentScenario().gates.filter((gate) => !isGateReady(gate));
+      const owner = missing[0]?.label || currentScenario().owner;
+      const status = missing.length === 0 ? "clear" : evidence.status;
+      return {
+        status,
+        owner,
+        reason: missing.length ? `${maintenance.priority} ${maintenance.failure}; ${evidence.basis}` : "source custody clear",
+        due: missing.length > 1 ? "next monitoring cycle" : missing.length === 1 ? "before owner issue" : "none",
+        packet: missing.length ? `${workload.queue}: verify ${owner}` : "ready for owner review",
+        proof: missing.length ? owner : evidence.ready,
+        boundary: "escalation only; source owner remains authoritative"
+      };
+    }
+
+    function renderSourceEscalation() {
+      const escalation = sourceEscalation();
+      const status = document.getElementById("source-escalation-status");
+      status.textContent = escalation.status;
+      status.className = `badge ${escalation.status === "clear" ? "ok" : escalation.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("source-escalation-owner").textContent = escalation.owner;
+      document.getElementById("source-escalation-reason").textContent = escalation.reason;
+      document.getElementById("source-escalation-due").textContent = escalation.due;
+      document.getElementById("source-escalation-packet").textContent = escalation.packet;
+      document.getElementById("source-escalation-proof").textContent = escalation.proof;
+      document.getElementById("source-escalation-boundary").textContent = escalation.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -2140,6 +2186,7 @@
       const workOrder = workOrderDraft();
       const playbook = resiliencyPlaybook();
       const evidence = evidenceDossier();
+      const escalation = sourceEscalation();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2250,6 +2297,13 @@
         ["evidence_dossier_basis", evidence.basis],
         ["evidence_dossier_claim_level", evidence.claim],
         ["evidence_dossier_boundary", evidence.boundary],
+        ["source_escalation_status", escalation.status],
+        ["source_escalation_owner", escalation.owner],
+        ["source_escalation_reason", escalation.reason],
+        ["source_escalation_due", escalation.due],
+        ["source_escalation_packet", escalation.packet],
+        ["source_escalation_next_proof", escalation.proof],
+        ["source_escalation_boundary", escalation.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2292,6 +2346,7 @@
       const workOrder = workOrderDraft();
       const playbook = resiliencyPlaybook();
       const evidence = evidenceDossier();
+      const escalation = sourceEscalation();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2321,6 +2376,7 @@
         `Work order draft: ${workOrder.status}; id ${workOrder.id}; issuer ${workOrder.issuer}; gate ${workOrder.releaseGate}; step ${workOrder.fieldStep}`,
         `Resiliency playbook: ${playbook.status}; switch ${playbook.switch}; trigger ${playbook.trigger}; rollback ${playbook.rollback}; gate ${playbook.gate}`,
         `Evidence dossier: ${evidence.status}; readiness ${evidence.readiness}; missing ${evidence.missing}; basis ${evidence.basis}; claim ${evidence.claim}`,
+        `Source escalation: ${escalation.status}; owner ${escalation.owner}; due ${escalation.due}; packet ${escalation.packet}; boundary ${escalation.boundary}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2565,6 +2621,7 @@
       renderWorkOrderDraft();
       renderResiliencyPlaybook();
       renderEvidenceDossier();
+      renderSourceEscalation();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2713,6 +2770,7 @@
         workOrder: workOrderDraft(),
         playbook: resiliencyPlaybook(),
         evidenceDossier: evidenceDossier(),
+        sourceEscalation: sourceEscalation(),
         handoff: handoffText(),
         log: state.log
       };
