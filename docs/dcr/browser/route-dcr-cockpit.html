@@ -1350,6 +1350,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Capital Program Queue</h2>
+            <span class="badge info" id="capital-status">intake</span>
+          </div>
+          <div class="metrics" aria-label="Capital program queue">
+            <div class="metric"><span>Lane</span><strong id="capital-lane">operations intake</strong></div>
+            <div class="metric"><span>Package</span><strong id="capital-package">DCR-FIX</strong></div>
+            <div class="metric"><span>Priority</span><strong id="capital-priority">P3</strong></div>
+            <div class="metric"><span>Value Basis</span><strong id="capital-value">proof pending</strong></div>
+            <div class="metric"><span>Dependency</span><strong id="capital-dependency">source custody</strong></div>
+            <div class="metric"><span>Exit Condition</span><strong id="capital-exit">owner review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="capital-boundary">queue only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>Intervention Rank</h2>
             <span class="badge info" id="intervention-status">draft</span>
           </div>
@@ -4284,6 +4300,42 @@
       document.getElementById("remediation-boundary").textContent = docket.boundary;
     }
 
+    function capitalProgramQueue() {
+      const remediation = remediationDocket();
+      const maintenance = maintenanceCase();
+      const backlog = maintenanceBacklog();
+      const renewalValue = renewalValueCase();
+      const status = remediation.status === "ready"
+        ? "program-ready"
+        : remediation.status === "held"
+          ? "blocked"
+          : "intake";
+      return {
+        status,
+        lane: status === "program-ready" ? "renewal/capital review" : status === "blocked" ? "source-clearance queue" : "operations intake",
+        package: `${backlog.ticket}; ${remediation.caseId}`,
+        priority: `${maintenance.priority}; ${backlog.asset}`,
+        value: status === "program-ready" ? renewalValue.proof : remediation.proof,
+        dependency: status === "program-ready" ? renewalValue.gap : backlog.dependency,
+        exit: status === "program-ready" ? `owner decides ${backlog.queue}` : backlog.exit,
+        boundary: "capital queue only; no funding approval or procurement claim"
+      };
+    }
+
+    function renderCapitalProgramQueue() {
+      const capital = capitalProgramQueue();
+      const status = document.getElementById("capital-status");
+      status.textContent = capital.status;
+      status.className = `badge ${capital.status === "program-ready" ? "ok" : capital.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("capital-lane").textContent = capital.lane;
+      document.getElementById("capital-package").textContent = capital.package;
+      document.getElementById("capital-priority").textContent = capital.priority;
+      document.getElementById("capital-value").textContent = capital.value;
+      document.getElementById("capital-dependency").textContent = capital.dependency;
+      document.getElementById("capital-exit").textContent = capital.exit;
+      document.getElementById("capital-boundary").textContent = capital.boundary;
+    }
+
     function interventionRank() {
       const drive = driveSlaPriorities();
       const fix = fixPackage();
@@ -4672,6 +4724,7 @@
       const fix = fixPackage();
       const justification = fixJustification();
       const remediation = remediationDocket();
+      const capital = capitalProgramQueue();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -5036,6 +5089,14 @@
         ["remediation_replay_proof", remediation.proof],
         ["remediation_owner_gate", remediation.gate],
         ["remediation_boundary", remediation.boundary],
+        ["capital_status", capital.status],
+        ["capital_lane", capital.lane],
+        ["capital_package", capital.package],
+        ["capital_priority", capital.priority],
+        ["capital_value_basis", capital.value],
+        ["capital_dependency", capital.dependency],
+        ["capital_exit_condition", capital.exit],
+        ["capital_boundary", capital.boundary],
         ["intervention_status", intervention.status],
         ["intervention_rank", intervention.rank],
         ["intervention_name", intervention.intervention],
@@ -5221,6 +5282,7 @@
       const fix = fixPackage();
       const justification = fixJustification();
       const remediation = remediationDocket();
+      const capital = capitalProgramQueue();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -5295,6 +5357,7 @@
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Fix justification: ${justification.status}; failure ${justification.failure}; basis ${justification.basis}; expected ${justification.expected}; gate ${justification.gate}`,
         `Remediation docket: ${remediation.status}; case ${remediation.caseId}; trigger ${remediation.trigger}; action ${remediation.action}; proof ${remediation.proof}; gate ${remediation.gate}`,
+        `Capital program queue: ${capital.status}; lane ${capital.lane}; package ${capital.package}; value ${capital.value}; dependency ${capital.dependency}; exit ${capital.exit}`,
         `Intervention rank: ${intervention.status}; ${intervention.rank}; intervention ${intervention.intervention}; confidence ${intervention.confidence}; gate ${intervention.gate}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
@@ -5588,6 +5651,7 @@
       renderFixPackage();
       renderFixJustification();
       renderRemediationDocket();
+      renderCapitalProgramQueue();
       renderInterventionRank();
       renderDecisionDossier();
       renderPostFixMonitor();
@@ -5761,6 +5825,7 @@
         traceabilityLedger: traceabilityLedger(),
         replayProof: replayProof(),
         remediationDocket: remediationDocket(),
+        capitalProgramQueue: capitalProgramQueue(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
