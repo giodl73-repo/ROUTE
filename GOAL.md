@@ -163,3 +163,6 @@ should mean something in the SLA graph.
 - `route optimizer-constraint-ledger` now preserves T2 qualification gate policy
   and game-use semantics in `optimizer_effect` for replayed game/ops bundle
   relief rows whose source blocker-relief rows had them.
+- `route optimizer-constraint-budget` now rolls qualification-bearing
+  `optimizer_effect` values into `qualification_effects` so selector-facing
+  budget rows retain the T2 gate/game-use contract.
