@@ -136,3 +136,6 @@ should mean something in the SLA graph.
 - `route t2-service-selection` now consumes the T2 qualification-action ledger
   and exports qualification map treatment, gate policy, and game-use semantics
   into `data/t2-service-selection.csv`.
+- `route t2-bundle-overlays` now carries qualification map treatment, gate
+  policy, and game-use semantics into `data/game/t2-bundle-overlays.csv`, and its
+  gate requires those fields for bound overlays.

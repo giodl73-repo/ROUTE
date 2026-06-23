@@ -166,14 +166,16 @@ reviews, close notes, and the commits that changed the system.
 | 2026-05-15 | LA I-220 CA I-110 Funding Insufficiency Review | Check official LA and CA program sources and preserve the remaining repair holds because no full-cost pavement repair funding is shown. | done |
 | 2026-05-15 | Parking Map Refresh | Regenerate the 17 atlas maps, refresh map readiness, and write a parking handoff. | done |
 | 2026-06-23 | Milestone 10 T2 Qualification Actions | Turn T2 qualification-action exports into basis-covered gates and consume them in service selection. | done |
+| 2026-06-23 | Milestone 10 T2 Overlay Qualification Semantics | Carry T2 qualification-action semantics from service selection into bundle overlays. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-qualification-actions` closed
-after `data/t2-service-selection.csv` consumed qualification-action map
-treatment, gate policy, and game-use semantics. Current T1-T4 structural maps
-have a gateable readiness artifact, a gateable release-facing inventory, and no
-residual `publication` blockers.
+No wave is active. `2026-06-23-milestone-10-t2-overlay-qualification-semantics`
+closed after `data/game/t2-bundle-overlays.csv` carried qualification-action map
+treatment, gate policy, and game-use semantics from service selection into the
+game/ops binding surface. Current T1-T4 structural maps have a gateable
+readiness artifact, a gateable release-facing inventory, and no residual
+`publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
 and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,
