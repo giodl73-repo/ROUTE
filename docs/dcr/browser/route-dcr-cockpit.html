@@ -969,6 +969,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Active Service Loop</h2>
+            <span class="badge info" id="service-loop-status">watch</span>
+          </div>
+          <div class="metrics" aria-label="Active service loop">
+            <div class="metric"><span>Watch</span><strong id="service-loop-watch">route SLA</strong></div>
+            <div class="metric"><span>Decision</span><strong id="service-loop-decision">monitor</strong></div>
+            <div class="metric"><span>Switch</span><strong id="service-loop-switch">owner review</strong></div>
+            <div class="metric"><span>Measure</span><strong id="service-loop-measure">pending</strong></div>
+            <div class="metric"><span>Escalate</span><strong id="service-loop-escalate">source owner</strong></div>
+            <div class="metric"><span>Next Run</span><strong id="service-loop-next">continue monitoring</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="service-loop-boundary">advisory loop</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2946,6 +2962,37 @@
       };
     }
 
+    function activeServiceLoop() {
+      const summary = runSummary();
+      const drive = driveSlaPriorities();
+      const trace = tierDecisionTrace();
+      const workload = operatorWorkload();
+      const playbook = resiliencyPlaybook();
+      const recovery = recoveryVerification();
+      const nextCycle = nextCycleSimulation();
+      const status = recovery.status === "proving"
+        ? "proving"
+        : workload.sourceHolds || workload.roleHolds
+          ? "source-held"
+          : summary.openActions
+            ? "intervene"
+            : "watch";
+      return {
+        status,
+        watch: `${drive.endpoints}; ${drive.current} against ${drive.target}; ${trace.why}`,
+        decision: drive.status === "violated"
+          ? `${drive.priority}; ${drive.mitigation}`
+          : `${drive.priority}; ${trace.move}`,
+        switch: playbook.status === "active"
+          ? `${playbook.switch}; ${playbook.trigger}`
+          : `${playbook.switch}; ${playbook.gate}`,
+        measure: `${recovery.status}; ${recovery.result}; ${recovery.reopen}`,
+        escalate: workload.sourceHolds || workload.roleHolds ? workload.nextOwner : "owner approval packet",
+        next: nextCycle.move,
+        boundary: "active service loop is simulated; operator recommends and owners approve field action"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3740,6 +3787,20 @@
       document.getElementById("operating-contract-boundary").textContent = contract.boundary;
     }
 
+    function renderActiveServiceLoop() {
+      const loop = activeServiceLoop();
+      const status = document.getElementById("service-loop-status");
+      status.textContent = loop.status;
+      status.className = `badge ${loop.status === "proving" ? "ok" : loop.status === "source-held" ? "risk" : "info"}`;
+      document.getElementById("service-loop-watch").textContent = loop.watch;
+      document.getElementById("service-loop-decision").textContent = loop.decision;
+      document.getElementById("service-loop-switch").textContent = loop.switch;
+      document.getElementById("service-loop-measure").textContent = loop.measure;
+      document.getElementById("service-loop-escalate").textContent = loop.escalate;
+      document.getElementById("service-loop-next").textContent = loop.next;
+      document.getElementById("service-loop-boundary").textContent = loop.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4322,6 +4383,7 @@
       const renewalBrief = renewalDecisionBrief();
       const counterfactual = counterfactualValue();
       const operatingContract = renewalOperatingContract();
+      const serviceLoop = activeServiceLoop();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4544,6 +4606,14 @@
         ["operating_contract_proof", operatingContract.proof],
         ["operating_contract_renewal_trigger", operatingContract.trigger],
         ["operating_contract_boundary", operatingContract.boundary],
+        ["active_service_loop_status", serviceLoop.status],
+        ["active_service_loop_watch", serviceLoop.watch],
+        ["active_service_loop_decision", serviceLoop.decision],
+        ["active_service_loop_switch", serviceLoop.switch],
+        ["active_service_loop_measure", serviceLoop.measure],
+        ["active_service_loop_escalate", serviceLoop.escalate],
+        ["active_service_loop_next_run", serviceLoop.next],
+        ["active_service_loop_boundary", serviceLoop.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4815,6 +4885,7 @@
       const renewalBrief = renewalDecisionBrief();
       const counterfactual = counterfactualValue();
       const operatingContract = renewalOperatingContract();
+      const serviceLoop = activeServiceLoop();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4883,6 +4954,7 @@
         `Renewal decision brief: ${renewalBrief.status}; decision ${renewalBrief.decision}; basis ${renewalBrief.basis}; ask ${renewalBrief.ask}; held ${renewalBrief.held}; owner ${renewalBrief.owner}; next ${renewalBrief.next}`,
         `Counterfactual value: ${counterfactual.status}; without ${counterfactual.without}; with ${counterfactual.with}; delta ${counterfactual.delta}; avoided ${counterfactual.avoided}; reason ${counterfactual.reason}; gap ${counterfactual.gap}`,
         `Renewal operating contract: ${operatingContract.status}; service ${operatingContract.service}; cadence ${operatingContract.cadence}; rights ${operatingContract.rights}; resilience ${operatingContract.resilience}; deliverable ${operatingContract.deliverable}; proof ${operatingContract.proof}; trigger ${operatingContract.trigger}`,
+        `Active service loop: ${serviceLoop.status}; watch ${serviceLoop.watch}; decision ${serviceLoop.decision}; switch ${serviceLoop.switch}; measure ${serviceLoop.measure}; escalate ${serviceLoop.escalate}; next ${serviceLoop.next}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5166,6 +5238,7 @@
       renderRenewalDecisionBrief();
       renderCounterfactualValue();
       renderRenewalOperatingContract();
+      renderActiveServiceLoop();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5351,6 +5424,7 @@
         renewalDecisionBrief: renewalDecisionBrief(),
         counterfactualValue: counterfactualValue(),
         renewalOperatingContract: renewalOperatingContract(),
+        activeServiceLoop: activeServiceLoop(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),

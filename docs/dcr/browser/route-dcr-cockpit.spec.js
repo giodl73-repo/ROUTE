@@ -327,6 +327,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operating-contract-proof")).toHaveText("watch; 0 resolved; 0/3 evidence");
     await expect(page.locator("#operating-contract-trigger")).toHaveText("verify 511 closure feed");
     await expect(page.locator("#operating-contract-boundary")).toHaveText("operating contract is simulated; no payment, ROI, SLA guarantee, or field authority");
+    await expect(page.getByLabel("Active service loop")).toContainText("WatchT1 west gateway -> T1 east gateway; 105m against 95m +5m buffer; watch +10m; promise risk 46>=45");
+    await expect(page.locator("#service-loop-status")).toHaveText("source-held");
+    await expect(page.locator("#service-loop-decision")).toHaveText("P2 mitigate risk; weather-responsive split + EV staging");
+    await expect(page.locator("#service-loop-switch")).toHaveText("Monitor only; source custody: verify 511 closure feed");
+    await expect(page.locator("#service-loop-measure")).toHaveText("blocked; +0 risk; +0% flow; watch for rebound");
+    await expect(page.locator("#service-loop-escalate")).toHaveText("511 closure feed");
+    await expect(page.locator("#service-loop-next")).toHaveText("verify Charging source owner");
+    await expect(page.locator("#service-loop-boundary")).toHaveText("active service loop is simulated; operator recommends and owners approve field action");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -382,6 +390,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_delta,"\+0 risk; \+0% flow"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_status,"gated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_resilience_work,"P2 weather-responsive split \+ EV staging; \+0 risk; \+0% flow"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_service_loop_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_service_loop_next_run,"verify Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -816,6 +826,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operating-contract-proof")).toHaveText("proven; 1 resolved; 1/3 evidence");
     await expect(page.locator("#operating-contract-trigger")).toHaveText("verify Charging source owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Renewal operating contract: proof-run; service active monitoring, DCR run decisions, source-gap governance; cadence 0m; clear 2 source holds; rights operator recommends; Charging source owner clears source custody; resilience P3 weather-responsive split \+ EV staging; -4 risk; \+5% flow; deliverable renew monitored DCR cockpit; mountain corridor \+ charging sources; proof proven; 1 resolved; 1\/3 evidence; trigger verify Charging source owner/);
+    await expect(page.locator("#service-loop-status")).toHaveText("proving");
+    await expect(page.locator("#service-loop-watch")).toHaveText("T1 west gateway -> T1 east gateway; 97m against 95m +5m buffer; buffer holding at +2m; none");
+    await expect(page.locator("#service-loop-decision")).toHaveText("P3 maintain watch; continue monitoring");
+    await expect(page.locator("#service-loop-switch")).toHaveText("Reroute advisory; post-fix proving window");
+    await expect(page.locator("#service-loop-measure")).toHaveText("proving; -4 risk; +5% flow; watch for rebound");
+    await expect(page.locator("#service-loop-escalate")).toHaveText("Charging source owner");
+    await expect(page.locator("#service-loop-next")).toHaveText("verify Operator message owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Active service loop: proving; watch T1 west gateway -> T1 east gateway; 97m against 95m \+5m buffer; buffer holding at \+2m; none; decision P3 maintain watch; continue monitoring; switch Reroute advisory; post-fix proving window; measure proving; -4 risk; \+5% flow; watch for rebound; escalate Charging source owner; next verify Operator message owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -922,6 +940,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_delta,"-4 risk; \+5% flow"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_status,"proof-run"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_deliverable,"renew monitored DCR cockpit; mountain corridor \+ charging sources"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_service_loop_status,"proving"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/active_service_loop_switch,"Reroute advisory; post-fix proving window"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
