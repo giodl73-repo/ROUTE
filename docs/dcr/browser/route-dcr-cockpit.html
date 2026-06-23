@@ -520,6 +520,21 @@
           </section>
 
           <section class="panel">
+            <div class="signal-top">
+              <h2>Portfolio Proof</h2>
+              <span class="badge info" id="portfolio-grade">0 runs</span>
+            </div>
+            <div class="metrics" aria-label="Portfolio proof">
+              <div class="metric"><span>Saved Runs</span><strong id="portfolio-runs">0</strong></div>
+              <div class="metric"><span>DCR-4 Proofs</span><strong id="portfolio-proof">0</strong></div>
+              <div class="metric"><span>Mitigated</span><strong id="portfolio-mitigated">0</strong></div>
+              <div class="metric"><span>Open Work</span><strong id="portfolio-open-work">0</strong></div>
+              <div class="metric"><span>Renewal Cases</span><strong id="portfolio-renewal">0</strong></div>
+              <div class="metric"><span>Scenarios</span><strong id="portfolio-scenarios">0</strong></div>
+            </div>
+          </section>
+
+          <section class="panel">
             <h2>Scenario</h2>
             <div class="control-grid">
               <label>Case
@@ -1609,6 +1624,36 @@
       }
     }
 
+    function portfolioProof(runs) {
+      const scenariosSeen = new Set(runs.map((run) => run.scenario));
+      const dcr4 = runs.filter((run) => run.scorecard?.grade === "DCR-4").length;
+      const mitigated = runs.filter((run) => run.summary?.outcome === "mitigated").length;
+      const renewal = runs.filter((run) => run.scorecard?.renewal === "renew").length;
+      const openWork = runs.reduce((total, run) => total + (run.summary?.openActions || 0), 0);
+      return {
+        total: runs.length,
+        dcr4,
+        mitigated,
+        openWork,
+        renewal,
+        scenarioCount: scenariosSeen.size,
+        grade: dcr4 > 2 ? "portfolio" : dcr4 > 0 ? "proof" : "0 runs"
+      };
+    }
+
+    function renderPortfolioProof() {
+      const proof = portfolioProof(readStoredRuns());
+      const grade = document.getElementById("portfolio-grade");
+      grade.textContent = proof.grade;
+      grade.className = `badge ${proof.grade === "portfolio" || proof.grade === "proof" ? "ok" : "info"}`;
+      document.getElementById("portfolio-runs").textContent = String(proof.total);
+      document.getElementById("portfolio-proof").textContent = String(proof.dcr4);
+      document.getElementById("portfolio-mitigated").textContent = String(proof.mitigated);
+      document.getElementById("portfolio-open-work").textContent = String(proof.openWork);
+      document.getElementById("portfolio-renewal").textContent = String(proof.renewal);
+      document.getElementById("portfolio-scenarios").textContent = String(proof.scenarioCount);
+    }
+
     function renderPaymentTier() {
       const tier = expressTier();
       for (const button of document.querySelectorAll("button[data-tier]")) {
@@ -1635,6 +1680,7 @@
       renderRole();
       renderAccount();
       renderRunLibrary();
+      renderPortfolioProof();
       renderPaymentTier();
       renderDirector();
     }
@@ -1760,6 +1806,9 @@
         manualEvents: state.manualEvents,
         resolvedEvents: state.resolvedEvents,
         verifiedEvidence: state.verifiedEvidence,
+        summary: runSummary(),
+        scorecard: scenarioScorecard(),
+        handoff: handoffText(),
         log: state.log
       };
     }
