@@ -800,6 +800,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Post-Fix Monitor</h2>
+            <span class="badge info" id="postfix-status">pending</span>
+          </div>
+          <div class="metrics" aria-label="Post-fix monitor">
+            <div class="metric"><span>Window</span><strong id="postfix-window">next cycle</strong></div>
+            <div class="metric"><span>Proof Target</span><strong id="postfix-target">risk/flow</strong></div>
+            <div class="metric"><span>Current Result</span><strong id="postfix-result">pending</strong></div>
+            <div class="metric"><span>Rollback</span><strong id="postfix-rollback">risk rebounds</strong></div>
+            <div class="metric"><span>Renewal</span><strong id="postfix-renewal">watch</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="postfix-boundary">monitor only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1832,6 +1847,40 @@
       document.getElementById("dossier-boundary").textContent = dossier.boundary;
     }
 
+    function postFixMonitor() {
+      const summary = runSummary();
+      const fix = fixPackage();
+      const score = scenarioScorecard();
+      const result = `${formatSigned(summary.riskChange)} risk; ${formatSigned(summary.flowChange)}% flow`;
+      const status = fix.status === "validated" && summary.riskChange < 0 && summary.flowChange > 0
+        ? "proving"
+        : fix.status === "blocked"
+          ? "blocked"
+          : "pending";
+      return {
+        status,
+        window: "next 2 monitoring cycles",
+        target: "risk below baseline; flow above baseline",
+        result,
+        rollback: summary.riskChange > 0 || summary.flowChange < 0 ? "reopen recommendation" : "watch for rebound",
+        renewal: score.renewal,
+        boundary: "monitoring only; owner decides field changes"
+      };
+    }
+
+    function renderPostFixMonitor() {
+      const postFix = postFixMonitor();
+      const status = document.getElementById("postfix-status");
+      status.textContent = postFix.status;
+      status.className = `badge ${postFix.status === "proving" ? "ok" : postFix.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("postfix-window").textContent = postFix.window;
+      document.getElementById("postfix-target").textContent = postFix.target;
+      document.getElementById("postfix-result").textContent = postFix.result;
+      document.getElementById("postfix-rollback").textContent = postFix.rollback;
+      document.getElementById("postfix-renewal").textContent = postFix.renewal;
+      document.getElementById("postfix-boundary").textContent = postFix.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1842,6 +1891,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const dossier = decisionDossier();
+      const postFix = postFixMonitor();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1909,6 +1959,13 @@
         ["dossier_blockers", dossier.blockers],
         ["dossier_next_proof", dossier.proof],
         ["dossier_boundary", dossier.boundary],
+        ["postfix_status", postFix.status],
+        ["postfix_window", postFix.window],
+        ["postfix_target", postFix.target],
+        ["postfix_result", postFix.result],
+        ["postfix_rollback", postFix.rollback],
+        ["postfix_renewal", postFix.renewal],
+        ["postfix_boundary", postFix.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1945,6 +2002,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const dossier = decisionDossier();
+      const postFix = postFixMonitor();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1968,6 +2026,7 @@
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
+        `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2206,6 +2265,7 @@
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
+      renderPostFixMonitor();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2348,6 +2408,7 @@
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
+        postFix: postFixMonitor(),
         handoff: handoffText(),
         log: state.log
       };

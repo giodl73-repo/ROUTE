@@ -45,6 +45,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Decision dossier")).toContainText("DecisionP2 weather-responsive split + EV staging");
     await expect(page.locator("#dossier-status")).toHaveText("blocked");
     await expect(page.locator("#dossier-blockers")).toHaveText("source custody: verify 511 closure feed");
+    await expect(page.getByLabel("Post-fix monitor")).toContainText("Windownext 2 monitoring cycles");
+    await expect(page.locator("#postfix-status")).toHaveText("blocked");
+    await expect(page.locator("#postfix-result")).toHaveText("+0 risk; +0% flow");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -66,6 +69,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_thresholds,"risk 46>=45"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/fix_boundary,"recommendation package, not a work order"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/dossier_boundary,"advisory dossier, not procurement approval"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/postfix_boundary,"monitoring only; owner decides field changes"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -106,6 +110,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#dossier-alternatives")).toHaveText("hold gate timing; manual detour only");
+    await expect(page.locator("#postfix-target")).toHaveText("risk below baseline; flow above baseline");
 
     await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
@@ -201,6 +206,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#dossier-status")).toHaveText("validated");
     await expect(page.locator("#dossier-why")).toHaveText("risk 42; flow 96%; recovery 43m");
     await expect(page.locator("#dossier-proof")).toHaveText("Charging source owner; Operator message owner");
+    await expect(page.locator("#postfix-status")).toHaveText("proving");
+    await expect(page.locator("#postfix-result")).toHaveText("-4 risk; +5% flow");
+    await expect(page.locator("#postfix-rollback")).toHaveText("watch for rebound");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
@@ -209,6 +217,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Fix package: validated; owner DOT operations; scope weather-responsive split \+ EV staging; effect -4 risk; \+5% flow; approval source custody/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Dossier: decision P3 weather-responsive split \+ EV staging; why risk 42; flow 96%; recovery 43m; blockers source custody: verify Charging source owner/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Post-fix monitor: proving; target risk below baseline; flow above baseline; result -4 risk; \+5% flow; rollback watch for rebound/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
@@ -223,6 +232,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_evidence_gap,"Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/fix_expected_effect,"-4 risk; \+5% flow"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/dossier_status,"validated"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/postfix_status,"proving"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
