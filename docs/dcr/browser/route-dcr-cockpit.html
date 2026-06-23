@@ -740,6 +740,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Workload Board</h2>
+            <span class="badge info" id="workload-status">watch</span>
+          </div>
+          <div class="metrics" aria-label="Workload board">
+            <div class="metric"><span>Open Actions</span><strong id="workload-open">0</strong></div>
+            <div class="metric"><span>Source Holds</span><strong id="workload-source">0</strong></div>
+            <div class="metric"><span>Role Holds</span><strong id="workload-role">0</strong></div>
+            <div class="metric"><span>Next Owner</span><strong id="workload-owner">scenario owner</strong></div>
+            <div class="metric"><span>Next Action</span><strong id="workload-next">monitor</strong></div>
+            <div class="metric"><span>Queue</span><strong id="workload-queue">monitoring</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1584,12 +1599,67 @@
       document.getElementById("guidance-boundary").textContent = guidance.boundary;
     }
 
+    function nextWorkAction(actions, missingEvidence) {
+      if (actions[0]) return `${switchLabels[actions[0].action]} for ${actions[0].label}`;
+      if (missingEvidence[0]) return `verify ${missingEvidence[0].label}`;
+      return "continue monitoring";
+    }
+
+    function operatorWorkload() {
+      const actions = openActionEvents();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
+      const roleHolds = state.decisions.filter((item) => item.status === "blocked" && item.boundary.includes("authority mismatch"));
+      const sourceHolds = missingEvidence.length;
+      const nextOwner = actions[0]
+        ? roleLabel(approvalRoleFor(actions[0].action))
+        : missingEvidence[0]
+          ? missingEvidence[0].label
+          : currentScenario().owner;
+      const queue = roleHolds.length
+        ? "role authority"
+        : sourceHolds
+          ? "source custody"
+          : actions.length
+            ? "operator review"
+            : "monitoring";
+      const status = roleHolds.length || sourceHolds
+        ? "held"
+        : actions.length
+          ? "loaded"
+          : state.resolvedEvents.length
+            ? "clear"
+            : "watch";
+      return {
+        status,
+        openActions: actions.length,
+        sourceHolds,
+        roleHolds: roleHolds.length,
+        nextOwner,
+        nextAction: nextWorkAction(actions, missingEvidence),
+        queue
+      };
+    }
+
+    function renderWorkloadBoard() {
+      const workload = operatorWorkload();
+      const status = document.getElementById("workload-status");
+      status.textContent = workload.status;
+      status.className = `badge ${workload.status === "clear" ? "ok" : workload.status === "held" ? "risk" : "info"}`;
+      document.getElementById("workload-open").textContent = String(workload.openActions);
+      document.getElementById("workload-source").textContent = String(workload.sourceHolds);
+      document.getElementById("workload-role").textContent = String(workload.roleHolds);
+      document.getElementById("workload-owner").textContent = workload.nextOwner;
+      document.getElementById("workload-next").textContent = workload.nextAction;
+      document.getElementById("workload-queue").textContent = workload.queue;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
       const score = scenarioScorecard();
       const sla = operatorSla();
       const guidance = guidanceBoard();
+      const workload = operatorWorkload();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1627,6 +1697,13 @@
         ["guidance_source", guidance.source],
         ["guidance_audience", guidance.audience],
         ["guidance_boundary", guidance.boundary],
+        ["workload_status", workload.status],
+        ["workload_open_actions", workload.openActions],
+        ["workload_source_holds", workload.sourceHolds],
+        ["workload_role_holds", workload.roleHolds],
+        ["workload_next_owner", workload.nextOwner],
+        ["workload_next_action", workload.nextAction],
+        ["workload_queue", workload.queue],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1659,6 +1736,7 @@
       const summary = runSummary();
       const sla = operatorSla();
       const guidance = guidanceBoard();
+      const workload = operatorWorkload();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1678,6 +1756,7 @@
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
+        `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -1912,6 +1991,7 @@
       renderScorecard();
       renderOperatorSla();
       renderGuidanceBoard();
+      renderWorkloadBoard();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2050,6 +2130,7 @@
         scorecard: scenarioScorecard(),
         sla: operatorSla(),
         guidance: guidanceBoard(),
+        workload: operatorWorkload(),
         handoff: handoffText(),
         log: state.log
       };
