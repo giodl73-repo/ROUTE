@@ -950,6 +950,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Owner Approval Packet</h2>
+            <span class="badge info" id="approval-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Owner approval packet">
+            <div class="metric"><span>Owner</span><strong id="approval-owner">owner</strong></div>
+            <div class="metric"><span>Request</span><strong id="approval-request">review</strong></div>
+            <div class="metric"><span>Evidence</span><strong id="approval-evidence">pending</strong></div>
+            <div class="metric"><span>Value</span><strong id="approval-value">pending</strong></div>
+            <div class="metric"><span>Decision</span><strong id="approval-decision">hold</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="approval-boundary">owner decides</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1740,6 +1755,40 @@
       document.getElementById("backlog-boundary").textContent = backlog.boundary;
     }
 
+    function ownerApprovalPacket() {
+      const board = boardPacket();
+      const workOrder = workOrderDraft();
+      const evidence = evidenceDossier();
+      const backlog = maintenanceBacklog();
+      const status = board.status === "ready"
+        ? "review"
+        : board.status === "blocked"
+          ? "blocked"
+          : "draft";
+      return {
+        status,
+        owner: board.sponsor,
+        request: `${workOrder.id}: ${workOrder.fieldStep}`,
+        evidence: `${evidence.readiness}; ${evidence.claim}`,
+        value: board.value,
+        decision: status === "review" ? `decide ${backlog.queue}` : board.gate,
+        boundary: "approval packet only; owner approval is external"
+      };
+    }
+
+    function renderOwnerApprovalPacket() {
+      const approval = ownerApprovalPacket();
+      const status = document.getElementById("approval-status");
+      status.textContent = approval.status;
+      status.className = `badge ${approval.status === "review" ? "ok" : approval.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("approval-owner").textContent = approval.owner;
+      document.getElementById("approval-request").textContent = approval.request;
+      document.getElementById("approval-evidence").textContent = approval.evidence;
+      document.getElementById("approval-value").textContent = approval.value;
+      document.getElementById("approval-decision").textContent = approval.decision;
+      document.getElementById("approval-boundary").textContent = approval.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2358,6 +2407,7 @@
       const closure = closureCriteria();
       const decisionLog = operatorDecisionLog();
       const backlog = maintenanceBacklog();
+      const approval = ownerApprovalPacket();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2496,6 +2546,13 @@
         ["maintenance_backlog_dependency", backlog.dependency],
         ["maintenance_backlog_exit", backlog.exit],
         ["maintenance_backlog_boundary", backlog.boundary],
+        ["owner_approval_status", approval.status],
+        ["owner_approval_owner", approval.owner],
+        ["owner_approval_request", approval.request],
+        ["owner_approval_evidence", approval.evidence],
+        ["owner_approval_value", approval.value],
+        ["owner_approval_decision", approval.decision],
+        ["owner_approval_boundary", approval.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2542,6 +2599,7 @@
       const closure = closureCriteria();
       const decisionLog = operatorDecisionLog();
       const backlog = maintenanceBacklog();
+      const approval = ownerApprovalPacket();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2575,6 +2633,7 @@
         `Closure criteria: ${closure.status}; close ${closure.close}; renew ${closure.renew}; reopen ${closure.reopen}; evidence ${closure.evidence}`,
         `Operator decision log: ${decisionLog.status}; recommended ${decisionLog.recommended}; approved ${decisionLog.approved}; held ${decisionLog.held}; next ${decisionLog.next}`,
         `Maintenance backlog: ${backlog.status}; ticket ${backlog.ticket}; queue ${backlog.queue}; dependency ${backlog.dependency}; exit ${backlog.exit}`,
+        `Owner approval packet: ${approval.status}; owner ${approval.owner}; request ${approval.request}; evidence ${approval.evidence}; decision ${approval.decision}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2812,6 +2871,7 @@
       renderWorkloadBoard();
       renderOperatorDecisionLog();
       renderMaintenanceBacklog();
+      renderOwnerApprovalPacket();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -2964,6 +3024,7 @@
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
         maintenanceBacklog: maintenanceBacklog(),
+        ownerApproval: ownerApprovalPacket(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
