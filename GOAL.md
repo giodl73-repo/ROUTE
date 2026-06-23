@@ -166,3 +166,6 @@ should mean something in the SLA graph.
 - `route optimizer-constraint-budget` now rolls qualification-bearing
   `optimizer_effect` values into `qualification_effects` so selector-facing
   budget rows retain the T2 gate/game-use contract.
+- `T2GameOpsBindingIntakeRow` now accepts and preserves `qualification_effects`
+  from budget rollup for future active game/ops binding intake rows while
+  remaining compatible with existing intake CSVs.
