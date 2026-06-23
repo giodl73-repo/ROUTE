@@ -875,6 +875,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Evidence Dossier</h2>
+            <span class="badge info" id="evidence-dossier-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Evidence dossier">
+            <div class="metric"><span>Readiness</span><strong id="evidence-dossier-readiness">0/0</strong></div>
+            <div class="metric"><span>Ready Sources</span><strong id="evidence-dossier-ready">none</strong></div>
+            <div class="metric"><span>Missing Sources</span><strong id="evidence-dossier-missing">source custody</strong></div>
+            <div class="metric"><span>Measured Basis</span><strong id="evidence-dossier-basis">threshold watch</strong></div>
+            <div class="metric"><span>Claim Level</span><strong id="evidence-dossier-claim">held</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="evidence-dossier-boundary">evidence only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -2074,6 +2089,41 @@
       document.getElementById("playbook-gate").textContent = playbook.gate;
     }
 
+    function evidenceDossier() {
+      const gates = currentScenario().gates;
+      const ready = gates.filter((gate) => isGateReady(gate)).map((gate) => gate.label);
+      const missing = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const maintenance = maintenanceCase();
+      const readiness = `${ready.length}/${gates.length}`;
+      const status = missing.length === 0
+        ? "complete"
+        : ready.length > 0
+          ? "partial"
+          : "blocked";
+      return {
+        status,
+        readiness,
+        ready: ready.join("; ") || "none",
+        missing: missing.join("; ") || "none",
+        basis: maintenance.thresholds === "none crossed" ? maintenance.justification : maintenance.thresholds,
+        claim: missing.length === 0 ? "evidence-backed" : `${missing.length} source hold${missing.length === 1 ? "" : "s"}`,
+        boundary: "evidence dossier only; source owners remain authoritative"
+      };
+    }
+
+    function renderEvidenceDossier() {
+      const evidence = evidenceDossier();
+      const status = document.getElementById("evidence-dossier-status");
+      status.textContent = evidence.status;
+      status.className = `badge ${evidence.status === "complete" ? "ok" : evidence.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("evidence-dossier-readiness").textContent = evidence.readiness;
+      document.getElementById("evidence-dossier-ready").textContent = evidence.ready;
+      document.getElementById("evidence-dossier-missing").textContent = evidence.missing;
+      document.getElementById("evidence-dossier-basis").textContent = evidence.basis;
+      document.getElementById("evidence-dossier-claim").textContent = evidence.claim;
+      document.getElementById("evidence-dossier-boundary").textContent = evidence.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -2089,6 +2139,7 @@
       const board = boardPacket();
       const workOrder = workOrderDraft();
       const playbook = resiliencyPlaybook();
+      const evidence = evidenceDossier();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2192,6 +2243,13 @@
         ["playbook_rollback", playbook.rollback],
         ["playbook_authority_gate", playbook.gate],
         ["playbook_boundary", playbook.boundary],
+        ["evidence_dossier_status", evidence.status],
+        ["evidence_dossier_readiness", evidence.readiness],
+        ["evidence_dossier_ready_sources", evidence.ready],
+        ["evidence_dossier_missing_sources", evidence.missing],
+        ["evidence_dossier_basis", evidence.basis],
+        ["evidence_dossier_claim_level", evidence.claim],
+        ["evidence_dossier_boundary", evidence.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2233,6 +2291,7 @@
       const board = boardPacket();
       const workOrder = workOrderDraft();
       const playbook = resiliencyPlaybook();
+      const evidence = evidenceDossier();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2261,6 +2320,7 @@
         `Board packet: ${board.status}; ask ${board.ask}; sponsor ${board.sponsor}; value ${board.value}; gate ${board.gate}`,
         `Work order draft: ${workOrder.status}; id ${workOrder.id}; issuer ${workOrder.issuer}; gate ${workOrder.releaseGate}; step ${workOrder.fieldStep}`,
         `Resiliency playbook: ${playbook.status}; switch ${playbook.switch}; trigger ${playbook.trigger}; rollback ${playbook.rollback}; gate ${playbook.gate}`,
+        `Evidence dossier: ${evidence.status}; readiness ${evidence.readiness}; missing ${evidence.missing}; basis ${evidence.basis}; claim ${evidence.claim}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2504,6 +2564,7 @@
       renderBoardPacket();
       renderWorkOrderDraft();
       renderResiliencyPlaybook();
+      renderEvidenceDossier();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2651,6 +2712,7 @@
         board: boardPacket(),
         workOrder: workOrderDraft(),
         playbook: resiliencyPlaybook(),
+        evidenceDossier: evidenceDossier(),
         handoff: handoffText(),
         log: state.log
       };
