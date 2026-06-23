@@ -37,6 +37,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-priority")).toHaveText("P2 mitigate risk");
     await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#drive-sla-mitigation")).toHaveText("weather-responsive split + EV staging");
+    await expect(page.getByLabel("US tier map validation")).toContainText("SLA RowSAC -> SLC");
+    await expect(page.locator("#tier-map-status")).toHaveText("breach");
+    await expect(page.locator("#tier-map-source")).toHaveText("maps/all-tiers-v2.png + data/beck-stop-sla.csv");
+    await expect(page.locator("#tier-map-path")).toHaveText("T1 via I-5;I-15");
+    await expect(page.locator("#tier-map-window")).toHaveText("24h overnight");
+    await expect(page.locator("#tier-map-delta")).toHaveText("+10m");
+    await expect(page.locator("#tier-map-validation")).toHaveText("tier SLA breach simulated");
+    await expect(page.locator("#tier-map-boundary")).toHaveText("US tier map fixture only; no live network validation");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -136,6 +144,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_boundary,"simulated timing; no guaranteed SLA"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"violated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_current,"105m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -204,6 +215,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-current")).toHaveText("69m");
     await expect(page.locator("#drive-sla-priority")).toHaveText("P1 protect drive SLA");
     await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#tier-map-row")).toHaveText("HOU -> BEAUMONT");
+    await expect(page.locator("#tier-map-path")).toHaveText("T1 via I-10");
+    await expect(page.locator("#tier-map-window")).toHaveText("6h local");
+    await expect(page.locator("#tier-map-delta")).toHaveText("+27m");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
@@ -393,6 +408,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Drive SLA: maintained; T1 west gateway -> T1 east gateway; current 97m against 95m \+5m buffer; priority P3 maintain watch; violation none; mitigation weather-responsive split \+ EV staging/);
+    await expect(page.locator("#tier-map-status")).toHaveText("validated");
+    await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
+    await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/US tier map validation: validated; row SAC -> SLC; path T1 via I-5;I-15; window 24h overnight; delta \+2m; validated within tier buffer/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -422,6 +441,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/time_to_mitigate,"0m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"maintained"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_violation,"none"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
