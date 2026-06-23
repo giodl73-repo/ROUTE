@@ -7,6 +7,7 @@ test.describe("ROUTE DCR cockpit", () => {
   test("desktop exposes the simulated operating board and claim boundaries", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
 
     await expect(page.getByRole("heading", { name: "ROUTE DCR Cockpit", exact: true })).toBeVisible();
     await expect(page.getByLabel("Simulated service network")).toBeVisible();
@@ -77,6 +78,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#release-check-rollback")).toHaveText("watch for rebound");
     await expect(page.locator("#release-check-claims")).toHaveText("traffic control; legal detour; EV availability held");
     await expect(page.locator("#release-check-boundary")).toHaveText("readiness checklist only; no field or public release");
+    await expect(page.getByLabel("Release proof ledger")).toContainText("Ledger IDDCR-LEDGER-WINTER-CLOSURE-SAC-CENTRAL-VALLEY");
+    await expect(page.locator("#release-ledger-status")).toHaveText("held");
+    await expect(page.locator("#release-ledger-evidence")).toHaveText("0/3; 3 source holds");
+    await expect(page.locator("#release-ledger-proof")).toHaveText("blocked: 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#release-ledger-renewal")).toHaveText("hold renewal proof");
+    await expect(page.locator("#release-ledger-boundary")).toHaveText("proof ledger only; not a public claim");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -189,6 +196,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_boundary,"preview only; no public signage or routing command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_status,"blocked"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_owner,"blocked until source clear"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_status,"held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_id,"DCR-LEDGER-WINTER-CLOSURE-SAC-CENTRAL-VALLEY"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -486,6 +495,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#release-check-owner")).toHaveText("DOT operations monitor only");
     await expect(page.locator("#release-check-proof")).toHaveText("post-fix proving window");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Release readiness checklist: watch; source blocked: Charging source owner; Operator message owner; owner DOT operations monitor only; rollback watch for rebound; claims traffic control; legal detour; EV availability held; proof post-fix proving window/);
+    await expect(page.locator("#release-ledger-status")).toHaveText("retained");
+    await expect(page.locator("#release-ledger-id")).toHaveText("DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA");
+    await expect(page.locator("#release-ledger-evidence")).toHaveText("1/3; 2 source holds");
+    await expect(page.locator("#release-ledger-proof")).toHaveText("post-fix proving window");
+    await expect(page.locator("#release-ledger-renewal")).toHaveText("renew monitored DCR cockpit");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Release proof ledger: retained; id DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; evidence 1\/3; 2 source holds; proof post-fix proving window; renewal renew monitored DCR cockpit; review DOT operations; DOT operations monitor only/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -525,6 +540,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_route,"reviewed alternate route"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_status,"watch"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_proof,"post-fix proving window"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_status,"retained"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_ledger_renewal,"renew monitored DCR cockpit"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
