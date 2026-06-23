@@ -785,6 +785,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Decision Dossier</h2>
+            <span class="badge info" id="dossier-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Decision dossier">
+            <div class="metric"><span>Decision</span><strong id="dossier-decision">monitor</strong></div>
+            <div class="metric"><span>Alternatives</span><strong id="dossier-alternatives">base route</strong></div>
+            <div class="metric"><span>Why Now</span><strong id="dossier-why">threshold watch</strong></div>
+            <div class="metric"><span>Blockers</span><strong id="dossier-blockers">source custody</strong></div>
+            <div class="metric"><span>Next Proof</span><strong id="dossier-proof">operator evidence</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="dossier-boundary">advisory dossier</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1783,6 +1798,40 @@
       document.getElementById("fix-boundary").textContent = fix.boundary;
     }
 
+    function decisionDossier() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const workload = operatorWorkload();
+      const alternatives = {
+        "winter-closure": "hold base route; late signage; no EV staging",
+        "terminal-access": "hold gate timing; manual detour only",
+        "managed-lane": "wait for clearance; no shoulder review",
+        "freight-bottleneck": "keep package order; defer asset refresh"
+      }[state.scenario];
+      return {
+        status: fix.status,
+        decision: `${maintenance.priority} ${fix.scope}`,
+        alternatives,
+        why: maintenance.thresholds === "none crossed" ? maintenance.justification : maintenance.thresholds,
+        blockers: workload.queue === "monitoring" ? "none" : `${workload.queue}: ${workload.nextAction}`,
+        proof: maintenance.evidenceGap === "none" ? "ready for owner review" : maintenance.evidenceGap,
+        boundary: "advisory dossier, not procurement approval"
+      };
+    }
+
+    function renderDecisionDossier() {
+      const dossier = decisionDossier();
+      const status = document.getElementById("dossier-status");
+      status.textContent = dossier.status;
+      status.className = `badge ${dossier.status === "validated" ? "ok" : dossier.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("dossier-decision").textContent = dossier.decision;
+      document.getElementById("dossier-alternatives").textContent = dossier.alternatives;
+      document.getElementById("dossier-why").textContent = dossier.why;
+      document.getElementById("dossier-blockers").textContent = dossier.blockers;
+      document.getElementById("dossier-proof").textContent = dossier.proof;
+      document.getElementById("dossier-boundary").textContent = dossier.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1792,6 +1841,7 @@
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
       const fix = fixPackage();
+      const dossier = decisionDossier();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1852,6 +1902,13 @@
         ["fix_basis", fix.basis],
         ["fix_approval", fix.approval],
         ["fix_boundary", fix.boundary],
+        ["dossier_status", dossier.status],
+        ["dossier_decision", dossier.decision],
+        ["dossier_alternatives", dossier.alternatives],
+        ["dossier_why_now", dossier.why],
+        ["dossier_blockers", dossier.blockers],
+        ["dossier_next_proof", dossier.proof],
+        ["dossier_boundary", dossier.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1887,6 +1944,7 @@
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
       const fix = fixPackage();
+      const dossier = decisionDossier();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1909,6 +1967,7 @@
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
+        `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2146,6 +2205,7 @@
       renderWorkloadBoard();
       renderMaintenanceCase();
       renderFixPackage();
+      renderDecisionDossier();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2287,6 +2347,7 @@
         workload: operatorWorkload(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
+        dossier: decisionDossier(),
         handoff: handoffText(),
         log: state.log
       };
