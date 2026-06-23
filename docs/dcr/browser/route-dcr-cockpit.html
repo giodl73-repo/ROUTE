@@ -763,8 +763,8 @@
             <div class="metric"><span>Measured Failure</span><strong id="maintenance-failure">monitoring</strong></div>
             <div class="metric"><span>Recommended Fix</span><strong id="maintenance-fix">continue monitoring</strong></div>
             <div class="metric"><span>Priority</span><strong id="maintenance-priority">P3</strong></div>
-            <div class="metric"><span>Justification</span><strong id="maintenance-justification">baseline</strong></div>
-            <div class="metric"><span>Evidence</span><strong id="maintenance-evidence">0/3</strong></div>
+            <div class="metric"><span>Thresholds</span><strong id="maintenance-thresholds">none crossed</strong></div>
+            <div class="metric"><span>Evidence Gap</span><strong id="maintenance-evidence">0/3</strong></div>
             <div class="metric"><span>Boundary</span><strong id="maintenance-boundary">owner approval</strong></div>
           </div>
         </div>
@@ -1672,7 +1672,9 @@
       const metrics = computeMetrics();
       const summary = runSummary();
       const actions = openActionEvents();
-      const evidenceReady = currentScenario().gates.filter((gate) => isGateReady(gate)).length;
+      const gates = currentScenario().gates;
+      const evidenceReady = gates.filter((gate) => isGateReady(gate)).length;
+      const missingEvidence = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
       const measured = {
         "winter-closure": {
           failure: "corridor reliability failure",
@@ -1701,13 +1703,20 @@
         : actions.length || priority !== "P3"
           ? "measured"
           : "watch";
+      const thresholds = [
+        metrics.risk >= 55 ? `risk ${metrics.risk}>=55` : metrics.risk >= 45 ? `risk ${metrics.risk}>=45` : "",
+        metrics.flow < 85 ? `flow ${metrics.flow}%<85%` : "",
+        metrics.recovery >= 60 ? `recovery ${metrics.recovery}m>=60m` : ""
+      ].filter(Boolean);
       return {
         status,
         failure: measured.failure,
         fix: measured.fix,
         priority,
         justification: `risk ${metrics.risk}; flow ${metrics.flow}%; recovery ${metrics.recovery}m`,
-        evidence: `${evidenceReady}/${currentScenario().gates.length}`,
+        thresholds: thresholds.join("; ") || "none crossed",
+        evidence: `${evidenceReady}/${gates.length}`,
+        evidenceGap: missingEvidence.join("; ") || "none",
         boundary: "recommendation only; owner approval required"
       };
     }
@@ -1720,8 +1729,8 @@
       document.getElementById("maintenance-failure").textContent = maintenance.failure;
       document.getElementById("maintenance-fix").textContent = maintenance.fix;
       document.getElementById("maintenance-priority").textContent = maintenance.priority;
-      document.getElementById("maintenance-justification").textContent = maintenance.justification;
-      document.getElementById("maintenance-evidence").textContent = maintenance.evidence;
+      document.getElementById("maintenance-thresholds").textContent = maintenance.thresholds;
+      document.getElementById("maintenance-evidence").textContent = maintenance.evidenceGap;
       document.getElementById("maintenance-boundary").textContent = maintenance.boundary;
     }
 
@@ -1782,7 +1791,9 @@
         ["maintenance_fix", maintenance.fix],
         ["maintenance_priority", maintenance.priority],
         ["maintenance_justification", maintenance.justification],
+        ["maintenance_thresholds", maintenance.thresholds],
         ["maintenance_evidence", maintenance.evidence],
+        ["maintenance_evidence_gap", maintenance.evidenceGap],
         ["maintenance_boundary", maintenance.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
@@ -1838,7 +1849,7 @@
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
-        `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; because ${maintenance.justification}`,
+        `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
