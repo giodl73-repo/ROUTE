@@ -60,6 +60,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workorder-status")).toHaveText("blocked");
     await expect(page.locator("#workorder-gate")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.locator("#workorder-step")).toHaveText("prepare weather-responsive split + EV staging");
+    await expect(page.getByLabel("Resiliency playbook")).toContainText("SwitchMonitor only");
+    await expect(page.locator("#playbook-status")).toHaveText("blocked");
+    await expect(page.locator("#playbook-trigger")).toHaveText("risk 46>=45");
+    await expect(page.locator("#playbook-gate")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -85,6 +89,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/watchlist_boundary,"watchlist only; no dispatch"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/board_boundary,"board packet only; sponsor decision required"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workorder_boundary,"draft only; owner-issued work order required"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/playbook_boundary,"playbook is advisory; operator and owner authority required"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -130,6 +135,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#board-case")).toHaveText("intersection access failure; retime gate approach routing");
     await expect(page.locator("#workorder-id")).toHaveText("DCR-TERMINAL-ACCESS-P1");
     await expect(page.locator("#workorder-step")).toHaveText("prepare retime gate approach routing");
+    await expect(page.locator("#playbook-fallback")).toHaveText("hold gate timing; manual detour only");
+    await expect(page.locator("#playbook-gate")).toHaveText("source custody: verify Terminal queue feed");
 
     await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
@@ -237,6 +244,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workorder-status")).toHaveText("ready");
     await expect(page.locator("#workorder-gate")).toHaveText("sponsor decision + owner issue");
     await expect(page.locator("#workorder-proof")).toHaveText("-4 risk; +5% flow");
+    await expect(page.locator("#playbook-status")).toHaveText("active");
+    await expect(page.locator("#playbook-switch")).toHaveText("Reroute advisory");
+    await expect(page.locator("#playbook-trigger")).toHaveText("post-fix proving window");
+    await expect(page.locator("#playbook-gate")).toHaveText("owner-issued action; monitor rebound");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
@@ -249,6 +260,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Watchlist: active; primary rebound watch; owner Charging source owner; trigger watch for rebound; escalation reopen if target misses/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Board packet: ready; ask review P3 fix package; sponsor DOT operations; value -4 risk; \+5% flow; gate source custody: verify Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Work order draft: ready; id DCR-WINTER-CLOSURE-P3; issuer DOT operations; gate sponsor decision \+ owner issue; step issue weather-responsive split \+ EV staging/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Resiliency playbook: active; switch Reroute advisory; trigger post-fix proving window; rollback watch for rebound; gate owner-issued action; monitor rebound/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
@@ -267,6 +279,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/watchlist_status,"active"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/board_status,"ready"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workorder_status,"ready"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/playbook_status,"active"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
