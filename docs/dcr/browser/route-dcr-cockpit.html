@@ -1035,6 +1035,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Replay Proof</h2>
+            <span class="badge info" id="replay-proof-status">armed</span>
+          </div>
+          <div class="metrics" aria-label="Replay proof">
+            <div class="metric"><span>Replay</span><strong id="replay-proof-run">scenario</strong></div>
+            <div class="metric"><span>Events</span><strong id="replay-proof-events">none</strong></div>
+            <div class="metric"><span>Decisions</span><strong id="replay-proof-decisions">none</strong></div>
+            <div class="metric"><span>Outcome</span><strong id="replay-proof-outcome">standby</strong></div>
+            <div class="metric"><span>Delta</span><strong id="replay-proof-delta">+0 risk; +0% flow</strong></div>
+            <div class="metric"><span>Trace</span><strong id="replay-proof-trace">DCR-AUDIT</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="replay-proof-boundary">replay only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -3110,6 +3126,30 @@
       };
     }
 
+    function replayProof() {
+      const summary = runSummary();
+      const traceability = traceabilityLedger();
+      const appliedEvents = currentScenario().timeline
+        .filter((event) => state.appliedEvents.includes(event.id))
+        .map((event) => event.label);
+      const decisions = state.decisions.map((item) => `${item.label}: ${item.status}`);
+      const status = summary.resolved > 0
+        ? "proven"
+        : summary.applied || state.decisions.length
+          ? "active"
+          : "armed";
+      return {
+        status,
+        replay: `${currentScenario().name}; ${formatClock()}`,
+        events: appliedEvents.concat(state.manualEvents.map((event) => event.label)).join("; ") || "none",
+        decisions: decisions.join("; ") || "none",
+        outcome: `${summary.outcome}; ${summary.resolved} resolved; ${summary.openActions} open`,
+        delta: `${formatSigned(summary.riskChange)} risk; ${formatSigned(summary.flowChange)}% flow`,
+        trace: traceability.record,
+        boundary: "replay proof is simulated; not live telemetry or field certification"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3962,6 +4002,20 @@
       document.getElementById("traceability-ledger-boundary").textContent = ledger.boundary;
     }
 
+    function renderReplayProof() {
+      const proof = replayProof();
+      const status = document.getElementById("replay-proof-status");
+      status.textContent = proof.status;
+      status.className = `badge ${proof.status === "proven" ? "ok" : proof.status === "active" ? "info" : "watch"}`;
+      document.getElementById("replay-proof-run").textContent = proof.replay;
+      document.getElementById("replay-proof-events").textContent = proof.events;
+      document.getElementById("replay-proof-decisions").textContent = proof.decisions;
+      document.getElementById("replay-proof-outcome").textContent = proof.outcome;
+      document.getElementById("replay-proof-delta").textContent = proof.delta;
+      document.getElementById("replay-proof-trace").textContent = proof.trace;
+      document.getElementById("replay-proof-boundary").textContent = proof.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4548,6 +4602,7 @@
       const engineRecommendation = decisionEngineRecommendation();
       const operatorApproval = operatorApprovalPacket();
       const traceability = traceabilityLedger();
+      const replay = replayProof();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4804,6 +4859,14 @@
         ["traceability_ledger_blocked_by", traceability.blocked],
         ["traceability_ledger_next_step", traceability.next],
         ["traceability_ledger_boundary", traceability.boundary],
+        ["replay_proof_status", replay.status],
+        ["replay_proof_run", replay.replay],
+        ["replay_proof_events", replay.events],
+        ["replay_proof_decisions", replay.decisions],
+        ["replay_proof_outcome", replay.outcome],
+        ["replay_proof_delta", replay.delta],
+        ["replay_proof_trace", replay.trace],
+        ["replay_proof_boundary", replay.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -5079,6 +5142,7 @@
       const engineRecommendation = decisionEngineRecommendation();
       const operatorApproval = operatorApprovalPacket();
       const traceability = traceabilityLedger();
+      const replay = replayProof();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -5151,6 +5215,7 @@
         `Decision engine recommendation: ${engineRecommendation.status}; recommend ${engineRecommendation.recommend}; why ${engineRecommendation.why}; evidence ${engineRecommendation.evidence}; move ${engineRecommendation.move}; gate ${engineRecommendation.gate}; confidence ${engineRecommendation.confidence}; blocked ${engineRecommendation.blocked}`,
         `Operator approval packet: ${operatorApproval.status}; request ${operatorApproval.request}; move ${operatorApproval.move}; evidence ${operatorApproval.evidence}; owner ${operatorApproval.owner}; gate ${operatorApproval.gate}; log ${operatorApproval.log}; held ${operatorApproval.held}`,
         `Traceability ledger: ${traceability.status}; record ${traceability.record}; decision ${traceability.decision}; custody ${traceability.custody}; proof ${traceability.proof}; blocked ${traceability.blocked}; next ${traceability.next}`,
+        `Replay proof: ${replay.status}; replay ${replay.replay}; events ${replay.events}; decisions ${replay.decisions}; outcome ${replay.outcome}; delta ${replay.delta}; trace ${replay.trace}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5438,6 +5503,7 @@
       renderDecisionEngineRecommendation();
       renderOperatorApprovalPacket();
       renderTraceabilityLedger();
+      renderReplayProof();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5627,6 +5693,7 @@
         decisionEngineRecommendation: decisionEngineRecommendation(),
         operatorApprovalPacket: operatorApprovalPacket(),
         traceabilityLedger: traceabilityLedger(),
+        replayProof: replayProof(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
