@@ -21174,6 +21174,8 @@ struct T2GameOpsBindingIntakeRow {
     claim_blocker_count: usize,
     blocked_claims: String,
     top_constraint_classes: String,
+    #[serde(default)]
+    qualification_effects: String,
     next_artifacts: String,
     constraint_ledger_artifact: String,
     intake_status: String,
@@ -30289,6 +30291,7 @@ fn t2_game_ops_binding_intake_rows(
             claim_blocker_count: row.claim_blocker_count,
             blocked_claims: row.blocking_claims.clone(),
             top_constraint_classes: row.top_constraint_classes.clone(),
+            qualification_effects: row.qualification_effects.clone(),
             next_artifacts: row.next_artifacts.clone(),
             constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
             intake_status: "decision-needed".to_string(),
@@ -30354,6 +30357,10 @@ fn t2_game_ops_binding_intake_gate_failures(
             expected.len()
         ));
     }
+    let budget_by_id = budget_rows
+        .iter()
+        .map(|budget| (budget.budget_id.as_str(), budget))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut seen = std::collections::BTreeSet::<String>::new();
     for row in rows {
         if row.intake_id.trim().is_empty()
@@ -30393,6 +30400,16 @@ fn t2_game_ops_binding_intake_gate_failures(
         }
         if row.intake_status != "decision-needed" || row.validation_status != "review" {
             failures.push(format!("{} intake status is not review", row.budget_id));
+        }
+        if let Some(budget) = budget_by_id.get(row.budget_id.as_str()) {
+            if !budget.qualification_effects.trim().is_empty()
+                && row.qualification_effects.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} drops qualification effects from budget row",
+                    row.budget_id
+                ));
+            }
         }
     }
     for expected_id in expected {
@@ -69025,6 +69042,7 @@ mod tests {
             claim_blocker_count: 1,
             blocked_claims: "game;incident;publication;upgrade".to_string(),
             top_constraint_classes: "game_ops_bundle_binding".to_string(),
+            qualification_effects: String::new(),
             next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
             constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
             intake_status: "decision-needed".to_string(),
