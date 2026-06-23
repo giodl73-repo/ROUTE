@@ -755,6 +755,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Maintenance Case</h2>
+            <span class="badge info" id="maintenance-status">watch</span>
+          </div>
+          <div class="metrics" aria-label="Maintenance case">
+            <div class="metric"><span>Measured Failure</span><strong id="maintenance-failure">monitoring</strong></div>
+            <div class="metric"><span>Recommended Fix</span><strong id="maintenance-fix">continue monitoring</strong></div>
+            <div class="metric"><span>Priority</span><strong id="maintenance-priority">P3</strong></div>
+            <div class="metric"><span>Justification</span><strong id="maintenance-justification">baseline</strong></div>
+            <div class="metric"><span>Evidence</span><strong id="maintenance-evidence">0/3</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="maintenance-boundary">owner approval</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1653,6 +1668,63 @@
       document.getElementById("workload-queue").textContent = workload.queue;
     }
 
+    function maintenanceCase() {
+      const metrics = computeMetrics();
+      const summary = runSummary();
+      const actions = openActionEvents();
+      const evidenceReady = currentScenario().gates.filter((gate) => isGateReady(gate)).length;
+      const measured = {
+        "winter-closure": {
+          failure: "corridor reliability failure",
+          fix: "weather-responsive split + EV staging"
+        },
+        "terminal-access": {
+          failure: "intersection access failure",
+          fix: "retime gate approach routing"
+        },
+        "managed-lane": {
+          failure: "managed-lane recovery failure",
+          fix: "clearance protocol + shoulder review"
+        },
+        "freight-bottleneck": {
+          failure: "recurring freight bottleneck",
+          fix: "package reprioritization"
+        }
+      }[state.scenario];
+      const priority = metrics.risk >= 55 || metrics.flow < 85 || metrics.recovery >= 60
+        ? "P1"
+        : metrics.risk >= 45 || actions.length
+          ? "P2"
+          : "P3";
+      const status = summary.outcome === "mitigated"
+        ? "validated"
+        : actions.length || priority !== "P3"
+          ? "measured"
+          : "watch";
+      return {
+        status,
+        failure: measured.failure,
+        fix: measured.fix,
+        priority,
+        justification: `risk ${metrics.risk}; flow ${metrics.flow}%; recovery ${metrics.recovery}m`,
+        evidence: `${evidenceReady}/${currentScenario().gates.length}`,
+        boundary: "recommendation only; owner approval required"
+      };
+    }
+
+    function renderMaintenanceCase() {
+      const maintenance = maintenanceCase();
+      const status = document.getElementById("maintenance-status");
+      status.textContent = maintenance.status;
+      status.className = `badge ${maintenance.status === "validated" ? "ok" : maintenance.priority === "P1" ? "risk" : "info"}`;
+      document.getElementById("maintenance-failure").textContent = maintenance.failure;
+      document.getElementById("maintenance-fix").textContent = maintenance.fix;
+      document.getElementById("maintenance-priority").textContent = maintenance.priority;
+      document.getElementById("maintenance-justification").textContent = maintenance.justification;
+      document.getElementById("maintenance-evidence").textContent = maintenance.evidence;
+      document.getElementById("maintenance-boundary").textContent = maintenance.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1660,6 +1732,7 @@
       const sla = operatorSla();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
+      const maintenance = maintenanceCase();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1704,6 +1777,13 @@
         ["workload_next_owner", workload.nextOwner],
         ["workload_next_action", workload.nextAction],
         ["workload_queue", workload.queue],
+        ["maintenance_status", maintenance.status],
+        ["maintenance_failure", maintenance.failure],
+        ["maintenance_fix", maintenance.fix],
+        ["maintenance_priority", maintenance.priority],
+        ["maintenance_justification", maintenance.justification],
+        ["maintenance_evidence", maintenance.evidence],
+        ["maintenance_boundary", maintenance.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1737,6 +1817,7 @@
       const sla = operatorSla();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
+      const maintenance = maintenanceCase();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1757,6 +1838,7 @@
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
+        `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; because ${maintenance.justification}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -1992,6 +2074,7 @@
       renderOperatorSla();
       renderGuidanceBoard();
       renderWorkloadBoard();
+      renderMaintenanceCase();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2131,6 +2214,7 @@
         sla: operatorSla(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
+        maintenance: maintenanceCase(),
         handoff: handoffText(),
         log: state.log
       };
