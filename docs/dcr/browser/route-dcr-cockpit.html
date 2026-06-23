@@ -1334,6 +1334,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Remediation Docket</h2>
+            <span class="badge info" id="remediation-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Remediation docket">
+            <div class="metric"><span>Case ID</span><strong id="remediation-case">DCR-FIX</strong></div>
+            <div class="metric"><span>Measured Trigger</span><strong id="remediation-trigger">threshold watch</strong></div>
+            <div class="metric"><span>Recommended Action</span><strong id="remediation-action">monitor</strong></div>
+            <div class="metric"><span>Justification</span><strong id="remediation-justification">risk/flow</strong></div>
+            <div class="metric"><span>Replay Proof</span><strong id="remediation-proof">pending</strong></div>
+            <div class="metric"><span>Owner Gate</span><strong id="remediation-gate">owner review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="remediation-boundary">recommendation only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>Intervention Rank</h2>
             <span class="badge info" id="intervention-status">draft</span>
           </div>
@@ -4230,6 +4246,44 @@
       document.getElementById("justification-boundary").textContent = justification.boundary;
     }
 
+    function remediationDocket() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const justification = fixJustification();
+      const replay = replayProof();
+      const approval = ownerApprovalPacket();
+      const traceability = traceabilityLedger();
+      const status = fix.status === "validated" && replay.status === "proven"
+        ? "ready"
+        : fix.status === "blocked"
+          ? "held"
+          : "draft";
+      return {
+        status,
+        caseId: `DCR-FIX-${state.scenario.toUpperCase()}-${maintenance.priority}`,
+        trigger: maintenance.thresholds === "none crossed" ? maintenance.justification : maintenance.thresholds,
+        action: `${maintenance.priority} ${fix.scope}`,
+        justification: `${justification.failure}; ${justification.basis}; expected ${justification.expected}`,
+        proof: replay.status === "proven" ? `${replay.outcome}; ${replay.delta}` : traceability.proof,
+        gate: status === "ready" ? approval.decision : fix.approval,
+        boundary: "remediation docket only; owner issues and funds field fixes"
+      };
+    }
+
+    function renderRemediationDocket() {
+      const docket = remediationDocket();
+      const status = document.getElementById("remediation-status");
+      status.textContent = docket.status;
+      status.className = `badge ${docket.status === "ready" ? "ok" : docket.status === "held" ? "risk" : "info"}`;
+      document.getElementById("remediation-case").textContent = docket.caseId;
+      document.getElementById("remediation-trigger").textContent = docket.trigger;
+      document.getElementById("remediation-action").textContent = docket.action;
+      document.getElementById("remediation-justification").textContent = docket.justification;
+      document.getElementById("remediation-proof").textContent = docket.proof;
+      document.getElementById("remediation-gate").textContent = docket.gate;
+      document.getElementById("remediation-boundary").textContent = docket.boundary;
+    }
+
     function interventionRank() {
       const drive = driveSlaPriorities();
       const fix = fixPackage();
@@ -4617,6 +4671,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const justification = fixJustification();
+      const remediation = remediationDocket();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -4973,6 +5028,14 @@
         ["justification_proof_gap", justification.proof],
         ["justification_approval_gate", justification.gate],
         ["justification_boundary", justification.boundary],
+        ["remediation_status", remediation.status],
+        ["remediation_case_id", remediation.caseId],
+        ["remediation_trigger", remediation.trigger],
+        ["remediation_action", remediation.action],
+        ["remediation_justification", remediation.justification],
+        ["remediation_replay_proof", remediation.proof],
+        ["remediation_owner_gate", remediation.gate],
+        ["remediation_boundary", remediation.boundary],
         ["intervention_status", intervention.status],
         ["intervention_rank", intervention.rank],
         ["intervention_name", intervention.intervention],
@@ -5157,6 +5220,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const justification = fixJustification();
+      const remediation = remediationDocket();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -5230,6 +5294,7 @@
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Fix justification: ${justification.status}; failure ${justification.failure}; basis ${justification.basis}; expected ${justification.expected}; gate ${justification.gate}`,
+        `Remediation docket: ${remediation.status}; case ${remediation.caseId}; trigger ${remediation.trigger}; action ${remediation.action}; proof ${remediation.proof}; gate ${remediation.gate}`,
         `Intervention rank: ${intervention.status}; ${intervention.rank}; intervention ${intervention.intervention}; confidence ${intervention.confidence}; gate ${intervention.gate}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
@@ -5522,6 +5587,7 @@
       renderMaintenanceCase();
       renderFixPackage();
       renderFixJustification();
+      renderRemediationDocket();
       renderInterventionRank();
       renderDecisionDossier();
       renderPostFixMonitor();
@@ -5694,6 +5760,7 @@
         operatorApprovalPacket: operatorApprovalPacket(),
         traceabilityLedger: traceabilityLedger(),
         replayProof: replayProof(),
+        remediationDocket: remediationDocket(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
