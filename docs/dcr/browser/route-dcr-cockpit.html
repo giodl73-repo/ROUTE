@@ -1366,6 +1366,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Decision Memo</h2>
+            <span class="badge info" id="memo-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Decision memo">
+            <div class="metric"><span>Decision Ask</span><strong id="memo-ask">hold</strong></div>
+            <div class="metric"><span>Recommendation</span><strong id="memo-recommendation">monitor</strong></div>
+            <div class="metric"><span>Proof Basis</span><strong id="memo-proof">pending</strong></div>
+            <div class="metric"><span>Blocked By</span><strong id="memo-blocked">source custody</strong></div>
+            <div class="metric"><span>Authority</span><strong id="memo-authority">owner</strong></div>
+            <div class="metric"><span>Next Step</span><strong id="memo-next">owner review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="memo-boundary">memo only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>Intervention Rank</h2>
             <span class="badge info" id="intervention-status">draft</span>
           </div>
@@ -4336,6 +4352,42 @@
       document.getElementById("capital-boundary").textContent = capital.boundary;
     }
 
+    function decisionMemo() {
+      const capital = capitalProgramQueue();
+      const remediation = remediationDocket();
+      const approval = ownerApprovalPacket();
+      const board = boardPacket();
+      const status = capital.status === "program-ready"
+        ? "decision-ready"
+        : capital.status === "blocked"
+          ? "blocked"
+          : "draft";
+      return {
+        status,
+        ask: status === "decision-ready" ? approval.decision : "clear source custody before decision",
+        recommendation: remediation.action,
+        proof: capital.value,
+        blocked: status === "decision-ready" ? "source gaps disclosed; not blocking memo" : capital.dependency,
+        authority: approval.owner,
+        next: status === "decision-ready" ? board.ask : capital.exit,
+        boundary: "decision memo only; owner decision and funding remain external"
+      };
+    }
+
+    function renderDecisionMemo() {
+      const memo = decisionMemo();
+      const status = document.getElementById("memo-status");
+      status.textContent = memo.status;
+      status.className = `badge ${memo.status === "decision-ready" ? "ok" : memo.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("memo-ask").textContent = memo.ask;
+      document.getElementById("memo-recommendation").textContent = memo.recommendation;
+      document.getElementById("memo-proof").textContent = memo.proof;
+      document.getElementById("memo-blocked").textContent = memo.blocked;
+      document.getElementById("memo-authority").textContent = memo.authority;
+      document.getElementById("memo-next").textContent = memo.next;
+      document.getElementById("memo-boundary").textContent = memo.boundary;
+    }
+
     function interventionRank() {
       const drive = driveSlaPriorities();
       const fix = fixPackage();
@@ -4725,6 +4777,7 @@
       const justification = fixJustification();
       const remediation = remediationDocket();
       const capital = capitalProgramQueue();
+      const memo = decisionMemo();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -5097,6 +5150,14 @@
         ["capital_dependency", capital.dependency],
         ["capital_exit_condition", capital.exit],
         ["capital_boundary", capital.boundary],
+        ["memo_status", memo.status],
+        ["memo_ask", memo.ask],
+        ["memo_recommendation", memo.recommendation],
+        ["memo_proof_basis", memo.proof],
+        ["memo_blocked_by", memo.blocked],
+        ["memo_authority", memo.authority],
+        ["memo_next_step", memo.next],
+        ["memo_boundary", memo.boundary],
         ["intervention_status", intervention.status],
         ["intervention_rank", intervention.rank],
         ["intervention_name", intervention.intervention],
@@ -5283,6 +5344,7 @@
       const justification = fixJustification();
       const remediation = remediationDocket();
       const capital = capitalProgramQueue();
+      const memo = decisionMemo();
       const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
@@ -5358,6 +5420,7 @@
         `Fix justification: ${justification.status}; failure ${justification.failure}; basis ${justification.basis}; expected ${justification.expected}; gate ${justification.gate}`,
         `Remediation docket: ${remediation.status}; case ${remediation.caseId}; trigger ${remediation.trigger}; action ${remediation.action}; proof ${remediation.proof}; gate ${remediation.gate}`,
         `Capital program queue: ${capital.status}; lane ${capital.lane}; package ${capital.package}; value ${capital.value}; dependency ${capital.dependency}; exit ${capital.exit}`,
+        `Decision memo: ${memo.status}; ask ${memo.ask}; recommendation ${memo.recommendation}; proof ${memo.proof}; blocked ${memo.blocked}; authority ${memo.authority}; next ${memo.next}`,
         `Intervention rank: ${intervention.status}; ${intervention.rank}; intervention ${intervention.intervention}; confidence ${intervention.confidence}; gate ${intervention.gate}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
@@ -5652,6 +5715,7 @@
       renderFixJustification();
       renderRemediationDocket();
       renderCapitalProgramQueue();
+      renderDecisionMemo();
       renderInterventionRank();
       renderDecisionDossier();
       renderPostFixMonitor();
@@ -5826,6 +5890,7 @@
         replayProof: replayProof(),
         remediationDocket: remediationDocket(),
         capitalProgramQueue: capitalProgramQueue(),
+        decisionMemo: decisionMemo(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
