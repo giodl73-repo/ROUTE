@@ -59,6 +59,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-trace-evidence")).toHaveText("511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#tier-trace-release")).toHaveText("held for 511 closure feed");
     await expect(page.locator("#tier-trace-boundary")).toHaveText("decision trace only; owner approves field action");
+    await expect(page.getByLabel("Tier release package")).toContainText("OwnerDOT operations");
+    await expect(page.locator("#tier-release-status")).toHaveText("blocked");
+    await expect(page.locator("#tier-release-criteria")).toHaveText("clear 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#tier-release-step")).toHaveText("prepare weather-responsive split + EV staging");
+    await expect(page.locator("#tier-release-proof")).toContainText("SAC -> CENTRAL_VALLEY; SAC -> SLC");
+    await expect(page.locator("#tier-release-boundary")).toHaveText("release package only; owner-issued field action required");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -165,6 +171,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_pressure,"watch \+10m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_release,"held for 511 closure feed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_status,"blocked"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_criteria,"clear 511 closure feed; Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -447,6 +455,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-trace-release")).toHaveText("monitor release");
     await expect(page.locator("#tier-trace-move")).toHaveText("continue monitoring");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Tier decision trace: monitor; why buffer holding at \+2m; none; evidence Charging source owner; Operator message owner; release monitor release; move continue monitoring/);
+    await expect(page.locator("#tier-release-status")).toHaveText("monitor");
+    await expect(page.locator("#tier-release-criteria")).toHaveText("maintain Drive SLA through next 2 monitoring cycles");
+    await expect(page.locator("#tier-release-step")).toHaveText("keep advisory in watch mode");
+    await expect(page.locator("#tier-release-proof")).toHaveText("post-fix proving window");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Tier release package: monitor; owner DOT operations; criteria maintain Drive SLA through next 2 monitoring cycles; step keep advisory in watch mode; rollback watch for rebound; proof post-fix proving window/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -480,6 +493,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_release,"monitor release"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_status,"monitor"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_step,"keep advisory in watch mode"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
