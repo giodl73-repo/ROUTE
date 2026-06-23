@@ -985,6 +985,23 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Decision Engine Recommendation</h2>
+            <span class="badge info" id="decision-engine-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Decision engine recommendation">
+            <div class="metric"><span>Recommend</span><strong id="decision-engine-recommend">monitor</strong></div>
+            <div class="metric"><span>Why</span><strong id="decision-engine-why">risk basis</strong></div>
+            <div class="metric"><span>Evidence</span><strong id="decision-engine-evidence">source basis</strong></div>
+            <div class="metric"><span>Operator Move</span><strong id="decision-engine-move">continue monitoring</strong></div>
+            <div class="metric"><span>Owner Gate</span><strong id="decision-engine-gate">owner approval</strong></div>
+            <div class="metric"><span>Confidence</span><strong id="decision-engine-confidence">watch</strong></div>
+            <div class="metric"><span>Blocked By</span><strong id="decision-engine-blocked">none</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="decision-engine-boundary">recommendation only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2993,6 +3010,30 @@
       };
     }
 
+    function decisionEngineRecommendation() {
+      const loop = activeServiceLoop();
+      const audit = decisionAudit();
+      const criteria = releaseCriteria();
+      const confidence = signalConfidence();
+      const action = operatorActionPlan();
+      const status = criteria.status === "release-review" && confidence.status !== "evidence-held"
+        ? "ready"
+        : loop.status === "proving"
+          ? "prove"
+          : "hold";
+      return {
+        status,
+        recommend: audit.recommendation,
+        why: audit.rationale,
+        evidence: audit.evidence,
+        move: action.now,
+        gate: criteria.owner,
+        confidence: `${confidence.grade}; ${confidence.proof}`,
+        blocked: audit.blocker,
+        boundary: "decision engine recommendation only; operator and owner approval remain required"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3801,6 +3842,21 @@
       document.getElementById("service-loop-boundary").textContent = loop.boundary;
     }
 
+    function renderDecisionEngineRecommendation() {
+      const recommendation = decisionEngineRecommendation();
+      const status = document.getElementById("decision-engine-status");
+      status.textContent = recommendation.status;
+      status.className = `badge ${recommendation.status === "ready" || recommendation.status === "prove" ? "ok" : "risk"}`;
+      document.getElementById("decision-engine-recommend").textContent = recommendation.recommend;
+      document.getElementById("decision-engine-why").textContent = recommendation.why;
+      document.getElementById("decision-engine-evidence").textContent = recommendation.evidence;
+      document.getElementById("decision-engine-move").textContent = recommendation.move;
+      document.getElementById("decision-engine-gate").textContent = recommendation.gate;
+      document.getElementById("decision-engine-confidence").textContent = recommendation.confidence;
+      document.getElementById("decision-engine-blocked").textContent = recommendation.blocked;
+      document.getElementById("decision-engine-boundary").textContent = recommendation.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4384,6 +4440,7 @@
       const counterfactual = counterfactualValue();
       const operatingContract = renewalOperatingContract();
       const serviceLoop = activeServiceLoop();
+      const engineRecommendation = decisionEngineRecommendation();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4614,6 +4671,15 @@
         ["active_service_loop_escalate", serviceLoop.escalate],
         ["active_service_loop_next_run", serviceLoop.next],
         ["active_service_loop_boundary", serviceLoop.boundary],
+        ["decision_engine_status", engineRecommendation.status],
+        ["decision_engine_recommend", engineRecommendation.recommend],
+        ["decision_engine_why", engineRecommendation.why],
+        ["decision_engine_evidence", engineRecommendation.evidence],
+        ["decision_engine_operator_move", engineRecommendation.move],
+        ["decision_engine_owner_gate", engineRecommendation.gate],
+        ["decision_engine_confidence", engineRecommendation.confidence],
+        ["decision_engine_blocked_by", engineRecommendation.blocked],
+        ["decision_engine_boundary", engineRecommendation.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4886,6 +4952,7 @@
       const counterfactual = counterfactualValue();
       const operatingContract = renewalOperatingContract();
       const serviceLoop = activeServiceLoop();
+      const engineRecommendation = decisionEngineRecommendation();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4955,6 +5022,7 @@
         `Counterfactual value: ${counterfactual.status}; without ${counterfactual.without}; with ${counterfactual.with}; delta ${counterfactual.delta}; avoided ${counterfactual.avoided}; reason ${counterfactual.reason}; gap ${counterfactual.gap}`,
         `Renewal operating contract: ${operatingContract.status}; service ${operatingContract.service}; cadence ${operatingContract.cadence}; rights ${operatingContract.rights}; resilience ${operatingContract.resilience}; deliverable ${operatingContract.deliverable}; proof ${operatingContract.proof}; trigger ${operatingContract.trigger}`,
         `Active service loop: ${serviceLoop.status}; watch ${serviceLoop.watch}; decision ${serviceLoop.decision}; switch ${serviceLoop.switch}; measure ${serviceLoop.measure}; escalate ${serviceLoop.escalate}; next ${serviceLoop.next}`,
+        `Decision engine recommendation: ${engineRecommendation.status}; recommend ${engineRecommendation.recommend}; why ${engineRecommendation.why}; evidence ${engineRecommendation.evidence}; move ${engineRecommendation.move}; gate ${engineRecommendation.gate}; confidence ${engineRecommendation.confidence}; blocked ${engineRecommendation.blocked}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5239,6 +5307,7 @@
       renderCounterfactualValue();
       renderRenewalOperatingContract();
       renderActiveServiceLoop();
+      renderDecisionEngineRecommendation();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5425,6 +5494,7 @@
         counterfactualValue: counterfactualValue(),
         renewalOperatingContract: renewalOperatingContract(),
         activeServiceLoop: activeServiceLoop(),
+        decisionEngineRecommendation: decisionEngineRecommendation(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
