@@ -802,6 +802,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Intervention Rank</h2>
+            <span class="badge info" id="intervention-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Intervention rank">
+            <div class="metric"><span>Rank</span><strong id="intervention-rank">rank 0</strong></div>
+            <div class="metric"><span>Intervention</span><strong id="intervention-name">monitor</strong></div>
+            <div class="metric"><span>Confidence</span><strong id="intervention-confidence">low</strong></div>
+            <div class="metric"><span>Value Trigger</span><strong id="intervention-value">threshold watch</strong></div>
+            <div class="metric"><span>Release Gate</span><strong id="intervention-gate">owner review</strong></div>
+            <div class="metric"><span>Next Proof</span><strong id="intervention-proof">source custody</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="intervention-boundary">rank only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>Decision Dossier</h2>
             <span class="badge info" id="dossier-status">draft</span>
           </div>
@@ -2281,6 +2297,45 @@
       document.getElementById("justification-boundary").textContent = justification.boundary;
     }
 
+    function interventionRank() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const score = scenarioScorecard();
+      const evidence = evidenceDossier();
+      const approval = ownerApprovalPacket();
+      const rank = maintenance.priority === "P1"
+        ? "rank 1; P1"
+        : maintenance.priority === "P2"
+          ? "rank 2; P2"
+          : "rank 3; P3";
+      const status = fix.status === "validated" ? "proving" : fix.status === "blocked" ? "held" : "ready";
+      const confidence = evidence.status === "complete" ? "high" : evidence.status === "partial" ? "medium" : "low";
+      return {
+        status,
+        rank,
+        intervention: fix.scope,
+        confidence,
+        value: score.grade === "DCR-4" ? `${score.grade}; ${score.renewal}` : evidence.basis,
+        gate: approval.decision,
+        proof: evidence.missing === "none" ? "owner review" : evidence.missing,
+        boundary: "ranked recommendation only; no dispatch authority"
+      };
+    }
+
+    function renderInterventionRank() {
+      const intervention = interventionRank();
+      const status = document.getElementById("intervention-status");
+      status.textContent = intervention.status;
+      status.className = `badge ${intervention.status === "proving" || intervention.status === "ready" ? "ok" : intervention.status === "held" ? "risk" : "info"}`;
+      document.getElementById("intervention-rank").textContent = intervention.rank;
+      document.getElementById("intervention-name").textContent = intervention.intervention;
+      document.getElementById("intervention-confidence").textContent = intervention.confidence;
+      document.getElementById("intervention-value").textContent = intervention.value;
+      document.getElementById("intervention-gate").textContent = intervention.gate;
+      document.getElementById("intervention-proof").textContent = intervention.proof;
+      document.getElementById("intervention-boundary").textContent = intervention.boundary;
+    }
+
     function decisionDossier() {
       const maintenance = maintenanceCase();
       const fix = fixPackage();
@@ -2595,6 +2650,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const justification = fixJustification();
+      const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
@@ -2678,6 +2734,14 @@
         ["justification_proof_gap", justification.proof],
         ["justification_approval_gate", justification.gate],
         ["justification_boundary", justification.boundary],
+        ["intervention_status", intervention.status],
+        ["intervention_rank", intervention.rank],
+        ["intervention_name", intervention.intervention],
+        ["intervention_confidence", intervention.confidence],
+        ["intervention_value_trigger", intervention.value],
+        ["intervention_release_gate", intervention.gate],
+        ["intervention_next_proof", intervention.proof],
+        ["intervention_boundary", intervention.boundary],
         ["dossier_status", dossier.status],
         ["dossier_decision", dossier.decision],
         ["dossier_alternatives", dossier.alternatives],
@@ -2820,6 +2884,7 @@
       const maintenance = maintenanceCase();
       const fix = fixPackage();
       const justification = fixJustification();
+      const intervention = interventionRank();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
@@ -2858,6 +2923,7 @@
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Fix justification: ${justification.status}; failure ${justification.failure}; basis ${justification.basis}; expected ${justification.expected}; gate ${justification.gate}`,
+        `Intervention rank: ${intervention.status}; ${intervention.rank}; intervention ${intervention.intervention}; confidence ${intervention.confidence}; gate ${intervention.gate}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
         `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
@@ -3117,6 +3183,7 @@
       renderMaintenanceCase();
       renderFixPackage();
       renderFixJustification();
+      renderInterventionRank();
       renderDecisionDossier();
       renderPostFixMonitor();
       renderWatchlist();
@@ -3274,6 +3341,7 @@
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         fixJustification: fixJustification(),
+        interventionRank: interventionRank(),
         dossier: decisionDossier(),
         postFix: postFixMonitor(),
         watchlist: watchlist(),
