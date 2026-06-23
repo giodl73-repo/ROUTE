@@ -713,6 +713,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Field Preview Packet</h2>
+            <span class="badge info" id="field-preview-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Field preview packet">
+            <div class="metric"><span>Signage Draft</span><strong id="field-preview-signage">draft message</strong></div>
+            <div class="metric"><span>Routing Draft</span><strong id="field-preview-route">draft route</strong></div>
+            <div class="metric"><span>EV Posture</span><strong id="field-preview-ev">monitor range</strong></div>
+            <div class="metric"><span>Audience</span><strong id="field-preview-audience">operator review</strong></div>
+            <div class="metric"><span>Hold</span><strong id="field-preview-hold">source custody</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="field-preview-boundary">preview only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2444,6 +2459,51 @@
       document.getElementById("tier-release-boundary").textContent = release.boundary;
     }
 
+    function fieldPreviewPacket(release = tierReleasePackage()) {
+      const tier = tierMapValidation();
+      const tick = tierSimulationTick(tier);
+      const trace = tierDecisionTrace(tier, tick);
+      const guidance = guidanceBoard();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const status = release.status === "blocked"
+        ? "held"
+        : release.status === "monitor"
+          ? "watch"
+          : "ready";
+      return {
+        status,
+        signage: status === "held"
+          ? `draft only: ${tick.segment}; ${tick.pressure}`
+          : status === "watch"
+            ? `watch ${tick.segment}; SLA buffer holding`
+            : `prepare ${guidance.signage} for ${tick.segment}`,
+        route: status === "held"
+          ? `prepare ${guidance.route}; no public detour`
+          : status === "watch"
+            ? guidance.route
+            : `release ${guidance.route}`,
+        ev: trace.move.toLowerCase().includes("ev")
+          ? "stage EV support after source check"
+          : guidance.ev,
+        audience: status === "ready" ? "field owner issue" : status === "watch" ? "operator watch desk" : "operator review only",
+        hold: missingEvidence.join("; ") || (status === "watch" ? "rebound watch" : "owner issue"),
+        boundary: "preview only; no public signage or routing command"
+      };
+    }
+
+    function renderFieldPreviewPacket() {
+      const preview = fieldPreviewPacket();
+      const status = document.getElementById("field-preview-status");
+      status.textContent = preview.status;
+      status.className = `badge ${preview.status === "watch" ? "ok" : preview.status === "held" ? "risk" : "watch"}`;
+      document.getElementById("field-preview-signage").textContent = preview.signage;
+      document.getElementById("field-preview-route").textContent = preview.route;
+      document.getElementById("field-preview-ev").textContent = preview.ev;
+      document.getElementById("field-preview-audience").textContent = preview.audience;
+      document.getElementById("field-preview-hold").textContent = preview.hold;
+      document.getElementById("field-preview-boundary").textContent = preview.boundary;
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -3115,6 +3175,7 @@
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
       const release = tierReleasePackage(trace);
+      const fieldPreview = fieldPreviewPacket(release);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3208,6 +3269,13 @@
         ["tier_release_rollback", release.rollback],
         ["tier_release_proof", release.proof],
         ["tier_release_boundary", release.boundary],
+        ["field_preview_status", fieldPreview.status],
+        ["field_preview_signage", fieldPreview.signage],
+        ["field_preview_route", fieldPreview.route],
+        ["field_preview_ev", fieldPreview.ev],
+        ["field_preview_audience", fieldPreview.audience],
+        ["field_preview_hold", fieldPreview.hold],
+        ["field_preview_boundary", fieldPreview.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3396,6 +3464,7 @@
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
       const release = tierReleasePackage(trace);
+      const fieldPreview = fieldPreviewPacket(release);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3440,6 +3509,7 @@
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
         `Tier release package: ${release.status}; owner ${release.owner}; criteria ${release.criteria}; step ${release.step}; rollback ${release.rollback}; proof ${release.proof}`,
+        `Field preview packet: ${fieldPreview.status}; signage ${fieldPreview.signage}; route ${fieldPreview.route}; EV ${fieldPreview.ev}; hold ${fieldPreview.hold}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3697,6 +3767,7 @@
       renderDriveSlaPriorities();
       renderTierMapValidation();
       renderTierReleasePackage();
+      renderFieldPreviewPacket();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -3860,6 +3931,7 @@
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
         tierReleasePackage: tierReleasePackage(),
+        fieldPreview: fieldPreviewPacket(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
