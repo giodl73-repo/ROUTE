@@ -683,6 +683,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Tier Decision Trace</h2>
+            <span class="badge info" id="tier-trace-status">simulated</span>
+          </div>
+          <div class="metrics" aria-label="Tier decision trace">
+            <div class="metric"><span>Why Now</span><strong id="tier-trace-why">SLA pressure</strong></div>
+            <div class="metric"><span>Segment Basis</span><strong id="tier-trace-basis">fixture row</strong></div>
+            <div class="metric"><span>Evidence Gate</span><strong id="tier-trace-evidence">source custody</strong></div>
+            <div class="metric"><span>Release Decision</span><strong id="tier-trace-release">operator review</strong></div>
+            <div class="metric"><span>Operator Move</span><strong id="tier-trace-move">monitor</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="tier-trace-boundary">advisory only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2351,6 +2366,31 @@
       };
     }
 
+    function tierDecisionTrace(tier = tierMapValidation(), tick = tierSimulationTick(tier)) {
+      const drive = driveSlaPriorities();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const held = missingEvidence.length > 0;
+      const release = drive.status === "maintained"
+        ? "monitor release"
+        : held
+          ? `held for ${missingEvidence[0]}`
+          : "operator release review";
+      const status = drive.status === "maintained"
+        ? "monitor"
+        : held
+          ? "held"
+          : "review";
+      return {
+        status,
+        why: `${tick.pressure}; ${drive.violation}`,
+        basis: `${tick.segment}; ${tick.basis}`,
+        evidence: missingEvidence.join("; ") || "all source gates ready",
+        release,
+        move: tick.control,
+        boundary: "decision trace only; owner approves field action"
+      };
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -2402,6 +2442,7 @@
     function renderTierMapValidation() {
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
+      const trace = tierDecisionTrace(tier, tick);
       const status = document.getElementById("tier-map-status");
       status.textContent = tier.status;
       status.className = `badge ${tier.status === "validated" ? "ok" : "risk"}`;
@@ -2417,6 +2458,15 @@
       document.getElementById("tier-map-progress").textContent = tick.progress;
       document.getElementById("tier-map-pressure").textContent = tick.pressure;
       document.getElementById("tier-map-control").textContent = tick.control;
+      const traceStatus = document.getElementById("tier-trace-status");
+      traceStatus.textContent = trace.status;
+      traceStatus.className = `badge ${trace.status === "monitor" ? "ok" : trace.status === "held" ? "risk" : "watch"}`;
+      document.getElementById("tier-trace-why").textContent = trace.why;
+      document.getElementById("tier-trace-basis").textContent = trace.basis;
+      document.getElementById("tier-trace-evidence").textContent = trace.evidence;
+      document.getElementById("tier-trace-release").textContent = trace.release;
+      document.getElementById("tier-trace-move").textContent = trace.move;
+      document.getElementById("tier-trace-boundary").textContent = trace.boundary;
       renderTierMapRoute(tier);
     }
 
@@ -3010,6 +3060,7 @@
       const drive = driveSlaPriorities();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
+      const trace = tierDecisionTrace(tier, tick);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3089,6 +3140,13 @@
         ["tier_sim_control", tick.control],
         ["tier_sim_basis", tick.basis],
         ["tier_sim_boundary", tick.boundary],
+        ["tier_trace_status", trace.status],
+        ["tier_trace_why", trace.why],
+        ["tier_trace_basis", trace.basis],
+        ["tier_trace_evidence", trace.evidence],
+        ["tier_trace_release", trace.release],
+        ["tier_trace_move", trace.move],
+        ["tier_trace_boundary", trace.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3275,6 +3333,7 @@
       const drive = driveSlaPriorities();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
+      const trace = tierDecisionTrace(tier, tick);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3317,6 +3376,7 @@
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
+        `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3734,6 +3794,7 @@
         driveSla: driveSlaPriorities(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
+        tierDecisionTrace: tierDecisionTrace(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
