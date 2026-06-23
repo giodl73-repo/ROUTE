@@ -830,6 +830,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Board Packet</h2>
+            <span class="badge info" id="board-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Board packet">
+            <div class="metric"><span>Ask</span><strong id="board-ask">review recommendation</strong></div>
+            <div class="metric"><span>Sponsor</span><strong id="board-sponsor">owner</strong></div>
+            <div class="metric"><span>Case</span><strong id="board-case">maintenance</strong></div>
+            <div class="metric"><span>Value</span><strong id="board-value">pending</strong></div>
+            <div class="metric"><span>Decision Gate</span><strong id="board-gate">source review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="board-boundary">no approval claim</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1924,6 +1939,36 @@
       document.getElementById("watchlist-boundary").textContent = watch.boundary;
     }
 
+    function boardPacket() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const dossier = decisionDossier();
+      const postFix = postFixMonitor();
+      const status = fix.status === "validated" ? "ready" : fix.status;
+      return {
+        status,
+        ask: `review ${maintenance.priority} fix package`,
+        sponsor: fix.owner,
+        case: `${maintenance.failure}; ${fix.scope}`,
+        value: postFix.result,
+        gate: dossier.blockers,
+        boundary: "board packet only; sponsor decision required"
+      };
+    }
+
+    function renderBoardPacket() {
+      const board = boardPacket();
+      const status = document.getElementById("board-status");
+      status.textContent = board.status;
+      status.className = `badge ${board.status === "ready" ? "ok" : board.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("board-ask").textContent = board.ask;
+      document.getElementById("board-sponsor").textContent = board.sponsor;
+      document.getElementById("board-case").textContent = board.case;
+      document.getElementById("board-value").textContent = board.value;
+      document.getElementById("board-gate").textContent = board.gate;
+      document.getElementById("board-boundary").textContent = board.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1936,6 +1981,7 @@
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
+      const board = boardPacket();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2017,6 +2063,13 @@
         ["watchlist_escalation", watch.escalation],
         ["watchlist_cycle", watch.cycle],
         ["watchlist_boundary", watch.boundary],
+        ["board_status", board.status],
+        ["board_ask", board.ask],
+        ["board_sponsor", board.sponsor],
+        ["board_case", board.case],
+        ["board_value", board.value],
+        ["board_decision_gate", board.gate],
+        ["board_boundary", board.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2055,6 +2108,7 @@
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
+      const board = boardPacket();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2080,6 +2134,7 @@
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
         `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
+        `Board packet: ${board.status}; ask ${board.ask}; sponsor ${board.sponsor}; value ${board.value}; gate ${board.gate}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2320,6 +2375,7 @@
       renderDecisionDossier();
       renderPostFixMonitor();
       renderWatchlist();
+      renderBoardPacket();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2464,6 +2520,7 @@
         dossier: decisionDossier(),
         postFix: postFixMonitor(),
         watchlist: watchlist(),
+        board: boardPacket(),
         handoff: handoffText(),
         log: state.log
       };
