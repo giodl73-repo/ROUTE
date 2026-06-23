@@ -728,6 +728,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Recovery Verification</h2>
+            <span class="badge info" id="recovery-verification-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Recovery verification">
+            <div class="metric"><span>Proof Window</span><strong id="recovery-verification-window">pending</strong></div>
+            <div class="metric"><span>Target</span><strong id="recovery-verification-target">risk and flow</strong></div>
+            <div class="metric"><span>Observed Result</span><strong id="recovery-verification-result">pending</strong></div>
+            <div class="metric"><span>Reopen Trigger</span><strong id="recovery-verification-reopen">watch</strong></div>
+            <div class="metric"><span>Closure State</span><strong id="recovery-verification-closure">open</strong></div>
+            <div class="metric"><span>Sponsor Proof</span><strong id="recovery-verification-proof">held</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="recovery-verification-boundary">monitor only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2404,6 +2420,28 @@
       };
     }
 
+    function recoveryVerification() {
+      const postFix = postFixMonitor();
+      const closure = closureCriteria();
+      const renewalProof = renewalProofSummary();
+      const evidence = evidenceDossier();
+      const status = postFix.status === "proving"
+        ? "proving"
+        : postFix.status === "blocked"
+          ? "blocked"
+          : closure.status;
+      return {
+        status,
+        window: postFix.window,
+        target: postFix.target,
+        result: postFix.result,
+        reopen: postFix.rollback,
+        closure: closure.status === "closable" ? "owner can close" : closure.close,
+        proof: renewalProof.status === "ready" ? renewalProof.safeClaim : evidence.claim,
+        boundary: "recovery verification only; owner decides closure or renewal"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -2987,6 +3025,20 @@
       document.getElementById("authority-handoff-boundary").textContent = handoff.boundary;
     }
 
+    function renderRecoveryVerification() {
+      const recovery = recoveryVerification();
+      const status = document.getElementById("recovery-verification-status");
+      status.textContent = recovery.status;
+      status.className = `badge ${recovery.status === "proving" || recovery.status === "closable" ? "ok" : recovery.status === "blocked" || recovery.status === "open" ? "risk" : "info"}`;
+      document.getElementById("recovery-verification-window").textContent = recovery.window;
+      document.getElementById("recovery-verification-target").textContent = recovery.target;
+      document.getElementById("recovery-verification-result").textContent = recovery.result;
+      document.getElementById("recovery-verification-reopen").textContent = recovery.reopen;
+      document.getElementById("recovery-verification-closure").textContent = recovery.closure;
+      document.getElementById("recovery-verification-proof").textContent = recovery.proof;
+      document.getElementById("recovery-verification-boundary").textContent = recovery.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3554,6 +3606,7 @@
       const runbook = mitigationRunbook(cascade);
       const evidenceQueueState = evidenceQueue();
       const authority = authorityHandoff();
+      const recovery = recoveryVerification();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3655,6 +3708,14 @@
         ["authority_handoff_escalation_clock", authority.clock],
         ["authority_handoff_sponsor_consequence", authority.sponsor],
         ["authority_handoff_boundary", authority.boundary],
+        ["recovery_verification_status", recovery.status],
+        ["recovery_verification_window", recovery.window],
+        ["recovery_verification_target", recovery.target],
+        ["recovery_verification_result", recovery.result],
+        ["recovery_verification_reopen_trigger", recovery.reopen],
+        ["recovery_verification_closure_state", recovery.closure],
+        ["recovery_verification_sponsor_proof", recovery.proof],
+        ["recovery_verification_boundary", recovery.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3911,6 +3972,7 @@
       const runbook = mitigationRunbook(cascade);
       const evidenceQueueState = evidenceQueue();
       const authority = authorityHandoff();
+      const recovery = recoveryVerification();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3964,6 +4026,7 @@
         `Mitigation runbook: ${runbook.status}; control ${runbook.control}; why ${runbook.why}; gate ${runbook.gate}; effect ${runbook.effect}; rollback ${runbook.rollback}; sponsor ${runbook.sponsor}`,
         `Evidence queue: ${evidenceQueueState.status}; owner ${evidenceQueueState.owner}; readiness ${evidenceQueueState.readiness}; missing ${evidenceQueueState.missing}; claim ${evidenceQueueState.claim}; release ${evidenceQueueState.release}; next ${evidenceQueueState.next}`,
         `Authority handoff: ${authority.status}; owner ${authority.owner}; authorization ${authority.authorization}; claim ${authority.claim}; action ${authority.action}; clock ${authority.clock}; sponsor ${authority.sponsor}`,
+        `Recovery verification: ${recovery.status}; window ${recovery.window}; target ${recovery.target}; result ${recovery.result}; reopen ${recovery.reopen}; closure ${recovery.closure}; proof ${recovery.proof}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4232,6 +4295,7 @@
       renderMitigationRunbook();
       renderEvidenceQueue();
       renderAuthorityHandoff();
+      renderRecoveryVerification();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4402,6 +4466,7 @@
         mitigationRunbook: mitigationRunbook(),
         evidenceQueue: evidenceQueue(),
         authorityHandoff: authorityHandoff(),
+        recoveryVerification: recoveryVerification(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
