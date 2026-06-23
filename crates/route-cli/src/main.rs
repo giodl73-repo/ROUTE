@@ -21210,6 +21210,8 @@ struct T2BundleOverlayRepairTargetRow {
     binding_status: String,
     bundle_status: String,
     service_class: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     pavement_debt_cost_m: f64,
     pavement_debt_class: String,
     blocks_claims: String,
@@ -30725,6 +30727,8 @@ fn t2_bundle_overlay_repair_target_rows(
                 binding_status: row.binding_status.clone(),
                 bundle_status: row.bundle_status.clone(),
                 service_class: row.service_class.clone(),
+                qualification_gate_policy: row.qualification_gate_policy.clone(),
+                qualification_game_use: row.qualification_game_use.clone(),
                 pavement_debt_cost_m,
                 pavement_debt_class,
                 blocks_claims: row.blocks_claims.clone(),
@@ -30855,6 +30859,16 @@ fn t2_bundle_overlay_repair_target_gate_failures(
         if row.target_status == "pass-candidate" {
             failures.push(format!(
                 "{} cannot be a pass candidate in repair intake",
+                row.route
+            ));
+        }
+        if row.target_status == "repair-needed"
+            && row.binding_status == "bundle-bound-review"
+            && (row.qualification_gate_policy.trim().is_empty()
+                || row.qualification_game_use.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} repair target missing qualification semantics",
                 row.route
             ));
         }
