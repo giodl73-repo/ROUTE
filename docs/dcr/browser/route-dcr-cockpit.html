@@ -888,6 +888,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Assurance Case</h2>
+            <span class="badge info" id="assurance-case-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Assurance case">
+            <div class="metric"><span>Claim</span><strong id="assurance-case-claim">pending</strong></div>
+            <div class="metric"><span>Proof</span><strong id="assurance-case-proof">pending</strong></div>
+            <div class="metric"><span>Caveat</span><strong id="assurance-case-caveat">pending</strong></div>
+            <div class="metric"><span>Decision</span><strong id="assurance-case-decision">hold</strong></div>
+            <div class="metric"><span>Buyer Value</span><strong id="assurance-case-value">visibility</strong></div>
+            <div class="metric"><span>Renewal Hook</span><strong id="assurance-case-renewal">proof run</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="assurance-case-boundary">case only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2759,6 +2775,25 @@
       };
     }
 
+    function assuranceCase() {
+      const drive = driveSlaPriorities();
+      const confidence = signalConfidence();
+      const criteria = releaseCriteria();
+      const audit = decisionAudit();
+      const renewal = renewalValueCase();
+      const reviewable = criteria.status === "release-review" && confidence.status !== "evidence-held";
+      return {
+        status: reviewable ? "reviewable" : "held",
+        claim: `${drive.status} drive SLA; ${drive.priority}`,
+        proof: confidence.proof,
+        caveat: confidence.status === "evidence-held" ? `held by ${confidence.gap}` : criteria.claims,
+        decision: reviewable ? "owner release review" : audit.recommendation,
+        value: `${drive.endpoints}; ${drive.mitigation}`,
+        renewal: renewal.ask,
+        boundary: "assurance case only; no guaranteed SLA, ROI, or field release"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3482,6 +3517,20 @@
       document.getElementById("signal-confidence-boundary").textContent = confidence.boundary;
     }
 
+    function renderAssuranceCase() {
+      const assurance = assuranceCase();
+      const status = document.getElementById("assurance-case-status");
+      status.textContent = assurance.status;
+      status.className = `badge ${assurance.status === "reviewable" ? "ok" : "info"}`;
+      document.getElementById("assurance-case-claim").textContent = assurance.claim;
+      document.getElementById("assurance-case-proof").textContent = assurance.proof;
+      document.getElementById("assurance-case-caveat").textContent = assurance.caveat;
+      document.getElementById("assurance-case-decision").textContent = assurance.decision;
+      document.getElementById("assurance-case-value").textContent = assurance.value;
+      document.getElementById("assurance-case-renewal").textContent = assurance.renewal;
+      document.getElementById("assurance-case-boundary").textContent = assurance.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4059,6 +4108,7 @@
       const releaseCriteriaState = releaseCriteria();
       const decisionAuditState = decisionAudit();
       const signalConfidenceState = signalConfidence();
+      const assurance = assuranceCase();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4240,6 +4290,14 @@
         ["signal_confidence_refresh", signalConfidenceState.refresh],
         ["signal_confidence_escalation", signalConfidenceState.escalation],
         ["signal_confidence_boundary", signalConfidenceState.boundary],
+        ["assurance_case_status", assurance.status],
+        ["assurance_case_claim", assurance.claim],
+        ["assurance_case_proof", assurance.proof],
+        ["assurance_case_caveat", assurance.caveat],
+        ["assurance_case_decision", assurance.decision],
+        ["assurance_case_buyer_value", assurance.value],
+        ["assurance_case_renewal_hook", assurance.renewal],
+        ["assurance_case_boundary", assurance.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4506,6 +4564,7 @@
       const releaseCriteriaState = releaseCriteria();
       const decisionAuditState = decisionAudit();
       const signalConfidenceState = signalConfidence();
+      const assurance = assuranceCase();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4569,6 +4628,7 @@
         `Release criteria: ${releaseCriteriaState.status}; source ${releaseCriteriaState.source}; SLA ${releaseCriteriaState.sla}; owner ${releaseCriteriaState.owner}; claims ${releaseCriteriaState.claims}; decision ${releaseCriteriaState.decision}; evidence ${releaseCriteriaState.evidence}`,
         `Decision audit: ${decisionAuditState.status}; trigger ${decisionAuditState.trigger}; rationale ${decisionAuditState.rationale}; evidence ${decisionAuditState.evidence}; recommendation ${decisionAuditState.recommendation}; blocked by ${decisionAuditState.blocker}; id ${decisionAuditState.id}`,
         `Signal confidence: ${signalConfidenceState.status}; grade ${signalConfidenceState.grade}; proof ${signalConfidenceState.proof}; action ${signalConfidenceState.action}; gap ${signalConfidenceState.gap}; refresh ${signalConfidenceState.refresh}; escalation ${signalConfidenceState.escalation}`,
+        `Assurance case: ${assurance.status}; claim ${assurance.claim}; proof ${assurance.proof}; caveat ${assurance.caveat}; decision ${assurance.decision}; value ${assurance.value}; renewal ${assurance.renewal}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4847,6 +4907,7 @@
       renderReleaseCriteria();
       renderDecisionAudit();
       renderSignalConfidence();
+      renderAssuranceCase();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5027,6 +5088,7 @@
         releaseCriteria: releaseCriteria(),
         decisionAudit: decisionAudit(),
         signalConfidence: signalConfidence(),
+        assuranceCase: assuranceCase(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
