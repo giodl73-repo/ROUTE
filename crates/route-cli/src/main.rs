@@ -20484,6 +20484,9 @@ struct T2BundleOverlayRow {
     upgrade_lever: String,
     restitch_lever: String,
     release_gate: String,
+    qualification_map_treatment: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     pavement_debt_cost_m: f64,
     pavement_debt_class: String,
     pavement_debt_basis: String,
@@ -27436,6 +27439,9 @@ fn t2_bundle_overlay_rows(
                 release_gate: overlay
                     .map(|row| row.release_gate.clone())
                     .unwrap_or_default(),
+                qualification_map_treatment: service.qualification_map_treatment.clone(),
+                qualification_gate_policy: service.qualification_gate_policy.clone(),
+                qualification_game_use: service.qualification_game_use.clone(),
                 pavement_debt_cost_m: service.pavement_debt_cost_m,
                 pavement_debt_class: service.pavement_debt_class.clone(),
                 pavement_debt_basis: service.pavement_debt_basis.clone(),
@@ -27561,6 +27567,18 @@ fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Vec<String> {
             failures.push(format!(
                 "{} has invalid validation status {}",
                 row.route, row.validation_status
+            ));
+        }
+        if matches!(
+            row.binding_status.as_str(),
+            "bundle-bound" | "bundle-bound-review"
+        ) && (row.qualification_map_treatment.trim().is_empty()
+            || row.qualification_gate_policy.trim().is_empty()
+            || row.qualification_game_use.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} bound overlay missing qualification action semantics",
+                row.route
             ));
         }
     }
@@ -68875,6 +68893,10 @@ mod tests {
             upgrade_lever: "upgrade".to_string(),
             restitch_lever: "restitch".to_string(),
             release_gate: "gate".to_string(),
+            qualification_map_treatment: "draw as normal T2 service for its class".to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: String::new(),
             pavement_debt_basis: String::new(),
@@ -68924,6 +68946,10 @@ mod tests {
             upgrade_lever: "upgrade stop spacing".to_string(),
             restitch_lever: "restitch inside local cluster".to_string(),
             release_gate: "gate".to_string(),
+            qualification_map_treatment: "draw as normal T2 service for its class".to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
@@ -70794,6 +70820,9 @@ mod tests {
             upgrade_lever: String::new(),
             restitch_lever: String::new(),
             release_gate: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             pavement_debt_cost_m: 35.0,
             pavement_debt_class: "repair-debt".to_string(),
             pavement_debt_basis: "route-level pavement debt rollup".to_string(),
@@ -71299,6 +71328,9 @@ mod tests {
             upgrade_lever: "port-access-upgrade".to_string(),
             restitch_lever: "restitch-route".to_string(),
             release_gate: "review".to_string(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: String::new(),
             pavement_debt_basis: String::new(),
