@@ -710,6 +710,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Operator SLA</h2>
+            <span class="badge info" id="sla-status">simulated</span>
+          </div>
+          <div class="metrics" aria-label="Operator SLA">
+            <div class="metric"><span>Detect</span><strong id="sla-detect">pending</strong></div>
+            <div class="metric"><span>Hold</span><strong id="sla-hold">pending</strong></div>
+            <div class="metric"><span>Verify</span><strong id="sla-verify">pending</strong></div>
+            <div class="metric"><span>Mitigate</span><strong id="sla-mitigate">pending</strong></div>
+            <div class="metric"><span>Cycle</span><strong id="sla-cycle">0m</strong></div>
+            <div class="metric"><span>Claim</span><strong id="sla-claim">bounded</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1440,10 +1455,74 @@
       document.getElementById("score-proof").textContent = String(score.proofPoints);
     }
 
+    function logMinute(pattern) {
+      const row = state.log.find((entry) => entry.includes(pattern));
+      if (!row) return null;
+      const match = row.match(/^(\d{2}):(\d{2})/);
+      if (!match) return null;
+      return (Number(match[1]) * 60) + Number(match[2]);
+    }
+
+    function firstSignalMinute() {
+      const applied = currentScenario().timeline
+        .filter((event) => state.appliedEvents.includes(event.id))
+        .map((event) => event.minute);
+      const manual = state.manualEvents.map((event) => event.minute);
+      const logged = [logMinute("timeline "), logMinute("manual signal")].filter((minute) => minute !== null);
+      const minutes = [...applied, ...manual, ...logged];
+      return minutes.length ? Math.min(...minutes) : null;
+    }
+
+    function formatSla(value) {
+      return value === null ? "pending" : `${Math.max(0, value)}m`;
+    }
+
+    function operatorSla() {
+      const detectedAt = firstSignalMinute();
+      const holdAt = logMinute("source hold:") ?? logMinute("held for authority:") ?? logMinute("role hold:");
+      const verifiedAt = logMinute("evidence verified:");
+      const mitigatedAt = logMinute("mitigated signal:");
+      const elapsed = (minute) => detectedAt === null || minute === null ? null : minute - detectedAt;
+      const cycle = detectedAt === null
+        ? 0
+        : (mitigatedAt === null ? state.minute : mitigatedAt) - detectedAt;
+      const status = mitigatedAt !== null
+        ? "mitigated"
+        : holdAt !== null
+          ? "held"
+          : detectedAt !== null
+            ? "detecting"
+            : "simulated";
+      return {
+        status,
+        detect: detectedAt === null ? null : 0,
+        hold: elapsed(holdAt),
+        verify: elapsed(verifiedAt),
+        mitigate: elapsed(mitigatedAt),
+        cycle: Math.max(0, cycle),
+        claim: "bounded",
+        boundary: "simulated timing; no guaranteed SLA"
+      };
+    }
+
+    function renderOperatorSla() {
+      const sla = operatorSla();
+      const status = document.getElementById("sla-status");
+      status.textContent = sla.status;
+      status.className = `badge ${sla.status === "mitigated" ? "ok" : sla.status === "held" ? "risk" : "info"}`;
+      document.getElementById("sla-detect").textContent = formatSla(sla.detect);
+      document.getElementById("sla-hold").textContent = formatSla(sla.hold);
+      document.getElementById("sla-verify").textContent = formatSla(sla.verify);
+      document.getElementById("sla-mitigate").textContent = formatSla(sla.mitigate);
+      document.getElementById("sla-cycle").textContent = `${sla.cycle}m`;
+      document.getElementById("sla-claim").textContent = sla.claim;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
       const score = scenarioScorecard();
+      const sla = operatorSla();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1467,6 +1546,13 @@
         ["scorecard_mitigation", `${score.mitigationPercent}%`],
         ["scorecard_evidence", `${score.evidencePercent}%`],
         ["scorecard_renewal", score.renewal],
+        ["sla_status", sla.status],
+        ["time_to_detect", formatSla(sla.detect)],
+        ["time_to_hold", formatSla(sla.hold)],
+        ["time_to_verify", formatSla(sla.verify)],
+        ["time_to_mitigate", formatSla(sla.mitigate)],
+        ["sla_cycle", `${sla.cycle}m`],
+        ["sla_boundary", sla.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1497,6 +1583,7 @@
     function handoffText() {
       const metrics = computeMetrics();
       const summary = runSummary();
+      const sla = operatorSla();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1514,6 +1601,7 @@
         `Outcome: ${summary.outcome}; pilot value: ${summary.pilotValue}`,
         `Metrics: risk ${metrics.risk} (${formatSigned(summary.riskChange)}), flow ${metrics.flow}% (${formatSigned(summary.flowChange)}%), evidence ${summary.evidenceReady}/${summary.evidenceTotal}`,
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
+        `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -1746,6 +1834,7 @@
       renderDecisions();
       renderRunSummary();
       renderScorecard();
+      renderOperatorSla();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -1882,6 +1971,7 @@
         verifiedEvidence: state.verifiedEvidence,
         summary: runSummary(),
         scorecard: scenarioScorecard(),
+        sla: operatorSla(),
         handoff: handoffText(),
         log: state.log
       };
