@@ -815,6 +815,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Watchlist</h2>
+            <span class="badge info" id="watchlist-status">pending</span>
+          </div>
+          <div class="metrics" aria-label="Watchlist">
+            <div class="metric"><span>Primary Watch</span><strong id="watchlist-primary">source custody</strong></div>
+            <div class="metric"><span>Owner</span><strong id="watchlist-owner">scenario owner</strong></div>
+            <div class="metric"><span>Trigger</span><strong id="watchlist-trigger">verify source</strong></div>
+            <div class="metric"><span>Escalation</span><strong id="watchlist-escalation">hold</strong></div>
+            <div class="metric"><span>Cycle</span><strong id="watchlist-cycle">next cycle</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="watchlist-boundary">watch only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1881,6 +1896,34 @@
       document.getElementById("postfix-boundary").textContent = postFix.boundary;
     }
 
+    function watchlist() {
+      const postFix = postFixMonitor();
+      const workload = operatorWorkload();
+      const status = postFix.status === "proving" ? "active" : postFix.status;
+      return {
+        status,
+        primary: postFix.status === "proving" ? "rebound watch" : workload.queue,
+        owner: workload.nextOwner,
+        trigger: postFix.status === "proving" ? postFix.rollback : workload.nextAction,
+        escalation: postFix.status === "proving" ? "reopen if target misses" : "clear source custody first",
+        cycle: postFix.window,
+        boundary: "watchlist only; no dispatch"
+      };
+    }
+
+    function renderWatchlist() {
+      const watch = watchlist();
+      const status = document.getElementById("watchlist-status");
+      status.textContent = watch.status;
+      status.className = `badge ${watch.status === "active" ? "ok" : watch.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("watchlist-primary").textContent = watch.primary;
+      document.getElementById("watchlist-owner").textContent = watch.owner;
+      document.getElementById("watchlist-trigger").textContent = watch.trigger;
+      document.getElementById("watchlist-escalation").textContent = watch.escalation;
+      document.getElementById("watchlist-cycle").textContent = watch.cycle;
+      document.getElementById("watchlist-boundary").textContent = watch.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1892,6 +1935,7 @@
       const fix = fixPackage();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
+      const watch = watchlist();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1966,6 +2010,13 @@
         ["postfix_rollback", postFix.rollback],
         ["postfix_renewal", postFix.renewal],
         ["postfix_boundary", postFix.boundary],
+        ["watchlist_status", watch.status],
+        ["watchlist_primary", watch.primary],
+        ["watchlist_owner", watch.owner],
+        ["watchlist_trigger", watch.trigger],
+        ["watchlist_escalation", watch.escalation],
+        ["watchlist_cycle", watch.cycle],
+        ["watchlist_boundary", watch.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2003,6 +2054,7 @@
       const fix = fixPackage();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
+      const watch = watchlist();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2027,6 +2079,7 @@
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
+        `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2266,6 +2319,7 @@
       renderFixPackage();
       renderDecisionDossier();
       renderPostFixMonitor();
+      renderWatchlist();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2409,6 +2463,7 @@
         fix: fixPackage(),
         dossier: decisionDossier(),
         postFix: postFixMonitor(),
+        watchlist: watchlist(),
         handoff: handoffText(),
         log: state.log
       };
