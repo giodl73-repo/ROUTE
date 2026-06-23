@@ -37,6 +37,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operator-log-status")).toHaveText("watch");
     await expect(page.locator("#operator-log-next")).toHaveText("continue monitoring");
     await expect(page.locator("#operator-log-reason")).toHaveText("no open operator action");
+    await expect(page.getByLabel("Maintenance backlog")).toContainText("TicketDCR-MAINT-WINTER-CLOSURE-P2");
+    await expect(page.locator("#backlog-status")).toHaveText("blocked");
+    await expect(page.locator("#backlog-asset")).toHaveText("mountain corridor + charging sources");
+    await expect(page.locator("#backlog-dependency")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.getByLabel("Maintenance case")).toContainText("Measured Failurecorridor reliability failure");
     await expect(page.locator("#maintenance-fix")).toHaveText("weather-responsive split + EV staging");
     await expect(page.locator("#maintenance-priority")).toHaveText("P2");
@@ -110,6 +114,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_escalation_boundary,"escalation only; source owner remains authoritative"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/closure_boundary,"closure criteria only; owner closes or renews"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_log_boundary,"operator decision log only; field authority remains external"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_backlog_boundary,"backlog ticket only; owner CMMS remains source of record"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -166,6 +171,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#source-escalation-owner")).toHaveText("Terminal queue feed");
     await expect(page.locator("#source-escalation-reason")).toHaveText("P1 intersection access failure; risk 52>=45; flow 84%<85%");
     await expect(page.locator("#closure-close")).toHaveText("clear Terminal queue feed; Local truck route authority; Port communications owner");
+    await expect(page.locator("#backlog-ticket")).toHaveText("DCR-MAINT-TERMINAL-ACCESS-P1");
+    await expect(page.locator("#backlog-asset")).toHaveText("terminal gate approach");
 
     await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
@@ -255,6 +262,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operator-log-status")).toHaveText("approved");
     await expect(page.locator("#operator-log-approved")).toHaveText("Reroute advisory");
     await expect(page.locator("#operator-log-next")).toHaveText("continue monitoring");
+    await expect(page.locator("#backlog-status")).toHaveText("renewal");
+    await expect(page.locator("#backlog-queue")).toHaveText("renewal candidate");
+    await expect(page.locator("#backlog-exit")).toHaveText("clear Charging source owner; Operator message owner");
     await expect(page.locator("#maintenance-status")).toHaveText("validated");
     await expect(page.locator("#maintenance-thresholds")).toHaveText("none crossed");
     await expect(page.locator("#maintenance-evidence")).toHaveText("Charging source owner; Operator message owner");
@@ -307,6 +317,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Source escalation: partial; owner Charging source owner; due next monitoring cycle; packet source custody: verify Charging source owner; boundary escalation only; source owner remains authoritative/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Closure criteria: proving; close clear Charging source owner; Operator message owner; renew package renewal candidate; reopen watch for rebound; evidence 1\/3/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Operator decision log: approved; recommended none; approved Reroute advisory; held none; next continue monitoring/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance backlog: renewal; ticket DCR-MAINT-WINTER-CLOSURE-P3; queue renewal candidate; dependency source custody: verify Charging source owner; exit clear Charging source owner; Operator message owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
@@ -330,6 +341,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_escalation_status,"partial"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/closure_status,"proving"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_log_status,"approved"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_backlog_status,"renewal"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
