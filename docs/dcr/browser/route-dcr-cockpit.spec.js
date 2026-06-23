@@ -23,6 +23,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#summary-outcome")).toHaveText("standby");
     await expect(page.locator("#scorecard-grade")).toHaveText("DCR-0");
     await expect(page.locator("#score-renewal")).toHaveText("watch");
+    await expect(page.getByLabel("Operator SLA")).toContainText("Claimbounded");
+    await expect(page.locator("#sla-status")).toHaveText("simulated");
+    await expect(page.locator("#sla-detect")).toHaveText("pending");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -37,6 +40,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#run-owner")).toHaveText("DOT operations");
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_boundary,"simulated timing; no guaranteed SLA"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -116,8 +120,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#action-count")).toHaveText("1 open");
     await expect(page.locator("#summary-outcome")).toHaveText("source-held");
     await expect(page.locator("#summary-open-work")).toHaveText("1");
+    await expect(page.locator("#sla-status")).toHaveText("held");
+    await expect(page.locator("#sla-hold")).toHaveText("0m");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/missing_evidence,"511 closure feed; Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/run_outcome,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_status,"held"/);
 
     await page.getByRole("button", { name: "Verify 511 closure feed" }).click();
     await expect(page.locator("#gate-count")).toHaveText("1/3 ready");
@@ -136,13 +143,18 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#score-mitigation")).toHaveText("100%");
     await expect(page.locator("#score-evidence")).toHaveText("33%");
     await expect(page.locator("#score-renewal")).toHaveText("renew");
+    await expect(page.locator("#sla-status")).toHaveText("mitigated");
+    await expect(page.locator("#sla-verify")).toHaveText("0m");
+    await expect(page.locator("#sla-mitigate")).toHaveText("0m");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/scorecard_grade,"DCR-4"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/time_to_mitigate,"0m"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
@@ -176,6 +188,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#summary-outcome")).toHaveText("mitigated");
     await expect(page.locator("#action-count")).toHaveText("0 open");
     await expect(page.locator("#scorecard-grade")).toHaveText("DCR-4");
+    await expect(page.locator("#sla-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
 
     await page.getByRole("button", { name: "Save Run" }).click();
