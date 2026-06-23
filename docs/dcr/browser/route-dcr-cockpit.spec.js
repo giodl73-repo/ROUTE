@@ -21,6 +21,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
     await expect(page.getByLabel("Run summary")).toContainText("baseline");
     await expect(page.locator("#summary-outcome")).toHaveText("standby");
+    await expect(page.locator("#scorecard-grade")).toHaveText("DCR-0");
+    await expect(page.locator("#score-renewal")).toHaveText("watch");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/ROUTE DCR shift handoff - 00:00/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify 511 closure feed/);
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
@@ -125,12 +127,18 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#summary-flow-change")).toHaveText("+5%");
     await expect(page.locator("#summary-evidence-ready")).toHaveText("1/3");
     await expect(page.locator("#summary-pilot-value")).toHaveText("proof-ready");
+    await expect(page.locator("#scorecard-grade")).toHaveText("DCR-4");
+    await expect(page.locator("#score-response")).toHaveText("0m");
+    await expect(page.locator("#score-mitigation")).toHaveText("100%");
+    await expect(page.locator("#score-evidence")).toHaveText("33%");
+    await expect(page.locator("#score-renewal")).toHaveText("renew");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/scorecard_grade,"DCR-4"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
@@ -163,6 +171,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Next Demo Step" }).click();
     await expect(page.locator("#summary-outcome")).toHaveText("mitigated");
     await expect(page.locator("#action-count")).toHaveText("0 open");
+    await expect(page.locator("#scorecard-grade")).toHaveText("DCR-4");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
   });
 
