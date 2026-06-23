@@ -1,7 +1,8 @@
 ---
 wave: milestone-10-t2-qualification-actions
 date_open: 2026-06-23
-status: active
+date_close: 2026-06-23
+status: done
 source: goal-resume
 ---
 
@@ -19,6 +20,7 @@ pair.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Qualification action basis gate | done | `data/beck-t2-qualification-actions.csv`; `route beck-t2-qualification-actions --gate`; `npm run check:l2` |
+| 02 - Service selection consumes qualification actions | done | `data/t2-service-selection.csv`; `route t2-service-selection --gate`; `npm run check:l2` |
 
 ## Top Gate
 
@@ -26,8 +28,10 @@ Keep the T2 qualification-action ledger, T2 diagnostics, and L2 e2e gate aligned
 so duplicate-service decisions can flow into map/game overlays without silently
 losing their decision basis.
 
-## Close Criteria
+## Close Evidence
 
-The wave can close when qualification actions are consumed by the next
-downstream T2 decision surface, and the wave card, pulse files, generated ledger,
-and gate bundle agree.
+The qualification-action ledger is consumed by the next downstream T2 decision
+surface through `data/t2-service-selection.csv`. `route
+beck-t2-qualification-actions --gate`, `route t2-service-selection --gate`, and
+`npm run check:l2` pass with the wave card, pulse files, generated ledgers, and
+GOAL handoff aligned.
