@@ -254,6 +254,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#next-cycle-move")).toHaveText("verify Charging source owner");
     await expect(page.locator("#next-cycle-release")).toHaveText("still held for Charging source owner");
     await expect(page.locator("#next-cycle-boundary")).toHaveText("next-cycle simulation only; source owners and field owners remain authoritative");
+    await expect(page.getByLabel("Clearance path")).toContainText("Cycles Left3");
+    await expect(page.locator("#clearance-path-status")).toHaveText("queued");
+    await expect(page.locator("#clearance-path-sequence")).toHaveText("cycle 1: 511 closure feed -> cycle 2: Charging source owner -> cycle 3: Operator message owner");
+    await expect(page.locator("#clearance-path-readiness")).toHaveText("3/3");
+    await expect(page.locator("#clearance-path-release")).toHaveText("after Operator message owner clears");
+    await expect(page.locator("#clearance-path-sponsor")).toHaveText("sponsor packet held until source custody clears");
+    await expect(page.locator("#clearance-path-proof")).toHaveText("0/3 now; 3 source cycles to clear");
+    await expect(page.locator("#clearance-path-boundary")).toHaveText("clearance path is simulated sequencing only; source owners approve evidence and field owners approve release");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -291,6 +299,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_action_do_now,"verify 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_status,"still-held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_operator_move,"verify Charging source owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_status,"queued"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_cycles_left,"3"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -658,6 +668,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#next-cycle-move")).toHaveText("verify Operator message owner");
     await expect(page.locator("#next-cycle-release")).toHaveText("still held for Operator message owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next-cycle simulation: still-held; clear Charging source owner; readiness 2\/3; remaining Operator message owner; posture SLA maintained; monitor rebound and preserve proof; move verify Operator message owner; release still held for Operator message owner/);
+    await expect(page.locator("#clearance-path-status")).toHaveText("queued");
+    await expect(page.locator("#clearance-path-cycles")).toHaveText("2");
+    await expect(page.locator("#clearance-path-sequence")).toHaveText("cycle 1: Charging source owner -> cycle 2: Operator message owner");
+    await expect(page.locator("#clearance-path-readiness")).toHaveText("3/3");
+    await expect(page.locator("#clearance-path-release")).toHaveText("after Operator message owner clears");
+    await expect(page.locator("#clearance-path-sponsor")).toHaveText("sponsor packet held until source custody clears");
+    await expect(page.locator("#clearance-path-proof")).toHaveText("1/3 now; 2 source cycles to clear");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Clearance path: queued; cycles 2; sequence cycle 1: Charging source owner -> cycle 2: Operator message owner; final readiness 3\/3; release after Operator message owner clears; sponsor sponsor packet held until source custody clears; proof 1\/3 now; 2 source cycles to clear/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -746,6 +764,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_action_do_now,"verify Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_status,"still-held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_clear_assumption,"Charging source owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_cycles_left,"2"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_proof_trail,"1\/3 now; 2 source cycles to clear"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
