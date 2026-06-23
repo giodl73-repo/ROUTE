@@ -952,6 +952,23 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Renewal Operating Contract</h2>
+            <span class="badge info" id="operating-contract-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Renewal operating contract">
+            <div class="metric"><span>Service</span><strong id="operating-contract-service">monitoring</strong></div>
+            <div class="metric"><span>Cadence</span><strong id="operating-contract-cadence">cycle</strong></div>
+            <div class="metric"><span>Decision Rights</span><strong id="operating-contract-rights">owner approval</strong></div>
+            <div class="metric"><span>Resilience Work</span><strong id="operating-contract-resilience">fix path</strong></div>
+            <div class="metric"><span>Deliverable</span><strong id="operating-contract-deliverable">proof run</strong></div>
+            <div class="metric"><span>Proof</span><strong id="operating-contract-proof">evidence</strong></div>
+            <div class="metric"><span>Renewal Trigger</span><strong id="operating-contract-trigger">decision</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="operating-contract-boundary">no payment</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2899,6 +2916,36 @@
       };
     }
 
+    function renewalOperatingContract() {
+      const summary = runSummary();
+      const counterfactual = counterfactualValue();
+      const cadence = operationsCadence();
+      const workload = operatorWorkload();
+      const maintenance = maintenanceCase();
+      const renewal = renewalValueCase();
+      const sourceHeld = workload.sourceHolds || workload.roleHolds;
+      const status = sourceHeld
+        ? counterfactual.status === "proven" ? "proof-run" : "gated"
+        : renewal.status === "renew"
+          ? "renewable"
+          : "operate";
+      return {
+        status,
+        service: "active monitoring, DCR run decisions, source-gap governance",
+        cadence: `${cadence.cycle}; ${cadence.rhythm}`,
+        rights: sourceHeld
+          ? `operator recommends; ${workload.nextOwner} clears source custody`
+          : "operator recommends; owner approves field changes",
+        resilience: `${maintenance.priority} ${maintenance.fix}; ${counterfactual.delta}`,
+        deliverable: counterfactual.status === "proven"
+          ? `${renewal.ask}; ${renewal.coverage}`
+          : `${renewal.ask}; ${workload.queue}`,
+        proof: `${counterfactual.status}; ${summary.resolved} resolved; ${summary.evidenceReady}/${summary.evidenceTotal} evidence`,
+        trigger: sourceHeld ? workload.nextAction : renewal.next,
+        boundary: "operating contract is simulated; no payment, ROI, SLA guarantee, or field authority"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3678,6 +3725,21 @@
       document.getElementById("counterfactual-boundary").textContent = value.boundary;
     }
 
+    function renderRenewalOperatingContract() {
+      const contract = renewalOperatingContract();
+      const status = document.getElementById("operating-contract-status");
+      status.textContent = contract.status;
+      status.className = `badge ${contract.status === "renewable" || contract.status === "proof-run" ? "ok" : contract.status === "gated" ? "risk" : "info"}`;
+      document.getElementById("operating-contract-service").textContent = contract.service;
+      document.getElementById("operating-contract-cadence").textContent = contract.cadence;
+      document.getElementById("operating-contract-rights").textContent = contract.rights;
+      document.getElementById("operating-contract-resilience").textContent = contract.resilience;
+      document.getElementById("operating-contract-deliverable").textContent = contract.deliverable;
+      document.getElementById("operating-contract-proof").textContent = contract.proof;
+      document.getElementById("operating-contract-trigger").textContent = contract.trigger;
+      document.getElementById("operating-contract-boundary").textContent = contract.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4259,6 +4321,7 @@
       const sponsorProof = sponsorProofPacket();
       const renewalBrief = renewalDecisionBrief();
       const counterfactual = counterfactualValue();
+      const operatingContract = renewalOperatingContract();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4472,6 +4535,15 @@
         ["counterfactual_value_buyer_reason", counterfactual.reason],
         ["counterfactual_value_remaining_gap", counterfactual.gap],
         ["counterfactual_value_boundary", counterfactual.boundary],
+        ["operating_contract_status", operatingContract.status],
+        ["operating_contract_service", operatingContract.service],
+        ["operating_contract_cadence", operatingContract.cadence],
+        ["operating_contract_decision_rights", operatingContract.rights],
+        ["operating_contract_resilience_work", operatingContract.resilience],
+        ["operating_contract_deliverable", operatingContract.deliverable],
+        ["operating_contract_proof", operatingContract.proof],
+        ["operating_contract_renewal_trigger", operatingContract.trigger],
+        ["operating_contract_boundary", operatingContract.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4742,6 +4814,7 @@
       const sponsorProof = sponsorProofPacket();
       const renewalBrief = renewalDecisionBrief();
       const counterfactual = counterfactualValue();
+      const operatingContract = renewalOperatingContract();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4809,6 +4882,7 @@
         `Sponsor proof packet: ${sponsorProof.status}; offer ${sponsorProof.offer}; proof ${sponsorProof.proofLine}; value ${sponsorProof.value}; held ${sponsorProof.held}; ask ${sponsorProof.ask}; next ${sponsorProof.next}`,
         `Renewal decision brief: ${renewalBrief.status}; decision ${renewalBrief.decision}; basis ${renewalBrief.basis}; ask ${renewalBrief.ask}; held ${renewalBrief.held}; owner ${renewalBrief.owner}; next ${renewalBrief.next}`,
         `Counterfactual value: ${counterfactual.status}; without ${counterfactual.without}; with ${counterfactual.with}; delta ${counterfactual.delta}; avoided ${counterfactual.avoided}; reason ${counterfactual.reason}; gap ${counterfactual.gap}`,
+        `Renewal operating contract: ${operatingContract.status}; service ${operatingContract.service}; cadence ${operatingContract.cadence}; rights ${operatingContract.rights}; resilience ${operatingContract.resilience}; deliverable ${operatingContract.deliverable}; proof ${operatingContract.proof}; trigger ${operatingContract.trigger}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5091,6 +5165,7 @@
       renderSponsorProofPacket();
       renderRenewalDecisionBrief();
       renderCounterfactualValue();
+      renderRenewalOperatingContract();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5275,6 +5350,7 @@
         sponsorProofPacket: sponsorProofPacket(),
         renewalDecisionBrief: renewalDecisionBrief(),
         counterfactualValue: counterfactualValue(),
+        renewalOperatingContract: renewalOperatingContract(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
