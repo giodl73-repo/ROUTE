@@ -824,6 +824,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Clearance Path</h2>
+            <span class="badge info" id="clearance-path-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Clearance path">
+            <div class="metric"><span>Cycles Left</span><strong id="clearance-path-cycles">0</strong></div>
+            <div class="metric"><span>Sequence</span><strong id="clearance-path-sequence">source custody clear</strong></div>
+            <div class="metric"><span>Final Readiness</span><strong id="clearance-path-readiness">0/0</strong></div>
+            <div class="metric"><span>Release Gate</span><strong id="clearance-path-release">owner review</strong></div>
+            <div class="metric"><span>Sponsor Gate</span><strong id="clearance-path-sponsor">hold</strong></div>
+            <div class="metric"><span>Proof Trail</span><strong id="clearance-path-proof">pending</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="clearance-path-boundary">path only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2615,6 +2631,23 @@
       };
     }
 
+    function clearancePath() {
+      const gates = currentScenario().gates;
+      const missing = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const readyCount = gates.length - missing.length;
+      const renewalProof = renewalProofSummary();
+      return {
+        status: missing.length === 0 ? "clear" : "queued",
+        cycles: missing.length,
+        sequence: missing.length ? missing.map((label, index) => `cycle ${index + 1}: ${label}`).join(" -> ") : "source custody clear",
+        readiness: `${gates.length}/${gates.length}`,
+        release: missing.length ? `after ${missing[missing.length - 1]} clears` : "release review allowed",
+        sponsor: missing.length ? "sponsor packet held until source custody clears" : renewalProof.ask,
+        proof: `${readyCount}/${gates.length} now; ${missing.length} source cycles to clear`,
+        boundary: "clearance path is simulated sequencing only; source owners approve evidence and field owners approve release"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3282,6 +3315,20 @@
       document.getElementById("next-cycle-boundary").textContent = simulation.boundary;
     }
 
+    function renderClearancePath() {
+      const path = clearancePath();
+      const status = document.getElementById("clearance-path-status");
+      status.textContent = path.status;
+      status.className = `badge ${path.status === "clear" ? "ok" : "info"}`;
+      document.getElementById("clearance-path-cycles").textContent = path.cycles;
+      document.getElementById("clearance-path-sequence").textContent = path.sequence;
+      document.getElementById("clearance-path-readiness").textContent = path.readiness;
+      document.getElementById("clearance-path-release").textContent = path.release;
+      document.getElementById("clearance-path-sponsor").textContent = path.sponsor;
+      document.getElementById("clearance-path-proof").textContent = path.proof;
+      document.getElementById("clearance-path-boundary").textContent = path.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3855,6 +3902,7 @@
       const clearance = clearanceForecast();
       const operatorAction = operatorActionPlan();
       const nextCycle = nextCycleSimulation();
+      const clearancePathState = clearancePath();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4004,6 +4052,14 @@
         ["next_cycle_operator_move", nextCycle.move],
         ["next_cycle_release_result", nextCycle.release],
         ["next_cycle_boundary", nextCycle.boundary],
+        ["clearance_path_status", clearancePathState.status],
+        ["clearance_path_cycles_left", clearancePathState.cycles],
+        ["clearance_path_sequence", clearancePathState.sequence],
+        ["clearance_path_final_readiness", clearancePathState.readiness],
+        ["clearance_path_release_gate", clearancePathState.release],
+        ["clearance_path_sponsor_gate", clearancePathState.sponsor],
+        ["clearance_path_proof_trail", clearancePathState.proof],
+        ["clearance_path_boundary", clearancePathState.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4266,6 +4322,7 @@
       const clearance = clearanceForecast();
       const operatorAction = operatorActionPlan();
       const nextCycle = nextCycleSimulation();
+      const clearancePathState = clearancePath();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4325,6 +4382,7 @@
         `Clearance forecast: ${clearance.status}; clear ${clearance.next}; after readiness ${clearance.readiness}; remaining ${clearance.remaining}; release ${clearance.release}; renewal ${clearance.renewal}; authority ${clearance.authority}`,
         `Operator action plan: ${operatorAction.status}; now ${operatorAction.now}; scope ${operatorAction.scope}; prohibited ${operatorAction.prohibited}; rerun ${operatorAction.rerun}; decision ${operatorAction.decision}; cadence ${operatorAction.cadence}`,
         `Next-cycle simulation: ${nextCycle.status}; clear ${nextCycle.clear}; readiness ${nextCycle.readiness}; remaining ${nextCycle.remaining}; posture ${nextCycle.sla}; move ${nextCycle.move}; release ${nextCycle.release}`,
+        `Clearance path: ${clearancePathState.status}; cycles ${clearancePathState.cycles}; sequence ${clearancePathState.sequence}; final readiness ${clearancePathState.readiness}; release ${clearancePathState.release}; sponsor ${clearancePathState.sponsor}; proof ${clearancePathState.proof}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4599,6 +4657,7 @@
       renderClearanceForecast();
       renderOperatorActionPlan();
       renderNextCycleSimulation();
+      renderClearancePath();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4775,6 +4834,7 @@
         clearanceForecast: clearanceForecast(),
         operatorActionPlan: operatorActionPlan(),
         nextCycleSimulation: nextCycleSimulation(),
+        clearancePath: clearancePath(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
