@@ -66,6 +66,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#fix-status")).toHaveText("blocked");
     await expect(page.locator("#fix-scope")).toHaveText("weather-responsive split + EV staging");
     await expect(page.locator("#fix-approval")).toHaveText("source custody");
+    await expect(page.getByLabel("Fix justification")).toContainText("FailureP2 corridor reliability failure");
+    await expect(page.locator("#justification-status")).toHaveText("blocked");
+    await expect(page.locator("#justification-basis")).toHaveText("risk 46>=45");
+    await expect(page.locator("#justification-gate")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.getByLabel("Decision dossier")).toContainText("DecisionP2 weather-responsive split + EV staging");
     await expect(page.locator("#dossier-status")).toHaveText("blocked");
     await expect(page.locator("#dossier-blockers")).toHaveText("source custody: verify 511 closure feed");
@@ -120,6 +124,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_thresholds,"risk 46>=45"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/fix_boundary,"recommendation package, not a work order"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/justification_boundary,"justification only; owner approves fixes"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/dossier_boundary,"advisory dossier, not procurement approval"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/postfix_boundary,"monitoring only; owner decides field changes"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/watchlist_boundary,"watchlist only; no dispatch"/);
@@ -179,6 +184,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 52>=45; flow 84%<85%");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
+    await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
+    await expect(page.locator("#justification-basis")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#justification-gate")).toHaveText("source custody: verify Terminal queue feed");
     await expect(page.locator("#dossier-alternatives")).toHaveText("hold gate timing; manual detour only");
     await expect(page.locator("#postfix-target")).toHaveText("risk below baseline; flow above baseline");
     await expect(page.locator("#watchlist-cycle")).toHaveText("next 2 monitoring cycles");
@@ -320,6 +328,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#fix-status")).toHaveText("validated");
     await expect(page.locator("#fix-effect")).toHaveText("-4 risk; +5% flow");
     await expect(page.locator("#fix-approval")).toHaveText("source custody");
+    await expect(page.locator("#justification-status")).toHaveText("validated");
+    await expect(page.locator("#justification-expected")).toHaveText("-4 risk; +5% flow");
+    await expect(page.locator("#justification-proof")).toHaveText("Charging source owner; Operator message owner");
+    await expect(page.locator("#justification-gate")).toHaveText("source custody: verify Charging source owner");
     await expect(page.locator("#dossier-status")).toHaveText("validated");
     await expect(page.locator("#dossier-why")).toHaveText("risk 42; flow 96%; recovery 43m");
     await expect(page.locator("#dossier-proof")).toHaveText("Charging source owner; Operator message owner");
@@ -346,6 +358,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Fix package: validated; owner DOT operations; scope weather-responsive split \+ EV staging; effect -4 risk; \+5% flow; approval source custody/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Fix justification: validated; failure P3 corridor reliability failure; basis risk 42; flow 96%; recovery 43m; expected -4 risk; \+5% flow; gate source custody: verify Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Dossier: decision P3 weather-responsive split \+ EV staging; why risk 42; flow 96%; recovery 43m; blockers source custody: verify Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Post-fix monitor: proving; target risk below baseline; flow above baseline; result -4 risk; \+5% flow; rollback watch for rebound/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Watchlist: active; primary rebound watch; owner Charging source owner; trigger watch for rebound; escalation reopen if target misses/);
@@ -374,6 +387,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_justification,"risk 42; flow 96%; recovery 43m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_evidence_gap,"Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/fix_expected_effect,"-4 risk; \+5% flow"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/justification_status,"validated"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/justification_approval_gate,"source custody: verify Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/dossier_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/postfix_status,"proving"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/watchlist_status,"active"/);

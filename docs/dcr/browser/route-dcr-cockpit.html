@@ -786,6 +786,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Fix Justification</h2>
+            <span class="badge info" id="justification-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Fix justification">
+            <div class="metric"><span>Failure</span><strong id="justification-failure">monitoring</strong></div>
+            <div class="metric"><span>Fix</span><strong id="justification-fix">continue monitoring</strong></div>
+            <div class="metric"><span>Basis</span><strong id="justification-basis">threshold watch</strong></div>
+            <div class="metric"><span>Expected</span><strong id="justification-expected">pending</strong></div>
+            <div class="metric"><span>Proof Gap</span><strong id="justification-proof">source custody</strong></div>
+            <div class="metric"><span>Approval Gate</span><strong id="justification-gate">owner review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="justification-boundary">justification only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>Decision Dossier</h2>
             <span class="badge info" id="dossier-status">draft</span>
           </div>
@@ -2234,6 +2250,37 @@
       document.getElementById("fix-boundary").textContent = fix.boundary;
     }
 
+    function fixJustification() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const escalation = sourceEscalation();
+      const approval = ownerApprovalPacket();
+      return {
+        status: fix.status,
+        failure: `${maintenance.priority} ${maintenance.failure}`,
+        fix: fix.scope,
+        basis: maintenance.thresholds === "none crossed" ? maintenance.justification : maintenance.thresholds,
+        expected: fix.effect,
+        proof: maintenance.evidenceGap,
+        gate: fix.status === "validated" ? escalation.packet : approval.decision,
+        boundary: "justification only; owner approves fixes"
+      };
+    }
+
+    function renderFixJustification() {
+      const justification = fixJustification();
+      const status = document.getElementById("justification-status");
+      status.textContent = justification.status;
+      status.className = `badge ${justification.status === "validated" ? "ok" : justification.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("justification-failure").textContent = justification.failure;
+      document.getElementById("justification-fix").textContent = justification.fix;
+      document.getElementById("justification-basis").textContent = justification.basis;
+      document.getElementById("justification-expected").textContent = justification.expected;
+      document.getElementById("justification-proof").textContent = justification.proof;
+      document.getElementById("justification-gate").textContent = justification.gate;
+      document.getElementById("justification-boundary").textContent = justification.boundary;
+    }
+
     function decisionDossier() {
       const maintenance = maintenanceCase();
       const fix = fixPackage();
@@ -2547,6 +2594,7 @@
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
       const fix = fixPackage();
+      const justification = fixJustification();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
@@ -2622,6 +2670,14 @@
         ["fix_basis", fix.basis],
         ["fix_approval", fix.approval],
         ["fix_boundary", fix.boundary],
+        ["justification_status", justification.status],
+        ["justification_failure", justification.failure],
+        ["justification_fix", justification.fix],
+        ["justification_basis", justification.basis],
+        ["justification_expected", justification.expected],
+        ["justification_proof_gap", justification.proof],
+        ["justification_approval_gate", justification.gate],
+        ["justification_boundary", justification.boundary],
         ["dossier_status", dossier.status],
         ["dossier_decision", dossier.decision],
         ["dossier_alternatives", dossier.alternatives],
@@ -2763,6 +2819,7 @@
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
       const fix = fixPackage();
+      const justification = fixJustification();
       const dossier = decisionDossier();
       const postFix = postFixMonitor();
       const watch = watchlist();
@@ -2800,6 +2857,7 @@
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
         `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
+        `Fix justification: ${justification.status}; failure ${justification.failure}; basis ${justification.basis}; expected ${justification.expected}; gate ${justification.gate}`,
         `Dossier: decision ${dossier.decision}; why ${dossier.why}; blockers ${dossier.blockers}; next proof ${dossier.proof}`,
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
         `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
@@ -3058,6 +3116,7 @@
       renderOperationsCadence();
       renderMaintenanceCase();
       renderFixPackage();
+      renderFixJustification();
       renderDecisionDossier();
       renderPostFixMonitor();
       renderWatchlist();
@@ -3214,6 +3273,7 @@
         operationsCadence: operationsCadence(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
+        fixJustification: fixJustification(),
         dossier: decisionDossier(),
         postFix: postFixMonitor(),
         watchlist: watchlist(),
