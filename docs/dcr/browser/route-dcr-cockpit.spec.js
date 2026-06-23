@@ -21,6 +21,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
     await expect(page.getByLabel("Run summary")).toContainText("baseline");
     await expect(page.locator("#summary-outcome")).toHaveText("standby");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/ROUTE DCR shift handoff - 00:00/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify 511 closure feed/);
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
     await expect(page.getByLabel("Evidence gates")).toContainText("511 closure feed");
     await expect(page.locator("#gate-count")).toHaveText("0/3 ready");
@@ -123,9 +125,17 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#summary-flow-change")).toHaveText("+5%");
     await expect(page.locator("#summary-evidence-ready")).toHaveText("1/3");
     await expect(page.locator("#summary-pilot-value")).toHaveText("proof-ready");
+    await expect(page.locator("#handoff-status")).toHaveText("mitigated");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
+
+    const handoffPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download TXT" }).click();
+    const handoffDownload = await handoffPromise;
+    expect(handoffDownload.suggestedFilename()).toBe("route-dcr-shift-handoff.txt");
   });
 
   test("express payment signal creates a bounded service advisory", async ({ page }) => {

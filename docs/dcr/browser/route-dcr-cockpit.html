@@ -761,6 +761,18 @@
               <button type="button" id="download-readout">Download CSV</button>
             </div>
           </section>
+
+          <section class="panel">
+            <div class="log-top">
+              <h2>Shift Handoff</h2>
+              <span class="badge info" id="handoff-status">standby</span>
+            </div>
+            <textarea id="handoff" class="readout" aria-label="Shift handoff" readonly></textarea>
+            <div class="readout-actions">
+              <button type="button" id="copy-handoff">Copy</button>
+              <button type="button" id="download-handoff">Download TXT</button>
+            </div>
+          </section>
         </div>
       </aside>
     </main>
@@ -1379,6 +1391,42 @@
       document.getElementById("readout").value = rows.map(([key, value]) => `${key},${csvCell(value)}`).join("\n");
     }
 
+    function handoffText() {
+      const metrics = computeMetrics();
+      const summary = runSummary();
+      const account = accountProfiles[state.account];
+      const openActions = openActionEvents();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
+      const approvedSwitches = state.decisions.filter((item) => item.status === "approved").map((item) => item.label);
+      const blockedSwitches = state.decisions.filter((item) => item.status === "blocked").map((item) => `${item.label}: ${item.boundary}`);
+      const nextAction = openActions[0]
+        ? `${switchLabels[openActions[0].action]} for ${openActions[0].label}`
+        : missingEvidence[0]
+          ? `verify ${missingEvidence[0].label}`
+          : "continue monitoring";
+      return [
+        `ROUTE DCR shift handoff - ${formatClock()}`,
+        `Account: ${account.name} / ${account.org}`,
+        `Scenario: ${currentScenario().name}`,
+        `Outcome: ${summary.outcome}; pilot value: ${summary.pilotValue}`,
+        `Metrics: risk ${metrics.risk} (${formatSigned(summary.riskChange)}), flow ${metrics.flow}% (${formatSigned(summary.flowChange)}%), evidence ${summary.evidenceReady}/${summary.evidenceTotal}`,
+        `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
+        `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
+        `Held switches: ${blockedSwitches.join("; ") || "none"}`,
+        `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
+        `Next action: ${nextAction}`,
+        "Boundary: advisory simulation only; field commands, legal detours, public claims, EV availability, pricing authority, revenue guarantee, ROI, and incident command remain outside ROUTE unless owner-approved."
+      ].join("\n");
+    }
+
+    function renderHandoff() {
+      const summary = runSummary();
+      const status = document.getElementById("handoff-status");
+      status.textContent = summary.outcome;
+      status.className = `badge ${summary.outcome === "mitigated" ? "ok" : summary.outcome === "source-held" ? "risk" : "info"}`;
+      document.getElementById("handoff").value = handoffText();
+    }
+
     function renderLog() {
       const root = document.getElementById("ops-log");
       root.innerHTML = "";
@@ -1492,6 +1540,7 @@
       renderDecisions();
       renderRunSummary();
       renderReadout();
+      renderHandoff();
       renderLog();
       renderBoundary();
       renderRole();
@@ -1804,6 +1853,18 @@
       URL.revokeObjectURL(url);
     }
 
+    function downloadHandoff() {
+      const blob = new Blob([document.getElementById("handoff").value], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "route-dcr-shift-handoff.txt";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
     document.getElementById("scenario-select").addEventListener("change", (event) => {
       state.scenario = event.target.value;
       resetScenario();
@@ -1834,6 +1895,10 @@
       await navigator.clipboard.writeText(document.getElementById("readout").value);
     });
     document.getElementById("download-readout").addEventListener("click", downloadReadout);
+    document.getElementById("copy-handoff").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(document.getElementById("handoff").value);
+    });
+    document.getElementById("download-handoff").addEventListener("click", downloadHandoff);
 
     for (const button of document.querySelectorAll("button[data-inject]")) {
       button.addEventListener("click", () => injectSignal(button.dataset.inject));
