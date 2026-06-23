@@ -318,6 +318,15 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#counterfactual-reason")).toHaveText("turns failures into accountable source work");
     await expect(page.locator("#counterfactual-gap")).toHaveText("held by 511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#counterfactual-boundary")).toHaveText("counterfactual value is simulated; no ROI, revenue, or guaranteed SLA claim");
+    await expect(page.getByLabel("Renewal operating contract")).toContainText("Serviceactive monitoring, DCR run decisions, source-gap governance");
+    await expect(page.locator("#operating-contract-status")).toHaveText("gated");
+    await expect(page.locator("#operating-contract-cadence")).toHaveText("0m; clear 3 source holds");
+    await expect(page.locator("#operating-contract-rights")).toHaveText("operator recommends; 511 closure feed clears source custody");
+    await expect(page.locator("#operating-contract-resilience")).toHaveText("P2 weather-responsive split + EV staging; +0 risk; +0% flow");
+    await expect(page.locator("#operating-contract-deliverable")).toHaveText("continue proof run; source custody");
+    await expect(page.locator("#operating-contract-proof")).toHaveText("watch; 0 resolved; 0/3 evidence");
+    await expect(page.locator("#operating-contract-trigger")).toHaveText("verify 511 closure feed");
+    await expect(page.locator("#operating-contract-boundary")).toHaveText("operating contract is simulated; no payment, ROI, SLA guarantee, or field authority");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -371,6 +380,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_decision,"clear source custody before sponsor decision"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_status,"watch"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_delta,"\+0 risk; \+0% flow"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_status,"gated"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_resilience_work,"P2 weather-responsive split \+ EV staging; \+0 risk; \+0% flow"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -797,6 +808,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#counterfactual-reason")).toHaveText("keeps SLA proof and source gaps visible");
     await expect(page.locator("#counterfactual-gap")).toHaveText("held by Charging source owner; Operator message owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Counterfactual value: proven; without unmanaged corridor reliability failure; risk 46; flow 91%; with monitored maintained drive SLA; P3 maintain watch; risk 42; flow 96%; delta -4 risk; \+5% flow; avoided 1 resolved; clear source custody before sponsor decision; reason keeps SLA proof and source gaps visible; gap held by Charging source owner; Operator message owner/);
+    await expect(page.locator("#operating-contract-status")).toHaveText("proof-run");
+    await expect(page.locator("#operating-contract-cadence")).toHaveText("0m; clear 2 source holds");
+    await expect(page.locator("#operating-contract-rights")).toHaveText("operator recommends; Charging source owner clears source custody");
+    await expect(page.locator("#operating-contract-resilience")).toHaveText("P3 weather-responsive split + EV staging; -4 risk; +5% flow");
+    await expect(page.locator("#operating-contract-deliverable")).toHaveText("renew monitored DCR cockpit; mountain corridor + charging sources");
+    await expect(page.locator("#operating-contract-proof")).toHaveText("proven; 1 resolved; 1/3 evidence");
+    await expect(page.locator("#operating-contract-trigger")).toHaveText("verify Charging source owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Renewal operating contract: proof-run; service active monitoring, DCR run decisions, source-gap governance; cadence 0m; clear 2 source holds; rights operator recommends; Charging source owner clears source custody; resilience P3 weather-responsive split \+ EV staging; -4 risk; \+5% flow; deliverable renew monitored DCR cockpit; mountain corridor \+ charging sources; proof proven; 1 resolved; 1\/3 evidence; trigger verify Charging source owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -901,6 +920,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_decision_owner,"Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_status,"proven"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/counterfactual_value_delta,"-4 risk; \+5% flow"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_status,"proof-run"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/operating_contract_deliverable,"renew monitored DCR cockpit; mountain corridor \+ charging sources"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
