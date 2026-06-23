@@ -758,6 +758,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Renewal Proof Summary</h2>
+            <span class="badge info" id="renewal-proof-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Renewal proof summary">
+            <div class="metric"><span>Sponsor Proof</span><strong id="renewal-proof-sponsor">pending</strong></div>
+            <div class="metric"><span>Safe Claim</span><strong id="renewal-proof-safe">bounded</strong></div>
+            <div class="metric"><span>Held Claims</span><strong id="renewal-proof-held">ROI</strong></div>
+            <div class="metric"><span>Next Ask</span><strong id="renewal-proof-ask">continue proof</strong></div>
+            <div class="metric"><span>Coverage</span><strong id="renewal-proof-coverage">scenario</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="renewal-proof-boundary">renewal only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2607,6 +2622,37 @@
       document.getElementById("release-ledger-boundary").textContent = ledger.boundary;
     }
 
+    function renewalProofSummary(ledger = releaseProofLedger()) {
+      const renewal = renewalValueCase();
+      const status = ledger.status === "held"
+        ? "held"
+        : renewal.status === "renew"
+          ? "ready"
+          : "work";
+      return {
+        status,
+        sponsorProof: ledger.status === "held" ? "proof held until source custody clears" : `${ledger.id}; ${renewal.proof}`,
+        safeClaim: ledger.status === "held" ? "readiness gaps identified" : "monitored DCR proof retained",
+        heldClaims: "ROI; guaranteed SLA; traffic control; EV availability",
+        ask: ledger.status === "held" ? "continue proof run" : renewal.ask,
+        coverage: renewal.coverage,
+        boundary: "renewal summary only; no ROI or SLA guarantee"
+      };
+    }
+
+    function renderRenewalProofSummary() {
+      const proof = renewalProofSummary();
+      const status = document.getElementById("renewal-proof-status");
+      status.textContent = proof.status;
+      status.className = `badge ${proof.status === "ready" ? "ok" : proof.status === "held" ? "risk" : "watch"}`;
+      document.getElementById("renewal-proof-sponsor").textContent = proof.sponsorProof;
+      document.getElementById("renewal-proof-safe").textContent = proof.safeClaim;
+      document.getElementById("renewal-proof-held").textContent = proof.heldClaims;
+      document.getElementById("renewal-proof-ask").textContent = proof.ask;
+      document.getElementById("renewal-proof-coverage").textContent = proof.coverage;
+      document.getElementById("renewal-proof-boundary").textContent = proof.boundary;
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -3281,6 +3327,7 @@
       const fieldPreview = fieldPreviewPacket(release);
       const readiness = releaseReadinessChecklist(release, fieldPreview);
       const ledger = releaseProofLedger(readiness);
+      const renewalProof = renewalProofSummary(ledger);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3395,6 +3442,13 @@
         ["release_ledger_renewal", ledger.renewal],
         ["release_ledger_review", ledger.review],
         ["release_ledger_boundary", ledger.boundary],
+        ["renewal_proof_status", renewalProof.status],
+        ["renewal_proof_sponsor", renewalProof.sponsorProof],
+        ["renewal_proof_safe_claim", renewalProof.safeClaim],
+        ["renewal_proof_held_claims", renewalProof.heldClaims],
+        ["renewal_proof_ask", renewalProof.ask],
+        ["renewal_proof_coverage", renewalProof.coverage],
+        ["renewal_proof_boundary", renewalProof.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3586,6 +3640,7 @@
       const fieldPreview = fieldPreviewPacket(release);
       const readiness = releaseReadinessChecklist(release, fieldPreview);
       const ledger = releaseProofLedger(readiness);
+      const renewalProof = renewalProofSummary(ledger);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3633,6 +3688,7 @@
         `Field preview packet: ${fieldPreview.status}; signage ${fieldPreview.signage}; route ${fieldPreview.route}; EV ${fieldPreview.ev}; hold ${fieldPreview.hold}`,
         `Release readiness checklist: ${readiness.status}; source ${readiness.source}; owner ${readiness.owner}; rollback ${readiness.rollback}; claims ${readiness.claims}; proof ${readiness.proof}`,
         `Release proof ledger: ${ledger.status}; id ${ledger.id}; evidence ${ledger.evidence}; proof ${ledger.proof}; renewal ${ledger.renewal}; review ${ledger.review}`,
+        `Renewal proof summary: ${renewalProof.status}; sponsor proof ${renewalProof.sponsorProof}; safe claim ${renewalProof.safeClaim}; ask ${renewalProof.ask}; held ${renewalProof.heldClaims}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3893,6 +3949,7 @@
       renderFieldPreviewPacket();
       renderReleaseReadinessChecklist();
       renderReleaseProofLedger();
+      renderRenewalProofSummary();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -4059,6 +4116,7 @@
         fieldPreview: fieldPreviewPacket(),
         releaseReadiness: releaseReadinessChecklist(),
         releaseProofLedger: releaseProofLedger(),
+        renewalProofSummary: renewalProofSummary(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
