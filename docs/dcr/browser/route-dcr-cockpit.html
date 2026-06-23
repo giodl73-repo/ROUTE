@@ -664,6 +664,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Priority Cascade</h2>
+            <span class="badge info" id="priority-cascade-status">simulated</span>
+          </div>
+          <div class="metrics" aria-label="Priority cascade">
+            <div class="metric"><span>Primary Priority</span><strong id="priority-cascade-primary">monitor</strong></div>
+            <div class="metric"><span>SLA State</span><strong id="priority-cascade-sla">pending</strong></div>
+            <div class="metric"><span>Violation Basis</span><strong id="priority-cascade-violation">none</strong></div>
+            <div class="metric"><span>Mitigation Decision</span><strong id="priority-cascade-mitigation">monitor</strong></div>
+            <div class="metric"><span>Release Gate</span><strong id="priority-cascade-gate">operator review</strong></div>
+            <div class="metric"><span>Sponsor Step</span><strong id="priority-cascade-sponsor">proof run</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="priority-cascade-boundary">advisory only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2273,6 +2289,20 @@
       };
     }
 
+    function priorityCascade(drive = driveSlaPriorities(), sla = operatorSla(), sponsor = sponsorPacketDraft()) {
+      const maintained = drive.status === "maintained";
+      return {
+        status: maintained ? "maintained" : "active",
+        primary: `${drive.priority}; ${drive.endpoints}`,
+        sla: `${sla.status}; detect ${formatSla(sla.detect)}; mitigate ${formatSla(sla.mitigate)}`,
+        violation: drive.violation,
+        mitigation: maintained ? "monitor rebound and preserve proof" : drive.mitigation,
+        gate: drive.gate,
+        sponsor: sponsor.status === "ready" ? sponsor.next : `${sponsor.status}: ${sponsor.next}`,
+        boundary: "priority cascade only; operator and owner approval still required"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -2798,6 +2828,20 @@
         drive.status === "maintained" ? "monitor" : "operator review";
       document.getElementById("alert-boundary").className =
         `badge ${drive.status === "maintained" ? "ok" : "risk"}`;
+    }
+
+    function renderPriorityCascade() {
+      const cascade = priorityCascade();
+      const status = document.getElementById("priority-cascade-status");
+      status.textContent = cascade.status;
+      status.className = `badge ${cascade.status === "maintained" ? "ok" : "risk"}`;
+      document.getElementById("priority-cascade-primary").textContent = cascade.primary;
+      document.getElementById("priority-cascade-sla").textContent = cascade.sla;
+      document.getElementById("priority-cascade-violation").textContent = cascade.violation;
+      document.getElementById("priority-cascade-mitigation").textContent = cascade.mitigation;
+      document.getElementById("priority-cascade-gate").textContent = cascade.gate;
+      document.getElementById("priority-cascade-sponsor").textContent = cascade.sponsor;
+      document.getElementById("priority-cascade-boundary").textContent = cascade.boundary;
     }
 
     function uniqueLabels(items) {
@@ -3363,6 +3407,7 @@
       const score = scenarioScorecard();
       const sla = operatorSla();
       const drive = driveSlaPriorities();
+      const cascade = priorityCascade(drive, sla);
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3432,6 +3477,14 @@
         ["drive_sla_cause", drive.cause],
         ["drive_sla_mitigation", drive.mitigation],
         ["drive_sla_release_gate", drive.gate],
+        ["priority_cascade_status", cascade.status],
+        ["priority_cascade_primary", cascade.primary],
+        ["priority_cascade_sla", cascade.sla],
+        ["priority_cascade_violation", cascade.violation],
+        ["priority_cascade_mitigation", cascade.mitigation],
+        ["priority_cascade_gate", cascade.gate],
+        ["priority_cascade_sponsor_step", cascade.sponsor],
+        ["priority_cascade_boundary", cascade.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3684,6 +3737,7 @@
       const summary = runSummary();
       const sla = operatorSla();
       const drive = driveSlaPriorities();
+      const cascade = priorityCascade(drive, sla);
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3733,6 +3787,7 @@
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
+        `Priority cascade: ${cascade.status}; primary ${cascade.primary}; SLA ${cascade.sla}; violation ${cascade.violation}; mitigation ${cascade.mitigation}; gate ${cascade.gate}; sponsor ${cascade.sponsor}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -3997,6 +4052,7 @@
       renderScorecard();
       renderOperatorSla();
       renderDriveSlaPriorities();
+      renderPriorityCascade();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4163,6 +4219,7 @@
         scorecard: scenarioScorecard(),
         sla: operatorSla(),
         driveSla: driveSlaPriorities(),
+        priorityCascade: priorityCascade(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),

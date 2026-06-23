@@ -38,6 +38,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-priority")).toHaveText("P2 mitigate risk");
     await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#drive-sla-mitigation")).toHaveText("weather-responsive split + EV staging");
+    await expect(page.getByLabel("Priority cascade")).toContainText("Primary PriorityP2 mitigate risk; T1 west gateway -> T1 east gateway");
+    await expect(page.locator("#priority-cascade-status")).toHaveText("active");
+    await expect(page.locator("#priority-cascade-sla")).toHaveText("simulated; detect pending; mitigate pending");
+    await expect(page.locator("#priority-cascade-violation")).toHaveText("promise risk 46>=45");
+    await expect(page.locator("#priority-cascade-mitigation")).toHaveText("weather-responsive split + EV staging");
+    await expect(page.locator("#priority-cascade-gate")).toHaveText("verify 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#priority-cascade-sponsor")).toHaveText("held: clear proof gaps before sponsor ask");
+    await expect(page.locator("#priority-cascade-boundary")).toHaveText("priority cascade only; operator and owner approval still required");
     await expect(page.getByLabel("US tier map validation")).toContainText("SLA RowSAC -> SLC");
     await expect(page.locator("#tier-map-status")).toHaveText("breach");
     await expect(page.locator("#tier-map-source")).toHaveText("maps/all-tiers-v2.png + data/beck-stop-sla.csv");
@@ -195,6 +203,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_boundary,"simulated timing; no guaranteed SLA"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"violated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_current,"105m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/priority_cascade_status,"active"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/priority_cascade_sponsor_step,"held: clear proof gaps before sponsor ask"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -411,6 +421,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-priority")).toHaveText("P3 maintain watch");
     await expect(page.locator("#drive-sla-violation")).toHaveText("none");
     await expect(page.locator("#drive-sla-gate")).toHaveText("verify Charging source owner; Operator message owner");
+    await expect(page.locator("#priority-cascade-status")).toHaveText("maintained");
+    await expect(page.locator("#priority-cascade-primary")).toHaveText("P3 maintain watch; T1 west gateway -> T1 east gateway");
+    await expect(page.locator("#priority-cascade-sla")).toHaveText("mitigated; detect 0m; mitigate 0m");
+    await expect(page.locator("#priority-cascade-violation")).toHaveText("none");
+    await expect(page.locator("#priority-cascade-mitigation")).toHaveText("monitor rebound and preserve proof");
+    await expect(page.locator("#priority-cascade-sponsor")).toHaveText("decide renewal candidate");
     await expect(page.locator("#recommended-posture")).toHaveText("weather-responsive split + EV staging; continue monitoring");
     await expect(page.locator("#alert-title")).toHaveText("maintained: P3 maintain watch");
     await expect(page.locator("#alert-boundary")).toHaveText("monitor");
@@ -488,6 +504,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Drive SLA: maintained; T1 west gateway -> T1 east gateway; current 97m against 95m \+5m buffer; priority P3 maintain watch; violation none; mitigation weather-responsive split \+ EV staging/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Priority cascade: maintained; primary P3 maintain watch; T1 west gateway -> T1 east gateway; SLA mitigated; detect 0m; mitigate 0m; violation none; mitigation monitor rebound and preserve proof; gate verify Charging source owner; Operator message owner; sponsor decide renewal candidate/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -556,6 +573,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/time_to_mitigate,"0m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_status,"maintained"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_violation,"none"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/priority_cascade_status,"maintained"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/priority_cascade_mitigation,"monitor rebound and preserve proof"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
