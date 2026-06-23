@@ -89,11 +89,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#network-flow")).toHaveText("91%");
     await expect(page.locator("#timeline-count")).toHaveText("0 applied");
 
-    await page.getByRole("button", { name: "Step" }).click();
+    await page.getByRole("button", { name: "Step", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("46");
     await expect(page.locator("#timeline-count")).toHaveText("0 applied");
 
-    await page.getByRole("button", { name: "Step" }).click();
+    await page.getByRole("button", { name: "Step", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("51");
     await expect(page.locator("#network-flow")).toHaveText("89%");
     await expect(page.locator("#risk-delta")).toHaveText("+5");
@@ -136,6 +136,34 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Download TXT" }).click();
     const handoffDownload = await handoffPromise;
     expect(handoffDownload.suggestedFilename()).toBe("route-dcr-shift-handoff.txt");
+  });
+
+  test("demo director runs the guided DCR sequence", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
+
+    await page.getByRole("button", { name: "Next Demo Step" }).click();
+    await expect(page.locator("#clock")).toHaveText("00:10");
+    await expect(page.locator("#director-status")).toHaveText("Applied event: Snow band reduces alternate reliability.");
+    await expect(page.locator("#action-count")).toHaveText("1 open");
+
+    await page.getByRole("button", { name: "Next Demo Step" }).click();
+    await expect(page.getByText("Reroute advisory created from simulated signal review.")).toBeVisible();
+    await expect(page.locator("#director-status")).toHaveText("Created switch packet: Reroute advisory.");
+
+    await page.getByRole("button", { name: "Next Demo Step" }).click();
+    await expect(page.getByText("Held for source custody: 511 closure feed.")).toBeVisible();
+    await expect(page.locator("#summary-outcome")).toHaveText("source-held");
+
+    await page.getByRole("button", { name: "Next Demo Step" }).click();
+    await expect(page.locator("#gate-count")).toHaveText("1/3 ready");
+    await expect(page.locator("#director-status")).toHaveText("Verified source gate: 511 closure feed.");
+
+    await page.getByRole("button", { name: "Next Demo Step" }).click();
+    await expect(page.locator("#summary-outcome")).toHaveText("mitigated");
+    await expect(page.locator("#action-count")).toHaveText("0 open");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
   });
 
   test("express payment signal creates a bounded service advisory", async ({ page }) => {
@@ -193,8 +221,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Marta Ruiz at District Operations. Local demo account; no authentication backend.")).toBeVisible();
 
     await page.getByLabel("Scenario case").selectOption("managed-lane");
-    await page.getByRole("button", { name: "Step" }).click();
-    await page.getByRole("button", { name: "Step" }).click();
+    await page.getByRole("button", { name: "Step", exact: true }).click();
+    await page.getByRole("button", { name: "Step", exact: true }).click();
     await expect(page.getByLabel("Timeline queue")).toContainText("Clearance estimate slips by one cycle");
     await page.getByRole("button", { name: "Save Run" }).click();
     await expect(page.locator("#saved-run-status")).toContainText("Saved Managed-lane incident recovery for Marta Ruiz");

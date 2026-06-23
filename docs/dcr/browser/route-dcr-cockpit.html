@@ -542,6 +542,14 @@
           </section>
 
           <section class="panel">
+            <h2>Demo Director</h2>
+            <div class="controls">
+              <button type="button" id="director-step">Next Demo Step</button>
+            </div>
+            <p class="subhead" id="director-status">Ready to run guided DCR sequence.</p>
+          </section>
+
+          <section class="panel">
             <h2>Inject Signal</h2>
             <div class="controls" aria-label="Inject signal controls">
               <button type="button" data-inject="closure">Closure</button>
@@ -976,6 +984,7 @@
       manualEvents: [],
       resolvedEvents: [],
       verifiedEvidence: [],
+      directorNote: "Ready to run guided DCR sequence.",
       log: ["00:00 DCR started in advisory simulation mode."]
     };
 
@@ -1483,6 +1492,14 @@
       return false;
     }
 
+    function approvalRoleFor(kind) {
+      return kind === "express" ? "payment" : "operator";
+    }
+
+    function renderDirector() {
+      document.getElementById("director-status").textContent = state.directorNote;
+    }
+
     function renderRole() {
       document.getElementById("role-select").value = state.activeRole;
       document.getElementById("role-boundary").textContent =
@@ -1547,6 +1564,7 @@
       renderAccount();
       renderRunLibrary();
       renderPaymentTier();
+      renderDirector();
     }
 
     function stepSimulation() {
@@ -1597,6 +1615,7 @@
       state.manualEvents = [];
       state.resolvedEvents = [];
       state.verifiedEvidence = [];
+      state.directorNote = "Ready to run guided DCR sequence.";
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
       renderAll();
     }
@@ -1606,6 +1625,52 @@
       state.activeRole = accountProfiles[accountId].role;
       state.log.push(`${formatClock()} account switched to ${accountProfiles[accountId].name}.`);
       renderAll();
+    }
+
+    function runDirectorStep() {
+      setRunning(false);
+      const firstEvent = currentScenario().timeline[0];
+      if (!state.appliedEvents.includes(firstEvent.id)) {
+        state.minute = Math.max(state.minute, firstEvent.minute);
+        applyTimelineEvents();
+        state.directorNote = `Applied event: ${firstEvent.label}.`;
+        state.log.push(`${formatClock()} demo director advanced to first timeline event.`);
+        renderAll();
+        return;
+      }
+
+      const open = openActionEvents()[0];
+      if (!open) {
+        state.directorNote = "Run is mitigated or waiting only on scheduled future events; handoff is ready.";
+        state.log.push(`${formatClock()} demo director completed guided sequence.`);
+        renderAll();
+        return;
+      }
+
+      const decision = state.decisions.find((item) => item.kind === open.action);
+      if (!decision) {
+        state.directorNote = `Created switch packet: ${switchLabels[open.action]}.`;
+        createDecision(open.action);
+        return;
+      }
+
+      const missing = missingEvidenceFor(open.action);
+      if (missing.length && decision.status !== "blocked") {
+        state.activeRole = approvalRoleFor(open.action);
+        state.directorNote = `Testing source-custody hold for ${missing[0].label}.`;
+        approveCurrent();
+        return;
+      }
+
+      if (missing.length) {
+        state.directorNote = `Verified source gate: ${missing[0].label}.`;
+        verifyEvidence(missing[0].id);
+        return;
+      }
+
+      state.activeRole = approvalRoleFor(open.action);
+      state.directorNote = `Approved mitigation: ${switchLabels[open.action]}.`;
+      approveCurrent();
     }
 
     function runSnapshot() {
@@ -1889,6 +1954,7 @@
     document.getElementById("play-pause").addEventListener("click", () => setRunning(!state.running));
     document.getElementById("step").addEventListener("click", stepSimulation);
     document.getElementById("reset").addEventListener("click", resetScenario);
+    document.getElementById("director-step").addEventListener("click", runDirectorStep);
     document.getElementById("approve-operator").addEventListener("click", approveCurrent);
     document.getElementById("hold-operator").addEventListener("click", holdCurrent);
     document.getElementById("copy-readout").addEventListener("click", async () => {
