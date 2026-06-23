@@ -856,6 +856,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Decision Audit</h2>
+            <span class="badge info" id="decision-audit-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Decision audit">
+            <div class="metric"><span>Trigger</span><strong id="decision-audit-trigger">signal</strong></div>
+            <div class="metric"><span>Rationale</span><strong id="decision-audit-rationale">pending</strong></div>
+            <div class="metric"><span>Evidence Basis</span><strong id="decision-audit-evidence">pending</strong></div>
+            <div class="metric"><span>Recommendation</span><strong id="decision-audit-recommendation">monitor</strong></div>
+            <div class="metric"><span>Blocked By</span><strong id="decision-audit-blocker">none</strong></div>
+            <div class="metric"><span>Audit ID</span><strong id="decision-audit-id">DCR-AUDIT</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="decision-audit-boundary">audit only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2686,6 +2702,25 @@
       };
     }
 
+    function decisionAudit() {
+      const criteria = releaseCriteria();
+      const justification = fixJustification();
+      const maintenance = maintenanceCase();
+      const trace = tierDecisionTrace();
+      const status = criteria.status === "release-review" ? "reviewable" : "held";
+      const auditId = `DCR-AUDIT-${state.scenario.toUpperCase()}-${criteria.status.toUpperCase()}`;
+      return {
+        status,
+        trigger: criteria.decision,
+        rationale: `${justification.failure}; ${maintenance.justification}`,
+        evidence: `${criteria.evidence}; ${trace.evidence}`,
+        recommendation: status === "reviewable" ? "route to owner approval" : criteria.decision,
+        blocker: status === "reviewable" ? "none" : criteria.source,
+        id: auditId,
+        boundary: "decision audit only; recommendations require owner approval before field release"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3381,6 +3416,20 @@
       document.getElementById("release-criteria-boundary").textContent = criteria.boundary;
     }
 
+    function renderDecisionAudit() {
+      const audit = decisionAudit();
+      const status = document.getElementById("decision-audit-status");
+      status.textContent = audit.status;
+      status.className = `badge ${audit.status === "reviewable" ? "ok" : "info"}`;
+      document.getElementById("decision-audit-trigger").textContent = audit.trigger;
+      document.getElementById("decision-audit-rationale").textContent = audit.rationale;
+      document.getElementById("decision-audit-evidence").textContent = audit.evidence;
+      document.getElementById("decision-audit-recommendation").textContent = audit.recommendation;
+      document.getElementById("decision-audit-blocker").textContent = audit.blocker;
+      document.getElementById("decision-audit-id").textContent = audit.id;
+      document.getElementById("decision-audit-boundary").textContent = audit.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3956,6 +4005,7 @@
       const nextCycle = nextCycleSimulation();
       const clearancePathState = clearancePath();
       const releaseCriteriaState = releaseCriteria();
+      const decisionAuditState = decisionAudit();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4121,6 +4171,14 @@
         ["release_criteria_decision", releaseCriteriaState.decision],
         ["release_criteria_next_evidence", releaseCriteriaState.evidence],
         ["release_criteria_boundary", releaseCriteriaState.boundary],
+        ["decision_audit_status", decisionAuditState.status],
+        ["decision_audit_trigger", decisionAuditState.trigger],
+        ["decision_audit_rationale", decisionAuditState.rationale],
+        ["decision_audit_evidence_basis", decisionAuditState.evidence],
+        ["decision_audit_recommendation", decisionAuditState.recommendation],
+        ["decision_audit_blocked_by", decisionAuditState.blocker],
+        ["decision_audit_id", decisionAuditState.id],
+        ["decision_audit_boundary", decisionAuditState.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4385,6 +4443,7 @@
       const nextCycle = nextCycleSimulation();
       const clearancePathState = clearancePath();
       const releaseCriteriaState = releaseCriteria();
+      const decisionAuditState = decisionAudit();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4446,6 +4505,7 @@
         `Next-cycle simulation: ${nextCycle.status}; clear ${nextCycle.clear}; readiness ${nextCycle.readiness}; remaining ${nextCycle.remaining}; posture ${nextCycle.sla}; move ${nextCycle.move}; release ${nextCycle.release}`,
         `Clearance path: ${clearancePathState.status}; cycles ${clearancePathState.cycles}; sequence ${clearancePathState.sequence}; final readiness ${clearancePathState.readiness}; release ${clearancePathState.release}; sponsor ${clearancePathState.sponsor}; proof ${clearancePathState.proof}`,
         `Release criteria: ${releaseCriteriaState.status}; source ${releaseCriteriaState.source}; SLA ${releaseCriteriaState.sla}; owner ${releaseCriteriaState.owner}; claims ${releaseCriteriaState.claims}; decision ${releaseCriteriaState.decision}; evidence ${releaseCriteriaState.evidence}`,
+        `Decision audit: ${decisionAuditState.status}; trigger ${decisionAuditState.trigger}; rationale ${decisionAuditState.rationale}; evidence ${decisionAuditState.evidence}; recommendation ${decisionAuditState.recommendation}; blocked by ${decisionAuditState.blocker}; id ${decisionAuditState.id}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4722,6 +4782,7 @@
       renderNextCycleSimulation();
       renderClearancePath();
       renderReleaseCriteria();
+      renderDecisionAudit();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4900,6 +4961,7 @@
         nextCycleSimulation: nextCycleSimulation(),
         clearancePath: clearancePath(),
         releaseCriteria: releaseCriteria(),
+        decisionAudit: decisionAudit(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
