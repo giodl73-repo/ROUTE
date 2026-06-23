@@ -904,6 +904,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Sponsor Proof Packet</h2>
+            <span class="badge info" id="sponsor-proof-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Sponsor proof packet">
+            <div class="metric"><span>Offer</span><strong id="sponsor-proof-offer">continue proof</strong></div>
+            <div class="metric"><span>Proof Line</span><strong id="sponsor-proof-line">pending</strong></div>
+            <div class="metric"><span>Visible Value</span><strong id="sponsor-proof-value">visibility</strong></div>
+            <div class="metric"><span>Still Held</span><strong id="sponsor-proof-held">claims</strong></div>
+            <div class="metric"><span>Ask</span><strong id="sponsor-proof-ask">review</strong></div>
+            <div class="metric"><span>Next Milestone</span><strong id="sponsor-proof-next">source clearance</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="sponsor-proof-boundary">packet only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2794,6 +2810,24 @@
       };
     }
 
+    function sponsorProofPacket() {
+      const assurance = assuranceCase();
+      const proof = renewalProofSummary();
+      const sponsor = sponsorPacketDraft(proof);
+      const queue = evidenceQueue();
+      const held = assurance.status === "held";
+      return {
+        status: held ? "held" : sponsor.status,
+        offer: held ? "continue monitored proof run" : sponsor.ask,
+        proofLine: `${proof.sponsorProof}; ${assurance.proof}`,
+        value: assurance.value,
+        held: held ? `${queue.missing}; ${sponsor.held}` : sponsor.held,
+        ask: held ? "clear source custody before sponsor decision" : sponsor.next,
+        next: held ? queue.next : sponsor.next,
+        boundary: "sponsor proof packet only; no renewal, ROI, or SLA commitment"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3531,6 +3565,20 @@
       document.getElementById("assurance-case-boundary").textContent = assurance.boundary;
     }
 
+    function renderSponsorProofPacket() {
+      const packet = sponsorProofPacket();
+      const status = document.getElementById("sponsor-proof-status");
+      status.textContent = packet.status;
+      status.className = `badge ${packet.status === "ready" ? "ok" : packet.status === "held" ? "info" : "watch"}`;
+      document.getElementById("sponsor-proof-offer").textContent = packet.offer;
+      document.getElementById("sponsor-proof-line").textContent = packet.proofLine;
+      document.getElementById("sponsor-proof-value").textContent = packet.value;
+      document.getElementById("sponsor-proof-held").textContent = packet.held;
+      document.getElementById("sponsor-proof-ask").textContent = packet.ask;
+      document.getElementById("sponsor-proof-next").textContent = packet.next;
+      document.getElementById("sponsor-proof-boundary").textContent = packet.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4109,6 +4157,7 @@
       const decisionAuditState = decisionAudit();
       const signalConfidenceState = signalConfidence();
       const assurance = assuranceCase();
+      const sponsorProof = sponsorProofPacket();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4298,6 +4347,14 @@
         ["assurance_case_buyer_value", assurance.value],
         ["assurance_case_renewal_hook", assurance.renewal],
         ["assurance_case_boundary", assurance.boundary],
+        ["sponsor_proof_status", sponsorProof.status],
+        ["sponsor_proof_offer", sponsorProof.offer],
+        ["sponsor_proof_line", sponsorProof.proofLine],
+        ["sponsor_proof_visible_value", sponsorProof.value],
+        ["sponsor_proof_still_held", sponsorProof.held],
+        ["sponsor_proof_ask", sponsorProof.ask],
+        ["sponsor_proof_next_milestone", sponsorProof.next],
+        ["sponsor_proof_boundary", sponsorProof.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4565,6 +4622,7 @@
       const decisionAuditState = decisionAudit();
       const signalConfidenceState = signalConfidence();
       const assurance = assuranceCase();
+      const sponsorProof = sponsorProofPacket();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4629,6 +4687,7 @@
         `Decision audit: ${decisionAuditState.status}; trigger ${decisionAuditState.trigger}; rationale ${decisionAuditState.rationale}; evidence ${decisionAuditState.evidence}; recommendation ${decisionAuditState.recommendation}; blocked by ${decisionAuditState.blocker}; id ${decisionAuditState.id}`,
         `Signal confidence: ${signalConfidenceState.status}; grade ${signalConfidenceState.grade}; proof ${signalConfidenceState.proof}; action ${signalConfidenceState.action}; gap ${signalConfidenceState.gap}; refresh ${signalConfidenceState.refresh}; escalation ${signalConfidenceState.escalation}`,
         `Assurance case: ${assurance.status}; claim ${assurance.claim}; proof ${assurance.proof}; caveat ${assurance.caveat}; decision ${assurance.decision}; value ${assurance.value}; renewal ${assurance.renewal}`,
+        `Sponsor proof packet: ${sponsorProof.status}; offer ${sponsorProof.offer}; proof ${sponsorProof.proofLine}; value ${sponsorProof.value}; held ${sponsorProof.held}; ask ${sponsorProof.ask}; next ${sponsorProof.next}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4908,6 +4967,7 @@
       renderDecisionAudit();
       renderSignalConfidence();
       renderAssuranceCase();
+      renderSponsorProofPacket();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5089,6 +5149,7 @@
         decisionAudit: decisionAudit(),
         signalConfidence: signalConfidence(),
         assuranceCase: assuranceCase(),
+        sponsorProofPacket: sponsorProofPacket(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
