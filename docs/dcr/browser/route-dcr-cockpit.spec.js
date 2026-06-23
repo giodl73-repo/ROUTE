@@ -14,6 +14,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("traffic control, legal detour, SLA, EV availability")).toBeVisible();
     await expect(page.locator("#active-case")).toHaveText("Winter closure and EV stress");
     await expect(page.locator("#promise-risk")).toHaveText("46");
+    await expect(page.locator("#account-name")).toHaveText("Avery Chen");
     await expect(page.locator("#signal-count")).toHaveText("6 active");
     await expect(page.locator("#express-demand")).toHaveText("38%");
     await expect(page.locator("#paid-requests")).toHaveText("0");
@@ -108,5 +109,35 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Payment owner reviewed advisory. ROUTE still does not command field devices, set prices, or publish claims.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/active_role,"Payment owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/role_authority,"can approve express payment posture"/);
+  });
+
+  test("local accounts save and replay cockpit runs", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
+
+    await page.getByLabel("Account profile").selectOption("operator");
+    await expect(page.locator("#account-name")).toHaveText("Marta Ruiz");
+    await expect(page.getByLabel("Active role")).toHaveValue("operator");
+    await expect(page.getByText("Marta Ruiz at District Operations. Local demo account; no authentication backend.")).toBeVisible();
+
+    await page.getByLabel("Scenario case").selectOption("managed-lane");
+    await page.getByRole("button", { name: "Step" }).click();
+    await page.getByRole("button", { name: "Save Run" }).click();
+    await expect(page.locator("#saved-run-status")).toContainText("Saved Managed-lane incident recovery for Marta Ruiz");
+
+    await page.getByLabel("Account profile").selectOption("planner");
+    await page.getByLabel("Scenario case").selectOption("winter-closure");
+    await expect(page.locator("#account-name")).toHaveText("Avery Chen");
+
+    await page.getByRole("button", { name: "Load Last" }).click();
+    await expect(page.locator("#account-name")).toHaveText("Marta Ruiz");
+    await expect(page.locator("#active-case")).toHaveText("Managed-lane incident recovery");
+    await expect(page.locator("#clock")).toHaveText("00:05");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/account_name,"Marta Ruiz"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/account_org,"District Operations"/);
+
+    await page.getByRole("button", { name: "Clear Runs" }).click();
+    await expect(page.locator("#saved-run-status")).toHaveText("Saved runs cleared.");
   });
 });

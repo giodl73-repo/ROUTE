@@ -492,6 +492,25 @@
       <aside aria-label="Simulation controls">
         <div class="stack">
           <section class="panel">
+            <h2>Account</h2>
+            <label>Profile
+              <select id="account-select" aria-label="Account profile">
+                <option value="planner">Avery Chen - Planner</option>
+                <option value="operator">Marta Ruiz - Operator</option>
+                <option value="payment">Samir Patel - Payment owner</option>
+                <option value="executive">Dana Brooks - Executive sponsor</option>
+              </select>
+            </label>
+            <p class="subhead" id="account-boundary">Avery Chen at State Network Planning. Local demo account; no authentication backend.</p>
+            <div class="controls">
+              <button type="button" id="save-run">Save Run</button>
+              <button type="button" id="load-run">Load Last</button>
+              <button type="button" id="clear-runs" class="danger">Clear Runs</button>
+            </div>
+            <p class="subhead" id="saved-run-status">No saved run loaded.</p>
+          </section>
+
+          <section class="panel">
             <h2>Scenario</h2>
             <div class="control-grid">
               <label>Case
@@ -571,6 +590,7 @@
       <section class="cockpit" aria-label="DCR cockpit board">
         <div class="metrics" aria-label="Service metrics">
           <div class="metric"><span>Clock</span><strong id="clock">00:00</strong></div>
+          <div class="metric"><span>Account</span><strong id="account-name">Avery Chen</strong></div>
           <div class="metric"><span>Promise Risk</span><strong id="promise-risk">46</strong></div>
           <div class="metric"><span>Network Flow</span><strong id="network-flow">91%</strong></div>
           <div class="metric"><span>EV Confidence</span><strong id="ev-confidence">72%</strong></div>
@@ -814,7 +834,33 @@
       express: "Express service payment advisory"
     };
 
+    const accountProfiles = {
+      planner: {
+        name: "Avery Chen",
+        org: "State Network Planning",
+        role: "planner"
+      },
+      operator: {
+        name: "Marta Ruiz",
+        org: "District Operations",
+        role: "operator"
+      },
+      payment: {
+        name: "Samir Patel",
+        org: "Express Service Office",
+        role: "payment"
+      },
+      executive: {
+        name: "Dana Brooks",
+        org: "Executive Sponsor Office",
+        role: "executive"
+      }
+    };
+
+    const RUN_STORE_KEY = "route-dcr-cockpit-runs-v1";
+
     const state = {
+      account: "planner",
       scenario: "winter-closure",
       minute: 0,
       running: true,
@@ -883,7 +929,9 @@
 
     function renderMetrics() {
       const metrics = computeMetrics();
+      const account = accountProfiles[state.account];
       document.getElementById("clock").textContent = formatClock();
+      document.getElementById("account-name").textContent = account.name;
       document.getElementById("promise-risk").textContent = String(metrics.risk);
       document.getElementById("network-flow").textContent = `${metrics.flow}%`;
       document.getElementById("ev-confidence").textContent = `${metrics.ev}%`;
@@ -993,6 +1041,8 @@
       const metrics = computeMetrics();
       const rows = [
         ["clock", formatClock()],
+        ["account_name", accountProfiles[state.account].name],
+        ["account_org", accountProfiles[state.account].org],
         ["scenario", currentScenario().name],
         ["promise_risk", metrics.risk],
         ["network_flow", `${metrics.flow}%`],
@@ -1083,6 +1133,13 @@
         `${roleLabel(state.activeRole)} ${roleAuthority(state.activeRole)}.`;
     }
 
+    function renderAccount() {
+      const account = accountProfiles[state.account];
+      document.getElementById("account-select").value = state.account;
+      document.getElementById("account-boundary").textContent =
+        `${account.name} at ${account.org}. Local demo account; no authentication backend.`;
+    }
+
     function renderPaymentTier() {
       const tier = expressTier();
       for (const button of document.querySelectorAll("button[data-tier]")) {
@@ -1101,6 +1158,7 @@
       renderLog();
       renderBoundary();
       renderRole();
+      renderAccount();
       renderPaymentTier();
     }
 
@@ -1136,9 +1194,83 @@
       state.selectedSwitch = null;
       state.operatorStatus = "pending";
       state.paymentTier = "standard";
-      state.activeRole = "planner";
+      state.activeRole = accountProfiles[state.account].role;
       state.decisions = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
+      renderAll();
+    }
+
+    function selectAccount(accountId) {
+      state.account = accountId;
+      state.activeRole = accountProfiles[accountId].role;
+      state.log.push(`${formatClock()} account switched to ${accountProfiles[accountId].name}.`);
+      renderAll();
+    }
+
+    function runSnapshot() {
+      return {
+        savedAt: new Date().toISOString(),
+        account: state.account,
+        scenario: state.scenario,
+        minute: state.minute,
+        selectedSwitch: state.selectedSwitch,
+        operatorStatus: state.operatorStatus,
+        paymentTier: state.paymentTier,
+        activeRole: state.activeRole,
+        decisions: state.decisions,
+        log: state.log
+      };
+    }
+
+    function readStoredRuns() {
+      try {
+        return JSON.parse(localStorage.getItem(RUN_STORE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function writeStoredRuns(runs) {
+      localStorage.setItem(RUN_STORE_KEY, JSON.stringify(runs.slice(-10)));
+    }
+
+    function saveRun() {
+      const runs = readStoredRuns();
+      const snapshot = runSnapshot();
+      runs.push(snapshot);
+      writeStoredRuns(runs);
+      document.getElementById("saved-run-status").textContent =
+        `Saved ${currentScenario().name} for ${accountProfiles[state.account].name} at ${formatClock()}.`;
+      state.log.push(`${formatClock()} run saved locally.`);
+      renderAll();
+    }
+
+    function loadLastRun() {
+      const runs = readStoredRuns();
+      const snapshot = runs.at(-1);
+      if (!snapshot) {
+        document.getElementById("saved-run-status").textContent = "No saved run available.";
+        return;
+      }
+      state.account = snapshot.account;
+      state.scenario = snapshot.scenario;
+      state.minute = snapshot.minute;
+      state.selectedSwitch = snapshot.selectedSwitch;
+      state.operatorStatus = snapshot.operatorStatus;
+      state.paymentTier = snapshot.paymentTier;
+      state.activeRole = snapshot.activeRole;
+      state.decisions = snapshot.decisions || [];
+      state.log = [...(snapshot.log || []), `${formatClock()} saved run replayed locally.`];
+      document.getElementById("scenario-select").value = state.scenario;
+      document.getElementById("saved-run-status").textContent =
+        `Loaded ${currentScenario().name} for ${accountProfiles[state.account].name}.`;
+      renderAll();
+    }
+
+    function clearRuns() {
+      localStorage.removeItem(RUN_STORE_KEY);
+      document.getElementById("saved-run-status").textContent = "Saved runs cleared.";
+      state.log.push(`${formatClock()} local saved runs cleared.`);
       renderAll();
     }
 
@@ -1254,6 +1386,12 @@
       state.log.push(`${formatClock()} active role changed to ${roleLabel(state.activeRole)}.`);
       renderAll();
     });
+    document.getElementById("account-select").addEventListener("change", (event) => {
+      selectAccount(event.target.value);
+    });
+    document.getElementById("save-run").addEventListener("click", saveRun);
+    document.getElementById("load-run").addEventListener("click", loadLastRun);
+    document.getElementById("clear-runs").addEventListener("click", clearRuns);
     document.getElementById("play-pause").addEventListener("click", () => setRunning(!state.running));
     document.getElementById("step").addEventListener("click", stepSimulation);
     document.getElementById("reset").addEventListener("click", resetScenario);
