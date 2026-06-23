@@ -770,6 +770,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Fix Package</h2>
+            <span class="badge info" id="fix-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Fix package">
+            <div class="metric"><span>Owner</span><strong id="fix-owner">scenario owner</strong></div>
+            <div class="metric"><span>Scope</span><strong id="fix-scope">monitor</strong></div>
+            <div class="metric"><span>Expected Effect</span><strong id="fix-effect">pending</strong></div>
+            <div class="metric"><span>Basis</span><strong id="fix-basis">measured case</strong></div>
+            <div class="metric"><span>Approval</span><strong id="fix-approval">owner required</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="fix-boundary">not a work order</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1734,6 +1749,40 @@
       document.getElementById("maintenance-boundary").textContent = maintenance.boundary;
     }
 
+    function fixPackage() {
+      const maintenance = maintenanceCase();
+      const summary = runSummary();
+      const workload = operatorWorkload();
+      const effect = `${formatSigned(summary.riskChange)} risk; ${formatSigned(summary.flowChange)}% flow`;
+      const status = maintenance.status === "validated"
+        ? "validated"
+        : workload.sourceHolds || workload.roleHolds
+          ? "blocked"
+          : "ready";
+      return {
+        status,
+        owner: currentScenario().owner,
+        scope: maintenance.fix,
+        effect,
+        basis: maintenance.thresholds,
+        approval: workload.sourceHolds || workload.roleHolds ? workload.queue : "owner review",
+        boundary: "recommendation package, not a work order"
+      };
+    }
+
+    function renderFixPackage() {
+      const fix = fixPackage();
+      const status = document.getElementById("fix-status");
+      status.textContent = fix.status;
+      status.className = `badge ${fix.status === "validated" ? "ok" : fix.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("fix-owner").textContent = fix.owner;
+      document.getElementById("fix-scope").textContent = fix.scope;
+      document.getElementById("fix-effect").textContent = fix.effect;
+      document.getElementById("fix-basis").textContent = fix.basis;
+      document.getElementById("fix-approval").textContent = fix.approval;
+      document.getElementById("fix-boundary").textContent = fix.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1742,6 +1791,7 @@
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
+      const fix = fixPackage();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1795,6 +1845,13 @@
         ["maintenance_evidence", maintenance.evidence],
         ["maintenance_evidence_gap", maintenance.evidenceGap],
         ["maintenance_boundary", maintenance.boundary],
+        ["fix_status", fix.status],
+        ["fix_owner", fix.owner],
+        ["fix_scope", fix.scope],
+        ["fix_expected_effect", fix.effect],
+        ["fix_basis", fix.basis],
+        ["fix_approval", fix.approval],
+        ["fix_boundary", fix.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1829,6 +1886,7 @@
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
+      const fix = fixPackage();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1850,6 +1908,7 @@
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
+        `Fix package: ${fix.status}; owner ${fix.owner}; scope ${fix.scope}; effect ${fix.effect}; approval ${fix.approval}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2086,6 +2145,7 @@
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderMaintenanceCase();
+      renderFixPackage();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2226,6 +2286,7 @@
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         maintenance: maintenanceCase(),
+        fix: fixPackage(),
         handoff: handoffText(),
         log: state.log
       };
