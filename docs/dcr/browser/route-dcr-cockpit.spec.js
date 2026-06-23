@@ -13,6 +13,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Mode advisory simulation")).toBeVisible();
     await expect(page.getByText("traffic control, legal detour, SLA, EV availability")).toBeVisible();
     await expect(page.locator("#active-case")).toHaveText("Winter closure and EV stress");
+    await expect(page.locator("#recommended-posture")).toHaveText("weather-responsive split + EV staging; verify 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#alert-title")).toHaveText("violated: P2 mitigate risk");
+    await expect(page.locator("#alert-body")).toHaveText(/T1 west gateway -> T1 east gateway; current 105m against 95m \+5m buffer/);
+    await expect(page.locator("#alert-boundary")).toHaveText("operator review");
     await expect(page.locator("#promise-risk")).toHaveText("46");
     await expect(page.locator("#account-name")).toHaveText("Avery Chen");
     await expect(page.locator("#signal-count")).toHaveText("6 active");
@@ -312,6 +316,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-priority")).toHaveText("P3 maintain watch");
     await expect(page.locator("#drive-sla-violation")).toHaveText("none");
     await expect(page.locator("#drive-sla-gate")).toHaveText("verify Charging source owner; Operator message owner");
+    await expect(page.locator("#recommended-posture")).toHaveText("weather-responsive split + EV staging; continue monitoring");
+    await expect(page.locator("#alert-title")).toHaveText("maintained: P3 maintain watch");
+    await expect(page.locator("#alert-boundary")).toHaveText("monitor");
     await expect(page.locator("#guidance-status")).toHaveText("reviewed");
     await expect(page.locator("#guidance-route")).toHaveText("reviewed alternate route");
     await expect(page.locator("#guidance-source")).toHaveText("operator-reviewed");
