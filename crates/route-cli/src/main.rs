@@ -21322,6 +21322,8 @@ struct T2GameOpsBundleEvidenceBlockerReliefRow {
     route: String,
     segment_bundle_id: String,
     accepted_required_evidence: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     relief_decision: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
@@ -31706,6 +31708,8 @@ fn t2_game_ops_bundle_evidence_blocker_relief_rows(
             route: row.route.clone(),
             segment_bundle_id: row.segment_bundle_id.clone(),
             accepted_required_evidence: row.accepted_required_evidence.clone(),
+            qualification_gate_policy: row.qualification_gate_policy.clone(),
+            qualification_game_use: row.qualification_game_use.clone(),
             relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
             blocker_claims_before: row.blocker_claims_after.clone(),
             blocker_claims_after: String::new(),
@@ -31796,6 +31800,10 @@ fn t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
             expected.len()
         ));
     }
+    let acceptance_by_id = acceptance_rows
+        .iter()
+        .map(|acceptance| (acceptance.acceptance_id.as_str(), acceptance))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut seen = std::collections::BTreeSet::<String>::new();
     for row in rows {
         if row.relief_id.trim().is_empty()
@@ -31844,6 +31852,20 @@ fn t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
                 "{} points at wrong next artifact",
                 row.acceptance_id
             ));
+        }
+        if let Some(acceptance) = acceptance_by_id.get(row.acceptance_id.as_str()) {
+            let acceptance_has_qualification =
+                !acceptance.qualification_gate_policy.trim().is_empty()
+                    || !acceptance.qualification_game_use.trim().is_empty();
+            if acceptance_has_qualification
+                && (row.qualification_gate_policy.trim().is_empty()
+                    || row.qualification_game_use.trim().is_empty())
+            {
+                failures.push(format!(
+                    "{} relief missing qualification semantics",
+                    row.acceptance_id
+                ));
+            }
         }
     }
     for expected_id in expected {
@@ -71416,6 +71438,8 @@ mod tests {
             route: "I-110".to_string(),
             segment_bundle_id: "i110-la".to_string(),
             accepted_required_evidence: "game-ops-bundle-binding-evidence".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
             blocker_claims_before: "game;incident;publication;sla;transit;upgrade".to_string(),
             blocker_claims_after: String::new(),
