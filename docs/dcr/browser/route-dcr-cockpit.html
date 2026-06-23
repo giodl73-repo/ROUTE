@@ -728,6 +728,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Release Readiness Checklist</h2>
+            <span class="badge info" id="release-check-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Release readiness checklist">
+            <div class="metric"><span>Source Custody</span><strong id="release-check-source">source gates</strong></div>
+            <div class="metric"><span>Owner Issue</span><strong id="release-check-owner">owner gate</strong></div>
+            <div class="metric"><span>Rollback Watch</span><strong id="release-check-rollback">watch rebound</strong></div>
+            <div class="metric"><span>Public Claims</span><strong id="release-check-claims">held</strong></div>
+            <div class="metric"><span>SLA Proof</span><strong id="release-check-proof">pending</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="release-check-boundary">checklist only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2504,6 +2519,43 @@
       document.getElementById("field-preview-boundary").textContent = preview.boundary;
     }
 
+    function releaseReadinessChecklist(release = tierReleasePackage(), preview = fieldPreviewPacket(release)) {
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const status = release.status === "blocked"
+        ? "blocked"
+        : release.status === "monitor"
+          ? "watch"
+          : "ready";
+      return {
+        status,
+        source: missingEvidence.length
+          ? `blocked: ${missingEvidence.join("; ")}`
+          : "source custody ready",
+        owner: status === "ready"
+          ? `${release.owner} can issue after review`
+          : status === "watch"
+            ? `${release.owner} monitor only`
+            : "blocked until source clear",
+        rollback: release.rollback,
+        claims: "traffic control; legal detour; EV availability held",
+        proof: release.proof,
+        boundary: "readiness checklist only; no field or public release"
+      };
+    }
+
+    function renderReleaseReadinessChecklist() {
+      const checklist = releaseReadinessChecklist();
+      const status = document.getElementById("release-check-status");
+      status.textContent = checklist.status;
+      status.className = `badge ${checklist.status === "watch" ? "ok" : checklist.status === "blocked" ? "risk" : "watch"}`;
+      document.getElementById("release-check-source").textContent = checklist.source;
+      document.getElementById("release-check-owner").textContent = checklist.owner;
+      document.getElementById("release-check-rollback").textContent = checklist.rollback;
+      document.getElementById("release-check-claims").textContent = checklist.claims;
+      document.getElementById("release-check-proof").textContent = checklist.proof;
+      document.getElementById("release-check-boundary").textContent = checklist.boundary;
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -3176,6 +3228,7 @@
       const trace = tierDecisionTrace(tier, tick);
       const release = tierReleasePackage(trace);
       const fieldPreview = fieldPreviewPacket(release);
+      const readiness = releaseReadinessChecklist(release, fieldPreview);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3276,6 +3329,13 @@
         ["field_preview_audience", fieldPreview.audience],
         ["field_preview_hold", fieldPreview.hold],
         ["field_preview_boundary", fieldPreview.boundary],
+        ["release_check_status", readiness.status],
+        ["release_check_source", readiness.source],
+        ["release_check_owner", readiness.owner],
+        ["release_check_rollback", readiness.rollback],
+        ["release_check_claims", readiness.claims],
+        ["release_check_proof", readiness.proof],
+        ["release_check_boundary", readiness.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3465,6 +3525,7 @@
       const trace = tierDecisionTrace(tier, tick);
       const release = tierReleasePackage(trace);
       const fieldPreview = fieldPreviewPacket(release);
+      const readiness = releaseReadinessChecklist(release, fieldPreview);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3510,6 +3571,7 @@
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
         `Tier release package: ${release.status}; owner ${release.owner}; criteria ${release.criteria}; step ${release.step}; rollback ${release.rollback}; proof ${release.proof}`,
         `Field preview packet: ${fieldPreview.status}; signage ${fieldPreview.signage}; route ${fieldPreview.route}; EV ${fieldPreview.ev}; hold ${fieldPreview.hold}`,
+        `Release readiness checklist: ${readiness.status}; source ${readiness.source}; owner ${readiness.owner}; rollback ${readiness.rollback}; claims ${readiness.claims}; proof ${readiness.proof}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3768,6 +3830,7 @@
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
+      renderReleaseReadinessChecklist();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -3932,6 +3995,7 @@
         tierDecisionTrace: tierDecisionTrace(),
         tierReleasePackage: tierReleasePackage(),
         fieldPreview: fieldPreviewPacket(),
+        releaseReadiness: releaseReadinessChecklist(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
