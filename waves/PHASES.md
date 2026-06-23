@@ -170,12 +170,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Binding Qualification Semantics | Preserve T2 qualification-action semantics in game/ops binding decisions. | done |
 | 2026-06-23 | Milestone 10 T2 Repair Target Qualification Semantics | Preserve T2 qualification-action semantics in bundle-overlay repair targets. | done |
 | 2026-06-23 | Milestone 10 T2 Evidence Review Qualification Semantics | Preserve T2 qualification-action semantics in game/ops bundle evidence review. | done |
+| 2026-06-23 | Milestone 10 T2 Evidence Policy Qualification Semantics | Preserve T2 qualification-action semantics in game/ops bundle evidence policy. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-evidence-review-qualification-semantics`
-closed after `data/t2-game-ops-bundle-evidence-review.csv` preserved
-qualification-action gate policy and game-use semantics from repair targets.
+No wave is active. `2026-06-23-milestone-10-t2-evidence-policy-qualification-semantics`
+closed after `data/t2-game-ops-bundle-evidence-policy.csv` preserved
+qualification-action gate policy and game-use semantics from evidence review.
 Current T1-T4 structural maps have a gateable readiness artifact, a gateable
 release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
