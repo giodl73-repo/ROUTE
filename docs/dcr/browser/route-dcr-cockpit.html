@@ -680,6 +680,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Mitigation Runbook</h2>
+            <span class="badge info" id="mitigation-runbook-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Mitigation runbook">
+            <div class="metric"><span>Control</span><strong id="mitigation-runbook-control">monitor</strong></div>
+            <div class="metric"><span>Justification</span><strong id="mitigation-runbook-why">pending</strong></div>
+            <div class="metric"><span>Evidence Gate</span><strong id="mitigation-runbook-gate">source custody</strong></div>
+            <div class="metric"><span>Expected Effect</span><strong id="mitigation-runbook-effect">+0 risk</strong></div>
+            <div class="metric"><span>Rollback</span><strong id="mitigation-runbook-rollback">watch rebound</strong></div>
+            <div class="metric"><span>Sponsor Impact</span><strong id="mitigation-runbook-sponsor">proof run</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="mitigation-runbook-boundary">advisory only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2303,6 +2319,24 @@
       };
     }
 
+    function mitigationRunbook(cascade = priorityCascade()) {
+      const drive = driveSlaPriorities();
+      const fix = fixPackage();
+      const playbook = resiliencyPlaybook();
+      const evidence = evidenceDossier();
+      const status = fix.status === "validated" ? "proving" : fix.status === "blocked" ? "blocked" : "ready";
+      return {
+        status,
+        control: status === "proving" ? playbook.switch : drive.mitigation,
+        why: cascade.violation === "none" ? "SLA maintained; preserve proof window" : cascade.violation,
+        gate: evidence.missing === "none" ? "owner review" : evidence.missing,
+        effect: fix.effect,
+        rollback: playbook.rollback,
+        sponsor: cascade.sponsor,
+        boundary: "runbook is advisory; no field command or public claim"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -2842,6 +2876,20 @@
       document.getElementById("priority-cascade-gate").textContent = cascade.gate;
       document.getElementById("priority-cascade-sponsor").textContent = cascade.sponsor;
       document.getElementById("priority-cascade-boundary").textContent = cascade.boundary;
+    }
+
+    function renderMitigationRunbook() {
+      const runbook = mitigationRunbook();
+      const status = document.getElementById("mitigation-runbook-status");
+      status.textContent = runbook.status;
+      status.className = `badge ${runbook.status === "proving" || runbook.status === "ready" ? "ok" : "risk"}`;
+      document.getElementById("mitigation-runbook-control").textContent = runbook.control;
+      document.getElementById("mitigation-runbook-why").textContent = runbook.why;
+      document.getElementById("mitigation-runbook-gate").textContent = runbook.gate;
+      document.getElementById("mitigation-runbook-effect").textContent = runbook.effect;
+      document.getElementById("mitigation-runbook-rollback").textContent = runbook.rollback;
+      document.getElementById("mitigation-runbook-sponsor").textContent = runbook.sponsor;
+      document.getElementById("mitigation-runbook-boundary").textContent = runbook.boundary;
     }
 
     function uniqueLabels(items) {
@@ -3408,6 +3456,7 @@
       const sla = operatorSla();
       const drive = driveSlaPriorities();
       const cascade = priorityCascade(drive, sla);
+      const runbook = mitigationRunbook(cascade);
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3485,6 +3534,14 @@
         ["priority_cascade_gate", cascade.gate],
         ["priority_cascade_sponsor_step", cascade.sponsor],
         ["priority_cascade_boundary", cascade.boundary],
+        ["mitigation_runbook_status", runbook.status],
+        ["mitigation_runbook_control", runbook.control],
+        ["mitigation_runbook_justification", runbook.why],
+        ["mitigation_runbook_gate", runbook.gate],
+        ["mitigation_runbook_expected_effect", runbook.effect],
+        ["mitigation_runbook_rollback", runbook.rollback],
+        ["mitigation_runbook_sponsor_impact", runbook.sponsor],
+        ["mitigation_runbook_boundary", runbook.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3738,6 +3795,7 @@
       const sla = operatorSla();
       const drive = driveSlaPriorities();
       const cascade = priorityCascade(drive, sla);
+      const runbook = mitigationRunbook(cascade);
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3788,6 +3846,7 @@
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
         `Priority cascade: ${cascade.status}; primary ${cascade.primary}; SLA ${cascade.sla}; violation ${cascade.violation}; mitigation ${cascade.mitigation}; gate ${cascade.gate}; sponsor ${cascade.sponsor}`,
+        `Mitigation runbook: ${runbook.status}; control ${runbook.control}; why ${runbook.why}; gate ${runbook.gate}; effect ${runbook.effect}; rollback ${runbook.rollback}; sponsor ${runbook.sponsor}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4053,6 +4112,7 @@
       renderOperatorSla();
       renderDriveSlaPriorities();
       renderPriorityCascade();
+      renderMitigationRunbook();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4220,6 +4280,7 @@
         sla: operatorSla(),
         driveSla: driveSlaPriorities(),
         priorityCascade: priorityCascade(),
+        mitigationRunbook: mitigationRunbook(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
