@@ -21190,6 +21190,8 @@ struct T2GameOpsBindingDecisionRow {
     service_class: String,
     bundle_status: String,
     binding_status: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     decision: String,
     decision_reason: String,
     blocks_claims: String,
@@ -30424,6 +30426,12 @@ fn t2_game_ops_binding_decision_rows(
             let overlay_validation_status = overlay
                 .map(|overlay| overlay.validation_status.as_str())
                 .unwrap_or("review");
+            let qualification_gate_policy = overlay
+                .map(|overlay| overlay.qualification_gate_policy.clone())
+                .unwrap_or_default();
+            let qualification_game_use = overlay
+                .map(|overlay| overlay.qualification_game_use.clone())
+                .unwrap_or_default();
             let (decision, reason, next_artifact, validation_status) =
                 if binding_status == "bundle-bound" && overlay_validation_status == "pass" {
                     (
@@ -30469,6 +30477,8 @@ fn t2_game_ops_binding_decision_rows(
                 service_class,
                 bundle_status,
                 binding_status,
+                qualification_gate_policy,
+                qualification_game_use,
                 decision: decision.to_string(),
                 decision_reason: reason.to_string(),
                 blocks_claims: if validation_status == "pass" {
@@ -30586,6 +30596,23 @@ fn t2_game_ops_binding_decision_gate_failures(
             {
                 failures.push(format!(
                     "{} bound decision lacks passing bundle binding",
+                    row.route
+                ));
+            }
+            if row.qualification_gate_policy.trim().is_empty()
+                || row.qualification_game_use.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} bound decision missing qualification semantics",
+                    row.route
+                ));
+            }
+        } else if row.decision == "repair-needed" && row.binding_status == "bundle-bound-review" {
+            if row.qualification_gate_policy.trim().is_empty()
+                || row.qualification_game_use.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} repair decision missing qualification semantics",
                     row.route
                 ));
             }
@@ -68927,6 +68954,9 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             decision: "repair-needed".to_string(),
             decision_reason: "bundle id exists but validation remains under review".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -68980,6 +69010,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -69023,6 +69055,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -69205,6 +69239,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -69254,6 +69290,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -69345,6 +69383,9 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             decision: "repair-needed".to_string(),
             decision_reason: "bundle id exists but validation remains under review".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -70159,6 +70200,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),

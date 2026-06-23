@@ -139,3 +139,6 @@ should mean something in the SLA graph.
 - `route t2-bundle-overlays` now carries qualification map treatment, gate
   policy, and game-use semantics into `data/game/t2-bundle-overlays.csv`, and its
   gate requires those fields for bound overlays.
+- `route t2-game-ops-binding-decisions` now preserves qualification gate policy
+  and game-use semantics in `data/t2-game-ops-binding-decisions.csv`, and its
+  gate requires them for bound or bundle-bound-review decisions.
