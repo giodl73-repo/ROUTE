@@ -262,6 +262,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#clearance-path-sponsor")).toHaveText("sponsor packet held until source custody clears");
     await expect(page.locator("#clearance-path-proof")).toHaveText("0/3 now; 3 source cycles to clear");
     await expect(page.locator("#clearance-path-boundary")).toHaveText("clearance path is simulated sequencing only; source owners approve evidence and field owners approve release");
+    await expect(page.getByLabel("Release criteria")).toContainText("Source Gate0/3 ready; missing 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#release-criteria-status")).toHaveText("source-held");
+    await expect(page.locator("#release-criteria-sla")).toHaveText("violated; 105m against 95m +5m buffer");
+    await expect(page.locator("#release-criteria-owner")).toHaveText("not before Operator message owner clears");
+    await expect(page.locator("#release-criteria-claims")).toHaveText("traffic control; legal detour; EV availability; guaranteed SLA held");
+    await expect(page.locator("#release-criteria-decision")).toHaveText("clear 511 closure feed");
+    await expect(page.locator("#release-criteria-evidence")).toHaveText("source custody: 511 closure feed");
+    await expect(page.locator("#release-criteria-boundary")).toHaveText("release criteria only; owner approval and field release remain external");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -301,6 +309,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_operator_move,"verify Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_status,"queued"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_cycles_left,"3"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_decision,"clear 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -676,6 +686,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#clearance-path-sponsor")).toHaveText("sponsor packet held until source custody clears");
     await expect(page.locator("#clearance-path-proof")).toHaveText("1/3 now; 2 source cycles to clear");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Clearance path: queued; cycles 2; sequence cycle 1: Charging source owner -> cycle 2: Operator message owner; final readiness 3\/3; release after Operator message owner clears; sponsor sponsor packet held until source custody clears; proof 1\/3 now; 2 source cycles to clear/);
+    await expect(page.locator("#release-criteria-status")).toHaveText("source-held");
+    await expect(page.locator("#release-criteria-source")).toHaveText("1/3 ready; missing Charging source owner; Operator message owner");
+    await expect(page.locator("#release-criteria-sla")).toHaveText("maintained; 97m against 95m +5m buffer");
+    await expect(page.locator("#release-criteria-owner")).toHaveText("not before Operator message owner clears");
+    await expect(page.locator("#release-criteria-decision")).toHaveText("clear Charging source owner");
+    await expect(page.locator("#release-criteria-evidence")).toHaveText("source custody: Charging source owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Release criteria: source-held; source 1\/3 ready; missing Charging source owner; Operator message owner; SLA maintained; 97m against 95m \+5m buffer; owner not before Operator message owner clears; claims traffic control; legal detour; EV availability; guaranteed SLA held; decision clear Charging source owner; evidence source custody: Charging source owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -766,6 +783,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/next_cycle_clear_assumption,"Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_cycles_left,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_path_proof_trail,"1\/3 now; 2 source cycles to clear"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_sla_gate,"maintained; 97m against 95m \+5m buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);

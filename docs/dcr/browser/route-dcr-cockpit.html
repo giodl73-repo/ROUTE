@@ -840,6 +840,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Release Criteria</h2>
+            <span class="badge info" id="release-criteria-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Release criteria">
+            <div class="metric"><span>Source Gate</span><strong id="release-criteria-source">pending</strong></div>
+            <div class="metric"><span>SLA Gate</span><strong id="release-criteria-sla">pending</strong></div>
+            <div class="metric"><span>Owner Gate</span><strong id="release-criteria-owner">pending</strong></div>
+            <div class="metric"><span>Held Claims</span><strong id="release-criteria-claims">pending</strong></div>
+            <div class="metric"><span>Release Decision</span><strong id="release-criteria-decision">hold</strong></div>
+            <div class="metric"><span>Next Evidence</span><strong id="release-criteria-evidence">source</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="release-criteria-boundary">criteria only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2648,6 +2664,28 @@
       };
     }
 
+    function releaseCriteria() {
+      const gates = currentScenario().gates;
+      const missing = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const readyCount = gates.length - missing.length;
+      const drive = driveSlaPriorities();
+      const approval = ownerApprovalPacket();
+      const sourceHeld = missing.length > 0;
+      const slaHeld = drive.status !== "maintained";
+      return {
+        status: sourceHeld ? "source-held" : slaHeld ? "sla-held" : "release-review",
+        source: sourceHeld ? `${readyCount}/${gates.length} ready; missing ${missing.join("; ")}` : "all source gates ready",
+        sla: `${drive.status}; ${drive.current} against ${drive.target}`,
+        owner: sourceHeld ? `not before ${missing[missing.length - 1]} clears` : approval.decision,
+        claims: sourceHeld || slaHeld
+          ? "traffic control; legal detour; EV availability; guaranteed SLA held"
+          : "bounded advisory release review",
+        decision: sourceHeld ? `clear ${missing[0]}` : slaHeld ? drive.mitigation : "route to owner approval",
+        evidence: sourceHeld ? `source custody: ${missing[0]}` : approval.evidence,
+        boundary: "release criteria only; owner approval and field release remain external"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3329,6 +3367,20 @@
       document.getElementById("clearance-path-boundary").textContent = path.boundary;
     }
 
+    function renderReleaseCriteria() {
+      const criteria = releaseCriteria();
+      const status = document.getElementById("release-criteria-status");
+      status.textContent = criteria.status;
+      status.className = `badge ${criteria.status === "release-review" ? "ok" : criteria.status === "sla-held" ? "risk" : "info"}`;
+      document.getElementById("release-criteria-source").textContent = criteria.source;
+      document.getElementById("release-criteria-sla").textContent = criteria.sla;
+      document.getElementById("release-criteria-owner").textContent = criteria.owner;
+      document.getElementById("release-criteria-claims").textContent = criteria.claims;
+      document.getElementById("release-criteria-decision").textContent = criteria.decision;
+      document.getElementById("release-criteria-evidence").textContent = criteria.evidence;
+      document.getElementById("release-criteria-boundary").textContent = criteria.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3903,6 +3955,7 @@
       const operatorAction = operatorActionPlan();
       const nextCycle = nextCycleSimulation();
       const clearancePathState = clearancePath();
+      const releaseCriteriaState = releaseCriteria();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4060,6 +4113,14 @@
         ["clearance_path_sponsor_gate", clearancePathState.sponsor],
         ["clearance_path_proof_trail", clearancePathState.proof],
         ["clearance_path_boundary", clearancePathState.boundary],
+        ["release_criteria_status", releaseCriteriaState.status],
+        ["release_criteria_source_gate", releaseCriteriaState.source],
+        ["release_criteria_sla_gate", releaseCriteriaState.sla],
+        ["release_criteria_owner_gate", releaseCriteriaState.owner],
+        ["release_criteria_held_claims", releaseCriteriaState.claims],
+        ["release_criteria_decision", releaseCriteriaState.decision],
+        ["release_criteria_next_evidence", releaseCriteriaState.evidence],
+        ["release_criteria_boundary", releaseCriteriaState.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4323,6 +4384,7 @@
       const operatorAction = operatorActionPlan();
       const nextCycle = nextCycleSimulation();
       const clearancePathState = clearancePath();
+      const releaseCriteriaState = releaseCriteria();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4383,6 +4445,7 @@
         `Operator action plan: ${operatorAction.status}; now ${operatorAction.now}; scope ${operatorAction.scope}; prohibited ${operatorAction.prohibited}; rerun ${operatorAction.rerun}; decision ${operatorAction.decision}; cadence ${operatorAction.cadence}`,
         `Next-cycle simulation: ${nextCycle.status}; clear ${nextCycle.clear}; readiness ${nextCycle.readiness}; remaining ${nextCycle.remaining}; posture ${nextCycle.sla}; move ${nextCycle.move}; release ${nextCycle.release}`,
         `Clearance path: ${clearancePathState.status}; cycles ${clearancePathState.cycles}; sequence ${clearancePathState.sequence}; final readiness ${clearancePathState.readiness}; release ${clearancePathState.release}; sponsor ${clearancePathState.sponsor}; proof ${clearancePathState.proof}`,
+        `Release criteria: ${releaseCriteriaState.status}; source ${releaseCriteriaState.source}; SLA ${releaseCriteriaState.sla}; owner ${releaseCriteriaState.owner}; claims ${releaseCriteriaState.claims}; decision ${releaseCriteriaState.decision}; evidence ${releaseCriteriaState.evidence}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4658,6 +4721,7 @@
       renderOperatorActionPlan();
       renderNextCycleSimulation();
       renderClearancePath();
+      renderReleaseCriteria();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4835,6 +4899,7 @@
         operatorActionPlan: operatorActionPlan(),
         nextCycleSimulation: nextCycleSimulation(),
         clearancePath: clearancePath(),
+        releaseCriteria: releaseCriteria(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
