@@ -156,3 +156,7 @@ should mean something in the SLA graph.
   qualification gate policy and game-use semantics in
   `data/t2-game-ops-bundle-evidence-policy-acceptance.csv` when accepted source
   policy rows had them.
+- `route t2-game-ops-bundle-evidence-blocker-relief` now preserves qualification
+  gate policy and game-use semantics in
+  `data/t2-game-ops-bundle-evidence-blocker-relief.csv` when source acceptance
+  rows had them.
