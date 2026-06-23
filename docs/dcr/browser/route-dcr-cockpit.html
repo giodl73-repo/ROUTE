@@ -920,6 +920,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Operator Decision Log</h2>
+            <span class="badge info" id="operator-log-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Operator decision log">
+            <div class="metric"><span>Recommended</span><strong id="operator-log-recommended">none</strong></div>
+            <div class="metric"><span>Approved</span><strong id="operator-log-approved">none</strong></div>
+            <div class="metric"><span>Held</span><strong id="operator-log-held">none</strong></div>
+            <div class="metric"><span>Next Decision</span><strong id="operator-log-next">monitor</strong></div>
+            <div class="metric"><span>Reason</span><strong id="operator-log-reason">standing watch</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="operator-log-boundary">operator review</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1624,6 +1639,50 @@
       document.getElementById("decision-count").textContent = `${reviewed} reviewed`;
     }
 
+    function operatorDecisionLog() {
+      const actions = openActionEvents();
+      const approved = state.decisions.filter((item) => item.status === "approved").map((item) => item.label);
+      const held = state.decisions.filter((item) => item.status === "blocked").map((item) => item.label);
+      const pending = state.decisions.filter((item) => item.status === "pending").map((item) => item.label);
+      const recommended = actions.map((event) => switchLabels[event.action]);
+      const next = actions[0]
+        ? `review ${switchLabels[actions[0].action]}`
+        : pending[0]
+          ? `review ${pending[0]}`
+          : held[0]
+            ? `clear hold for ${held[0]}`
+            : "continue monitoring";
+      const status = held.length
+        ? "held"
+        : pending.length || actions.length
+          ? "review"
+          : approved.length
+            ? "approved"
+            : "watch";
+      return {
+        status,
+        recommended: uniqueLabels(recommended).join("; ") || "none",
+        approved: approved.join("; ") || "none",
+        held: held.join("; ") || "none",
+        next,
+        reason: actions[0]?.label || pending[0] || held[0] || "no open operator action",
+        boundary: "operator decision log only; field authority remains external"
+      };
+    }
+
+    function renderOperatorDecisionLog() {
+      const decisionLog = operatorDecisionLog();
+      const status = document.getElementById("operator-log-status");
+      status.textContent = decisionLog.status;
+      status.className = `badge ${decisionLog.status === "approved" ? "ok" : decisionLog.status === "held" ? "risk" : "info"}`;
+      document.getElementById("operator-log-recommended").textContent = decisionLog.recommended;
+      document.getElementById("operator-log-approved").textContent = decisionLog.approved;
+      document.getElementById("operator-log-held").textContent = decisionLog.held;
+      document.getElementById("operator-log-next").textContent = decisionLog.next;
+      document.getElementById("operator-log-reason").textContent = decisionLog.reason;
+      document.getElementById("operator-log-boundary").textContent = decisionLog.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2240,6 +2299,7 @@
       const evidence = evidenceDossier();
       const escalation = sourceEscalation();
       const closure = closureCriteria();
+      const decisionLog = operatorDecisionLog();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2364,6 +2424,13 @@
         ["closure_next_review", closure.review],
         ["closure_evidence_gate", closure.evidence],
         ["closure_boundary", closure.boundary],
+        ["operator_log_status", decisionLog.status],
+        ["operator_log_recommended", decisionLog.recommended],
+        ["operator_log_approved", decisionLog.approved],
+        ["operator_log_held", decisionLog.held],
+        ["operator_log_next_decision", decisionLog.next],
+        ["operator_log_reason", decisionLog.reason],
+        ["operator_log_boundary", decisionLog.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2408,6 +2475,7 @@
       const evidence = evidenceDossier();
       const escalation = sourceEscalation();
       const closure = closureCriteria();
+      const decisionLog = operatorDecisionLog();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2439,6 +2507,7 @@
         `Evidence dossier: ${evidence.status}; readiness ${evidence.readiness}; missing ${evidence.missing}; basis ${evidence.basis}; claim ${evidence.claim}`,
         `Source escalation: ${escalation.status}; owner ${escalation.owner}; due ${escalation.due}; packet ${escalation.packet}; boundary ${escalation.boundary}`,
         `Closure criteria: ${closure.status}; close ${closure.close}; renew ${closure.renew}; reopen ${closure.reopen}; evidence ${closure.evidence}`,
+        `Operator decision log: ${decisionLog.status}; recommended ${decisionLog.recommended}; approved ${decisionLog.approved}; held ${decisionLog.held}; next ${decisionLog.next}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2674,6 +2743,7 @@
       renderOperatorSla();
       renderGuidanceBoard();
       renderWorkloadBoard();
+      renderOperatorDecisionLog();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -2824,6 +2894,7 @@
         sla: operatorSla(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
+        operatorDecisionLog: operatorDecisionLog(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
