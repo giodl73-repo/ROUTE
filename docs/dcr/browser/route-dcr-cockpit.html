@@ -776,6 +776,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Clearance Forecast</h2>
+            <span class="badge info" id="clearance-forecast-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Clearance forecast">
+            <div class="metric"><span>Clear Next</span><strong id="clearance-forecast-next">source owner</strong></div>
+            <div class="metric"><span>After Readiness</span><strong id="clearance-forecast-readiness">0/0</strong></div>
+            <div class="metric"><span>Remaining Holds</span><strong id="clearance-forecast-remaining">pending</strong></div>
+            <div class="metric"><span>Release Result</span><strong id="clearance-forecast-release">hold release</strong></div>
+            <div class="metric"><span>Renewal Result</span><strong id="clearance-forecast-renewal">hold renewal</strong></div>
+            <div class="metric"><span>Next Authority</span><strong id="clearance-forecast-authority">owner</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="clearance-forecast-boundary">forecast only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2509,6 +2525,25 @@
       };
     }
 
+    function clearanceForecast() {
+      const gates = currentScenario().gates;
+      const missing = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const readyCount = gates.length - missing.length;
+      const next = missing[0] || "none";
+      const remaining = missing.slice(1);
+      const afterReadiness = `${Math.min(gates.length, readyCount + (missing.length ? 1 : 0))}/${gates.length}`;
+      return {
+        status: missing.length === 0 ? "clear" : remaining.length ? "partial" : "release-ready",
+        next,
+        readiness: afterReadiness,
+        remaining: remaining.join("; ") || "none",
+        release: remaining.length ? `still held; next ${remaining[0]}` : "release review allowed",
+        renewal: remaining.length ? "renewal still held" : "sponsor decision allowed",
+        authority: remaining[0] || currentScenario().owner,
+        boundary: "clearance forecast only; source owner verification still required"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3134,6 +3169,20 @@
       document.getElementById("source-clearance-boundary").textContent = plan.boundary;
     }
 
+    function renderClearanceForecast() {
+      const forecast = clearanceForecast();
+      const status = document.getElementById("clearance-forecast-status");
+      status.textContent = forecast.status;
+      status.className = `badge ${forecast.status === "clear" || forecast.status === "release-ready" ? "ok" : "info"}`;
+      document.getElementById("clearance-forecast-next").textContent = forecast.next;
+      document.getElementById("clearance-forecast-readiness").textContent = forecast.readiness;
+      document.getElementById("clearance-forecast-remaining").textContent = forecast.remaining;
+      document.getElementById("clearance-forecast-release").textContent = forecast.release;
+      document.getElementById("clearance-forecast-renewal").textContent = forecast.renewal;
+      document.getElementById("clearance-forecast-authority").textContent = forecast.authority;
+      document.getElementById("clearance-forecast-boundary").textContent = forecast.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3704,6 +3753,7 @@
       const recovery = recoveryVerification();
       const renewalGate = renewalDecisionGate();
       const sourceClearance = sourceClearancePlan();
+      const clearance = clearanceForecast();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3829,6 +3879,14 @@
         ["source_clearance_renewal_impact", sourceClearance.renewal],
         ["source_clearance_action", sourceClearance.action],
         ["source_clearance_boundary", sourceClearance.boundary],
+        ["clearance_forecast_status", clearance.status],
+        ["clearance_forecast_clear_next", clearance.next],
+        ["clearance_forecast_after_readiness", clearance.readiness],
+        ["clearance_forecast_remaining_holds", clearance.remaining],
+        ["clearance_forecast_release_result", clearance.release],
+        ["clearance_forecast_renewal_result", clearance.renewal],
+        ["clearance_forecast_next_authority", clearance.authority],
+        ["clearance_forecast_boundary", clearance.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4088,6 +4146,7 @@
       const recovery = recoveryVerification();
       const renewalGate = renewalDecisionGate();
       const sourceClearance = sourceClearancePlan();
+      const clearance = clearanceForecast();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4144,6 +4203,7 @@
         `Recovery verification: ${recovery.status}; window ${recovery.window}; target ${recovery.target}; result ${recovery.result}; reopen ${recovery.reopen}; closure ${recovery.closure}; proof ${recovery.proof}`,
         `Renewal decision gate: ${renewalGate.status}; decision ${renewalGate.decision}; proof ${renewalGate.proof}; blocker ${renewalGate.blocker}; owner ${renewalGate.owner}; ask ${renewalGate.ask}; held ${renewalGate.held}`,
         `Source clearance plan: ${sourceClearance.status}; next ${sourceClearance.next}; sequence ${sourceClearance.sequence}; readiness ${sourceClearance.readiness}; release ${sourceClearance.release}; renewal ${sourceClearance.renewal}; action ${sourceClearance.action}`,
+        `Clearance forecast: ${clearance.status}; clear ${clearance.next}; after readiness ${clearance.readiness}; remaining ${clearance.remaining}; release ${clearance.release}; renewal ${clearance.renewal}; authority ${clearance.authority}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4415,6 +4475,7 @@
       renderRecoveryVerification();
       renderRenewalDecisionGate();
       renderSourceClearancePlan();
+      renderClearanceForecast();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4588,6 +4649,7 @@
         recoveryVerification: recoveryVerification(),
         renewalDecisionGate: renewalDecisionGate(),
         sourceClearance: sourceClearancePlan(),
+        clearanceForecast: clearanceForecast(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),

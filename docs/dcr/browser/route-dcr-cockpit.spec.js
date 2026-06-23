@@ -90,6 +90,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#source-clearance-renewal")).toHaveText("renewal decision held");
     await expect(page.locator("#source-clearance-action")).toHaveText("verify 511 closure feed");
     await expect(page.locator("#source-clearance-boundary")).toHaveText("source clearance plan only; source owners remain authoritative");
+    await expect(page.getByLabel("Clearance forecast")).toContainText("Clear Next511 closure feed");
+    await expect(page.locator("#clearance-forecast-status")).toHaveText("partial");
+    await expect(page.locator("#clearance-forecast-readiness")).toHaveText("1/3");
+    await expect(page.locator("#clearance-forecast-remaining")).toHaveText("Charging source owner; Operator message owner");
+    await expect(page.locator("#clearance-forecast-release")).toHaveText("still held; next Charging source owner");
+    await expect(page.locator("#clearance-forecast-renewal")).toHaveText("renewal still held");
+    await expect(page.locator("#clearance-forecast-authority")).toHaveText("Charging source owner");
+    await expect(page.locator("#clearance-forecast-boundary")).toHaveText("clearance forecast only; source owner verification still required");
     await expect(page.getByLabel("US tier map validation")).toContainText("SLA RowSAC -> SLC");
     await expect(page.locator("#tier-map-status")).toHaveText("breach");
     await expect(page.locator("#tier-map-source")).toHaveText("maps/all-tiers-v2.png + data/beck-stop-sla.csv");
@@ -261,6 +269,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_gate_open_blocker,"source custody: verify 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_clearance_status,"blocked"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_clearance_action,"verify 511 closure feed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_forecast_status,"partial"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_forecast_next_authority,"Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -520,6 +530,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#source-clearance-release")).toHaveText("release held until Charging source owner");
     await expect(page.locator("#source-clearance-renewal")).toHaveText("renewal decision held");
     await expect(page.locator("#source-clearance-action")).toHaveText("verify Charging source owner");
+    await expect(page.locator("#clearance-forecast-status")).toHaveText("partial");
+    await expect(page.locator("#clearance-forecast-next")).toHaveText("Charging source owner");
+    await expect(page.locator("#clearance-forecast-readiness")).toHaveText("2/3");
+    await expect(page.locator("#clearance-forecast-remaining")).toHaveText("Operator message owner");
+    await expect(page.locator("#clearance-forecast-release")).toHaveText("still held; next Operator message owner");
+    await expect(page.locator("#clearance-forecast-renewal")).toHaveText("renewal still held");
+    await expect(page.locator("#clearance-forecast-authority")).toHaveText("Operator message owner");
     await expect(page.locator("#recommended-posture")).toHaveText("weather-responsive split + EV staging; continue monitoring");
     await expect(page.locator("#alert-title")).toHaveText("maintained: P3 maintain watch");
     await expect(page.locator("#alert-boundary")).toHaveText("monitor");
@@ -604,6 +621,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Recovery verification: proving; window next 2 monitoring cycles; target risk below baseline; flow above baseline; result -4 risk; \+5% flow; reopen watch for rebound; closure clear Charging source owner; Operator message owner; proof monitored DCR proof retained/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Renewal decision gate: held; decision clear source custody before sponsor decision; proof monitored DCR proof retained; blocker source custody: verify Charging source owner; owner Charging source owner; ask continue proof run; held ROI; guaranteed SLA; traffic control; EV availability/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Source clearance plan: partial; next Charging source owner; sequence 1\. Charging source owner -> 2\. Operator message owner; readiness 1\/3; release release held until Charging source owner; renewal renewal decision held; action verify Charging source owner/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Clearance forecast: partial; clear Charging source owner; after readiness 2\/3; remaining Operator message owner; release still held; next Operator message owner; renewal renewal still held; authority Operator message owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -686,6 +704,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_gate_owner,"Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_clearance_status,"partial"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/source_clearance_next_source,"Charging source owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_forecast_status,"partial"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/clearance_forecast_after_readiness,"2\/3"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
