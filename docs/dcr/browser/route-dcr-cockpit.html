@@ -845,6 +845,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Work Order Draft</h2>
+            <span class="badge info" id="workorder-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Work order draft">
+            <div class="metric"><span>Draft ID</span><strong id="workorder-id">DCR-draft</strong></div>
+            <div class="metric"><span>Issuer</span><strong id="workorder-issuer">owner</strong></div>
+            <div class="metric"><span>Release Gate</span><strong id="workorder-gate">owner issue</strong></div>
+            <div class="metric"><span>Field Step</span><strong id="workorder-step">prepare fix</strong></div>
+            <div class="metric"><span>Proof Link</span><strong id="workorder-proof">pending</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="workorder-boundary">draft only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1969,6 +1984,41 @@
       document.getElementById("board-boundary").textContent = board.boundary;
     }
 
+    function workOrderDraft() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const dossier = decisionDossier();
+      const postFix = postFixMonitor();
+      const board = boardPacket();
+      const status = board.status === "ready"
+        ? "ready"
+        : fix.status === "blocked"
+          ? "blocked"
+          : "draft";
+      return {
+        status,
+        id: `DCR-${state.scenario.toUpperCase()}-${maintenance.priority}`,
+        issuer: fix.owner,
+        releaseGate: status === "ready" ? "sponsor decision + owner issue" : dossier.blockers,
+        fieldStep: `${status === "ready" ? "issue" : "prepare"} ${fix.scope}`,
+        proofLink: status === "ready" ? postFix.result : maintenance.thresholds,
+        boundary: "draft only; owner-issued work order required"
+      };
+    }
+
+    function renderWorkOrderDraft() {
+      const workOrder = workOrderDraft();
+      const status = document.getElementById("workorder-status");
+      status.textContent = workOrder.status;
+      status.className = `badge ${workOrder.status === "ready" ? "ok" : workOrder.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("workorder-id").textContent = workOrder.id;
+      document.getElementById("workorder-issuer").textContent = workOrder.issuer;
+      document.getElementById("workorder-gate").textContent = workOrder.releaseGate;
+      document.getElementById("workorder-step").textContent = workOrder.fieldStep;
+      document.getElementById("workorder-proof").textContent = workOrder.proofLink;
+      document.getElementById("workorder-boundary").textContent = workOrder.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
@@ -1982,6 +2032,7 @@
       const postFix = postFixMonitor();
       const watch = watchlist();
       const board = boardPacket();
+      const workOrder = workOrderDraft();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2070,6 +2121,13 @@
         ["board_value", board.value],
         ["board_decision_gate", board.gate],
         ["board_boundary", board.boundary],
+        ["workorder_status", workOrder.status],
+        ["workorder_id", workOrder.id],
+        ["workorder_issuer", workOrder.issuer],
+        ["workorder_release_gate", workOrder.releaseGate],
+        ["workorder_field_step", workOrder.fieldStep],
+        ["workorder_proof_link", workOrder.proofLink],
+        ["workorder_boundary", workOrder.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2109,6 +2167,7 @@
       const postFix = postFixMonitor();
       const watch = watchlist();
       const board = boardPacket();
+      const workOrder = workOrderDraft();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2135,6 +2194,7 @@
         `Post-fix monitor: ${postFix.status}; target ${postFix.target}; result ${postFix.result}; rollback ${postFix.rollback}`,
         `Watchlist: ${watch.status}; primary ${watch.primary}; owner ${watch.owner}; trigger ${watch.trigger}; escalation ${watch.escalation}`,
         `Board packet: ${board.status}; ask ${board.ask}; sponsor ${board.sponsor}; value ${board.value}; gate ${board.gate}`,
+        `Work order draft: ${workOrder.status}; id ${workOrder.id}; issuer ${workOrder.issuer}; gate ${workOrder.releaseGate}; step ${workOrder.fieldStep}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2376,6 +2436,7 @@
       renderPostFixMonitor();
       renderWatchlist();
       renderBoardPacket();
+      renderWorkOrderDraft();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -2521,6 +2582,7 @@
         postFix: postFixMonitor(),
         watchlist: watchlist(),
         board: boardPacket(),
+        workOrder: workOrderDraft(),
         handoff: handoffText(),
         log: state.log
       };
