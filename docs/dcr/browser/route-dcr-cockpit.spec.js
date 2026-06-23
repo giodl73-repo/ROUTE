@@ -20,6 +20,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#paid-requests")).toHaveText("0");
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
+    await expect(page.getByLabel("Evidence gates")).toContainText("511 closure feed");
+    await expect(page.locator("#gate-count")).toHaveText("0/3 ready");
     await expect(page.getByLabel("Timeline queue")).toContainText("00:10 Snow band reduces alternate reliability");
     await expect(page.getByLabel("Action queue")).toContainText("No open action");
     await expect(page.locator("#run-owner")).toHaveText("DOT operations");
@@ -57,7 +59,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Scenario run plan")).toContainText("Terminal queue owner plus local truck-route authority required.");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_owner,"Port operations"/);
 
-    await page.getByRole("button", { name: "Terminal" }).click();
+    await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
     await expect(page.locator("#network-flow")).toHaveText("80%");
     await expect(page.getByLabel("Timeline queue")).toContainText("manual");
@@ -99,6 +101,14 @@ test.describe("ROUTE DCR cockpit", () => {
 
     await page.getByRole("button", { name: "Create Reroute advisory" }).click();
     await page.getByLabel("Active role").selectOption("operator");
+    await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
+    await expect(page.getByText("Held for source custody: 511 closure feed.")).toBeVisible();
+    await expect(page.locator("#action-count")).toHaveText("1 open");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/missing_evidence,"511 closure feed; Charging source owner; Operator message owner"/);
+
+    await page.getByRole("button", { name: "Verify 511 closure feed" }).click();
+    await expect(page.locator("#gate-count")).toHaveText("1/3 ready");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/evidence_ready,"1\/3"/);
     await page.getByRole("button", { name: "Approve Reviewed Switch" }).click();
     await expect(page.locator("#promise-risk")).toHaveText("42");
     await expect(page.locator("#network-flow")).toHaveText("96%");

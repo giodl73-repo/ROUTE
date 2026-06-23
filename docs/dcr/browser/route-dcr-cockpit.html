@@ -697,6 +697,14 @@
 
           <section class="panel">
             <div class="signal-top">
+              <h2>Evidence Gates</h2>
+              <span class="badge watch" id="gate-count">0 ready</span>
+            </div>
+            <div class="stack" id="gate-list" aria-label="Evidence gates"></div>
+          </section>
+
+          <section class="panel">
+            <div class="signal-top">
               <h2>Timeline Queue</h2>
               <span class="badge info" id="timeline-count">0 applied</span>
             </div>
@@ -765,6 +773,11 @@
           "Review signage window and EV staging note with operator.",
           "Export claim-safe leadership readout."
         ],
+        gates: [
+          { id: "closure-feed", label: "511 closure feed", appliesTo: ["reroute", "signage"], status: "source-needed" },
+          { id: "charging-source", label: "Charging source owner", appliesTo: ["ev"], status: "source-needed" },
+          { id: "operator-message", label: "Operator message owner", appliesTo: ["signage"], status: "source-needed" }
+        ],
         metrics: { risk: 46, flow: 91, ev: 72, recovery: 42, signage: 2, express: 38, holds: 5 },
         signals: [
           ["Closure", "risk", 72, "Primary pass restricted; alternate independence needs review."],
@@ -794,6 +807,11 @@
           "Compare staging, truck route, and blocked access option.",
           "Review signage and operator communication posture.",
           "Hold endorsement and public-readiness language."
+        ],
+        gates: [
+          { id: "terminal-queue", label: "Terminal queue feed", appliesTo: ["reroute", "recovery"], status: "source-needed" },
+          { id: "truck-route", label: "Local truck route authority", appliesTo: ["reroute"], status: "source-needed" },
+          { id: "port-comms", label: "Port communications owner", appliesTo: ["signage"], status: "source-needed" }
         ],
         metrics: { risk: 52, flow: 84, ev: 79, recovery: 55, signage: 3, express: 46, holds: 6 },
         signals: [
@@ -825,6 +843,11 @@
           "Review tolling/pricing authority holds.",
           "Export operator-reviewed switch packet."
         ],
+        gates: [
+          { id: "incident-log", label: "Incident log owner", appliesTo: ["recovery", "reroute"], status: "operator-review" },
+          { id: "clearance-owner", label: "Clearance owner review", appliesTo: ["recovery"], status: "operator-review" },
+          { id: "priced-lane", label: "Priced-lane authority", appliesTo: ["express"], status: "source-needed" }
+        ],
         metrics: { risk: 59, flow: 78, ev: 83, recovery: 68, signage: 2, express: 62, holds: 5 },
         signals: [
           ["Incident", "risk", 80, "Managed lane blocked at merge area."],
@@ -854,6 +877,11 @@
           "Compare operations package, asset package, and express-service option.",
           "Review ROI and revenue proxy holds.",
           "Update renewal backlog for quarterly review."
+        ],
+        gates: [
+          { id: "probe-window", label: "Probe data window", appliesTo: ["recovery", "asset"], status: "heuristic" },
+          { id: "carrier-source", label: "Carrier advisory source", appliesTo: ["express"], status: "source-needed" },
+          { id: "asset-refresh", label: "Asset row refresh", appliesTo: ["asset"], status: "source-needed" }
         ],
         metrics: { risk: 41, flow: 87, ev: 86, recovery: 39, signage: 1, express: 54, holds: 4 },
         signals: [
@@ -920,6 +948,7 @@
       appliedEvents: [],
       manualEvents: [],
       resolvedEvents: [],
+      verifiedEvidence: [],
       log: ["00:00 DCR started in advisory simulation mode."]
     };
 
@@ -1041,6 +1070,41 @@
         item.textContent = step;
         steps.appendChild(item);
       }
+    }
+
+    function renderEvidenceGates() {
+      const root = document.getElementById("gate-list");
+      root.innerHTML = "";
+      const gates = currentScenario().gates;
+      for (const gate of gates) {
+        const verified = isGateReady(gate);
+        const cls = verified ? "ok" : gate.status === "heuristic" ? "watch" : "risk";
+        const actionLabels = gate.appliesTo.map((kind) => switchLabels[kind]).join("; ");
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>${gate.label}</h3>
+            <span class="badge ${cls}">${verified ? "ready" : gate.status}</span>
+          </div>
+          <p class="subhead">Applies to ${actionLabels}. ${verified ? "Evidence can support mitigation review." : "Mitigation remains held until this source is verified."}</p>
+          ${verified ? "" : `<button type="button" data-evidence-gate="${gate.id}">Verify ${gate.label}</button>`}
+        `;
+        root.appendChild(el);
+      }
+      document.getElementById("gate-count").textContent =
+        `${gates.filter((gate) => isGateReady(gate)).length}/${gates.length} ready`;
+      for (const button of root.querySelectorAll("button[data-evidence-gate]")) {
+        button.addEventListener("click", () => verifyEvidence(button.dataset.evidenceGate));
+      }
+    }
+
+    function isGateReady(gate) {
+      return gate.status !== "source-needed" || state.verifiedEvidence.includes(gate.id);
+    }
+
+    function missingEvidenceFor(kind) {
+      return currentScenario().gates.filter((gate) => gate.appliesTo.includes(kind) && !isGateReady(gate));
     }
 
     function renderTimeline() {
@@ -1224,6 +1288,8 @@
         ["operator_owner", currentScenario().owner],
         ["source_custody", currentScenario().custody],
         ["evidence_status", currentScenario().evidence],
+        ["evidence_ready", `${currentScenario().gates.filter((gate) => isGateReady(gate)).length}/${currentScenario().gates.length}`],
+        ["missing_evidence", currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label).join("; ") || "none"],
         ["active_role", roleLabel(state.activeRole)],
         ["role_authority", roleAuthority(state.activeRole)],
         ["operator_status", state.operatorStatus],
@@ -1348,6 +1414,7 @@
 
     function renderAll() {
       renderScenario();
+      renderEvidenceGates();
       renderTimeline();
       renderActionQueue();
       renderMetrics();
@@ -1409,6 +1476,7 @@
       state.appliedEvents = [];
       state.manualEvents = [];
       state.resolvedEvents = [];
+      state.verifiedEvidence = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
       renderAll();
     }
@@ -1434,6 +1502,7 @@
         appliedEvents: state.appliedEvents,
         manualEvents: state.manualEvents,
         resolvedEvents: state.resolvedEvents,
+        verifiedEvidence: state.verifiedEvidence,
         log: state.log
       };
     }
@@ -1479,6 +1548,7 @@
       state.appliedEvents = snapshot.appliedEvents || [];
       state.manualEvents = snapshot.manualEvents || [];
       state.resolvedEvents = snapshot.resolvedEvents || [];
+      state.verifiedEvidence = snapshot.verifiedEvidence || [];
       state.log = [...(snapshot.log || []), `${formatSnapshotClock(snapshot.minute)} ${label}.`];
       document.getElementById("scenario-select").value = state.scenario;
       document.getElementById("saved-run-status").textContent =
@@ -1537,6 +1607,15 @@
       renderAll();
     }
 
+    function verifyEvidence(gateId) {
+      if (!state.verifiedEvidence.includes(gateId)) {
+        state.verifiedEvidence.push(gateId);
+      }
+      const gate = currentScenario().gates.find((item) => item.id === gateId);
+      state.log.push(`${formatClock()} evidence verified: ${gate.label}.`);
+      renderAll();
+    }
+
     function injectSignal(kind) {
       const manualImpacts = {
         closure: { label: "Closure severity increased", severity: "risk", action: "reroute", impact: { risk: 7, flow: -3, recovery: 5 } },
@@ -1591,6 +1670,16 @@
         target.boundary = `Held for ${roleLabel(state.activeRole)} authority mismatch. ${roleLabel(state.activeRole)} ${roleAuthority(state.activeRole)}.`;
         state.operatorStatus = "held";
         state.log.push(`${formatClock()} role hold: ${roleLabel(state.activeRole)} cannot approve ${target.label}.`);
+        renderAll();
+        return;
+      }
+      const resolvableEvents = openActionEvents().filter((event) => event.action === target.kind);
+      const missing = resolvableEvents.length ? missingEvidenceFor(target.kind) : [];
+      if (missing.length) {
+        target.status = "blocked";
+        target.boundary = `Held for source custody: ${missing.map((gate) => gate.label).join("; ")}.`;
+        state.operatorStatus = "held";
+        state.log.push(`${formatClock()} source hold: ${target.label} needs ${missing.map((gate) => gate.label).join("; ")}.`);
         renderAll();
         return;
       }
