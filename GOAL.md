@@ -160,3 +160,6 @@ should mean something in the SLA graph.
   gate policy and game-use semantics in
   `data/t2-game-ops-bundle-evidence-blocker-relief.csv` when source acceptance
   rows had them.
+- `route optimizer-constraint-ledger` now preserves T2 qualification gate policy
+  and game-use semantics in `optimizer_effect` for replayed game/ops bundle
+  relief rows whose source blocker-relief rows had them.
