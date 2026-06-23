@@ -2095,11 +2095,32 @@
       return `${name}: ${body}`;
     }
 
+    function scenarioMaintenanceDefinition() {
+      return {
+        "winter-closure": {
+          failure: "corridor reliability failure",
+          fix: "weather-responsive split + EV staging"
+        },
+        "terminal-access": {
+          failure: "intersection access failure",
+          fix: "retime gate approach routing"
+        },
+        "managed-lane": {
+          failure: "managed-lane recovery failure",
+          fix: "clearance protocol + shoulder review"
+        },
+        "freight-bottleneck": {
+          failure: "recurring freight bottleneck",
+          fix: "package reprioritization"
+        }
+      }[state.scenario];
+    }
+
     function driveSlaPriorities() {
       const profile = driveProfile();
       const metrics = computeMetrics();
-      const fix = fixPackage();
-      const evidence = evidenceDossier();
+      const definition = scenarioMaintenanceDefinition();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
       const current = Math.round(
         profile.target +
         Math.max(0, metrics.risk - 40) * 1.2 +
@@ -2117,16 +2138,18 @@
         : metrics.risk >= 45
           ? "P2 mitigate risk"
           : "P3 maintain watch";
+      const priorityCode = priority.slice(0, 2);
       return {
         status: maintained ? "maintained" : "violated",
         endpoints: profile.endpoints,
         target: `${profile.target}m +5m buffer`,
         current: `${current}m`,
         priority,
+        priorityCode,
         violation: violations.join("; ") || "none",
         cause: topTrafficCause(),
-        mitigation: fix.scope,
-        gate: evidence.missing === "none" ? "operator release review" : `verify ${evidence.missing}`
+        mitigation: definition.fix,
+        gate: missingEvidence.length ? `verify ${missingEvidence.join("; ")}` : "operator release review"
       };
     }
 
@@ -2151,6 +2174,7 @@
 
     function guidanceBoard() {
       const metrics = computeMetrics();
+      const drive = driveSlaPriorities();
       const actions = openActionEvents();
       const approvedKinds = state.decisions
         .filter((item) => item.status === "approved")
@@ -2164,12 +2188,12 @@
         status,
         route: hasDecision("reroute")
           ? "reviewed alternate route"
-          : actions.some((event) => event.action === "reroute") || metrics.risk >= 50
+          : actions.some((event) => event.action === "reroute") || drive.status === "violated"
             ? "draft reroute split"
             : "monitor base route",
         signage: hasDecision("signage")
           ? "reviewed message window"
-          : actions.some((event) => event.action === "signage") || metrics.signage >= 3
+          : actions.some((event) => event.action === "signage") || metrics.signage >= 3 || drive.status === "violated"
             ? "queue early signage"
             : "monitor queue",
         ev: hasDecision("ev")
@@ -2253,42 +2277,19 @@
     function maintenanceCase() {
       const metrics = computeMetrics();
       const summary = runSummary();
-      const actions = openActionEvents();
+      const drive = driveSlaPriorities();
       const gates = currentScenario().gates;
       const evidenceReady = gates.filter((gate) => isGateReady(gate)).length;
       const missingEvidence = gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
-      const measured = {
-        "winter-closure": {
-          failure: "corridor reliability failure",
-          fix: "weather-responsive split + EV staging"
-        },
-        "terminal-access": {
-          failure: "intersection access failure",
-          fix: "retime gate approach routing"
-        },
-        "managed-lane": {
-          failure: "managed-lane recovery failure",
-          fix: "clearance protocol + shoulder review"
-        },
-        "freight-bottleneck": {
-          failure: "recurring freight bottleneck",
-          fix: "package reprioritization"
-        }
-      }[state.scenario];
-      const priority = metrics.risk >= 55 || metrics.flow < 85 || metrics.recovery >= 60
-        ? "P1"
-        : metrics.risk >= 45 || actions.length
-          ? "P2"
-          : "P3";
+      const measured = scenarioMaintenanceDefinition();
+      const priority = drive.priorityCode;
       const status = summary.outcome === "mitigated"
         ? "validated"
-        : actions.length || priority !== "P3"
+        : drive.status === "violated"
           ? "measured"
           : "watch";
       const thresholds = [
-        metrics.risk >= 55 ? `risk ${metrics.risk}>=55` : metrics.risk >= 45 ? `risk ${metrics.risk}>=45` : "",
-        metrics.flow < 85 ? `flow ${metrics.flow}%<85%` : "",
-        metrics.recovery >= 60 ? `recovery ${metrics.recovery}m>=60m` : ""
+        drive.violation === "none" ? "" : drive.violation
       ].filter(Boolean);
       return {
         status,
@@ -2382,14 +2383,14 @@
     }
 
     function interventionRank() {
-      const maintenance = maintenanceCase();
+      const drive = driveSlaPriorities();
       const fix = fixPackage();
       const score = scenarioScorecard();
       const evidence = evidenceDossier();
       const approval = ownerApprovalPacket();
-      const rank = maintenance.priority === "P1"
+      const rank = drive.priorityCode === "P1"
         ? "rank 1; P1"
-        : maintenance.priority === "P2"
+        : drive.priorityCode === "P2"
           ? "rank 2; P2"
           : "rank 3; P3";
       const status = fix.status === "validated" ? "proving" : fix.status === "blocked" ? "held" : "ready";
