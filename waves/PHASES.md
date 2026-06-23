@@ -174,14 +174,15 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Evidence Acceptance Qualification Semantics | Preserve T2 qualification-action semantics in game/ops bundle evidence policy acceptance. | done |
 | 2026-06-23 | Milestone 10 T2 Blocker Relief Qualification Semantics | Preserve T2 qualification-action semantics in game/ops bundle blocker relief. | done |
 | 2026-06-23 | Milestone 10 T2 Optimizer Qualification Semantics | Preserve T2 qualification-action semantics in optimizer ledger replay. | done |
+| 2026-06-23 | Milestone 10 T2 Budget Qualification Semantics | Preserve T2 qualification-action semantics in optimizer constraint budget rollup. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-optimizer-qualification-semantics`
-closed after `data/optimizer-constraint-ledger.csv` preserved
-qualification-action gate policy and game-use semantics from blocker relief.
-Current T1-T4 structural maps have a gateable readiness artifact, a gateable
-release-facing inventory, and no residual `publication` blockers.
+No wave is active. `2026-06-23-milestone-10-t2-budget-qualification-semantics`
+closed after `data/optimizer-constraint-budget.csv` preserved qualification
+effects from optimizer ledger replay. Current T1-T4 structural maps have a
+gateable readiness artifact, a gateable release-facing inventory, and no
+residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
 and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,

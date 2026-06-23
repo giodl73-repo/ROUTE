@@ -20603,6 +20603,7 @@ struct OptimizerConstraintBudgetRow {
     constraint_penalty_score: f64,
     top_constraint_classes: String,
     blocking_claims: String,
+    qualification_effects: String,
     next_artifacts: String,
     constraint_ledger_artifact: String,
     validation_status: String,
@@ -36241,6 +36242,7 @@ struct OptimizerConstraintBudgetBuilder {
     constraint_penalty_score: f64,
     class_counts: std::collections::BTreeMap<String, usize>,
     blocking_claims: std::collections::BTreeSet<String>,
+    qualification_effects: std::collections::BTreeSet<String>,
     next_artifacts: std::collections::BTreeSet<String>,
 }
 
@@ -36306,6 +36308,11 @@ fn optimizer_constraint_budget_rows(
         if !row.next_artifact.trim().is_empty() {
             builder.next_artifacts.insert(row.next_artifact.clone());
         }
+        if row.optimizer_effect.contains("qualification_gate_policy=") {
+            builder
+                .qualification_effects
+                .insert(row.optimizer_effect.clone());
+        }
         if builder.route.is_empty() && !row.route.is_empty() {
             builder.route = row.route.clone();
         }
@@ -36346,6 +36353,7 @@ fn optimizer_constraint_budget_rows(
                 constraint_penalty_score: builder.constraint_penalty_score,
                 top_constraint_classes,
                 blocking_claims: join_string_set(&builder.blocking_claims),
+                qualification_effects: join_string_set(&builder.qualification_effects),
                 next_artifacts: join_string_set(&builder.next_artifacts),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: validation_status.to_string(),
@@ -36497,6 +36505,22 @@ fn optimizer_constraint_budget_gate_failures(
         if row.claim_blocker_count > 0 && row.blocking_claims.trim().is_empty() {
             failures.push(format!(
                 "{} has claim blockers without blocking claims",
+                row.budget_id
+            ));
+        }
+        if row
+            .top_constraint_classes
+            .contains("game_ops_bundle_binding_relief")
+            && ledger_rows.iter().any(|ledger| {
+                ledger.segment_bundle_id == row.segment_bundle_id
+                    && ledger
+                        .optimizer_effect
+                        .contains("qualification_gate_policy=")
+            })
+            && row.qualification_effects.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} drops qualification-bearing optimizer effects",
                 row.budget_id
             ));
         }
@@ -68924,6 +68948,7 @@ mod tests {
                 constraint_penalty_score: 1.0,
                 top_constraint_classes: "game_ops_bundle_binding".to_string(),
                 blocking_claims: "game;incident;publication;upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: "review".to_string(),
@@ -68947,6 +68972,7 @@ mod tests {
                 constraint_penalty_score: 1.0,
                 top_constraint_classes: "terminal_access_evidence_gap".to_string(),
                 blocking_claims: "upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts: "data/t3-t4-access-gaps.csv".to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: "review".to_string(),
@@ -68970,6 +68996,7 @@ mod tests {
                 constraint_penalty_score: 6.0,
                 top_constraint_classes: "asset_condition_debt|game_ops_bundle_binding".to_string(),
                 blocking_claims: "game;incident;publication;upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts: "data/game/t2-service-overlays.csv;data/tier-pavement-docket.csv"
                     .to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
@@ -71859,7 +71886,9 @@ mod tests {
                 exception_id: String::new(),
                 exception_artifact: String::new(),
                 next_artifact: "data/tier-pavement-docket.csv".to_string(),
-                optimizer_effect: "subtract budget cost".to_string(),
+                optimizer_effect:
+                    "subtract budget cost; qualification_gate_policy=accepted when structural diagnostics pass"
+                        .to_string(),
                 validation_status: "review".to_string(),
             },
             OptimizerConstraintLedgerRow {
@@ -71919,6 +71948,9 @@ mod tests {
         assert_eq!(bundle_row.constraint_debt_cost_m, 10.0);
         assert_eq!(bundle_row.claim_blocker_count, 0);
         assert_eq!(bundle_row.blocking_claims, "publication;sla");
+        assert!(bundle_row
+            .qualification_effects
+            .contains("qualification_gate_policy="));
         let route_row = rows
             .iter()
             .find(|row| row.subject_id == "I84")
@@ -71950,6 +71982,7 @@ mod tests {
                 constraint_penalty_score: 1.0,
                 top_constraint_classes: "game_ops_bundle_binding".to_string(),
                 blocking_claims: "game;incident;publication;upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: "review".to_string(),
@@ -71973,6 +72006,7 @@ mod tests {
                 constraint_penalty_score: 5.85,
                 top_constraint_classes: "asset_condition_debt".to_string(),
                 blocking_claims: "publication;sla;transit;upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts: "data/tier-pavement-acquisition-plan.csv".to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: "review".to_string(),
@@ -71997,6 +72031,7 @@ mod tests {
                 top_constraint_classes: "asset_condition_debt|game_ops_bundle_binding_relief"
                     .to_string(),
                 blocking_claims: "publication;sla;transit;upgrade".to_string(),
+                qualification_effects: String::new(),
                 next_artifacts:
                     "data/optimizer-constraint-budget.csv;data/tier-pavement-docket.csv".to_string(),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
