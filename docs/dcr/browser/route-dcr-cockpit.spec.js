@@ -26,6 +26,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Operator SLA")).toContainText("Claimbounded");
     await expect(page.locator("#sla-status")).toHaveText("simulated");
     await expect(page.locator("#sla-detect")).toHaveText("pending");
+    await expect(page.getByLabel("Guidance board")).toContainText("Routemonitor base route");
+    await expect(page.locator("#guidance-status")).toHaveText("draft");
+    await expect(page.locator("#guidance-source")).toHaveText("source-needed");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -41,6 +44,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sla_boundary,"simulated timing; no guaranteed SLA"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
   });
 
   test("controls create and approve switch packets without changing authority boundary", async ({ page }) => {
@@ -72,6 +76,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#source-status")).toHaveText("source-needed");
     await expect(page.getByLabel("Scenario run plan")).toContainText("Terminal queue owner plus local truck-route authority required.");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_owner,"Port operations"/);
+    await expect(page.locator("#guidance-route")).toHaveText("draft reroute split");
+    await expect(page.locator("#guidance-signage")).toHaveText("queue early signage");
 
     await page.getByRole("button", { name: "Terminal", exact: true }).click();
     await expect(page.locator("#promise-risk")).toHaveText("57");
@@ -111,6 +117,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Timeline queue")).toContainText("applied");
     await expect(page.locator("#action-count")).toHaveText("1 open");
     await expect(page.getByLabel("Action queue")).toContainText("Reroute advisory");
+    await expect(page.locator("#guidance-status")).toHaveText("held");
+    await expect(page.locator("#guidance-route")).toHaveText("draft reroute split");
+    await expect(page.locator("#guidance-source")).toHaveText("511 closure feed");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/timeline_events,"Snow band reduces alternate reliability"/);
 
     await page.getByRole("button", { name: "Create Reroute advisory" }).click();
@@ -146,15 +155,20 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#sla-status")).toHaveText("mitigated");
     await expect(page.locator("#sla-verify")).toHaveText("0m");
     await expect(page.locator("#sla-mitigate")).toHaveText("0m");
+    await expect(page.locator("#guidance-status")).toHaveText("reviewed");
+    await expect(page.locator("#guidance-route")).toHaveText("reviewed alternate route");
+    await expect(page.locator("#guidance-source")).toHaveText("operator-reviewed");
     await expect(page.locator("#handoff-status")).toHaveText("mitigated");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/SLA view: detect 0m, hold 0m, verify 0m, mitigate 0m/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify Charging source owner/);
     await expect(page.getByLabel("Timeline queue")).toContainText("resolved");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/resolved_events,"1"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pilot_value,"proof-ready"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/scorecard_grade,"DCR-4"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/time_to_mitigate,"0m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
 
     const handoffPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download TXT" }).click();
@@ -189,6 +203,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#action-count")).toHaveText("0 open");
     await expect(page.locator("#scorecard-grade")).toHaveText("DCR-4");
     await expect(page.locator("#sla-status")).toHaveText("mitigated");
+    await expect(page.locator("#guidance-status")).toHaveText("reviewed");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
 
     await page.getByRole("button", { name: "Save Run" }).click();
