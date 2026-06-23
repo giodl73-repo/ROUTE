@@ -125,6 +125,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Step" }).click();
     await page.getByRole("button", { name: "Save Run" }).click();
     await expect(page.locator("#saved-run-status")).toContainText("Saved Managed-lane incident recovery for Marta Ruiz");
+    await expect(page.getByLabel("Run library")).toContainText("Managed-lane incident recovery - Marta Ruiz @ 00:05");
 
     await page.getByLabel("Account profile").selectOption("planner");
     await page.getByLabel("Scenario case").selectOption("winter-closure");
@@ -136,6 +137,17 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#clock")).toHaveText("00:05");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/account_name,"Marta Ruiz"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/account_org,"District Operations"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/risk_delta,"0"/);
+    await expect(page.locator("#risk-delta")).toHaveText("+0");
+
+    await page.getByLabel("Scenario case").selectOption("freight-bottleneck");
+    await page.getByRole("button", { name: "Replay Selected" }).click();
+    await expect(page.locator("#active-case")).toHaveText("Managed-lane incident recovery");
+
+    const exportPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export Runs" }).click();
+    const exportDownload = await exportPromise;
+    expect(exportDownload.suggestedFilename()).toBe("route-dcr-cockpit-runs.json");
 
     await page.getByRole("button", { name: "Clear Runs" }).click();
     await expect(page.locator("#saved-run-status")).toHaveText("Saved runs cleared.");
