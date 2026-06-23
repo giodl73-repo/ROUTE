@@ -696,6 +696,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Evidence Queue</h2>
+            <span class="badge info" id="evidence-queue-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Evidence queue">
+            <div class="metric"><span>Next Owner</span><strong id="evidence-queue-owner">source owner</strong></div>
+            <div class="metric"><span>Readiness</span><strong id="evidence-queue-readiness">0/0</strong></div>
+            <div class="metric"><span>Missing Gates</span><strong id="evidence-queue-missing">pending</strong></div>
+            <div class="metric"><span>Claim Impact</span><strong id="evidence-queue-claim">held</strong></div>
+            <div class="metric"><span>Release Consequence</span><strong id="evidence-queue-release">hold release</strong></div>
+            <div class="metric"><span>Next Action</span><strong id="evidence-queue-next">verify source</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="evidence-queue-boundary">source owner authoritative</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2337,6 +2353,23 @@
       };
     }
 
+    function evidenceQueue() {
+      const evidence = evidenceDossier();
+      const escalation = sourceEscalation();
+      const runbook = mitigationRunbook();
+      const clear = evidence.missing === "none";
+      return {
+        status: clear ? "clear" : evidence.status,
+        owner: escalation.owner,
+        readiness: evidence.readiness,
+        missing: evidence.missing,
+        claim: evidence.claim,
+        release: clear ? "ready for owner review" : `hold release; ${runbook.gate}`,
+        next: clear ? "owner review" : escalation.packet,
+        boundary: "evidence queue only; source owners remain authoritative"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -2890,6 +2923,20 @@
       document.getElementById("mitigation-runbook-rollback").textContent = runbook.rollback;
       document.getElementById("mitigation-runbook-sponsor").textContent = runbook.sponsor;
       document.getElementById("mitigation-runbook-boundary").textContent = runbook.boundary;
+    }
+
+    function renderEvidenceQueue() {
+      const queue = evidenceQueue();
+      const status = document.getElementById("evidence-queue-status");
+      status.textContent = queue.status;
+      status.className = `badge ${queue.status === "clear" ? "ok" : queue.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("evidence-queue-owner").textContent = queue.owner;
+      document.getElementById("evidence-queue-readiness").textContent = queue.readiness;
+      document.getElementById("evidence-queue-missing").textContent = queue.missing;
+      document.getElementById("evidence-queue-claim").textContent = queue.claim;
+      document.getElementById("evidence-queue-release").textContent = queue.release;
+      document.getElementById("evidence-queue-next").textContent = queue.next;
+      document.getElementById("evidence-queue-boundary").textContent = queue.boundary;
     }
 
     function uniqueLabels(items) {
@@ -3457,6 +3504,7 @@
       const drive = driveSlaPriorities();
       const cascade = priorityCascade(drive, sla);
       const runbook = mitigationRunbook(cascade);
+      const evidenceQueueState = evidenceQueue();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3542,6 +3590,14 @@
         ["mitigation_runbook_rollback", runbook.rollback],
         ["mitigation_runbook_sponsor_impact", runbook.sponsor],
         ["mitigation_runbook_boundary", runbook.boundary],
+        ["evidence_queue_status", evidenceQueueState.status],
+        ["evidence_queue_owner", evidenceQueueState.owner],
+        ["evidence_queue_readiness", evidenceQueueState.readiness],
+        ["evidence_queue_missing", evidenceQueueState.missing],
+        ["evidence_queue_claim_impact", evidenceQueueState.claim],
+        ["evidence_queue_release_consequence", evidenceQueueState.release],
+        ["evidence_queue_next_action", evidenceQueueState.next],
+        ["evidence_queue_boundary", evidenceQueueState.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3796,6 +3852,7 @@
       const drive = driveSlaPriorities();
       const cascade = priorityCascade(drive, sla);
       const runbook = mitigationRunbook(cascade);
+      const evidenceQueueState = evidenceQueue();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3847,6 +3904,7 @@
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
         `Priority cascade: ${cascade.status}; primary ${cascade.primary}; SLA ${cascade.sla}; violation ${cascade.violation}; mitigation ${cascade.mitigation}; gate ${cascade.gate}; sponsor ${cascade.sponsor}`,
         `Mitigation runbook: ${runbook.status}; control ${runbook.control}; why ${runbook.why}; gate ${runbook.gate}; effect ${runbook.effect}; rollback ${runbook.rollback}; sponsor ${runbook.sponsor}`,
+        `Evidence queue: ${evidenceQueueState.status}; owner ${evidenceQueueState.owner}; readiness ${evidenceQueueState.readiness}; missing ${evidenceQueueState.missing}; claim ${evidenceQueueState.claim}; release ${evidenceQueueState.release}; next ${evidenceQueueState.next}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4113,6 +4171,7 @@
       renderDriveSlaPriorities();
       renderPriorityCascade();
       renderMitigationRunbook();
+      renderEvidenceQueue();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4281,6 +4340,7 @@
         driveSla: driveSlaPriorities(),
         priorityCascade: priorityCascade(),
         mitigationRunbook: mitigationRunbook(),
+        evidenceQueue: evidenceQueue(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
