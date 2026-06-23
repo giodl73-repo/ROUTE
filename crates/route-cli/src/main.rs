@@ -21302,6 +21302,8 @@ struct T2GameOpsBundleEvidencePolicyAcceptanceRow {
     segment_bundle_id: String,
     accepted_required_evidence: String,
     accepted_policy_treatment: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     acceptance_decision: String,
     blocker_claims_before: String,
     blocker_claims_after: String,
@@ -31506,6 +31508,8 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_rows(
             segment_bundle_id: row.segment_bundle_id.clone(),
             accepted_required_evidence: row.required_evidence.clone(),
             accepted_policy_treatment: row.policy_treatment.clone(),
+            qualification_gate_policy: row.qualification_gate_policy.clone(),
+            qualification_game_use: row.qualification_game_use.clone(),
             acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
             blocker_claims_before: row.blocker_claims_after.clone(),
             blocker_claims_after: row.blocker_claims_after.clone(),
@@ -31589,6 +31593,10 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_gate_failures(
             expected.len()
         ));
     }
+    let policy_by_id = policy_rows
+        .iter()
+        .map(|policy| (policy.policy_id.as_str(), policy))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut seen = std::collections::BTreeSet::<String>::new();
     for row in rows {
         if row.acceptance_id.trim().is_empty()
@@ -31630,6 +31638,19 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_gate_failures(
         }
         if row.next_artifact != "data/t2-game-ops-bundle-evidence-blocker-relief.csv" {
             failures.push(format!("{} points at wrong next artifact", row.policy_id));
+        }
+        if let Some(policy) = policy_by_id.get(row.policy_id.as_str()) {
+            let policy_has_qualification = !policy.qualification_gate_policy.trim().is_empty()
+                || !policy.qualification_game_use.trim().is_empty();
+            if policy_has_qualification
+                && (row.qualification_gate_policy.trim().is_empty()
+                    || row.qualification_game_use.trim().is_empty())
+            {
+                failures.push(format!(
+                    "{} acceptance missing qualification semantics",
+                    row.policy_id
+                ));
+            }
         }
     }
     for expected_id in expected {
@@ -69244,6 +69265,8 @@ mod tests {
             accepted_policy_treatment:
                 "hold game/ops claims until local-zone overlay handoff is accepted or explicitly carried"
                     .to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
             blocker_claims_before: "game;incident;publication;sla;transit;upgrade".to_string(),
             blocker_claims_after: "game;incident;publication;sla;transit;upgrade".to_string(),

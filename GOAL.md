@@ -152,3 +152,7 @@ should mean something in the SLA graph.
   policy and game-use semantics in
   `data/t2-game-ops-bundle-evidence-policy.csv` for bundle-bound stop-chain
   policy rows.
+- `route t2-game-ops-bundle-evidence-policy-acceptance` now preserves
+  qualification gate policy and game-use semantics in
+  `data/t2-game-ops-bundle-evidence-policy-acceptance.csv` when accepted source
+  policy rows had them.
