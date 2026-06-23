@@ -725,6 +725,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Guidance Board</h2>
+            <span class="badge info" id="guidance-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Guidance board">
+            <div class="metric"><span>Route</span><strong id="guidance-route">monitor base route</strong></div>
+            <div class="metric"><span>Signage</span><strong id="guidance-signage">monitor queue</strong></div>
+            <div class="metric"><span>EV staging</span><strong id="guidance-ev">monitor range</strong></div>
+            <div class="metric"><span>Source</span><strong id="guidance-source">source-needed</strong></div>
+            <div class="metric"><span>Audience</span><strong id="guidance-audience">operator only</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="guidance-boundary">advisory</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1518,11 +1533,63 @@
       document.getElementById("sla-claim").textContent = sla.claim;
     }
 
+    function uniqueLabels(items) {
+      return [...new Set(items.filter(Boolean))];
+    }
+
+    function guidanceBoard() {
+      const metrics = computeMetrics();
+      const actions = openActionEvents();
+      const approvedKinds = state.decisions
+        .filter((item) => item.status === "approved")
+        .map((item) => item.kind);
+      const activeKinds = uniqueLabels([...actions.map((event) => event.action), ...approvedKinds]);
+      const missingSources = uniqueLabels(activeKinds.flatMap((kind) => missingEvidenceFor(kind).map((gate) => gate.label)));
+      const blocked = state.decisions.some((item) => item.status === "blocked");
+      const reviewed = approvedKinds.length > 0 && actions.length === 0;
+      const status = reviewed ? "reviewed" : blocked || missingSources.length ? "held" : actions.length ? "draft" : "draft";
+      return {
+        status,
+        route: hasDecision("reroute")
+          ? "reviewed alternate route"
+          : actions.some((event) => event.action === "reroute") || metrics.risk >= 50
+            ? "draft reroute split"
+            : "monitor base route",
+        signage: hasDecision("signage")
+          ? "reviewed message window"
+          : actions.some((event) => event.action === "signage") || metrics.signage >= 3
+            ? "queue early signage"
+            : "monitor queue",
+        ev: hasDecision("ev")
+          ? "reviewed EV staging"
+          : actions.some((event) => event.action === "ev") || metrics.ev < 70
+            ? "verify charging source"
+            : "monitor range",
+        source: missingSources.join("; ") || (reviewed ? "operator-reviewed" : currentScenario().evidence),
+        audience: reviewed ? "operator packet" : "operator only",
+        boundary: "advisory, not field command"
+      };
+    }
+
+    function renderGuidanceBoard() {
+      const guidance = guidanceBoard();
+      const status = document.getElementById("guidance-status");
+      status.textContent = guidance.status;
+      status.className = `badge ${guidance.status === "reviewed" ? "ok" : guidance.status === "held" ? "risk" : "info"}`;
+      document.getElementById("guidance-route").textContent = guidance.route;
+      document.getElementById("guidance-signage").textContent = guidance.signage;
+      document.getElementById("guidance-ev").textContent = guidance.ev;
+      document.getElementById("guidance-source").textContent = guidance.source;
+      document.getElementById("guidance-audience").textContent = guidance.audience;
+      document.getElementById("guidance-boundary").textContent = guidance.boundary;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
       const score = scenarioScorecard();
       const sla = operatorSla();
+      const guidance = guidanceBoard();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1553,6 +1620,13 @@
         ["time_to_mitigate", formatSla(sla.mitigate)],
         ["sla_cycle", `${sla.cycle}m`],
         ["sla_boundary", sla.boundary],
+        ["guidance_status", guidance.status],
+        ["guidance_route", guidance.route],
+        ["guidance_signage", guidance.signage],
+        ["guidance_ev", guidance.ev],
+        ["guidance_source", guidance.source],
+        ["guidance_audience", guidance.audience],
+        ["guidance_boundary", guidance.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1584,6 +1658,7 @@
       const metrics = computeMetrics();
       const summary = runSummary();
       const sla = operatorSla();
+      const guidance = guidanceBoard();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -1602,6 +1677,7 @@
         `Metrics: risk ${metrics.risk} (${formatSigned(summary.riskChange)}), flow ${metrics.flow}% (${formatSigned(summary.flowChange)}%), evidence ${summary.evidenceReady}/${summary.evidenceTotal}`,
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
+        `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -1835,6 +1911,7 @@
       renderRunSummary();
       renderScorecard();
       renderOperatorSla();
+      renderGuidanceBoard();
       renderReadout();
       renderHandoff();
       renderLog();
@@ -1972,6 +2049,7 @@
         summary: runSummary(),
         scorecard: scenarioScorecard(),
         sla: operatorSla(),
+        guidance: guidanceBoard(),
         handoff: handoffText(),
         log: state.log
       };
