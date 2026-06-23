@@ -662,6 +662,23 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>US Tier Map Validation</h2>
+            <span class="badge info" id="tier-map-status">simulated</span>
+          </div>
+          <div class="metrics" aria-label="US tier map validation">
+            <div class="metric"><span>Map Source</span><strong id="tier-map-source">maps/all-tiers-v2.png</strong></div>
+            <div class="metric"><span>SLA Row</span><strong id="tier-map-row">fixture</strong></div>
+            <div class="metric"><span>Tier Path</span><strong id="tier-map-path">T1</strong></div>
+            <div class="metric"><span>Window</span><strong id="tier-map-window">24h</strong></div>
+            <div class="metric"><span>Sim Delta</span><strong id="tier-map-delta">+0m</strong></div>
+            <div class="metric"><span>Validation</span><strong id="tier-map-validation">bounded</strong></div>
+            <div class="metric"><span>Stop Rhythm</span><strong id="tier-map-rhythm">fixture</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="tier-map-boundary">fixture only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2145,6 +2162,102 @@
       };
     }
 
+    function tierMapFixture() {
+      return {
+        "winter-closure": {
+          source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
+          row: "SAC -> SLC",
+          tierPath: "T1 via I-5;I-15",
+          stopPath: "SAC;CENTRAL_VALLEY;LA;BARSTOW;LAS_VEGAS;ST_GEORGE;CEDAR_CITY;FILLMORE;SLC",
+          window: "24h overnight",
+          freightP95: "25.3h",
+          fullI20P95: "21.5h",
+          stopGap: "sla-stop-rhythm-ok",
+          evidence: "heuristic-planning"
+        },
+        "terminal-access": {
+          source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
+          row: "HOU -> BEAUMONT",
+          tierPath: "T1 via I-10",
+          stopPath: "HOU;BEAUMONT",
+          window: "6h local",
+          freightP95: "1.9h",
+          fullI20P95: "1.7h",
+          stopGap: "sla-stop-rhythm-ok",
+          evidence: "heuristic-planning"
+        },
+        "managed-lane": {
+          source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
+          row: "LA -> BARSTOW",
+          tierPath: "T2 via I-15",
+          stopPath: "LA;BARSTOW",
+          window: "6h local",
+          freightP95: "2.3h",
+          fullI20P95: "2.0h",
+          stopGap: "sla-stop-rhythm-ok",
+          evidence: "heuristic-planning"
+        },
+        "freight-bottleneck": {
+          source: "maps/all-tiers-v2.png + data/beck-stop-sla.csv",
+          row: "HOU -> DAL",
+          tierPath: "T1 via I-10;I-35",
+          stopPath: "HOU;SAT;WACO;DAL",
+          window: "12h half-day",
+          freightP95: "11.7h",
+          fullI20P95: "9.9h",
+          stopGap: "sla-stop-rhythm-ok",
+          evidence: "heuristic-planning"
+        }
+      }[state.scenario];
+    }
+
+    function minutesFromText(value) {
+      const match = String(value).match(/-?\d+/);
+      return match ? Number(match[0]) : 0;
+    }
+
+    function tierMapValidation() {
+      const fixture = tierMapFixture();
+      const drive = driveSlaPriorities();
+      const targetMinutes = minutesFromText(drive.target);
+      const currentMinutes = minutesFromText(drive.current);
+      const deltaMinutes = currentMinutes - targetMinutes;
+      const delta = `${deltaMinutes >= 0 ? "+" : ""}${deltaMinutes}m`;
+      const validation = drive.status === "maintained"
+        ? "validated within tier buffer"
+        : "tier SLA breach simulated";
+      return {
+        status: drive.status === "maintained" ? "validated" : "breach",
+        source: fixture.source,
+        row: fixture.row,
+        tierPath: fixture.tierPath,
+        stopPath: fixture.stopPath,
+        window: fixture.window,
+        freightP95: fixture.freightP95,
+        fullI20P95: fixture.fullI20P95,
+        stopGap: fixture.stopGap,
+        evidence: fixture.evidence,
+        delta,
+        validation,
+        boundary: "US tier map fixture only; no live network validation"
+      };
+    }
+
+    function renderTierMapValidation() {
+      const tier = tierMapValidation();
+      const status = document.getElementById("tier-map-status");
+      status.textContent = tier.status;
+      status.className = `badge ${tier.status === "validated" ? "ok" : "risk"}`;
+      document.getElementById("tier-map-source").textContent = tier.source;
+      document.getElementById("tier-map-row").textContent = tier.row;
+      document.getElementById("tier-map-path").textContent = tier.tierPath;
+      document.getElementById("tier-map-window").textContent = tier.window;
+      document.getElementById("tier-map-delta").textContent = tier.delta;
+      document.getElementById("tier-map-validation").textContent = tier.validation;
+      document.getElementById("tier-map-rhythm").textContent = tier.stopGap;
+      document.getElementById("tier-map-boundary").textContent = tier.boundary;
+    }
+
     function renderDriveSlaPriorities() {
       const drive = driveSlaPriorities();
       const status = document.getElementById("drive-sla-status");
@@ -2733,6 +2846,7 @@
       const score = scenarioScorecard();
       const sla = operatorSla();
       const drive = driveSlaPriorities();
+      const tier = tierMapValidation();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -2793,6 +2907,19 @@
         ["drive_sla_cause", drive.cause],
         ["drive_sla_mitigation", drive.mitigation],
         ["drive_sla_release_gate", drive.gate],
+        ["tier_map_status", tier.status],
+        ["tier_map_source", tier.source],
+        ["tier_map_row", tier.row],
+        ["tier_map_path", tier.tierPath],
+        ["tier_map_stop_path", tier.stopPath],
+        ["tier_map_window", tier.window],
+        ["tier_map_freight_p95", tier.freightP95],
+        ["tier_map_full_i20_p95", tier.fullI20P95],
+        ["tier_map_stop_rhythm", tier.stopGap],
+        ["tier_map_delta", tier.delta],
+        ["tier_map_validation", tier.validation],
+        ["tier_map_evidence", tier.evidence],
+        ["tier_map_boundary", tier.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -2977,6 +3104,7 @@
       const summary = runSummary();
       const sla = operatorSla();
       const drive = driveSlaPriorities();
+      const tier = tierMapValidation();
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3017,6 +3145,7 @@
         `Resolved signals: ${state.resolvedEvents.length}; open actions: ${summary.openActions}; applied events: ${summary.applied}`,
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
+        `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3272,6 +3401,7 @@
       renderScorecard();
       renderOperatorSla();
       renderDriveSlaPriorities();
+      renderTierMapValidation();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -3431,6 +3561,7 @@
         scorecard: scenarioScorecard(),
         sla: operatorSla(),
         driveSla: driveSlaPriorities(),
+        tierMapValidation: tierMapValidation(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
