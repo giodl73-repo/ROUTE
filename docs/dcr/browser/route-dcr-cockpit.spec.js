@@ -302,6 +302,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#sponsor-proof-ask")).toHaveText("clear source custody before sponsor decision");
     await expect(page.locator("#sponsor-proof-next")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.locator("#sponsor-proof-boundary")).toHaveText("sponsor proof packet only; no renewal, ROI, or SLA commitment");
+    await expect(page.getByLabel("Renewal decision brief")).toContainText("Decisionclear source custody before sponsor decision");
+    await expect(page.locator("#renewal-brief-status")).toHaveText("defer");
+    await expect(page.locator("#renewal-brief-basis")).toHaveText("proof held until source custody clears; 0/3 evidence; DCR-0; degraded");
+    await expect(page.locator("#renewal-brief-ask")).toHaveText("continue monitored proof run");
+    await expect(page.locator("#renewal-brief-held")).toHaveText("511 closure feed; Charging source owner; Operator message owner; ROI; guaranteed SLA; traffic control; EV availability");
+    await expect(page.locator("#renewal-brief-owner")).toHaveText("511 closure feed");
+    await expect(page.locator("#renewal-brief-next")).toHaveText("source custody: verify 511 closure feed");
+    await expect(page.locator("#renewal-brief-boundary")).toHaveText("renewal decision brief only; sponsor decision, ROI, and SLA commitments remain external");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -351,6 +359,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/assurance_case_decision,"clear 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_proof_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_proof_offer,"continue monitored proof run"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_status,"defer"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_decision,"clear source custody before sponsor decision"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -762,6 +772,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#sponsor-proof-held")).toHaveText("Charging source owner; Operator message owner; ROI; guaranteed SLA; traffic control; EV availability");
     await expect(page.locator("#sponsor-proof-next")).toHaveText("source custody: verify Charging source owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Sponsor proof packet: held; offer continue monitored proof run; proof DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; \+5% flow; 1 resolved; 1\/3 evidence; DCR-4; degraded; value T1 west gateway -> T1 east gateway; weather-responsive split \+ EV staging; held Charging source owner; Operator message owner; ROI; guaranteed SLA; traffic control; EV availability; ask clear source custody before sponsor decision; next source custody: verify Charging source owner/);
+    await expect(page.locator("#renewal-brief-status")).toHaveText("defer");
+    await expect(page.locator("#renewal-brief-decision")).toHaveText("clear source custody before sponsor decision");
+    await expect(page.locator("#renewal-brief-basis")).toHaveText("DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; +5% flow; 1 resolved; 1/3 evidence; DCR-4; degraded");
+    await expect(page.locator("#renewal-brief-ask")).toHaveText("continue monitored proof run");
+    await expect(page.locator("#renewal-brief-held")).toHaveText("Charging source owner; Operator message owner; ROI; guaranteed SLA; traffic control; EV availability");
+    await expect(page.locator("#renewal-brief-owner")).toHaveText("Charging source owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Renewal decision brief: defer; decision clear source custody before sponsor decision; basis DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; \+5% flow; 1 resolved; 1\/3 evidence; DCR-4; degraded; ask continue monitored proof run; held Charging source owner; Operator message owner; ROI; guaranteed SLA; traffic control; EV availability; owner Charging source owner; next source custody: verify Charging source owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -862,6 +879,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/assurance_case_claim,"maintained drive SLA; P3 maintain watch"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_proof_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/sponsor_proof_line,"DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; DCR-4; -4 risk; \+5% flow; 1 resolved; 1\/3 evidence; DCR-4; degraded"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_status,"defer"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/renewal_brief_decision_owner,"Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);

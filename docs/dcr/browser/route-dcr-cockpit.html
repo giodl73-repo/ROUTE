@@ -920,6 +920,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Renewal Decision Brief</h2>
+            <span class="badge info" id="renewal-brief-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Renewal decision brief">
+            <div class="metric"><span>Decision</span><strong id="renewal-brief-decision">hold</strong></div>
+            <div class="metric"><span>Basis</span><strong id="renewal-brief-basis">pending</strong></div>
+            <div class="metric"><span>Commercial Ask</span><strong id="renewal-brief-ask">continue proof</strong></div>
+            <div class="metric"><span>Held Terms</span><strong id="renewal-brief-held">ROI</strong></div>
+            <div class="metric"><span>Decision Owner</span><strong id="renewal-brief-owner">sponsor</strong></div>
+            <div class="metric"><span>Next Step</span><strong id="renewal-brief-next">source clearance</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="renewal-brief-boundary">brief only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2828,6 +2844,23 @@
       };
     }
 
+    function renewalDecisionBrief() {
+      const sponsorProof = sponsorProofPacket();
+      const gate = renewalDecisionGate();
+      const renewal = renewalValueCase();
+      const deferred = sponsorProof.status === "held" || gate.status === "held";
+      return {
+        status: deferred ? "defer" : renewal.status,
+        decision: deferred ? gate.decision : renewal.next,
+        basis: sponsorProof.proofLine,
+        ask: sponsorProof.offer,
+        held: sponsorProof.held,
+        owner: gate.owner,
+        next: sponsorProof.next,
+        boundary: "renewal decision brief only; sponsor decision, ROI, and SLA commitments remain external"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3579,6 +3612,20 @@
       document.getElementById("sponsor-proof-boundary").textContent = packet.boundary;
     }
 
+    function renderRenewalDecisionBrief() {
+      const brief = renewalDecisionBrief();
+      const status = document.getElementById("renewal-brief-status");
+      status.textContent = brief.status;
+      status.className = `badge ${brief.status === "renew" ? "ok" : brief.status === "defer" ? "info" : "watch"}`;
+      document.getElementById("renewal-brief-decision").textContent = brief.decision;
+      document.getElementById("renewal-brief-basis").textContent = brief.basis;
+      document.getElementById("renewal-brief-ask").textContent = brief.ask;
+      document.getElementById("renewal-brief-held").textContent = brief.held;
+      document.getElementById("renewal-brief-owner").textContent = brief.owner;
+      document.getElementById("renewal-brief-next").textContent = brief.next;
+      document.getElementById("renewal-brief-boundary").textContent = brief.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4158,6 +4205,7 @@
       const signalConfidenceState = signalConfidence();
       const assurance = assuranceCase();
       const sponsorProof = sponsorProofPacket();
+      const renewalBrief = renewalDecisionBrief();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4355,6 +4403,14 @@
         ["sponsor_proof_ask", sponsorProof.ask],
         ["sponsor_proof_next_milestone", sponsorProof.next],
         ["sponsor_proof_boundary", sponsorProof.boundary],
+        ["renewal_brief_status", renewalBrief.status],
+        ["renewal_brief_decision", renewalBrief.decision],
+        ["renewal_brief_basis", renewalBrief.basis],
+        ["renewal_brief_commercial_ask", renewalBrief.ask],
+        ["renewal_brief_held_terms", renewalBrief.held],
+        ["renewal_brief_decision_owner", renewalBrief.owner],
+        ["renewal_brief_next_step", renewalBrief.next],
+        ["renewal_brief_boundary", renewalBrief.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4623,6 +4679,7 @@
       const signalConfidenceState = signalConfidence();
       const assurance = assuranceCase();
       const sponsorProof = sponsorProofPacket();
+      const renewalBrief = renewalDecisionBrief();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4688,6 +4745,7 @@
         `Signal confidence: ${signalConfidenceState.status}; grade ${signalConfidenceState.grade}; proof ${signalConfidenceState.proof}; action ${signalConfidenceState.action}; gap ${signalConfidenceState.gap}; refresh ${signalConfidenceState.refresh}; escalation ${signalConfidenceState.escalation}`,
         `Assurance case: ${assurance.status}; claim ${assurance.claim}; proof ${assurance.proof}; caveat ${assurance.caveat}; decision ${assurance.decision}; value ${assurance.value}; renewal ${assurance.renewal}`,
         `Sponsor proof packet: ${sponsorProof.status}; offer ${sponsorProof.offer}; proof ${sponsorProof.proofLine}; value ${sponsorProof.value}; held ${sponsorProof.held}; ask ${sponsorProof.ask}; next ${sponsorProof.next}`,
+        `Renewal decision brief: ${renewalBrief.status}; decision ${renewalBrief.decision}; basis ${renewalBrief.basis}; ask ${renewalBrief.ask}; held ${renewalBrief.held}; owner ${renewalBrief.owner}; next ${renewalBrief.next}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4968,6 +5026,7 @@
       renderSignalConfidence();
       renderAssuranceCase();
       renderSponsorProofPacket();
+      renderRenewalDecisionBrief();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5150,6 +5209,7 @@
         signalConfidence: signalConfidence(),
         assuranceCase: assuranceCase(),
         sponsorProofPacket: sponsorProofPacket(),
+        renewalDecisionBrief: renewalDecisionBrief(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
