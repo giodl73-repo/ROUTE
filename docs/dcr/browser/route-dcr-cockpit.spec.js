@@ -23,6 +23,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#summary-outcome")).toHaveText("standby");
     await expect(page.locator("#scorecard-grade")).toHaveText("DCR-0");
     await expect(page.locator("#score-renewal")).toHaveText("watch");
+    await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
+    await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/ROUTE DCR shift handoff - 00:00/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Next action: verify 511 closure feed/);
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
@@ -173,6 +175,13 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#action-count")).toHaveText("0 open");
     await expect(page.locator("#scorecard-grade")).toHaveText("DCR-4");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Outcome: mitigated; pilot value: proof-ready/);
+
+    await page.getByRole("button", { name: "Save Run" }).click();
+    await expect(page.locator("#portfolio-grade")).toHaveText("proof");
+    await expect(page.locator("#portfolio-runs")).toHaveText("1");
+    await expect(page.locator("#portfolio-proof")).toHaveText("1");
+    await expect(page.locator("#portfolio-mitigated")).toHaveText("1");
+    await expect(page.locator("#portfolio-renewal")).toHaveText("1");
   });
 
   test("express payment signal creates a bounded service advisory", async ({ page }) => {
@@ -262,5 +271,6 @@ test.describe("ROUTE DCR cockpit", () => {
 
     await page.getByRole("button", { name: "Clear Runs" }).click();
     await expect(page.locator("#saved-run-status")).toHaveText("Saved runs cleared.");
+    await expect(page.locator("#portfolio-runs")).toHaveText("0");
   });
 });
