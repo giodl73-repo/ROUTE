@@ -712,6 +712,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Authority Handoff</h2>
+            <span class="badge info" id="authority-handoff-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Authority handoff">
+            <div class="metric"><span>Current Owner</span><strong id="authority-handoff-owner">owner</strong></div>
+            <div class="metric"><span>Required Authorization</span><strong id="authority-handoff-auth">review</strong></div>
+            <div class="metric"><span>Blocked Claim</span><strong id="authority-handoff-claim">held</strong></div>
+            <div class="metric"><span>Allowed Action</span><strong id="authority-handoff-action">monitor</strong></div>
+            <div class="metric"><span>Escalation Clock</span><strong id="authority-handoff-clock">next cycle</strong></div>
+            <div class="metric"><span>Sponsor Consequence</span><strong id="authority-handoff-sponsor">proof run</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="authority-handoff-boundary">external authority</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2370,6 +2386,24 @@
       };
     }
 
+    function authorityHandoff() {
+      const queue = evidenceQueue();
+      const approval = ownerApprovalPacket();
+      const escalation = sourceEscalation();
+      const runbook = mitigationRunbook();
+      const blocked = queue.status !== "clear";
+      return {
+        status: approval.status === "review" && !blocked ? "owner-review" : blocked ? "source-held" : approval.status,
+        owner: blocked ? queue.owner : approval.owner,
+        authorization: blocked ? queue.next : approval.decision,
+        claim: blocked ? queue.claim : approval.evidence,
+        action: blocked ? "monitor only; clear evidence first" : runbook.control,
+        clock: escalation.due,
+        sponsor: blocked ? "hold sponsor packet" : approval.decision,
+        boundary: "authority handoff only; ROUTE does not approve field action"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -2939,6 +2973,20 @@
       document.getElementById("evidence-queue-boundary").textContent = queue.boundary;
     }
 
+    function renderAuthorityHandoff() {
+      const handoff = authorityHandoff();
+      const status = document.getElementById("authority-handoff-status");
+      status.textContent = handoff.status;
+      status.className = `badge ${handoff.status === "owner-review" ? "ok" : handoff.status === "source-held" || handoff.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("authority-handoff-owner").textContent = handoff.owner;
+      document.getElementById("authority-handoff-auth").textContent = handoff.authorization;
+      document.getElementById("authority-handoff-claim").textContent = handoff.claim;
+      document.getElementById("authority-handoff-action").textContent = handoff.action;
+      document.getElementById("authority-handoff-clock").textContent = handoff.clock;
+      document.getElementById("authority-handoff-sponsor").textContent = handoff.sponsor;
+      document.getElementById("authority-handoff-boundary").textContent = handoff.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -3505,6 +3553,7 @@
       const cascade = priorityCascade(drive, sla);
       const runbook = mitigationRunbook(cascade);
       const evidenceQueueState = evidenceQueue();
+      const authority = authorityHandoff();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3598,6 +3647,14 @@
         ["evidence_queue_release_consequence", evidenceQueueState.release],
         ["evidence_queue_next_action", evidenceQueueState.next],
         ["evidence_queue_boundary", evidenceQueueState.boundary],
+        ["authority_handoff_status", authority.status],
+        ["authority_handoff_owner", authority.owner],
+        ["authority_handoff_authorization", authority.authorization],
+        ["authority_handoff_blocked_claim", authority.claim],
+        ["authority_handoff_allowed_action", authority.action],
+        ["authority_handoff_escalation_clock", authority.clock],
+        ["authority_handoff_sponsor_consequence", authority.sponsor],
+        ["authority_handoff_boundary", authority.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -3853,6 +3910,7 @@
       const cascade = priorityCascade(drive, sla);
       const runbook = mitigationRunbook(cascade);
       const evidenceQueueState = evidenceQueue();
+      const authority = authorityHandoff();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -3905,6 +3963,7 @@
         `Priority cascade: ${cascade.status}; primary ${cascade.primary}; SLA ${cascade.sla}; violation ${cascade.violation}; mitigation ${cascade.mitigation}; gate ${cascade.gate}; sponsor ${cascade.sponsor}`,
         `Mitigation runbook: ${runbook.status}; control ${runbook.control}; why ${runbook.why}; gate ${runbook.gate}; effect ${runbook.effect}; rollback ${runbook.rollback}; sponsor ${runbook.sponsor}`,
         `Evidence queue: ${evidenceQueueState.status}; owner ${evidenceQueueState.owner}; readiness ${evidenceQueueState.readiness}; missing ${evidenceQueueState.missing}; claim ${evidenceQueueState.claim}; release ${evidenceQueueState.release}; next ${evidenceQueueState.next}`,
+        `Authority handoff: ${authority.status}; owner ${authority.owner}; authorization ${authority.authorization}; claim ${authority.claim}; action ${authority.action}; clock ${authority.clock}; sponsor ${authority.sponsor}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4172,6 +4231,7 @@
       renderPriorityCascade();
       renderMitigationRunbook();
       renderEvidenceQueue();
+      renderAuthorityHandoff();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4341,6 +4401,7 @@
         priorityCascade: priorityCascade(),
         mitigationRunbook: mitigationRunbook(),
         evidenceQueue: evidenceQueue(),
+        authorityHandoff: authorityHandoff(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),

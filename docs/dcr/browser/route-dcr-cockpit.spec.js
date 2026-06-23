@@ -60,6 +60,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#evidence-queue-release")).toHaveText("hold release; 511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#evidence-queue-next")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.locator("#evidence-queue-boundary")).toHaveText("evidence queue only; source owners remain authoritative");
+    await expect(page.getByLabel("Authority handoff")).toContainText("Current Owner511 closure feed");
+    await expect(page.locator("#authority-handoff-status")).toHaveText("source-held");
+    await expect(page.locator("#authority-handoff-auth")).toHaveText("source custody: verify 511 closure feed");
+    await expect(page.locator("#authority-handoff-claim")).toHaveText("3 source holds");
+    await expect(page.locator("#authority-handoff-action")).toHaveText("monitor only; clear evidence first");
+    await expect(page.locator("#authority-handoff-clock")).toHaveText("next monitoring cycle");
+    await expect(page.locator("#authority-handoff-sponsor")).toHaveText("hold sponsor packet");
+    await expect(page.locator("#authority-handoff-boundary")).toHaveText("authority handoff only; ROUTE does not approve field action");
     await expect(page.getByLabel("US tier map validation")).toContainText("SLA RowSAC -> SLC");
     await expect(page.locator("#tier-map-status")).toHaveText("breach");
     await expect(page.locator("#tier-map-source")).toHaveText("maps/all-tiers-v2.png + data/beck-stop-sla.csv");
@@ -223,6 +231,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/mitigation_runbook_gate,"511 closure feed; Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/evidence_queue_status,"blocked"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/evidence_queue_next_action,"source custody: verify 511 closure feed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/authority_handoff_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/authority_handoff_owner,"511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -457,6 +467,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#evidence-queue-missing")).toHaveText("Charging source owner; Operator message owner");
     await expect(page.locator("#evidence-queue-release")).toHaveText("hold release; Charging source owner; Operator message owner");
     await expect(page.locator("#evidence-queue-next")).toHaveText("source custody: verify Charging source owner");
+    await expect(page.locator("#authority-handoff-status")).toHaveText("source-held");
+    await expect(page.locator("#authority-handoff-owner")).toHaveText("Charging source owner");
+    await expect(page.locator("#authority-handoff-auth")).toHaveText("source custody: verify Charging source owner");
+    await expect(page.locator("#authority-handoff-claim")).toHaveText("2 source holds");
+    await expect(page.locator("#authority-handoff-clock")).toHaveText("next monitoring cycle");
+    await expect(page.locator("#authority-handoff-sponsor")).toHaveText("hold sponsor packet");
     await expect(page.locator("#recommended-posture")).toHaveText("weather-responsive split + EV staging; continue monitoring");
     await expect(page.locator("#alert-title")).toHaveText("maintained: P3 maintain watch");
     await expect(page.locator("#alert-boundary")).toHaveText("monitor");
@@ -537,6 +553,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Priority cascade: maintained; primary P3 maintain watch; T1 west gateway -> T1 east gateway; SLA mitigated; detect 0m; mitigate 0m; violation none; mitigation monitor rebound and preserve proof; gate verify Charging source owner; Operator message owner; sponsor decide renewal candidate/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Mitigation runbook: proving; control Reroute advisory; why SLA maintained; preserve proof window; gate Charging source owner; Operator message owner; effect -4 risk; \+5% flow; rollback watch for rebound; sponsor decide renewal candidate/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Evidence queue: partial; owner Charging source owner; readiness 1\/3; missing Charging source owner; Operator message owner; claim 2 source holds; release hold release; Charging source owner; Operator message owner; next source custody: verify Charging source owner/);
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Authority handoff: source-held; owner Charging source owner; authorization source custody: verify Charging source owner; claim 2 source holds; action monitor only; clear evidence first; clock next monitoring cycle; sponsor hold sponsor packet/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -611,6 +628,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/mitigation_runbook_control,"Reroute advisory"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/evidence_queue_status,"partial"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/evidence_queue_owner,"Charging source owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/authority_handoff_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/authority_handoff_authorization,"source custody: verify Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
