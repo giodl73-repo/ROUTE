@@ -169,14 +169,15 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Overlay Qualification Semantics | Carry T2 qualification-action semantics from service selection into bundle overlays. | done |
 | 2026-06-23 | Milestone 10 T2 Binding Qualification Semantics | Preserve T2 qualification-action semantics in game/ops binding decisions. | done |
 | 2026-06-23 | Milestone 10 T2 Repair Target Qualification Semantics | Preserve T2 qualification-action semantics in bundle-overlay repair targets. | done |
+| 2026-06-23 | Milestone 10 T2 Evidence Review Qualification Semantics | Preserve T2 qualification-action semantics in game/ops bundle evidence review. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-repair-target-qualification-semantics`
-closed after `data/t2-bundle-overlay-repair-targets.csv` preserved
-qualification-action gate policy and game-use semantics from game/ops binding
-decisions. Current T1-T4 structural maps have a gateable readiness artifact, a
-gateable release-facing inventory, and no residual `publication` blockers.
+No wave is active. `2026-06-23-milestone-10-t2-evidence-review-qualification-semantics`
+closed after `data/t2-game-ops-bundle-evidence-review.csv` preserved
+qualification-action gate policy and game-use semantics from repair targets.
+Current T1-T4 structural maps have a gateable readiness artifact, a gateable
+release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
 and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,

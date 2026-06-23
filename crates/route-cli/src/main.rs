@@ -21252,6 +21252,8 @@ struct T2GameOpsBundleEvidenceReviewRow {
     service_class: String,
     repair_class: String,
     repair_action: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     evidence_artifact: String,
     service_repair_class: String,
     evidence_status: String,
@@ -31111,6 +31113,8 @@ fn t2_game_ops_bundle_evidence_review_rows(
                 service_class: decision.service_class.clone(),
                 repair_class: target.repair_class.clone(),
                 repair_action: target.repair_action.clone(),
+                qualification_gate_policy: target.qualification_gate_policy.clone(),
+                qualification_game_use: target.qualification_game_use.clone(),
                 evidence_artifact: evidence_artifact.to_string(),
                 service_repair_class: service_repair_class.to_string(),
                 evidence_status: "downstream-evidence-bound-blocker-preserved".to_string(),
@@ -31225,6 +31229,15 @@ fn t2_game_ops_bundle_evidence_review_gate_failures(
             failures.push(format!(
                 "{} has invalid validation status {}",
                 row.review_id, row.validation_status
+            ));
+        }
+        if row.binding_status == "bundle-bound-review"
+            && (row.qualification_gate_policy.trim().is_empty()
+                || row.qualification_game_use.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} bundle-bound review missing qualification semantics",
+                row.review_id
             ));
         }
     }
@@ -69120,6 +69133,8 @@ mod tests {
             service_class: "unclassified".to_string(),
             repair_class: "service-class".to_string(),
             repair_action: "repair-service-class-before-game-overlay".to_string(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             evidence_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
             service_repair_class: "local-zone".to_string(),
             evidence_status: "downstream-evidence-bound-blocker-preserved".to_string(),
