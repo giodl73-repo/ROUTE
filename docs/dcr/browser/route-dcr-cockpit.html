@@ -935,6 +935,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Maintenance Backlog</h2>
+            <span class="badge info" id="backlog-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Maintenance backlog">
+            <div class="metric"><span>Ticket</span><strong id="backlog-ticket">DCR-ticket</strong></div>
+            <div class="metric"><span>Queue</span><strong id="backlog-queue">review</strong></div>
+            <div class="metric"><span>Asset Area</span><strong id="backlog-asset">network</strong></div>
+            <div class="metric"><span>Dependency</span><strong id="backlog-dependency">source custody</strong></div>
+            <div class="metric"><span>Exit</span><strong id="backlog-exit">owner review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="backlog-boundary">not CMMS</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1683,6 +1698,48 @@
       document.getElementById("operator-log-boundary").textContent = decisionLog.boundary;
     }
 
+    function maintenanceBacklog() {
+      const maintenance = maintenanceCase();
+      const fix = fixPackage();
+      const escalation = sourceEscalation();
+      const closure = closureCriteria();
+      const assetAreas = {
+        "winter-closure": "mountain corridor + charging sources",
+        "terminal-access": "terminal gate approach",
+        "managed-lane": "managed lane recovery",
+        "freight-bottleneck": "freight package priority"
+      };
+      const status = escalation.status === "blocked"
+        ? "blocked"
+        : closure.status === "proving"
+          ? "renewal"
+          : fix.status === "validated"
+            ? "ready"
+            : "queued";
+      return {
+        status,
+        ticket: `DCR-MAINT-${state.scenario.toUpperCase()}-${maintenance.priority}`,
+        queue: status === "renewal" ? "renewal candidate" : `${maintenance.priority} maintenance review`,
+        asset: assetAreas[state.scenario],
+        dependency: escalation.status === "clear" ? "none" : escalation.packet,
+        exit: closure.close,
+        boundary: "backlog ticket only; owner CMMS remains source of record"
+      };
+    }
+
+    function renderMaintenanceBacklog() {
+      const backlog = maintenanceBacklog();
+      const status = document.getElementById("backlog-status");
+      status.textContent = backlog.status;
+      status.className = `badge ${backlog.status === "ready" || backlog.status === "renewal" ? "ok" : backlog.status === "blocked" ? "risk" : "info"}`;
+      document.getElementById("backlog-ticket").textContent = backlog.ticket;
+      document.getElementById("backlog-queue").textContent = backlog.queue;
+      document.getElementById("backlog-asset").textContent = backlog.asset;
+      document.getElementById("backlog-dependency").textContent = backlog.dependency;
+      document.getElementById("backlog-exit").textContent = backlog.exit;
+      document.getElementById("backlog-boundary").textContent = backlog.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2300,6 +2357,7 @@
       const escalation = sourceEscalation();
       const closure = closureCriteria();
       const decisionLog = operatorDecisionLog();
+      const backlog = maintenanceBacklog();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2431,6 +2489,13 @@
         ["operator_log_next_decision", decisionLog.next],
         ["operator_log_reason", decisionLog.reason],
         ["operator_log_boundary", decisionLog.boundary],
+        ["maintenance_backlog_status", backlog.status],
+        ["maintenance_backlog_ticket", backlog.ticket],
+        ["maintenance_backlog_queue", backlog.queue],
+        ["maintenance_backlog_asset", backlog.asset],
+        ["maintenance_backlog_dependency", backlog.dependency],
+        ["maintenance_backlog_exit", backlog.exit],
+        ["maintenance_backlog_boundary", backlog.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2476,6 +2541,7 @@
       const escalation = sourceEscalation();
       const closure = closureCriteria();
       const decisionLog = operatorDecisionLog();
+      const backlog = maintenanceBacklog();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2508,6 +2574,7 @@
         `Source escalation: ${escalation.status}; owner ${escalation.owner}; due ${escalation.due}; packet ${escalation.packet}; boundary ${escalation.boundary}`,
         `Closure criteria: ${closure.status}; close ${closure.close}; renew ${closure.renew}; reopen ${closure.reopen}; evidence ${closure.evidence}`,
         `Operator decision log: ${decisionLog.status}; recommended ${decisionLog.recommended}; approved ${decisionLog.approved}; held ${decisionLog.held}; next ${decisionLog.next}`,
+        `Maintenance backlog: ${backlog.status}; ticket ${backlog.ticket}; queue ${backlog.queue}; dependency ${backlog.dependency}; exit ${backlog.exit}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2744,6 +2811,7 @@
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
+      renderMaintenanceBacklog();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -2895,6 +2963,7 @@
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
+        maintenanceBacklog: maintenanceBacklog(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
