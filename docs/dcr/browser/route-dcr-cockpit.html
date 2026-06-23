@@ -676,6 +676,10 @@
             <div class="metric"><span>Validation</span><strong id="tier-map-validation">bounded</strong></div>
             <div class="metric"><span>Stop Rhythm</span><strong id="tier-map-rhythm">fixture</strong></div>
             <div class="metric"><span>Boundary</span><strong id="tier-map-boundary">fixture only</strong></div>
+            <div class="metric"><span>Current Segment</span><strong id="tier-map-segment">origin -> stop</strong></div>
+            <div class="metric"><span>Progress</span><strong id="tier-map-progress">0%</strong></div>
+            <div class="metric"><span>SLA Pressure</span><strong id="tier-map-pressure">watch</strong></div>
+            <div class="metric"><span>Next Control</span><strong id="tier-map-control">monitor</strong></div>
           </div>
         </div>
 
@@ -2318,6 +2322,35 @@
       };
     }
 
+    function tierSimulationTick(tier = tierMapValidation()) {
+      const drive = driveSlaPriorities();
+      const stops = tier.stopPath.split(";");
+      const segmentCount = Math.max(1, stops.length - 1);
+      const progress = Math.min(99, Math.floor(((state.minute % 60) / 60) * 100));
+      const segmentIndex = Math.min(segmentCount - 1, Math.floor((progress / 100) * segmentCount));
+      const segment = `${stops[segmentIndex]} -> ${stops[segmentIndex + 1]}`;
+      const deltaMinutes = minutesFromText(tier.delta);
+      const pressure = drive.status === "maintained"
+        ? `buffer holding at ${tier.delta}`
+        : deltaMinutes >= 20
+          ? `critical ${tier.delta}`
+          : `watch ${tier.delta}`;
+      const open = openActionEvents()[0];
+      const control = drive.status === "maintained"
+        ? "continue monitoring"
+        : open
+          ? `${switchLabels[open.action]} for ${open.label}`
+          : drive.mitigation;
+      return {
+        segment,
+        progress: `${progress}%`,
+        pressure,
+        control,
+        basis: `${tier.row}; ${tier.tierPath}; ${tier.window}; ${tier.stopGap}`,
+        boundary: "simulated tick; not vehicle telemetry"
+      };
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -2368,6 +2401,7 @@
 
     function renderTierMapValidation() {
       const tier = tierMapValidation();
+      const tick = tierSimulationTick(tier);
       const status = document.getElementById("tier-map-status");
       status.textContent = tier.status;
       status.className = `badge ${tier.status === "validated" ? "ok" : "risk"}`;
@@ -2379,6 +2413,10 @@
       document.getElementById("tier-map-validation").textContent = tier.validation;
       document.getElementById("tier-map-rhythm").textContent = tier.stopGap;
       document.getElementById("tier-map-boundary").textContent = tier.boundary;
+      document.getElementById("tier-map-segment").textContent = tick.segment;
+      document.getElementById("tier-map-progress").textContent = tick.progress;
+      document.getElementById("tier-map-pressure").textContent = tick.pressure;
+      document.getElementById("tier-map-control").textContent = tick.control;
       renderTierMapRoute(tier);
     }
 
@@ -2971,6 +3009,7 @@
       const sla = operatorSla();
       const drive = driveSlaPriorities();
       const tier = tierMapValidation();
+      const tick = tierSimulationTick(tier);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3044,6 +3083,12 @@
         ["tier_map_validation", tier.validation],
         ["tier_map_evidence", tier.evidence],
         ["tier_map_boundary", tier.boundary],
+        ["tier_sim_segment", tick.segment],
+        ["tier_sim_progress", tick.progress],
+        ["tier_sim_pressure", tick.pressure],
+        ["tier_sim_control", tick.control],
+        ["tier_sim_basis", tick.basis],
+        ["tier_sim_boundary", tick.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3229,6 +3274,7 @@
       const sla = operatorSla();
       const drive = driveSlaPriorities();
       const tier = tierMapValidation();
+      const tick = tierSimulationTick(tier);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3270,6 +3316,7 @@
         `SLA view: detect ${formatSla(sla.detect)}, hold ${formatSla(sla.hold)}, verify ${formatSla(sla.verify)}, mitigate ${formatSla(sla.mitigate)} (${sla.boundary})`,
         `Drive SLA: ${drive.status}; ${drive.endpoints}; current ${drive.current} against ${drive.target}; priority ${drive.priority}; violation ${drive.violation}; mitigation ${drive.mitigation}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
+        `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3686,6 +3733,7 @@
         sla: operatorSla(),
         driveSla: driveSlaPriorities(),
         tierMapValidation: tierMapValidation(),
+        tierSimulationTick: tierSimulationTick(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),

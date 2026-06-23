@@ -50,6 +50,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-origin-label")).toHaveText("SAC");
     await expect(page.locator("#tier-dest-label")).toHaveText("SLC");
     await expect(page.locator("#tier-incident-label")).toHaveText("closure risk");
+    await expect(page.locator("#tier-map-segment")).toHaveText("SAC -> CENTRAL_VALLEY");
+    await expect(page.locator("#tier-map-progress")).toHaveText("0%");
+    await expect(page.locator("#tier-map-pressure")).toHaveText("watch +10m");
+    await expect(page.locator("#tier-map-control")).toHaveText("weather-responsive split + EV staging");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -152,6 +156,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_segment,"SAC -> CENTRAL_VALLEY"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_pressure,"watch \+10m"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -228,6 +234,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-origin-label")).toHaveText("HOU");
     await expect(page.locator("#tier-dest-label")).toHaveText("BEAUMONT");
     await expect(page.locator("#tier-incident-label")).toHaveText("gate queue");
+    await expect(page.locator("#tier-map-segment")).toHaveText("HOU -> BEAUMONT");
+    await expect(page.locator("#tier-map-pressure")).toHaveText("critical +27m");
+    await expect(page.locator("#tier-map-control")).toHaveText("retime gate approach routing");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
@@ -292,6 +301,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#network-flow")).toHaveText("89%");
     await expect(page.locator("#risk-delta")).toHaveText("+5");
     await expect(page.locator("#timeline-count")).toHaveText("1 applied");
+    await expect(page.locator("#tier-map-segment")).toHaveText("CENTRAL_VALLEY -> LA");
+    await expect(page.locator("#tier-map-progress")).toHaveText("16%");
     await expect(page.getByLabel("Timeline queue")).toContainText("applied");
     await expect(page.locator("#action-count")).toHaveText("1 open");
     await expect(page.getByLabel("Action queue")).toContainText("Reroute advisory");
@@ -301,6 +312,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workload-open")).toHaveText("1");
     await expect(page.locator("#workload-owner")).toHaveText("Operator");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/timeline_events,"Snow band reduces alternate reliability"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_segment,"CENTRAL_VALLEY -> LA"/);
 
     await page.getByRole("button", { name: "Create Reroute advisory" }).click();
     await page.getByLabel("Active role").selectOption("operator");
