@@ -965,6 +965,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Renewal Value Case</h2>
+            <span class="badge info" id="renewal-value-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Renewal value case">
+            <div class="metric"><span>Ask</span><strong id="renewal-value-ask">continue proof</strong></div>
+            <div class="metric"><span>Value</span><strong id="renewal-value-proof">pending</strong></div>
+            <div class="metric"><span>Coverage</span><strong id="renewal-value-coverage">watch</strong></div>
+            <div class="metric"><span>Gap</span><strong id="renewal-value-gap">evidence</strong></div>
+            <div class="metric"><span>Next Term</span><strong id="renewal-value-next">monitoring</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="renewal-value-boundary">no ROI claim</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1789,6 +1804,41 @@
       document.getElementById("approval-boundary").textContent = approval.boundary;
     }
 
+    function renewalValueCase() {
+      const score = scenarioScorecard();
+      const summary = runSummary();
+      const approval = ownerApprovalPacket();
+      const backlog = maintenanceBacklog();
+      const evidence = evidenceDossier();
+      const status = score.renewal === "renew"
+        ? "renew"
+        : summary.openActions > 0 || approval.status === "blocked"
+          ? "work"
+          : "watch";
+      return {
+        status,
+        ask: status === "renew" ? "renew monitored DCR cockpit" : "continue proof run",
+        proof: `${score.grade}; ${approval.value}; ${summary.resolved} resolved`,
+        coverage: backlog.asset,
+        gap: evidence.missing,
+        next: status === "renew" ? backlog.queue : approval.decision,
+        boundary: "renewal value case only; no ROI or revenue guarantee"
+      };
+    }
+
+    function renderRenewalValueCase() {
+      const renewalValue = renewalValueCase();
+      const status = document.getElementById("renewal-value-status");
+      status.textContent = renewalValue.status;
+      status.className = `badge ${renewalValue.status === "renew" ? "ok" : renewalValue.status === "work" ? "risk" : "info"}`;
+      document.getElementById("renewal-value-ask").textContent = renewalValue.ask;
+      document.getElementById("renewal-value-proof").textContent = renewalValue.proof;
+      document.getElementById("renewal-value-coverage").textContent = renewalValue.coverage;
+      document.getElementById("renewal-value-gap").textContent = renewalValue.gap;
+      document.getElementById("renewal-value-next").textContent = renewalValue.next;
+      document.getElementById("renewal-value-boundary").textContent = renewalValue.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2408,6 +2458,7 @@
       const decisionLog = operatorDecisionLog();
       const backlog = maintenanceBacklog();
       const approval = ownerApprovalPacket();
+      const renewalValue = renewalValueCase();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2553,6 +2604,13 @@
         ["owner_approval_value", approval.value],
         ["owner_approval_decision", approval.decision],
         ["owner_approval_boundary", approval.boundary],
+        ["renewal_value_status", renewalValue.status],
+        ["renewal_value_ask", renewalValue.ask],
+        ["renewal_value_proof", renewalValue.proof],
+        ["renewal_value_coverage", renewalValue.coverage],
+        ["renewal_value_gap", renewalValue.gap],
+        ["renewal_value_next_term", renewalValue.next],
+        ["renewal_value_boundary", renewalValue.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2600,6 +2658,7 @@
       const decisionLog = operatorDecisionLog();
       const backlog = maintenanceBacklog();
       const approval = ownerApprovalPacket();
+      const renewalValue = renewalValueCase();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2634,6 +2693,7 @@
         `Operator decision log: ${decisionLog.status}; recommended ${decisionLog.recommended}; approved ${decisionLog.approved}; held ${decisionLog.held}; next ${decisionLog.next}`,
         `Maintenance backlog: ${backlog.status}; ticket ${backlog.ticket}; queue ${backlog.queue}; dependency ${backlog.dependency}; exit ${backlog.exit}`,
         `Owner approval packet: ${approval.status}; owner ${approval.owner}; request ${approval.request}; evidence ${approval.evidence}; decision ${approval.decision}`,
+        `Renewal value case: ${renewalValue.status}; ask ${renewalValue.ask}; proof ${renewalValue.proof}; coverage ${renewalValue.coverage}; gap ${renewalValue.gap}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2872,6 +2932,7 @@
       renderOperatorDecisionLog();
       renderMaintenanceBacklog();
       renderOwnerApprovalPacket();
+      renderRenewalValueCase();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -3025,6 +3086,7 @@
         operatorDecisionLog: operatorDecisionLog(),
         maintenanceBacklog: maintenanceBacklog(),
         ownerApproval: ownerApprovalPacket(),
+        renewalValue: renewalValueCase(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
