@@ -649,6 +649,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Run Summary</h2>
+            <span class="badge info" id="summary-outcome">standby</span>
+          </div>
+          <div class="metrics" aria-label="Run summary">
+            <div class="metric"><span>Risk Change</span><strong id="summary-risk-change">+0</strong></div>
+            <div class="metric"><span>Flow Change</span><strong id="summary-flow-change">+0%</strong></div>
+            <div class="metric"><span>Evidence Ready</span><strong id="summary-evidence-ready">0/3</strong></div>
+            <div class="metric"><span>Open Work</span><strong id="summary-open-work">0</strong></div>
+            <div class="metric"><span>Resolved Signals</span><strong id="summary-resolved">0</strong></div>
+            <div class="metric"><span>Pilot Value</span><strong id="summary-pilot-value">baseline</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1049,6 +1064,44 @@
       return { risk: base.risk, flow: base.flow };
     }
 
+    function runSummary() {
+      const metrics = computeMetrics();
+      const baseline = baselineMetrics();
+      const gates = currentScenario().gates;
+      const evidenceReady = gates.filter((gate) => isGateReady(gate)).length;
+      const openActions = openActionEvents().length;
+      const applied = state.appliedEvents.length + state.manualEvents.length;
+      const approved = state.decisions.filter((item) => item.status === "approved").length;
+      const blocked = state.decisions.filter((item) => item.status === "blocked").length;
+      const outcome = openActions === 0 && state.resolvedEvents.length > 0
+        ? "mitigated"
+        : openActions > 0 && gates.some((gate) => !isGateReady(gate))
+          ? "source-held"
+          : applied > 0
+            ? "active"
+            : "standby";
+      const pilotValue = state.resolvedEvents.length > 0 && evidenceReady > 0
+        ? "proof-ready"
+        : openActions > 0
+          ? "operator-work"
+          : approved > 0 || blocked > 0
+            ? "governed"
+            : "baseline";
+      return {
+        outcome,
+        pilotValue,
+        riskChange: metrics.risk - baseline.risk,
+        flowChange: metrics.flow - baseline.flow,
+        evidenceReady,
+        evidenceTotal: gates.length,
+        openActions,
+        applied,
+        approved,
+        blocked,
+        resolved: state.resolvedEvents.length
+      };
+    }
+
     function formatSigned(value) {
       return value >= 0 ? `+${value}` : String(value);
     }
@@ -1265,8 +1318,22 @@
       document.getElementById("decision-count").textContent = `${reviewed} reviewed`;
     }
 
+    function renderRunSummary() {
+      const summary = runSummary();
+      const outcomeBadge = document.getElementById("summary-outcome");
+      outcomeBadge.textContent = summary.outcome;
+      outcomeBadge.className = `badge ${summary.outcome === "mitigated" ? "ok" : summary.outcome === "source-held" ? "risk" : "info"}`;
+      document.getElementById("summary-risk-change").textContent = formatSigned(summary.riskChange);
+      document.getElementById("summary-flow-change").textContent = `${formatSigned(summary.flowChange)}%`;
+      document.getElementById("summary-evidence-ready").textContent = `${summary.evidenceReady}/${summary.evidenceTotal}`;
+      document.getElementById("summary-open-work").textContent = String(summary.openActions);
+      document.getElementById("summary-resolved").textContent = String(summary.resolved);
+      document.getElementById("summary-pilot-value").textContent = summary.pilotValue;
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
+      const summary = runSummary();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1282,6 +1349,9 @@
         ["revenue_proxy", `$${metrics.revenueProxy}`],
         ["risk_delta", metrics.risk - baselineMetrics().risk],
         ["flow_delta", metrics.flow - baselineMetrics().flow],
+        ["run_outcome", summary.outcome],
+        ["pilot_value", summary.pilotValue],
+        ["summary", `${summary.resolved} resolved; ${summary.openActions} open; ${summary.evidenceReady}/${summary.evidenceTotal} evidence ready`],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1420,6 +1490,7 @@
       renderMetrics();
       renderSignals();
       renderDecisions();
+      renderRunSummary();
       renderReadout();
       renderLog();
       renderBoundary();
