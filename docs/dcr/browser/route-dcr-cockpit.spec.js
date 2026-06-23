@@ -278,6 +278,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#decision-audit-blocker")).toHaveText("0/3 ready; missing 511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#decision-audit-id")).toHaveText("DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD");
     await expect(page.locator("#decision-audit-boundary")).toHaveText("decision audit only; recommendations require owner approval before field release");
+    await expect(page.getByLabel("Signal confidence")).toContainText("Confidencelow confidence");
+    await expect(page.locator("#signal-confidence-status")).toHaveText("evidence-held");
+    await expect(page.locator("#signal-confidence-proof")).toHaveText("0/3 evidence; DCR-0; degraded");
+    await expect(page.locator("#signal-confidence-action")).toHaveText("clear 511 closure feed");
+    await expect(page.locator("#signal-confidence-gap")).toHaveText("511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#signal-confidence-refresh")).toHaveText("clear 3 source holds");
+    await expect(page.locator("#signal-confidence-escalation")).toHaveText("511 closure feed");
+    await expect(page.locator("#signal-confidence-boundary")).toHaveText("signal confidence is advisory; source evidence and owner approval remain authoritative");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -321,6 +329,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_decision,"clear 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_audit_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_audit_trigger,"clear 511 closure feed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/signal_confidence_status,"evidence-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/signal_confidence_actionability,"clear 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -710,6 +720,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#decision-audit-recommendation")).toHaveText("clear Charging source owner");
     await expect(page.locator("#decision-audit-blocker")).toHaveText("1/3 ready; missing Charging source owner; Operator message owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Decision audit: held; trigger clear Charging source owner; rationale P3 corridor reliability failure; risk 42; flow 96%; recovery 43m; evidence source custody: Charging source owner; Charging source owner; Operator message owner; recommendation clear Charging source owner; blocked by 1\/3 ready; missing Charging source owner; Operator message owner; id DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD/);
+    await expect(page.locator("#signal-confidence-status")).toHaveText("evidence-held");
+    await expect(page.locator("#signal-confidence-grade")).toHaveText("low confidence");
+    await expect(page.locator("#signal-confidence-proof")).toHaveText("1/3 evidence; DCR-4; degraded");
+    await expect(page.locator("#signal-confidence-action")).toHaveText("clear Charging source owner");
+    await expect(page.locator("#signal-confidence-gap")).toHaveText("Charging source owner; Operator message owner");
+    await expect(page.locator("#signal-confidence-refresh")).toHaveText("clear 2 source holds");
+    await expect(page.locator("#signal-confidence-escalation")).toHaveText("Charging source owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Signal confidence: evidence-held; grade low confidence; proof 1\/3 evidence; DCR-4; degraded; action clear Charging source owner; gap Charging source owner; Operator message owner; refresh clear 2 source holds; escalation Charging source owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -804,6 +822,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/release_criteria_sla_gate,"maintained; 97m against 95m \+5m buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_audit_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_audit_recommendation,"clear Charging source owner"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/signal_confidence_status,"evidence-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/signal_confidence_proof_quality,"1\/3 evidence; DCR-4; degraded"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);

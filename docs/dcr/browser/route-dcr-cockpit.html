@@ -872,6 +872,22 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Signal Confidence</h2>
+            <span class="badge info" id="signal-confidence-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Signal confidence">
+            <div class="metric"><span>Confidence</span><strong id="signal-confidence-grade">low</strong></div>
+            <div class="metric"><span>Proof Quality</span><strong id="signal-confidence-proof">pending</strong></div>
+            <div class="metric"><span>Actionability</span><strong id="signal-confidence-action">monitor</strong></div>
+            <div class="metric"><span>Open Gap</span><strong id="signal-confidence-gap">source</strong></div>
+            <div class="metric"><span>Refresh</span><strong id="signal-confidence-refresh">next cycle</strong></div>
+            <div class="metric"><span>Escalation</span><strong id="signal-confidence-escalation">owner</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="signal-confidence-boundary">confidence only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -2721,6 +2737,28 @@
       };
     }
 
+    function signalConfidence() {
+      const summary = runSummary();
+      const score = scenarioScorecard();
+      const queue = evidenceQueue();
+      const criteria = releaseCriteria();
+      const audit = decisionAudit();
+      const health = systemHealth();
+      const cadence = operationsCadence();
+      const evidenceHeld = queue.status !== "clear" || criteria.status !== "release-review";
+      const highProof = score.grade === "DCR-4" && summary.resolved > 0;
+      return {
+        status: evidenceHeld ? "evidence-held" : highProof ? "high" : "watch",
+        grade: evidenceHeld ? "low confidence" : highProof ? "high confidence" : "medium confidence",
+        proof: `${summary.evidenceReady}/${summary.evidenceTotal} evidence; ${score.grade}; ${health.status}`,
+        action: evidenceHeld ? audit.recommendation : criteria.decision,
+        gap: evidenceHeld ? queue.missing : "none",
+        refresh: evidenceHeld ? cadence.rhythm : cadence.checkpoint,
+        escalation: evidenceHeld ? queue.owner : "owner approval packet",
+        boundary: "signal confidence is advisory; source evidence and owner approval remain authoritative"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3430,6 +3468,20 @@
       document.getElementById("decision-audit-boundary").textContent = audit.boundary;
     }
 
+    function renderSignalConfidence() {
+      const confidence = signalConfidence();
+      const status = document.getElementById("signal-confidence-status");
+      status.textContent = confidence.status;
+      status.className = `badge ${confidence.status === "high" ? "ok" : confidence.status === "evidence-held" ? "risk" : "info"}`;
+      document.getElementById("signal-confidence-grade").textContent = confidence.grade;
+      document.getElementById("signal-confidence-proof").textContent = confidence.proof;
+      document.getElementById("signal-confidence-action").textContent = confidence.action;
+      document.getElementById("signal-confidence-gap").textContent = confidence.gap;
+      document.getElementById("signal-confidence-refresh").textContent = confidence.refresh;
+      document.getElementById("signal-confidence-escalation").textContent = confidence.escalation;
+      document.getElementById("signal-confidence-boundary").textContent = confidence.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4006,6 +4058,7 @@
       const clearancePathState = clearancePath();
       const releaseCriteriaState = releaseCriteria();
       const decisionAuditState = decisionAudit();
+      const signalConfidenceState = signalConfidence();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4179,6 +4232,14 @@
         ["decision_audit_blocked_by", decisionAuditState.blocker],
         ["decision_audit_id", decisionAuditState.id],
         ["decision_audit_boundary", decisionAuditState.boundary],
+        ["signal_confidence_status", signalConfidenceState.status],
+        ["signal_confidence_grade", signalConfidenceState.grade],
+        ["signal_confidence_proof_quality", signalConfidenceState.proof],
+        ["signal_confidence_actionability", signalConfidenceState.action],
+        ["signal_confidence_open_gap", signalConfidenceState.gap],
+        ["signal_confidence_refresh", signalConfidenceState.refresh],
+        ["signal_confidence_escalation", signalConfidenceState.escalation],
+        ["signal_confidence_boundary", signalConfidenceState.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4444,6 +4505,7 @@
       const clearancePathState = clearancePath();
       const releaseCriteriaState = releaseCriteria();
       const decisionAuditState = decisionAudit();
+      const signalConfidenceState = signalConfidence();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4506,6 +4568,7 @@
         `Clearance path: ${clearancePathState.status}; cycles ${clearancePathState.cycles}; sequence ${clearancePathState.sequence}; final readiness ${clearancePathState.readiness}; release ${clearancePathState.release}; sponsor ${clearancePathState.sponsor}; proof ${clearancePathState.proof}`,
         `Release criteria: ${releaseCriteriaState.status}; source ${releaseCriteriaState.source}; SLA ${releaseCriteriaState.sla}; owner ${releaseCriteriaState.owner}; claims ${releaseCriteriaState.claims}; decision ${releaseCriteriaState.decision}; evidence ${releaseCriteriaState.evidence}`,
         `Decision audit: ${decisionAuditState.status}; trigger ${decisionAuditState.trigger}; rationale ${decisionAuditState.rationale}; evidence ${decisionAuditState.evidence}; recommendation ${decisionAuditState.recommendation}; blocked by ${decisionAuditState.blocker}; id ${decisionAuditState.id}`,
+        `Signal confidence: ${signalConfidenceState.status}; grade ${signalConfidenceState.grade}; proof ${signalConfidenceState.proof}; action ${signalConfidenceState.action}; gap ${signalConfidenceState.gap}; refresh ${signalConfidenceState.refresh}; escalation ${signalConfidenceState.escalation}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -4783,6 +4846,7 @@
       renderClearancePath();
       renderReleaseCriteria();
       renderDecisionAudit();
+      renderSignalConfidence();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -4962,6 +5026,7 @@
         clearancePath: clearancePath(),
         releaseCriteria: releaseCriteria(),
         decisionAudit: decisionAudit(),
+        signalConfidence: signalConfidence(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
