@@ -20451,6 +20451,9 @@ struct T2ServiceSelectionRow {
     constraint_ledger_artifact: String,
     beck_service_action: String,
     qualification_basis: String,
+    qualification_map_treatment: String,
+    qualification_gate_policy: String,
+    qualification_game_use: String,
     selection_action: String,
     selection_basis: String,
     validation_status: String,
@@ -26659,6 +26662,9 @@ fn t2_service_selection_rows(
         .iter()
         .map(|row| {
             let diagnostic = diagnostic_by_route.get(&canonical_route_key(&row.route));
+            let qualification_action = diagnostic.and_then(|diag| {
+                t2_qualification_action_for(diag.service_action, diag.qualification_basis)
+            });
             let (selection_action, selection_basis, validation_status) =
                 t2_service_selection_decision(row, diagnostic.copied());
 
@@ -26717,6 +26723,18 @@ fn t2_service_selection_rows(
                     .unwrap_or_default(),
                 qualification_basis: diagnostic
                     .map(|diag| diag.qualification_basis.to_string())
+                    .unwrap_or_default(),
+                qualification_map_treatment: qualification_action
+                    .as_ref()
+                    .map(|action| action.map_treatment.to_string())
+                    .unwrap_or_default(),
+                qualification_gate_policy: qualification_action
+                    .as_ref()
+                    .map(|action| action.gate_policy.to_string())
+                    .unwrap_or_default(),
+                qualification_game_use: qualification_action
+                    .as_ref()
+                    .map(|action| action.game_use.to_string())
                     .unwrap_or_default(),
                 selection_action,
                 selection_basis,
@@ -26786,6 +26804,21 @@ fn t2_service_selection_decision(
         "service-diagnostic-action-mismatch".to_string(),
         "review".to_string(),
     )
+}
+
+fn t2_qualification_action_for(
+    service_action: &str,
+    qualification_basis: &str,
+) -> Option<route_map::BeckT2QualificationActionRow> {
+    route_map::beck_t2_qualification_actions()
+        .into_iter()
+        .find(|action| {
+            action.service_action == service_action
+                && action
+                    .covered_bases
+                    .iter()
+                    .any(|basis| *basis == qualification_basis)
+        })
 }
 
 fn canonical_route_key(route: &str) -> String {
@@ -26858,6 +26891,25 @@ fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow]) -> Vec<Str
         {
             failures.push(format!(
                 "{} kept despite unresolved T2 diagnostic",
+                row.route
+            ));
+        }
+        if !row.beck_service_action.is_empty()
+            && t2_qualification_action_for(&row.beck_service_action, &row.qualification_basis)
+                .is_none()
+        {
+            failures.push(format!(
+                "{} has uncovered T2 qualification action/basis {} {}",
+                row.route, row.beck_service_action, row.qualification_basis
+            ));
+        }
+        if !row.beck_service_action.is_empty()
+            && (row.qualification_map_treatment.trim().is_empty()
+                || row.qualification_gate_policy.trim().is_empty()
+                || row.qualification_game_use.trim().is_empty())
+        {
+            failures.push(format!(
+                "{} missing T2 qualification action treatment columns",
                 row.route
             ));
         }
@@ -64829,6 +64881,9 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
             validation_status: "review".to_string(),
@@ -64897,6 +64952,9 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
             validation_status: "review".to_string(),
@@ -64964,6 +65022,9 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
             validation_status: "review".to_string(),
@@ -65028,6 +65089,10 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: "keep".to_string(),
             qualification_basis: "distinct-parent-service".to_string(),
+            qualification_map_treatment: "draw as normal T2 service for its class".to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             selection_action: "split-parallel-service".to_string(),
             selection_basis: "close-parallel-beck-service".to_string(),
             validation_status: "review".to_string(),
@@ -68008,6 +68073,9 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             selection_action: "closure-review-needs-beck-diagnostic".to_string(),
             selection_basis: "closure-accepted-missing-beck-t2-diagnostic".to_string(),
             validation_status: "review".to_string(),
@@ -68393,6 +68461,10 @@ mod tests {
                 constraint_ledger_artifact: String::new(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
+                qualification_map_treatment: "draw as normal T2 service for its class".to_string(),
+                qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+                qualification_game_use:
+                    "default playable service for incidents, upgrades, and restitches".to_string(),
                 selection_action: "keep-service-column".to_string(),
                 selection_basis: "diagnostic-backed-distinct-service".to_string(),
                 validation_status: "pass".to_string(),
@@ -68427,6 +68499,10 @@ mod tests {
                 constraint_ledger_artifact: String::new(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
+                qualification_map_treatment: "draw as normal T2 service for its class".to_string(),
+                qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+                qualification_game_use:
+                    "default playable service for incidents, upgrades, and restitches".to_string(),
                 selection_action: "parent-region-review".to_string(),
                 selection_basis: "regionalizer-review-treatment".to_string(),
                 validation_status: "review".to_string(),
@@ -68651,6 +68727,9 @@ mod tests {
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
+            qualification_map_treatment: String::new(),
+            qualification_gate_policy: String::new(),
+            qualification_game_use: String::new(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
             validation_status: "review".to_string(),

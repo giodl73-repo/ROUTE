@@ -133,3 +133,6 @@ should mean something in the SLA graph.
   `route beck-t2-qualification-actions --gate` rejects uncovered service-action
   plus qualification-basis pairs before duplicate-service decisions can flow
   downstream.
+- `route t2-service-selection` now consumes the T2 qualification-action ledger
+  and exports qualification map treatment, gate policy, and game-use semantics
+  into `data/t2-service-selection.csv`.
