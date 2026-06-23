@@ -353,6 +353,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operator-approval-log")).toHaveText("watch; continue monitoring");
     await expect(page.locator("#operator-approval-held")).toHaveText("0/3 ready; missing 511 closure feed; Charging source owner; Operator message owner");
     await expect(page.locator("#operator-approval-boundary")).toHaveText("operator approval packet only; no field command or owner approval");
+    await expect(page.getByLabel("Traceability ledger")).toContainText("Audit RecordDCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD");
+    await expect(page.locator("#traceability-ledger-status")).toHaveText("held");
+    await expect(page.locator("#traceability-ledger-decision")).toHaveText("clear 511 closure feed");
+    await expect(page.locator("#traceability-ledger-custody")).toHaveText("511 closure feed; not before Operator message owner clears");
+    await expect(page.locator("#traceability-ledger-proof")).toHaveText("DCR-LEDGER-WINTER-CLOSURE-SAC-CENTRAL-VALLEY; 0/3; 3 source holds");
+    await expect(page.locator("#traceability-ledger-blocked")).toHaveText("0/3 ready; missing 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#traceability-ledger-next")).toHaveText("verify 511 closure feed");
+    await expect(page.locator("#traceability-ledger-boundary")).toHaveText("traceability ledger only; source owners and field owners remain authoritative");
     await expect(page.getByLabel("Portfolio proof")).toContainText("Saved Runs0");
     await expect(page.locator("#portfolio-grade")).toHaveText("0 runs");
     await expect(page.getByLabel("Renewal backlog")).toContainText("No saved renewal work");
@@ -414,6 +422,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_engine_recommend,"clear 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_status,"blocked"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_owner,"511 closure feed"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_status,"held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_record,"DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"breach"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_source,"maps\/all-tiers-v2.png \+ data\/beck-stop-sla.csv"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
@@ -874,6 +884,14 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#operator-approval-log")).toHaveText("approved; continue monitoring");
     await expect(page.locator("#operator-approval-held")).toHaveText("1/3 ready; missing Charging source owner; Operator message owner");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Operator approval packet: source-review; request clear Charging source owner; move verify Charging source owner; evidence source custody: Charging source owner; Charging source owner; Operator message owner; owner Charging source owner; gate not before Operator message owner clears; log approved; continue monitoring; held 1\/3 ready; missing Charging source owner; Operator message owner/);
+    await expect(page.locator("#traceability-ledger-status")).toHaveText("source-held");
+    await expect(page.locator("#traceability-ledger-record")).toHaveText("DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD");
+    await expect(page.locator("#traceability-ledger-decision")).toHaveText("clear Charging source owner");
+    await expect(page.locator("#traceability-ledger-custody")).toHaveText("Charging source owner; not before Operator message owner clears");
+    await expect(page.locator("#traceability-ledger-proof")).toHaveText("DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; 1/3; 2 source holds");
+    await expect(page.locator("#traceability-ledger-blocked")).toHaveText("1/3 ready; missing Charging source owner; Operator message owner");
+    await expect(page.locator("#traceability-ledger-next")).toHaveText("verify Charging source owner");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Traceability ledger: source-held; record DCR-AUDIT-WINTER-CLOSURE-SOURCE-HELD; decision clear Charging source owner; custody Charging source owner; not before Operator message owner clears; proof DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; 1\/3; 2 source holds; blocked 1\/3 ready; missing Charging source owner; Operator message owner; next verify Charging source owner/);
     await expect(page.locator("#tier-map-status")).toHaveText("validated");
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
@@ -986,6 +1004,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/decision_engine_recommend,"clear Charging source owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_status,"source-review"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_approval_log,"approved; continue monitoring"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_status,"source-held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/traceability_ledger_proof,"DCR-LEDGER-WINTER-CLOSURE-CENTRAL-VALLEY-LA; 1\/3; 2 source holds"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
