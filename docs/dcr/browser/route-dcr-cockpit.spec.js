@@ -71,6 +71,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#field-preview-ev")).toHaveText("stage EV support after source check");
     await expect(page.locator("#field-preview-audience")).toHaveText("operator review only");
     await expect(page.locator("#field-preview-boundary")).toHaveText("preview only; no public signage or routing command");
+    await expect(page.getByLabel("Release readiness checklist")).toContainText("Source Custodyblocked: 511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#release-check-status")).toHaveText("blocked");
+    await expect(page.locator("#release-check-owner")).toHaveText("blocked until source clear");
+    await expect(page.locator("#release-check-rollback")).toHaveText("watch for rebound");
+    await expect(page.locator("#release-check-claims")).toHaveText("traffic control; legal detour; EV availability held");
+    await expect(page.locator("#release-check-boundary")).toHaveText("readiness checklist only; no field or public release");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -181,6 +187,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_criteria,"clear 511 closure feed; Charging source owner; Operator message owner"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_status,"held"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_boundary,"preview only; no public signage or routing command"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_status,"blocked"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_owner,"blocked until source clear"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -473,6 +481,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#field-preview-route")).toHaveText("reviewed alternate route");
     await expect(page.locator("#field-preview-audience")).toHaveText("operator watch desk");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Field preview packet: watch; signage watch CENTRAL_VALLEY -> LA; SLA buffer holding; route reviewed alternate route; EV monitor range; hold Charging source owner; Operator message owner/);
+    await expect(page.locator("#release-check-status")).toHaveText("watch");
+    await expect(page.locator("#release-check-source")).toHaveText("blocked: Charging source owner; Operator message owner");
+    await expect(page.locator("#release-check-owner")).toHaveText("DOT operations monitor only");
+    await expect(page.locator("#release-check-proof")).toHaveText("post-fix proving window");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Release readiness checklist: watch; source blocked: Charging source owner; Operator message owner; owner DOT operations monitor only; rollback watch for rebound; claims traffic control; legal detour; EV availability held; proof post-fix proving window/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -510,6 +523,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_release_step,"keep advisory in watch mode"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_status,"watch"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/field_preview_route,"reviewed alternate route"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_status,"watch"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/release_check_proof,"post-fix proving window"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
