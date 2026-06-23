@@ -773,6 +773,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Sponsor Packet Draft</h2>
+            <span class="badge info" id="sponsor-packet-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Sponsor packet draft">
+            <div class="metric"><span>Ask</span><strong id="sponsor-packet-ask">continue proof</strong></div>
+            <div class="metric"><span>Proof Line</span><strong id="sponsor-packet-proof">pending</strong></div>
+            <div class="metric"><span>Decision Owner</span><strong id="sponsor-packet-owner">sponsor</strong></div>
+            <div class="metric"><span>Held Language</span><strong id="sponsor-packet-held">ROI held</strong></div>
+            <div class="metric"><span>Next Step</span><strong id="sponsor-packet-next">review</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="sponsor-packet-boundary">draft only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2653,6 +2668,34 @@
       document.getElementById("renewal-proof-boundary").textContent = proof.boundary;
     }
 
+    function sponsorPacketDraft(proof = renewalProofSummary()) {
+      const board = boardPacket();
+      const approval = ownerApprovalPacket();
+      const status = proof.status === "ready" ? "ready" : proof.status === "held" ? "held" : "draft";
+      return {
+        status,
+        ask: proof.ask,
+        proofLine: proof.status === "held" ? proof.safeClaim : proof.sponsorProof,
+        owner: board.sponsor,
+        held: proof.heldClaims,
+        next: status === "ready" ? approval.decision : "clear proof gaps before sponsor ask",
+        boundary: "sponsor packet draft only; no renewal commitment"
+      };
+    }
+
+    function renderSponsorPacketDraft() {
+      const packet = sponsorPacketDraft();
+      const status = document.getElementById("sponsor-packet-status");
+      status.textContent = packet.status;
+      status.className = `badge ${packet.status === "ready" ? "ok" : packet.status === "held" ? "risk" : "watch"}`;
+      document.getElementById("sponsor-packet-ask").textContent = packet.ask;
+      document.getElementById("sponsor-packet-proof").textContent = packet.proofLine;
+      document.getElementById("sponsor-packet-owner").textContent = packet.owner;
+      document.getElementById("sponsor-packet-held").textContent = packet.held;
+      document.getElementById("sponsor-packet-next").textContent = packet.next;
+      document.getElementById("sponsor-packet-boundary").textContent = packet.boundary;
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -3328,6 +3371,7 @@
       const readiness = releaseReadinessChecklist(release, fieldPreview);
       const ledger = releaseProofLedger(readiness);
       const renewalProof = renewalProofSummary(ledger);
+      const sponsorPacket = sponsorPacketDraft(renewalProof);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3449,6 +3493,13 @@
         ["renewal_proof_ask", renewalProof.ask],
         ["renewal_proof_coverage", renewalProof.coverage],
         ["renewal_proof_boundary", renewalProof.boundary],
+        ["sponsor_packet_status", sponsorPacket.status],
+        ["sponsor_packet_ask", sponsorPacket.ask],
+        ["sponsor_packet_proof_line", sponsorPacket.proofLine],
+        ["sponsor_packet_owner", sponsorPacket.owner],
+        ["sponsor_packet_held_language", sponsorPacket.held],
+        ["sponsor_packet_next_step", sponsorPacket.next],
+        ["sponsor_packet_boundary", sponsorPacket.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3641,6 +3692,7 @@
       const readiness = releaseReadinessChecklist(release, fieldPreview);
       const ledger = releaseProofLedger(readiness);
       const renewalProof = renewalProofSummary(ledger);
+      const sponsorPacket = sponsorPacketDraft(renewalProof);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3689,6 +3741,7 @@
         `Release readiness checklist: ${readiness.status}; source ${readiness.source}; owner ${readiness.owner}; rollback ${readiness.rollback}; claims ${readiness.claims}; proof ${readiness.proof}`,
         `Release proof ledger: ${ledger.status}; id ${ledger.id}; evidence ${ledger.evidence}; proof ${ledger.proof}; renewal ${ledger.renewal}; review ${ledger.review}`,
         `Renewal proof summary: ${renewalProof.status}; sponsor proof ${renewalProof.sponsorProof}; safe claim ${renewalProof.safeClaim}; ask ${renewalProof.ask}; held ${renewalProof.heldClaims}`,
+        `Sponsor packet draft: ${sponsorPacket.status}; ask ${sponsorPacket.ask}; proof ${sponsorPacket.proofLine}; owner ${sponsorPacket.owner}; held ${sponsorPacket.held}; next ${sponsorPacket.next}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3950,6 +4003,7 @@
       renderReleaseReadinessChecklist();
       renderReleaseProofLedger();
       renderRenewalProofSummary();
+      renderSponsorPacketDraft();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -4117,6 +4171,7 @@
         releaseReadiness: releaseReadinessChecklist(),
         releaseProofLedger: releaseProofLedger(),
         renewalProofSummary: renewalProofSummary(),
+        sponsorPacket: sponsorPacketDraft(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
