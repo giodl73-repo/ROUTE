@@ -698,6 +698,21 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="signal-top">
+            <h2>Tier Release Package</h2>
+            <span class="badge info" id="tier-release-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Tier release package">
+            <div class="metric"><span>Owner</span><strong id="tier-release-owner">operator</strong></div>
+            <div class="metric"><span>Release Criteria</span><strong id="tier-release-criteria">source gates</strong></div>
+            <div class="metric"><span>Field Step</span><strong id="tier-release-step">prepare advisory</strong></div>
+            <div class="metric"><span>Rollback Trigger</span><strong id="tier-release-rollback">watch rebound</strong></div>
+            <div class="metric"><span>Proof Required</span><strong id="tier-release-proof">evidence</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="tier-release-boundary">owner-issued only</strong></div>
+          </div>
+        </div>
+
         <div class="alert-strip" aria-label="DCR alert ticker">
           <strong id="alert-title">Watch: Closure</strong>
           <span id="alert-body">Primary pass restricted; alternate independence needs review.</span>
@@ -2391,6 +2406,44 @@
       };
     }
 
+    function tierReleasePackage(trace = tierDecisionTrace()) {
+      const workOrder = workOrderDraft();
+      const playbook = resiliencyPlaybook();
+      const postFix = postFixMonitor();
+      const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate)).map((gate) => gate.label);
+      const status = trace.status === "monitor"
+        ? "monitor"
+        : missingEvidence.length
+          ? "blocked"
+          : "ready";
+      return {
+        status,
+        owner: workOrder.issuer,
+        criteria: status === "blocked"
+          ? `clear ${missingEvidence.join("; ")}`
+          : status === "monitor"
+            ? "maintain Drive SLA through next 2 monitoring cycles"
+            : workOrder.releaseGate,
+        step: status === "monitor" ? "keep advisory in watch mode" : workOrder.fieldStep,
+        rollback: postFix.rollback,
+        proof: status === "blocked" ? trace.basis : playbook.trigger,
+        boundary: "release package only; owner-issued field action required"
+      };
+    }
+
+    function renderTierReleasePackage() {
+      const release = tierReleasePackage();
+      const status = document.getElementById("tier-release-status");
+      status.textContent = release.status;
+      status.className = `badge ${release.status === "monitor" ? "ok" : release.status === "blocked" ? "risk" : "watch"}`;
+      document.getElementById("tier-release-owner").textContent = release.owner;
+      document.getElementById("tier-release-criteria").textContent = release.criteria;
+      document.getElementById("tier-release-step").textContent = release.step;
+      document.getElementById("tier-release-rollback").textContent = release.rollback;
+      document.getElementById("tier-release-proof").textContent = release.proof;
+      document.getElementById("tier-release-boundary").textContent = release.boundary;
+    }
+
     function setTextLabel(id, label) {
       const node = document.getElementById(id);
       node.textContent = label[0];
@@ -3061,6 +3114,7 @@
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
+      const release = tierReleasePackage(trace);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3147,6 +3201,13 @@
         ["tier_trace_release", trace.release],
         ["tier_trace_move", trace.move],
         ["tier_trace_boundary", trace.boundary],
+        ["tier_release_status", release.status],
+        ["tier_release_owner", release.owner],
+        ["tier_release_criteria", release.criteria],
+        ["tier_release_step", release.step],
+        ["tier_release_rollback", release.rollback],
+        ["tier_release_proof", release.proof],
+        ["tier_release_boundary", release.boundary],
         ["guidance_status", guidance.status],
         ["guidance_route", guidance.route],
         ["guidance_signage", guidance.signage],
@@ -3334,6 +3395,7 @@
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
+      const release = tierReleasePackage(trace);
       const guidance = guidanceBoard();
       const workload = operatorWorkload();
       const maintenance = maintenanceCase();
@@ -3377,6 +3439,7 @@
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
+        `Tier release package: ${release.status}; owner ${release.owner}; criteria ${release.criteria}; step ${release.step}; rollback ${release.rollback}; proof ${release.proof}`,
         `Guidance: ${guidance.status}; route ${guidance.route}; signage ${guidance.signage}; EV ${guidance.ev}; source ${guidance.source}`,
         `Workload: ${workload.status}; queue ${workload.queue}; next owner ${workload.nextOwner}; next action ${workload.nextAction}`,
         `Maintenance: ${maintenance.priority} ${maintenance.failure}; fix ${maintenance.fix}; thresholds ${maintenance.thresholds}; evidence gap ${maintenance.evidenceGap}`,
@@ -3633,6 +3696,7 @@
       renderOperatorSla();
       renderDriveSlaPriorities();
       renderTierMapValidation();
+      renderTierReleasePackage();
       renderGuidanceBoard();
       renderWorkloadBoard();
       renderOperatorDecisionLog();
@@ -3795,6 +3859,7 @@
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
+        tierReleasePackage: tierReleasePackage(),
         guidance: guidanceBoard(),
         workload: operatorWorkload(),
         operatorDecisionLog: operatorDecisionLog(),
