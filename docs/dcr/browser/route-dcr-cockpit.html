@@ -995,6 +995,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Operations Cadence</h2>
+            <span class="badge info" id="cadence-status">watch</span>
+          </div>
+          <div class="metrics" aria-label="Operations cadence">
+            <div class="metric"><span>Cycle</span><strong id="cadence-cycle">0m</strong></div>
+            <div class="metric"><span>Checkpoint</span><strong id="cadence-checkpoint">next cycle</strong></div>
+            <div class="metric"><span>Handoff Owner</span><strong id="cadence-owner">operator</strong></div>
+            <div class="metric"><span>Escalation</span><strong id="cadence-escalation">watch</strong></div>
+            <div class="metric"><span>Rhythm</span><strong id="cadence-rhythm">monitor</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="cadence-boundary">simulation only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1890,6 +1905,41 @@
       document.getElementById("system-health-boundary").textContent = health.boundary;
     }
 
+    function operationsCadence() {
+      const health = systemHealth();
+      const sla = operatorSla();
+      const watch = watchlist();
+      const escalation = sourceEscalation();
+      const sourceHolds = Number(health.sourceHolds);
+      const status = health.status === "ready"
+        ? "ready"
+        : health.status === "degraded"
+          ? "attention"
+          : health.status;
+      return {
+        status,
+        cycle: `${sla.cycle}m`,
+        checkpoint: health.next,
+        owner: escalation.owner,
+        escalation: watch.escalation,
+        rhythm: sourceHolds ? `clear ${sourceHolds} source holds` : "monitor next two cycles",
+        boundary: "cadence is simulated; operator owns live operations"
+      };
+    }
+
+    function renderOperationsCadence() {
+      const cadence = operationsCadence();
+      const status = document.getElementById("cadence-status");
+      status.textContent = cadence.status;
+      status.className = `badge ${cadence.status === "ready" ? "ok" : cadence.status === "attention" ? "risk" : "info"}`;
+      document.getElementById("cadence-cycle").textContent = cadence.cycle;
+      document.getElementById("cadence-checkpoint").textContent = cadence.checkpoint;
+      document.getElementById("cadence-owner").textContent = cadence.owner;
+      document.getElementById("cadence-escalation").textContent = cadence.escalation;
+      document.getElementById("cadence-rhythm").textContent = cadence.rhythm;
+      document.getElementById("cadence-boundary").textContent = cadence.boundary;
+    }
+
     function renderRunSummary() {
       const summary = runSummary();
       const outcomeBadge = document.getElementById("summary-outcome");
@@ -2511,6 +2561,7 @@
       const approval = ownerApprovalPacket();
       const renewalValue = renewalValueCase();
       const health = systemHealth();
+      const cadence = operationsCadence();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -2670,6 +2721,13 @@
         ["system_health_monitor", health.monitor],
         ["system_health_next_check", health.next],
         ["system_health_boundary", health.boundary],
+        ["cadence_status", cadence.status],
+        ["cadence_cycle", cadence.cycle],
+        ["cadence_checkpoint", cadence.checkpoint],
+        ["cadence_handoff_owner", cadence.owner],
+        ["cadence_escalation", cadence.escalation],
+        ["cadence_rhythm", cadence.rhythm],
+        ["cadence_boundary", cadence.boundary],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -2719,6 +2777,7 @@
       const approval = ownerApprovalPacket();
       const renewalValue = renewalValueCase();
       const health = systemHealth();
+      const cadence = operationsCadence();
       const account = accountProfiles[state.account];
       const openActions = openActionEvents();
       const missingEvidence = currentScenario().gates.filter((gate) => !isGateReady(gate));
@@ -2755,6 +2814,7 @@
         `Owner approval packet: ${approval.status}; owner ${approval.owner}; request ${approval.request}; evidence ${approval.evidence}; decision ${approval.decision}`,
         `Renewal value case: ${renewalValue.status}; ask ${renewalValue.ask}; proof ${renewalValue.proof}; coverage ${renewalValue.coverage}; gap ${renewalValue.gap}`,
         `System health: ${health.status}; signals ${health.signals}; source holds ${health.sourceHolds}; controls ${health.controls}; monitor ${health.monitor}`,
+        `Operations cadence: ${cadence.status}; cycle ${cadence.cycle}; checkpoint ${cadence.checkpoint}; owner ${cadence.owner}; escalation ${cadence.escalation}`,
         `Approved switches: ${approvedSwitches.join("; ") || "none"}`,
         `Held switches: ${blockedSwitches.join("; ") || "none"}`,
         `Missing evidence: ${missingEvidence.map((gate) => gate.label).join("; ") || "none"}`,
@@ -2995,6 +3055,7 @@
       renderOwnerApprovalPacket();
       renderRenewalValueCase();
       renderSystemHealth();
+      renderOperationsCadence();
       renderMaintenanceCase();
       renderFixPackage();
       renderDecisionDossier();
@@ -3150,6 +3211,7 @@
         ownerApproval: ownerApprovalPacket(),
         renewalValue: renewalValueCase(),
         systemHealth: systemHealth(),
+        operationsCadence: operationsCadence(),
         maintenance: maintenanceCase(),
         fix: fixPackage(),
         dossier: decisionDossier(),
