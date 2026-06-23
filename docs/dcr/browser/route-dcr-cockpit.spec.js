@@ -54,6 +54,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-map-progress")).toHaveText("0%");
     await expect(page.locator("#tier-map-pressure")).toHaveText("watch +10m");
     await expect(page.locator("#tier-map-control")).toHaveText("weather-responsive split + EV staging");
+    await expect(page.getByLabel("Tier decision trace")).toContainText("Why Nowwatch +10m; promise risk 46>=45");
+    await expect(page.locator("#tier-trace-status")).toHaveText("held");
+    await expect(page.locator("#tier-trace-evidence")).toHaveText("511 closure feed; Charging source owner; Operator message owner");
+    await expect(page.locator("#tier-trace-release")).toHaveText("held for 511 closure feed");
+    await expect(page.locator("#tier-trace-boundary")).toHaveText("decision trace only; owner approves field action");
     await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
     await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
@@ -158,6 +163,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_boundary,"US tier map fixture only; no live network validation"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_segment,"SAC -> CENTRAL_VALLEY"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_sim_pressure,"watch \+10m"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_release,"held for 511 closure feed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
@@ -237,6 +244,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-map-segment")).toHaveText("HOU -> BEAUMONT");
     await expect(page.locator("#tier-map-pressure")).toHaveText("critical +27m");
     await expect(page.locator("#tier-map-control")).toHaveText("retime gate approach routing");
+    await expect(page.locator("#tier-trace-status")).toHaveText("held");
+    await expect(page.locator("#tier-trace-release")).toHaveText("held for Terminal queue feed");
+    await expect(page.locator("#tier-trace-move")).toHaveText("retime gate approach routing");
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
@@ -433,6 +443,10 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#tier-map-delta")).toHaveText("+2m");
     await expect(page.locator("#tier-map-validation")).toHaveText("validated within tier buffer");
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/US tier map validation: validated; row SAC -> SLC; path T1 via I-5;I-15; window 24h overnight; delta \+2m; validated within tier buffer/);
+    await expect(page.locator("#tier-trace-status")).toHaveText("monitor");
+    await expect(page.locator("#tier-trace-release")).toHaveText("monitor release");
+    await expect(page.locator("#tier-trace-move")).toHaveText("continue monitoring");
+    await expect(page.getByLabel("Shift handoff")).toHaveValue(/Tier decision trace: monitor; why buffer holding at \+2m; none; evidence Charging source owner; Operator message owner; release monitor release; move continue monitoring/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Guidance: reviewed; route reviewed alternate route/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Workload: held; queue source custody; next owner Charging source owner/);
     await expect(page.getByLabel("Shift handoff")).toHaveValue(/Maintenance: P3 corridor reliability failure; fix weather-responsive split \+ EV staging; thresholds none crossed; evidence gap Charging source owner; Operator message owner/);
@@ -464,6 +478,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/drive_sla_violation,"none"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_status,"validated"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_map_validation,"validated within tier buffer"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_status,"monitor"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/tier_trace_release,"monitor release"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_status,"reviewed"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_source_holds,"2"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_status,"validated"/);
