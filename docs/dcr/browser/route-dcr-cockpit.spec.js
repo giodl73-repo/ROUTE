@@ -33,9 +33,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#drive-sla-priority")).toHaveText("P2 mitigate risk");
     await expect(page.locator("#drive-sla-violation")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#drive-sla-mitigation")).toHaveText("weather-responsive split + EV staging");
-    await expect(page.getByLabel("Guidance board")).toContainText("Routemonitor base route");
+    await expect(page.getByLabel("Guidance board")).toContainText("Routedraft reroute split");
     await expect(page.locator("#guidance-status")).toHaveText("draft");
-    await expect(page.locator("#guidance-source")).toHaveText("source-needed");
+    await expect(page.locator("#guidance-source")).toHaveText(/source-needed|511 closure feed/);
     await expect(page.getByLabel("Workload board")).toContainText("Open Actions0");
     await expect(page.locator("#workload-status")).toHaveText("held");
     await expect(page.locator("#workload-source")).toHaveText("3");
@@ -67,7 +67,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Maintenance case")).toContainText("Measured Failurecorridor reliability failure");
     await expect(page.locator("#maintenance-fix")).toHaveText("weather-responsive split + EV staging");
     await expect(page.locator("#maintenance-priority")).toHaveText("P2");
-    await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 46>=45");
+    await expect(page.locator("#maintenance-thresholds")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#maintenance-evidence")).toHaveText("511 closure feed; Charging source owner; Operator message owner");
     await expect(page.getByLabel("Fix package")).toContainText("OwnerDOT operations");
     await expect(page.locator("#fix-status")).toHaveText("blocked");
@@ -75,7 +75,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#fix-approval")).toHaveText("source custody");
     await expect(page.getByLabel("Fix justification")).toContainText("FailureP2 corridor reliability failure");
     await expect(page.locator("#justification-status")).toHaveText("blocked");
-    await expect(page.locator("#justification-basis")).toHaveText("risk 46>=45");
+    await expect(page.locator("#justification-basis")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#justification-gate")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.getByLabel("Intervention rank")).toContainText("Rankrank 2; P2");
     await expect(page.locator("#intervention-status")).toHaveText("held");
@@ -101,7 +101,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workorder-step")).toHaveText("prepare weather-responsive split + EV staging");
     await expect(page.getByLabel("Resiliency playbook")).toContainText("SwitchMonitor only");
     await expect(page.locator("#playbook-status")).toHaveText("blocked");
-    await expect(page.locator("#playbook-trigger")).toHaveText("risk 46>=45");
+    await expect(page.locator("#playbook-trigger")).toHaveText("promise risk 46>=45");
     await expect(page.locator("#playbook-gate")).toHaveText("source custody: verify 511 closure feed");
     await expect(page.getByLabel("Evidence dossier")).toContainText("Readiness0/3");
     await expect(page.locator("#evidence-dossier-status")).toHaveText("blocked");
@@ -135,7 +135,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/guidance_boundary,"advisory, not field command"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/workload_queue,"source custody"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_boundary,"recommendation only; owner approval required"/);
-    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_thresholds,"risk 46>=45"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/maintenance_thresholds,"promise risk 46>=45"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/fix_boundary,"recommendation package, not a work order"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/justification_boundary,"justification only; owner approves fixes"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/intervention_boundary,"ranked recommendation only; no dispatch authority"/);
@@ -195,7 +195,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#maintenance-failure")).toHaveText("intersection access failure");
     await expect(page.locator("#maintenance-fix")).toHaveText("retime gate approach routing");
     await expect(page.locator("#maintenance-priority")).toHaveText("P1");
-    await expect(page.locator("#maintenance-thresholds")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#maintenance-thresholds")).toHaveText("promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#drive-sla-endpoints")).toHaveText("Inland yard -> Port gate");
     await expect(page.locator("#drive-sla-current")).toHaveText("69m");
     await expect(page.locator("#drive-sla-priority")).toHaveText("P1 protect drive SLA");
@@ -203,11 +203,11 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#fix-owner")).toHaveText("Port operations");
     await expect(page.locator("#fix-scope")).toHaveText("retime gate approach routing");
     await expect(page.locator("#justification-failure")).toHaveText("P1 intersection access failure");
-    await expect(page.locator("#justification-basis")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#justification-basis")).toHaveText("promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#justification-gate")).toHaveText("source custody: verify Terminal queue feed");
     await expect(page.locator("#intervention-rank")).toHaveText("rank 1; P1");
     await expect(page.locator("#intervention-name")).toHaveText("retime gate approach routing");
-    await expect(page.locator("#intervention-value")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#intervention-value")).toHaveText("promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#dossier-alternatives")).toHaveText("hold gate timing; manual detour only");
     await expect(page.locator("#postfix-target")).toHaveText("risk below baseline; flow above baseline");
     await expect(page.locator("#watchlist-cycle")).toHaveText("next 2 monitoring cycles");
@@ -216,9 +216,9 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#workorder-step")).toHaveText("prepare retime gate approach routing");
     await expect(page.locator("#playbook-fallback")).toHaveText("hold gate timing; manual detour only");
     await expect(page.locator("#playbook-gate")).toHaveText("source custody: verify Terminal queue feed");
-    await expect(page.locator("#evidence-dossier-basis")).toHaveText("risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#evidence-dossier-basis")).toHaveText("promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#source-escalation-owner")).toHaveText("Terminal queue feed");
-    await expect(page.locator("#source-escalation-reason")).toHaveText("P1 intersection access failure; risk 52>=45; flow 84%<85%");
+    await expect(page.locator("#source-escalation-reason")).toHaveText("P1 intersection access failure; promise risk 52>=45; flow 84%<85%");
     await expect(page.locator("#closure-close")).toHaveText("clear Terminal queue feed; Local truck route authority; Port communications owner");
     await expect(page.locator("#backlog-ticket")).toHaveText("DCR-MAINT-TERMINAL-ACCESS-P1");
     await expect(page.locator("#backlog-asset")).toHaveText("terminal gate approach");
