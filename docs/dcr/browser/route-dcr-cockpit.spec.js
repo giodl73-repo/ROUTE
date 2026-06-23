@@ -20,6 +20,7 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.locator("#paid-requests")).toHaveText("0");
     await expect(page.locator("#revenue-proxy")).toHaveText("$0");
     await expect(page.getByLabel("Scenario run plan")).toContainText("Primary pass restriction crosses promise-risk threshold.");
+    await expect(page.getByLabel("Timeline queue")).toContainText("00:10 Snow band reduces alternate reliability");
     await expect(page.locator("#run-owner")).toHaveText("DOT operations");
     await expect(page.getByText("Held traffic control, legal detour, SLA, EV availability, pricing authority")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/held_claims/);
@@ -56,15 +57,41 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_owner,"Port operations"/);
 
     await page.getByRole("button", { name: "Terminal" }).click();
+    await expect(page.locator("#promise-risk")).toHaveText("57");
+    await expect(page.locator("#network-flow")).toHaveText("80%");
+    await expect(page.getByLabel("Timeline queue")).toContainText("manual");
     await page.getByRole("button", { name: "EV Support" }).click();
     await page.getByRole("button", { name: "Hold For Authority" }).click();
     await expect(page.getByText("Held for authority. Traffic control, legal detour, SLA, EV availability, pricing authority, and revenue guarantees remain blocked claims.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/operator_status,"held"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/manual_events,"Terminal access exception added"/);
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download CSV" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe("route-dcr-cockpit-readout.csv");
+  });
+
+  test("scheduled timeline events evolve risk and flow deterministically", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 820 });
+    await page.goto(pagePath);
+    await page.getByRole("button", { name: "Pause" }).click();
+
+    await expect(page.locator("#promise-risk")).toHaveText("46");
+    await expect(page.locator("#network-flow")).toHaveText("91%");
+    await expect(page.locator("#timeline-count")).toHaveText("0 applied");
+
+    await page.getByRole("button", { name: "Step" }).click();
+    await expect(page.locator("#promise-risk")).toHaveText("46");
+    await expect(page.locator("#timeline-count")).toHaveText("0 applied");
+
+    await page.getByRole("button", { name: "Step" }).click();
+    await expect(page.locator("#promise-risk")).toHaveText("51");
+    await expect(page.locator("#network-flow")).toHaveText("89%");
+    await expect(page.locator("#risk-delta")).toHaveText("+5");
+    await expect(page.locator("#timeline-count")).toHaveText("1 applied");
+    await expect(page.getByLabel("Timeline queue")).toContainText("applied");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/timeline_events,"Snow band reduces alternate reliability"/);
   });
 
   test("express payment signal creates a bounded service advisory", async ({ page }) => {
@@ -77,8 +104,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pending_or_held_switches,"Express service payment advisory: pending"/);
 
     await page.getByRole("button", { name: "Priority advisory $45" }).click();
-    await expect(page.locator("#paid-requests")).toHaveText("8");
-    await expect(page.locator("#revenue-proxy")).toHaveText("$360");
+    await expect(page.locator("#paid-requests")).toHaveText("10");
+    await expect(page.locator("#revenue-proxy")).toHaveText("$450");
     await expect(page.getByText("Priority advisory is simulated at $45.")).toBeVisible();
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_status,"simulated only; owner authority required"/);
 
@@ -89,8 +116,8 @@ test.describe("ROUTE DCR cockpit", () => {
     await expect(page.getByLabel("Executive readout")).toHaveValue(/pricing_authority; revenue_guarantee/);
 
     await page.getByRole("button", { name: "Verified window $120" }).click();
-    await expect(page.locator("#paid-requests")).toHaveText("5");
-    await expect(page.locator("#revenue-proxy")).toHaveText("$600");
+    await expect(page.locator("#paid-requests")).toHaveText("6");
+    await expect(page.locator("#revenue-proxy")).toHaveText("$720");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/express_tier,"Verified window"/);
   });
 
@@ -123,9 +150,11 @@ test.describe("ROUTE DCR cockpit", () => {
 
     await page.getByLabel("Scenario case").selectOption("managed-lane");
     await page.getByRole("button", { name: "Step" }).click();
+    await page.getByRole("button", { name: "Step" }).click();
+    await expect(page.getByLabel("Timeline queue")).toContainText("Clearance estimate slips by one cycle");
     await page.getByRole("button", { name: "Save Run" }).click();
     await expect(page.locator("#saved-run-status")).toContainText("Saved Managed-lane incident recovery for Marta Ruiz");
-    await expect(page.getByLabel("Run library")).toContainText("Managed-lane incident recovery - Marta Ruiz @ 00:05");
+    await expect(page.getByLabel("Run library")).toContainText("Managed-lane incident recovery - Marta Ruiz @ 00:10");
 
     await page.getByLabel("Account profile").selectOption("planner");
     await page.getByLabel("Scenario case").selectOption("winter-closure");
@@ -134,11 +163,12 @@ test.describe("ROUTE DCR cockpit", () => {
     await page.getByRole("button", { name: "Load Last" }).click();
     await expect(page.locator("#account-name")).toHaveText("Marta Ruiz");
     await expect(page.locator("#active-case")).toHaveText("Managed-lane incident recovery");
-    await expect(page.locator("#clock")).toHaveText("00:05");
+    await expect(page.locator("#clock")).toHaveText("00:10");
     await expect(page.getByLabel("Executive readout")).toHaveValue(/account_name,"Marta Ruiz"/);
     await expect(page.getByLabel("Executive readout")).toHaveValue(/account_org,"District Operations"/);
-    await expect(page.getByLabel("Executive readout")).toHaveValue(/risk_delta,"0"/);
-    await expect(page.locator("#risk-delta")).toHaveText("+0");
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/risk_delta,"7"/);
+    await expect(page.getByLabel("Executive readout")).toHaveValue(/timeline_events,"Clearance estimate slips by one cycle"/);
+    await expect(page.locator("#risk-delta")).toHaveText("+7");
 
     await page.getByLabel("Scenario case").selectOption("freight-bottleneck");
     await page.getByRole("button", { name: "Replay Selected" }).click();

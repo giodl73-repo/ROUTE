@@ -696,6 +696,14 @@
           </section>
 
           <section class="panel">
+            <div class="signal-top">
+              <h2>Timeline Queue</h2>
+              <span class="badge info" id="timeline-count">0 applied</span>
+            </div>
+            <div class="stack" id="timeline-list" aria-label="Timeline queue"></div>
+          </section>
+
+          <section class="panel">
             <div class="decision-top">
               <h2>Switch Playbook</h2>
               <span class="badge info" id="decision-count">0 reviewed</span>
@@ -757,6 +765,11 @@
           ["Signage", "watch", 48, "Drivers need earlier route split before grade approach."],
           ["Express payment", "watch", 44, "Operators may pay for faster verified service, but pricing authority is held."],
           ["Evidence", "watch", 52, "Legal detour and EV availability claims remain held."]
+        ],
+        timeline: [
+          { id: "wx-band", minute: 10, label: "Snow band reduces alternate reliability", severity: "watch", impact: { risk: 4, flow: -2, ev: -3, recovery: 5 } },
+          { id: "charger-source", minute: 20, label: "Charging source goes stale", severity: "risk", impact: { risk: 6, ev: -9, holds: 1 } },
+          { id: "signage-window", minute: 30, label: "Early signage window expires", severity: "risk", impact: { risk: 5, flow: -3, signage: 1, recovery: 4 } }
         ]
       },
       "terminal-access": {
@@ -782,6 +795,11 @@
           ["Express payment", "watch", 58, "Terminal operators show premium access demand; payment policy remains source-needed."],
           ["Recovery", "watch", 49, "Window expands without access switch."],
           ["Evidence", "watch", 60, "Public-readiness and endorsement claims held."]
+        ],
+        timeline: [
+          { id: "gate-queue", minute: 10, label: "Gate queue crosses staging threshold", severity: "risk", impact: { risk: 5, flow: -4, recovery: 6, signage: 1 } },
+          { id: "truck-restriction", minute: 25, label: "Local truck restriction blocks fallback", severity: "risk", impact: { risk: 7, flow: -3, holds: 1 } },
+          { id: "access-recovery", minute: 35, label: "Terminal owner posts partial recovery row", severity: "watch", impact: { risk: -3, flow: 2, recovery: -5 } }
         ]
       },
       "managed-lane": {
@@ -807,6 +825,11 @@
           ["Communications", "watch", 46, "Leadership language needs bounded claim."],
           ["Signage", "watch", 51, "Route-split timing review needed."],
           ["Evidence", "watch", 54, "Incident-command and SLA claims remain held."]
+        ],
+        timeline: [
+          { id: "clearance-slip", minute: 10, label: "Clearance estimate slips by one cycle", severity: "risk", impact: { risk: 6, flow: -5, recovery: 8, express: 4 } },
+          { id: "shoulder-open", minute: 25, label: "Shoulder option becomes operator-reviewable", severity: "watch", impact: { risk: -4, flow: 3, recovery: -6 } },
+          { id: "tolling-hold", minute: 40, label: "Tolling authority hold remains unresolved", severity: "watch", impact: { holds: 1, express: 5 } }
         ]
       },
       "freight-bottleneck": {
@@ -832,6 +855,11 @@
           ["Asset", "watch", 43, "Pavement and WIM rows need refresh."],
           ["Package", "watch", 57, "Operations package now outranks old capital list."],
           ["Evidence", "watch", 45, "ROI and construction readiness claims held."]
+        ],
+        timeline: [
+          { id: "peak-repeat", minute: 10, label: "Peak queue repeats for third monitored window", severity: "watch", impact: { risk: 4, flow: -2, recovery: 3 } },
+          { id: "carrier-signal", minute: 20, label: "Carrier advisory feed confirms missed promise proxy", severity: "risk", impact: { risk: 6, flow: -3, express: 6 } },
+          { id: "asset-row", minute: 35, label: "Asset row refresh changes package priority", severity: "watch", impact: { risk: -2, holds: 1 } }
         ]
       }
     };
@@ -881,6 +909,8 @@
       paymentTier: "standard",
       activeRole: "planner",
       decisions: [],
+      appliedEvents: [],
+      manualEvents: [],
       log: ["00:00 DCR started in advisory simulation mode."]
     };
 
@@ -910,19 +940,32 @@
       const base = currentScenario().metrics;
       const drift = Math.min(18, Math.floor(state.minute / 10));
       const mitigation = state.decisions.filter((item) => item.status === "approved").length * 5;
+      const impact = cumulativeImpact();
       const tier = expressTier();
-      const paidRequests = Math.max(0, Math.round((base.express + drift) * tier.capture));
+      const expressDemand = Math.max(10, Math.min(96, base.express + drift + impact.express + (hasDecision("express") ? 6 : 0)));
+      const paidRequests = Math.max(0, Math.round(expressDemand * tier.capture));
       return {
-        risk: Math.max(12, Math.min(96, base.risk + drift - mitigation)),
-        flow: Math.max(42, Math.min(99, base.flow - Math.floor(drift / 2) + mitigation)),
-        ev: Math.max(25, Math.min(98, base.ev - (state.scenario === "winter-closure" ? drift : 0) + (hasDecision("ev") ? 8 : 0))),
-        recovery: Math.max(12, base.recovery + drift - (hasDecision("recovery") ? 12 : 0)),
-        signage: Math.max(0, base.signage + (hasDecision("signage") ? -1 : 0)),
-        express: Math.max(10, Math.min(96, base.express + drift + (hasDecision("express") ? 6 : 0))),
+        risk: Math.max(12, Math.min(96, base.risk + drift + impact.risk - mitigation)),
+        flow: Math.max(42, Math.min(99, base.flow - Math.floor(drift / 2) + impact.flow + mitigation)),
+        ev: Math.max(25, Math.min(98, base.ev - (state.scenario === "winter-closure" ? drift : 0) + impact.ev + (hasDecision("ev") ? 8 : 0))),
+        recovery: Math.max(12, base.recovery + drift + impact.recovery - (hasDecision("recovery") ? 12 : 0)),
+        signage: Math.max(0, base.signage + impact.signage + (hasDecision("signage") ? -1 : 0)),
+        express: expressDemand,
         paidRequests,
         revenueProxy: paidRequests * tier.price,
-        holds: Math.max(3, base.holds - state.decisions.filter((item) => item.status === "approved").length)
+        holds: Math.max(3, base.holds + impact.holds - state.decisions.filter((item) => item.status === "approved").length)
       };
+    }
+
+    function cumulativeImpact() {
+      const empty = { risk: 0, flow: 0, ev: 0, recovery: 0, signage: 0, express: 0, holds: 0 };
+      const timelineEvents = currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id));
+      for (const event of [...timelineEvents, ...state.manualEvents]) {
+        for (const key of Object.keys(empty)) {
+          empty[key] += event.impact?.[key] || 0;
+        }
+      }
+      return empty;
     }
 
     function expressTier() {
@@ -988,6 +1031,45 @@
         item.textContent = step;
         steps.appendChild(item);
       }
+    }
+
+    function renderTimeline() {
+      const root = document.getElementById("timeline-list");
+      root.innerHTML = "";
+      const timeline = [
+        ...currentScenario().timeline.map((event) => ({
+          ...event,
+          status: state.appliedEvents.includes(event.id) ? "applied" : "scheduled",
+          source: "Scenario"
+        })),
+        ...state.manualEvents.map((event) => ({
+          ...event,
+          status: "manual",
+          source: "Manual"
+        }))
+      ].sort((a, b) => a.minute - b.minute);
+      for (const event of timeline) {
+        const cls = event.status === "applied" || event.status === "manual" ? "ok" : badgeClass(event.severity);
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>${formatSnapshotClock(event.minute)} ${event.label}</h3>
+            <span class="badge ${cls}">${event.status}</span>
+          </div>
+          <p class="subhead">${event.source} ${event.severity} event. Impact: ${impactSummary(event.impact)}.</p>
+        `;
+        root.appendChild(el);
+      }
+      document.getElementById("timeline-count").textContent =
+        `${state.appliedEvents.length + state.manualEvents.length} applied`;
+    }
+
+    function impactSummary(impact) {
+      return Object.entries(impact)
+        .filter(([, value]) => value)
+        .map(([key, value]) => `${key} ${formatSigned(value)}`)
+        .join(", ");
     }
 
     function renderSignals() {
@@ -1088,6 +1170,9 @@
         ["operator_status", state.operatorStatus],
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
         ["pending_or_held_switches", state.decisions.filter((item) => item.status !== "approved").map((item) => `${item.label}: ${item.status}`).join("; ") || "none"],
+        ["applied_event_count", state.appliedEvents.length + state.manualEvents.length],
+        ["timeline_events", currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id)).map((event) => event.label).join("; ") || "none"],
+        ["manual_events", state.manualEvents.map((event) => event.label).join("; ") || "none"],
         ["operating_memory_rows", state.log.length],
         ["latest_event", state.log.at(-1)],
         ["held_claims", "traffic_control; legal_detour; incident_command; guaranteed_sla; ev_availability; pricing_authority; revenue_guarantee; roi"],
@@ -1201,6 +1286,7 @@
 
     function renderAll() {
       renderScenario();
+      renderTimeline();
       renderMetrics();
       renderSignals();
       renderDecisions();
@@ -1215,10 +1301,20 @@
 
     function stepSimulation() {
       state.minute += 5;
+      applyTimelineEvents();
       if (state.minute % 15 === 0) {
         state.log.push(`${formatClock()} monitoring exception refreshed for ${currentScenario().name}.`);
       }
       renderAll();
+    }
+
+    function applyTimelineEvents() {
+      for (const event of currentScenario().timeline) {
+        if (event.minute <= state.minute && !state.appliedEvents.includes(event.id)) {
+          state.appliedEvents.push(event.id);
+          state.log.push(`${formatSnapshotClock(event.minute)} timeline ${event.severity}: ${event.label}.`);
+        }
+      }
     }
 
     function setRunning(next) {
@@ -1247,6 +1343,8 @@
       state.paymentTier = "standard";
       state.activeRole = accountProfiles[state.account].role;
       state.decisions = [];
+      state.appliedEvents = [];
+      state.manualEvents = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
       renderAll();
     }
@@ -1269,6 +1367,8 @@
         paymentTier: state.paymentTier,
         activeRole: state.activeRole,
         decisions: state.decisions,
+        appliedEvents: state.appliedEvents,
+        manualEvents: state.manualEvents,
         log: state.log
       };
     }
@@ -1311,6 +1411,8 @@
       state.paymentTier = snapshot.paymentTier;
       state.activeRole = snapshot.activeRole;
       state.decisions = snapshot.decisions || [];
+      state.appliedEvents = snapshot.appliedEvents || [];
+      state.manualEvents = snapshot.manualEvents || [];
       state.log = [...(snapshot.log || []), `${formatSnapshotClock(snapshot.minute)} ${label}.`];
       document.getElementById("scenario-select").value = state.scenario;
       document.getElementById("saved-run-status").textContent =
@@ -1370,16 +1472,24 @@
     }
 
     function injectSignal(kind) {
-      const names = {
-        closure: "Closure severity increased",
-        charger: "Charging source changed",
-        signage: "Signage queue updated",
-        terminal: "Terminal access exception added",
-        weather: "Weather hazard expanded",
-        payment: "Express payment demand changed"
+      const manualImpacts = {
+        closure: { label: "Closure severity increased", severity: "risk", impact: { risk: 7, flow: -3, recovery: 5 } },
+        charger: { label: "Charging source changed", severity: "risk", impact: { risk: 3, ev: -8, holds: 1 } },
+        signage: { label: "Signage queue updated", severity: "watch", impact: { signage: 1, flow: -1 } },
+        terminal: { label: "Terminal access exception added", severity: "risk", impact: { risk: 5, flow: -4, recovery: 5 } },
+        weather: { label: "Weather hazard expanded", severity: "risk", impact: { risk: 4, flow: -2, ev: -2 } },
+        payment: { label: "Express payment demand changed", severity: "watch", impact: { express: 8, holds: 1 } }
       };
+      const event = manualImpacts[kind];
       state.minute += 3;
-      state.log.push(`${formatClock()} ${names[kind]}.`);
+      state.manualEvents.push({
+        id: `${kind}-${state.manualEvents.length + 1}`,
+        minute: state.minute,
+        label: event.label,
+        severity: event.severity,
+        impact: event.impact
+      });
+      state.log.push(`${formatClock()} manual signal ${event.severity}: ${event.label}.`);
       if (kind === "charger" && !state.decisions.some((item) => item.kind === "ev")) createDecision("ev");
       if (kind === "signage" && !state.decisions.some((item) => item.kind === "signage")) createDecision("signage");
       if (kind === "payment" && !state.decisions.some((item) => item.kind === "express")) createDecision("express");
