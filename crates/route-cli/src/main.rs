@@ -29896,9 +29896,7 @@ fn optimizer_constraint_ledger_rows_with_terminal_proof(
             exception_artifact: "data/t2-game-ops-bundle-evidence-policy-acceptance.csv"
                 .to_string(),
             next_artifact: "data/optimizer-constraint-budget.csv".to_string(),
-            optimizer_effect:
-                "accepted game/ops bundle evidence policy removes bundle-binding blockers"
-                    .to_string(),
+            optimizer_effect: game_ops_bundle_relief_optimizer_effect(row),
             validation_status: "pass".to_string(),
         });
     }
@@ -29979,6 +29977,21 @@ fn optimizer_constraint_ledger_rows_with_terminal_proof(
             .then_with(|| left.constraint_id.cmp(&right.constraint_id))
     });
     rows
+}
+
+fn game_ops_bundle_relief_optimizer_effect(
+    row: &T2GameOpsBundleEvidenceBlockerReliefRow,
+) -> String {
+    let base = "accepted game/ops bundle evidence policy removes bundle-binding blockers";
+    if row.qualification_gate_policy.trim().is_empty()
+        && row.qualification_game_use.trim().is_empty()
+    {
+        return base.to_string();
+    }
+    format!(
+        "{base}; qualification_gate_policy={}; qualification_game_use={}",
+        row.qualification_gate_policy, row.qualification_game_use
+    )
 }
 
 fn t1_topology_constraint_mapping(
@@ -71438,8 +71451,9 @@ mod tests {
             route: "I-110".to_string(),
             segment_bundle_id: "i110-la".to_string(),
             accepted_required_evidence: "game-ops-bundle-binding-evidence".to_string(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
             blocker_claims_before: "game;incident;publication;sla;transit;upgrade".to_string(),
             blocker_claims_after: String::new(),
@@ -71503,6 +71517,7 @@ mod tests {
             |row| row.constraint_class == "game_ops_bundle_binding_relief"
                 && row.constraint_status == "pass"
                 && row.subject_id == "i110-la"
+                && row.optimizer_effect.contains("qualification_gate_policy=")
         ));
         assert!(!rows
             .iter()
