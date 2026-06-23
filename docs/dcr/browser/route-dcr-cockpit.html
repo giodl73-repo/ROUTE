@@ -672,6 +672,21 @@
         </div>
 
         <div class="panel">
+          <div class="signal-top">
+            <h2>Scenario Scorecard</h2>
+            <span class="badge info" id="scorecard-grade">DCR-0</span>
+          </div>
+          <div class="metrics" aria-label="Scenario scorecard">
+            <div class="metric"><span>Response Time</span><strong id="score-response">0m</strong></div>
+            <div class="metric"><span>Mitigation</span><strong id="score-mitigation">0%</strong></div>
+            <div class="metric"><span>Evidence</span><strong id="score-evidence">0%</strong></div>
+            <div class="metric"><span>Handoff</span><strong id="score-handoff">ready</strong></div>
+            <div class="metric"><span>Renewal</span><strong id="score-renewal">watch</strong></div>
+            <div class="metric"><span>Proof Points</span><strong id="score-proof">0</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="tabs" aria-label="Readout controls">
             <button type="button" data-view="signals" aria-pressed="true">Signals</button>
             <button type="button" data-view="decisions" aria-pressed="false">Decisions</button>
@@ -1123,6 +1138,43 @@
       };
     }
 
+    function scenarioScorecard() {
+      const summary = runSummary();
+      const firstApplied = [
+        ...currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id)),
+        ...state.manualEvents
+      ].sort((a, b) => a.minute - b.minute)[0];
+      const responseTime = firstApplied ? Math.max(0, state.minute - firstApplied.minute) : 0;
+      const mitigationPercent = summary.applied ? Math.round((summary.resolved / summary.applied) * 100) : 0;
+      const evidencePercent = Math.round((summary.evidenceReady / summary.evidenceTotal) * 100);
+      const proofPoints = [
+        summary.resolved > 0,
+        summary.evidenceReady > 0,
+        summary.openActions === 0 && summary.applied > 0,
+        summary.riskChange < 0 || summary.flowChange > 0,
+        state.log.length >= 4
+      ].filter(Boolean).length;
+      const grade = proofPoints >= 4
+        ? "DCR-4"
+        : proofPoints >= 2
+          ? "DCR-2"
+          : "DCR-0";
+      const renewal = summary.pilotValue === "proof-ready"
+        ? "renew"
+        : summary.openActions > 0
+          ? "work"
+          : "watch";
+      return {
+        grade,
+        responseTime,
+        mitigationPercent,
+        evidencePercent,
+        handoff: summary.outcome === "standby" ? "ready" : summary.outcome,
+        renewal,
+        proofPoints
+      };
+    }
+
     function formatSigned(value) {
       return value >= 0 ? `+${value}` : String(value);
     }
@@ -1352,9 +1404,23 @@
       document.getElementById("summary-pilot-value").textContent = summary.pilotValue;
     }
 
+    function renderScorecard() {
+      const score = scenarioScorecard();
+      const grade = document.getElementById("scorecard-grade");
+      grade.textContent = score.grade;
+      grade.className = `badge ${score.grade === "DCR-4" ? "ok" : score.grade === "DCR-2" ? "watch" : "info"}`;
+      document.getElementById("score-response").textContent = `${score.responseTime}m`;
+      document.getElementById("score-mitigation").textContent = `${score.mitigationPercent}%`;
+      document.getElementById("score-evidence").textContent = `${score.evidencePercent}%`;
+      document.getElementById("score-handoff").textContent = score.handoff;
+      document.getElementById("score-renewal").textContent = score.renewal;
+      document.getElementById("score-proof").textContent = String(score.proofPoints);
+    }
+
     function renderReadout() {
       const metrics = computeMetrics();
       const summary = runSummary();
+      const score = scenarioScorecard();
       const rows = [
         ["clock", formatClock()],
         ["account_name", accountProfiles[state.account].name],
@@ -1373,6 +1439,11 @@
         ["run_outcome", summary.outcome],
         ["pilot_value", summary.pilotValue],
         ["summary", `${summary.resolved} resolved; ${summary.openActions} open; ${summary.evidenceReady}/${summary.evidenceTotal} evidence ready`],
+        ["scorecard_grade", score.grade],
+        ["scorecard_response_time", `${score.responseTime}m`],
+        ["scorecard_mitigation", `${score.mitigationPercent}%`],
+        ["scorecard_evidence", `${score.evidencePercent}%`],
+        ["scorecard_renewal", score.renewal],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1556,6 +1627,7 @@
       renderSignals();
       renderDecisions();
       renderRunSummary();
+      renderScorecard();
       renderReadout();
       renderHandoff();
       renderLog();
