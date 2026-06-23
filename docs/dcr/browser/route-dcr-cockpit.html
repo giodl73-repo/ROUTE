@@ -704,6 +704,14 @@
           </section>
 
           <section class="panel">
+            <div class="signal-top">
+              <h2>Action Queue</h2>
+              <span class="badge watch" id="action-count">0 open</span>
+            </div>
+            <div class="stack" id="action-list" aria-label="Action queue"></div>
+          </section>
+
+          <section class="panel">
             <div class="decision-top">
               <h2>Switch Playbook</h2>
               <span class="badge info" id="decision-count">0 reviewed</span>
@@ -767,9 +775,9 @@
           ["Evidence", "watch", 52, "Legal detour and EV availability claims remain held."]
         ],
         timeline: [
-          { id: "wx-band", minute: 10, label: "Snow band reduces alternate reliability", severity: "watch", impact: { risk: 4, flow: -2, ev: -3, recovery: 5 } },
-          { id: "charger-source", minute: 20, label: "Charging source goes stale", severity: "risk", impact: { risk: 6, ev: -9, holds: 1 } },
-          { id: "signage-window", minute: 30, label: "Early signage window expires", severity: "risk", impact: { risk: 5, flow: -3, signage: 1, recovery: 4 } }
+          { id: "wx-band", minute: 10, label: "Snow band reduces alternate reliability", severity: "watch", action: "reroute", impact: { risk: 4, flow: -2, ev: -3, recovery: 5 } },
+          { id: "charger-source", minute: 20, label: "Charging source goes stale", severity: "risk", action: "ev", impact: { risk: 6, ev: -9, holds: 1 } },
+          { id: "signage-window", minute: 30, label: "Early signage window expires", severity: "risk", action: "signage", impact: { risk: 5, flow: -3, signage: 1, recovery: 4 } }
         ]
       },
       "terminal-access": {
@@ -797,9 +805,9 @@
           ["Evidence", "watch", 60, "Public-readiness and endorsement claims held."]
         ],
         timeline: [
-          { id: "gate-queue", minute: 10, label: "Gate queue crosses staging threshold", severity: "risk", impact: { risk: 5, flow: -4, recovery: 6, signage: 1 } },
-          { id: "truck-restriction", minute: 25, label: "Local truck restriction blocks fallback", severity: "risk", impact: { risk: 7, flow: -3, holds: 1 } },
-          { id: "access-recovery", minute: 35, label: "Terminal owner posts partial recovery row", severity: "watch", impact: { risk: -3, flow: 2, recovery: -5 } }
+          { id: "gate-queue", minute: 10, label: "Gate queue crosses staging threshold", severity: "risk", action: "reroute", impact: { risk: 5, flow: -4, recovery: 6, signage: 1 } },
+          { id: "truck-restriction", minute: 25, label: "Local truck restriction blocks fallback", severity: "risk", action: "reroute", impact: { risk: 7, flow: -3, holds: 1 } },
+          { id: "access-recovery", minute: 35, label: "Terminal owner posts partial recovery row", severity: "watch", action: "recovery", impact: { risk: -3, flow: 2, recovery: -5 } }
         ]
       },
       "managed-lane": {
@@ -827,9 +835,9 @@
           ["Evidence", "watch", 54, "Incident-command and SLA claims remain held."]
         ],
         timeline: [
-          { id: "clearance-slip", minute: 10, label: "Clearance estimate slips by one cycle", severity: "risk", impact: { risk: 6, flow: -5, recovery: 8, express: 4 } },
-          { id: "shoulder-open", minute: 25, label: "Shoulder option becomes operator-reviewable", severity: "watch", impact: { risk: -4, flow: 3, recovery: -6 } },
-          { id: "tolling-hold", minute: 40, label: "Tolling authority hold remains unresolved", severity: "watch", impact: { holds: 1, express: 5 } }
+          { id: "clearance-slip", minute: 10, label: "Clearance estimate slips by one cycle", severity: "risk", action: "recovery", impact: { risk: 6, flow: -5, recovery: 8, express: 4 } },
+          { id: "shoulder-open", minute: 25, label: "Shoulder option becomes operator-reviewable", severity: "watch", action: "reroute", impact: { risk: -4, flow: 3, recovery: -6 } },
+          { id: "tolling-hold", minute: 40, label: "Tolling authority hold remains unresolved", severity: "watch", action: "express", impact: { holds: 1, express: 5 } }
         ]
       },
       "freight-bottleneck": {
@@ -857,9 +865,9 @@
           ["Evidence", "watch", 45, "ROI and construction readiness claims held."]
         ],
         timeline: [
-          { id: "peak-repeat", minute: 10, label: "Peak queue repeats for third monitored window", severity: "watch", impact: { risk: 4, flow: -2, recovery: 3 } },
-          { id: "carrier-signal", minute: 20, label: "Carrier advisory feed confirms missed promise proxy", severity: "risk", impact: { risk: 6, flow: -3, express: 6 } },
-          { id: "asset-row", minute: 35, label: "Asset row refresh changes package priority", severity: "watch", impact: { risk: -2, holds: 1 } }
+          { id: "peak-repeat", minute: 10, label: "Peak queue repeats for third monitored window", severity: "watch", action: "recovery", impact: { risk: 4, flow: -2, recovery: 3 } },
+          { id: "carrier-signal", minute: 20, label: "Carrier advisory feed confirms missed promise proxy", severity: "risk", action: "express", impact: { risk: 6, flow: -3, express: 6 } },
+          { id: "asset-row", minute: 35, label: "Asset row refresh changes package priority", severity: "watch", action: "asset", impact: { risk: -2, holds: 1 } }
         ]
       }
     };
@@ -911,6 +919,7 @@
       decisions: [],
       appliedEvents: [],
       manualEvents: [],
+      resolvedEvents: [],
       log: ["00:00 DCR started in advisory simulation mode."]
     };
 
@@ -959,8 +968,9 @@
 
     function cumulativeImpact() {
       const empty = { risk: 0, flow: 0, ev: 0, recovery: 0, signage: 0, express: 0, holds: 0 };
-      const timelineEvents = currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id));
-      for (const event of [...timelineEvents, ...state.manualEvents]) {
+      const timelineEvents = currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id) && !state.resolvedEvents.includes(event.id));
+      const manualEvents = state.manualEvents.filter((event) => !state.resolvedEvents.includes(event.id));
+      for (const event of [...timelineEvents, ...manualEvents]) {
         for (const key of Object.keys(empty)) {
           empty[key] += event.impact?.[key] || 0;
         }
@@ -1039,17 +1049,17 @@
       const timeline = [
         ...currentScenario().timeline.map((event) => ({
           ...event,
-          status: state.appliedEvents.includes(event.id) ? "applied" : "scheduled",
+          status: state.resolvedEvents.includes(event.id) ? "resolved" : state.appliedEvents.includes(event.id) ? "applied" : "scheduled",
           source: "Scenario"
         })),
         ...state.manualEvents.map((event) => ({
           ...event,
-          status: "manual",
+          status: state.resolvedEvents.includes(event.id) ? "resolved" : "manual",
           source: "Manual"
         }))
       ].sort((a, b) => a.minute - b.minute);
       for (const event of timeline) {
-        const cls = event.status === "applied" || event.status === "manual" ? "ok" : badgeClass(event.severity);
+        const cls = event.status === "resolved" ? "ok" : event.status === "applied" || event.status === "manual" ? "watch" : badgeClass(event.severity);
         const el = document.createElement("article");
         el.className = "signal";
         el.innerHTML = `
@@ -1057,12 +1067,61 @@
             <h3>${formatSnapshotClock(event.minute)} ${event.label}</h3>
             <span class="badge ${cls}">${event.status}</span>
           </div>
-          <p class="subhead">${event.source} ${event.severity} event. Impact: ${impactSummary(event.impact)}.</p>
+          <p class="subhead">${event.source} ${event.severity} event. Recommended switch: ${switchLabels[event.action] || "monitor"}. Impact: ${impactSummary(event.impact)}.</p>
         `;
         root.appendChild(el);
       }
       document.getElementById("timeline-count").textContent =
         `${state.appliedEvents.length + state.manualEvents.length} applied`;
+    }
+
+    function openActionEvents() {
+      const timelineEvents = currentScenario().timeline
+        .filter((event) => state.appliedEvents.includes(event.id))
+        .map((event) => ({ ...event, source: "Scenario" }));
+      const manualEvents = state.manualEvents.map((event) => ({ ...event, source: "Manual" }));
+      return [...timelineEvents, ...manualEvents]
+        .filter((event) => event.action && !state.resolvedEvents.includes(event.id))
+        .sort((a, b) => severityRank(b.severity) - severityRank(a.severity) || a.minute - b.minute);
+    }
+
+    function severityRank(severity) {
+      return severity === "risk" ? 2 : severity === "watch" ? 1 : 0;
+    }
+
+    function renderActionQueue() {
+      const root = document.getElementById("action-list");
+      root.innerHTML = "";
+      const actions = openActionEvents();
+      if (!actions.length) {
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>No open action</h3>
+            <span class="badge ok">clear</span>
+          </div>
+          <p class="subhead">Timeline events are either scheduled, resolved, or waiting for a source update.</p>
+        `;
+        root.appendChild(el);
+      }
+      for (const event of actions) {
+        const el = document.createElement("article");
+        el.className = "signal";
+        el.innerHTML = `
+          <div class="signal-top">
+            <h3>${switchLabels[event.action]}</h3>
+            <span class="badge ${badgeClass(event.severity)}">${event.severity}</span>
+          </div>
+          <p class="subhead">${event.label}. Expected mitigation clears: ${impactSummary(event.impact)}.</p>
+          <button type="button" data-action-switch="${event.action}">Create ${switchLabels[event.action]}</button>
+        `;
+        root.appendChild(el);
+      }
+      document.getElementById("action-count").textContent = `${actions.length} open`;
+      for (const button of root.querySelectorAll("button[data-action-switch]")) {
+        button.addEventListener("click", () => createDecision(button.dataset.actionSwitch));
+      }
     }
 
     function impactSummary(impact) {
@@ -1171,6 +1230,9 @@
         ["approved_switches", state.decisions.filter((item) => item.status === "approved").map((item) => item.label).join("; ") || "none"],
         ["pending_or_held_switches", state.decisions.filter((item) => item.status !== "approved").map((item) => `${item.label}: ${item.status}`).join("; ") || "none"],
         ["applied_event_count", state.appliedEvents.length + state.manualEvents.length],
+        ["open_action_count", openActionEvents().length],
+        ["open_actions", openActionEvents().map((event) => `${switchLabels[event.action]} for ${event.label}`).join("; ") || "none"],
+        ["resolved_events", state.resolvedEvents.length],
         ["timeline_events", currentScenario().timeline.filter((event) => state.appliedEvents.includes(event.id)).map((event) => event.label).join("; ") || "none"],
         ["manual_events", state.manualEvents.map((event) => event.label).join("; ") || "none"],
         ["operating_memory_rows", state.log.length],
@@ -1287,6 +1349,7 @@
     function renderAll() {
       renderScenario();
       renderTimeline();
+      renderActionQueue();
       renderMetrics();
       renderSignals();
       renderDecisions();
@@ -1345,6 +1408,7 @@
       state.decisions = [];
       state.appliedEvents = [];
       state.manualEvents = [];
+      state.resolvedEvents = [];
       state.log = [`00:00 DCR reset for ${currentScenario().name}.`];
       renderAll();
     }
@@ -1369,6 +1433,7 @@
         decisions: state.decisions,
         appliedEvents: state.appliedEvents,
         manualEvents: state.manualEvents,
+        resolvedEvents: state.resolvedEvents,
         log: state.log
       };
     }
@@ -1413,6 +1478,7 @@
       state.decisions = snapshot.decisions || [];
       state.appliedEvents = snapshot.appliedEvents || [];
       state.manualEvents = snapshot.manualEvents || [];
+      state.resolvedEvents = snapshot.resolvedEvents || [];
       state.log = [...(snapshot.log || []), `${formatSnapshotClock(snapshot.minute)} ${label}.`];
       document.getElementById("scenario-select").value = state.scenario;
       document.getElementById("saved-run-status").textContent =
@@ -1473,12 +1539,12 @@
 
     function injectSignal(kind) {
       const manualImpacts = {
-        closure: { label: "Closure severity increased", severity: "risk", impact: { risk: 7, flow: -3, recovery: 5 } },
-        charger: { label: "Charging source changed", severity: "risk", impact: { risk: 3, ev: -8, holds: 1 } },
-        signage: { label: "Signage queue updated", severity: "watch", impact: { signage: 1, flow: -1 } },
-        terminal: { label: "Terminal access exception added", severity: "risk", impact: { risk: 5, flow: -4, recovery: 5 } },
-        weather: { label: "Weather hazard expanded", severity: "risk", impact: { risk: 4, flow: -2, ev: -2 } },
-        payment: { label: "Express payment demand changed", severity: "watch", impact: { express: 8, holds: 1 } }
+        closure: { label: "Closure severity increased", severity: "risk", action: "reroute", impact: { risk: 7, flow: -3, recovery: 5 } },
+        charger: { label: "Charging source changed", severity: "risk", action: "ev", impact: { risk: 3, ev: -8, holds: 1 } },
+        signage: { label: "Signage queue updated", severity: "watch", action: "signage", impact: { signage: 1, flow: -1 } },
+        terminal: { label: "Terminal access exception added", severity: "risk", action: "reroute", impact: { risk: 5, flow: -4, recovery: 5 } },
+        weather: { label: "Weather hazard expanded", severity: "risk", action: "reroute", impact: { risk: 4, flow: -2, ev: -2 } },
+        payment: { label: "Express payment demand changed", severity: "watch", action: "express", impact: { express: 8, holds: 1 } }
       };
       const event = manualImpacts[kind];
       state.minute += 3;
@@ -1487,6 +1553,7 @@
         minute: state.minute,
         label: event.label,
         severity: event.severity,
+        action: event.action,
         impact: event.impact
       });
       state.log.push(`${formatClock()} manual signal ${event.severity}: ${event.label}.`);
@@ -1531,7 +1598,16 @@
       target.boundary = `${roleLabel(state.activeRole)} reviewed advisory. ROUTE still does not command field devices, set prices, or publish claims.`;
       state.operatorStatus = "approved";
       state.log.push(`${formatClock()} ${roleLabel(state.activeRole)} reviewed: ${target.label}.`);
+      resolveEventsForSwitch(target.kind);
       renderAll();
+    }
+
+    function resolveEventsForSwitch(kind) {
+      const matched = openActionEvents().filter((event) => event.action === kind);
+      for (const event of matched) {
+        state.resolvedEvents.push(event.id);
+        state.log.push(`${formatClock()} mitigated signal: ${event.label}.`);
+      }
     }
 
     function holdCurrent() {
