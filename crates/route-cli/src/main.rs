@@ -7282,10 +7282,27 @@ fn run_cli() -> Result<()> {
                     .iter()
                     .map(|row| row.service_action)
                     .collect::<std::collections::BTreeSet<_>>();
+                let covered_pairs = rows
+                    .iter()
+                    .flat_map(|row| {
+                        row.covered_bases
+                            .iter()
+                            .map(move |basis| (row.service_action, *basis))
+                    })
+                    .collect::<std::collections::BTreeSet<_>>();
                 let missing = route_map::beck_t2_diagnostics()
                     .iter()
-                    .filter(|row| !action_rows.contains(row.service_action))
-                    .map(|row| format!("{} {}", row.corridor, row.service_action))
+                    .filter(|row| {
+                        !action_rows.contains(row.service_action)
+                            || !covered_pairs
+                                .contains(&(row.service_action, row.qualification_basis))
+                    })
+                    .map(|row| {
+                        format!(
+                            "{} {} {}",
+                            row.corridor, row.service_action, row.qualification_basis
+                        )
+                    })
                     .collect::<Vec<_>>();
                 if missing.is_empty() {
                     println!("Beck T2 qualification actions gate: PASS");

@@ -124,9 +124,10 @@ fn e2e_generates_beck_t2_map_and_stop_sla_surface() {
         "--gate",
     ]);
     let t2_actions = std::fs::read_to_string(&t2_actions_out).expect("read T2 actions CSV");
-    assert!(t2_actions.starts_with("service_action,definition,required_evidence"));
+    assert!(t2_actions.starts_with("service_action,covered_bases,definition,required_evidence"));
     assert!(t2_actions.contains("keep-primary-review"));
     assert!(t2_actions.contains("demote-review"));
+    assert!(t2_actions.contains("duplicate-service-with-unique-markets"));
 
     assert_success(&[
         "stop-sla-surface",

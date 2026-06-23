@@ -140,6 +140,7 @@ pub struct BeckT2ServiceStandardRow {
 
 pub struct BeckT2QualificationActionRow {
     pub service_action: &'static str,
+    pub covered_bases: &'static [&'static str],
     pub definition: &'static str,
     pub required_evidence: &'static str,
     pub map_treatment: &'static str,
@@ -2808,13 +2809,14 @@ pub fn build_beck_t2_service_standards_csv() -> String {
 
 pub fn build_beck_t2_qualification_actions_csv() -> String {
     let mut csv = String::from(
-        "service_action,definition,required_evidence,map_treatment,gate_policy,game_use\n",
+        "service_action,covered_bases,definition,required_evidence,map_treatment,gate_policy,game_use\n",
     );
     for row in beck_t2_qualification_actions() {
         push_csv_row(
             &mut csv,
             &[
                 row.service_action,
+                &row.covered_bases.join(";"),
                 row.definition,
                 row.required_evidence,
                 row.map_treatment,
@@ -2883,6 +2885,7 @@ pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
     vec![
         BeckT2QualificationActionRow {
             service_action: "keep",
+            covered_bases: &["distinct-parent-service"],
             definition: "T2 service has no duplicate parent-trunk peer in the current stop model",
             required_evidence: "distinct parent-trunk pair or no shared split-anchor peer",
             map_treatment: "draw as normal T2 service for its class",
@@ -2891,6 +2894,7 @@ pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
         },
         BeckT2QualificationActionRow {
             service_action: "keep-primary-review",
+            covered_bases: &["duplicate-service-with-unique-markets"],
             definition: "duplicate T2 service with enough unique stops to justify primary retention",
             required_evidence: "at least two stops not served by duplicate peers and score no worse than peer",
             map_treatment: "keep visible; review whether duplicate peer should be thinner, merged, or demoted",
@@ -2899,6 +2903,7 @@ pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
         },
         BeckT2QualificationActionRow {
             service_action: "merge-review",
+            covered_bases: &["duplicate-service-needs-policy"],
             definition: "duplicate T2 service whose unique value is ambiguous in the current stop model",
             required_evidence: "some unique service or peer-score conflict, but not enough to choose primary",
             map_treatment: "review for shared trunking, branch split, or one-line schematic treatment",
@@ -2907,6 +2912,7 @@ pub fn beck_t2_qualification_actions() -> Vec<BeckT2QualificationActionRow> {
         },
         BeckT2QualificationActionRow {
             service_action: "demote-review",
+            covered_bases: &["duplicate-subset-service"],
             definition: "duplicate T2 service that is currently a subset of a stronger duplicate peer",
             required_evidence: "zero unique duplicate stops and no better drawn-stop or transfer-stop score than peer",
             map_treatment: "review for T3/T4 demotion, hidden relief service, or local inset treatment",
@@ -4892,14 +4898,23 @@ mod tests {
     #[test]
     fn beck_t2_qualification_actions_cover_diagnostic_recommendations() {
         let csv = build_beck_t2_qualification_actions_csv();
-        assert!(csv.starts_with("service_action,definition,required_evidence"));
+        assert!(csv.starts_with("service_action,covered_bases,definition,required_evidence"));
         assert!(csv.contains("keep-primary-review"));
         assert!(csv.contains("demote-review"));
+        assert!(csv.contains("duplicate-service-with-unique-markets"));
         assert!(csv.contains("zero unique duplicate stops"));
 
         let action_rows = super::beck_t2_qualification_actions()
             .iter()
             .map(|row| row.service_action)
+            .collect::<std::collections::HashSet<_>>();
+        let covered_pairs = super::beck_t2_qualification_actions()
+            .iter()
+            .flat_map(|row| {
+                row.covered_bases
+                    .iter()
+                    .map(move |basis| (row.service_action, *basis))
+            })
             .collect::<std::collections::HashSet<_>>();
         for row in beck_t2_diagnostics() {
             assert!(
@@ -4907,6 +4922,13 @@ mod tests {
                 "{} uses uncovered service action {}",
                 row.corridor,
                 row.service_action
+            );
+            assert!(
+                covered_pairs.contains(&(row.service_action, row.qualification_basis)),
+                "{} uses uncovered service action/basis {} {}",
+                row.corridor,
+                row.service_action,
+                row.qualification_basis
             );
         }
     }

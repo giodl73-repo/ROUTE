@@ -129,3 +129,7 @@ should mean something in the SLA graph.
 - T2 qualification actions now export to `data/beck-t2-qualification-actions.csv`
   via `route beck-t2-qualification-actions`, separating duplicate-service
   keep, merge, and demotion review rules from visual service classes.
+- T2 qualification actions now name covered diagnostic bases, and
+  `route beck-t2-qualification-actions --gate` rejects uncovered service-action
+  plus qualification-basis pairs before duplicate-service decisions can flow
+  downstream.
