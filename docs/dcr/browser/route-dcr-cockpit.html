@@ -1002,6 +1002,23 @@
 
         <div class="panel">
           <div class="signal-top">
+            <h2>Operator Approval Packet</h2>
+            <span class="badge info" id="operator-approval-status">draft</span>
+          </div>
+          <div class="metrics" aria-label="Operator approval packet">
+            <div class="metric"><span>Request</span><strong id="operator-approval-request">review</strong></div>
+            <div class="metric"><span>Operator Move</span><strong id="operator-approval-move">monitor</strong></div>
+            <div class="metric"><span>Evidence</span><strong id="operator-approval-evidence">pending</strong></div>
+            <div class="metric"><span>Approval Owner</span><strong id="operator-approval-owner">owner</strong></div>
+            <div class="metric"><span>Gate</span><strong id="operator-approval-gate">source custody</strong></div>
+            <div class="metric"><span>Log State</span><strong id="operator-approval-log">watch</strong></div>
+            <div class="metric"><span>Held By</span><strong id="operator-approval-held">none</strong></div>
+            <div class="metric"><span>Boundary</span><strong id="operator-approval-boundary">approval packet only</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="signal-top">
             <h2>US Tier Map Validation</h2>
             <span class="badge info" id="tier-map-status">simulated</span>
           </div>
@@ -3034,6 +3051,28 @@
       };
     }
 
+    function operatorApprovalPacket() {
+      const engine = decisionEngineRecommendation();
+      const authority = authorityHandoff();
+      const decisionLog = operatorDecisionLog();
+      const status = engine.status === "ready"
+        ? "operator-ready"
+        : engine.status === "prove"
+          ? "source-review"
+          : "blocked";
+      return {
+        status,
+        request: engine.recommend,
+        move: engine.move,
+        evidence: engine.evidence,
+        owner: authority.owner,
+        gate: engine.gate,
+        log: `${decisionLog.status}; ${decisionLog.next}`,
+        held: engine.blocked,
+        boundary: "operator approval packet only; no field command or owner approval"
+      };
+    }
+
     function tierMapFixture() {
       return {
         "winter-closure": {
@@ -3857,6 +3896,21 @@
       document.getElementById("decision-engine-boundary").textContent = recommendation.boundary;
     }
 
+    function renderOperatorApprovalPacket() {
+      const packet = operatorApprovalPacket();
+      const status = document.getElementById("operator-approval-status");
+      status.textContent = packet.status;
+      status.className = `badge ${packet.status === "operator-ready" || packet.status === "source-review" ? "ok" : "risk"}`;
+      document.getElementById("operator-approval-request").textContent = packet.request;
+      document.getElementById("operator-approval-move").textContent = packet.move;
+      document.getElementById("operator-approval-evidence").textContent = packet.evidence;
+      document.getElementById("operator-approval-owner").textContent = packet.owner;
+      document.getElementById("operator-approval-gate").textContent = packet.gate;
+      document.getElementById("operator-approval-log").textContent = packet.log;
+      document.getElementById("operator-approval-held").textContent = packet.held;
+      document.getElementById("operator-approval-boundary").textContent = packet.boundary;
+    }
+
     function uniqueLabels(items) {
       return [...new Set(items.filter(Boolean))];
     }
@@ -4441,6 +4495,7 @@
       const operatingContract = renewalOperatingContract();
       const serviceLoop = activeServiceLoop();
       const engineRecommendation = decisionEngineRecommendation();
+      const operatorApproval = operatorApprovalPacket();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -4680,6 +4735,15 @@
         ["decision_engine_confidence", engineRecommendation.confidence],
         ["decision_engine_blocked_by", engineRecommendation.blocked],
         ["decision_engine_boundary", engineRecommendation.boundary],
+        ["operator_approval_status", operatorApproval.status],
+        ["operator_approval_request", operatorApproval.request],
+        ["operator_approval_move", operatorApproval.move],
+        ["operator_approval_evidence", operatorApproval.evidence],
+        ["operator_approval_owner", operatorApproval.owner],
+        ["operator_approval_gate", operatorApproval.gate],
+        ["operator_approval_log", operatorApproval.log],
+        ["operator_approval_held_by", operatorApproval.held],
+        ["operator_approval_boundary", operatorApproval.boundary],
         ["tier_map_status", tier.status],
         ["tier_map_source", tier.source],
         ["tier_map_row", tier.row],
@@ -4953,6 +5017,7 @@
       const operatingContract = renewalOperatingContract();
       const serviceLoop = activeServiceLoop();
       const engineRecommendation = decisionEngineRecommendation();
+      const operatorApproval = operatorApprovalPacket();
       const tier = tierMapValidation();
       const tick = tierSimulationTick(tier);
       const trace = tierDecisionTrace(tier, tick);
@@ -5023,6 +5088,7 @@
         `Renewal operating contract: ${operatingContract.status}; service ${operatingContract.service}; cadence ${operatingContract.cadence}; rights ${operatingContract.rights}; resilience ${operatingContract.resilience}; deliverable ${operatingContract.deliverable}; proof ${operatingContract.proof}; trigger ${operatingContract.trigger}`,
         `Active service loop: ${serviceLoop.status}; watch ${serviceLoop.watch}; decision ${serviceLoop.decision}; switch ${serviceLoop.switch}; measure ${serviceLoop.measure}; escalate ${serviceLoop.escalate}; next ${serviceLoop.next}`,
         `Decision engine recommendation: ${engineRecommendation.status}; recommend ${engineRecommendation.recommend}; why ${engineRecommendation.why}; evidence ${engineRecommendation.evidence}; move ${engineRecommendation.move}; gate ${engineRecommendation.gate}; confidence ${engineRecommendation.confidence}; blocked ${engineRecommendation.blocked}`,
+        `Operator approval packet: ${operatorApproval.status}; request ${operatorApproval.request}; move ${operatorApproval.move}; evidence ${operatorApproval.evidence}; owner ${operatorApproval.owner}; gate ${operatorApproval.gate}; log ${operatorApproval.log}; held ${operatorApproval.held}`,
         `US tier map validation: ${tier.status}; row ${tier.row}; path ${tier.tierPath}; window ${tier.window}; delta ${tier.delta}; ${tier.validation}`,
         `Tier simulation tick: segment ${tick.segment}; progress ${tick.progress}; pressure ${tick.pressure}; control ${tick.control}; boundary ${tick.boundary}`,
         `Tier decision trace: ${trace.status}; why ${trace.why}; evidence ${trace.evidence}; release ${trace.release}; move ${trace.move}`,
@@ -5308,6 +5374,7 @@
       renderRenewalOperatingContract();
       renderActiveServiceLoop();
       renderDecisionEngineRecommendation();
+      renderOperatorApprovalPacket();
       renderTierMapValidation();
       renderTierReleasePackage();
       renderFieldPreviewPacket();
@@ -5495,6 +5562,7 @@
         renewalOperatingContract: renewalOperatingContract(),
         activeServiceLoop: activeServiceLoop(),
         decisionEngineRecommendation: decisionEngineRecommendation(),
+        operatorApprovalPacket: operatorApprovalPacket(),
         tierMapValidation: tierMapValidation(),
         tierSimulationTick: tierSimulationTick(),
         tierDecisionTrace: tierDecisionTrace(),
