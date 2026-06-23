@@ -63,8 +63,9 @@ from a static readout to a maintained decision environment.
 The first cockpit surface is `docs/dcr/browser/route-dcr-cockpit.html`. It is a
 simulated DCR workbench with signal injection, scenario time, switch controls,
 operator review state, map posture, scenario run plans, source custody,
-evidence status, local account profiles, saved run replay, role-aware
-authority, and claim-safe readout export.
+evidence status, local account profiles, saved run library, selected replay,
+baseline deltas, JSON run export, role-aware authority, and claim-safe readout
+export.
 
 The express payment policy is
 `docs/briefs/route-dcr-express-payment-policy-001.md`. It keeps tiered express

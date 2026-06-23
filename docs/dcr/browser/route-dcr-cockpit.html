@@ -507,6 +507,15 @@
               <button type="button" id="load-run">Load Last</button>
               <button type="button" id="clear-runs" class="danger">Clear Runs</button>
             </div>
+            <label>Run library
+              <select id="run-library" aria-label="Run library">
+                <option value="">No saved runs</option>
+              </select>
+            </label>
+            <div class="controls">
+              <button type="button" id="load-selected-run">Replay Selected</button>
+              <button type="button" id="export-runs">Export Runs</button>
+            </div>
             <p class="subhead" id="saved-run-status">No saved run loaded.</p>
           </section>
 
@@ -600,6 +609,8 @@
           <div class="metric"><span>Paid Requests</span><strong id="paid-requests">0</strong></div>
           <div class="metric"><span>Revenue Proxy</span><strong id="revenue-proxy">$0</strong></div>
           <div class="metric"><span>Evidence Holds</span><strong id="evidence-holds">5</strong></div>
+          <div class="metric"><span>Risk Delta</span><strong id="risk-delta">+0</strong></div>
+          <div class="metric"><span>Flow Delta</span><strong id="flow-delta">+0%</strong></div>
           <div class="metric"><span>Renewal Signal</span><strong id="renewal-signal">active</strong></div>
         </div>
 
@@ -929,6 +940,7 @@
 
     function renderMetrics() {
       const metrics = computeMetrics();
+      const baseline = baselineMetrics();
       const account = accountProfiles[state.account];
       document.getElementById("clock").textContent = formatClock();
       document.getElementById("account-name").textContent = account.name;
@@ -941,11 +953,22 @@
       document.getElementById("paid-requests").textContent = String(metrics.paidRequests);
       document.getElementById("revenue-proxy").textContent = `$${metrics.revenueProxy.toLocaleString("en-US")}`;
       document.getElementById("evidence-holds").textContent = String(metrics.holds);
+      document.getElementById("risk-delta").textContent = formatSigned(metrics.risk - baseline.risk);
+      document.getElementById("flow-delta").textContent = `${formatSigned(metrics.flow - baseline.flow)}%`;
       document.getElementById("renewal-signal").textContent = state.decisions.length > 1 || state.minute > 20 ? "strong" : "active";
       document.getElementById("incident-node").setAttribute("r", String(18 + Math.min(18, metrics.risk / 6)));
       document.getElementById("alt-route").setAttribute("stroke-width", hasDecision("reroute") ? "24" : "18");
       document.getElementById("signage-zone").setAttribute("stroke-width", hasDecision("signage") ? "5" : "3");
       document.getElementById("ev-node").setAttribute("r", String(hasDecision("ev") ? 24 : 19));
+    }
+
+    function baselineMetrics() {
+      const base = currentScenario().metrics;
+      return { risk: base.risk, flow: base.flow };
+    }
+
+    function formatSigned(value) {
+      return value >= 0 ? `+${value}` : String(value);
     }
 
     function renderScenario() {
@@ -1052,6 +1075,8 @@
         ["express_tier", expressTier().label],
         ["paid_requests", metrics.paidRequests],
         ["revenue_proxy", `$${metrics.revenueProxy}`],
+        ["risk_delta", metrics.risk - baselineMetrics().risk],
+        ["flow_delta", metrics.flow - baselineMetrics().flow],
         ["pricing_status", "simulated only; owner authority required"],
         ["recommended_posture", currentScenario().posture],
         ["scenario_trigger", currentScenario().trigger],
@@ -1140,6 +1165,31 @@
         `${account.name} at ${account.org}. Local demo account; no authentication backend.`;
     }
 
+    function renderRunLibrary() {
+      const runs = readStoredRuns();
+      const select = document.getElementById("run-library");
+      const selected = select.value;
+      select.innerHTML = "";
+      if (!runs.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No saved runs";
+        select.appendChild(option);
+        return;
+      }
+      runs.forEach((run, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = `${index + 1}. ${scenarios[run.scenario].name} - ${accountProfiles[run.account].name} @ ${formatSnapshotClock(run.minute)}`;
+        select.appendChild(option);
+      });
+      if (selected && Number(selected) < runs.length) {
+        select.value = selected;
+      } else {
+        select.value = String(runs.length - 1);
+      }
+    }
+
     function renderPaymentTier() {
       const tier = expressTier();
       for (const button of document.querySelectorAll("button[data-tier]")) {
@@ -1159,6 +1209,7 @@
       renderBoundary();
       renderRole();
       renderAccount();
+      renderRunLibrary();
       renderPaymentTier();
     }
 
@@ -1230,6 +1281,12 @@
       }
     }
 
+    function formatSnapshotClock(minute) {
+      const hours = String(Math.floor(minute / 60)).padStart(2, "0");
+      const minutes = String(minute % 60).padStart(2, "0");
+      return `${hours}:${minutes}`;
+    }
+
     function writeStoredRuns(runs) {
       localStorage.setItem(RUN_STORE_KEY, JSON.stringify(runs.slice(-10)));
     }
@@ -1245,13 +1302,7 @@
       renderAll();
     }
 
-    function loadLastRun() {
-      const runs = readStoredRuns();
-      const snapshot = runs.at(-1);
-      if (!snapshot) {
-        document.getElementById("saved-run-status").textContent = "No saved run available.";
-        return;
-      }
+    function restoreRun(snapshot, label) {
       state.account = snapshot.account;
       state.scenario = snapshot.scenario;
       state.minute = snapshot.minute;
@@ -1260,11 +1311,32 @@
       state.paymentTier = snapshot.paymentTier;
       state.activeRole = snapshot.activeRole;
       state.decisions = snapshot.decisions || [];
-      state.log = [...(snapshot.log || []), `${formatClock()} saved run replayed locally.`];
+      state.log = [...(snapshot.log || []), `${formatSnapshotClock(snapshot.minute)} ${label}.`];
       document.getElementById("scenario-select").value = state.scenario;
       document.getElementById("saved-run-status").textContent =
         `Loaded ${currentScenario().name} for ${accountProfiles[state.account].name}.`;
       renderAll();
+    }
+
+    function loadLastRun() {
+      const runs = readStoredRuns();
+      const snapshot = runs.at(-1);
+      if (!snapshot) {
+        document.getElementById("saved-run-status").textContent = "No saved run available.";
+        return;
+      }
+      restoreRun(snapshot, "saved run replayed locally");
+    }
+
+    function loadSelectedRun() {
+      const runs = readStoredRuns();
+      const index = Number(document.getElementById("run-library").value);
+      const snapshot = runs[index];
+      if (!snapshot) {
+        document.getElementById("saved-run-status").textContent = "No selected run available.";
+        return;
+      }
+      restoreRun(snapshot, "selected saved run replayed locally");
     }
 
     function clearRuns() {
@@ -1272,6 +1344,19 @@
       document.getElementById("saved-run-status").textContent = "Saved runs cleared.";
       state.log.push(`${formatClock()} local saved runs cleared.`);
       renderAll();
+    }
+
+    function exportRuns() {
+      const runs = readStoredRuns();
+      const blob = new Blob([JSON.stringify(runs, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "route-dcr-cockpit-runs.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
     function selectTier(tier) {
@@ -1391,7 +1476,9 @@
     });
     document.getElementById("save-run").addEventListener("click", saveRun);
     document.getElementById("load-run").addEventListener("click", loadLastRun);
+    document.getElementById("load-selected-run").addEventListener("click", loadSelectedRun);
     document.getElementById("clear-runs").addEventListener("click", clearRuns);
+    document.getElementById("export-runs").addEventListener("click", exportRuns);
     document.getElementById("play-pause").addEventListener("click", () => setRunning(!state.running));
     document.getElementById("step").addEventListener("click", stepSimulation);
     document.getElementById("reset").addEventListener("click", resetScenario);
