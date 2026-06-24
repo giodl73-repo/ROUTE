@@ -214,3 +214,6 @@ should mean something in the SLA graph.
 - `NationalSegmentRegistryRow` now accepts and preserves `qualification_effects`
   from tier segment candidates and pavement dockets for future registry rows
   while remaining compatible with existing registry CSVs.
+- `NationalSegmentBundleRow` now accepts and preserves `qualification_effects`
+  from national segment registry members for future bundle rows while remaining
+  compatible with existing bundle CSVs.
