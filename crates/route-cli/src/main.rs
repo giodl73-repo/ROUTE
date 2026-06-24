@@ -21215,6 +21215,8 @@ struct T2BundleOverlayRepairTargetRow {
     binding_status: String,
     bundle_status: String,
     service_class: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     pavement_debt_cost_m: f64,
@@ -30778,6 +30780,7 @@ fn t2_bundle_overlay_repair_target_rows(
                 binding_status: row.binding_status.clone(),
                 bundle_status: row.bundle_status.clone(),
                 service_class: row.service_class.clone(),
+                qualification_effects: row.qualification_effects.clone(),
                 qualification_gate_policy: row.qualification_gate_policy.clone(),
                 qualification_game_use: row.qualification_game_use.clone(),
                 pavement_debt_cost_m,
@@ -30920,6 +30923,15 @@ fn t2_bundle_overlay_repair_target_gate_failures(
         {
             failures.push(format!(
                 "{} repair target missing qualification semantics",
+                row.route
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.qualification_gate_policy.trim().is_empty()
+            && row.qualification_game_use.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} repair target drops qualification contract",
                 row.route
             ));
         }
