@@ -21851,6 +21851,8 @@ struct TierSegmentCandidateRow {
     route_aliases: String,
     selector_basis: String,
     candidate_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -27681,7 +27683,12 @@ fn tier_segment_candidate_rows(
         .filter(|row| row.family_action == "split-numbered-service-family")
         .map(|row| canonical_route_key(&row.route))
         .collect::<std::collections::BTreeSet<_>>();
-    let mut service_rows = Vec::<(&str, &str, String, String, String, String)>::new();
+    let route_family_qualification_effects = route_family_rows
+        .iter()
+        .filter(|row| !row.qualification_effects.trim().is_empty())
+        .map(|row| (canonical_route_key(&row.route), row.qualification_effects.clone()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut service_rows = Vec::<(&str, &str, String, String, String, String, String)>::new();
     for row in t1_rows.iter().filter(|row| row.selected) {
         service_rows.push((
             "T1",
@@ -27691,6 +27698,7 @@ fn tier_segment_candidate_rows(
             row.selected_stops.clone(),
             "selected T1 SLA promise route; decompose into graph segment members before bundle stitching"
                 .to_string(),
+            String::new(),
         ));
     }
     for row in t2_rows.iter().filter(|row| {
@@ -27709,6 +27717,13 @@ fn tier_segment_candidate_rows(
                 "{}; {}; {}",
                 row.beck_service_class, row.qualification_basis, row.selection_basis
             ),
+            merge_qualification_effects(
+                &row.qualification_effects,
+                route_family_qualification_effects
+                    .get(&canonical_route_key(&row.route))
+                    .map(String::as_str)
+                    .unwrap_or_default(),
+            ),
         ));
     }
     for row in repair_rows
@@ -27725,11 +27740,21 @@ fn tier_segment_candidate_rows(
                 "{}; {}; {}",
                 row.bundle_status, row.bundle_action, row.repair_action
             ),
+            String::new(),
         ));
     }
 
     let mut rows = Vec::new();
-    for (tier, source_selector, region_id, route, selector_basis, action_basis) in service_rows {
+    for (
+        tier,
+        source_selector,
+        region_id,
+        route,
+        selector_basis,
+        action_basis,
+        qualification_effects,
+    ) in service_rows
+    {
         let route_key = normalise_designation(&route);
         let split_by_state =
             tier == "T2" && split_service_families.contains(&canonical_route_key(&route_key));
@@ -27776,6 +27801,7 @@ fn tier_segment_candidate_rows(
                 route_aliases: tier_candidate_aliases(tier, &region_id, &route_key, &bundle_scope),
                 selector_basis: selector_basis.clone(),
                 candidate_action: action_basis.clone(),
+                qualification_effects: qualification_effects.clone(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             });
@@ -27790,6 +27816,16 @@ fn tier_segment_candidate_rows(
             .then_with(|| a.edge_id.cmp(&b.edge_id))
     });
     rows
+}
+
+fn merge_qualification_effects(left: &str, right: &str) -> String {
+    let mut values = std::collections::BTreeSet::new();
+    for value in left.split('|').chain(right.split('|')).map(str::trim) {
+        if !value.is_empty() {
+            values.insert(value.to_string());
+        }
+    }
+    join_string_set(&values)
 }
 
 fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> String {
@@ -27935,6 +27971,14 @@ fn tier_segment_candidate_gate_failures(
         *rows_by_service
             .entry((row.tier.clone(), row.route.clone()))
             .or_default() += 1;
+        if !row.qualification_effects.trim().is_empty()
+            && !row.candidate_action.contains("qualification")
+        {
+            failures.push(format!(
+                "{}:{} segment candidate drops qualification effects",
+                row.tier, row.route
+            ));
+        }
     }
 
     for row in t1_rows.iter().filter(|row| row.selected) {
@@ -68269,6 +68313,7 @@ mod tests {
                 route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
                 selector_basis: "I80;I10".to_string(),
                 candidate_action: "connector".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -68290,6 +68335,7 @@ mod tests {
                 route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
                 selector_basis: "I80;I10".to_string(),
                 candidate_action: "connector".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -69832,6 +69878,7 @@ mod tests {
             route_aliases: "route:I295".to_string(),
             selector_basis: "test".to_string(),
             candidate_action: "candidate".to_string(),
+            qualification_effects: String::new(),
             next_artifact: "data/national-segment-registry.csv".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -70027,6 +70074,7 @@ mod tests {
             route_aliases: "route:I295".to_string(),
             selector_basis: "test".to_string(),
             candidate_action: "candidate".to_string(),
+            qualification_effects: String::new(),
             next_artifact: "data/national-segment-registry.csv".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -70084,6 +70132,7 @@ mod tests {
                 route_aliases: "route:I295".to_string(),
                 selector_basis: "test".to_string(),
                 candidate_action: "candidate".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -70105,6 +70154,7 @@ mod tests {
                 route_aliases: "route:I295".to_string(),
                 selector_basis: "test".to_string(),
                 candidate_action: "candidate".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -70195,6 +70245,7 @@ mod tests {
                 route_aliases: "I95".to_string(),
                 selector_basis: "route-family-scope:FL".to_string(),
                 candidate_action: "missing-beck-t2-diagnostic".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -70216,6 +70267,7 @@ mod tests {
                 route_aliases: "I95".to_string(),
                 selector_basis: "route-family-scope:VA".to_string(),
                 candidate_action: "missing-beck-t2-diagnostic".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -70833,6 +70885,7 @@ mod tests {
                 route_aliases: "route:I80".to_string(),
                 selector_basis: "fixture".to_string(),
                 candidate_action: "fixture".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             })
