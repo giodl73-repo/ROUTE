@@ -179,13 +179,14 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Binding Decision Qualification Compatibility | Preserve T2 qualification effects in future binding decision rows without breaking existing decision CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Repair Target Qualification Compatibility | Preserve T2 qualification effects in future repair target rows without breaking existing repair target CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Service Repair Qualification Compatibility | Preserve T2 qualification effects in future service-class repair docket rows without breaking existing docket CSVs. | done |
+| 2026-06-23 | Milestone 10 T2 Evidence Review Qualification Compatibility | Preserve T2 qualification effects in future evidence review rows without breaking existing review CSVs. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-service-repair-qualification-compatibility`
-closed after `T2ServiceClassRepairDocketRow` gained defaulted
-qualification-effect compatibility for future service-class repair docket rows.
-Current T1-T4 structural maps have a gateable readiness artifact, a gateable
+No wave is active. `2026-06-23-milestone-10-t2-evidence-review-qualification-compatibility`
+closed after `T2GameOpsBundleEvidenceReviewRow` gained defaulted
+qualification-effect compatibility for future evidence review rows. Current
+T1-T4 structural maps have a gateable readiness artifact, a gateable
 release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,

@@ -21261,6 +21261,8 @@ struct T2GameOpsBundleEvidenceReviewRow {
     service_class: String,
     repair_class: String,
     repair_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     evidence_artifact: String,
@@ -31195,6 +31197,10 @@ fn t2_game_ops_bundle_evidence_review_rows(
                 service_class: decision.service_class.clone(),
                 repair_class: target.repair_class.clone(),
                 repair_action: target.repair_action.clone(),
+                qualification_effects: service
+                    .map(|row| row.qualification_effects.clone())
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or_else(|| target.qualification_effects.clone()),
                 qualification_gate_policy: target.qualification_gate_policy.clone(),
                 qualification_game_use: target.qualification_game_use.clone(),
                 evidence_artifact: evidence_artifact.to_string(),
@@ -31319,6 +31325,15 @@ fn t2_game_ops_bundle_evidence_review_gate_failures(
         {
             failures.push(format!(
                 "{} bundle-bound review missing qualification semantics",
+                row.review_id
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.qualification_gate_policy.trim().is_empty()
+            && row.qualification_game_use.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} evidence review drops qualification contract",
                 row.review_id
             ));
         }
@@ -69296,6 +69311,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             repair_class: "service-class".to_string(),
             repair_action: "repair-service-class-before-game-overlay".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             evidence_artifact: "data/t3-t4-pressure-intake.csv".to_string(),

@@ -178,3 +178,6 @@ should mean something in the SLA graph.
 - `T2ServiceClassRepairDocketRow` now accepts and preserves
   `qualification_effects` from repair targets for future service-class repair
   docket rows while remaining compatible with existing docket CSVs.
+- `T2GameOpsBundleEvidenceReviewRow` now accepts and preserves
+  `qualification_effects` from service repair or repair targets for future
+  evidence review rows while remaining compatible with existing review CSVs.
