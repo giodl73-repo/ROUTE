@@ -211,3 +211,6 @@ should mean something in the SLA graph.
 - `TierPavementDocketRow` now accepts and preserves `qualification_effects` from
   tier segment candidates for future pavement docket rows while remaining
   compatible with existing docket CSVs.
+- `NationalSegmentRegistryRow` now accepts and preserves `qualification_effects`
+  from tier segment candidates and pavement dockets for future registry rows
+  while remaining compatible with existing registry CSVs.

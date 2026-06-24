@@ -23417,6 +23417,8 @@ struct NationalSegmentRegistryRow {
     bundle_role: String,
     member_segment_ids: String,
     registry_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     validation_status: String,
 }
 
@@ -27688,7 +27690,12 @@ fn tier_segment_candidate_rows(
     let route_family_qualification_effects = route_family_rows
         .iter()
         .filter(|row| !row.qualification_effects.trim().is_empty())
-        .map(|row| (canonical_route_key(&row.route), row.qualification_effects.clone()))
+        .map(|row| {
+            (
+                canonical_route_key(&row.route),
+                row.qualification_effects.clone(),
+            )
+        })
         .collect::<std::collections::BTreeMap<_, _>>();
     let mut service_rows = Vec::<(&str, &str, String, String, String, String, String)>::new();
     for row in t1_rows.iter().filter(|row| row.selected) {
@@ -55251,6 +55258,7 @@ struct NationalSegmentRegistryBuilder {
     board_layers: std::collections::BTreeSet<String>,
     source_artifacts: std::collections::BTreeSet<String>,
     stop_placement_status: std::collections::BTreeSet<String>,
+    qualification_effects: std::collections::BTreeSet<String>,
     validation_statuses: std::collections::BTreeSet<String>,
 }
 
@@ -55376,6 +55384,10 @@ fn national_segment_registry_rows(
         );
         insert_semicolon_values(&mut builder.segment_aliases, &row.route_aliases);
         insert_semicolon_values(&mut builder.bundle_aliases, &row.route_aliases);
+        insert_pipe_values(
+            &mut builder.qualification_effects,
+            &row.qualification_effects,
+        );
         builder
             .stop_placement_status
             .insert(format!("member-role:{}", row.member_role));
@@ -55391,6 +55403,10 @@ fn national_segment_registry_rows(
             builder
                 .stop_placement_status
                 .insert(pavement.pavement_status.clone());
+            insert_pipe_values(
+                &mut builder.qualification_effects,
+                &pavement.qualification_effects,
+            );
         } else {
             builder
                 .stop_placement_status
@@ -55444,6 +55460,7 @@ fn national_segment_registry_rows(
                 source_artifacts: join_string_set(&builder.source_artifacts),
                 stop_placement_status: join_string_set(&builder.stop_placement_status),
                 registry_action: registry_action.to_string(),
+                qualification_effects: join_pipe_set(&builder.qualification_effects),
                 validation_status: validation_status.to_string(),
             }
         })
@@ -55501,6 +55518,16 @@ fn insert_semicolon_values(target: &mut std::collections::BTreeSet<String>, valu
     }
 }
 
+fn insert_pipe_values(target: &mut std::collections::BTreeSet<String>, value: &str) {
+    for item in value
+        .split('|')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+    {
+        target.insert(item.to_string());
+    }
+}
+
 fn insert_non_empty_string(target: &mut std::collections::BTreeSet<String>, value: &str) {
     if !value.trim().is_empty() {
         target.insert(value.trim().to_string());
@@ -55509,6 +55536,10 @@ fn insert_non_empty_string(target: &mut std::collections::BTreeSet<String>, valu
 
 fn join_string_set(values: &std::collections::BTreeSet<String>) -> String {
     values.iter().cloned().collect::<Vec<_>>().join(";")
+}
+
+fn join_pipe_set(values: &std::collections::BTreeSet<String>) -> String {
+    values.iter().cloned().collect::<Vec<_>>().join("|")
 }
 
 fn national_segment_registry_action(
@@ -55642,6 +55673,17 @@ fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) 
             failures.push(format!(
                 "{} single-segment bundle has mismatched members {}",
                 row.national_segment_id, row.member_segment_ids
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && (!row.board_layers.contains("tier-segment-candidate")
+                || !row
+                    .source_artifacts
+                    .contains("data/tier-segment-candidates.csv"))
+        {
+            failures.push(format!(
+                "{} carries qualification effects without segment candidate source",
+                row.national_segment_id
             ));
         }
         if row.board_layers.contains("selected-route")
@@ -68305,6 +68347,7 @@ mod tests {
             source_artifacts: "data/t3-zone-render-board.csv".to_string(),
             stop_placement_status: "ready-for-stop-layout".to_string(),
             registry_action: "eligible-for-geometry-layout".to_string(),
+            qualification_effects: String::new(),
             validation_status: "pass".to_string(),
         }];
 
@@ -68342,7 +68385,7 @@ mod tests {
                 route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
                 selector_basis: "I80;I10".to_string(),
                 candidate_action: "connector".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -68389,7 +68432,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "pass".to_string(),
             },
@@ -68427,6 +68470,9 @@ mod tests {
         assert!(registry_rows
             .iter()
             .all(|row| row.registry_action == "eligible-for-service-bundle"));
+        assert!(registry_rows
+            .iter()
+            .any(|row| row.qualification_effects == "qualification_gate_policy=stop-first"));
         assert_eq!(bundle_rows.len(), 1);
         assert_eq!(bundle_rows[0].member_count, 2);
         assert_eq!(bundle_rows[0].bundle_status, "bundle-ready");
@@ -70085,6 +70131,7 @@ mod tests {
             bundle_role: "stitched-service".to_string(),
             member_segment_ids: "US.HWYSEG.I295".to_string(),
             registry_action: "eligible-for-service-bundle".to_string(),
+            qualification_effects: String::new(),
             validation_status: "pass".to_string(),
         }];
         let candidate_rows = vec![TierSegmentCandidateRow {
