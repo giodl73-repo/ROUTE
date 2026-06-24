@@ -20295,6 +20295,8 @@ struct T2RouteFamilySplitRow {
     disposition: String,
     required_evidence: String,
     next_artifact: String,
+    #[serde(default)]
+    qualification_effects: String,
     optimizer_effect: String,
     validation_status: String,
 }
@@ -25321,6 +25323,7 @@ fn t2_route_family_split_rows(
                 disposition: disposition.to_string(),
                 required_evidence: required_evidence.to_string(),
                 next_artifact: next_artifact.to_string(),
+                qualification_effects: String::new(),
                 optimizer_effect: optimizer_effect.to_string(),
                 validation_status: "review".to_string(),
             }
@@ -25350,9 +25353,11 @@ fn t2_route_family_split_rows(
                     "represented segment family plus Beck service diagnostic for each selected segment"
                         .to_string(),
                 next_artifact: row.next_artifact.clone(),
-                optimizer_effect:
-                    "blocked from national T2 service rendering until multi-state route label is split"
-                        .to_string(),
+                qualification_effects: row.qualification_effects.clone(),
+                optimizer_effect: route_family_split_optimizer_effect(
+                    "blocked from national T2 service rendering until multi-state route label is split",
+                    &row.qualification_effects,
+                ),
                 validation_status: "review".to_string(),
             }),
     );
@@ -25388,6 +25393,7 @@ fn t2_route_family_split_rows(
                     bundles.len()
                 ),
                 next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+                qualification_effects: String::new(),
                 optimizer_effect:
                     "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
                         .to_string(),
@@ -25431,6 +25437,7 @@ fn t2_route_family_split_rows(
                     bundles.len()
                 ),
                 next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
+                qualification_effects: String::new(),
                 optimizer_effect:
                     "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
                         .to_string(),
@@ -25448,11 +25455,19 @@ fn t2_route_family_split_rows(
             disposition: "clear".to_string(),
             required_evidence: "no route-family split blockers remain".to_string(),
             next_artifact: "data/tier-candidate-columns.csv".to_string(),
+            qualification_effects: String::new(),
             optimizer_effect: "route-family split lane is clear".to_string(),
             validation_status: "pass".to_string(),
         });
     }
     rows
+}
+
+fn route_family_split_optimizer_effect(effect: &str, qualification_effects: &str) -> String {
+    if qualification_effects.trim().is_empty() {
+        return effect.to_string();
+    }
+    format!("{effect}; qualification_effects={qualification_effects}")
 }
 
 fn is_three_digit_interstate(route: &str) -> bool {
@@ -25562,6 +25577,14 @@ fn t2_route_family_split_gate_failures(rows: &[T2RouteFamilySplitRow]) -> Vec<St
             || row.optimizer_effect.trim().is_empty()
         {
             failures.push(format!("{} has incomplete route-family split", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && !row.optimizer_effect.contains("qualification")
+        {
+            failures.push(format!(
+                "{} route-family split drops qualification effects",
+                row.route
+            ));
         }
     }
     failures
@@ -69092,6 +69115,7 @@ mod tests {
             disposition: "blocked".to_string(),
             required_evidence: "represented segment family".to_string(),
             next_artifact: "data/national-segment-bundles.csv".to_string(),
+            qualification_effects: String::new(),
             optimizer_effect: "split before rendering".to_string(),
             validation_status: "review".to_string(),
         }];

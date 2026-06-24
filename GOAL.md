@@ -202,3 +202,6 @@ should mean something in the SLA graph.
 - `T2ServiceDiagnosticQueueRow` now accepts and preserves `qualification_effects`
   from service selection for future diagnostic queue rows while remaining
   compatible with existing CSVs.
+- `T2RouteFamilySplitRow` now accepts and preserves `qualification_effects` from
+  service diagnostics for future route-family split rows while remaining
+  compatible with existing split CSVs.
