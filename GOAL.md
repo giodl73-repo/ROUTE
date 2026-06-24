@@ -208,3 +208,6 @@ should mean something in the SLA graph.
 - `TierSegmentCandidateRow` now accepts and preserves `qualification_effects`
   from T2 service selection and route-family splits for future segment candidate
   rows while remaining compatible with existing candidate CSVs.
+- `TierPavementDocketRow` now accepts and preserves `qualification_effects` from
+  tier segment candidates for future pavement docket rows while remaining
+  compatible with existing docket CSVs.

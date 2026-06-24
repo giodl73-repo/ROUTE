@@ -21877,6 +21877,8 @@ struct TierPavementDocketRow {
     freight_ride_requirement: String,
     transit_ride_requirement: String,
     source_contract: String,
+    #[serde(default)]
+    qualification_effects: String,
     next_artifact: String,
     validation_status: String,
 }
@@ -28083,6 +28085,7 @@ fn tier_pavement_docket_rows(
                 source_contract: standard
                     .map(|row| row.source_contract.clone())
                     .unwrap_or_else(|| "data/tier-pavement-standards.csv".to_string()),
+                qualification_effects: segment.qualification_effects.clone(),
                 next_artifact,
                 validation_status,
             }
@@ -28241,6 +28244,20 @@ fn tier_pavement_docket_gate_failures(
     }
 
     let mut seen = std::collections::BTreeSet::<(String, u64)>::new();
+    let segment_effects_by_member = segment_rows
+        .iter()
+        .filter(|row| !row.qualification_effects.trim().is_empty())
+        .map(|row| {
+            (
+                (
+                    row.segment_bundle_id.clone(),
+                    row.national_segment_id.clone(),
+                    row.edge_id,
+                ),
+                row.qualification_effects.clone(),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
     for row in rows {
         if row.tier.trim().is_empty()
             || row.route.trim().is_empty()
@@ -28296,6 +28313,18 @@ fn tier_pavement_docket_gate_failures(
                 "{}:{} edge {} passes without a pavement-floor-pass status",
                 row.tier, row.route, row.edge_id
             ));
+        }
+        if let Some(expected_effects) = segment_effects_by_member.get(&(
+            row.segment_bundle_id.clone(),
+            row.national_segment_id.clone(),
+            row.edge_id,
+        )) {
+            if row.qualification_effects != *expected_effects {
+                failures.push(format!(
+                    "{}:{} edge {} drops qualification effects",
+                    row.tier, row.route, row.edge_id
+                ));
+            }
         }
     }
     failures
@@ -68360,6 +68389,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "pass".to_string(),
             },
@@ -68382,6 +68412,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/standards-l1-inventory.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -70939,6 +70970,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "pass".to_string(),
             },
@@ -70961,6 +70993,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI plus state pavement feeds".to_string(),
+                qualification_effects: String::new(),
                 next_artifact: "data/standards-l1-inventory.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -74227,6 +74260,7 @@ mod tests {
             freight_ride_requirement: "freight ride requirement".to_string(),
             transit_ride_requirement: "transit ride requirement".to_string(),
             source_contract: "HPMS IRI joined to T2 segment candidates".to_string(),
+            qualification_effects: String::new(),
             next_artifact: "data/tier-pavement-docket.csv".to_string(),
             validation_status: "review".to_string(),
         }

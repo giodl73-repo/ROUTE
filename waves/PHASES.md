@@ -189,12 +189,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Diagnostic Queue Qualification Compatibility | Preserve T2 qualification effects in future service diagnostic queue rows without breaking existing CSVs. | done |
 | 2026-06-24 | Milestone 10 T2 Route Family Qualification Compatibility | Preserve T2 qualification effects in future route-family split rows without breaking existing split CSVs. | done |
 | 2026-06-24 | Milestone 10 T2 Segment Candidate Qualification Compatibility | Preserve T2 qualification effects in future tier segment candidate rows without breaking existing candidate CSVs. | done |
+| 2026-06-24 | Milestone 10 T2 Pavement Docket Qualification Compatibility | Preserve T2 qualification effects in future tier pavement docket rows without breaking existing docket CSVs. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-24-milestone-10-t2-segment-candidate-qualification-compatibility`
-closed after `TierSegmentCandidateRow` gained defaulted qualification-effect
-compatibility for future segment candidate rows. Current T1-T4 structural maps
+No wave is active. `2026-06-24-milestone-10-t2-pavement-docket-qualification-compatibility`
+closed after `TierPavementDocketRow` gained defaulted qualification-effect
+compatibility for future pavement docket rows. Current T1-T4 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
