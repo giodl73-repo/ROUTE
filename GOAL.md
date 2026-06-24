@@ -175,3 +175,6 @@ should mean something in the SLA graph.
 - `T2BundleOverlayRepairTargetRow` now accepts and preserves
   `qualification_effects` from binding decisions for future active repair target
   rows while remaining compatible with existing repair-target CSVs.
+- `T2ServiceClassRepairDocketRow` now accepts and preserves
+  `qualification_effects` from repair targets for future service-class repair
+  docket rows while remaining compatible with existing docket CSVs.

@@ -21240,6 +21240,8 @@ struct T2ServiceClassRepairDocketRow {
     service_class: String,
     service_repair_class: String,
     service_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     required_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
@@ -31008,9 +31010,10 @@ fn t2_service_class_repair_docket_rows(
                 service_class: row.service_class.clone(),
                 service_repair_class: service_repair_class.to_string(),
                 service_action: service_action.to_string(),
+                qualification_effects: row.qualification_effects.clone(),
                 required_artifact: required_artifact.to_string(),
                 next_artifact: next_artifact.to_string(),
-                optimizer_effect: effect.to_string(),
+                optimizer_effect: service_repair_optimizer_effect(effect, row),
                 validation_status: "review".to_string(),
             }
         })
@@ -31021,6 +31024,16 @@ fn t2_service_class_repair_docket_rows(
             .then(left.segment_bundle_id.cmp(&right.segment_bundle_id))
     });
     rows
+}
+
+fn service_repair_optimizer_effect(effect: &str, row: &T2BundleOverlayRepairTargetRow) -> String {
+    if row.qualification_effects.trim().is_empty() {
+        return effect.to_string();
+    }
+    format!(
+        "{effect}; qualification_effects={}",
+        row.qualification_effects
+    )
 }
 
 fn write_t2_service_class_repair_docket(
@@ -31112,6 +31125,14 @@ fn t2_service_class_repair_docket_gate_failures(
         }
         if row.validation_status != "review" {
             failures.push(format!("{} service repair must remain review", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && !row.optimizer_effect.contains("qualification")
+        {
+            failures.push(format!(
+                "{} service repair drops qualification effects",
+                row.route
+            ));
         }
     }
     for expected_id in expected {
