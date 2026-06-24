@@ -21315,6 +21315,8 @@ struct T2GameOpsBundleEvidencePolicyAcceptanceRow {
     segment_bundle_id: String,
     accepted_required_evidence: String,
     accepted_policy_treatment: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     acceptance_decision: String,
@@ -31613,6 +31615,7 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_rows(
             segment_bundle_id: row.segment_bundle_id.clone(),
             accepted_required_evidence: row.required_evidence.clone(),
             accepted_policy_treatment: row.policy_treatment.clone(),
+            qualification_effects: row.qualification_effects.clone(),
             qualification_gate_policy: row.qualification_gate_policy.clone(),
             qualification_game_use: row.qualification_game_use.clone(),
             acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
@@ -31746,10 +31749,12 @@ fn t2_game_ops_bundle_evidence_policy_acceptance_gate_failures(
         }
         if let Some(policy) = policy_by_id.get(row.policy_id.as_str()) {
             let policy_has_qualification = !policy.qualification_gate_policy.trim().is_empty()
-                || !policy.qualification_game_use.trim().is_empty();
+                || !policy.qualification_game_use.trim().is_empty()
+                || !policy.qualification_effects.trim().is_empty();
             if policy_has_qualification
-                && (row.qualification_gate_policy.trim().is_empty()
-                    || row.qualification_game_use.trim().is_empty())
+                && row.qualification_gate_policy.trim().is_empty()
+                && row.qualification_game_use.trim().is_empty()
+                && row.qualification_effects.trim().is_empty()
             {
                 failures.push(format!(
                     "{} acceptance missing qualification semantics",
@@ -69422,6 +69427,7 @@ mod tests {
             accepted_policy_treatment:
                 "hold game/ops claims until local-zone overlay handoff is accepted or explicitly carried"
                     .to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
