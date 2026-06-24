@@ -172,3 +172,6 @@ should mean something in the SLA graph.
 - `T2GameOpsBindingDecisionRow` now accepts and preserves `qualification_effects`
   from binding intake for future active game/ops binding decisions while
   remaining compatible with existing decision CSVs.
+- `T2BundleOverlayRepairTargetRow` now accepts and preserves
+  `qualification_effects` from binding decisions for future active repair target
+  rows while remaining compatible with existing repair-target CSVs.
