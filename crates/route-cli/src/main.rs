@@ -20388,6 +20388,8 @@ struct TierCandidateColumnRow {
     lifecycle_debt_cost_m: f64,
     constraint_penalty_score: f64,
     top_constraint_classes: String,
+    #[serde(default)]
+    qualification_effects: String,
     constraint_ledger_artifact: String,
     column_decision: String,
     evidence_status: String,
@@ -20415,6 +20417,8 @@ struct T2RegionalizerRow {
     lifecycle_debt_cost_m: f64,
     constraint_penalty_score: f64,
     top_constraint_classes: String,
+    #[serde(default)]
+    qualification_effects: String,
     constraint_ledger_artifact: String,
     regionalizer_action: String,
     validation_status: String,
@@ -26166,6 +26170,7 @@ fn tier_candidate_column_rows(
                 lifecycle_debt_cost_m,
                 constraint_penalty_score,
                 top_constraint_classes,
+                qualification_effects,
                 constraint_ledger_artifact,
             ) = constraint_budget_for_candidate(
                 &row.route,
@@ -26209,6 +26214,7 @@ fn tier_candidate_column_rows(
                 lifecycle_debt_cost_m,
                 constraint_penalty_score,
                 top_constraint_classes,
+                qualification_effects,
                 constraint_ledger_artifact,
                 column_decision: column_decision.to_string(),
                 evidence_status: tier_candidate_column_evidence_status(row, closure),
@@ -26607,6 +26613,7 @@ fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2RegionalizerRo
                 lifecycle_debt_cost_m: row.lifecycle_debt_cost_m,
                 constraint_penalty_score: row.constraint_penalty_score,
                 top_constraint_classes: row.top_constraint_classes.clone(),
+                qualification_effects: row.qualification_effects.clone(),
                 constraint_ledger_artifact: row.constraint_ledger_artifact.clone(),
                 regionalizer_action: if row.column_decision == "selected" {
                     "include-in-regional-treatment"
@@ -36267,6 +36274,7 @@ struct OptimizerConstraintBudgetRollup {
     lifecycle_debt_cost_m: f64,
     constraint_penalty_score: f64,
     top_constraint_classes: std::collections::BTreeSet<String>,
+    qualification_effects: std::collections::BTreeSet<String>,
     constraint_ledger_artifact: String,
 }
 
@@ -36298,6 +36306,11 @@ fn optimizer_constraint_budget_index(
                     rollup.top_constraint_classes.insert(class.to_string());
                 }
             }
+            for effect in row.qualification_effects.split('|').map(str::trim) {
+                if !effect.is_empty() {
+                    rollup.qualification_effects.insert(effect.to_string());
+                }
+            }
             if rollup.constraint_ledger_artifact.is_empty() {
                 rollup.constraint_ledger_artifact = row.constraint_ledger_artifact.clone();
             }
@@ -36310,7 +36323,7 @@ fn constraint_budget_for_candidate(
     route: &str,
     segment_bundle_id: &str,
     index: &OptimizerConstraintBudgetIndex,
-) -> (usize, usize, f64, f64, f64, String, String) {
+) -> (usize, usize, f64, f64, f64, String, String, String) {
     if let Some(row) = index.by_bundle.get(segment_bundle_id) {
         return (
             row.hard_blocker_count,
@@ -36319,6 +36332,7 @@ fn constraint_budget_for_candidate(
             row.lifecycle_debt_cost_m,
             row.constraint_penalty_score,
             row.top_constraint_classes.clone(),
+            row.qualification_effects.clone(),
             row.constraint_ledger_artifact.clone(),
         );
     }
@@ -36330,10 +36344,20 @@ fn constraint_budget_for_candidate(
             rollup.lifecycle_debt_cost_m,
             rollup.constraint_penalty_score,
             join_string_set(&rollup.top_constraint_classes),
+            join_string_set(&rollup.qualification_effects),
             rollup.constraint_ledger_artifact.clone(),
         );
     }
-    (0, 0, 0.0, 0.0, 0.0, "none".to_string(), String::new())
+    (
+        0,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        "none".to_string(),
+        String::new(),
+        String::new(),
+    )
 }
 
 #[derive(Debug, Default)]
@@ -49056,6 +49080,7 @@ fn t3_zone_route_column_rows(
                 lifecycle_debt_cost_m,
                 constraint_penalty_score,
                 top_constraint_classes,
+                _qualification_effects,
                 constraint_ledger_artifact,
             ) = constraint_budget_for_candidate(&route, "", constraint_budget_index);
             let constraint_adjusted_score = current_score - constraint_penalty_score;
@@ -49370,6 +49395,7 @@ fn t4_terminal_access_column_rows(
                 lifecycle_debt_cost_m,
                 constraint_penalty_score,
                 top_constraint_classes,
+                _qualification_effects,
                 constraint_ledger_artifact,
             ) = constraint_budget_for_candidate(&row.route, "", constraint_budget_index);
             T4TerminalAccessColumnRow {
@@ -59155,9 +59181,9 @@ fn t1_line_selector_rows(
     tier_rows.sort_by(|a, b| {
         let a_route = normalise_designation(&a.route);
         let b_route = normalise_designation(&b.route);
-        let (_, _, _, _, a_penalty, _, _) =
+        let (_, _, _, _, a_penalty, _, _, _) =
             constraint_budget_for_candidate(&a_route, "", &constraint_budget_index);
-        let (_, _, _, _, b_penalty, _, _) =
+        let (_, _, _, _, b_penalty, _, _, _) =
             constraint_budget_for_candidate(&b_route, "", &constraint_budget_index);
         let a_adjusted_score = a.score - a_penalty;
         let b_adjusted_score = b.score - b_penalty;
@@ -59225,6 +59251,7 @@ fn t1_line_selector_rows(
             lifecycle_debt_cost_m,
             constraint_penalty_score,
             top_constraint_classes,
+            _qualification_effects,
             constraint_ledger_artifact,
         ) = constraint_budget_for_candidate(&route, "", &constraint_budget_index);
         let constraint_adjusted_score = row.score - constraint_penalty_score;
@@ -65043,6 +65070,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
+            qualification_effects: String::new(),
             constraint_ledger_artifact: String::new(),
             column_decision: "blocked".to_string(),
             evidence_status: "closure-bundle-pending".to_string(),
@@ -65111,6 +65139,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
+            qualification_effects: String::new(),
             constraint_ledger_artifact: String::new(),
             column_decision: "review".to_string(),
             evidence_status: "closure-accepted-bundle-ready".to_string(),
@@ -68532,6 +68561,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
+                qualification_effects: String::new(),
                 constraint_ledger_artifact: String::new(),
                 column_decision: "selected".to_string(),
                 evidence_status: "accepted".to_string(),
@@ -68568,6 +68598,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
+                qualification_effects: String::new(),
                 constraint_ledger_artifact: String::new(),
                 column_decision: "review".to_string(),
                 evidence_status: "review".to_string(),
@@ -68608,6 +68639,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
+                qualification_effects: String::new(),
                 constraint_ledger_artifact: String::new(),
                 regionalizer_action: "include-in-regional-treatment".to_string(),
                 validation_status: "pass".to_string(),
@@ -68631,6 +68663,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
+                qualification_effects: String::new(),
                 constraint_ledger_artifact: String::new(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
@@ -68654,6 +68687,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
+                qualification_effects: String::new(),
                 constraint_ledger_artifact: String::new(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
@@ -68694,6 +68728,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
+            qualification_effects: String::new(),
             constraint_ledger_artifact: String::new(),
             regionalizer_action: "include-in-regional-treatment".to_string(),
             validation_status: "pass".to_string(),
@@ -75401,6 +75436,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
+            qualification_effects: String::new(),
             constraint_ledger_artifact: String::new(),
             column_decision: "demote".to_string(),
             evidence_status: "policy-action".to_string(),
