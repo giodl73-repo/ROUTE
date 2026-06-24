@@ -30000,15 +30000,29 @@ fn game_ops_bundle_relief_optimizer_effect(
     row: &T2GameOpsBundleEvidenceBlockerReliefRow,
 ) -> String {
     let base = "accepted game/ops bundle evidence policy removes bundle-binding blockers";
-    if row.qualification_gate_policy.trim().is_empty()
-        && row.qualification_game_use.trim().is_empty()
-    {
+    let mut parts = Vec::new();
+    if !row.qualification_effects.trim().is_empty() {
+        parts.push(format!(
+            "qualification_effects={}",
+            row.qualification_effects
+        ));
+    }
+    if !row.qualification_gate_policy.trim().is_empty() {
+        parts.push(format!(
+            "qualification_gate_policy={}",
+            row.qualification_gate_policy
+        ));
+    }
+    if !row.qualification_game_use.trim().is_empty() {
+        parts.push(format!(
+            "qualification_game_use={}",
+            row.qualification_game_use
+        ));
+    }
+    if parts.is_empty() {
         return base.to_string();
     }
-    format!(
-        "{base}; qualification_gate_policy={}; qualification_game_use={}",
-        row.qualification_gate_policy, row.qualification_game_use
-    )
+    format!("{base}; {}", parts.join("; "))
 }
 
 fn t1_topology_constraint_mapping(
@@ -71588,7 +71602,9 @@ mod tests {
             route: "I-110".to_string(),
             segment_bundle_id: "i110-la".to_string(),
             accepted_required_evidence: "game-ops-bundle-binding-evidence".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "accepted game/ops bundle evidence policy removes bundle-binding blockers"
+                    .to_string(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
@@ -71655,6 +71671,7 @@ mod tests {
             |row| row.constraint_class == "game_ops_bundle_binding_relief"
                 && row.constraint_status == "pass"
                 && row.subject_id == "i110-la"
+                && row.optimizer_effect.contains("qualification_effects=")
                 && row.optimizer_effect.contains("qualification_gate_policy=")
         ));
         assert!(!rows

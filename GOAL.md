@@ -190,3 +190,6 @@ should mean something in the SLA graph.
 - `T2GameOpsBundleEvidenceBlockerReliefRow` now accepts and preserves
   `qualification_effects` from evidence acceptance for future blocker-relief rows
   while remaining compatible with existing relief CSVs.
+- Optimizer ledger replay now carries non-empty blocker-relief
+  `qualification_effects` into `optimizer_effect` without emitting empty
+  qualification-effect placeholders in current generated rows.

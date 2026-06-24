@@ -183,14 +183,15 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Evidence Policy Qualification Compatibility | Preserve T2 qualification effects in future evidence policy rows without breaking existing policy CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Evidence Acceptance Qualification Compatibility | Preserve T2 qualification effects in future evidence acceptance rows without breaking existing acceptance CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Blocker Relief Qualification Compatibility | Preserve T2 qualification effects in future blocker relief rows without breaking existing relief CSVs. | done |
+| 2026-06-23 | Milestone 10 T2 Optimizer Effect Qualification Compatibility | Preserve T2 qualification effects in future optimizer ledger effects without noisy empty fields. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-blocker-relief-qualification-compatibility`
-closed after `T2GameOpsBundleEvidenceBlockerReliefRow` gained defaulted
-qualification-effect compatibility for future blocker relief rows. Current
-T1-T4 structural maps have a gateable readiness artifact, a gateable
-release-facing inventory, and no residual `publication` blockers.
+No wave is active. `2026-06-23-milestone-10-t2-optimizer-effect-qualification-compatibility`
+closed after optimizer ledger effects learned to carry non-empty qualification
+effects without emitting noisy empty fields. Current T1-T4 structural maps have a
+gateable readiness artifact, a gateable release-facing inventory, and no
+residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
 `snapshot_only`. Three terminal-contact sources are accepted (I-465, I-510,
 and US90Z), and sixty-six contradicted terminal-contact pairings are rejected,
