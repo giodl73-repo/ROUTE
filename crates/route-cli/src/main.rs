@@ -21193,6 +21193,8 @@ struct T2GameOpsBindingDecisionRow {
     service_class: String,
     bundle_status: String,
     binding_status: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     decision: String,
@@ -30518,6 +30520,7 @@ fn t2_game_ops_binding_decision_rows(
                 service_class,
                 bundle_status,
                 binding_status,
+                qualification_effects: row.qualification_effects.clone(),
                 qualification_gate_policy,
                 qualification_game_use,
                 decision: decision.to_string(),
@@ -30645,6 +30648,15 @@ fn t2_game_ops_binding_decision_gate_failures(
             {
                 failures.push(format!(
                     "{} bound decision missing qualification semantics",
+                    row.route
+                ));
+            }
+            if !row.qualification_effects.trim().is_empty()
+                && row.qualification_gate_policy.trim().is_empty()
+                && row.qualification_game_use.trim().is_empty()
+            {
+                failures.push(format!(
+                    "{} bound decision drops qualification contract",
                     row.route
                 ));
             }
@@ -69096,6 +69108,7 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
@@ -69152,6 +69165,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             decision: "held".to_string(),
@@ -69197,6 +69211,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             decision: "held".to_string(),
@@ -69387,6 +69402,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             decision: "held".to_string(),
@@ -69438,6 +69454,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             decision: "held".to_string(),
@@ -69531,6 +69548,7 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
@@ -70348,6 +70366,7 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             decision: "held".to_string(),

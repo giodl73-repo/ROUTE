@@ -169,3 +169,6 @@ should mean something in the SLA graph.
 - `T2GameOpsBindingIntakeRow` now accepts and preserves `qualification_effects`
   from budget rollup for future active game/ops binding intake rows while
   remaining compatible with existing intake CSVs.
+- `T2GameOpsBindingDecisionRow` now accepts and preserves `qualification_effects`
+  from binding intake for future active game/ops binding decisions while
+  remaining compatible with existing decision CSVs.
