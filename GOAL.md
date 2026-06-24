@@ -193,3 +193,6 @@ should mean something in the SLA graph.
 - Optimizer ledger replay now carries non-empty blocker-relief
   `qualification_effects` into `optimizer_effect` without emitting empty
   qualification-effect placeholders in current generated rows.
+- `TierCandidateColumnRow` and `T2RegionalizerRow` now accept and preserve
+  `qualification_effects` from budget rollup for future T2 candidate/regionalizer
+  rows while remaining compatible with existing CSVs.
