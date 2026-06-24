@@ -21288,6 +21288,8 @@ struct T2GameOpsBundleEvidencePolicyRow {
     repair_class: String,
     service_repair_class: String,
     evidence_artifact: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     required_evidence: String,
@@ -31379,6 +31381,7 @@ fn t2_game_ops_bundle_evidence_policy_rows(
             repair_class: row.repair_class.clone(),
             service_repair_class: row.service_repair_class.clone(),
             evidence_artifact: row.evidence_artifact.clone(),
+            qualification_effects: row.qualification_effects.clone(),
             qualification_gate_policy: row.qualification_gate_policy.clone(),
             qualification_game_use: row.qualification_game_use.clone(),
             required_evidence: t2_game_ops_bundle_required_evidence(row).to_string(),
@@ -31541,6 +31544,15 @@ fn t2_game_ops_bundle_evidence_policy_gate_failures(
         {
             failures.push(format!(
                 "{} bundle-bound policy missing qualification semantics",
+                row.review_id
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.qualification_gate_policy.trim().is_empty()
+            && row.qualification_game_use.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} policy drops qualification contract",
                 row.review_id
             ));
         }
@@ -69358,6 +69370,7 @@ mod tests {
             repair_class: "service-class".to_string(),
             service_repair_class: "local-zone".to_string(),
             evidence_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
             required_evidence: "accepted-local-zone-overlay-handoff".to_string(),
