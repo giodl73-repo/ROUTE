@@ -199,3 +199,6 @@ should mean something in the SLA graph.
 - `T2ServiceSelectionRow` now accepts and preserves `qualification_effects` from
   regionalizer rows for future service selection rows while remaining compatible
   with existing CSVs.
+- `T2ServiceDiagnosticQueueRow` now accepts and preserves `qualification_effects`
+  from service selection for future diagnostic queue rows while remaining
+  compatible with existing CSVs.

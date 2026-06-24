@@ -20519,6 +20519,8 @@ struct T2ServiceDiagnosticQueueRow {
     bundle_status: String,
     selection_action: String,
     selection_basis: String,
+    #[serde(default)]
+    qualification_effects: String,
     diagnostic_status: String,
     service_diagnostic_action: String,
     required_artifact: String,
@@ -27035,11 +27037,15 @@ fn t2_service_diagnostic_queue_rows(
                         bundle_status: bundle.bundle_status.clone(),
                         selection_action: row.selection_action.clone(),
                         selection_basis: row.selection_basis.clone(),
+                        qualification_effects: row.qualification_effects.clone(),
                         diagnostic_status: diagnostic_status.to_string(),
                         service_diagnostic_action: service_diagnostic_action.to_string(),
                         required_artifact: "data/t2-service-selection.csv".to_string(),
                         next_artifact: next_artifact.to_string(),
-                        optimizer_effect: optimizer_effect.to_string(),
+                        optimizer_effect: service_diagnostic_optimizer_effect(
+                            optimizer_effect,
+                            &row.qualification_effects,
+                        ),
                         validation_status: "review".to_string(),
                     }
                 })
@@ -27055,6 +27061,7 @@ fn t2_service_diagnostic_queue_rows(
             bundle_status: "service-diagnostic-clear".to_string(),
             selection_action: "clear".to_string(),
             selection_basis: "no-missing-beck-t2-diagnostics".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "service-diagnostic-clear".to_string(),
             service_diagnostic_action: "no-service-diagnostic-work-needed".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
@@ -27064,6 +27071,13 @@ fn t2_service_diagnostic_queue_rows(
         });
     }
     rows
+}
+
+fn service_diagnostic_optimizer_effect(effect: &str, qualification_effects: &str) -> String {
+    if qualification_effects.trim().is_empty() {
+        return effect.to_string();
+    }
+    format!("{effect}; qualification_effects={qualification_effects}")
 }
 
 fn t2_service_diagnostic_contract(
@@ -27210,6 +27224,14 @@ fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnosticQueueRow
             || row.next_artifact.trim().is_empty()
         {
             failures.push(format!("{} missing diagnostic action artifacts", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && !row.optimizer_effect.contains("qualification")
+        {
+            failures.push(format!(
+                "{} diagnostic row drops qualification effects",
+                row.route
+            ));
         }
         if row.validation_status != "review" {
             failures.push(format!(
@@ -64606,6 +64628,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "route-family-diagnostic-split-needed".to_string(),
             service_diagnostic_action: "split-numbered-route-family-before-beck-diagnostic"
                 .to_string(),
@@ -69312,6 +69335,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "local-relief-map-review".to_string(),
             service_diagnostic_action: "local-relief-map-review".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
@@ -69358,6 +69382,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "local-relief-map-review".to_string(),
             service_diagnostic_action: "local-relief-map-review".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
@@ -69552,6 +69577,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "beck-diagnostic-missing".to_string(),
             service_diagnostic_action: "beck-diagnostic-missing".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
@@ -69604,6 +69630,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
+            qualification_effects: String::new(),
             diagnostic_status: "local-relief-map-review".to_string(),
             service_diagnostic_action: "local-relief-map-review".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
