@@ -182,12 +182,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-23 | Milestone 10 T2 Evidence Review Qualification Compatibility | Preserve T2 qualification effects in future evidence review rows without breaking existing review CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Evidence Policy Qualification Compatibility | Preserve T2 qualification effects in future evidence policy rows without breaking existing policy CSVs. | done |
 | 2026-06-23 | Milestone 10 T2 Evidence Acceptance Qualification Compatibility | Preserve T2 qualification effects in future evidence acceptance rows without breaking existing acceptance CSVs. | done |
+| 2026-06-23 | Milestone 10 T2 Blocker Relief Qualification Compatibility | Preserve T2 qualification effects in future blocker relief rows without breaking existing relief CSVs. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-23-milestone-10-t2-evidence-acceptance-qualification-compatibility`
-closed after `T2GameOpsBundleEvidencePolicyAcceptanceRow` gained defaulted
-qualification-effect compatibility for future evidence acceptance rows. Current
+No wave is active. `2026-06-23-milestone-10-t2-blocker-relief-qualification-compatibility`
+closed after `T2GameOpsBundleEvidenceBlockerReliefRow` gained defaulted
+qualification-effect compatibility for future blocker relief rows. Current
 T1-T4 structural maps have a gateable readiness artifact, a gateable
 release-facing inventory, and no residual `publication` blockers.
 The Iowa 511 evidence window has been extended to 29 rows but remains
