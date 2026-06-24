@@ -196,3 +196,6 @@ should mean something in the SLA graph.
 - `TierCandidateColumnRow` and `T2RegionalizerRow` now accept and preserve
   `qualification_effects` from budget rollup for future T2 candidate/regionalizer
   rows while remaining compatible with existing CSVs.
+- `T2ServiceSelectionRow` now accepts and preserves `qualification_effects` from
+  regionalizer rows for future service selection rows while remaining compatible
+  with existing CSVs.
