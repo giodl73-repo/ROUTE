@@ -21337,6 +21337,8 @@ struct T2GameOpsBundleEvidenceBlockerReliefRow {
     route: String,
     segment_bundle_id: String,
     accepted_required_evidence: String,
+    #[serde(default)]
+    qualification_effects: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
     relief_decision: String,
@@ -31816,6 +31818,7 @@ fn t2_game_ops_bundle_evidence_blocker_relief_rows(
             route: row.route.clone(),
             segment_bundle_id: row.segment_bundle_id.clone(),
             accepted_required_evidence: row.accepted_required_evidence.clone(),
+            qualification_effects: row.qualification_effects.clone(),
             qualification_gate_policy: row.qualification_gate_policy.clone(),
             qualification_game_use: row.qualification_game_use.clone(),
             relief_decision: "relief-ready-for-constraint-ledger-replay".to_string(),
@@ -31964,10 +31967,12 @@ fn t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
         if let Some(acceptance) = acceptance_by_id.get(row.acceptance_id.as_str()) {
             let acceptance_has_qualification =
                 !acceptance.qualification_gate_policy.trim().is_empty()
-                    || !acceptance.qualification_game_use.trim().is_empty();
+                    || !acceptance.qualification_game_use.trim().is_empty()
+                    || !acceptance.qualification_effects.trim().is_empty();
             if acceptance_has_qualification
-                && (row.qualification_gate_policy.trim().is_empty()
-                    || row.qualification_game_use.trim().is_empty())
+                && row.qualification_gate_policy.trim().is_empty()
+                && row.qualification_game_use.trim().is_empty()
+                && row.qualification_effects.trim().is_empty()
             {
                 failures.push(format!(
                     "{} relief missing qualification semantics",
@@ -71583,6 +71588,7 @@ mod tests {
             route: "I-110".to_string(),
             segment_bundle_id: "i110-la".to_string(),
             accepted_required_evidence: "game-ops-bundle-binding-evidence".to_string(),
+            qualification_effects: String::new(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),

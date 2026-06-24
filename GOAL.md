@@ -187,3 +187,6 @@ should mean something in the SLA graph.
 - `T2GameOpsBundleEvidencePolicyAcceptanceRow` now accepts and preserves
   `qualification_effects` from evidence policy for future acceptance rows while
   remaining compatible with existing acceptance CSVs.
+- `T2GameOpsBundleEvidenceBlockerReliefRow` now accepts and preserves
+  `qualification_effects` from evidence acceptance for future blocker-relief rows
+  while remaining compatible with existing relief CSVs.
