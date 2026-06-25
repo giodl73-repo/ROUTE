@@ -21502,6 +21502,8 @@ struct T2NationalBundleReadinessAuditRow {
     bundle_member_count: usize,
     audit_decision: String,
     audit_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -33548,6 +33550,7 @@ fn t2_national_bundle_readiness_audit_rows(
                 bundle_member_count,
                 audit_decision: "held-for-structural-bundle-repair".to_string(),
                 audit_action: audit_action.to_string(),
+                qualification_effects: replay.qualification_effects.clone(),
                 blocked_claims_before: replay.blocked_claims_after.clone(),
                 blocked_claims_after: replay.blocked_claims_after.clone(),
                 blocker_delta: 0,
@@ -33651,6 +33654,14 @@ fn t2_national_bundle_readiness_audit_gate_failures(
             || row.validation_status != "review"
         {
             failures.push(format!("{} audit promoted readiness", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.audit_decision != "held-for-structural-bundle-repair"
+        {
+            failures.push(format!(
+                "{} audit carries qualification effects without held structural repair",
+                row.route
+            ));
         }
         if row.blocked_claims_before != "game;incident;publication;upgrade"
             || row.blocked_claims_after != "game;incident;publication;upgrade"
@@ -69138,7 +69149,9 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects:
+                    "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                        .to_string(),
                 constraint_ledger_artifact: String::new(),
                 column_decision: "review".to_string(),
                 evidence_status: "review".to_string(),
@@ -70564,7 +70577,9 @@ mod tests {
             delta_replay_decision: "held".to_string(),
             replay_decision: "held-for-bundle-replay".to_string(),
             replay_action: "keep-held-until-repair-delta-mutates".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -70599,6 +70614,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].audit_decision, "held-for-structural-bundle-repair");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].bundle_status, "needs-stitched-members");
         assert_eq!(
             rows[0].blocked_claims_after,

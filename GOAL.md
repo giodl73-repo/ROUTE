@@ -297,3 +297,5 @@ should mean something in the SLA graph.
   docket `qualification_effects` for readiness evidence probe rows.
 - `T2BundleReadinessReplayDecisionRow` now accepts and preserves merged readiness
   evidence and repair-delta `qualification_effects` for readiness replay rows.
+- `T2NationalBundleReadinessAuditRow` now accepts and preserves readiness replay
+  `qualification_effects` for national bundle readiness audit rows.

@@ -223,12 +223,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Repair Effects Compatibility | Preserve T2 qualification effects in bundle readiness repair docket rows. | done |
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Evidence Effects Compatibility | Preserve T2 qualification effects in bundle readiness repair evidence rows. | done |
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Replay Effects Compatibility | Preserve T2 qualification effects in bundle readiness replay decision rows. | done |
+| 2026-06-25 | Milestone 10 T2 Bundle Readiness Audit Effects Compatibility | Preserve T2 qualification effects in national bundle readiness audit rows. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-25-milestone-10-t2-bundle-readiness-replay-effects-compatibility`
-closed after bundle readiness replay decision rows began preserving merged
-readiness evidence and repair-delta qualification effects. Current T1-T4
+No wave is active. `2026-06-25-milestone-10-t2-bundle-readiness-audit-effects-compatibility`
+closed after national bundle readiness audit rows began preserving readiness
+replay qualification effects. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.
