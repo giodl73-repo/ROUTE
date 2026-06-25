@@ -235,3 +235,6 @@ should mean something in the SLA graph.
 - `T2BundleOverlayRow` now accepts and preserves merged `qualification_effects`
   from service selection and national segment bundles for future overlay rows,
   and qualification-effect merging now keeps pipe-delimited effect text.
+- `T2GameOpsBindingDecisionRow` generation now merges `qualification_effects`
+  from binding intake and bundle overlays so future decisions preserve both
+  budget-derived and overlay-derived qualification contracts.
