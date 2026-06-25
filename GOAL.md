@@ -269,3 +269,6 @@ should mean something in the SLA graph.
   optimizer effect text.
 - `route optimizer-constraint-ledger` coverage now verifies close-parallel
   service qualification effects survive into parallel-service ledger rows.
+- `route optimizer-constraint-budget` coverage now verifies close-parallel
+  service `qualification_effects` survive from parallel ledger rows into
+  route-scoped budget rollups.

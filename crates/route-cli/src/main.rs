@@ -72743,6 +72743,67 @@ mod tests {
     }
 
     #[test]
+    fn optimizer_constraint_budget_extracts_parallel_qualification_effects() {
+        let ledger_rows = vec![OptimizerConstraintLedgerRow {
+            constraint_id: "CON-T2PAR-I59".to_string(),
+            optimizer_run_id: "run-1".to_string(),
+            tier: "T2".to_string(),
+            region_id: "component-1".to_string(),
+            constraint_order: 11,
+            constraint_class: "duplication_and_parallel_service".to_string(),
+            behavior_type: "penalty-soft".to_string(),
+            constraint_scope: "route".to_string(),
+            subject_id: "I59".to_string(),
+            segment_bundle_id: String::new(),
+            national_segment_id: String::new(),
+            stitch_group_id: String::new(),
+            route: "I59".to_string(),
+            stop_id: String::new(),
+            pair_id: String::new(),
+            map_id: "beck-schematic-t2-only".to_string(),
+            source_artifact: "data/t2-parallel-service-queue.csv".to_string(),
+            source_row_id: "I59".to_string(),
+            standard_artifact: "docs/t2-regional-treatment.md".to_string(),
+            evidence_status: "accepted".to_string(),
+            constraint_status: "review".to_string(),
+            observed_value: "1".to_string(),
+            threshold_value: "0".to_string(),
+            measurement_unit: "close_parallel_services".to_string(),
+            blocks_claims: "promotion|map|publication".to_string(),
+            budget_cost_m: 0.0,
+            cost_category: String::new(),
+            cost_basis: String::new(),
+            cost_confidence: String::new(),
+            budget_units: String::new(),
+            penalty_score: 1.0,
+            repair_action: "review-spacing-or-split-service-before-promotion".to_string(),
+            payment_action: String::new(),
+            owner_jurisdiction: "route-program".to_string(),
+            funding_program: String::new(),
+            delivery_risk: "unknown".to_string(),
+            exception_id: String::new(),
+            exception_artifact: String::new(),
+            next_artifact: "docs/t2-regional-treatment.md".to_string(),
+            optimizer_effect:
+                "keeps close-parallel T2 line visible but below automatic keep/promotion; qualification_effects=qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = optimizer_constraint_budget_rows(&ledger_rows);
+        let failures = optimizer_constraint_budget_gate_failures(&rows, &ledger_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].subject_scope, "route");
+        assert_eq!(rows[0].subject_id, "I59");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
+    }
+
+    #[test]
     fn optimizer_residual_blocker_backlog_groups_without_relief() {
         let budget_rows = vec![
             OptimizerConstraintBudgetRow {
