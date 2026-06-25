@@ -232,3 +232,6 @@ should mean something in the SLA graph.
 - Repair-derived `TierSegmentCandidateRow` rows now preserve
   `qualification_effects` from `T2BundleRepairQueueRow` when bundle repair work
   re-enters segment candidate generation.
+- `T2BundleOverlayRow` now accepts and preserves merged `qualification_effects`
+  from service selection and national segment bundles for future overlay rows,
+  and qualification-effect merging now keeps pipe-delimited effect text.

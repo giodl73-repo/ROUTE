@@ -20498,6 +20498,8 @@ struct T2BundleOverlayRow {
     qualification_map_treatment: String,
     qualification_gate_policy: String,
     qualification_game_use: String,
+    #[serde(default)]
+    qualification_effects: String,
     pavement_debt_cost_m: f64,
     pavement_debt_class: String,
     pavement_debt_basis: String,
@@ -27549,6 +27551,16 @@ fn t2_bundle_overlay_rows(
         .iter()
         .map(|row| (row.service_class.clone(), row))
         .collect::<std::collections::BTreeMap<_, _>>();
+    let qualification_effects_by_bundle = bundle_rows
+        .iter()
+        .filter(|row| !row.qualification_effects.trim().is_empty())
+        .map(|row| {
+            (
+                row.segment_bundle_id.clone(),
+                row.qualification_effects.clone(),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
 
     service_rows
         .iter()
@@ -27621,6 +27633,15 @@ fn t2_bundle_overlay_rows(
                 qualification_map_treatment: service.qualification_map_treatment.clone(),
                 qualification_gate_policy: service.qualification_gate_policy.clone(),
                 qualification_game_use: service.qualification_game_use.clone(),
+                qualification_effects: merge_qualification_effects(
+                    &service.qualification_effects,
+                    bundle
+                        .and_then(|bundle| {
+                            qualification_effects_by_bundle.get(&bundle.segment_bundle_id)
+                        })
+                        .map(String::as_str)
+                        .unwrap_or_default(),
+                ),
                 pavement_debt_cost_m: service.pavement_debt_cost_m,
                 pavement_debt_class: service.pavement_debt_class.clone(),
                 pavement_debt_basis: service.pavement_debt_basis.clone(),
@@ -27923,7 +27944,7 @@ fn merge_qualification_effects(left: &str, right: &str) -> String {
             values.insert(value.to_string());
         }
     }
-    join_string_set(&values)
+    join_pipe_set(&values)
 }
 
 fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> String {
@@ -64901,7 +64922,7 @@ mod tests {
             bundle_status: "bundle-ready".to_string(),
             selection_action: "source-needed".to_string(),
             selection_basis: "missing-beck-t2-diagnostic".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             diagnostic_status: "route-family-diagnostic-split-needed".to_string(),
             service_diagnostic_action: "split-numbered-route-family-before-beck-diagnostic"
                 .to_string(),
@@ -64950,7 +64971,7 @@ mod tests {
                 required_evidence: "prove contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked until contact exists".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_game_use=default-play".to_string(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -65019,7 +65040,7 @@ mod tests {
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "retain relief review only after contact repair validates"
                     .to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 closure_status: "evidence-observed".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -65034,7 +65055,7 @@ mod tests {
                 required_evidence: "terminal endpoint plus graph contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked from T2 until graph contact validates".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_game_use=default-play".to_string(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -69107,7 +69128,7 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 constraint_ledger_artifact: String::new(),
                 beck_service_action: "keep".to_string(),
                 qualification_basis: "distinct-parent-service".to_string(),
@@ -69175,7 +69196,7 @@ mod tests {
             source_artifacts: "fixture".to_string(),
             bundle_status: "bundle-ready".to_string(),
             bundle_action: "use bundle as service join surface".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_game_use=default-play".to_string(),
             next_artifact: "maps/t3-zone".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -69195,6 +69216,10 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I15");
         assert_eq!(rows[0].binding_status, "bundle-bound");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].pavement_debt_cost_m, 12.5);
         assert_eq!(rows[0].pavement_debt_class, "repair-debt");
         assert_eq!(rows[1].binding_status, "bundle-binding-pending");
@@ -69602,6 +69627,7 @@ mod tests {
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
+            qualification_effects: String::new(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: String::new(),
             pavement_debt_basis: String::new(),
@@ -69659,6 +69685,7 @@ mod tests {
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
+            qualification_effects: String::new(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: "none".to_string(),
             pavement_debt_basis: "no pavement debt row joined".to_string(),
@@ -71576,6 +71603,7 @@ mod tests {
             qualification_map_treatment: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
+            qualification_effects: String::new(),
             pavement_debt_cost_m: 35.0,
             pavement_debt_class: "repair-debt".to_string(),
             pavement_debt_basis: "route-level pavement debt rollup".to_string(),
@@ -72090,6 +72118,7 @@ mod tests {
             qualification_map_treatment: String::new(),
             qualification_gate_policy: String::new(),
             qualification_game_use: String::new(),
+            qualification_effects: String::new(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: String::new(),
             pavement_debt_basis: String::new(),
