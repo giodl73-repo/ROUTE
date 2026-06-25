@@ -21423,6 +21423,8 @@ struct T2BundleReadinessDispositionRow {
     readiness_class: String,
     disposition: String,
     disposition_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     required_artifact: String,
     next_artifact: String,
     blocks_claims: String,
@@ -32747,6 +32749,7 @@ fn t2_bundle_readiness_disposition_rows(
                 readiness_class: readiness_class.to_string(),
                 disposition: disposition.to_string(),
                 disposition_action: action.to_string(),
+                qualification_effects: row.qualification_effects.clone(),
                 required_artifact: required_artifact.to_string(),
                 next_artifact: next_artifact.to_string(),
                 blocks_claims: row.blocks_claims.clone(),
@@ -32854,6 +32857,12 @@ fn t2_bundle_readiness_disposition_gate_failures(
         }
         if row.route == "I37" && row.disposition != "repair-needed" {
             failures.push("I37 bundle-bound-review must remain repair-needed".to_string());
+        }
+        if !row.qualification_effects.trim().is_empty() && row.disposition.trim().is_empty() {
+            failures.push(format!(
+                "{} readiness disposition has qualification effects without disposition",
+                row.route
+            ));
         }
         if row.validation_status != "review" {
             failures.push(format!(
@@ -65719,7 +65728,9 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
@@ -70311,7 +70322,9 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
@@ -70329,6 +70342,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].disposition, "repair-needed");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].validation_status, "review");
     }
 
@@ -70345,6 +70362,7 @@ mod tests {
                 readiness_class: "stop-chain".to_string(),
                 disposition: "repair-needed".to_string(),
                 disposition_action: "author-stop-chain-before-bundle-pass".to_string(),
+                qualification_effects: String::new(),
                 required_artifact: "data/national-segment-registry.csv".to_string(),
                 next_artifact: "data/national-segment-bundles.csv".to_string(),
                 blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -70360,6 +70378,7 @@ mod tests {
                 readiness_class: "stop-chain".to_string(),
                 disposition: "held".to_string(),
                 disposition_action: "repair-service-class-before-stop-chain-pass".to_string(),
+                qualification_effects: String::new(),
                 required_artifact: "data/game/t2-service-overlays.csv".to_string(),
                 next_artifact: "data/national-segment-bundles.csv".to_string(),
                 blocks_claims: "game;incident;publication;upgrade".to_string(),
