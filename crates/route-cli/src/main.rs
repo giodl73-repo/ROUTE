@@ -21461,6 +21461,8 @@ struct T2BundleReadinessRepairEvidenceRow {
     evidence_row_count: usize,
     evidence_summary: String,
     evidence_decision: String,
+    #[serde(default)]
+    qualification_effects: String,
     next_artifact: String,
     blocks_claims: String,
     validation_status: String,
@@ -33143,6 +33145,7 @@ fn t2_bundle_readiness_repair_evidence_rows(
                 evidence_row_count: count,
                 evidence_summary: summary,
                 evidence_decision: "held-for-readiness-replay".to_string(),
+                qualification_effects: repair.qualification_effects.clone(),
                 next_artifact: "data/t2-bundle-overlay-repair-delta.csv".to_string(),
                 blocks_claims: repair.blocks_claims.clone(),
                 validation_status: "review".to_string(),
@@ -33238,6 +33241,14 @@ fn t2_bundle_readiness_repair_evidence_gate_failures(
         }
         if row.evidence_decision != "held-for-readiness-replay" {
             failures.push(format!("{} evidence probe promoted readiness", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.evidence_decision != "held-for-readiness-replay"
+        {
+            failures.push(format!(
+                "{} repair evidence carries qualification effects without held replay",
+                row.route
+            ));
         }
         if row.blocks_claims != "game;incident;publication;upgrade" {
             failures.push(format!("{} does not preserve claim blockers", row.route));
@@ -65813,7 +65824,9 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
@@ -70424,7 +70437,9 @@ mod tests {
             readiness_class: "stitched-member".to_string(),
             repair_decision: "repair-needed".to_string(),
             repair_action: "stitch-member-segments-before-bundle-pass".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             required_artifact: "data/tier-segment-candidates.csv".to_string(),
             next_artifact: "data/national-segment-bundles.csv".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -70461,6 +70476,10 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].evidence_status, "candidate-evidence-found");
         assert_eq!(rows[0].evidence_decision, "held-for-readiness-replay");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
 
@@ -70477,6 +70496,7 @@ mod tests {
             evidence_row_count: 1,
             evidence_summary: "1 segment candidate rows match route I295".to_string(),
             evidence_decision: "held-for-readiness-replay".to_string(),
+            qualification_effects: String::new(),
             next_artifact: "data/t2-bundle-overlay-repair-delta.csv".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
             validation_status: "review".to_string(),
