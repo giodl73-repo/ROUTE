@@ -220,3 +220,6 @@ should mean something in the SLA graph.
 - `T2BlockerClosureRow` now accepts and preserves `qualification_effects` from
   national segment bundles for future blocker-closure rows while remaining
   compatible with existing closure CSVs.
+- Closure-driven `T2RouteFamilySplitRow` rows now preserve
+  `qualification_effects` from blocker closures and carry them into optimizer
+  effects for future route-family split rows.
