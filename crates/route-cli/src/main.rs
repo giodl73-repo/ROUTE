@@ -21382,6 +21382,8 @@ struct T2ServiceOverlayDiagnosticDecisionRow {
     diagnostic_action: String,
     overlay_decision: String,
     decision_reason: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocks_claims: String,
     required_artifact: String,
     next_artifact: String,
@@ -32337,6 +32339,7 @@ fn t2_service_overlay_diagnostic_decision_rows(
                 diagnostic_action,
                 overlay_decision: overlay_decision.to_string(),
                 decision_reason: decision_reason.to_string(),
+                qualification_effects: row.qualification_effects.clone(),
                 blocks_claims,
                 required_artifact: required_artifact.to_string(),
                 next_artifact: next_artifact.to_string(),
@@ -32440,6 +32443,14 @@ fn t2_service_overlay_diagnostic_decision_gate_failures(
         if row.overlay_decision == "bound" {
             failures.push(format!(
                 "{} cannot bind from diagnostic decision surface",
+                row.route
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.current_service_class.trim().is_empty()
+        {
+            failures.push(format!(
+                "{} diagnostic decision has qualification effects without service class context",
                 row.route
             ));
         }
@@ -70068,9 +70079,12 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
-            qualification_effects: String::new(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -70106,6 +70120,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].overlay_decision, "held");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].required_artifact, "data/beck-t2-diagnostics.csv");
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
