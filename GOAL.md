@@ -246,3 +246,5 @@ should mean something in the SLA graph.
   effect text.
 - `T2GameOpsBundleEvidenceReviewRow` coverage now verifies service-repair
   `qualification_effects` survive into game/ops bundle evidence review rows.
+- `T2GameOpsBundleEvidencePolicyRow` coverage now verifies evidence-review
+  `qualification_effects` survive into game/ops bundle evidence policy rows.
