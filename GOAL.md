@@ -217,3 +217,6 @@ should mean something in the SLA graph.
 - `NationalSegmentBundleRow` now accepts and preserves `qualification_effects`
   from national segment registry members for future bundle rows while remaining
   compatible with existing bundle CSVs.
+- `T2BlockerClosureRow` now accepts and preserves `qualification_effects` from
+  national segment bundles for future blocker-closure rows while remaining
+  compatible with existing closure CSVs.

@@ -20280,6 +20280,8 @@ struct T2BlockerClosureRow {
     required_evidence: String,
     next_artifact: String,
     optimizer_effect: String,
+    #[serde(default)]
+    qualification_effects: String,
     closure_status: String,
     validation_status: String,
 }
@@ -25068,6 +25070,7 @@ fn t2_blocker_closure_rows(
             .map(segment_bundle_from_national_row)
             .collect(),
     );
+    let bundle_effects_by_route = bundle_qualification_effects_by_route(bundle_rows);
 
     for row in graph_rows
         .iter()
@@ -25080,6 +25083,10 @@ fn t2_blocker_closure_rows(
         };
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_blocker_bundle_fields(&registry, &row.route);
+        let qualification_effects = bundle_effects_by_route
+            .get(&canonical_route_key(&row.route))
+            .cloned()
+            .unwrap_or_default();
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
             segment_bundle_id,
@@ -25091,6 +25098,7 @@ fn t2_blocker_closure_rows(
             required_evidence: row.required_evidence.clone(),
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.optimizer_effect.clone(),
+            qualification_effects,
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         });
@@ -25102,6 +25110,10 @@ fn t2_blocker_closure_rows(
     {
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_blocker_bundle_fields(&registry, &row.route);
+        let qualification_effects = bundle_effects_by_route
+            .get(&canonical_route_key(&row.route))
+            .cloned()
+            .unwrap_or_default();
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
             segment_bundle_id,
@@ -25113,6 +25125,7 @@ fn t2_blocker_closure_rows(
             required_evidence: row.required_evidence.clone(),
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.optimizer_effect.clone(),
+            qualification_effects,
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         });
@@ -25130,6 +25143,10 @@ fn t2_blocker_closure_rows(
             };
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_blocker_bundle_fields(&registry, &row.route);
+        let qualification_effects = bundle_effects_by_route
+            .get(&canonical_route_key(&row.route))
+            .cloned()
+            .unwrap_or_default();
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
             segment_bundle_id,
@@ -25141,6 +25158,7 @@ fn t2_blocker_closure_rows(
             required_evidence: row.evidence_basis.clone(),
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.optimizer_effect.clone(),
+            qualification_effects,
             closure_status: closure_status.to_string(),
             validation_status: "review".to_string(),
         });
@@ -25158,6 +25176,10 @@ fn t2_blocker_closure_rows(
         };
         let (segment_bundle_id, bundle_status, bundle_action) =
             t2_blocker_bundle_fields(&registry, &row.route);
+        let qualification_effects = bundle_effects_by_route
+            .get(&canonical_route_key(&row.route))
+            .cloned()
+            .unwrap_or_default();
         rows.push(T2BlockerClosureRow {
             route: row.route.clone(),
             segment_bundle_id,
@@ -25169,6 +25191,7 @@ fn t2_blocker_closure_rows(
             required_evidence: row.required_evidence.clone(),
             next_artifact: row.next_artifact.clone(),
             optimizer_effect: row.optimizer_effect.clone(),
+            qualification_effects,
             closure_status: if row.terminal_action == "accept-terminal-contact" {
                 "ready".to_string()
             } else {
@@ -25184,6 +25207,30 @@ fn t2_blocker_closure_rows(
             .then_with(|| a.route.cmp(&b.route))
     });
     rows
+}
+
+fn bundle_qualification_effects_by_route(
+    bundle_rows: &[NationalSegmentBundleRow],
+) -> std::collections::BTreeMap<String, String> {
+    let mut effects_by_route =
+        std::collections::BTreeMap::<String, std::collections::BTreeSet<String>>::new();
+    for row in bundle_rows {
+        if row.qualification_effects.trim().is_empty() {
+            continue;
+        }
+        for route in semicolon_values(&row.route_labels) {
+            insert_pipe_values(
+                effects_by_route
+                    .entry(canonical_route_key(&route))
+                    .or_default(),
+                &row.qualification_effects,
+            );
+        }
+    }
+    effects_by_route
+        .into_iter()
+        .map(|(route, effects)| (route, join_pipe_set(&effects)))
+        .collect()
 }
 
 fn t2_blocker_bundle_fields(
@@ -25274,6 +25321,12 @@ fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> Vec<String>
             failures.push(format!(
                 "{} blocker closure lacks bundle binding for {}",
                 row.route, row.blocker_class
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty() && row.segment_bundle_id.trim().is_empty() {
+            failures.push(format!(
+                "{} carries qualification effects without a segment bundle",
+                row.route
             ));
         }
     }
@@ -64706,7 +64759,7 @@ mod tests {
             source_artifacts: "fixture".to_string(),
             bundle_status: "bundle-ready".to_string(),
             bundle_action: "use bundle as service join surface".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             next_artifact: "maps/t3-zone".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -64716,6 +64769,10 @@ mod tests {
 
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I30");
         assert_eq!(rows[0].bundle_status, "bundle-ready");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_gate_policy=stop-first"
+        );
         assert!(failures.is_empty());
     }
 
@@ -64733,6 +64790,7 @@ mod tests {
                 required_evidence: "identify represented segment".to_string(),
                 next_artifact: "data/tier-node-exceptions.csv".to_string(),
                 optimizer_effect: "blocked until route family is disambiguated".to_string(),
+                qualification_effects: String::new(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64747,6 +64805,7 @@ mod tests {
                 required_evidence: "identify represented segment".to_string(),
                 next_artifact: "data/tier-node-exceptions.csv".to_string(),
                 optimizer_effect: "blocked until route family is disambiguated".to_string(),
+                qualification_effects: String::new(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64837,6 +64896,7 @@ mod tests {
                 required_evidence: "prove contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked until contact exists".to_string(),
+                qualification_effects: String::new(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64851,6 +64911,7 @@ mod tests {
                 required_evidence: "prove contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked until contact exists".to_string(),
+                qualification_effects: String::new(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64919,6 +64980,7 @@ mod tests {
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "retain relief review only after contact repair validates"
                     .to_string(),
+                qualification_effects: String::new(),
                 closure_status: "evidence-observed".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64933,6 +64995,7 @@ mod tests {
                 required_evidence: "terminal endpoint plus graph contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked from T2 until graph contact validates".to_string(),
+                qualification_effects: String::new(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -65009,6 +65072,7 @@ mod tests {
             required_evidence: "terminal-worthy endpoint exception".to_string(),
             next_artifact: "data/tier-node-exceptions.csv".to_string(),
             optimizer_effect: "blocked from T2 unless endpoint exception is upgraded".to_string(),
+            qualification_effects: String::new(),
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65133,6 +65197,7 @@ mod tests {
             required_evidence: "prove contact".to_string(),
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "blocked until contact exists".to_string(),
+            qualification_effects: String::new(),
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65221,6 +65286,7 @@ mod tests {
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "retain relief review only after contact repair validates"
                 .to_string(),
+            qualification_effects: String::new(),
             closure_status: "evidence-observed".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65290,6 +65356,7 @@ mod tests {
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "retain relief review only after contact repair validates"
                 .to_string(),
+            qualification_effects: String::new(),
             closure_status: "evidence-observed".to_string(),
             validation_status: "review".to_string(),
         }];
