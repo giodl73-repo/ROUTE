@@ -36585,7 +36585,7 @@ fn constraint_budget_for_candidate(
             rollup.lifecycle_debt_cost_m,
             rollup.constraint_penalty_score,
             join_string_set(&rollup.top_constraint_classes),
-            join_string_set(&rollup.qualification_effects),
+            join_pipe_set(&rollup.qualification_effects),
             rollup.constraint_ledger_artifact.clone(),
         );
     }
@@ -36686,11 +36686,10 @@ fn optimizer_constraint_budget_rows(
         if !row.next_artifact.trim().is_empty() {
             builder.next_artifacts.insert(row.next_artifact.clone());
         }
-        if row.optimizer_effect.contains("qualification_gate_policy=") {
-            builder
-                .qualification_effects
-                .insert(row.optimizer_effect.clone());
-        }
+        insert_optimizer_qualification_effects(
+            &mut builder.qualification_effects,
+            &row.optimizer_effect,
+        );
         if builder.route.is_empty() && !row.route.is_empty() {
             builder.route = row.route.clone();
         }
@@ -36731,13 +36730,28 @@ fn optimizer_constraint_budget_rows(
                 constraint_penalty_score: builder.constraint_penalty_score,
                 top_constraint_classes,
                 blocking_claims: join_string_set(&builder.blocking_claims),
-                qualification_effects: join_string_set(&builder.qualification_effects),
+                qualification_effects: join_pipe_set(&builder.qualification_effects),
                 next_artifacts: join_string_set(&builder.next_artifacts),
                 constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
                 validation_status: validation_status.to_string(),
             }
         })
         .collect()
+}
+
+fn insert_optimizer_qualification_effects(
+    target: &mut std::collections::BTreeSet<String>,
+    optimizer_effect: &str,
+) {
+    for part in optimizer_effect.split(';').map(str::trim) {
+        if let Some(effects) = part.strip_prefix("qualification_effects=") {
+            insert_pipe_values(target, effects);
+        } else if part.starts_with("qualification_gate_policy=")
+            || part.starts_with("qualification_game_use=")
+        {
+            target.insert(part.to_string());
+        }
+    }
 }
 
 fn optimizer_constraint_budget_subject(row: &OptimizerConstraintLedgerRow) -> (String, String) {
@@ -72555,7 +72569,7 @@ mod tests {
                 exception_artifact: String::new(),
                 next_artifact: "data/tier-pavement-docket.csv".to_string(),
                 optimizer_effect:
-                    "subtract budget cost; qualification_gate_policy=accepted when structural diagnostics pass"
+                    "subtract budget cost; qualification_effects=qualification_game_use=default-play|qualification_gate_policy=stop-first; qualification_gate_policy=accepted when structural diagnostics pass"
                         .to_string(),
                 validation_status: "review".to_string(),
             },
@@ -72616,9 +72630,10 @@ mod tests {
         assert_eq!(bundle_row.constraint_debt_cost_m, 10.0);
         assert_eq!(bundle_row.claim_blocker_count, 0);
         assert_eq!(bundle_row.blocking_claims, "publication;sla");
-        assert!(bundle_row
-            .qualification_effects
-            .contains("qualification_gate_policy="));
+        assert_eq!(
+            bundle_row.qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=accepted when structural diagnostics pass|qualification_gate_policy=stop-first"
+        );
         let route_row = rows
             .iter()
             .find(|row| row.subject_id == "I84")
