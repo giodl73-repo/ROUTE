@@ -229,3 +229,6 @@ should mean something in the SLA graph.
 - `T2BundleRepairQueueRow` now accepts and preserves `qualification_effects`
   from candidate columns and blocker closures for future bundle-repair queue rows
   while remaining compatible with existing repair CSVs.
+- Repair-derived `TierSegmentCandidateRow` rows now preserve
+  `qualification_effects` from `T2BundleRepairQueueRow` when bundle repair work
+  re-enters segment candidate generation.

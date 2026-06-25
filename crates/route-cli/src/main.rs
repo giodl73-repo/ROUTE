@@ -27838,7 +27838,7 @@ fn tier_segment_candidate_rows(
                 "{}; {}; {}",
                 row.bundle_status, row.bundle_action, row.repair_action
             ),
-            String::new(),
+            row.qualification_effects.clone(),
         ));
     }
 
@@ -28069,11 +28069,9 @@ fn tier_segment_candidate_gate_failures(
         *rows_by_service
             .entry((row.tier.clone(), row.route.clone()))
             .or_default() += 1;
-        if !row.qualification_effects.trim().is_empty()
-            && !row.candidate_action.contains("qualification")
-        {
+        if !row.qualification_effects.trim().is_empty() && !row.source_selector.starts_with("t2-") {
             failures.push(format!(
-                "{}:{} segment candidate drops qualification effects",
+                "{}:{} segment candidate carries untraceable qualification effects",
                 row.tier, row.route
             ));
         }
@@ -69285,6 +69283,71 @@ mod tests {
         assert_ne!(rows[0].national_segment_id, rows[1].national_segment_id);
         assert_eq!(rows[0].segment_bundle_id, rows[1].segment_bundle_id);
         assert_eq!(rows[0].member_role, "stitched-member");
+    }
+
+    #[test]
+    fn tier_segment_candidates_preserve_repair_queue_qualification_effects() {
+        let mut graph = HighwayGraph::new();
+        let a = graph.graph.add_node(HighwayNode {
+            id: 1,
+            coord: coord! { x: 0.0, y: 0.0 },
+            is_interchange: false,
+        });
+        let b = graph.graph.add_node(HighwayNode {
+            id: 2,
+            coord: coord! { x: 1.0, y: 0.0 },
+            is_interchange: true,
+        });
+        let edge = graph.graph.add_edge(
+            a,
+            b,
+            HighwayEdge {
+                id: 20,
+                route_id: "I285".to_string(),
+                state: "GA".to_string(),
+                road_class: route_data::RoadClass::Interstate,
+                geometry: LineString::from(vec![
+                    coord! { x: 0.0, y: 0.0 },
+                    coord! { x: 1.0, y: 0.0 },
+                ]),
+                length_miles: 64.0,
+                lane_count: Some(6),
+                aadt: Some(120_000),
+                pct_truck: None,
+                iri: None,
+                tti: None,
+                pti: None,
+                speed_limit: None,
+            },
+        );
+        graph.route_index.insert("I285".to_string(), vec![edge]);
+        let repair_rows = vec![T2BundleRepairQueueRow {
+            route: "I285".to_string(),
+            segment_bundle_id: String::new(),
+            bundle_status: "bundle-missing".to_string(),
+            bundle_action: "resolve route family or add segment bundle".to_string(),
+            contact_evidence_status: "closure-bundle-pending".to_string(),
+            candidate_decision: "blocked".to_string(),
+            repair_class: "relief-contact-repair".to_string(),
+            repair_action: "add-or-split-segment-bundle-before-regionalizer".to_string(),
+            required_artifact: "data/t2-blocker-closure.csv".to_string(),
+            next_artifact: "data/national-segment-bundles.csv".to_string(),
+            optimizer_effect: "I285 remains out of T2 regionalizer until bundle-missing"
+                .to_string(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = tier_segment_candidate_rows(&graph, &[], &[], &repair_rows, &[]);
+        let failures = tier_segment_candidate_gate_failures(&rows, &[], &[], &repair_rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source_selector, "t2-bundle-repair-queue");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_gate_policy=stop-first"
+        );
     }
 
     #[test]
