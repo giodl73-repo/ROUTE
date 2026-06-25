@@ -258,3 +258,6 @@ should mean something in the SLA graph.
 - `route optimizer-constraint-budget` now extracts qualification effect clauses
   from ledger optimizer effects and emits pipe-delimited budget
   `qualification_effects` for downstream candidate consumers.
+- T2 regionalizer and service-selection coverage now verifies normalized budget
+  `qualification_effects` survive through candidate-column and regionalizer
+  handoffs.

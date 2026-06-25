@@ -207,12 +207,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-24 | Milestone 10 T2 Evidence Acceptance Relief Effects Compatibility | Verify T2 qualification effects survive from evidence acceptance into blocker relief. | done |
 | 2026-06-24 | Milestone 10 T2 Relief Ledger Effects Compatibility | Verify T2 qualification effects survive from blocker relief into optimizer ledger effects. | done |
 | 2026-06-24 | Milestone 10 T2 Ledger Budget Effects Compatibility | Preserve pipe-delimited T2 qualification effects through optimizer budget rollup. | done |
+| 2026-06-24 | Milestone 10 T2 Budget Regionalizer Effects Compatibility | Verify normalized T2 qualification effects survive through regionalizer and service selection. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-24-milestone-10-t2-ledger-budget-effects-compatibility`
-closed after optimizer budget rollup began extracting qualification clauses from
-ledger optimizer effects into pipe-delimited budget effects. Current T1-T4
+No wave is active. `2026-06-24-milestone-10-t2-budget-regionalizer-effects-compatibility`
+closed after regionalizer and service-selection coverage verified normalized
+budget qualification effects survive downstream. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.
