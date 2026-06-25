@@ -291,3 +291,5 @@ should mean something in the SLA graph.
   optimizer-action `qualification_effects` for structural readiness review rows.
 - `T2BundleReadinessDispositionRow` now accepts and preserves repair-target
   `qualification_effects` for bundle readiness disposition rows.
+- `T2BundleReadinessRepairDocketRow` now accepts and preserves readiness
+  disposition `qualification_effects` for bundle readiness repair tasks.

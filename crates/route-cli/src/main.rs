@@ -21441,6 +21441,8 @@ struct T2BundleReadinessRepairDocketRow {
     readiness_class: String,
     repair_decision: String,
     repair_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     required_artifact: String,
     next_artifact: String,
     blocks_claims: String,
@@ -32918,6 +32920,7 @@ fn t2_bundle_readiness_repair_docket_rows(
                 readiness_class: row.readiness_class.clone(),
                 repair_decision: "repair-needed".to_string(),
                 repair_action: repair_action.to_string(),
+                qualification_effects: row.qualification_effects.clone(),
                 required_artifact: row.required_artifact.clone(),
                 next_artifact: row.next_artifact.clone(),
                 blocks_claims: row.blocks_claims.clone(),
@@ -33018,6 +33021,12 @@ fn t2_bundle_readiness_repair_docket_gate_failures(
         }
         if row.repair_decision != "repair-needed" {
             failures.push(format!("{} readiness repair was promoted", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty() && row.repair_decision != "repair-needed" {
+            failures.push(format!(
+                "{} readiness repair carries qualification effects without repair decision",
+                row.route
+            ));
         }
         if row.blocks_claims != "game;incident;publication;upgrade" {
             failures.push(format!("{} does not preserve claim blockers", row.route));
@@ -65757,7 +65766,9 @@ mod tests {
             source_artifacts: "fixture".to_string(),
             bundle_status: "bundle-ready".to_string(),
             bundle_action: "use bundle as service join surface".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             next_artifact: "maps/t3-zone".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -70362,7 +70373,9 @@ mod tests {
                 readiness_class: "stop-chain".to_string(),
                 disposition: "repair-needed".to_string(),
                 disposition_action: "author-stop-chain-before-bundle-pass".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects:
+                    "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                        .to_string(),
                 required_artifact: "data/national-segment-registry.csv".to_string(),
                 next_artifact: "data/national-segment-bundles.csv".to_string(),
                 blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -70393,6 +70406,10 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].route, "I37");
         assert_eq!(rows[0].repair_decision, "repair-needed");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].blocks_claims, "game;incident;publication;upgrade");
     }
 
@@ -70407,6 +70424,7 @@ mod tests {
             readiness_class: "stitched-member".to_string(),
             repair_decision: "repair-needed".to_string(),
             repair_action: "stitch-member-segments-before-bundle-pass".to_string(),
+            qualification_effects: String::new(),
             required_artifact: "data/tier-segment-candidates.csv".to_string(),
             next_artifact: "data/national-segment-bundles.csv".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
