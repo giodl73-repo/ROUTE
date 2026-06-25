@@ -267,3 +267,5 @@ should mean something in the SLA graph.
 - `T2ParallelServiceQueueRow` now accepts and preserves service-selection
   `qualification_effects` for close-parallel review rows and carries them into
   optimizer effect text.
+- `route optimizer-constraint-ledger` coverage now verifies close-parallel
+  service qualification effects survive into parallel-service ledger rows.

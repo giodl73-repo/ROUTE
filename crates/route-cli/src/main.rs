@@ -72278,6 +72278,61 @@ mod tests {
     }
 
     #[test]
+    fn optimizer_constraint_ledger_preserves_parallel_service_qualification_effects() {
+        let parallel_rows = vec![T2ParallelServiceQueueRow {
+            route: "I59".to_string(),
+            region_id: "component-1".to_string(),
+            beck_corridor: "I-59".to_string(),
+            service_class: "connector".to_string(),
+            close_parallel_count: 1,
+            close_parallel_corridors: "I-65".to_string(),
+            selection_action: "split-parallel-service".to_string(),
+            selection_basis: "close-parallel-beck-service".to_string(),
+            parallel_action: "review-spacing-or-split-service-before-promotion".to_string(),
+            required_artifact: "data/t2-service-selection.csv".to_string(),
+            next_artifact: "docs/t2-regional-treatment.md".to_string(),
+            optimizer_effect:
+                "keeps close-parallel T2 line visible but below automatic keep/promotion; qualification_effects=qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            validation_status: "review".to_string(),
+        }];
+
+        let rows = optimizer_constraint_ledger_rows(
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &parallel_rows,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+        let failures = optimizer_constraint_ledger_gate_failures(&rows);
+
+        assert!(failures.is_empty(), "{failures:?}");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].constraint_class, "duplication_and_parallel_service");
+        assert_eq!(rows[0].constraint_status, "review");
+        assert!(rows[0]
+            .optimizer_effect
+            .contains("qualification_gate_policy=stop-first"));
+    }
+
+    #[test]
     fn optimizer_constraint_ledger_replays_t3_feeder_relief() {
         let relief_rows = vec![T3LowerTierFeederGapBlockerReliefRow {
             relief_id: "T3FEEDERRELIEF-I135".to_string(),
