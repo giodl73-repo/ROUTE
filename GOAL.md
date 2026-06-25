@@ -285,3 +285,5 @@ should mean something in the SLA graph.
   queues.
 - `T2OverlayP2ServiceOverlayReviewRow` now accepts and preserves optimizer-action
   `qualification_effects` for service-overlay review rows.
+- `T2OverlayP3LocalZoneOverlayReviewRow` now accepts and preserves
+  optimizer-action `qualification_effects` for local-zone overlay review rows.
