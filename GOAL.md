@@ -248,3 +248,5 @@ should mean something in the SLA graph.
   `qualification_effects` survive into game/ops bundle evidence review rows.
 - `T2GameOpsBundleEvidencePolicyRow` coverage now verifies evidence-review
   `qualification_effects` survive into game/ops bundle evidence policy rows.
+- `T2GameOpsBundleEvidencePolicyAcceptanceRow` coverage now verifies evidence
+  policy `qualification_effects` survive into policy acceptance rows.
