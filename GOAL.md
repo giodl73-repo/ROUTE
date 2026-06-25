@@ -244,3 +244,5 @@ should mean something in the SLA graph.
 - `T2ServiceClassRepairDocketRow` coverage now verifies repair-target
   `qualification_effects` survive into service repair dockets and optimizer
   effect text.
+- `T2GameOpsBundleEvidenceReviewRow` coverage now verifies service-repair
+  `qualification_effects` survive into game/ops bundle evidence review rows.
