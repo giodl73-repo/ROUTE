@@ -277,3 +277,6 @@ should mean something in the SLA graph.
   decisions.
 - `T2LocalZoneOverlayHandoffRow` now accepts and preserves service-repair
   `qualification_effects` for local-zone handoff rows.
+- `T2BundleOverlayRepairDeltaRow` now accepts and preserves merged
+  decision/repair-target `qualification_effects` for bundle overlay replay
+  deltas.

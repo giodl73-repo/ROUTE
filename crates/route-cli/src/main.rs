@@ -21744,6 +21744,8 @@ struct T2BundleOverlayRepairDeltaRow {
     service_action: String,
     readiness_disposition: String,
     replay_decision: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -35824,6 +35826,10 @@ fn t2_bundle_overlay_repair_delta_rows(
                 service_action,
                 readiness_disposition: readiness,
                 replay_decision: decision.decision.clone(),
+                qualification_effects: merge_qualification_effects(
+                    &decision.qualification_effects,
+                    &target.qualification_effects,
+                ),
                 blocked_claims_before: decision.blocks_claims.clone(),
                 blocked_claims_after: decision.blocks_claims.clone(),
                 blocker_delta: 0,
@@ -35926,6 +35932,12 @@ fn t2_bundle_overlay_repair_delta_gate_failures(
         }
         if row.blocked_claims_before != row.blocked_claims_after || row.blocker_delta != 0 {
             failures.push(format!("{} lost residual blocked claims", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty() && row.replay_decision.trim().is_empty() {
+            failures.push(format!(
+                "{} repair delta has qualification effects without replay decision",
+                row.route
+            ));
         }
         if row.validation_status != "review" {
             failures.push(format!("{} delta must remain review", row.route));
@@ -70394,6 +70406,7 @@ mod tests {
             service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
             readiness_disposition: "repair-needed".to_string(),
             replay_decision: "held".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71078,9 +71091,12 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
-            qualification_effects: String::new(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -71102,6 +71118,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].replay_decision, "held");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
@@ -71118,6 +71138,7 @@ mod tests {
             service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
             readiness_disposition: "no-readiness-disposition-required".to_string(),
             replay_decision: "held".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
