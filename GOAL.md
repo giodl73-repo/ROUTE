@@ -264,3 +264,6 @@ should mean something in the SLA graph.
 - `T2ServiceDiagnosticQueueRow` coverage now verifies service-selection
   `qualification_effects` survive into diagnostic queue rows and optimizer
   effect text.
+- `T2ParallelServiceQueueRow` now accepts and preserves service-selection
+  `qualification_effects` for close-parallel review rows and carries them into
+  optimizer effect text.
