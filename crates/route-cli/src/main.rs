@@ -65480,7 +65480,9 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             constraint_ledger_artifact: String::new(),
             column_decision: "review".to_string(),
             evidence_status: "closure-accepted-bundle-ready".to_string(),
@@ -69667,7 +69669,9 @@ mod tests {
             service_class: "compact-service".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             binding_status: "bundle-bound-review".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
@@ -69710,6 +69714,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].repair_class, "stop-chain");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].target_status, "repair-needed");
         assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
     }

@@ -238,3 +238,6 @@ should mean something in the SLA graph.
 - `T2GameOpsBindingDecisionRow` generation now merges `qualification_effects`
   from binding intake and bundle overlays so future decisions preserve both
   budget-derived and overlay-derived qualification contracts.
+- `T2BundleOverlayRepairTargetRow` coverage now verifies merged
+  `qualification_effects` from game/ops binding decisions survive into repair
+  targets.
