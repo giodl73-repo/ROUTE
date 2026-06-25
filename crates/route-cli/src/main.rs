@@ -65585,6 +65585,13 @@ mod tests {
         assert_eq!(rows[0].route, "I285");
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I285");
         assert_eq!(rows[0].diagnostic_status, "local-relief-map-review");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
+        assert!(rows[0]
+            .optimizer_effect
+            .contains("qualification_gate_policy=stop-first"));
         assert_eq!(rows[0].next_artifact, "data/t3-t4-pressure-intake.csv");
         assert!(failures.is_empty());
     }

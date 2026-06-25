@@ -261,3 +261,6 @@ should mean something in the SLA graph.
 - T2 regionalizer and service-selection coverage now verifies normalized budget
   `qualification_effects` survive through candidate-column and regionalizer
   handoffs.
+- `T2ServiceDiagnosticQueueRow` coverage now verifies service-selection
+  `qualification_effects` survive into diagnostic queue rows and optimizer
+  effect text.
