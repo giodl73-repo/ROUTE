@@ -289,3 +289,5 @@ should mean something in the SLA graph.
   optimizer-action `qualification_effects` for local-zone overlay review rows.
 - `T2OverlayP1StructuralReadinessReviewRow` now accepts and preserves
   optimizer-action `qualification_effects` for structural readiness review rows.
+- `T2BundleReadinessDispositionRow` now accepts and preserves repair-target
+  `qualification_effects` for bundle readiness disposition rows.
