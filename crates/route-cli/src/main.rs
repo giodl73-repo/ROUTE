@@ -20550,6 +20550,8 @@ struct T2ParallelServiceQueueRow {
     required_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
+    #[serde(default)]
+    qualification_effects: String,
     validation_status: String,
 }
 
@@ -27383,9 +27385,11 @@ fn t2_parallel_service_queue_rows(
             parallel_action: "review-spacing-or-split-service-before-promotion".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
             next_artifact: "docs/t2-regional-treatment.md".to_string(),
-            optimizer_effect:
-                "keeps close-parallel T2 line visible but below automatic keep/promotion"
-                    .to_string(),
+            optimizer_effect: service_diagnostic_optimizer_effect(
+                "keeps close-parallel T2 line visible but below automatic keep/promotion",
+                &row.qualification_effects,
+            ),
+            qualification_effects: row.qualification_effects.clone(),
             validation_status: "review".to_string(),
         })
         .collect::<Vec<_>>();
@@ -27404,6 +27408,7 @@ fn t2_parallel_service_queue_rows(
             required_artifact: "data/t2-service-selection.csv".to_string(),
             next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
             optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
+            qualification_effects: String::new(),
             validation_status: "pass".to_string(),
         });
     }
@@ -27477,6 +27482,14 @@ fn t2_parallel_service_queue_gate_failures(rows: &[T2ParallelServiceQueueRow]) -
             || row.next_artifact.trim().is_empty()
         {
             failures.push(format!("{} missing parallel action artifacts", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && !row.optimizer_effect.contains("qualification_effects=")
+        {
+            failures.push(format!(
+                "{} parallel queue drops qualification effects",
+                row.route
+            ));
         }
         if row.validation_status != "review" {
             failures.push(format!(
@@ -65766,7 +65779,9 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             constraint_ledger_artifact: String::new(),
             beck_service_action: "keep".to_string(),
             qualification_basis: "distinct-parent-service".to_string(),
@@ -65785,6 +65800,13 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].route, "I59");
         assert_eq!(rows[0].close_parallel_corridors, "I-65");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
+        assert!(rows[0]
+            .optimizer_effect
+            .contains("qualification_gate_policy=stop-first"));
         assert_eq!(
             rows[0].parallel_action,
             "review-spacing-or-split-service-before-promotion"
@@ -71588,6 +71610,7 @@ mod tests {
             required_artifact: "data/t2-service-selection.csv".to_string(),
             next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
             optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
+            qualification_effects: String::new(),
             validation_status: "pass".to_string(),
         }];
         let access_gap_rows = vec![T3T4AccessGapRow {
