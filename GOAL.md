@@ -299,3 +299,5 @@ should mean something in the SLA graph.
   evidence and repair-delta `qualification_effects` for readiness replay rows.
 - `T2NationalBundleReadinessAuditRow` now accepts and preserves readiness replay
   `qualification_effects` for national bundle readiness audit rows.
+- `T2StitchedMemberRegistryHandoffRow` now accepts and preserves readiness audit
+  `qualification_effects` for stitched-member registry handoff rows.

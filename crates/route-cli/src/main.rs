@@ -21524,6 +21524,8 @@ struct T2StitchedMemberRegistryHandoffRow {
     required_member_min: usize,
     handoff_decision: String,
     handoff_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -33765,6 +33767,7 @@ fn t2_stitched_member_registry_handoff_rows(
                 required_member_min: 2,
                 handoff_decision: "held-for-member-expansion".to_string(),
                 handoff_action: "expand-stitch-group-before-bundle-replay".to_string(),
+                qualification_effects: audit.qualification_effects.clone(),
                 blocked_claims_before: audit.blocked_claims_after.clone(),
                 blocked_claims_after: audit.blocked_claims_after.clone(),
                 blocker_delta: 0,
@@ -33872,6 +33875,14 @@ fn t2_stitched_member_registry_handoff_gate_failures(
         if row.candidate_route_member_count == 0 {
             failures.push(format!(
                 "{} has no route-level candidate evidence",
+                row.route
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.handoff_decision != "held-for-member-expansion"
+        {
+            failures.push(format!(
+                "{} handoff carries qualification effects without member-expansion hold",
                 row.route
             ));
         }
@@ -69222,7 +69233,9 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects:
+                    "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                        .to_string(),
                 constraint_ledger_artifact: String::new(),
                 regionalizer_action: "hold-for-parent-region-review".to_string(),
                 validation_status: "review".to_string(),
@@ -70638,7 +70651,9 @@ mod tests {
             delta_replay_decision: "held".to_string(),
             replay_decision: "held-for-bundle-replay".to_string(),
             replay_action: "keep-held-until-repair-delta-mutates".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -70719,6 +70734,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].handoff_decision, "held-for-member-expansion");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].current_registry_member_count, 1);
         assert_eq!(
             rows[0].blocked_claims_after,
@@ -70740,6 +70759,7 @@ mod tests {
             required_member_min: 2,
             handoff_decision: "held-for-member-expansion".to_string(),
             handoff_action: "expand-stitch-group-before-bundle-replay".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
