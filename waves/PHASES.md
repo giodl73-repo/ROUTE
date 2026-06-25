@@ -194,11 +194,12 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-24 | Milestone 10 T2 Segment Bundle Qualification Compatibility | Preserve T2 qualification effects in future national segment bundle rows without breaking existing bundle CSVs. | done |
 | 2026-06-24 | Milestone 10 T2 Blocker Closure Qualification Compatibility | Preserve T2 qualification effects in future blocker-closure rows without breaking existing closure CSVs. | done |
 | 2026-06-24 | Milestone 10 T2 Route Family Closure Qualification Compatibility | Preserve T2 qualification effects in closure-driven route-family split rows. | done |
+| 2026-06-24 | Milestone 10 T2 Closure Candidate Qualification Compatibility | Preserve T2 qualification effects through closure dispositions into candidate columns. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-24-milestone-10-t2-route-family-closure-qualification-compatibility`
-closed after closure-driven `T2RouteFamilySplitRow` rows began preserving
+No wave is active. `2026-06-24-milestone-10-t2-closure-candidate-qualification-compatibility`
+closed after closure dispositions and candidate columns began preserving
 qualification effects from blocker closures. Current T1-T4 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.

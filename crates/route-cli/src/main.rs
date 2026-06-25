@@ -20357,6 +20357,7 @@ struct T2ClosureDisposition {
     segment_bundle_id: String,
     bundle_status: String,
     bundle_action: String,
+    qualification_effects: String,
     source_artifact: String,
     next_artifact: String,
 }
@@ -25501,7 +25502,7 @@ fn t2_route_family_split_rows(
                     bundles.len()
                 ),
                 next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 optimizer_effect:
                     "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
                         .to_string(),
@@ -26126,6 +26127,7 @@ fn t2_closure_dispositions(
                     row.segment_bundle_id.clone(),
                     row.bundle_status.clone(),
                     row.bundle_action.clone(),
+                    row.qualification_effects.clone(),
                 ),
             )
         })
@@ -26135,8 +26137,10 @@ fn t2_closure_dispositions(
         if row.route.starts_with("__all_") {
             continue;
         }
-        let (segment_bundle_id, bundle_status, bundle_action) =
+        let (segment_bundle_id, bundle_status, bundle_action, blocker_qualification_effects) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
+        let qualification_effects =
+            merge_qualification_effects(&row.qualification_effects, &blocker_qualification_effects);
         dispositions.insert(
             canonical_route_key(&row.route),
             T2ClosureDisposition {
@@ -26147,6 +26151,7 @@ fn t2_closure_dispositions(
                 segment_bundle_id,
                 bundle_status,
                 bundle_action,
+                qualification_effects,
                 source_artifact: "data/t2-route-family-splits.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
@@ -26156,7 +26161,7 @@ fn t2_closure_dispositions(
         if row.route.starts_with("__all_") {
             continue;
         }
-        let (segment_bundle_id, bundle_status, bundle_action) =
+        let (segment_bundle_id, bundle_status, bundle_action, qualification_effects) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
@@ -26168,6 +26173,7 @@ fn t2_closure_dispositions(
                 segment_bundle_id,
                 bundle_status,
                 bundle_action,
+                qualification_effects,
                 source_artifact: "data/t2-graph-contact-validation.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
@@ -26177,7 +26183,7 @@ fn t2_closure_dispositions(
         if row.route.starts_with("__all_") {
             continue;
         }
-        let (segment_bundle_id, bundle_status, bundle_action) =
+        let (segment_bundle_id, bundle_status, bundle_action, qualification_effects) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
@@ -26189,6 +26195,7 @@ fn t2_closure_dispositions(
                 segment_bundle_id,
                 bundle_status,
                 bundle_action,
+                qualification_effects,
                 source_artifact: "data/t2-contact-closure.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
@@ -26198,7 +26205,7 @@ fn t2_closure_dispositions(
         if row.route.starts_with("__all_") {
             continue;
         }
-        let (segment_bundle_id, bundle_status, bundle_action) =
+        let (segment_bundle_id, bundle_status, bundle_action, qualification_effects) =
             t2_closure_bundle_posture(&bundle_by_route, &row.route);
         dispositions.insert(
             canonical_route_key(&row.route),
@@ -26210,6 +26217,7 @@ fn t2_closure_dispositions(
                 segment_bundle_id,
                 bundle_status,
                 bundle_action,
+                qualification_effects,
                 source_artifact: "data/t2-endpoint-closure.csv".to_string(),
                 next_artifact: row.next_artifact.clone(),
             },
@@ -26220,9 +26228,9 @@ fn t2_closure_dispositions(
 }
 
 fn t2_closure_bundle_posture(
-    bundle_by_route: &std::collections::HashMap<String, (String, String, String)>,
+    bundle_by_route: &std::collections::HashMap<String, (String, String, String, String)>,
     route: &str,
-) -> (String, String, String) {
+) -> (String, String, String, String) {
     bundle_by_route
         .get(&canonical_route_key(route))
         .cloned()
@@ -26231,6 +26239,7 @@ fn t2_closure_bundle_posture(
                 String::new(),
                 "bundle-unchecked".to_string(),
                 "join t2-blocker-closure to bundle registry".to_string(),
+                String::new(),
             )
         })
 }
@@ -26261,12 +26270,18 @@ fn tier_candidate_column_rows(
                 lifecycle_debt_cost_m,
                 constraint_penalty_score,
                 top_constraint_classes,
-                qualification_effects,
+                budget_qualification_effects,
                 constraint_ledger_artifact,
             ) = constraint_budget_for_candidate(
                 &row.route,
                 &segment_bundle_id,
                 constraint_budget_index,
+            );
+            let qualification_effects = merge_qualification_effects(
+                &budget_qualification_effects,
+                closure
+                    .map(|closure| closure.qualification_effects.as_str())
+                    .unwrap_or_default(),
             );
             TierCandidateColumnRow {
                 tier: row.tier.clone(),
@@ -64906,7 +64921,7 @@ mod tests {
                 required_evidence: "prove contact".to_string(),
                 next_artifact: "data/tier-contact-witnesses.csv".to_string(),
                 optimizer_effect: "blocked until contact exists".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -65207,7 +65222,7 @@ mod tests {
             required_evidence: "prove contact".to_string(),
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "blocked until contact exists".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65242,6 +65257,10 @@ mod tests {
 
         assert_eq!(columns[0].column_decision, "review");
         assert_eq!(columns[0].bundle_status, "bundle-ready");
+        assert_eq!(
+            columns[0].qualification_effects,
+            "qualification_gate_policy=stop-first"
+        );
         assert_eq!(columns[0].pavement_debt_cost_m, 5.0);
         assert_eq!(columns[0].pavement_debt_class, "repair-debt");
         assert_eq!(columns[0].evidence_status, "closure-accepted-bundle-ready");

@@ -223,3 +223,6 @@ should mean something in the SLA graph.
 - Closure-driven `T2RouteFamilySplitRow` rows now preserve
   `qualification_effects` from blocker closures and carry them into optimizer
   effects for future route-family split rows.
+- `T2ClosureDisposition` and `TierCandidateColumnRow` now preserve
+  `qualification_effects` from blocker closures while merging any optimizer
+  budget effects for future candidate-column rows.
