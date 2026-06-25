@@ -69850,9 +69850,12 @@ mod tests {
             service_class: "unclassified".to_string(),
             repair_class: "service-class".to_string(),
             repair_action: "repair-service-class-before-game-overlay".to_string(),
-            qualification_effects: String::new(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             evidence_artifact: "data/t3-t4-pressure-intake.csv".to_string(),
             service_repair_class: "local-zone".to_string(),
             evidence_status: "downstream-evidence-bound-blocker-preserved".to_string(),
@@ -69873,6 +69876,10 @@ mod tests {
         assert_eq!(
             rows[0].required_evidence,
             "accepted-local-zone-overlay-handoff"
+        );
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
         );
         assert_eq!(
             rows[0].blocker_claims_before,
