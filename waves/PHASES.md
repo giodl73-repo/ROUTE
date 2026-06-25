@@ -218,12 +218,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-25 | Milestone 10 T2 Overlay Action Docket Effects Compatibility | Preserve T2 qualification effects in overlay optimizer action docket rows. | done |
 | 2026-06-25 | Milestone 10 T2 Overlay P2 Effects Compatibility | Preserve T2 qualification effects in P2 service-overlay review rows. | done |
 | 2026-06-25 | Milestone 10 T2 Overlay P3 Effects Compatibility | Preserve T2 qualification effects in P3 local-zone overlay review rows. | done |
+| 2026-06-25 | Milestone 10 T2 Overlay P1 Effects Compatibility | Preserve T2 qualification effects in P1 structural-readiness review rows. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-25-milestone-10-t2-overlay-p3-effects-compatibility`
-closed after P3 local-zone overlay review rows began preserving optimizer-action
-qualification effects. Current T1-T4
+No wave is active. `2026-06-25-milestone-10-t2-overlay-p1-effects-compatibility`
+closed after P1 structural-readiness review rows began preserving
+optimizer-action qualification effects. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.
