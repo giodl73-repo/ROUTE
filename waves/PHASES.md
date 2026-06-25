@@ -205,12 +205,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-24 | Milestone 10 T2 Evidence Review Policy Effects Compatibility | Verify T2 qualification effects survive from evidence review into evidence policy. | done |
 | 2026-06-24 | Milestone 10 T2 Evidence Policy Acceptance Effects Compatibility | Verify T2 qualification effects survive from evidence policy into acceptance. | done |
 | 2026-06-24 | Milestone 10 T2 Evidence Acceptance Relief Effects Compatibility | Verify T2 qualification effects survive from evidence acceptance into blocker relief. | done |
+| 2026-06-24 | Milestone 10 T2 Relief Ledger Effects Compatibility | Verify T2 qualification effects survive from blocker relief into optimizer ledger effects. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-24-milestone-10-t2-evidence-acceptance-relief-effects-compatibility`
-closed after blocker-relief coverage verified policy acceptance qualification
-effects survive into relief rows. Current T1-T4
+No wave is active. `2026-06-24-milestone-10-t2-relief-ledger-effects-compatibility`
+closed after optimizer-ledger coverage verified blocker-relief qualification
+effects survive into game/ops bundle relief optimizer effects. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.

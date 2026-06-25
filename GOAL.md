@@ -252,3 +252,6 @@ should mean something in the SLA graph.
   policy `qualification_effects` survive into policy acceptance rows.
 - `T2GameOpsBundleEvidenceBlockerReliefRow` coverage now verifies policy
   acceptance `qualification_effects` survive into blocker relief rows.
+- `route optimizer-constraint-ledger` coverage now verifies blocker-relief
+  `qualification_effects` survive into game/ops bundle relief optimizer effects
+  as pipe-delimited text.

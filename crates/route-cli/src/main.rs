@@ -72140,7 +72140,7 @@ mod tests {
             segment_bundle_id: "i110-la".to_string(),
             accepted_required_evidence: "game-ops-bundle-binding-evidence".to_string(),
             qualification_effects:
-                "accepted game/ops bundle evidence policy removes bundle-binding blockers"
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
                     .to_string(),
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
@@ -72209,7 +72209,9 @@ mod tests {
             |row| row.constraint_class == "game_ops_bundle_binding_relief"
                 && row.constraint_status == "pass"
                 && row.subject_id == "i110-la"
-                && row.optimizer_effect.contains("qualification_effects=")
+                && row.optimizer_effect.contains(
+                    "qualification_effects=qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                )
                 && row.optimizer_effect.contains("qualification_gate_policy=")
         ));
         assert!(!rows
