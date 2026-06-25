@@ -65543,7 +65543,9 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
@@ -68938,7 +68940,9 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects:
+                    "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                        .to_string(),
                 constraint_ledger_artifact: String::new(),
                 column_decision: "selected".to_string(),
                 evidence_status: "accepted".to_string(),
@@ -68989,6 +68993,10 @@ mod tests {
 
         assert_eq!(regionalizer.len(), 2);
         assert_eq!(regionalizer[0].treatment_status, "selected-treatment");
+        assert_eq!(
+            regionalizer[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(regionalizer[0].pavement_debt_cost_m, 5.85);
         assert_eq!(regionalizer[1].treatment_status, "review-treatment");
         assert!(failures.is_empty());
@@ -69016,7 +69024,9 @@ mod tests {
                 lifecycle_debt_cost_m: 0.0,
                 constraint_penalty_score: 0.0,
                 top_constraint_classes: "none".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects:
+                    "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                        .to_string(),
                 constraint_ledger_artifact: String::new(),
                 regionalizer_action: "include-in-regional-treatment".to_string(),
                 validation_status: "pass".to_string(),
@@ -69077,6 +69087,10 @@ mod tests {
         assert_eq!(rows.len(), 3);
         assert_eq!(rows[0].beck_corridor, "I-15");
         assert_eq!(rows[0].selection_action, "keep-service-column");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[1].selection_action, "parent-region-review");
         assert_eq!(rows[2].beck_corridor, "I-285");
         assert_eq!(rows[2].beck_service_class, "transfer-spine");
