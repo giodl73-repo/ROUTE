@@ -69962,9 +69962,11 @@ mod tests {
             accepted_policy_treatment:
                 "hold game/ops claims until local-zone overlay handoff is accepted or explicitly carried"
                     .to_string(),
-            qualification_effects: String::new(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_effects: "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                .to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             acceptance_decision: "bundle-evidence-policy-accepted".to_string(),
             blocker_claims_before: "game;incident;publication;sla;transit;upgrade".to_string(),
             blocker_claims_after: "game;incident;publication;sla;transit;upgrade".to_string(),
@@ -69988,6 +69990,10 @@ mod tests {
         assert_eq!(rows[0].blocker_claims_after, "");
         assert_eq!(rows[0].blocker_count_after, 0);
         assert_eq!(rows[0].claim_blocker_delta, -6);
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(
             rows[0].next_artifact,
             "data/optimizer-constraint-ledger.csv"
