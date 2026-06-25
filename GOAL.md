@@ -226,3 +226,6 @@ should mean something in the SLA graph.
 - `T2ClosureDisposition` and `TierCandidateColumnRow` now preserve
   `qualification_effects` from blocker closures while merging any optimizer
   budget effects for future candidate-column rows.
+- `T2BundleRepairQueueRow` now accepts and preserves `qualification_effects`
+  from candidate columns and blocker closures for future bundle-repair queue rows
+  while remaining compatible with existing repair CSVs.

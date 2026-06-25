@@ -21832,6 +21832,8 @@ struct T2BundleRepairQueueRow {
     required_artifact: String,
     next_artifact: String,
     optimizer_effect: String,
+    #[serde(default)]
+    qualification_effects: String,
     validation_status: String,
 }
 
@@ -25520,7 +25522,7 @@ fn t2_route_family_split_rows(
             disposition: "clear".to_string(),
             required_evidence: "no route-family split blockers remain".to_string(),
             next_artifact: "data/tier-candidate-columns.csv".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             optimizer_effect: "route-family split lane is clear".to_string(),
             validation_status: "pass".to_string(),
         });
@@ -26520,6 +26522,12 @@ fn t2_bundle_repair_queue_rows(
             };
             let (repair_action, next_artifact) =
                 t2_bundle_repair_queue_action(bundle_status.as_str());
+            let qualification_effects = merge_qualification_effects(
+                &row.qualification_effects,
+                blocker
+                    .map(|blocker| blocker.qualification_effects.as_str())
+                    .unwrap_or_default(),
+            );
             T2BundleRepairQueueRow {
                 route: row.route.clone(),
                 segment_bundle_id: row.segment_bundle_id.clone(),
@@ -26537,6 +26545,7 @@ fn t2_bundle_repair_queue_rows(
                     "{} remains out of T2 regionalizer until {}",
                     row.route, bundle_status
                 ),
+                qualification_effects,
                 validation_status: "review".to_string(),
             }
         })
@@ -26556,6 +26565,7 @@ fn t2_bundle_repair_queue_rows(
             next_artifact: "data/t2-service-selection.csv".to_string(),
             optimizer_effect: "all bundle-ready candidate reviews may move to service diagnostics"
                 .to_string(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             validation_status: "pass".to_string(),
         });
     }
@@ -26673,6 +26683,12 @@ fn t2_bundle_repair_queue_gate_failures(rows: &[T2BundleRepairQueueRow]) -> Vec<
         }
         if row.optimizer_effect.trim().is_empty() {
             failures.push(format!("{} missing optimizer_effect", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty() && row.repair_action.trim().is_empty() {
+            failures.push(format!(
+                "{} has qualification effects without repair action",
+                row.route
+            ));
         }
         if row.validation_status != "review" {
             failures.push(format!("{} repair queue row must remain review", row.route));
@@ -27163,7 +27179,7 @@ fn t2_service_diagnostic_queue_rows(
             bundle_status: "service-diagnostic-clear".to_string(),
             selection_action: "clear".to_string(),
             selection_basis: "no-missing-beck-t2-diagnostics".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             diagnostic_status: "service-diagnostic-clear".to_string(),
             service_diagnostic_action: "no-service-diagnostic-work-needed".to_string(),
             required_artifact: "data/t2-service-selection.csv".to_string(),
@@ -64823,7 +64839,7 @@ mod tests {
                 required_evidence: "identify represented segment".to_string(),
                 next_artifact: "data/tier-node-exceptions.csv".to_string(),
                 optimizer_effect: "blocked until route family is disambiguated".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -65366,7 +65382,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             constraint_ledger_artifact: String::new(),
             column_decision: "blocked".to_string(),
             evidence_status: "closure-bundle-pending".to_string(),
@@ -65385,7 +65401,7 @@ mod tests {
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "retain relief review only after contact repair validates"
                 .to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             closure_status: "evidence-observed".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65399,6 +65415,10 @@ mod tests {
         assert_eq!(
             rows[0].repair_action,
             "add-or-split-segment-bundle-before-regionalizer"
+        );
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_gate_policy=stop-first"
         );
         assert_eq!(rows[0].next_artifact, "data/national-segment-bundles.csv");
         assert!(failures.is_empty());
