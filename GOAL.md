@@ -283,3 +283,5 @@ should mean something in the SLA graph.
 - `T2OverlayOptimizerActionDocketRow` now accepts and preserves repair-delta
   `qualification_effects` before routing held overlay work into priority review
   queues.
+- `T2OverlayP2ServiceOverlayReviewRow` now accepts and preserves optimizer-action
+  `qualification_effects` for service-overlay review rows.

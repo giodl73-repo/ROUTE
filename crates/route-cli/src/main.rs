@@ -21805,6 +21805,8 @@ struct T2OverlayP2ServiceOverlayReviewRow {
     service_overlay_reason: String,
     downstream_action: String,
     action_status: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -36301,6 +36303,7 @@ fn t2_overlay_p2_service_overlay_review_rows(
                     .to_string(),
             downstream_action: "route-to-service-overlay-diagnostic-review".to_string(),
             action_status: "optimizer-held-known".to_string(),
+            qualification_effects: action.qualification_effects.clone(),
             blocked_claims_before: action.blocked_claims_after.clone(),
             blocked_claims_after: action.blocked_claims_after.clone(),
             blocker_delta: 0,
@@ -36412,6 +36415,14 @@ fn t2_overlay_p2_service_overlay_review_gate_failures(
             || row.blocker_delta != 0
         {
             failures.push(format!("{} did not preserve claim blockers", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.action_status != "optimizer-held-known"
+        {
+            failures.push(format!(
+                "{} P2 service review carries qualification effects without held status",
+                row.route
+            ));
         }
     }
     for expected_id in expected {
@@ -71228,7 +71239,9 @@ mod tests {
             optimizer_action: "service-overlay-diagnostic-review".to_string(),
             priority_class: "P2-service-overlay".to_string(),
             action_status: "optimizer-held-known".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71250,6 +71263,10 @@ mod tests {
         assert_eq!(
             rows[0].downstream_action,
             "route-to-service-overlay-diagnostic-review"
+        );
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
         );
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
