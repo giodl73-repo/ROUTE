@@ -213,12 +213,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-24 | Milestone 10 T2 Parallel Ledger Effects Compatibility | Verify T2 qualification effects survive from parallel-service queue into optimizer ledger. | done |
 | 2026-06-25 | Milestone 10 T2 Parallel Budget Effects Compatibility | Verify T2 qualification effects survive from parallel ledger rows into budget rollups. | done |
 | 2026-06-25 | Milestone 10 T2 Service Overlay Diagnostic Effects Compatibility | Preserve T2 qualification effects in service-overlay diagnostic decisions. | done |
+| 2026-06-25 | Milestone 10 T2 Local Zone Handoff Effects Compatibility | Preserve T2 qualification effects in local-zone overlay handoff rows. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-25-milestone-10-t2-service-overlay-diagnostic-effects-compatibility`
-closed after service-overlay diagnostic decisions began preserving
-service-repair qualification effects. Current T1-T4
+No wave is active. `2026-06-25-milestone-10-t2-local-zone-handoff-effects-compatibility`
+closed after local-zone overlay handoff rows began preserving service-repair
+qualification effects. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.

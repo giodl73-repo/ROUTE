@@ -275,3 +275,5 @@ should mean something in the SLA graph.
 - `T2ServiceOverlayDiagnosticDecisionRow` now accepts and preserves
   service-repair `qualification_effects` for service-overlay diagnostic
   decisions.
+- `T2LocalZoneOverlayHandoffRow` now accepts and preserves service-repair
+  `qualification_effects` for local-zone handoff rows.
