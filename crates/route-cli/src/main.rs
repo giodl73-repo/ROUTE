@@ -69733,9 +69733,12 @@ mod tests {
             service_class: "unclassified".to_string(),
             bundle_status: "bundle-ready".to_string(),
             binding_status: "service-class-held-known".to_string(),
-            qualification_effects: String::new(),
-            qualification_gate_policy: String::new(),
-            qualification_game_use: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
+            qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
+            qualification_game_use:
+                "default playable service for incidents, upgrades, and restitches".to_string(),
             decision: "held".to_string(),
             decision_reason: "service class overlay is missing or held".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
@@ -69766,6 +69769,13 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].service_repair_class, "local-zone");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
+        assert!(rows[0]
+            .optimizer_effect
+            .contains("qualification_game_use=default-play"));
         assert_eq!(rows[0].next_artifact, "data/t3-zone-render-board.csv");
     }
 
