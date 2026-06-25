@@ -21765,6 +21765,8 @@ struct T2OverlayOptimizerActionDocketRow {
     optimizer_action: String,
     priority_class: String,
     action_status: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -27414,7 +27416,9 @@ fn t2_parallel_service_queue_rows(
             required_artifact: "data/t2-service-selection.csv".to_string(),
             next_artifact: "data/game/t2-bundle-overlays.csv".to_string(),
             optimizer_effect: "all T2 service rows clear close-parallel review".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             validation_status: "pass".to_string(),
         });
     }
@@ -35986,6 +35990,7 @@ fn t2_overlay_optimizer_action_docket_rows(
                 optimizer_action: optimizer_action.to_string(),
                 priority_class: priority_class.to_string(),
                 action_status: "optimizer-held-known".to_string(),
+                qualification_effects: delta.qualification_effects.clone(),
                 blocked_claims_before: delta.blocked_claims_after.clone(),
                 blocked_claims_after: delta.blocked_claims_after.clone(),
                 blocker_delta: 0,
@@ -36090,6 +36095,14 @@ fn t2_overlay_optimizer_action_docket_gate_failures(
         {
             failures.push(format!(
                 "{} promoted optimizer action prematurely",
+                row.route
+            ));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.action_status != "optimizer-held-known"
+        {
+            failures.push(format!(
+                "{} optimizer action carries qualification effects without held status",
                 row.route
             ));
         }
@@ -65618,7 +65631,9 @@ mod tests {
             source_artifacts: "fixture".to_string(),
             bundle_status: "bundle-ready".to_string(),
             bundle_action: "use bundle as service join surface".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             next_artifact: "maps/t3-zone".to_string(),
             validation_status: "pass".to_string(),
         }];
@@ -71138,7 +71153,9 @@ mod tests {
             service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
             readiness_disposition: "no-readiness-disposition-required".to_string(),
             replay_decision: "held".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71157,6 +71174,10 @@ mod tests {
         );
         assert_eq!(rows[0].priority_class, "P2-service-overlay");
         assert_eq!(rows[0].action_status, "optimizer-held-known");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
@@ -71174,6 +71195,7 @@ mod tests {
             optimizer_action: "bundle-readiness-repair-review".to_string(),
             priority_class: "P1-structural-readiness".to_string(),
             action_status: "optimizer-held-known".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71206,6 +71228,7 @@ mod tests {
             optimizer_action: "service-overlay-diagnostic-review".to_string(),
             priority_class: "P2-service-overlay".to_string(),
             action_status: "optimizer-held-known".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71245,6 +71268,7 @@ mod tests {
             optimizer_action: "local-zone-overlay-review".to_string(),
             priority_class: "P3-local-zone-overlay".to_string(),
             action_status: "optimizer-held-known".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
