@@ -255,3 +255,6 @@ should mean something in the SLA graph.
 - `route optimizer-constraint-ledger` coverage now verifies blocker-relief
   `qualification_effects` survive into game/ops bundle relief optimizer effects
   as pipe-delimited text.
+- `route optimizer-constraint-budget` now extracts qualification effect clauses
+  from ledger optimizer effects and emits pipe-delimited budget
+  `qualification_effects` for downstream candidate consumers.
