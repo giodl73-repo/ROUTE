@@ -272,3 +272,6 @@ should mean something in the SLA graph.
 - `route optimizer-constraint-budget` coverage now verifies close-parallel
   service `qualification_effects` survive from parallel ledger rows into
   route-scoped budget rollups.
+- `T2ServiceOverlayDiagnosticDecisionRow` now accepts and preserves
+  service-repair `qualification_effects` for service-overlay diagnostic
+  decisions.
