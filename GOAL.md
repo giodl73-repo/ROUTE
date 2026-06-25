@@ -241,3 +241,6 @@ should mean something in the SLA graph.
 - `T2BundleOverlayRepairTargetRow` coverage now verifies merged
   `qualification_effects` from game/ops binding decisions survive into repair
   targets.
+- `T2ServiceClassRepairDocketRow` coverage now verifies repair-target
+  `qualification_effects` survive into service repair dockets and optimizer
+  effect text.
