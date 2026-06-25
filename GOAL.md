@@ -280,3 +280,6 @@ should mean something in the SLA graph.
 - `T2BundleOverlayRepairDeltaRow` now accepts and preserves merged
   decision/repair-target `qualification_effects` for bundle overlay replay
   deltas.
+- `T2OverlayOptimizerActionDocketRow` now accepts and preserves repair-delta
+  `qualification_effects` before routing held overlay work into priority review
+  queues.

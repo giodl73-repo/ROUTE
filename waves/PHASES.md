@@ -215,12 +215,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-25 | Milestone 10 T2 Service Overlay Diagnostic Effects Compatibility | Preserve T2 qualification effects in service-overlay diagnostic decisions. | done |
 | 2026-06-25 | Milestone 10 T2 Local Zone Handoff Effects Compatibility | Preserve T2 qualification effects in local-zone overlay handoff rows. | done |
 | 2026-06-25 | Milestone 10 T2 Overlay Repair Delta Effects Compatibility | Preserve T2 qualification effects in bundle overlay repair deltas. | done |
+| 2026-06-25 | Milestone 10 T2 Overlay Action Docket Effects Compatibility | Preserve T2 qualification effects in overlay optimizer action docket rows. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-25-milestone-10-t2-overlay-repair-delta-effects-compatibility`
-closed after bundle overlay repair deltas began preserving merged decision and
-repair-target qualification effects. Current T1-T4
+No wave is active. `2026-06-25-milestone-10-t2-overlay-action-docket-effects-compatibility`
+closed after overlay optimizer action docket rows began preserving repair-delta
+qualification effects. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.
