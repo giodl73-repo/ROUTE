@@ -198,12 +198,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-24 | Milestone 10 T2 Bundle Repair Queue Qualification Compatibility | Preserve T2 qualification effects in future bundle repair queue rows. | done |
 | 2026-06-24 | Milestone 10 T2 Repair Segment Candidate Qualification Compatibility | Preserve T2 qualification effects in repair-derived segment candidate rows. | done |
 | 2026-06-24 | Milestone 10 T2 Bundle Overlay Effects Compatibility | Preserve T2 qualification effects in future bundle overlay rows. | done |
+| 2026-06-24 | Milestone 10 T2 Overlay Decision Effects Compatibility | Preserve T2 qualification effects from overlays into game/ops binding decisions. | done |
 
 ## Next Active Wave
 
-No wave is active. `2026-06-24-milestone-10-t2-bundle-overlay-effects-compatibility`
-closed after `T2BundleOverlayRow` gained defaulted qualification-effect
-compatibility and effect merging kept pipe-delimited text. Current T1-T4
+No wave is active. `2026-06-24-milestone-10-t2-overlay-decision-effects-compatibility`
+closed after game/ops binding decisions began merging qualification effects from
+binding intake and bundle overlays. Current T1-T4
 structural maps
 have a gateable readiness artifact, a gateable release-facing inventory, and no
 residual `publication` blockers.

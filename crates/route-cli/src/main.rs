@@ -30789,7 +30789,12 @@ fn t2_game_ops_binding_decision_rows(
                 service_class,
                 bundle_status,
                 binding_status,
-                qualification_effects: row.qualification_effects.clone(),
+                qualification_effects: merge_qualification_effects(
+                    &row.qualification_effects,
+                    overlay
+                        .map(|overlay| overlay.qualification_effects.as_str())
+                        .unwrap_or_default(),
+                ),
                 qualification_gate_policy,
                 qualification_game_use,
                 decision: decision.to_string(),
@@ -65132,7 +65137,7 @@ mod tests {
             required_evidence: "terminal-worthy endpoint exception".to_string(),
             next_artifact: "data/tier-node-exceptions.csv".to_string(),
             optimizer_effect: "blocked from T2 unless endpoint exception is upgraded".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             closure_status: "open".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -65350,7 +65355,7 @@ mod tests {
             next_artifact: "data/tier-contact-witnesses.csv".to_string(),
             optimizer_effect: "retain relief review only after contact repair validates"
                 .to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_game_use=default-play".to_string(),
             closure_status: "evidence-observed".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -69603,7 +69608,7 @@ mod tests {
             claim_blocker_count: 1,
             blocked_claims: "game;incident;publication;upgrade".to_string(),
             top_constraint_classes: "game_ops_bundle_binding".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             next_artifacts: "data/game/t2-service-overlays.csv".to_string(),
             constraint_ledger_artifact: "data/optimizer-constraint-ledger.csv".to_string(),
             intake_status: "decision-needed".to_string(),
@@ -69627,7 +69632,7 @@ mod tests {
             qualification_gate_policy: "accepted when structural diagnostics pass".to_string(),
             qualification_game_use:
                 "default playable service for incidents, upgrades, and restitches".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_game_use=default-play".to_string(),
             pavement_debt_cost_m: 0.0,
             pavement_debt_class: String::new(),
             pavement_debt_basis: String::new(),
@@ -69643,6 +69648,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].decision, "repair-needed");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].validation_status, "review");
         assert!(rows[0].blocks_claims.contains("publication"));
     }
