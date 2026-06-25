@@ -25384,8 +25384,11 @@ fn t2_route_family_split_rows(
                 disposition: disposition.to_string(),
                 required_evidence: required_evidence.to_string(),
                 next_artifact: next_artifact.to_string(),
-                qualification_effects: String::new(),
-                optimizer_effect: optimizer_effect.to_string(),
+                qualification_effects: row.qualification_effects.clone(),
+                optimizer_effect: route_family_split_optimizer_effect(
+                    optimizer_effect,
+                    &row.qualification_effects,
+                ),
                 validation_status: "review".to_string(),
             }
         })
@@ -25454,7 +25457,7 @@ fn t2_route_family_split_rows(
                     bundles.len()
                 ),
                 next_artifact: "data/beck-t2-diagnostics.csv".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 optimizer_effect:
                     "keeps state-scoped T2 segment families stable while Beck diagnostics are authored"
                         .to_string(),
@@ -64790,7 +64793,7 @@ mod tests {
                 required_evidence: "identify represented segment".to_string(),
                 next_artifact: "data/tier-node-exceptions.csv".to_string(),
                 optimizer_effect: "blocked until route family is disambiguated".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 closure_status: "open".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -64838,6 +64841,13 @@ mod tests {
 
         assert_eq!(rows[0].family_action, "split-numbered-family");
         assert_eq!(rows[0].disposition, "blocked");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_gate_policy=stop-first"
+        );
+        assert!(rows[0]
+            .optimizer_effect
+            .contains("qualification_gate_policy=stop-first"));
         assert_eq!(rows[1].family_action, "split-local-family-or-demote");
         assert_eq!(rows[1].disposition, "lower-tier-pressure");
         assert!(failures.is_empty());
