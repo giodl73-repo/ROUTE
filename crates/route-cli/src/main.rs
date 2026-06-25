@@ -21480,6 +21480,8 @@ struct T2BundleReadinessReplayDecisionRow {
     delta_replay_decision: String,
     replay_decision: String,
     replay_action: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -33330,6 +33332,10 @@ fn t2_bundle_readiness_replay_decision_rows(
                 delta_replay_decision: delta.replay_decision.clone(),
                 replay_decision: "held-for-bundle-replay".to_string(),
                 replay_action: replay_action.to_string(),
+                qualification_effects: merge_qualification_effects(
+                    &evidence.qualification_effects,
+                    &delta.qualification_effects,
+                ),
                 blocked_claims_before: evidence.blocks_claims.clone(),
                 blocked_claims_after: delta.blocked_claims_after.clone(),
                 blocker_delta: 0,
@@ -33445,6 +33451,14 @@ fn t2_bundle_readiness_replay_decision_gate_failures(
         }
         if row.replay_decision == "bound" || row.delta_replay_decision == "bound" {
             failures.push(format!("{} readiness replay promoted a claim", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.replay_decision != "held-for-bundle-replay"
+        {
+            failures.push(format!(
+                "{} readiness replay carries qualification effects without held replay",
+                row.route
+            ));
         }
         if row.blocked_claims_before != "game;incident;publication;upgrade"
             || row.blocked_claims_after != "game;incident;publication;upgrade"
@@ -65853,7 +65867,7 @@ mod tests {
             source_artifacts: "fixture".to_string(),
             bundle_status: "needs-stop-chain".to_string(),
             bundle_action: "author zone-bounded stops before bundle geometry".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_game_use=default-play".to_string(),
             next_artifact: "data/tier-stop-candidates.csv".to_string(),
             validation_status: "review".to_string(),
         }];
@@ -68754,7 +68768,7 @@ mod tests {
                 route_aliases: "current-tier:T2;current-zone:component-1;route:I15".to_string(),
                 selector_basis: "I80;I10".to_string(),
                 candidate_action: "connector".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_gate_policy=stop-first".to_string(),
                 next_artifact: "data/national-segment-registry.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -68802,7 +68816,7 @@ mod tests {
                 freight_ride_requirement: "regional freight ride quality".to_string(),
                 transit_ride_requirement: "regional coach ride quality".to_string(),
                 source_contract: "HPMS IRI".to_string(),
-                qualification_effects: String::new(),
+                qualification_effects: "qualification_game_use=default-play".to_string(),
                 next_artifact: "data/standards-l1-inventory.csv".to_string(),
                 validation_status: "review".to_string(),
             },
@@ -68901,7 +68915,7 @@ mod tests {
             lifecycle_debt_cost_m: 0.0,
             constraint_penalty_score: 0.0,
             top_constraint_classes: "none".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             constraint_ledger_artifact: String::new(),
             beck_service_action: String::new(),
             qualification_basis: String::new(),
@@ -70496,7 +70510,7 @@ mod tests {
             evidence_row_count: 1,
             evidence_summary: "1 segment candidate rows match route I295".to_string(),
             evidence_decision: "held-for-readiness-replay".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_game_use=default-play".to_string(),
             next_artifact: "data/t2-bundle-overlay-repair-delta.csv".to_string(),
             blocks_claims: "game;incident;publication;upgrade".to_string(),
             validation_status: "review".to_string(),
@@ -70511,7 +70525,7 @@ mod tests {
             service_action: "repair-service-overlay-before-game-ops-binding".to_string(),
             readiness_disposition: "repair-needed".to_string(),
             replay_decision: "held".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects: "qualification_gate_policy=stop-first".to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -70526,6 +70540,10 @@ mod tests {
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].replay_decision, "held-for-bundle-replay");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(
             rows[0].blocked_claims_after,
             "game;incident;publication;upgrade"
@@ -70546,6 +70564,7 @@ mod tests {
             delta_replay_decision: "held".to_string(),
             replay_decision: "held-for-bundle-replay".to_string(),
             replay_action: "keep-held-until-repair-delta-mutates".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -70600,6 +70619,7 @@ mod tests {
             delta_replay_decision: "held".to_string(),
             replay_decision: "held-for-bundle-replay".to_string(),
             replay_action: "keep-held-until-repair-delta-mutates".to_string(),
+            qualification_effects: String::new(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,

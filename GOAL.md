@@ -295,3 +295,5 @@ should mean something in the SLA graph.
   disposition `qualification_effects` for bundle readiness repair tasks.
 - `T2BundleReadinessRepairEvidenceRow` now accepts and preserves readiness repair
   docket `qualification_effects` for readiness evidence probe rows.
+- `T2BundleReadinessReplayDecisionRow` now accepts and preserves merged readiness
+  evidence and repair-delta `qualification_effects` for readiness replay rows.
