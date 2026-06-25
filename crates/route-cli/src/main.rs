@@ -21786,6 +21786,8 @@ struct T2OverlayP1StructuralReadinessReviewRow {
     readiness_reason: String,
     downstream_action: String,
     action_status: String,
+    #[serde(default)]
+    qualification_effects: String,
     blocked_claims_before: String,
     blocked_claims_after: String,
     blocker_delta: isize,
@@ -36168,6 +36170,7 @@ fn t2_overlay_p1_structural_readiness_review_rows(
                 readiness_reason: readiness_reason.to_string(),
                 downstream_action: downstream_action.to_string(),
                 action_status: "optimizer-held-known".to_string(),
+                qualification_effects: action.qualification_effects.clone(),
                 blocked_claims_before: action.blocked_claims_after.clone(),
                 blocked_claims_after: action.blocked_claims_after.clone(),
                 blocker_delta: 0,
@@ -36270,6 +36273,14 @@ fn t2_overlay_p1_structural_readiness_review_gate_failures(
             || row.validation_status != "review"
         {
             failures.push(format!("{} P1 readiness review promoted action", row.route));
+        }
+        if !row.qualification_effects.trim().is_empty()
+            && row.action_status != "optimizer-held-known"
+        {
+            failures.push(format!(
+                "{} P1 readiness review carries qualification effects without held status",
+                row.route
+            ));
         }
         if row.blocked_claims_before != "game;incident;publication;upgrade"
             || row.blocked_claims_after != "game;incident;publication;upgrade"
@@ -71217,7 +71228,9 @@ mod tests {
             optimizer_action: "bundle-readiness-repair-review".to_string(),
             priority_class: "P1-structural-readiness".to_string(),
             action_status: "optimizer-held-known".to_string(),
-            qualification_effects: String::new(),
+            qualification_effects:
+                "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+                    .to_string(),
             blocked_claims_before: "game;incident;publication;upgrade".to_string(),
             blocked_claims_after: "game;incident;publication;upgrade".to_string(),
             blocker_delta: 0,
@@ -71233,6 +71246,10 @@ mod tests {
         assert_eq!(rows[0].priority_class, "P1-structural-readiness");
         assert_eq!(rows[0].action_status, "optimizer-held-known");
         assert_eq!(rows[0].readiness_decision, "held-stitched-proof-returned");
+        assert_eq!(
+            rows[0].qualification_effects,
+            "qualification_game_use=default-play|qualification_gate_policy=stop-first"
+        );
         assert_eq!(rows[0].blocker_delta, 0);
         assert_eq!(rows[0].blocked_claims_before, rows[0].blocked_claims_after);
     }
