@@ -22,6 +22,29 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 
 ---
 
+## Current Execution Focus — I-80 Flagship Stabilization
+
+Internal milepost completion means the relevant command and artifact gates
+passed; it does not mean the project has a validated flagship corridor or an
+externally reviewed investment recommendation.
+
+| Task | Status | Evidence / Next Step |
+|---|---|---|
+| Freeze expansion outside the flagship | ✅ active | `GOAL.md`; no new geography, doctrine family, or placeholder-only ledger |
+| Record the I-80 anchor baseline | ✅ done | `docs/anchors/i80-flagship-baseline.md` |
+| Complete the I-80 corpus narrative and source audit | ⏳ planned | Remove annotation placeholders and reconcile every material number |
+| Produce an I-80-specific gap diagnosis | ⏳ planned | Separate measured failures, source gaps, model limits, and geometry artifacts |
+| Select one bounded treatment from evidence | ⏳ planned | No treatment is preselected in the baseline pulse |
+| Run Parliament and editorial review | ⏳ planned | Seven voices plus citation, numeracy, and scope gates |
+| Build the compact decision packet | ⏳ planned | Regenerable report, maps, evidence appendix, and ten-minute presentation path |
+| Prepare external review | ⏳ planned | DOT/MPO, freight, and transportation-research reviewers |
+| Harden the flagship software path | ⏳ planned | Dependency pinning, CI portability, and focused CLI decomposition |
+
+Active wave:
+`waves/2026-07-11-i80-flagship-stabilization/WAVE.md`.
+
+---
+
 ## Current Sprint — Milepost 1 Instrument
 
 Goal: make the 16-dimension scorer boringly reliable enough that Atlas work can depend on it.
@@ -248,7 +271,7 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 
 | Designation | Name | Miles | Rubric ver | Status | Total score | Notes |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — |
+| I-80 | San Francisco Bay Area to New York region | 2,917 | v1.4 | draft | 89.8 / 160 | Medium confidence; generated record still contains human-annotation placeholders |
 
 ### Proposed corridors scored
 
