@@ -73,6 +73,15 @@ class SourceReadinessTests(unittest.TestCase):
             finally:
                 sources.ROOT = original_root
 
+    def test_excluded_source_does_not_fail_gate(self) -> None:
+        rows = [
+            {
+                "source_id": "SRC-I80-EXCLUDED",
+                "readiness_status": "excluded",
+            }
+        ]
+        self.assertEqual(sources.gate(rows, {"SRC-I80-EXCLUDED"}), [])
+
     def test_hpms_i80_gate_requires_all_corridor_states(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "hpms.csv"
@@ -99,6 +108,17 @@ class SourceReadinessTests(unittest.TestCase):
             self.assertFalse(ready)
             self.assertEqual(count, 0)
             self.assertIn("I80 tiles=0/49", detail)
+
+    def test_rucc_normalization_selects_code_rows(self) -> None:
+        content = """FIPS,State,County_Name,Attribute,Value
+01001,AL,Autauga County,Population_2020,58805
+01001,AL,Autauga County,RUCC_2023,2
+01001,AL,Autauga County,Description,Metro
+"""
+        self.assertEqual(
+            sources.normalize_rucc(content),
+            [{"GEOID": "01001", "RUCC": "2", "POP": "58805", "DENSITY": ""}],
+        )
 
 
 if __name__ == "__main__":

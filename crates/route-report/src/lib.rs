@@ -186,10 +186,7 @@ fn format_corpus_entry_with_annotations(
     md.push_str(&format!("updated: {today}\n"));
     md.push_str("sources:\n");
     md.push_str("  - \"FHWA HPMS 2023\"\n");
-    md.push_str("  - \"FHWA NBI 2023\"\n");
-    md.push_str("  - \"FAF5 v5.6 BTS/FHWA 2022\"\n");
     md.push_str("  - \"Census ACS 2022\"\n");
-    md.push_str("  - \"BEA CAINC4 2022\"\n");
     if let Some(annotations) = annotations {
         for source in &annotations.sources {
             md.push_str(&format!("  - \"{}\"\n", yaml_escape(source)));
@@ -342,6 +339,18 @@ fn format_corpus_entry_with_annotations(
         scores.score_weighted_confidence(),
         route_score::confidence_label(scores.score_weighted_confidence())
     ));
+    let unavailable = all
+        .iter()
+        .filter(|(_, dimension)| dimension.confidence == 0.0)
+        .map(|(_, dimension)| dimension.dim.code())
+        .collect::<Vec<_>>();
+    if !unavailable.is_empty() {
+        md.push_str(&format!(
+            "**Unavailable dimensions**: {}. The raw total carries unavailable dimensions as 0; \
+             do not interpret that contribution as observed zero need.\n\n",
+            unavailable.join(", ")
+        ));
+    }
 
     if scores.any_estimated() {
         md.push_str("† Estimated value — see score justification for details.\n\n");
@@ -666,5 +675,26 @@ sources = ["FHWA, National Highway System, https://example.com/nhs"]
         assert!(!written.contains("*[Human annotation"));
 
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn corpus_entry_labels_unavailable_dimensions_in_raw_total() {
+        let corridor = Corridor {
+            attributes: CorridorAttributes::default(),
+            ..corridor()
+        };
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        let md = format_corpus_entry_with_annotations(
+            &corridor,
+            &scores,
+            &CorpusProvenance::default(),
+            None,
+        );
+
+        assert!(md.contains("**Unavailable dimensions**"));
+        assert!(md.contains("do not interpret that contribution as observed zero need"));
     }
 }

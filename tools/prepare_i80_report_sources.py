@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import os
 import subprocess
 import sys
+import urllib.request
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,16 +18,28 @@ DEFAULT_OUTPUT = ROOT / "data" / "cache" / "i80-report-source-readiness.csv"
 I80_STATES = "CA,NV,UT,WY,NE,IA,IL,IN,OH,PA,NJ"
 I80_STATE_SET = set(I80_STATES.split(","))
 I80_FEMA_EXPECTED_TILES = 49
+RUCC_URL = (
+    "https://www.ers.usda.gov/media/5768/"
+    "2023-rural-urban-continuum-codes.csv?v=66892"
+)
 NO_CREDENTIAL_SOURCE_IDS = {
     "SRC-I80-TIGER",
     "SRC-I80-GAZETTEER",
     "SRC-I80-HPMS",
+    "SRC-I80-RUCC",
 }
 READY_CAPABLE_STATUSES = {
     "automated",
     "automated-download-partial-extract",
     "automated-partial",
     "automated-endpoint-needs-health-check",
+    "credential-supported",
+}
+EXCLUDED_STATUSES = {
+    "endpoint-blocked-excluded",
+    "claim-reference-excluded",
+    "credential-adapter-deferred-excluded",
+    "adapter-deferred-excluded",
 }
 
 
@@ -139,6 +153,63 @@ def extract_gazetteer() -> Attempt:
         return Attempt("failed", str(error))
 
 
+def normalize_rucc(content: str) -> list[dict[str, str]]:
+    population: dict[str, str] = {}
+    codes: dict[str, str] = {}
+    for row in csv.DictReader(io.StringIO(content)):
+        geoid = row.get("FIPS", "").strip()
+        attribute = row.get("Attribute", "").strip()
+        value = row.get("Value", "").strip()
+        if not geoid:
+            continue
+        if attribute == "Population_2020":
+            population[geoid] = value
+        elif attribute == "RUCC_2023":
+            codes[geoid] = value
+    return [
+        {
+            "GEOID": geoid,
+            "RUCC": codes[geoid],
+            "POP": population.get(geoid, ""),
+            "DENSITY": "",
+        }
+        for geoid in sorted(codes)
+    ]
+
+
+def fetch_rucc() -> Attempt:
+    request = urllib.request.Request(
+        RUCC_URL, headers={"User-Agent": "ROUTE/1.0 source-reproducibility"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            payload = response.read()
+        try:
+            content = payload.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            content = payload.decode("cp1252")
+        rows = normalize_rucc(content)
+        if len(rows) < 3000:
+            return Attempt("failed", f"RUCC normalization produced {len(rows)} rows")
+        destination = ROOT / "data" / "cache" / "rucc_2023.csv"
+        temporary = destination.with_name(f"{destination.name}.{os.getpid()}.tmp")
+        with temporary.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(
+                handle, fieldnames=["GEOID", "RUCC", "POP", "DENSITY"]
+            )
+            writer.writeheader()
+            writer.writerows(rows)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(destination)
+        return Attempt(
+            "succeeded",
+            f"normalized {len(rows)} rows to {destination.relative_to(ROOT)}",
+        )
+    except (OSError, UnicodeError, csv.Error) as error:
+        return Attempt("failed", str(error))
+
+
 def execute_no_credential_sources() -> dict[str, Attempt]:
     binary = ensure_route_binary()
     if binary is None:
@@ -162,6 +233,15 @@ def execute_no_credential_sources() -> dict[str, Attempt]:
     attempts["SRC-I80-HPMS"] = run_route(
         binary, ["fetch-hpms", "--states", I80_STATES]
     )
+    attempts["SRC-I80-RUCC"] = fetch_rucc()
+
+    if os.environ.get("CENSUS_API_KEY", "").strip():
+        attempts["SRC-I80-ACS-POP"] = run_route(
+            binary, ["fetch-acs"]
+        )
+        attempts["SRC-I80-ACS-INCOME"] = run_route(
+            binary, ["fetch-acs-income"]
+        )
     return attempts
 
 
@@ -213,7 +293,10 @@ def readiness_rows(
         elif source_id == "SRC-I80-FEMA":
             artifact_ready, count, evidence = fema_i80_evidence(artifact)
 
-        if (
+        if contract_row["acquisition_status"] in EXCLUDED_STATUSES:
+            readiness = "excluded"
+            blocker = contract_row["blocking_gap"]
+        elif (
             artifact_ready
             and contract_row["acquisition_status"] in READY_CAPABLE_STATUSES
         ):
@@ -258,7 +341,7 @@ def gate(rows: list[dict[str, str]], source_ids: set[str]) -> list[str]:
     return [
         row["source_id"]
         for row in rows
-        if row["source_id"] in source_ids and row["readiness_status"] != "ready"
+        if row["source_id"] in source_ids and row["readiness_status"] == "blocked"
     ]
 
 
@@ -311,7 +394,11 @@ def main() -> None:
     print(f"wrote {args.output.relative_to(ROOT)}")
 
     blocked = [row["source_id"] for row in rows if row["readiness_status"] == "blocked"]
-    print(f"ready={len(rows) - len(blocked)} blocked={len(blocked)}")
+    excluded = [
+        row["source_id"] for row in rows if row["readiness_status"] == "excluded"
+    ]
+    ready = len(rows) - len(blocked) - len(excluded)
+    print(f"ready={ready} excluded={len(excluded)} blocked={len(blocked)}")
 
     failures: list[str] = []
     if args.gate_no_credential:

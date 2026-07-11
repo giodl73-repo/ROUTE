@@ -648,21 +648,37 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
     let flood_score = 0.7 * consec_score + 0.3 * total_score;
 
     // Multi-hazard extension (v1.4): add wildfire, tornado, seismic components
-    let wildfire_score = attrs.wildfire_risk.map(|w| w as f64).unwrap_or(0.0);
-    let tornado_score = attrs.tornado_risk.map(|t| t as f64).unwrap_or(0.0);
-    let seismic_score = attrs.seismic_risk.map(|s| s as f64).unwrap_or(0.0);
+    let wildfire_score = attrs.wildfire_risk.map(|w| w as f64);
+    let tornado_score = attrs.tornado_risk.map(|t| t as f64);
+    let seismic_score = attrs.seismic_risk.map(|s| s as f64);
     let has_extended = attrs.wildfire_risk.is_some()
         || attrs.tornado_risk.is_some()
         || attrs.seismic_risk.is_some();
     let has_flood_data =
         attrs.max_consecutive_sfha_miles.is_some() || attrs.fema_sfha_miles.is_some();
 
-    let composite = if has_extended {
-        // Four-component weighted composite
-        flood_score * 0.40 + wildfire_score * 0.25 + tornado_score * 0.20 + seismic_score * 0.15
+    let mut weighted_score = 0.0;
+    let mut available_weight = 0.0;
+    if has_flood_data {
+        weighted_score += flood_score * 0.40;
+        available_weight += 0.40;
+    }
+    if let Some(score) = wildfire_score {
+        weighted_score += score * 0.25;
+        available_weight += 0.25;
+    }
+    if let Some(score) = tornado_score {
+        weighted_score += score * 0.20;
+        available_weight += 0.20;
+    }
+    if let Some(score) = seismic_score {
+        weighted_score += score * 0.15;
+        available_weight += 0.15;
+    }
+    let composite = if available_weight > 0.0 {
+        weighted_score / available_weight
     } else {
-        // Flood-only (legacy path): preserve pre-v1.4 scoring for corridors without hazard data
-        flood_score
+        0.0
     };
 
     let hazard_note = if has_extended {
@@ -676,7 +692,10 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
         " Wildfire/tornado/seismic not yet joined — run route fetch-hazards.".to_string()
     };
 
-    let mut sources = vec!["FEMA NFHL 2024".into()];
+    let mut sources = Vec::new();
+    if has_flood_data {
+        sources.push("FEMA NFHL 2024".into());
+    }
     if has_extended {
         sources.push("USFS Wildfire Hazard Potential 2023".into());
         sources.push("NOAA SPC tornado probability".into());
@@ -687,9 +706,16 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
         dim: Dimension::D1ClimateResilience,
         score: composite,
         justification: format!(
-            "Longest contiguous SFHA segment {:.1} mi; {:.1} total SFHA miles.{hazard_note}",
-            attrs.max_consecutive_sfha_miles.unwrap_or(0.0),
-            attrs.fema_sfha_miles.unwrap_or(0.0)
+            "{}{hazard_note}",
+            if has_flood_data {
+                format!(
+                    "Longest contiguous SFHA segment {:.1} mi; {:.1} total SFHA miles.",
+                    attrs.max_consecutive_sfha_miles.unwrap_or(0.0),
+                    attrs.fema_sfha_miles.unwrap_or(0.0)
+                )
+            } else {
+                "FEMA SFHA exposure unavailable.".to_string()
+            }
         ),
         sources,
         confidence: match (has_flood_data, has_extended) {
@@ -698,7 +724,7 @@ fn score_d1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
             (false, true) => 0.60,
             (false, false) => 0.0,
         },
-        estimated: !has_flood_data && !has_extended,
+        estimated: available_weight < 1.0,
     }
 }
 
@@ -709,21 +735,26 @@ fn score_d2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
         .score(attrs.intermodal_hub_count as f64);
     let ev_score = attrs
         .dcfc_per_100mi
-        .map(|d| cfg.d2.dcfc_per_100mi.score(d as f64))
-        .unwrap_or(0.0);
-    let composite = 0.6 * hub_score + 0.4 * ev_score;
+        .map(|d| cfg.d2.dcfc_per_100mi.score(d as f64));
+    let composite = ev_score
+        .map(|score| 0.6 * hub_score + 0.4 * score)
+        .unwrap_or(hub_score);
+    let mut sources = vec!["AAR intermodal terminal data".into()];
+    if ev_score.is_some() {
+        sources.push("DOE AFDC EV charger locator 2024".into());
+    }
     ScoredDimension {
         dim: Dimension::D2MultimodalIntegration,
         score: composite,
         justification: format!(
-            "{} intermodal freight hubs; {:.1} DCFC chargers per 100 miles.",
+            "{} intermodal freight hubs; {}.",
             attrs.intermodal_hub_count,
-            attrs.dcfc_per_100mi.unwrap_or(0.0)
+            attrs
+                .dcfc_per_100mi
+                .map(|value| format!("{value:.1} DCFC chargers per 100 miles"))
+                .unwrap_or_else(|| "DCFC coverage unavailable".to_string())
         ),
-        sources: vec![
-            "AAR intermodal terminal data".into(),
-            "DOE AFDC EV charger locator 2024".into(),
-        ],
+        sources,
         confidence: if attrs.dcfc_per_100mi.is_none() {
             0.55
         } else {
@@ -750,23 +781,45 @@ fn score_d3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
     let condition_score = 0.6 * bridge_score + 0.4 * vintage_score;
     let backlog_priority_score = 0.2 * bridge_score + 0.5 * backlog_score + 0.3 * vintage_score;
     let composite = condition_score.max(backlog_priority_score);
+    let iri_proxy = attrs.bridge_count == 0
+        && attrs.pct_bridges_poor.is_some()
+        && attrs.mean_year_built.is_some();
+    let unavailable = attrs.pct_bridges_poor.is_none() && attrs.mean_year_built.is_none();
     ScoredDimension {
         dim: Dimension::D3InfrastructureVintage,
         score: composite,
-        justification: format!(
-            "{} bridges; {:.0} poor; {:.0}% poor condition; mean construction year {:.0}.",
-            attrs.bridge_count,
-            poor_bridge_count,
-            attrs.pct_bridges_poor.unwrap_or(0.0) * 100.0,
-            attrs.mean_year_built.unwrap_or(0.0)
-        ),
-        sources: vec!["FHWA NBI 2023".into()],
-        confidence: if attrs.pct_bridges_poor.is_none() {
+        justification: if unavailable {
+            "NBI and HPMS IRI condition evidence unavailable. Score not computed.".to_string()
+        } else if iri_proxy {
+            format!(
+                "NBI unavailable; HPMS IRI proxy estimates {:.0}% poor-equivalent condition and vintage year {:.0}.",
+                attrs.pct_bridges_poor.unwrap_or(0.0) * 100.0,
+                attrs.mean_year_built.unwrap_or(0.0)
+            )
+        } else {
+            format!(
+                "{} bridges; {:.0} poor; {:.0}% poor condition; mean construction year {:.0}.",
+                attrs.bridge_count,
+                poor_bridge_count,
+                attrs.pct_bridges_poor.unwrap_or(0.0) * 100.0,
+                attrs.mean_year_built.unwrap_or(0.0)
+            )
+        },
+        sources: if unavailable {
+            vec![]
+        } else if iri_proxy {
+            vec!["FHWA HPMS IRI proxy".into()]
+        } else {
+            vec!["FHWA NBI 2023".into()]
+        },
+        confidence: if unavailable {
+            0.0
+        } else if iri_proxy {
             0.35
         } else {
             0.85
         },
-        estimated: attrs.pct_bridges_poor.is_none(),
+        estimated: unavailable || iri_proxy,
     }
 }
 
@@ -967,6 +1020,81 @@ mod tests {
             .justification
             .contains("total buffer GDP unavailable"));
         assert!(!scores.c3.justification.contains("$0.0B"));
+    }
+
+    #[test]
+    fn missing_fema_does_not_zero_available_hazard_components() {
+        let scores = score_corridor(
+            &CorridorAttributes {
+                wildfire_risk: Some(4.0),
+                tornado_risk: Some(5.0),
+                seismic_risk: Some(2.0),
+                ..Default::default()
+            },
+            &cfg(),
+        );
+
+        assert!(scores.d1.score > 3.0);
+        assert!(scores.d1.estimated);
+        assert!(!scores
+            .d1
+            .sources
+            .iter()
+            .any(|source| source.contains("FEMA")));
+        assert!(scores
+            .d1
+            .justification
+            .contains("SFHA exposure unavailable"));
+    }
+
+    #[test]
+    fn missing_dcfc_uses_available_intermodal_component() {
+        let config = cfg();
+        let scores = score_corridor(
+            &CorridorAttributes {
+                intermodal_hub_count: 3,
+                dcfc_per_100mi: None,
+                ..Default::default()
+            },
+            &config,
+        );
+
+        assert_close(scores.d2.score, config.d2.intermodal_hubs.score(3.0));
+        assert!(scores.d2.estimated);
+        assert!(scores
+            .d2
+            .justification
+            .contains("DCFC coverage unavailable"));
+        assert!(!scores
+            .d2
+            .sources
+            .iter()
+            .any(|source| source.contains("AFDC")));
+    }
+
+    #[test]
+    fn iri_proxy_does_not_claim_nbi_provenance() {
+        let scores = score_corridor(
+            &CorridorAttributes {
+                bridge_count: 0,
+                pct_bridges_poor: Some(0.10),
+                mean_year_built: Some(1975.0),
+                ..Default::default()
+            },
+            &cfg(),
+        );
+
+        assert!(scores.d3.estimated);
+        assert!(scores
+            .d3
+            .sources
+            .iter()
+            .any(|source| source.contains("HPMS")));
+        assert!(!scores
+            .d3
+            .sources
+            .iter()
+            .any(|source| source.contains("NBI")));
     }
 
     #[test]

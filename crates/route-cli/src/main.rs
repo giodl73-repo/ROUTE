@@ -558,10 +558,10 @@ enum Commands {
         grid_mode: bool,
     },
 
-    /// Fetch ACS county population from Census API (no auth required)
+    /// Fetch ACS county population from Census API
     FetchAcs,
 
-    /// Fetch ACS county median household income from Census API (B19013, no auth required)
+    /// Fetch ACS county median household income from Census API (B19013)
     FetchAcsIncome,
 
     /// Fetch FEMA NFHL D1 data using small per-state bboxes (avoids 504 timeout)
@@ -7357,13 +7357,34 @@ fn run_cli() -> Result<()> {
                     )
                 })?;
 
+            let excluded_sources = if norm == "I80" {
+                load_excluded_i80_sources(Path::new("data/i80-report-source-contract.csv"))?
+            } else {
+                std::collections::BTreeSet::new()
+            };
             let acs_counties = load_acs_counties_for_scoring(&manifest);
             let ports = load_ports();
-            let dcfc = load_dcfc_stations();
+            let dcfc = if excluded_sources.contains("SRC-I80-DCFC") {
+                Vec::new()
+            } else {
+                load_dcfc_stations()
+            };
             let intermodal = load_intermodal_terminals();
-            let fema_tiles = load_fema_tiles();
-            let nbi = load_nbi_bridges();
-            let fars_safety = load_fars_safety();
+            let fema_tiles = if excluded_sources.contains("SRC-I80-FEMA") {
+                Vec::new()
+            } else {
+                load_fema_tiles()
+            };
+            let nbi = if excluded_sources.contains("SRC-I80-NBI") {
+                std::collections::HashMap::new()
+            } else {
+                load_nbi_bridges()
+            };
+            let fars_safety = if excluded_sources.contains("SRC-I80-FARS") {
+                std::collections::HashMap::new()
+            } else {
+                load_fars_safety()
+            };
             let railroad_parallels = load_railroad_parallels();
             let hazard_zones = load_hazard_zones();
 
@@ -7596,7 +7617,8 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             std::fs::create_dir_all(&manifest.cache_dir)?;
             let out = manifest.cache_dir.join("acs_county_pop_2022.csv");
-            route_data::fetch_acs_population(&out)?;
+            let api_key = census_api_key()?;
+            route_data::fetch_acs_population(&out, &api_key)?;
             println!("  saved → {}", out.display());
             println!("  run `route fetch` to get county gazetteer, then `route coverage` for population-weighted analysis.");
         }
@@ -7607,9 +7629,10 @@ fn run_cli() -> Result<()> {
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             std::fs::create_dir_all(&manifest.cache_dir)?;
             let out = manifest.cache_dir.join("acs_county_income_2022.csv");
-            route_data::fetch_acs_income(&out)?;
+            let api_key = census_api_key()?;
+            route_data::fetch_acs_income(&out, &api_key)?;
             println!("  saved → {}", out.display());
-            println!("  national median HHI 2022: $74,580 (used as C3 baseline)");
+            println!("  national median HHI baseline remains the reviewed 2022 value");
             println!("  run `route score-all` to apply C3 scores.");
         }
 
@@ -64317,6 +64340,35 @@ mod tests {
     }
 
     #[test]
+    fn census_key_validation_rejects_missing_and_empty_values() {
+        assert!(super::validate_census_api_key(None).is_err());
+        assert!(super::validate_census_api_key(Some("  ".to_string())).is_err());
+        assert_eq!(
+            super::validate_census_api_key(Some("secret".to_string())).unwrap(),
+            "secret"
+        );
+    }
+
+    #[test]
+    fn i80_source_contract_exclusions_are_loaded() {
+        let dir =
+            std::env::temp_dir().join(format!("route-i80-source-policy-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("create policy fixture");
+        let path = dir.join("contract.csv");
+        std::fs::write(
+            &path,
+            "source_id,acquisition_status\nSRC-I80-NBI,adapter-deferred-excluded\nSRC-I80-HPMS,automated-partial\n",
+        )
+        .expect("write policy fixture");
+
+        let excluded = super::load_excluded_i80_sources(&path).expect("load exclusions");
+        assert!(excluded.contains("SRC-I80-NBI"));
+        assert!(!excluded.contains("SRC-I80-HPMS"));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn tier_for_score_matches_megamap_thresholds() {
         assert_eq!(tier_for_score(70.0), "T1");
         assert_eq!(tier_for_score(69.9), "T2");
@@ -78753,6 +78805,19 @@ fn normalise_designation(input: &str) -> String {
         .to_uppercase()
 }
 
+fn census_api_key() -> Result<String> {
+    validate_census_api_key(std::env::var("CENSUS_API_KEY").ok())
+}
+
+fn validate_census_api_key(value: Option<String>) -> Result<String> {
+    let key = value.context("CENSUS_API_KEY is required for Census ACS requests")?;
+    let key = key.trim();
+    if key.is_empty() {
+        anyhow::bail!("CENSUS_API_KEY is empty");
+    }
+    Ok(key.to_string())
+}
+
 /// Ensure the TIGER shapefile is extracted; return path to .shp file.
 fn ensure_shapefile(manifest: &route_data::Manifest) -> Result<std::path::PathBuf> {
     let extract_dir = manifest.cache_dir.join("tiger-primary-roads");
@@ -78814,11 +78879,7 @@ fn ensure_reviewed_report_sources(
         "hpms_2018.csv",
         "acs_county_pop_2022.csv",
         "acs_county_income_2022.csv",
-        "rucc_2013.csv",
-        "dcfc_stations.csv",
-        "fema_sfha_tile_counts.csv",
-        "nbi_bridges.csv",
-        "fars_2022_routes.csv",
+        "rucc_2023.csv",
     ];
     for path in required_cache {
         if !cache_dir.join(path).exists() {
@@ -78848,6 +78909,25 @@ fn ensure_reviewed_report_sources(
         output_path.display(),
         missing.join(", ")
     )
+}
+
+#[derive(serde::Deserialize)]
+struct I80SourcePolicyRow {
+    source_id: String,
+    acquisition_status: String,
+}
+
+fn load_excluded_i80_sources(path: &std::path::Path) -> Result<std::collections::BTreeSet<String>> {
+    let mut reader = csv::Reader::from_path(path)
+        .with_context(|| format!("reading I-80 source contract {}", path.display()))?;
+    let mut excluded = std::collections::BTreeSet::new();
+    for row in reader.deserialize::<I80SourcePolicyRow>() {
+        let row = row.with_context(|| format!("parsing {}", path.display()))?;
+        if row.acquisition_status.ends_with("excluded") {
+            excluded.insert(row.source_id);
+        }
+    }
+    Ok(excluded)
 }
 
 /// Load the HighwayGraph from cached TIGER + optional HPMS.
@@ -78918,7 +78998,7 @@ fn load_acs_counties_for_scoring(
     }
 
     // Join RUCC rural codes if cached (for C2 rural_share scoring)
-    let rucc_path = manifest.cache_dir.join("rucc_2013.csv");
+    let rucc_path = manifest.cache_dir.join("rucc_2023.csv");
     if rucc_path.exists() {
         let _ = route_data::join_rucc(&mut counties, &rucc_path);
     }

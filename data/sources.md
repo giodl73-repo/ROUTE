@@ -39,7 +39,7 @@ No raw data files are committed to this repo. Data is accessed from authoritativ
 
 | Source | What it provides | Notes |
 |---|---|---|
-| FHWA National Bridge Inventory (NBI) | Bridge condition, age, posted weight limits | Current public delimited files: https://www.fhwa.dot.gov/bridge/nbi/ascii2025.cfm. `data/cache/nbi_bridges.csv` is a local-only ROUTE summary and is not present in a clean clone; raw download and route-summary adapter remain to be implemented. |
+| FHWA National Bridge Inventory (NBI) | Bridge condition, age, posted weight limits | Current public delimited files: https://www.fhwa.dot.gov/bridge/nbi/ascii2025.cfm. NBI is excluded from reviewed I-80 regeneration until a fixture-backed raw-to-route summary adapter exists. |
 | FHWA HPMS Pavement Data | IRI (International Roughness Index) by segment | Via HPMS DataFinder |
 | FHWA Pavement Performance | % of NHS in good/fair/poor condition by state | https://www.fhwa.dot.gov/policyinformation/statistics.cfm |
 
@@ -48,10 +48,16 @@ No raw data files are committed to this repo. Data is accessed from authoritativ
 | Source | What it provides | Notes |
 |---|---|---|
 | US Census Bureau TIGER/Line | Road network, census tract boundaries, county boundaries | ROUTE manifest currently pins 2023. Current candidate directory: https://www2.census.gov/geo/tiger/TIGER2025/PRIMARYROADS/; update only after parser compatibility tests. |
-| Census ACS 5-Year Estimates | Population by tract, income, poverty rate | Current API requests redirect to the official missing-key page without a key. ROUTE's 2022 population/income commands need environment-based key and configurable-year support. |
+| Census ACS 5-Year Estimates | Population by tract, income, poverty rate | `route fetch-acs` and `route fetch-acs-income` read `CENSUS_API_KEY` from the environment. The reviewed report remains fixed to the 2022 vintage consumed by scoring. |
 | BEA CAINC4 | County personal income and population context used by the C3 source contract | Candidate download: https://apps.bea.gov/regional/zip/CAINC4.zip. ROUTE manifest names the 2022 ZIP but has no clean-clone fetch and join path; generated reports must not cite it unconditionally. |
-| USDA Economic Research Service | Rural classification, agricultural data, farm-to-market metrics | RUCC source page: https://www.ers.usda.gov/data-products/rural-urban-continuum-codes. ROUTE has a CSV join but no download/workbook conversion path and still expects `rucc_2013.csv`. |
+| USDA Economic Research Service | Rural classification, agricultural data, farm-to-market metrics | ROUTE downloads the official 2023 RUCC CSV from https://www.ers.usda.gov/media/5768/2023-rural-urban-continuum-codes.csv?v=66892 and normalizes it to `data/cache/rucc_2023.csv`. |
 | HRSA Health Resources | Rural hospital access, trauma center locations | https://data.hrsa.gov |
+
+## Safety
+
+| Source | What it provides | Notes |
+|---|---|---|
+| NHTSA FARS 2022 national CSV | Fatal crashes and roadway context | Official bulk ZIP: https://static.nhtsa.gov/nhtsa/downloads/FARS/2022/National/FARS2022NationalCSV.zip. A5 is excluded from reviewed I-80 regeneration until route matching and the VMT denominator are fixture-validated. |
 
 ## Climate and resilience
 
@@ -78,7 +84,7 @@ No raw data files are committed to this repo. Data is accessed from authoritativ
 | AAR (Association of American Railroads) | Freight rail network map, intermodal terminal locations | https://www.aar.org |
 | FHWA Intermodal Connector Study | Intermodal facility access and connector road condition | FHWA Office of Freight |
 | BTS Intermodal Passenger Connectivity Database | Transit connections at major interchanges | https://www.bts.gov |
-| DOE Alternative Fuels Station Locator | EV fast charger locations and density | Locator: https://afdc.energy.gov/stations. Current developer API moved to https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/; ROUTE has a cache loader but no key-backed fetch/normalization adapter. |
+| DOE Alternative Fuels Station Locator | EV fast charger locations and density | Locator: https://afdc.energy.gov/stations. The developer API is credentialed; DCFC is excluded from reviewed I-80 regeneration until a fixture-tested adapter exists. |
 
 ---
 

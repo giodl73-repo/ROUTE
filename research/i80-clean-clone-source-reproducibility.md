@@ -72,6 +72,9 @@ marking the source ready.
 
 ### ROUTE-SRC-03 - Current Census API access requires a key
 
+**Pulse 04 disposition:** environment-only `CENSUS_API_KEY` support is
+implemented for the fixed reviewed 2022 vintage.
+
 **Sources:** https://api.census.gov/data/missing_key.html;
 `route fetch-acs`; `route fetch-acs-income`.
 
@@ -101,6 +104,9 @@ artifact name must not be interpreted as current national HPMS.
 
 ### ROUTE-SRC-05 - RUCC has a join but no acquisition/conversion path
 
+**Pulse 04 disposition:** superseded. ROUTE now downloads and normalizes the
+official USDA 2023 CSV to `data/cache/rucc_2023.csv`.
+
 **Sources:** `data/manifest.json`; `join_rucc` in
 `crates/route-data/src/census.rs`; USDA RUCC source page:
 https://www.ers.usda.gov/data-products/rural-urban-continuum-codes.
@@ -114,6 +120,9 @@ workbook.
 **Confidence:** High.
 
 ### ROUTE-SRC-06 - AFDC has a current API but no ROUTE adapter
+
+**Pulse 04 disposition:** excluded from reviewed regeneration until a
+fixture-tested credentialed adapter exists.
 
 **Sources:** NLR Alternative Fuel Stations API:
 https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/;
@@ -144,6 +153,9 @@ until a bounded replacement source or downloadable coverage adapter is chosen.
 
 ### ROUTE-SRC-08 - NBI is publicly downloadable but lacks a raw-to-summary adapter
 
+**Pulse 04 disposition:** excluded from reviewed regeneration until a
+fixture-backed 2025 raw-to-route summary adapter exists.
+
 **Sources:** FHWA 2025 NBI ASCII page:
 https://www.fhwa.dot.gov/bridge/nbi/ascii2025.cfm; `load_nbi_bridges`.
 
@@ -156,6 +168,9 @@ and summarizes those rows.
 **Confidence:** High.
 
 ### ROUTE-SRC-09 - FARS source selection remains unresolved
+
+**Pulse 04 disposition:** the 2022 national CSV download is selected as the
+future source, but A5 remains excluded until route and VMT normalization pass.
 
 **Sources:** NHTSA CrashAPI:
 https://crashviewer.nhtsa.dot.gov/CrashAPI; `load_fars_safety`.
@@ -184,6 +199,8 @@ rename old data as current.
 
 ### ROUTE-SRC-11 - FAF5 is cited but not wired into the current I-80 result
 
+**Pulse 04 disposition:** the unconditional report citation is removed.
+
 **Sources:** `corpus/existing/i80.md`; `crates/route-data/src/faf5.rs`;
 `join_a2_freight_proxy` in `crates/route-cli/src/main.rs`.
 
@@ -198,6 +215,8 @@ report citation or implement a real source-backed join.
 
 ### ROUTE-SRC-12 - BEA is cited without a clean-clone join
 
+**Pulse 04 disposition:** the unconditional report citation is removed.
+
 **Sources:** `corpus/existing/i80.md`; `data/manifest.json`;
 `crates/route-score/src/score.rs`.
 
@@ -210,6 +229,16 @@ unconditional citation must be removed from generated reports.
 **Confidence:** High.
 
 ## Recommendations
+
+## Decision Update - Pulse 04
+
+- ACS key support and configurable year are implemented.
+- USDA RUCC 2023 download and normalization are implemented.
+- AFDC, NBI, FARS, and FEMA are excluded from reviewed regeneration until
+  fixture-backed adapters exist.
+- Unconditional FAF5 and BEA report citations are removed because those sources
+  did not produce the current I-80 scores.
+- Exclusion means unavailable and held, never zero.
 
 ### Adopt Now
 

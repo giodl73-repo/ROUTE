@@ -31,10 +31,11 @@ claim_holds = [
   "C4=9.0 supports an agricultural-production-access hypothesis, not a proven long-haul export-mode share.",
   "The 11,344 AADT and 24% truck values are unweighted means across matched HPMS segments, not uniform corridor-wide conditions.",
   "A3 is a BPR-derived reliability proxy rather than observed NPMRDS PTI.",
+  "A5 FARS, D1 FEMA, D2 DCFC, and D3 NBI values are historical and excluded from clean regeneration until reviewed adapters exist.",
   "No official-plan, construction-readiness, guaranteed-SLA, positive-ROI, or agency-endorsement claim is made.",
 ]
 
-held_dimensions = ["A4", "B4", "C4"]
+held_dimensions = ["A4", "A5", "B4", "C4", "D1", "D2", "D3"]
 
 open_questions = [
   "What share of I-80 mileage and how many route segments are represented in the HPMS, NBI, Census, FEMA, FARS, intermodal, and charger joins?",

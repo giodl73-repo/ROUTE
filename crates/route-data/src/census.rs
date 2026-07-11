@@ -82,24 +82,29 @@ pub fn read_county_gazetteer(path: &Path) -> Result<Vec<CountyCentroid>> {
     Ok(counties)
 }
 
-/// Fetch ACS 5-year county population from Census API (no auth required).
+/// Fetch ACS 5-year county population from Census API.
 /// Writes to `output_path` as CSV: GEOID, NAME, POPULATION
-pub fn fetch_acs_population(output_path: &Path) -> Result<()> {
-    let url = "https://api.census.gov/data/2022/acs/acs5\
-               ?get=NAME,B01003_001E&for=county:*&in=state:*";
-
+pub fn fetch_acs_population(output_path: &Path, api_key: &str) -> Result<()> {
     println!("  fetching ACS county population from Census API…");
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(120))
         .user_agent("ROUTE/1.0 highway-analysis")
         .build()?;
 
-    let text = client
-        .get(url)
+    let response = client
+        .get("https://api.census.gov/data/2022/acs/acs5")
+        .query(&[
+            ("get", "NAME,B01003_001E"),
+            ("for", "county:*"),
+            ("in", "state:*"),
+            ("key", api_key),
+        ])
         .send()
-        .context("fetching ACS")?
-        .text()
-        .context("reading ACS response")?;
+        .map_err(|_| anyhow::anyhow!("Census ACS request failed"))?;
+    if !response.status().is_success() {
+        anyhow::bail!("Census ACS HTTP {}", response.status());
+    }
+    let text = response.text().context("reading ACS response")?;
 
     // Response is a JSON array: [["NAME","B01003_001E","state","county"], [...], ...]
     let rows: Vec<Vec<serde_json::Value>> =
@@ -184,22 +189,27 @@ pub fn join_population(counties: &mut Vec<CountyCentroid>, pop_csv: &Path) -> Re
 
 /// Fetch ACS 5-year county median household income from Census API.
 /// Table B19013_001E. Writes to output_path as CSV: GEOID, NAME, MEDIAN_HHI
-pub fn fetch_acs_income(output_path: &Path) -> Result<()> {
-    let url = "https://api.census.gov/data/2022/acs/acs5\
-               ?get=NAME,B19013_001E&for=county:*&in=state:*";
-
+pub fn fetch_acs_income(output_path: &Path, api_key: &str) -> Result<()> {
     println!("  fetching ACS county median household income (B19013)…");
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(120))
         .user_agent("ROUTE/1.0 highway-analysis")
         .build()?;
 
-    let text = client
-        .get(url)
+    let response = client
+        .get("https://api.census.gov/data/2022/acs/acs5")
+        .query(&[
+            ("get", "NAME,B19013_001E"),
+            ("for", "county:*"),
+            ("in", "state:*"),
+            ("key", api_key),
+        ])
         .send()
-        .context("fetching ACS income")?
-        .text()
-        .context("reading ACS income response")?;
+        .map_err(|_| anyhow::anyhow!("Census ACS income request failed"))?;
+    if !response.status().is_success() {
+        anyhow::bail!("Census ACS income HTTP {}", response.status());
+    }
+    let text = response.text().context("reading ACS income response")?;
 
     let rows: Vec<Vec<serde_json::Value>> =
         serde_json::from_str(&text).context("parsing ACS income JSON")?;
