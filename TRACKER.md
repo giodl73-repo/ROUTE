@@ -35,8 +35,8 @@ externally reviewed investment recommendation.
 | Audit I-80 source and generator boundaries | ✅ done | `research/i80-flagship-source-audit.md` |
 | Complete the I-80 corpus narrative and measurement repairs | ✅ done | Reviewed record, annotation sidecar, held dimensions, and formatter regressions; full cache-backed regeneration deferred to software hardening |
 | Produce an I-80-specific gap diagnosis | ✅ done | `gaps/i80-flagship.md` separates observed seeds, unloaded models, source gaps, and contradictions |
-| Select one bounded treatment from evidence | ✅ done | Des Moines independent-transfer-path package selected for Parliament review; capital decision held |
-| Run Parliament and editorial review | ⏳ planned | Seven voices plus citation, numeracy, and scope gates |
+| Select one bounded treatment from evidence | ✅ reviewed then held | Des Moines independent-transfer-path hypothesis was falsifiable enough to review but not ready to become a design |
+| Run Parliament and editorial review | ✅ done | Seven voices and three editorial gates returned `hold and narrow`; see wave panel |
 | Build the compact decision packet | ⏳ planned | Regenerable report, maps, evidence appendix, and ten-minute presentation path |
 | Prepare external review | ⏳ planned | DOT/MPO, freight, and transportation-research reviewers |
 | Harden the flagship software path | ⏳ planned | Dependency pinning, CI portability, and focused CLI decomposition |
@@ -272,7 +272,7 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 
 | Designation | Name | Miles | Rubric ver | Status | Total score | Notes |
 |---|---|---|---|---|---|---|
-| I-80 | San Francisco Bay Area to New York region | 2,917 | v1.4 | draft | 89.8 / 160 | Medium confidence; generated record still contains human-annotation placeholders |
+| I-80 | San Francisco Bay Area to New York region | 2,917 | v1.4 | reviewed | 89.8 / 160 | Medium confidence; strategic dimensions and clean-clone regeneration remain held |
 
 ### Proposed corridors scored
 
@@ -286,7 +286,7 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 
 | Corridor | Round | Date | Earned | Refuted | Collisions | Axes changed | Notes |
 |---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — |
+| I-80 / Des Moines | 1 | 2026-07-11 | Falsifiable topology hypothesis and null-result discipline | Premature design and unsupported quantitative fields | National consequence vs local burden; topology vs capacity; road vs intermodal | None | Hold and narrow; validation plan replaces design proposal |
 
 ---
 
@@ -294,7 +294,7 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 
 | Slug | Gap type | Date | Status | Key finding |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| i80-flagship | topology/evidence alignment | 2026-07-11 | reviewed | Des Moines cannot yet be classified as a physical infrastructure gap because topology, demand, incident history, and impacts are not comparable |
 
 ---
 
@@ -302,7 +302,7 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 
 | Slug | Corridor | Date | Status | Key feature |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| i80-des-moines-transfer-resilience-validation | I-35/I-80 Des Moines | 2026-07-11 | held before design | Validation gates for topology, demand, geometry, constructability, equity, rural access, climate, and alternatives |
 
 ---
 

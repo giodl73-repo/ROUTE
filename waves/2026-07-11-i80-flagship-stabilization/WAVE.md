@@ -38,7 +38,7 @@ flagship, its reproducibility, or its external review path.
 | 02 - I-80 source audit | done | `research/i80-flagship-source-audit.md` |
 | 03 - I-80 corpus completion | done | Reviewed corpus plus annotation sidecar; clean-clone source-cache regeneration hold recorded |
 | 04 - I-80 gap and treatment decision | done | Des Moines independent-transfer-path package selected for review; capital decision held |
-| 05 - Parliament and editorial review | planned | Seven Parliament voices plus citation, numeracy, and scope decisions |
+| 05 - Parliament and editorial review | done | Hold-and-narrow decision; premature design demoted to validation plan |
 | 06 - Flagship packet and external review docket | planned | Compact regenerable packet and three reviewer lanes |
 | 07 - Flagship software hardening | planned | Reproducible dependencies, portable CI, and focused CLI extraction |
 
@@ -46,7 +46,8 @@ flagship, its reproducibility, or its external review path.
 
 - The I-80 corridor record is reviewed and contains no annotation placeholders.
 - Every material number has a source or an explicit estimate/hold label.
-- The selected treatment is traceable to a corridor-specific gap finding.
+- The treatment hypothesis is traceable to a corridor-specific gap finding, and
+  review records whether it advances, narrows, holds, or is rejected.
 - Parliament and editorial review change or affirm the treatment and claims.
 - A compact packet regenerates from named commands and supports a ten-minute
   presentation.

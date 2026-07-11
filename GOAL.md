@@ -27,9 +27,10 @@ the entire repository.
   material source, estimate, limitation, and rubric version.
 - The I-80 anchor has a corridor-specific gap record that distinguishes measured
   failures, source gaps, model limitations, and geometry artifacts.
-- One bounded Interstate 2.0 treatment is selected from evidence rather than
-  assumed in advance.
-- The treatment receives all seven Parliament voices plus citation, numeracy,
+- One bounded Interstate 2.0 treatment hypothesis is selected from evidence
+  rather than assumed in advance, then advanced, narrowed, held, or rejected by
+  review.
+- The hypothesis receives all seven Parliament voices plus citation, numeracy,
   and scope review.
 - A compact decision packet can be regenerated and presented in ten minutes.
 - At least three external reviewers are identified for the next validation
