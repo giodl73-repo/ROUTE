@@ -40,6 +40,12 @@ jobs:
       - name: Check I-80 packet
         run: npm run check:i80:packet
 
+      - name: Test I-80 source orchestration
+        run: npm run test:i80:sources
+
+      - name: Generate I-80 source readiness
+        run: npm run check:i80:sources
+
   test-and-release-gates:
     runs-on: windows-latest
 

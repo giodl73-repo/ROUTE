@@ -51,7 +51,8 @@ Closed wave:
 | Task | Status | Evidence / Next Step |
 |---|---|---|
 | Inventory every guarded report source | ✅ done | `research/i80-clean-clone-source-reproducibility.md`; `data/i80-report-source-contract.csv` |
-| Orchestrate no-credential sources | ⏳ planned | TIGER, Gazetteer, HPMS, and FEMA download/parse/coverage bundle |
+| Orchestrate no-credential sources | ✅ done | TIGER and Gazetteer ready; HPMS 10/11 I-80 states; FEMA I-80 coverage blocked |
+| Repair no-credential blockers | ⏳ planned | Indiana HPMS route representation and I-80 FEMA coverage plan |
 | Support credential and adapter sources | ⏳ planned | ACS key support; RUCC, AFDC, NBI, and FARS decisions |
 | Prove clean-clone regeneration | ⏳ planned | One command either regenerates reviewed I-80 or emits complete blockers |
 
