@@ -1,4 +1,4 @@
-# Current Goal: I-80 Flagship Stabilization
+# Current Goal: I-80 Flagship Stabilization - Complete
 
 ## Mission
 
@@ -56,3 +56,10 @@ flagship, its reproducibility, or its external review path is deferred.
 
 Historical Milestone 10 delivery remains recorded in `waves/PHASES.md` and its
 closed wave cards.
+
+## Close Decision
+
+The wave closed on 2026-07-11 with a reviewed anchor, a Parliament
+`hold and narrow` decision, a deterministic review packet, and a hardened
+software path. No capital treatment was approved. See
+`waves/2026-07-11-i80-flagship-stabilization/CLOSE.md`.

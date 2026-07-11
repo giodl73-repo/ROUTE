@@ -503,6 +503,9 @@ enum Commands {
     Report {
         /// Interstate designation
         designation: String,
+        /// Explicitly allow a degraded report when source caches are incomplete
+        #[arg(long)]
+        allow_partial: bool,
     },
 
     /// Compute max-flow capacity of a corridor and identify bottleneck segments
@@ -7316,11 +7319,21 @@ fn run_cli() -> Result<()> {
             }
         }
 
-        Commands::Report { designation } => {
+        Commands::Report {
+            designation,
+            allow_partial,
+        } => {
             let norm = normalise_designation(&designation);
             println!("route report {norm}");
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
+            let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
+            ensure_reviewed_report_sources(
+                &output_path,
+                &manifest.cache_dir,
+                std::path::Path::new("."),
+                allow_partial,
+            )?;
             let mut graph = load_graph(&manifest)?;
             let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
             let mut vals_sorted: Vec<f64> =
@@ -7400,7 +7413,6 @@ fn run_cli() -> Result<()> {
             join_a2_freight_proxy(&mut corridor.attributes, corridor.total_miles);
 
             let scores = route_score::score_corridor(&corridor.attributes, &scoring_cfg);
-            let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
             let provenance = route_report::CorpusProvenance {
                 command: format!("route report {norm}"),
                 manifest_version: manifest.version.clone(),
@@ -64255,6 +64267,48 @@ mod tests {
     }
 
     #[test]
+    fn reviewed_report_refuses_incomplete_source_overwrite() {
+        let root = std::env::temp_dir().join(format!(
+            "route-reviewed-report-sources-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let cache_dir = root.join("data").join("cache");
+        let output_path = root.join("corpus").join("existing").join("i80.md");
+        std::fs::create_dir_all(&cache_dir).expect("create cache directory");
+        std::fs::create_dir_all(output_path.parent().expect("output parent"))
+            .expect("create corpus directory");
+        std::fs::write(&output_path, "---\nstatus: reviewed\n---\n")
+            .expect("write reviewed corpus entry");
+
+        let error = super::ensure_reviewed_report_sources(&output_path, &cache_dir, &root, false)
+            .expect_err("incomplete reviewed report should fail");
+        assert!(error.to_string().contains("refusing to overwrite"));
+        assert!(error.to_string().contains("hpms_2018.csv"));
+
+        super::ensure_reviewed_report_sources(&output_path, &cache_dir, &root, true)
+            .expect("explicit partial report should be allowed");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn draft_report_allows_incomplete_sources() {
+        let root =
+            std::env::temp_dir().join(format!("route-draft-report-sources-{}", std::process::id()));
+        let cache_dir = root.join("data").join("cache");
+        let output_path = root.join("corpus").join("existing").join("i80.md");
+        std::fs::create_dir_all(&cache_dir).expect("create cache directory");
+        std::fs::create_dir_all(output_path.parent().expect("output parent"))
+            .expect("create corpus directory");
+        std::fs::write(&output_path, "---\nstatus: draft\n---\n")
+            .expect("write draft corpus entry");
+
+        super::ensure_reviewed_report_sources(&output_path, &cache_dir, &root, false)
+            .expect("draft report should allow partial sources");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn tier_for_score_matches_megamap_thresholds() {
         assert_eq!(tier_for_score(70.0), "T1");
         assert_eq!(tier_for_score(69.9), "T2");
@@ -78676,12 +78730,94 @@ fn ensure_shapefile(manifest: &route_data::Manifest) -> Result<std::path::PathBu
     if shp_path.exists() {
         return Ok(shp_path);
     }
+
     let zip_path = manifest.cache_path("tiger-primary-roads");
     if !zip_path.exists() {
         anyhow::bail!("TIGER primary roads not cached — run `route fetch` first.");
     }
     println!("  extracting shapefile…");
     route_data::fetch::extract_shp(&zip_path, &extract_dir)
+}
+
+fn ensure_reviewed_report_sources(
+    output_path: &std::path::Path,
+    cache_dir: &std::path::Path,
+    repo_root: &std::path::Path,
+    allow_partial: bool,
+) -> Result<()> {
+    if allow_partial || !output_path.exists() {
+        return Ok(());
+    }
+
+    let existing = std::fs::read_to_string(output_path)
+        .with_context(|| format!("reading {}", output_path.display()))?;
+    if !existing
+        .lines()
+        .any(|line| line.trim() == "status: reviewed")
+    {
+        return Ok(());
+    }
+
+    let tiger_ready = cache_dir
+        .join("tiger-primary-roads")
+        .join("tl_2023_us_primaryroads.shp")
+        .exists()
+        || cache_dir.join("tl_2023_us_primaryroads.zip").exists();
+    let gazetteer_ready = std::fs::read_dir(cache_dir).ok().is_some_and(|entries| {
+        entries.filter_map(|entry| entry.ok()).any(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .ends_with("counties_national.txt")
+        })
+    });
+
+    let mut missing = Vec::new();
+    if !tiger_ready {
+        missing.push("data/cache TIGER primary roads");
+    }
+    if !gazetteer_ready {
+        missing.push("data/cache/*counties_national.txt");
+    }
+
+    let required_cache = [
+        "hpms_2018.csv",
+        "acs_county_pop_2022.csv",
+        "acs_county_income_2022.csv",
+        "rucc_2013.csv",
+        "dcfc_stations.csv",
+        "fema_sfha_tile_counts.csv",
+        "nbi_bridges.csv",
+        "fars_2022_routes.csv",
+    ];
+    for path in required_cache {
+        if !cache_dir.join(path).exists() {
+            missing.push(path);
+        }
+    }
+
+    let required_repo = [
+        "data/ports.csv",
+        "data/intermodal_terminals.csv",
+        "data/railroad_parallels.csv",
+        "data/hazard_zones.csv",
+    ];
+    for path in required_repo {
+        if !repo_root.join(path).exists() {
+            missing.push(path);
+        }
+    }
+
+    if missing.is_empty() {
+        return Ok(());
+    }
+
+    anyhow::bail!(
+        "refusing to overwrite reviewed corpus entry {} with incomplete sources; missing: {}. \
+         Restore the source caches or pass --allow-partial to explicitly generate a degraded report.",
+        output_path.display(),
+        missing.join(", ")
+    )
 }
 
 /// Load the HighwayGraph from cached TIGER + optional HPMS.

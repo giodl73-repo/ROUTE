@@ -38,7 +38,6 @@ data/*.gdb
 data/cache/tiger-primary-roads/
 data/cache/tl_2023_us_primaryroads.zip
 data/cache/*.json
-Cargo.lock
 target/
 target2/
 .cargo/config.toml

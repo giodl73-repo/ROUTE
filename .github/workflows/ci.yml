@@ -5,6 +5,41 @@ on:
   pull_request:
 
 jobs:
+  flagship-quality:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint flagship crates
+        run: cargo clippy --locked -p route-score -p route-report --all-targets --no-deps -- -D warnings
+
+      - name: Test flagship crates
+        run: cargo test -q --locked -p route-score -p route-report
+
+      - name: Check I-80 packet
+        run: npm run check:i80:packet
+
   test-and-release-gates:
     runs-on: windows-latest
 

@@ -22,7 +22,7 @@ ROUTE phases use the Milepost theme from `docs/SYSTEM_PLAN.md`.
 
 ---
 
-## Current Execution Focus — I-80 Flagship Stabilization
+## Completed Execution Focus — I-80 Flagship Stabilization
 
 Internal milepost completion means the relevant command and artifact gates
 passed; it does not mean the project has a validated flagship corridor or an
@@ -30,7 +30,7 @@ externally reviewed investment recommendation.
 
 | Task | Status | Evidence / Next Step |
 |---|---|---|
-| Freeze expansion outside the flagship | ✅ active | `GOAL.md`; no new geography, doctrine family, or placeholder-only ledger |
+| Freeze expansion outside the flagship | ✅ done | Expansion remained frozen through wave closeout |
 | Record the I-80 anchor baseline | ✅ done | `docs/anchors/i80-flagship-baseline.md` |
 | Audit I-80 source and generator boundaries | ✅ done | `research/i80-flagship-source-audit.md` |
 | Complete the I-80 corpus narrative and measurement repairs | ✅ done | Reviewed record, annotation sidecar, held dimensions, and formatter regressions; full cache-backed regeneration deferred to software hardening |
@@ -39,10 +39,10 @@ externally reviewed investment recommendation.
 | Run Parliament and editorial review | ✅ done | Seven voices and three editorial gates returned `hold and narrow`; see wave panel |
 | Build the compact decision packet | ✅ done | `npm run build:i80:packet`; ten-minute hold-and-narrow review packet |
 | Prepare external review | ✅ done | DOT/MPO, freight, and transportation-research dockets with advance/narrow/reject outputs |
-| Harden the flagship software path | ⏳ planned | Dependency pinning, CI portability, and focused CLI decomposition |
+| Harden the flagship software path | ✅ done | Exact dependency revisions, committed lockfile, Linux/Windows CI, packet gate, and reviewed-corpus source guard |
 
-Active wave:
-`waves/2026-07-11-i80-flagship-stabilization/WAVE.md`.
+Closed wave:
+`waves/2026-07-11-i80-flagship-stabilization/WAVE.md`. No wave is active.
 
 ---
 
@@ -331,6 +331,6 @@ Status: ✅ complete. `docs/milepost-9-closeout.md` records the evidence-window 
 | README `## License` | ✅ |
 | Internal naming scrubbed | ✅ |
 | `.gitignore` standard block | ✅ |
-| Anchor corridor complete | ⏳ |
+| Anchor corridor complete | ✅ reviewed with explicit holds |
 | ≥1 research paper | ⏳ |
 | Research PDFs built | ⏳ |

@@ -432,10 +432,7 @@ fn yaml_escape(value: &str) -> String {
 }
 
 fn slug(designation: &str) -> String {
-    designation
-        .to_lowercase()
-        .replace('-', "-")
-        .replace(' ', "-")
+    designation.to_lowercase().replace(' ', "-")
 }
 
 fn chrono_today() -> String {

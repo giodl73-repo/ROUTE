@@ -17,4 +17,4 @@ rayon      = { workspace = true }
 thiserror  = { workspace = true }
 anyhow     = { workspace = true }
 reqwest    = { workspace = true }
-fletch-core = { git = "https://github.com/giodl73-repo/FLETCH.git", package = "fletch-core", branch = "master" }
+fletch-core = { git = "https://github.com/giodl73-repo/FLETCH.git", package = "fletch-core", rev = "7c7aacd4fbc8753299e2fc3181368d2cc6d90337" }

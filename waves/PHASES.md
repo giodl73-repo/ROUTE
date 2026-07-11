@@ -225,14 +225,15 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Replay Effects Compatibility | Preserve T2 qualification effects in bundle readiness replay decision rows. | done |
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Audit Effects Compatibility | Preserve T2 qualification effects in national bundle readiness audit rows. | done |
 | 2026-06-25 | Milestone 10 T2 Stitched Handoff Effects Compatibility | Preserve T2 qualification effects in stitched-member registry handoff rows. | done |
-| 2026-07-11 | I-80 Flagship Stabilization | Complete one source-to-decision anchor before ROUTE expands further. | active |
+| 2026-07-11 | I-80 Flagship Stabilization | Complete one source-to-decision anchor before ROUTE expands further. | done |
 
 ## Next Active Wave
 
-`2026-07-11-i80-flagship-stabilization` is active. The opening rule freezes
-geographic and doctrine expansion until I-80 has a complete corpus record,
-corridor-specific gap diagnosis, evidence-selected treatment, Parliament and
-editorial review, compact decision packet, and reproducible command path.
+No wave is active. `2026-07-11-i80-flagship-stabilization` closed with a
+reviewed I-80 corpus, gap diagnosis, Parliament hold-and-narrow decision,
+deterministic packet, external-review docket, pinned dependencies, portable CI,
+and a reviewed-corpus overwrite guard. Full source-cache regeneration remains
+held.
 
 ## Operating Rules
 

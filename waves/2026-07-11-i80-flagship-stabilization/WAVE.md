@@ -1,7 +1,8 @@
 ---
 wave: i80-flagship-stabilization
 date_open: 2026-07-11
-status: active
+date_close: 2026-07-11
+status: done
 source: portfolio-review
 ---
 
@@ -40,7 +41,12 @@ flagship, its reproducibility, or its external review path.
 | 04 - I-80 gap and treatment decision | done | Des Moines independent-transfer-path package selected for review; capital decision held |
 | 05 - Parliament and editorial review | done | Hold-and-narrow decision; premature design demoted to validation plan |
 | 06 - Flagship packet and external review docket | done | Deterministic ten-minute packet and DOT/MPO, freight, and research reviewer lanes |
-| 07 - Flagship software hardening | planned | Reproducible dependencies, portable CI, and focused CLI extraction |
+| 07 - Flagship software hardening | done | Pinned dependencies, committed lockfile, portable CI, packet gate, and reviewed-corpus overwrite guard |
+
+## Close Evidence
+
+See `CLOSE.md`. The wave closes with no capital treatment approved and with
+source-cache reproducibility still held explicitly.
 
 ## Done Criteria
 
