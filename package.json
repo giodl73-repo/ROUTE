@@ -122,6 +122,8 @@
     "check:dcr:renewal": "py tools/check_route_dcr_renewal.py",
     "check:dcr:cockpit": "playwright test docs/dcr/browser/route-dcr-cockpit.spec.js --browser=chromium",
     "check:dcr:express-payment": "py tools/check_route_dcr_express_payment.py",
+    "build:i80:packet": "python tools/build_i80_flagship_packet.py",
+    "check:i80:packet": "python tools/build_i80_flagship_packet.py --check",
     "check:l0": "cargo test -q --workspace --lib --bins",
     "check:l1": "cargo test -q",
     "check:l2": "cargo test -q -p route --test e2e_cli && playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium",

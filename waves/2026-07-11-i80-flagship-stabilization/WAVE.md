@@ -39,7 +39,7 @@ flagship, its reproducibility, or its external review path.
 | 03 - I-80 corpus completion | done | Reviewed corpus plus annotation sidecar; clean-clone source-cache regeneration hold recorded |
 | 04 - I-80 gap and treatment decision | done | Des Moines independent-transfer-path package selected for review; capital decision held |
 | 05 - Parliament and editorial review | done | Hold-and-narrow decision; premature design demoted to validation plan |
-| 06 - Flagship packet and external review docket | planned | Compact regenerable packet and three reviewer lanes |
+| 06 - Flagship packet and external review docket | done | Deterministic ten-minute packet and DOT/MPO, freight, and research reviewer lanes |
 | 07 - Flagship software hardening | planned | Reproducible dependencies, portable CI, and focused CLI extraction |
 
 ## Done Criteria

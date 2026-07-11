@@ -37,8 +37,8 @@ externally reviewed investment recommendation.
 | Produce an I-80-specific gap diagnosis | ✅ done | `gaps/i80-flagship.md` separates observed seeds, unloaded models, source gaps, and contradictions |
 | Select one bounded treatment from evidence | ✅ reviewed then held | Des Moines independent-transfer-path hypothesis was falsifiable enough to review but not ready to become a design |
 | Run Parliament and editorial review | ✅ done | Seven voices and three editorial gates returned `hold and narrow`; see wave panel |
-| Build the compact decision packet | ⏳ planned | Regenerable report, maps, evidence appendix, and ten-minute presentation path |
-| Prepare external review | ⏳ planned | DOT/MPO, freight, and transportation-research reviewers |
+| Build the compact decision packet | ✅ done | `npm run build:i80:packet`; ten-minute hold-and-narrow review packet |
+| Prepare external review | ✅ done | DOT/MPO, freight, and transportation-research dockets with advance/narrow/reject outputs |
 | Harden the flagship software path | ⏳ planned | Dependency pinning, CI portability, and focused CLI decomposition |
 
 Active wave:
