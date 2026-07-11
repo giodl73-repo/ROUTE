@@ -42,7 +42,21 @@ externally reviewed investment recommendation.
 | Harden the flagship software path | ✅ done | Exact dependency revisions, committed lockfile, Linux/Windows CI, packet gate, and reviewed-corpus source guard |
 
 Closed wave:
-`waves/2026-07-11-i80-flagship-stabilization/WAVE.md`. No wave is active.
+`waves/2026-07-11-i80-flagship-stabilization/WAVE.md`.
+
+---
+
+## Current Execution Focus — I-80 Clean-Clone Source Reproducibility
+
+| Task | Status | Evidence / Next Step |
+|---|---|---|
+| Inventory every guarded report source | ✅ done | `research/i80-clean-clone-source-reproducibility.md`; `data/i80-report-source-contract.csv` |
+| Orchestrate no-credential sources | ⏳ planned | TIGER, Gazetteer, HPMS, and FEMA download/parse/coverage bundle |
+| Support credential and adapter sources | ⏳ planned | ACS key support; RUCC, AFDC, NBI, and FARS decisions |
+| Prove clean-clone regeneration | ⏳ planned | One command either regenerates reviewed I-80 or emits complete blockers |
+
+Active wave:
+`waves/2026-07-11-i80-clean-clone-source-reproducibility/WAVE.md`.
 
 ---
 

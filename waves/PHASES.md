@@ -226,14 +226,13 @@ reviews, close notes, and the commits that changed the system.
 | 2026-06-25 | Milestone 10 T2 Bundle Readiness Audit Effects Compatibility | Preserve T2 qualification effects in national bundle readiness audit rows. | done |
 | 2026-06-25 | Milestone 10 T2 Stitched Handoff Effects Compatibility | Preserve T2 qualification effects in stitched-member registry handoff rows. | done |
 | 2026-07-11 | I-80 Flagship Stabilization | Complete one source-to-decision anchor before ROUTE expands further. | done |
+| 2026-07-11 | I-80 Clean-Clone Source Reproducibility | Acquire or explicitly block every source required to regenerate the reviewed I-80 report. | active |
 
 ## Next Active Wave
 
-No wave is active. `2026-07-11-i80-flagship-stabilization` closed with a
-reviewed I-80 corpus, gap diagnosis, Parliament hold-and-narrow decision,
-deterministic packet, external-review docket, pinned dependencies, portable CI,
-and a reviewed-corpus overwrite guard. Full source-cache regeneration remains
-held.
+`2026-07-11-i80-clean-clone-source-reproducibility` is active. The first pulse
+classifies the reviewed-report inputs before implementing one acquisition and
+blocker command.
 
 ## Operating Rules
 
