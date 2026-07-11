@@ -34,8 +34,8 @@ externally reviewed investment recommendation.
 | Record the I-80 anchor baseline | ✅ done | `docs/anchors/i80-flagship-baseline.md` |
 | Audit I-80 source and generator boundaries | ✅ done | `research/i80-flagship-source-audit.md` |
 | Complete the I-80 corpus narrative and measurement repairs | ✅ done | Reviewed record, annotation sidecar, held dimensions, and formatter regressions; full cache-backed regeneration deferred to software hardening |
-| Produce an I-80-specific gap diagnosis | ⏳ planned | Separate measured failures, source gaps, model limits, and geometry artifacts |
-| Select one bounded treatment from evidence | ⏳ planned | No treatment is preselected in the baseline pulse |
+| Produce an I-80-specific gap diagnosis | ✅ done | `gaps/i80-flagship.md` separates observed seeds, unloaded models, source gaps, and contradictions |
+| Select one bounded treatment from evidence | ✅ done | Des Moines independent-transfer-path package selected for Parliament review; capital decision held |
 | Run Parliament and editorial review | ⏳ planned | Seven voices plus citation, numeracy, and scope gates |
 | Build the compact decision packet | ⏳ planned | Regenerable report, maps, evidence appendix, and ten-minute presentation path |
 | Prepare external review | ⏳ planned | DOT/MPO, freight, and transportation-research reviewers |

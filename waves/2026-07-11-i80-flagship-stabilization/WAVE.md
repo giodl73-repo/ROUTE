@@ -37,7 +37,7 @@ flagship, its reproducibility, or its external review path.
 | 01 - Anchor contract and baseline | done | `docs/anchors/i80-flagship-baseline.md`; reconciled `GOAL.md`, `TRACKER.md`, and `waves/PHASES.md` |
 | 02 - I-80 source audit | done | `research/i80-flagship-source-audit.md` |
 | 03 - I-80 corpus completion | done | Reviewed corpus plus annotation sidecar; clean-clone source-cache regeneration hold recorded |
-| 04 - I-80 gap and treatment decision | planned | Corridor-specific gap artifact and evidence-based treatment selection |
+| 04 - I-80 gap and treatment decision | done | Des Moines independent-transfer-path package selected for review; capital decision held |
 | 05 - Parliament and editorial review | planned | Seven Parliament voices plus citation, numeracy, and scope decisions |
 | 06 - Flagship packet and external review docket | planned | Compact regenerable packet and three reviewer lanes |
 | 07 - Flagship software hardening | planned | Reproducible dependencies, portable CI, and focused CLI extraction |
