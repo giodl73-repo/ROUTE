@@ -22,7 +22,7 @@ sources:
   - https://www.ers.usda.gov/data-products/rural-urban-continuum-codes
   - https://data.transportation.gov/Roadways-and-Bridges/Highway-Performance-Monitoring-System-HPMS-/jc5k-rzm8
   - https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/
-  - https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer
+  - https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer
   - https://www.fhwa.dot.gov/bridge/nbi/ascii2025.cfm
   - https://crashviewer.nhtsa.dot.gov/CrashAPI
 ---
@@ -127,19 +127,20 @@ domain to `developer.nlr.gov`.
 
 **Confidence:** High for API existence and local adapter absence.
 
-### ROUTE-SRC-07 - FEMA is closest to a complete no-credential adapter
+### ROUTE-SRC-07 - The legacy FEMA endpoint is not an I-80 adapter
 
 **Sources:** `route fetch-fema-d1`; `crates/route-data/src/fema.rs`; FEMA NFHL
 service:
-https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer.
+https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer.
 
-**Observed constraint:** Fetch and CSV builder logic exist, but endpoint health,
-layer assumptions, and I-80 coverage are not recorded in a readiness artifact.
+**Observed constraint:** Fetch and CSV builder logic exist for a legacy
+Gulf/Atlantic/Mississippi tile set. A 49-tile I-80 attempt produced pervasive
+timeouts and non-JSON responses and exceeded the bounded execution window.
 
-**Implication:** Add health and nonempty-coverage gates rather than a new
-fetcher.
+**Implication:** Exclude the current FEMA path from reviewed I-80 regeneration
+until a bounded replacement source or downloadable coverage adapter is chosen.
 
-**Confidence:** Medium-high.
+**Confidence:** High for the current endpoint disposition.
 
 ### ROUTE-SRC-08 - NBI is publicly downloadable but lacks a raw-to-summary adapter
 

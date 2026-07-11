@@ -15,11 +15,11 @@ CONTRACT_PATH = ROOT / "data" / "i80-report-source-contract.csv"
 DEFAULT_OUTPUT = ROOT / "data" / "cache" / "i80-report-source-readiness.csv"
 I80_STATES = "CA,NV,UT,WY,NE,IA,IL,IN,OH,PA,NJ"
 I80_STATE_SET = set(I80_STATES.split(","))
+I80_FEMA_EXPECTED_TILES = 49
 NO_CREDENTIAL_SOURCE_IDS = {
     "SRC-I80-TIGER",
     "SRC-I80-GAZETTEER",
     "SRC-I80-HPMS",
-    "SRC-I80-FEMA",
 }
 READY_CAPABLE_STATUSES = {
     "automated",
@@ -162,7 +162,6 @@ def execute_no_credential_sources() -> dict[str, Attempt]:
     attempts["SRC-I80-HPMS"] = run_route(
         binary, ["fetch-hpms", "--states", I80_STATES]
     )
-    attempts["SRC-I80-FEMA"] = run_route(binary, ["fetch-fema-d1"])
     return attempts
 
 
@@ -284,10 +283,16 @@ def fema_i80_evidence(artifact: Path) -> tuple[bool, int, str]:
         reader = csv.DictReader(handle)
         rows = [row for row in reader if row.get("tile", "").startswith("I80-")]
     positive = sum(1 for row in rows if int(row.get("sfha_count", "0") or 0) > 0)
+    healthy = sum(1 for row in rows if row.get("status") == "ok")
     return (
-        bool(rows) and positive > 0,
+        len(rows) == I80_FEMA_EXPECTED_TILES
+        and healthy == I80_FEMA_EXPECTED_TILES
+        and positive > 0,
         len(rows),
-        f"I80 tiles={len(rows)} positive_tiles={positive}",
+        (
+            f"I80 tiles={len(rows)}/{I80_FEMA_EXPECTED_TILES} "
+            f"healthy={healthy} positive_tiles={positive}"
+        ),
     )
 
 

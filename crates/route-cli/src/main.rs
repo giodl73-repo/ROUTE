@@ -7619,27 +7619,26 @@ fn run_cli() -> Result<()> {
 
             // State bounding boxes (1°×1° tiles covering major flood-exposed corridors)
             // Focus on Gulf Coast (I-10 LA/TX), Atlantic Coast (I-95), Mississippi Valley
-            let state_tiles: Vec<(&str, f64, f64, f64, f64)> = vec![
-                ("LA-Gulf", -93.5, 29.0, -92.5, 30.0),
-                ("LA-Gulf2", -92.5, 29.0, -91.5, 30.0),
-                ("LA-Gulf3", -91.5, 29.0, -90.5, 30.0),
-                ("LA-Gulf4", -90.5, 29.0, -89.5, 30.0),
-                ("TX-Gulf", -95.5, 29.0, -94.5, 30.0),
-                ("TX-Gulf2", -94.5, 29.0, -93.5, 30.0),
-                ("FL-Gulf", -87.5, 30.0, -86.5, 31.0),
-                ("FL-SE", -81.0, 25.5, -80.0, 26.5),
-                ("FL-Atlantic", -80.5, 26.5, -79.5, 27.5),
-                ("NC-coast", -77.5, 34.5, -76.5, 35.5),
-                ("VA-coast", -76.5, 36.5, -75.5, 37.5),
-                ("NJ-coast", -74.5, 39.5, -73.5, 40.5),
-                ("MS-valley", -91.0, 32.0, -90.0, 33.0),
-                ("AR-flood", -91.5, 33.5, -90.5, 34.5),
+            let state_tiles: Vec<(String, f64, f64, f64, f64)> = vec![
+                ("LA-Gulf".to_string(), -93.5, 29.0, -92.5, 30.0),
+                ("LA-Gulf2".to_string(), -92.5, 29.0, -91.5, 30.0),
+                ("LA-Gulf3".to_string(), -91.5, 29.0, -90.5, 30.0),
+                ("LA-Gulf4".to_string(), -90.5, 29.0, -89.5, 30.0),
+                ("TX-Gulf".to_string(), -95.5, 29.0, -94.5, 30.0),
+                ("TX-Gulf2".to_string(), -94.5, 29.0, -93.5, 30.0),
+                ("FL-Gulf".to_string(), -87.5, 30.0, -86.5, 31.0),
+                ("FL-SE".to_string(), -81.0, 25.5, -80.0, 26.5),
+                ("FL-Atlantic".to_string(), -80.5, 26.5, -79.5, 27.5),
+                ("NC-coast".to_string(), -77.5, 34.5, -76.5, 35.5),
+                ("VA-coast".to_string(), -76.5, 36.5, -75.5, 37.5),
+                ("NJ-coast".to_string(), -74.5, 39.5, -73.5, 40.5),
+                ("MS-valley".to_string(), -91.0, 32.0, -90.0, 33.0),
+                ("AR-flood".to_string(), -91.5, 33.5, -90.5, 34.5),
             ];
-
             let fema_url =
                 "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
 
-            let mut results: Vec<(String, u32)> = Vec::new();
+            let mut results: Vec<(String, u32, String)> = Vec::new();
             for (name, xmin, ymin, xmax, ymax) in &state_tiles {
                 let qs = format!(
                     "where=FLD_ZONE+LIKE+%27A%25%27&geometry={},{},{},{}&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects&returnCountOnly=true&f=json",
@@ -7650,11 +7649,11 @@ fn run_cli() -> Result<()> {
                 match route_data::fetch_fema_count(&url) {
                     Ok(count) => {
                         println!("  {name}: {count} SFHA features");
-                        results.push((name.to_string(), count));
+                        results.push((name.to_string(), count, "ok".to_string()));
                     }
                     Err(e) => {
                         println!("  {name}: FAILED — {e}");
-                        results.push((name.to_string(), 0));
+                        results.push((name.to_string(), 0, format!("error: {e}")));
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(800));
@@ -7664,8 +7663,16 @@ fn run_cli() -> Result<()> {
             let out = PathBuf::from("data/cache/fema_sfha_tile_counts.csv");
             let tmp = temp_path_for_atomic_write(&out);
             let mut wtr = csv::Writer::from_path(&tmp)?;
-            wtr.write_record(["tile", "xmin", "ymin", "xmax", "ymax", "sfha_count"])?;
-            for (i, (name, count)) in results.iter().enumerate() {
+            wtr.write_record([
+                "tile",
+                "xmin",
+                "ymin",
+                "xmax",
+                "ymax",
+                "sfha_count",
+                "status",
+            ])?;
+            for (i, (name, count, status)) in results.iter().enumerate() {
                 let t = &state_tiles[i];
                 wtr.write_record(&[
                     name,
@@ -7674,13 +7681,14 @@ fn run_cli() -> Result<()> {
                     &t.3.to_string(),
                     &t.4.to_string(),
                     &count.to_string(),
+                    status,
                 ])?;
             }
             wtr.flush()?;
             drop(wtr);
             replace_with_atomic_write(&tmp, &out)?;
             println!("\n  Saved → {}", out.display());
-            let total: u32 = results.iter().map(|(_, c)| c).sum();
+            let total: u32 = results.iter().map(|(_, count, _)| count).sum();
             println!("  Total SFHA features across flood-exposed tiles: {total}");
             println!("  Next: wire tile counts into corridor D1 scoring via bbox intersection");
         }
@@ -78657,21 +78665,28 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         graph
             .route_index
             .insert("I1".to_string(), vec![edge_a, edge_b]);
+        graph
+            .route_index
+            .insert("I80".to_string(), vec![edge_a, edge_b]);
 
         let tiles = vec![
             FemaTile {
+                name: "fixture-a".to_string(),
                 xmin: 5.0,
                 ymin: -0.5,
                 xmax: 6.0,
                 ymax: 0.5,
                 sfha_count: 100,
+                status: "ok".to_string(),
             },
             FemaTile {
+                name: "fixture-b".to_string(),
                 xmin: 0.25,
                 ymin: -0.5,
                 xmax: 0.75,
                 ymax: 0.5,
                 sfha_count: 7,
+                status: "ok".to_string(),
             },
         ];
         let mut attrs = CorridorAttributes::default();
@@ -78680,6 +78695,10 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
 
         assert_eq!(attrs.fema_sfha_miles, Some(2.1));
         assert_eq!(attrs.max_consecutive_sfha_miles, Some(1.47));
+
+        let mut i80_attrs = CorridorAttributes::default();
+        join_fema_d1_to_corridor(&graph, "I80", &mut i80_attrs, &tiles);
+        assert_eq!(i80_attrs.fema_sfha_miles, None);
     }
 
     #[test]
@@ -78697,6 +78716,17 @@ T1X-I35-I80,IOWA511-2,Iowa DOT 511 ArcGIS,2,2026,2026-05-02 08:00 AM,2026-05-02 
         assert_eq!(i5.seismic, 8.5);
         assert_eq!(i80.wildfire, 3.5);
         assert_eq!(i80.tornado, 0.5);
+    }
+
+    #[test]
+    fn fema_tile_parser_requires_explicit_ok_status() {
+        let legacy = "tile,xmin,ymin,xmax,ymax,sfha_count\nlegacy,0,0,1,1,4\n";
+        let failed = "tile,xmin,ymin,xmax,ymax,sfha_count,status\nfailed,0,0,1,1,4,error\n";
+        let healthy = "tile,xmin,ymin,xmax,ymax,sfha_count,status\nhealthy,0,0,1,1,4,ok\n";
+
+        assert!(super::parse_fema_tiles(legacy.as_bytes()).is_empty());
+        assert!(super::parse_fema_tiles(failed.as_bytes()).is_empty());
+        assert_eq!(super::parse_fema_tiles(healthy.as_bytes()).len(), 1);
     }
 
     fn score_row(route: &str, score: f64, tier: &'static str) -> ScoreAllRow {
@@ -79015,7 +79045,7 @@ fn load_dcfc_stations() -> Vec<(f64, f64)> {
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 6 {
+            if rec.len() < 7 {
                 return None;
             }
             let lat: f64 = rec[4].parse().ok()?;
@@ -79153,11 +79183,13 @@ fn join_port_access_to_corridor(
 
 /// A 1°×1° FEMA NFHL tile with an SFHA feature count.
 struct FemaTile {
+    name: String,
     xmin: f64,
     ymin: f64,
     xmax: f64,
     ymax: f64,
     sfha_count: u32,
+    status: String,
 }
 
 /// Load FEMA SFHA tile counts from data/cache/fema_sfha_tile_counts.csv.
@@ -79167,13 +79199,18 @@ fn load_fema_tiles() -> Vec<FemaTile> {
     if !path.exists() {
         return Vec::new();
     }
-    let Ok(mut rdr) = csv::Reader::from_path(path) else {
+    let Ok(file) = std::fs::File::open(path) else {
         return Vec::new();
     };
+    parse_fema_tiles(file)
+}
+
+fn parse_fema_tiles(reader: impl std::io::Read) -> Vec<FemaTile> {
+    let mut rdr = csv::Reader::from_reader(reader);
     rdr.records()
         .filter_map(|r| r.ok())
         .filter_map(|rec| {
-            if rec.len() < 6 {
+            if rec.len() < 7 {
                 return None;
             }
             let xmin: f64 = rec[1].trim().parse().ok()?;
@@ -79181,12 +79218,18 @@ fn load_fema_tiles() -> Vec<FemaTile> {
             let xmax: f64 = rec[3].trim().parse().ok()?;
             let ymax: f64 = rec[4].trim().parse().ok()?;
             let sfha_count: u32 = rec[5].trim().parse().ok()?;
+            let status = rec[6].trim().to_string();
+            if status != "ok" {
+                return None;
+            }
             Some(FemaTile {
+                name: rec[0].trim().to_string(),
                 xmin,
                 ymin,
                 xmax,
                 ymax,
                 sfha_count,
+                status,
             })
         })
         .collect()
@@ -79233,6 +79276,12 @@ fn join_fema_d1_to_corridor(
     let total_sfha: u64 = tiles
         .iter()
         .filter(|t| {
+            if route_id == "I80" && !t.name.starts_with("I80-") {
+                return false;
+            }
+            if t.status != "ok" {
+                return false;
+            }
             edge_boxes.iter().any(|&(xmin, ymin, xmax, ymax)| {
                 !(xmax < t.xmin || xmin > t.xmax || ymax < t.ymin || ymin > t.ymax)
             })

@@ -84,6 +84,7 @@ struct Feature {
 #[derive(Debug, Deserialize)]
 struct FeatureAttributes {
     route_number: Option<i64>,
+    route_name: Option<String>,
     /// 2=Interstate, 3=US Route, 4=State Route
     route_signing: Option<i64>,
     aadt: Option<f64>,
@@ -141,7 +142,7 @@ pub fn fetch_state_hpms_with_systems(
                 // route_signing = 2/3/4 filters cause server 500s on this ArcGIS instance
                 // Phase 2: explicit f_system lists can add US-route principal arterials.
                 ("where", where_clause.as_str()),
-                ("outFields", "route_number,route_signing,aadt,aadt_combination,iri,through_lanes,speed_limit,f_system"),
+                ("outFields", "route_number,route_name,route_signing,aadt,aadt_combination,iri,through_lanes,speed_limit,f_system"),
                 ("f", "json"),
                 ("resultRecordCount", "1000"),
                 ("resultOffset", &offset.to_string()),
@@ -164,11 +165,10 @@ pub fn fetch_state_hpms_with_systems(
 
             // Build normalised route_id from route_signing + route_number
             // route_signing: 2=Interstate, 3=US Route, 4=State Route
-            let route_id = match (a.route_signing, a.route_number) {
-                (Some(2), Some(n)) if n > 0 => format!("I{n}"),
-                (Some(3), Some(n)) if n > 0 => format!("US{n}"),
-                (Some(4), Some(n)) if n > 0 => format!("SR{n}"),
-                _ => continue, // skip unsigned/county/municipal roads
+            let Some(route_id) =
+                route_id_from_fields(a.route_signing, a.route_number, a.route_name.as_deref())
+            else {
+                continue;
             };
 
             // pct_truck = aadt_combination / aadt (both are counts)
@@ -195,6 +195,29 @@ pub fn fetch_state_hpms_with_systems(
     }
 
     Ok(all)
+}
+
+fn route_id_from_fields(
+    route_signing: Option<i64>,
+    route_number: Option<i64>,
+    route_name: Option<&str>,
+) -> Option<String> {
+    match (route_signing, route_number) {
+        (Some(2), Some(n)) if n > 0 => Some(format!("I{n}")),
+        (Some(3), Some(n)) if n > 0 => Some(format!("US{n}")),
+        (Some(4), Some(n)) if n > 0 => Some(format!("SR{n}")),
+        _ => route_name
+            .map(normalise_hpms_route_id)
+            .filter(|route| valid_normalized_route(route)),
+    }
+}
+
+fn valid_normalized_route(route: &str) -> bool {
+    ["I", "US", "SR"].iter().any(|prefix| {
+        route
+            .strip_prefix(prefix)
+            .is_some_and(|suffix| !suffix.is_empty() && suffix.chars().all(|c| c.is_ascii_digit()))
+    })
 }
 
 /// Fetch HPMS for all 50 states, aggregate to route level, save to CSV.
@@ -312,7 +335,7 @@ pub fn normalise_hpms_route_id(raw: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::STATE_CODES;
+    use super::{route_id_from_fields, STATE_CODES};
 
     #[test]
     fn multiword_state_service_names_match_geo_dot_hosted_pattern() {
@@ -333,5 +356,26 @@ mod tests {
     fn default_state_hpms_fetch_scope_remains_interstate_only() {
         let default_systems = [1u8];
         assert_eq!(default_systems, [1]);
+    }
+
+    #[test]
+    fn route_name_fills_null_route_signing() {
+        assert_eq!(
+            route_id_from_fields(None, Some(80), Some("I 80")),
+            Some("I80".to_string())
+        );
+    }
+
+    #[test]
+    fn route_signing_remains_primary() {
+        assert_eq!(
+            route_id_from_fields(Some(3), Some(30), Some("I 80")),
+            Some("US30".to_string())
+        );
+    }
+
+    #[test]
+    fn unparseable_route_name_is_skipped() {
+        assert_eq!(route_id_from_fields(None, None, Some("Local Road")), None);
     }
 }

@@ -24,7 +24,7 @@ corpus.
 |---|---|---|
 | 01 - Source acquisition inventory | done | `research/i80-clean-clone-source-reproducibility.md`; `data/i80-report-source-contract.csv` |
 | 02 - No-credential acquisition path | done | TIGER and Gazetteer ready; HPMS Indiana and I-80 FEMA coverage blockers exposed |
-| 03 - No-credential blocker repair | planned | Resolve or disposition Indiana HPMS and define I-80 FEMA coverage |
+| 03 - No-credential blocker repair | done | Indiana HPMS parser repaired; FEMA legacy endpoint blocked and excluded |
 | 04 - Credential and adapter sources | planned | ACS key support plus RUCC, AFDC, NBI, and FARS adapter decisions |
 | 05 - Clean-clone report regeneration | planned | One command, source manifest, reviewed-output comparison, and CI proof |
 | 06 - Closeout | planned | Source posture, remaining holds, and next trigger |

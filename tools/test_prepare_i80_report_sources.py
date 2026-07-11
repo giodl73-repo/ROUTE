@@ -98,7 +98,7 @@ class SourceReadinessTests(unittest.TestCase):
             ready, count, detail = sources.fema_i80_evidence(path)
             self.assertFalse(ready)
             self.assertEqual(count, 0)
-            self.assertIn("I80 tiles=0", detail)
+            self.assertIn("I80 tiles=0/49", detail)
 
 
 if __name__ == "__main__":

@@ -50,5 +50,7 @@ coverage and endpoint-health evidence.
 
 ## Decision
 
-The orchestration command is accepted. The no-credential readiness gate remains
-failed for HPMS and FEMA, as intended.
+This historical run accepted the orchestration command while HPMS and FEMA
+remained failed. It is superseded by
+`docs/reviews/i80-no-credential-blocker-repair-001.md`: HPMS now passes, FEMA is
+formally excluded, and the current no-credential gate passes.

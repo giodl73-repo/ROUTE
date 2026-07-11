@@ -59,7 +59,7 @@ No raw data files are committed to this repo. Data is accessed from authoritativ
 |---|---|---|
 | NOAA National Centers for Environmental Information | Climate normals, extreme weather event data | https://www.ncei.noaa.gov |
 | FHWA Climate Change and Extreme Weather Vulnerability Assessment | Corridor-level climate risk by hazard type | FHWA Office of Planning |
-| FEMA National Flood Hazard Layer | SFHA (Special Flood Hazard Area) boundaries | https://msc.fema.gov |
+| FEMA National Flood Hazard Layer | SFHA (Special Flood Hazard Area) boundaries | Service: https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer. ROUTE's legacy tile query is not an I-80 coverage adapter and did not sustain corridor-scale requests; FEMA is excluded from reviewed I-80 regeneration pending replacement. |
 | USFS Wildfire Hazard Potential | Wildfire risk classification by area | https://www.firelab.org |
 
 ## Proposed corridors
