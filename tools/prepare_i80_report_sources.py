@@ -109,11 +109,16 @@ def run_route(binary: Path, args: list[str]) -> Attempt:
         part.strip() for part in [result.stdout, result.stderr] if part.strip()
     )
     if output:
-        print(output)
+        print(console_safe(output))
     return Attempt(
         status="succeeded" if result.returncode == 0 else "failed",
         detail=output[-1000:] if output else f"exit code {result.returncode}",
     )
+
+
+def console_safe(value: str) -> str:
+    encoding = sys.stdout.encoding or "utf-8"
+    return value.encode(encoding, errors="replace").decode(encoding)
 
 
 def extract_gazetteer() -> Attempt:
@@ -292,6 +297,9 @@ def readiness_rows(
             artifact_ready, count, evidence = hpms_i80_evidence(artifact)
         elif source_id == "SRC-I80-FEMA":
             artifact_ready, count, evidence = fema_i80_evidence(artifact)
+        if attempt.status in {"failed", "blocked"}:
+            artifact_ready = False
+            evidence = f"{evidence}; current attempt {attempt.status}"
 
         if contract_row["acquisition_status"] in EXCLUDED_STATUSES:
             readiness = "excluded"

@@ -82,6 +82,32 @@ class SourceReadinessTests(unittest.TestCase):
         ]
         self.assertEqual(sources.gate(rows, {"SRC-I80-EXCLUDED"}), [])
 
+    def test_failed_current_attempt_blocks_stale_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            original_root = sources.ROOT
+            try:
+                sources.ROOT = Path(directory)
+                artifact = sources.ROOT / "data" / "cache" / "source.csv"
+                artifact.parent.mkdir(parents=True)
+                artifact.write_text("id\n1\n", encoding="utf-8")
+                contract = [
+                    {
+                        "source_id": "SRC-I80-TEST",
+                        "artifact": "data/cache/source.csv",
+                        "current_source_year": "2022",
+                        "acquisition_status": "automated",
+                        "blocking_gap": "fetch failed",
+                        "next_action": "retry",
+                    }
+                ]
+                row = sources.readiness_rows(
+                    contract, {"SRC-I80-TEST": sources.Attempt("failed", "boom")}
+                )[0]
+                self.assertEqual(row["readiness_status"], "blocked")
+                self.assertIn("current attempt failed", row["evidence_detail"])
+            finally:
+                sources.ROOT = original_root
+
     def test_hpms_i80_gate_requires_all_corridor_states(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "hpms.csv"
@@ -119,6 +145,18 @@ class SourceReadinessTests(unittest.TestCase):
             sources.normalize_rucc(content),
             [{"GEOID": "01001", "RUCC": "2", "POP": "58805", "DENSITY": ""}],
         )
+
+    def test_console_output_replaces_unencodable_characters(self) -> None:
+        original = sources.sys.stdout
+
+        class AsciiStdout:
+            encoding = "ascii"
+
+        try:
+            sources.sys.stdout = AsciiStdout()
+            self.assertEqual(sources.console_safe("saved → file"), "saved ? file")
+        finally:
+            sources.sys.stdout = original
 
 
 if __name__ == "__main__":

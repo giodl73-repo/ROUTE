@@ -54,7 +54,7 @@ Closed wave:
 | Orchestrate no-credential sources | ✅ done | TIGER and Gazetteer ready; HPMS 10/11 I-80 states; FEMA I-80 coverage blocked |
 | Repair no-credential blockers | ✅ done | HPMS passes 11/11 states; FEMA legacy path excluded after bounded corridor attempt failed |
 | Support credential and adapter sources | ✅ done | ACS environment key; RUCC 2023 automated; AFDC/NBI/FARS/FEMA excluded pending reviewed adapters |
-| Prove clean-clone regeneration | ⏳ planned | One command either regenerates reviewed I-80 or emits complete blockers |
+| Prove clean-clone regeneration | ✅ done with credential hold | One command preserves canonical output and emits the two ACS blockers; comparison runs after key-backed gate passes |
 
 Active wave:
 `waves/2026-07-11-i80-clean-clone-source-reproducibility/WAVE.md`.

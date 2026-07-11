@@ -70,6 +70,23 @@ pub fn write_corpus_entry_with_provenance(
         .with_context(|| format!("writing {}", output_path.display()))
 }
 
+pub fn write_corpus_entry_with_provenance_and_annotations(
+    corridor: &Corridor,
+    scores: &DimensionScores,
+    output_path: &Path,
+    provenance: &CorpusProvenance,
+    annotation_path: &Path,
+) -> Result<()> {
+    let annotations = load_annotations_file(annotation_path)?;
+    let content =
+        format_corpus_entry_with_annotations(corridor, scores, provenance, annotations.as_ref());
+    if let Some(parent) = output_path.parent() {
+        std::fs::create_dir_all(parent).context("creating corpus directory")?;
+    }
+    std::fs::write(output_path, content)
+        .with_context(|| format!("writing {}", output_path.display()))
+}
+
 pub fn write_bundle_corpus_entry(
     bundle: &SegmentBundle,
     corridor: &Corridor,
@@ -400,6 +417,10 @@ fn load_annotations(output_path: &Path) -> Result<Option<CorpusAnnotations>> {
     let annotation_path = corpus_dir
         .join("annotations")
         .join(format!("{file_stem}.toml"));
+    load_annotations_file(&annotation_path)
+}
+
+fn load_annotations_file(annotation_path: &Path) -> Result<Option<CorpusAnnotations>> {
     if !annotation_path.exists() {
         return Ok(None);
     }
@@ -696,5 +717,38 @@ sources = ["FHWA, National Highway System, https://example.com/nhs"]
 
         assert!(md.contains("**Unavailable dimensions**"));
         assert!(md.contains("do not interpret that contribution as observed zero need"));
+    }
+
+    #[test]
+    fn explicit_annotation_path_supports_noncanonical_output() {
+        let dir =
+            std::env::temp_dir().join(format!("route-report-explicit-{}", std::process::id()));
+        let output = dir.join("cache").join("i80-regenerated.md");
+        let annotations = dir.join("i80.toml");
+        std::fs::create_dir_all(&dir).expect("create explicit annotation fixture");
+        std::fs::write(
+            &annotations,
+            "status = \"reviewed\"\noverview = \"Canonical annotation.\"\n",
+        )
+        .expect("write explicit annotations");
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+
+        write_corpus_entry_with_provenance_and_annotations(
+            &corridor,
+            &scores,
+            &output,
+            &CorpusProvenance::default(),
+            &annotations,
+        )
+        .expect("write noncanonical output");
+
+        let written = std::fs::read_to_string(&output).expect("read noncanonical output");
+        assert!(written.contains("Canonical annotation."));
+        assert!(written.contains("status: reviewed"));
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

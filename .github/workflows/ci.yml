@@ -43,6 +43,9 @@ jobs:
       - name: Test I-80 source orchestration
         run: npm run test:i80:sources
 
+      - name: Test I-80 report reproduction
+        run: npm run test:i80:reproduction
+
       - name: Generate I-80 source readiness
         run: npm run check:i80:sources
 

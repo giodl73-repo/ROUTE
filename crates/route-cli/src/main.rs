@@ -503,6 +503,9 @@ enum Commands {
     Report {
         /// Interstate designation
         designation: String,
+        /// Write separately; complete reviewed sources are still required unless --allow-partial
+        #[arg(long, value_name = "FILE")]
+        output: Option<PathBuf>,
         /// Explicitly allow a degraded report when source caches are incomplete
         #[arg(long)]
         allow_partial: bool,
@@ -7321,15 +7324,18 @@ fn run_cli() -> Result<()> {
 
         Commands::Report {
             designation,
+            output,
             allow_partial,
         } => {
             let norm = normalise_designation(&designation);
             println!("route report {norm}");
             let manifest = route_data::Manifest::load(&manifest_path)
                 .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            let output_path = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
+            let canonical_output =
+                PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
+            let output_path = output.unwrap_or_else(|| canonical_output.clone());
             ensure_reviewed_report_sources(
-                &output_path,
+                &canonical_output,
                 &manifest.cache_dir,
                 std::path::Path::new("."),
                 allow_partial,
@@ -7440,11 +7446,14 @@ fn run_cli() -> Result<()> {
                 manifest_path: manifest_path.display().to_string(),
                 scoring_config_path: scoring_config_path.display().to_string(),
             };
-            route_report::write_corpus_entry_with_provenance(
+            let annotation_path =
+                PathBuf::from(format!("corpus/annotations/{}.toml", norm.to_lowercase()));
+            route_report::write_corpus_entry_with_provenance_and_annotations(
                 &corridor,
                 &scores,
                 &output_path,
                 &provenance,
+                &annotation_path,
             )?;
 
             println!(
