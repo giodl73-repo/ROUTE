@@ -1,7 +1,28 @@
 use anyhow::{Context, Result};
 use route_network::{Corridor, SegmentBundle};
 use route_score::{BundleScores, DimensionScores};
+use serde::Deserialize;
 use std::path::Path;
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct CorpusAnnotations {
+    #[serde(default)]
+    pub status: Option<String>,
+    #[serde(default)]
+    pub overview: String,
+    #[serde(default)]
+    pub notable_segments: Vec<String>,
+    #[serde(default)]
+    pub interstate_2_0_fit: Vec<String>,
+    #[serde(default)]
+    pub claim_holds: Vec<String>,
+    #[serde(default)]
+    pub held_dimensions: Vec<String>,
+    #[serde(default)]
+    pub open_questions: Vec<String>,
+    #[serde(default)]
+    pub sources: Vec<String>,
+}
 
 #[derive(Debug, Clone)]
 pub struct CorpusProvenance {
@@ -39,7 +60,9 @@ pub fn write_corpus_entry_with_provenance(
     output_path: &Path,
     provenance: &CorpusProvenance,
 ) -> Result<()> {
-    let content = format_corpus_entry(corridor, scores, provenance);
+    let annotations = load_annotations(output_path)?;
+    let content =
+        format_corpus_entry_with_annotations(corridor, scores, provenance, annotations.as_ref());
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent).context("creating corpus directory")?;
     }
@@ -69,7 +92,9 @@ pub fn write_bundle_corpus_entry_with_provenance(
     output_path: &Path,
     provenance: &CorpusProvenance,
 ) -> Result<()> {
-    let content = format_bundle_corpus_entry(bundle, corridor, scores, provenance);
+    let annotations = load_annotations(output_path)?;
+    let content =
+        format_bundle_corpus_entry(bundle, corridor, scores, provenance, annotations.as_ref());
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent).context("creating corpus directory")?;
     }
@@ -82,8 +107,10 @@ fn format_bundle_corpus_entry(
     corridor: &Corridor,
     scores: &BundleScores,
     provenance: &CorpusProvenance,
+    annotations: Option<&CorpusAnnotations>,
 ) -> String {
-    let mut content = format_corpus_entry(corridor, &scores.scores, provenance);
+    let mut content =
+        format_corpus_entry_with_annotations(corridor, &scores.scores, provenance, annotations);
     let insertion = format!(
         "bundle:\n  segment_bundle_id: \"{}\"\n  bundle_role: \"{}\"\n  member_count: {}\n  member_segment_ids: [{}]\n",
         bundle.segment_bundle_id,
@@ -102,14 +129,18 @@ fn format_bundle_corpus_entry(
     content
 }
 
-fn format_corpus_entry(
+fn format_corpus_entry_with_annotations(
     corridor: &Corridor,
     scores: &DimensionScores,
     provenance: &CorpusProvenance,
+    annotations: Option<&CorpusAnnotations>,
 ) -> String {
     let today = chrono_today();
     let estimated_flag = if scores.any_estimated() { "†" } else { "" };
     let attrs = &corridor.attributes;
+    let document_status = annotations
+        .and_then(|value| value.status.as_deref())
+        .unwrap_or("draft");
 
     let mut md = String::new();
 
@@ -121,7 +152,7 @@ fn format_corpus_entry(
     ));
     md.push_str(&format!("slug: {}\n", slug(&corridor.designation)));
     md.push_str("type: existing-corridor\n");
-    md.push_str("status: draft\n");
+    md.push_str(&format!("status: {document_status}\n"));
     md.push_str(&format!("rubric_version: {}\n", scores.rubric_version));
     md.push_str(&format!("generated_by: \"{}\"\n", provenance.command));
     md.push_str(&format!(
@@ -159,6 +190,11 @@ fn format_corpus_entry(
     md.push_str("  - \"FAF5 v5.6 BTS/FHWA 2022\"\n");
     md.push_str("  - \"Census ACS 2022\"\n");
     md.push_str("  - \"BEA CAINC4 2022\"\n");
+    if let Some(annotations) = annotations {
+        for source in &annotations.sources {
+            md.push_str(&format!("  - \"{}\"\n", yaml_escape(source)));
+        }
+    }
     md.push_str("corridor:\n");
     md.push_str(&format!(
         "  termini: [\"{}\", \"{}\"]\n",
@@ -203,9 +239,16 @@ fn format_corpus_entry(
         route_score::confidence_label(scores.score_weighted_confidence())
     ));
 
-    // Overview — placeholder for human annotation
     md.push_str("## Overview\n\n");
-    md.push_str("*[Human annotation — describe corridor function and primary economic role.]*\n\n");
+    match annotations.map(|value| value.overview.trim()) {
+        Some(overview) if !overview.is_empty() => {
+            md.push_str(overview);
+            md.push_str("\n\n");
+        }
+        _ => md.push_str(
+            "*[Human annotation — describe corridor function and primary economic role.]*\n\n",
+        ),
+    }
 
     // Key facts
     md.push_str("## Key Facts\n\n");
@@ -215,14 +258,14 @@ fn format_corpus_entry(
         corridor.total_miles
     ));
     md.push_str(&format!(
-        "| Mean AADT | {} | HPMS 2023 |\n",
+        "| Mean AADT across matched segments | {} | HPMS 2023; unweighted segment mean |\n",
         attrs
             .mean_aadt
             .map(|v| format!("{v:.0}"))
             .unwrap_or("N/A".into())
     ));
     md.push_str(&format!(
-        "| Mean truck % | {} | HPMS 2023 |\n",
+        "| Mean truck % across matched segments | {} | HPMS 2023; unweighted segment mean |\n",
         attrs
             .mean_pct_truck
             .map(|v| format!("{:.0}%", v * 100.0))
@@ -270,7 +313,13 @@ fn format_corpus_entry(
     ];
 
     for (band, sd) in all.iter() {
-        let est = if sd.estimated { "†" } else { "" };
+        let held = annotations.is_some_and(|value| {
+            value
+                .held_dimensions
+                .iter()
+                .any(|code| code.eq_ignore_ascii_case(sd.dim.code()))
+        });
+        let est = if sd.estimated || held { "†" } else { "" };
         md.push_str(&format!(
             "| {} | {} | {} | {:.1}{} | {} | {:.2} | {} |\n",
             band,
@@ -298,12 +347,88 @@ fn format_corpus_entry(
         md.push_str("† Estimated value — see score justification for details.\n\n");
     }
 
-    md.push_str("## Notable Segments\n\n*[Human annotation.]*\n\n");
-    md.push_str("## Interstate 2.0 Fit\n\n*[Human annotation.]*\n\n");
-    md.push_str("## Open Questions\n\n*[Human annotation.]*\n\n");
-    md.push_str("## Sources\n\nSee `data/sources.md` for full citations.\n");
+    render_annotation_list(
+        &mut md,
+        "Notable Segments",
+        annotations.map(|value| value.notable_segments.as_slice()),
+    );
+    render_annotation_list(
+        &mut md,
+        "Interstate 2.0 Fit",
+        annotations.map(|value| value.interstate_2_0_fit.as_slice()),
+    );
+    render_annotation_list(
+        &mut md,
+        "Flagship Claim Holds",
+        annotations.map(|value| value.claim_holds.as_slice()),
+    );
+    render_annotation_list(
+        &mut md,
+        "Open Questions",
+        annotations.map(|value| value.open_questions.as_slice()),
+    );
+
+    md.push_str("## Sources\n\n");
+    match annotations.map(|value| value.sources.as_slice()) {
+        Some(sources) if !sources.is_empty() => {
+            for source in sources {
+                md.push_str(&format!("- {source}\n"));
+            }
+        }
+        _ => md.push_str("See `data/sources.md` for full citations.\n"),
+    }
 
     md
+}
+
+fn load_annotations(output_path: &Path) -> Result<Option<CorpusAnnotations>> {
+    let Some(corpus_dir) = output_path.parent().and_then(Path::parent) else {
+        return Ok(None);
+    };
+    let Some(file_stem) = output_path.file_stem().and_then(|value| value.to_str()) else {
+        return Ok(None);
+    };
+    let annotation_path = corpus_dir
+        .join("annotations")
+        .join(format!("{file_stem}.toml"));
+    if !annotation_path.exists() {
+        return Ok(None);
+    }
+
+    let content = std::fs::read_to_string(&annotation_path)
+        .with_context(|| format!("reading {}", annotation_path.display()))?;
+    let annotations: CorpusAnnotations = toml::from_str(&content)
+        .with_context(|| format!("parsing {}", annotation_path.display()))?;
+    if let Some(status) = annotations.status.as_deref() {
+        if !matches!(
+            status,
+            "draft" | "reviewed" | "validated" | "deprecated" | "superseded"
+        ) {
+            anyhow::bail!(
+                "invalid corpus annotation status '{}' in {}",
+                status,
+                annotation_path.display()
+            );
+        }
+    }
+    Ok(Some(annotations))
+}
+
+fn render_annotation_list(md: &mut String, heading: &str, items: Option<&[String]>) {
+    md.push_str(&format!("## {heading}\n\n"));
+    match items {
+        Some(items) if !items.is_empty() => {
+            for item in items {
+                md.push_str(&format!("- {item}\n"));
+            }
+            md.push('\n');
+        }
+        _ => md.push_str("*[Human annotation.]*\n\n"),
+    }
+}
+
+fn yaml_escape(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 fn slug(designation: &str) -> String {
@@ -369,7 +494,12 @@ mod tests {
             &corridor.attributes,
             &route_score::ScoringConfig::default_config(),
         );
-        let md = format_corpus_entry(&corridor, &scores, &CorpusProvenance::default());
+        let md = format_corpus_entry_with_annotations(
+            &corridor,
+            &scores,
+            &CorpusProvenance::default(),
+            None,
+        );
 
         for code in [
             "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
@@ -399,7 +529,12 @@ mod tests {
             &corridor.attributes,
             &route_score::ScoringConfig::default_config(),
         );
-        let md = format_corpus_entry(&corridor, &scores, &CorpusProvenance::default());
+        let md = format_corpus_entry_with_annotations(
+            &corridor,
+            &scores,
+            &CorpusProvenance::default(),
+            None,
+        );
 
         assert!(md.contains("created: 2030-01-02"));
         assert!(md.contains("updated: 2030-01-02"));
@@ -435,8 +570,13 @@ mod tests {
             &route_score::ScoringConfig::default_config(),
         );
 
-        let md =
-            format_bundle_corpus_entry(&bundle, &corridor, &scores, &CorpusProvenance::default());
+        let md = format_bundle_corpus_entry(
+            &bundle,
+            &corridor,
+            &scores,
+            &CorpusProvenance::default(),
+            None,
+        );
 
         assert!(md.contains("bundle:\n"));
         assert!(md.contains("segment_bundle_id: \"US.HWYBUNDLE.I80\""));
@@ -477,7 +617,7 @@ mod tests {
             scoring_config_path: "config/scoring.toml".to_string(),
         };
 
-        let md = format_corpus_entry(&corridor, &scores, &provenance);
+        let md = format_corpus_entry_with_annotations(&corridor, &scores, &provenance, None);
 
         assert!(md.contains("generated_by: \"route report I80\""));
         assert!(md.contains("data_manifest_version: \"1\""));
@@ -487,5 +627,47 @@ mod tests {
         assert!(md.contains("score_confidence_label: "));
         assert!(md.contains("## Generation"));
         assert!(md.contains("| Command | `route report I80` |"));
+    }
+
+    #[test]
+    fn write_corpus_entry_loads_checked_annotations() {
+        let dir =
+            std::env::temp_dir().join(format!("route-report-annotations-{}", std::process::id()));
+        let output_path = dir.join("corpus").join("existing").join("i80.md");
+        let annotation_dir = dir.join("corpus").join("annotations");
+        std::fs::create_dir_all(&annotation_dir).expect("create annotation directory");
+        std::fs::write(
+            annotation_dir.join("i80.toml"),
+            r#"
+overview = "Reviewed corridor overview."
+status = "reviewed"
+notable_segments = ["Donner remains evidence-limited."]
+interstate_2_0_fit = ["Compare treatments after gap diagnosis."]
+claim_holds = ["No guaranteed SLA claim."]
+held_dimensions = ["A4"]
+open_questions = ["What is the matched HPMS coverage?"]
+sources = ["FHWA, National Highway System, https://example.com/nhs"]
+"#,
+        )
+        .expect("write annotations");
+
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        write_corpus_entry(&corridor, &scores, &output_path).expect("write annotated corpus entry");
+
+        let written = std::fs::read_to_string(&output_path).expect("read corpus entry");
+        assert!(written.contains("Reviewed corridor overview."));
+        assert!(written.contains("status: reviewed"));
+        assert!(written.contains("Donner remains evidence-limited."));
+        assert!(written.contains("## Flagship Claim Holds"));
+        assert!(written.contains("No guaranteed SLA claim."));
+        assert!(written.contains("| A4 | International Trade Corridor | 4.0† |"));
+        assert!(written.contains("FHWA, National Highway System"));
+        assert!(!written.contains("*[Human annotation"));
+
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

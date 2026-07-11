@@ -33,7 +33,7 @@ externally reviewed investment recommendation.
 | Freeze expansion outside the flagship | ✅ active | `GOAL.md`; no new geography, doctrine family, or placeholder-only ledger |
 | Record the I-80 anchor baseline | ✅ done | `docs/anchors/i80-flagship-baseline.md` |
 | Audit I-80 source and generator boundaries | ✅ done | `research/i80-flagship-source-audit.md` |
-| Complete the I-80 corpus narrative and measurement repairs | ⏳ planned | Remove annotation placeholders and reconcile every material number |
+| Complete the I-80 corpus narrative and measurement repairs | ✅ done | Reviewed record, annotation sidecar, held dimensions, and formatter regressions; full cache-backed regeneration deferred to software hardening |
 | Produce an I-80-specific gap diagnosis | ⏳ planned | Separate measured failures, source gaps, model limits, and geometry artifacts |
 | Select one bounded treatment from evidence | ⏳ planned | No treatment is preselected in the baseline pulse |
 | Run Parliament and editorial review | ⏳ planned | Seven voices plus citation, numeracy, and scope gates |

@@ -12,5 +12,6 @@ route-score   = { path = "../route-score" }
 serde         = { workspace = true }
 serde_json    = { workspace = true }
 csv           = { workspace = true }
+toml          = { workspace = true }
 thiserror     = { workspace = true }
 anyhow        = { workspace = true }

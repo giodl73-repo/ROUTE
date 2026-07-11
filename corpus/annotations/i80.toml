@@ -1,0 +1,54 @@
+status = "reviewed"
+
+overview = """
+I-80 is a transcontinental Interstate from the San Francisco Bay Area to
+Teaneck, New Jersey, crossing eleven states and linking western ports and
+metropolitan regions with the central plains, the Chicago freight complex, and
+the New York region. As an Interstate it is part of the National Highway System,
+the Strategic Highway Network, and the National Highway Freight Network. Those
+federal classifications establish national mobility, defense, and freight
+importance; they do not by themselves prove that every segment needs the same
+upgrade or that any proposed treatment has positive ROI.
+"""
+
+notable_segments = [
+  "The Bay Area and Sacramento approaches, the Chicago/Joliet region, and the New Jersey terminus are high-complexity urban interfaces that should be reviewed separately from the corridor-wide unweighted HPMS segment mean.",
+  "Donner Pass is the flagship winter-resilience evidence target. ROUTE has an executable closure scenario, but observed closure frequency, truck-suitable alternate capacity, and recovery performance remain held.",
+  "The Wyoming and central-plains segments make long-distance continuity and weather exposure visible, while the current record still needs state and segment distributions before it can support a uniform corridor traffic claim.",
+  "The I-35/I-80 Des Moines junction has a repeatable Iowa 511 evidence path, but the current observation window remains snapshot-limited and cannot support annual failure or recovery claims.",
+]
+
+interstate_2_0_fit = [
+  "Treat I-80 as a portfolio of segment-specific problems rather than one uniform construction program.",
+  "Compare reliability, winter resilience, interchange redundancy, intermodal access, and asset-condition treatments only after the corridor-specific gap artifact identifies where each mechanism is binding.",
+  "Require observed reliability or closure evidence before promoting timed-freight SLA claims.",
+  "Keep route labels, map visibility, and federal network membership separate from investment readiness.",
+]
+
+claim_holds = [
+  "A4=9.0 remains a heuristic designation score; I-80 has no direct international border terminus and no route-level border-flow calculation is attached.",
+  "B4=8.5 remains heuristic until STRAHNET and installation proximity are represented by source-level rows rather than a single designation note.",
+  "C4=9.0 supports an agricultural-production-access hypothesis, not a proven long-haul export-mode share.",
+  "The 11,344 AADT and 24% truck values are unweighted means across matched HPMS segments, not uniform corridor-wide conditions.",
+  "A3 is a BPR-derived reliability proxy rather than observed NPMRDS PTI.",
+  "No official-plan, construction-readiness, guaranteed-SLA, positive-ROI, or agency-endorsement claim is made.",
+]
+
+held_dimensions = ["A4", "B4", "C4"]
+
+open_questions = [
+  "What share of I-80 mileage and how many route segments are represented in the HPMS, NBI, Census, FEMA, FARS, intermodal, and charger joins?",
+  "How do AADT, truck share, reliability, safety, bridge condition, and hazard exposure vary by state and operating segment?",
+  "Should A4 be removed or replaced with an NHFN/PHFS freight-role dimension for corridors without direct border service?",
+  "Can B4 and C4 be rebuilt from source-custody rows with installation distance, commodity flow, terminal, year, and calculation fields?",
+  "Which measured I-80 failure is decisive enough to compare treatments in the next pulse?",
+]
+
+sources = [
+  "FHWA, National Highway System, https://www.fhwa.dot.gov/planning/national_highway_system/",
+  "FHWA Office of Freight Management and Operations, National Highway Freight Network, https://ops.fhwa.dot.gov/freight/infrastructure/nfn/",
+  "FHWA, Tables of Frequently Requested NBI Information, https://www.fhwa.dot.gov/bridge/britab.cfm",
+  "USDA Agricultural Marketing Service, Transportation of U.S. Grains: A Modal Share Analysis, 1978-2020, https://www.ams.usda.gov/sites/default/files/media/TransportationofUSGrainsModalShare.pdf",
+  "ROUTE, I-80 Flagship Source Audit, research/i80-flagship-source-audit.md",
+  "ROUTE, Evidence Posture Report, docs/reports/route-evidence-posture.md",
+]

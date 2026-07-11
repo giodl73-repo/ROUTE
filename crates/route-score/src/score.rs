@@ -606,22 +606,27 @@ fn score_c2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
 
 fn score_c3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension {
     match attrs.gdp_per_capita_relative {
-        Some(rel) => ScoredDimension {
-            dim: Dimension::C3EconomicOpportunity,
-            score: cfg.c3.score(rel as f64),
-            justification: format!(
-                "Buffer GDP per capita {:.0}% of national average (${:.1}B total buffer GDP). \
+        Some(rel) => {
+            let total_gdp = attrs
+                .corridor_gdp_b
+                .map(|gdp| format!("${gdp:.1}B total buffer GDP"))
+                .unwrap_or_else(|| "total buffer GDP unavailable".to_string());
+            ScoredDimension {
+                dim: Dimension::C3EconomicOpportunity,
+                score: cfg.c3.score(rel as f64),
+                justification: format!(
+                    "Buffer GDP per capita {:.0}% of national average ({total_gdp}). \
                  Lower relative GDP = higher economic opportunity value of connectivity.",
-                rel * 100.0,
-                attrs.corridor_gdp_b.unwrap_or(0.0)
-            ),
-            sources: vec![
-                "BEA CAINC4 County GDP 2022".into(),
-                "Census ACS 2022 population".into(),
-            ],
-            confidence: 0.80,
-            estimated: false,
-        },
+                    rel * 100.0
+                ),
+                sources: vec![
+                    "BEA CAINC4 County GDP 2022".into(),
+                    "Census ACS 2022 population".into(),
+                ],
+                confidence: 0.80,
+                estimated: false,
+            }
+        }
         None => estimated(
             Dimension::C3EconomicOpportunity,
             "BEA GDP data join incomplete.",
@@ -944,6 +949,24 @@ mod tests {
         assert!(!scores.d1.estimated);
         assert!(!scores.d2.estimated);
         assert!(!scores.d3.estimated);
+    }
+
+    #[test]
+    fn c3_does_not_report_zero_gdp_when_total_is_unavailable() {
+        let scores = score_corridor(
+            &CorridorAttributes {
+                gdp_per_capita_relative: Some(0.75),
+                corridor_gdp_b: None,
+                ..Default::default()
+            },
+            &cfg(),
+        );
+
+        assert!(scores
+            .c3
+            .justification
+            .contains("total buffer GDP unavailable"));
+        assert!(!scores.c3.justification.contains("$0.0B"));
     }
 
     #[test]
