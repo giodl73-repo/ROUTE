@@ -1,7 +1,8 @@
 ---
 wave: i80-clean-clone-source-reproducibility
 date_open: 2026-07-11
-status: active
+date_close: 2026-07-11
+status: done
 source: user-selected-next-trigger
 ---
 
@@ -27,7 +28,11 @@ corpus.
 | 03 - No-credential blocker repair | done | Indiana HPMS parser repaired; FEMA legacy endpoint blocked and excluded |
 | 04 - Credential and adapter sources | done | ACS key support and RUCC automation; AFDC/NBI/FARS/FEMA excluded; FAF5/BEA citations removed |
 | 05 - Clean-clone report regeneration | done | Non-destructive command and comparison path; current run blocked only by ACS key |
-| 06 - Closeout | planned | Source posture, remaining holds, and next trigger |
+| 06 - Closeout | done | 4 ready, 6 excluded, 2 credential-blocked; safe reproduction contract |
+
+## Close Evidence
+
+See `CLOSE.md`. No wave is opened automatically after this closeout.
 
 ## Done Criteria
 

@@ -46,7 +46,7 @@ Closed wave:
 
 ---
 
-## Current Execution Focus — I-80 Clean-Clone Source Reproducibility
+## Completed Execution Focus — I-80 Clean-Clone Source Reproducibility
 
 | Task | Status | Evidence / Next Step |
 |---|---|---|
@@ -56,8 +56,8 @@ Closed wave:
 | Support credential and adapter sources | ✅ done | ACS environment key; RUCC 2023 automated; AFDC/NBI/FARS/FEMA excluded pending reviewed adapters |
 | Prove clean-clone regeneration | ✅ done with credential hold | One command preserves canonical output and emits the two ACS blockers; comparison runs after key-backed gate passes |
 
-Active wave:
-`waves/2026-07-11-i80-clean-clone-source-reproducibility/WAVE.md`.
+Closed wave:
+`waves/2026-07-11-i80-clean-clone-source-reproducibility/WAVE.md`. No wave is active.
 
 ---
 

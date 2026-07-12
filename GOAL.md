@@ -1,45 +1,28 @@
-# Current Goal: I-80 Clean-Clone Source Reproducibility
+# Current Goal: I-80 Clean-Clone Source Reproducibility - Complete
 
-## Mission
+## Outcome
 
-Make every source required by the reviewed I-80 report reproducible from a
-clean clone or explicitly machine-blocked with an authoritative source, access
-mode, and next action.
+Every source required or previously claimed by the reviewed I-80 report now has
+an explicit source contract.
 
-## Why This Matters
+- 4 sources are ready.
+- 6 sources are explicitly excluded pending reviewed adapters.
+- 2 ACS sources are blocked on environment-provided credentials.
 
-ROUTE now protects the reviewed corpus from incomplete overwrites, but a clean
-checkout cannot yet acquire every source used by the current I-80 measurements.
-The next step is to replace hidden local cache assumptions with explicit
-acquisition, credential, parse, coverage, and blocker contracts.
+`npm run reproduce:i80:report` acquires available inputs, emits complete
+blockers, preserves the canonical report, and generates a separate comparison
+only after the full source gate passes.
 
-## Active Wave
+## Credential Hold
 
-`waves/2026-07-11-i80-clean-clone-source-reproducibility/WAVE.md`
+Set `CENSUS_API_KEY` in the environment and rerun only when the user chooses to
+provide the credential. ROUTE never stores or logs the key.
 
-## Success Criteria
+## Closed Wave
 
-- Every guarded I-80 report input has a source-contract row.
-- One command acquires available inputs and emits blockers for the rest.
-- Credentials are environment-provided and never logged or committed.
-- Source year, parser status, coverage, and claim readiness remain distinct.
-- The reviewed corpus is regenerated only when the complete source contract
-  passes.
+`waves/2026-07-11-i80-clean-clone-source-reproducibility/CLOSE.md`
 
-## Opening Rule
+## Next Trigger
 
-Download success is not evidence acceptance. No missing source may be replaced
-with a success-shaped default.
-
-## Immediate Work
-
-1. Inventory required sources and access modes.
-2. Orchestrate no-credential sources with parse and coverage gates.
-3. Add credential support and adapter decisions.
-4. Prove clean-clone regeneration or emit a complete blocker record.
-
-## Prior Wave
-
-I-80 Flagship Stabilization closed on 2026-07-11 with a Parliament
-`hold and narrow` decision and no capital treatment approval. See
-`waves/2026-07-11-i80-flagship-stabilization/CLOSE.md`.
+Do not open another wave automatically. Wait for a credential-backed
+reproduction request or a new bounded objective.

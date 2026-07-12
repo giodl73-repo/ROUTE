@@ -68,6 +68,8 @@ upgrade or that any proposed treatment has positive ROI.
 - C4=9.0 supports an agricultural-production-access hypothesis, not a proven long-haul export-mode share.
 - The 11,344 AADT and 24% truck values are unweighted means across matched HPMS segments, not uniform corridor-wide conditions.
 - A3 is a BPR-derived reliability proxy rather than observed NPMRDS PTI.
+- A5 FARS, D1 FEMA, D2 DCFC, and D3 NBI values are historical and excluded
+  from clean regeneration until reviewed adapters exist.
 - No official-plan, construction-readiness, guaranteed-SLA, positive-ROI, or agency-endorsement claim is made.
 
 ## Current Gap Diagnosis
