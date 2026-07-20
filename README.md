@@ -21,7 +21,11 @@ fact sheet, claim guide, evidence posture, and source pointers.
 Important boundary: ROUTE is a research and tooling project. The current
 materials do not claim official-plan status, construction readiness, guaranteed
 service, numeric ROI, eligibility, compliance, agency endorsement, or public
-readiness.
+deployment readiness.
+
+Repository visibility makes the research inspectable; it does not promote held
+maps, scenarios, estimates, or recommendations beyond their recorded evidence
+labels.
 
 ![ROUTE Beck schematic](maps/beck-schematic.png)
 
