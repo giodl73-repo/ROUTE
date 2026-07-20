@@ -425,7 +425,7 @@ fn load_annotations_file(annotation_path: &Path) -> Result<Option<CorpusAnnotati
         return Ok(None);
     }
 
-    let content = std::fs::read_to_string(&annotation_path)
+    let content = std::fs::read_to_string(annotation_path)
         .with_context(|| format!("reading {}", annotation_path.display()))?;
     let annotations: CorpusAnnotations = toml::from_str(&content)
         .with_context(|| format!("parsing {}", annotation_path.display()))?;
