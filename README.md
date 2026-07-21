@@ -3,6 +3,8 @@
 The United States already chose highways. ROUTE asks what the next version of
 the national road system should promise.
 
+**Series:** [Applied Systems](https://github.com/giodl73-repo/giodl73-repo/blob/main/series/applied-systems.md)
+
 Today, most interstates are treated like one flat category: an interstate is an
 interstate is an interstate. That blurs priorities. A coast-to-coast freight
 spine, a regional connector, a rural feeder, a port approach, and a warehouse
