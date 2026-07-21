@@ -108,6 +108,27 @@ publication-grade claims remain scoped by
 render-valid without proving every SLA, transit, upgrade, terminal-access, or
 asset-condition claim.
 
+## International portability
+
+ROUTE also tests whether the same source-to-corpus-to-tier-to-map workflow can
+travel across jurisdictions without pretending that US assumptions are
+universal.
+
+| Canada | Rhine–Alpine | India |
+|--------|---------------|-------|
+| [![Canada candidate hierarchy](maps/international/canada-candidate-hierarchy-v2.png)](maps/international/canada-candidate-hierarchy-v2.png) | [![Rhine-Alpine candidate hierarchy](maps/international/eu-rhine-alpine-candidate-hierarchy-v2.png)](maps/international/eu-rhine-alpine-candidate-hierarchy-v2.png) | [![India candidate hierarchy](maps/international/india-candidate-hierarchy-v2.png)](maps/international/india-candidate-hierarchy-v2.png) |
+
+Additional review fixtures:
+[Japan Pacific Belt](maps/international/japan-candidate-hierarchy-v2.png) and
+[China logistics spine](maps/international/china-candidate-hierarchy-v2.png).
+
+These are candidate hierarchy and workflow-portability fixtures, not official
+networks. Route designation, local source acceptance, guaranteed SLA,
+construction, ROI, approval, endorsement, and external validation remain held.
+See the
+[international portability report](docs/reports/international-network-inference-portability-report.md)
+for the evidence boundary and reusable proof-kernel sequence.
+
 ## T1: where the country buys reliability
 
 T1 is the national promise spine. It is where 48h/36h freight commitments drive
