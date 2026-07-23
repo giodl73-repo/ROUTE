@@ -1,0 +1,52 @@
+name: Source or claim correction
+description: Correct a source interpretation, evidence label, public claim, map caption, or review boundary.
+title: "Source/claim correction: "
+labels: ["evidence", "claim-boundary"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when a ROUTE statement may overclaim, cite the wrong source, use the wrong evidence label, or need a safer public boundary.
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Link or path to the README, doc, paper, map, data row, or review record.
+      placeholder: "docs/media/media-claim-guide.md"
+    validations:
+      required: true
+  - type: textarea
+    id: current-claim
+    attributes:
+      label: Current claim or issue
+      description: Quote or summarize the claim, source interpretation, caption, or evidence label that needs correction.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Proposed correction
+      description: Provide safer wording, a source path, a different evidence label, or a reason to hold the claim.
+    validations:
+      required: true
+  - type: dropdown
+    id: claim-kind
+    attributes:
+      label: Claim kind
+      options:
+        - Official-plan / endorsement boundary
+        - Guaranteed-SLA boundary
+        - Construction / engineering readiness
+        - ROI / cost / numeric claim
+        - Funding / compliance / procurement
+        - Source custody
+        - Map caption or publication scope
+        - Research-paper interpretation
+        - Other public-language safety
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Add source links, citations, repo paths, or reviewer rationale. If evidence is missing, say source-needed.

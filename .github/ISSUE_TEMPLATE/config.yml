@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ROUTE open adoption guide
+    url: https://github.com/giodl73-repo/ROUTE/blob/master/docs/adoption/README.md
+    about: Start here before proposing a local adaptation or public reuse.
+  - name: ROUTE media resources
+    url: https://github.com/giodl73-repo/ROUTE/blob/master/docs/media/README.md
+    about: Use this for reporting, quoting, map captions, and public claim boundaries.
+  - name: ROUTE reviewer guide
+    url: https://github.com/giodl73-repo/ROUTE/blob/master/docs/adoption/reviewer-guide.md
+    about: Use this before submitting a bounded external review note.

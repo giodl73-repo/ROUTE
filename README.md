@@ -14,6 +14,18 @@ ROUTE gives roads the kind of service hierarchy rail and metro systems already
 use: express spine, regional connector, feeder, terminal access. It turns
 Interstate 2.0 from a road list into a promise network.
 
+## Use ROUTE
+
+ROUTE is public and open to use as a reference model, research corpus,
+diagnostic pattern, map package, review discipline, or local adaptation
+starting point.
+
+If you want to apply it to a state, corridor, port, region, terminal district,
+or freight network, start with
+[`docs/adoption/README.md`](docs/adoption/README.md). It lays out the safe
+reuse path, first local adaptation steps, contribution targets, and claim
+boundaries.
+
 ## Media resources
 
 If you are reporting on ROUTE or Interstate 2.0, start with
@@ -194,7 +206,22 @@ feed the public narrative and the optimizer:
 | E — Interstate 2.0 Design | Synthesize managed lanes, hubs, hardening, investment sequencing, and standards. |
 | F — Transit + Relay | Show how hubs support shared facilities, passenger access, relay markets, and future operations. |
 
-See `research/publications/` for papers and panel-review records.
+Start with the paper and review records directly:
+
+| Thread | Paper / plan | Review record |
+|---|---|---|
+| Network tiering | [`A.1 Interstate Arterials`](research/publications/A.1+arterials-tiering/main.tex) | [`panel synthesis`](research/publications/A.1+arterials-tiering/reviews/SYNTHESIS.md) |
+| Missing links | [`B.1 Missing Links`](research/publications/B.1+missing-links/main.tex) | [`round 2 synthesis`](research/publications/B.1+missing-links/reviews/SYNTHESIS-R2.md) |
+| 48-hour freight | [`C.3 The 48-Hour Corridor`](research/publications/C.3+48hour-economy/main.tex) | [`panel synthesis`](research/publications/C.3+48hour-economy/SYNTHESIS.md) |
+| Relay economics | [`C.4 Empty Miles and Load Matching`](research/publications/C.4+empty-backhaul-relay/main.tex) | [`panel synthesis`](research/publications/C.4+empty-backhaul-relay/SYNTHESIS.md) |
+| Interstate 2.0 doctrine | [`E.2 Design Framework`](research/publications/E.2+i2-framework/main.tex) | [`panel synthesis`](research/publications/E.2+i2-framework/reviews/SYNTHESIS.md) |
+| Relay marketplace | [`F.3 Relay Marketplace`](research/publications/F.3+relay-marketplace/main.tex) | [`panel synthesis`](research/publications/F.3+relay-marketplace/reviews/SYNTHESIS.md) |
+
+The full publication corpus lives in
+[`research/publications/`](research/publications/), with reviewer panels,
+source bibliographies, revision plans, post-write checks, and recheck records.
+For product-facing conclusions across the research program, use
+[`docs/research-conclusions.md`](docs/research-conclusions.md).
 
 ## The technical system
 
@@ -243,6 +270,7 @@ one produces a useful hold, downgrade, or next evidence step.
 | Need | Start here |
 |---|---|
 | Big-picture operating model | [`docs/SYSTEM_PLAN.md`](docs/SYSTEM_PLAN.md) |
+| Public reuse / adoption path | [`docs/adoption/README.md`](docs/adoption/README.md) |
 | Current active goal | [`GOAL.md`](GOAL.md) |
 | Claim ownership / spec map | [`docs/SPEC_INDEX.md`](docs/SPEC_INDEX.md) |
 | Service promise doctrine | [`docs/sla-promise-portfolio.md`](docs/sla-promise-portfolio.md) |
@@ -250,6 +278,7 @@ one produces a useful hold, downgrade, or next evidence step.
 | Recursive optimizer | [`docs/tier-optimizer-design.md`](docs/tier-optimizer-design.md) |
 | T2 regional doctrine | [`docs/t2-regional-treatment.md`](docs/t2-regional-treatment.md) |
 | T3/T4 access doctrine | [`docs/t3-t4-access-optimization.md`](docs/t3-t4-access-optimization.md) |
+| Paper and review corpus | [`research/publications/`](research/publications/) |
 | Research conclusions index | [`docs/research-conclusions.md`](docs/research-conclusions.md) |
 | Interstate 2.0 doctrine report | [`docs/reports/interstate-2-0-doctrine-report.md`](docs/reports/interstate-2-0-doctrine-report.md) |
 | Relay hubs report | [`docs/reports/relay-hubs-aviation-model-report.md`](docs/reports/relay-hubs-aviation-model-report.md) |

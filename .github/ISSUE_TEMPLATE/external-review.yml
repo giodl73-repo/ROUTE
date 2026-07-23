@@ -1,0 +1,65 @@
+name: External review note
+description: Submit a bounded reviewer note on a ROUTE claim, paper, map, fixture, or local adaptation.
+title: "Review: "
+labels: ["review", "claim-boundary"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for skeptical review. A useful review names the lens, location, concern, evidence or rationale, and suggested disposition. See docs/adoption/reviewer-guide.md.
+  - type: dropdown
+    id: lens
+    attributes:
+      label: Review lens
+      options:
+        - Freight / logistics
+        - State DOT / MPO / port planning
+        - Traffic engineering / operations
+        - Resilience / climate
+        - Community / environmental
+        - Finance / funding / procurement
+        - Labor / safety
+        - Numeracy
+        - Public language
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Path or link to the reviewed artifact.
+      placeholder: "README.md or research/publications/E.2+i2-framework/main.tex"
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: Concern
+      description: What claim, source interpretation, map caption, method, role label, or boundary needs attention?
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Evidence or rationale
+      description: Explain why, with source links or domain reasoning where available.
+    validations:
+      required: true
+  - type: dropdown
+    id: disposition
+    attributes:
+      label: Suggested disposition
+      options:
+        - pass
+        - revise
+        - hold
+        - source-needed
+        - confidence-limited
+    validations:
+      required: true
+  - type: textarea
+    id: next-step
+    attributes:
+      label: Safer wording or next source ask
+      description: Suggest wording, source evidence, review lens, or claim downgrade.
