@@ -11,9 +11,9 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route passenger-matrix — what I2.0 unlocks for people ({trips} trips)\n");
-            let data_dir = std::path::PathBuf::from("data");
-            print_passenger_matrix::print_passenger_matrix(trips, seed, &data_dir);
+    println!("route passenger-matrix — what I2.0 unlocks for people ({trips} trips)\n");
+    let data_dir = std::path::PathBuf::from("data");
+    support::print::print_passenger_matrix::print_passenger_matrix(trips, seed, &data_dir);
         
     Ok(())
 }

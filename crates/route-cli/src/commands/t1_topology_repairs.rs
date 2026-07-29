@@ -12,27 +12,27 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route t1-topology-repairs");
-            let review_rows = load_t1_design_review(&design_review)
-                .with_context(|| format!("loading {}", design_review.display()))?;
-            let rows = t1_topology_repair_rows(&review_rows);
-            write_t1_topology_repairs(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_topology_repair_summary(&output, &rows);
+    println!("route t1-topology-repairs");
+    let review_rows = load_t1_design_review(&design_review)
+        .with_context(|| format!("loading {}", design_review.display()))?;
+    let rows = t1_topology_repair_rows(&review_rows);
+    write_t1_topology_repairs(&output, &rows)
+        .with_context(|| format!("writing {}", output.display()))?;
+    print_t1_topology_repair_summary(&output, &rows);
 
-            if gate {
-                let failures = t1_topology_repair_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 topology repair gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 topology repair gate failed");
-                }
-                println!();
-                println!("T1 topology repair gate: PASS");
+    if gate {
+        let failures = t1_topology_repair_gate_failures(&rows);
+        if !failures.is_empty() {
+            println!();
+            println!("T1 topology repair gate: FAIL");
+            for failure in failures.iter().take(20) {
+                println!("  - {failure}");
             }
+            anyhow::bail!("T1 topology repair gate failed");
+        }
+        println!();
+        println!("T1 topology repair gate: PASS");
+    }
         
     Ok(())
 }

@@ -11,9 +11,9 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            let rows = load_t1_failure_source_plan(&ledger)
-                .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
-            print_t1_failure_sources(&rows, lookup_needed);
+    let rows = load_t1_failure_source_plan(&ledger)
+        .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
+    print_t1_failure_sources(&rows, lookup_needed);
         
     Ok(())
 }

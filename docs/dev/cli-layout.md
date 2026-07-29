@@ -36,6 +36,8 @@ over hundreds of sibling files at `src/` root named after a single function.
 ## What "done enough" looks like
 
 - Almost every `Commands::*` arm is a one-liner to `commands::`.
+- Large helpers live under `support/<domain>/` (not crate-root one-fn files).
+- Snapshot: `main` ~24k, `run_cli` thin, ~240 command modules.
 - New logic lands in `commands/` or `support/<domain>/`, never as a new 200-line arm.
 - Tests stay out of the hot path (`tests_inline.rs` / eventual `tests/`).
 - Empty `design/` stays honest until something is promoted on purpose.

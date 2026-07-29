@@ -10,10 +10,10 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            fetch_iowa511_events(&output)
-                .with_context(|| format!("fetching Iowa 511 events to {}", output.display()))?;
-            println!("route t1-fetch-iowa511");
-            println!("  wrote {}", output.display());
+    fetch_iowa511_events(&output)
+        .with_context(|| format!("fetching Iowa 511 events to {}", output.display()))?;
+    println!("route t1-fetch-iowa511");
+    println!("  wrote {}", output.display());
         
     Ok(())
 }

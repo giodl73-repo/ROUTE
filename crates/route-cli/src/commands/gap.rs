@@ -12,11 +12,11 @@ pub(crate) fn run(
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
     let r#type = type_;
 
-            println!("route gap --type {:?}", r#type);
-            let out_slug = slug.unwrap_or_else(|| gap_type_slug(&r#type).to_string());
-            let out = PathBuf::from(format!("gaps/{out_slug}.md"));
-            write_gap_report(&r#type, &out)?;
-            println!("  wrote gap report → {}", out.display());
+    println!("route gap --type {:?}", r#type);
+    let out_slug = slug.unwrap_or_else(|| gap_type_slug(&r#type).to_string());
+    let out = PathBuf::from(format!("gaps/{out_slug}.md"));
+    write_gap_report(&r#type, &out)?;
+    println!("  wrote gap report → {}", out.display());
         
     Ok(())
 }

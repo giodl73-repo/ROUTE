@@ -12,27 +12,27 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route t2-overlay-p3-local-zone-overlay-review");
-            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
-                .with_context(|| format!("loading {}", action_docket.display()))?;
-            let rows = t2_overlay_p3_local_zone_overlay_review_rows(&action_rows);
-            write_t2_overlay_p3_local_zone_overlay_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_overlay_p3_local_zone_overlay_review_summary(&output, &rows);
+    println!("route t2-overlay-p3-local-zone-overlay-review");
+    let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
+        .with_context(|| format!("loading {}", action_docket.display()))?;
+    let rows = t2_overlay_p3_local_zone_overlay_review_rows(&action_rows);
+    write_t2_overlay_p3_local_zone_overlay_review(&output, &rows)
+        .with_context(|| format!("writing {}", output.display()))?;
+    print_t2_overlay_p3_local_zone_overlay_review_summary(&output, &rows);
 
-            if gate {
-                let failures =
-                    t2_overlay_p3_local_zone_overlay_review_gate_failures(&rows, &action_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 overlay P3 local zone overlay review gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 overlay P3 local zone overlay review gate failed");
-                }
-                println!("T2 overlay P3 local zone overlay review gate: PASS");
+    if gate {
+        let failures =
+            t2_overlay_p3_local_zone_overlay_review_gate_failures(&rows, &action_rows);
+        if !failures.is_empty() {
+            println!();
+            println!("T2 overlay P3 local zone overlay review gate: FAIL");
+            for failure in failures {
+                println!("  - {failure}");
             }
+            anyhow::bail!("t2 overlay P3 local zone overlay review gate failed");
+        }
+        println!("T2 overlay P3 local zone overlay review gate: PASS");
+    }
         
     Ok(())
 }

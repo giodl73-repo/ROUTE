@@ -9,8 +9,8 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            let data_dir = std::path::PathBuf::from("data");
-            print_ev_analysis(&data_dir);
+    let data_dir = std::path::PathBuf::from("data");
+    print_ev_analysis(&data_dir);
         
     Ok(())
 }

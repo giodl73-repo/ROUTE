@@ -12,49 +12,49 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route tier-pavement-funding-evidence-accepted-metadata-source-access");
-            let acquisition_rows =
-                load_tier_pavement_funding_evidence_accepted_metadata_artifact_acquisition(
-                    &accepted_metadata_artifact_acquisition,
-                )
-                .with_context(|| {
-                    format!(
-                        "loading {}",
-                        accepted_metadata_artifact_acquisition.display()
-                    )
-                })?;
-            let rows = tier_pavement_funding_evidence_accepted_metadata_source_access_rows(
+    println!("route tier-pavement-funding-evidence-accepted-metadata-source-access");
+    let acquisition_rows =
+        load_tier_pavement_funding_evidence_accepted_metadata_artifact_acquisition(
+            &accepted_metadata_artifact_acquisition,
+        )
+        .with_context(|| {
+            format!(
+                "loading {}",
+                accepted_metadata_artifact_acquisition.display()
+            )
+        })?;
+    let rows = tier_pavement_funding_evidence_accepted_metadata_source_access_rows(
+        &acquisition_rows,
+    );
+    write_tier_pavement_funding_evidence_accepted_metadata_source_access(&output, &rows)
+        .with_context(|| format!("writing {}", output.display()))?;
+    print_tier_pavement_funding_evidence_accepted_metadata_source_access_summary(
+        &output, &rows,
+    );
+
+    if gate {
+        let failures =
+            tier_pavement_funding_evidence_accepted_metadata_source_access_gate_failures(
+                &rows,
                 &acquisition_rows,
             );
-            write_tier_pavement_funding_evidence_accepted_metadata_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_accepted_metadata_source_access_summary(
-                &output, &rows,
+        if !failures.is_empty() {
+            println!();
+            println!(
+                "Tier pavement funding evidence accepted metadata source access gate: FAIL"
             );
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_accepted_metadata_source_access_gate_failures(
-                        &rows,
-                        &acquisition_rows,
-                    );
-                if !failures.is_empty() {
-                    println!();
-                    println!(
-                        "Tier pavement funding evidence accepted metadata source access gate: FAIL"
-                    );
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!(
-                        "tier pavement funding evidence accepted metadata source access gate failed"
-                    );
-                }
-                println!();
-                println!(
-                    "Tier pavement funding evidence accepted metadata source access gate: PASS"
-                );
+            for failure in failures.iter().take(20) {
+                println!("  - {failure}");
             }
+            anyhow::bail!(
+                "tier pavement funding evidence accepted metadata source access gate failed"
+            );
+        }
+        println!();
+        println!(
+            "Tier pavement funding evidence accepted metadata source access gate: PASS"
+        );
+    }
         
     Ok(())
 }

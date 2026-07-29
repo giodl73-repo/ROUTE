@@ -12,51 +12,51 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!(
-                "route tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment"
-            );
-            let capture_rows =
-                load_tier_pavement_funding_evidence_accepted_metadata_source_capture(
-                    &accepted_metadata_source_capture,
-                )
-                .with_context(|| {
-                    format!("loading {}", accepted_metadata_source_capture.display())
-                })?;
-            let rows =
-                tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_rows(
-                    &capture_rows,
-                );
-            write_tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment(
-                &output, &rows,
-            )
-            .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_summary(
-                &output, &rows,
-            );
+    println!(
+        "route tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment"
+    );
+    let capture_rows =
+        load_tier_pavement_funding_evidence_accepted_metadata_source_capture(
+            &accepted_metadata_source_capture,
+        )
+        .with_context(|| {
+            format!("loading {}", accepted_metadata_source_capture.display())
+        })?;
+    let rows =
+        tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_rows(
+            &capture_rows,
+        );
+    write_tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment(
+        &output, &rows,
+    )
+    .with_context(|| format!("writing {}", output.display()))?;
+    print_tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_summary(
+        &output, &rows,
+    );
 
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_gate_failures(
-                        &rows,
-                        &capture_rows,
-                    );
-                if !failures.is_empty() {
-                    println!();
-                    println!(
-                        "Tier pavement funding evidence accepted metadata source capture artifact attachment gate: FAIL"
-                    );
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!(
-                        "tier pavement funding evidence accepted metadata source capture artifact attachment gate failed"
-                    );
-                }
-                println!();
-                println!(
-                    "Tier pavement funding evidence accepted metadata source capture artifact attachment gate: PASS"
-                );
+    if gate {
+        let failures =
+            tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_gate_failures(
+                &rows,
+                &capture_rows,
+            );
+        if !failures.is_empty() {
+            println!();
+            println!(
+                "Tier pavement funding evidence accepted metadata source capture artifact attachment gate: FAIL"
+            );
+            for failure in failures.iter().take(20) {
+                println!("  - {failure}");
             }
+            anyhow::bail!(
+                "tier pavement funding evidence accepted metadata source capture artifact attachment gate failed"
+            );
+        }
+        println!();
+        println!(
+            "Tier pavement funding evidence accepted metadata source capture artifact attachment gate: PASS"
+        );
+    }
         
     Ok(())
 }

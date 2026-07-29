@@ -10,11 +10,11 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            fetch_mdot_midrive_events(&output).with_context(|| {
-                format!("fetching MDOT Mi Drive events to {}", output.display())
-            })?;
-            println!("route t1-fetch-mdot-midrive");
-            println!("  wrote {}", output.display());
+    fetch_mdot_midrive_events(&output).with_context(|| {
+        format!("fetching MDOT Mi Drive events to {}", output.display())
+    })?;
+    println!("route t1-fetch-mdot-midrive");
+    println!("  wrote {}", output.display());
         
     Ok(())
 }

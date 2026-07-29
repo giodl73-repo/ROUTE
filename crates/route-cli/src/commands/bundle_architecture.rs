@@ -11,25 +11,25 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route bundle-architecture");
-            let rows = bundle_architecture_rows();
-            write_bundle_architecture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_bundle_architecture_summary(&output, &rows);
+    println!("route bundle-architecture");
+    let rows = bundle_architecture_rows();
+    write_bundle_architecture(&output, &rows)
+        .with_context(|| format!("writing {}", output.display()))?;
+    print_bundle_architecture_summary(&output, &rows);
 
-            if gate {
-                let failures = bundle_architecture_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("bundle architecture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("bundle architecture gate failed");
-                }
-                println!();
-                println!("bundle architecture gate: PASS");
+    if gate {
+        let failures = bundle_architecture_gate_failures(&rows);
+        if !failures.is_empty() {
+            println!();
+            println!("bundle architecture gate: FAIL");
+            for failure in failures.iter().take(20) {
+                println!("  - {failure}");
             }
+            anyhow::bail!("bundle architecture gate failed");
+        }
+        println!();
+        println!("bundle architecture gate: PASS");
+    }
         
     Ok(())
 }

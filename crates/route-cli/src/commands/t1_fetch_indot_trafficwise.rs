@@ -15,11 +15,11 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            fetch_indot_trafficwise_events(&output, north, south, east, west, zoom).with_context(
-                || format!("fetching INDOT TrafficWise events to {}", output.display()),
-            )?;
-            println!("route t1-fetch-indot-trafficwise");
-            println!("  wrote {}", output.display());
+    fetch_indot_trafficwise_events(&output, north, south, east, west, zoom).with_context(
+        || format!("fetching INDOT TrafficWise events to {}", output.display()),
+    )?;
+    println!("route t1-fetch-indot-trafficwise");
+    println!("  wrote {}", output.display());
         
     Ok(())
 }

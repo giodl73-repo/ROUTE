@@ -11,9 +11,9 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route sla-matrix — national SLA commitment windows ({trips} trips)\n");
-            let data_dir = std::path::PathBuf::from("data");
-            print_sla_matrix(trips, seed, &data_dir);
+    println!("route sla-matrix — national SLA commitment windows ({trips} trips)\n");
+    let data_dir = std::path::PathBuf::from("data");
+    print_sla_matrix(trips, seed, &data_dir);
         
     Ok(())
 }

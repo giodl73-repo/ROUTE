@@ -12,30 +12,30 @@ pub(crate) fn run(
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-            println!("route tier-pavement-funding-evidence-metadata-capture");
-            let intake_rows = load_tier_pavement_funding_evidence_intake(&evidence_intake)
-                .with_context(|| format!("loading {}", evidence_intake.display()))?;
-            let rows = tier_pavement_funding_evidence_metadata_capture_rows(&intake_rows);
-            write_tier_pavement_funding_evidence_metadata_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_metadata_capture_summary(&output, &rows);
+    println!("route tier-pavement-funding-evidence-metadata-capture");
+    let intake_rows = load_tier_pavement_funding_evidence_intake(&evidence_intake)
+        .with_context(|| format!("loading {}", evidence_intake.display()))?;
+    let rows = tier_pavement_funding_evidence_metadata_capture_rows(&intake_rows);
+    write_tier_pavement_funding_evidence_metadata_capture(&output, &rows)
+        .with_context(|| format!("writing {}", output.display()))?;
+    print_tier_pavement_funding_evidence_metadata_capture_summary(&output, &rows);
 
-            if gate {
-                let failures = tier_pavement_funding_evidence_metadata_capture_gate_failures(
-                    &rows,
-                    &intake_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence metadata-capture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence metadata-capture gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence metadata-capture gate: PASS");
+    if gate {
+        let failures = tier_pavement_funding_evidence_metadata_capture_gate_failures(
+            &rows,
+            &intake_rows,
+        );
+        if !failures.is_empty() {
+            println!();
+            println!("Tier pavement funding evidence metadata-capture gate: FAIL");
+            for failure in failures.iter().take(20) {
+                println!("  - {failure}");
             }
+            anyhow::bail!("tier pavement funding evidence metadata-capture gate failed");
+        }
+        println!();
+        println!("Tier pavement funding evidence metadata-capture gate: PASS");
+    }
         
     Ok(())
 }
