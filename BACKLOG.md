@@ -11,7 +11,7 @@ Last updated: 2026-07-29
 |----|------|--------|-------|
 | B1 | Public proof on-ramp (`npm run proof:public`) | done 2026-07-29 | `docs/how-to/public-proof.md` |
 | B2 | README lab posture (design empty, holds, milepost meaning) | done 2026-07-29 | Top-of-README table |
-| B3 | First `route-cli` split (`cli.rs` clap surface) | done 2026-07-29 | `run_cli` still large — continue modularizing |
+| B3 | First `route-cli` split (`cli.rs` clap surface) | done 2026-07-29 | Superseded by S1/S2 structural split |
 | B4 | External I-80 / state packet that needs no insider dialect | open | Packet exists; keep hold posture; improve first-run UX |
 | B5 | ACS credential path documented only as optional | open | Never block public proof on Census key |
 
@@ -19,8 +19,8 @@ Last updated: 2026-07-29
 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
-| S1 | Split `run_cli` match arms into command modules | open | After `cli.rs` |
-| S2 | Shrink/replace god-helpers still in `main.rs` | open | e.g. large loaders/optimizer rows |
+| S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | Core arms → `commands/{build,score,score_all,map,report,coverage,sim,calibrate}.rs` + `ctx` |
+| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | `optimizer_ledger.rs`, `optimizer_run.rs`; tests → `tests_inline.rs`; main ~55k (was ~74k) |
 | S3 | Freeze micro-wave creation; use this backlog | open | Process gravity control |
 
 ## Later (product yield)
