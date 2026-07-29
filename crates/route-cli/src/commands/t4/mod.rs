@@ -1,0 +1,22 @@
+//! `t4` command handlers.
+pub(crate) mod t4_terminal_access_columns;
+pub(crate) mod t4_terminal_access_evidence_review;
+pub(crate) mod t4_terminal_access_proof_acquisition;
+pub(crate) mod t4_terminal_access_proof_artifact_acquisition_targets;
+pub(crate) mod t4_terminal_access_proof_artifact_attachment;
+pub(crate) mod t4_terminal_access_proof_artifact_source_access;
+pub(crate) mod t4_terminal_access_proof_artifacts;
+pub(crate) mod t4_terminal_access_proof_attachment_review;
+pub(crate) mod t4_terminal_access_proof_intake;
+pub(crate) mod t4_terminal_access_proof_review;
+pub(crate) mod t4_terminal_access_proof_source_capture;
+pub(crate) mod t4_terminal_access_source_access;
+pub(crate) mod t4_terminal_columbus_proof_attempts;
+pub(crate) mod t4_terminal_columbus_proof_intake;
+pub(crate) mod t4_terminal_columbus_source_access;
+pub(crate) mod t4_terminal_contact_district_proof_import;
+pub(crate) mod t4_terminal_contact_evidence;
+pub(crate) mod t4_terminal_contact_proof_artifact_contract;
+pub(crate) mod t4_terminal_contact_proof_source_registry;
+pub(crate) mod t4_terminal_contact_source_plan;
+pub(crate) mod t4_terminal_scenario_readiness;

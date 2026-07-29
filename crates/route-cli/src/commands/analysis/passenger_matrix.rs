@@ -1,0 +1,20 @@
+//! `PassengerMatrix` command handler extracted from main.
+use crate::*;
+use crate::commands::ctx;
+#[allow(unused_variables)]
+pub(crate) fn run(
+    ctx: &ctx::Ctx<'_>,
+    trips: usize,
+    seed: u64
+) -> Result<()> {
+    let manifest_path = ctx.manifest_path.to_path_buf();
+    let scoring_cfg = ctx.scoring_cfg;
+    let scoring_config_path = ctx.scoring_config_path.to_path_buf();
+
+    println!("route passenger-matrix — what I2.0 unlocks for people ({trips} trips)\n");
+    let data_dir = std::path::PathBuf::from("data");
+    support::print::print_passenger_matrix::print_passenger_matrix(trips, seed, &data_dir);
+        
+    Ok(())
+}
+

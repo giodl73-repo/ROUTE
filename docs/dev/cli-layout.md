@@ -7,17 +7,40 @@
 | Layer | Owns | Does not own |
 |-------|------|----------------|
 | `cli.rs` | clap surface (`Cli`, `Commands`, value enums) | business logic |
-| `main.rs` | parse, `Ctx`, `match` → `commands::*::run` | multi-hundred-line arms |
-| `commands/*` | one command = `run(ctx, fields) -> Result<()>` | clap derive |
-| `support/*` | row builders, gates, printers, shared pure-ish helpers | CLI parsing |
-| `game.rs` / `optimizer_*.rs` | existing focused subsystems | new catch-all dumps |
+| `main.rs` | parse, `Ctx`, `match` → `commands::<domain>::<cmd>::run` | multi-hundred-line arms |
+| `commands/<domain>/*` | one command = `run(ctx, fields) -> Result<()>` | clap derive |
+| `support/<domain>/*` | row builders, gates, printers, shared helpers | CLI parsing |
+| `game.rs` | game subsystem | new catch-all dumps |
 
-## Command contract (exemplar: `commands/build.rs`)
+## Command domains
+
+```
+commands/
+  ctx.rs                 # shared Ctx (manifest + scoring paths)
+  core/                  # build, score, score_all, report, coverage, sim, …
+  data/                  # fetch*, fletch*, source_fetch_policy
+  map/                   # map, map_atlas, publication*
+  stop/                  # stop_* SLA / coverage
+  standards/             # standards*
+  analysis/              # matrices, EV, hubs, OD, interventions
+  governance/            # forum, blueprint*, release, moments
+  optimizer/             # optimizer_*
+  network/               # national segments, cross-tier columns/regions
+  pavement/              # tier_pavement_*
+  t1/ t2/ t3/ t4/        # tier-specific command surfaces
+  game/                  # game_cmd → game.rs
+```
+
+Support mirrors the same idea: `support/{tier,pavement,print,gates,optimizer,network,misc}/`.
+
+## Command contract (exemplar: `commands/core/build.rs`)
 
 ```rust
+use crate::*;
+use crate::commands::ctx;
+
 pub(crate) fn run(ctx: &ctx::Ctx<'_>, /* clap fields */) -> Result<()> {
     // use ctx.manifest_path / scoring_cfg
-    // do the work
     Ok(())
 }
 ```
@@ -25,25 +48,25 @@ pub(crate) fn run(ctx: &ctx::Ctx<'_>, /* clap fields */) -> Result<()> {
 `run_cli` only:
 
 ```rust
-Commands::Build { .. } => commands::build::run(&cmd_ctx, ..)?,
+Commands::Build { .. } => commands::core::build::run(&cmd_ctx, ..)?,
 ```
-
-## Support grouping
-
-Prefer **domain folders** under `support/` (`tier/`, `pavement/`, `print/`, `gates/`)
-over hundreds of sibling files at `src/` root named after a single function.
 
 ## What "done enough" looks like
 
-- Almost every `Commands::*` arm is a one-liner to `commands::`.
-- Large helpers live under `support/<domain>/` (not crate-root one-fn files).
-- Snapshot: `main` ~24k, `run_cli` thin, ~240 command modules.
-- New logic lands in `commands/` or `support/<domain>/`, never as a new 200-line arm.
+- Almost every `Commands::*` arm is a one-liner to `commands::<domain>::…`.
+- New logic lands in `commands/<domain>/` or `support/<domain>/`, never as a new fat arm.
+- Domain folders stay the navigation unit — avoid re-flattening to crate root.
 - Tests stay out of the hot path (`tests_inline.rs` / eventual `tests/`).
 - Empty `design/` stays honest until something is promoted on purpose.
 
+## Snapshot (2026-07-29)
+
+- ~240 command modules in 15 domains
+- `support/*` holds peeled helpers by domain
+- `main` ~24k; `run_cli` thin dispatch
+
 ## Non-goals
 
-- Perfect domain taxonomy on day one
+- Perfect taxonomy forever (rename when a better seam appears)
 - Moving clap into each command module
 - Big-bang rewrite of remaining helper soup in one PR
