@@ -5,6 +5,28 @@ the national road system should promise.
 
 **Series:** [Applied Systems](https://github.com/giodl73-repo/giodl73-repo/blob/main/series/applied-systems.md)
 
+## Current lab posture
+
+ROUTE is a **research and tooling lab**, not a finished national plan.
+
+| Surface | Status now |
+|---|---|
+| Scoring, corpus, maps, gap diagnostics, review process | Built and gated |
+| Flagship I-80 review packet | **Hold and narrow** — no approved design or capital recommendation |
+| `design/` corridor specifications | **Empty** — pipeline has not promoted a design yield yet |
+| Full T1–T4 map publication claims | **Blocked / scoped** — see [`docs/map-publication-scope.md`](docs/map-publication-scope.md) |
+| Milepost “complete” language | Means **internal command/artifact gates**, not external validation |
+
+**15-minute public proof** (no Census key required for the packet check):
+
+```powershell
+npm run proof:public
+```
+
+That rebuilds/checks the I-80 flagship review packet, runs the no-credential
+source gate, and prints where claims remain held. Details:
+[`docs/how-to/public-proof.md`](docs/how-to/public-proof.md).
+
 ## Infrastructure 2.0 family
 
 ROUTE is one domain implementation of a shared evidence-first method:
@@ -118,6 +140,7 @@ system, research program, review process, and game/simulation path.
 | **Research tracks** | Covers scoring, gap analysis, freight reliability, max-flow, 48-hour economy, resilience, Interstate 2.0 design, transit, and relay. |
 | **Role review** | Uses parliament, stakeholder, editorial, and panel-review lanes so tradeoffs are visible instead of hidden behind one score. |
 | **Interstate Tycoon** | Turns the same network into a playable strategy layer where infrastructure choices have visible consequences. |
+| **Design yield** | Not yet — `design/` has no promoted corridor specs; holds and gaps are the honest output until review clears a design. |
 
 ## Maps are part of the product
 

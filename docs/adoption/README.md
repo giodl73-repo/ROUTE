@@ -40,7 +40,7 @@ external validation.
 
 | If You Are | Start With | What You Can Do |
 |---|---|---|
-| Public reader | [`README.md`](../../README.md) | Understand the service-promise model and evidence boundary. |
+| Public reader | [`README.md`](../../README.md) · [`public proof`](../how-to/public-proof.md) | Understand the model; run `npm run proof:public`. |
 | Reporter or editor | [`docs/media/README.md`](../media/README.md) | Quote ROUTE safely and avoid official-plan drift. |
 | Researcher | [`research/publications/`](../../research/publications/) | Inspect papers, bibliographies, panel reviews, revisions, and rechecks. |
 | State, MPO, port, or authority planner | [`docs/briefs/route-first-client-wedge-package.md`](../briefs/route-first-client-wedge-package.md) | Reuse the diagnostic shape for a local network question. |
