@@ -1116,7 +1116,7 @@
         }];
 
         let rows =
-            t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows, &[]);
+            t2_blocker_closure_rows::t2_blocker_closure_rows(&graph_rows, &parent_rows, &relief_rows, &terminal_rows, &[]);
         let failures = t2_blocker_closure_gate_failures(&rows);
         let classes = rows
             .iter()
@@ -1163,7 +1163,7 @@
             validation_status: "pass".to_string(),
         }];
 
-        let rows = t2_blocker_closure_rows(&graph_rows, &[], &[], &[], &bundles);
+        let rows = t2_blocker_closure_rows::t2_blocker_closure_rows(&graph_rows, &[], &[], &[], &bundles);
         let failures = t2_blocker_closure_gate_failures(&rows);
 
         assert_eq!(rows[0].segment_bundle_id, "US.HWYBUNDLE.I30");
@@ -1232,7 +1232,7 @@
             },
         ];
 
-        let rows = t2_route_family_split_rows(&closure_rows, &[], &[], &exceptions);
+        let rows = t2_route_family_split_rows::t2_route_family_split_rows(&closure_rows, &[], &[], &exceptions);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows[0].family_action, "split-numbered-family");
@@ -1251,7 +1251,7 @@
 
     #[test]
     fn t2_route_family_splits_emit_clear_row_when_no_split_blockers_remain() {
-        let rows = t2_route_family_split_rows(&[], &[], &[], &[]);
+        let rows = t2_route_family_split_rows::t2_route_family_split_rows(&[], &[], &[], &[]);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -1278,7 +1278,7 @@
             validation_status: "review".to_string(),
         }];
 
-        let rows = t2_route_family_split_rows(&[], &service_rows, &[], &[]);
+        let rows = t2_route_family_split_rows::t2_route_family_split_rows(&[], &service_rows, &[], &[]);
         let failures = t2_route_family_split_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -4655,7 +4655,7 @@
         }];
         let atlas = vec![test_t3_map_atlas_row("t3-southeast")];
 
-        let rows = t3_zone_render_board_rows(&diagnostics, &route_rows, &gap_rows, &atlas);
+        let rows = t3_zone_render_board_rows::t3_zone_render_board_rows(&diagnostics, &route_rows, &gap_rows, &atlas);
         let failures = t3_zone_render_board_gate_failures(&rows, &atlas);
         let layers = rows
             .iter()
@@ -4855,7 +4855,7 @@
             validation_status: "pass".to_string(),
         }];
 
-        let rows = national_segment_registry_rows(&board_rows, &placement_rows, &[], &[]);
+        let rows = national_segment_registry_rows::national_segment_registry_rows(&board_rows, &placement_rows, &[], &[]);
         let failures = national_segment_registry_gate_failures(&rows);
 
         assert_eq!(rows.len(), 1);
@@ -5014,7 +5014,7 @@
             },
         ];
 
-        let registry_rows = national_segment_registry_rows(&[], &[], &segment_rows, &pavement_rows);
+        let registry_rows = national_segment_registry_rows::national_segment_registry_rows(&[], &[], &segment_rows, &pavement_rows);
         let registry_failures = national_segment_registry_gate_failures(&registry_rows);
         let bundle_rows = national_segment_bundle_rows(&registry_rows);
 
@@ -5687,7 +5687,7 @@
         }];
         let t2_rows = Vec::new();
         let repair_rows = Vec::new();
-        let rows = tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows, &[]);
+        let rows = tier_segment_candidate_rows::tier_segment_candidate_rows(&graph, &t1_rows, &t2_rows, &repair_rows, &[]);
         let failures =
             tier_segment_candidate_gate_failures(&rows, &t1_rows, &t2_rows, &repair_rows);
 
@@ -5753,7 +5753,7 @@
             validation_status: "review".to_string(),
         }];
 
-        let rows = tier_segment_candidate_rows(&graph, &[], &[], &repair_rows, &[]);
+        let rows = tier_segment_candidate_rows::tier_segment_candidate_rows(&graph, &[], &[], &repair_rows, &[]);
         let failures = tier_segment_candidate_gate_failures(&rows, &[], &[], &repair_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
@@ -5882,7 +5882,7 @@
             validation_status: "review".to_string(),
         }];
 
-        let rows = tier_segment_candidate_rows(&graph, &[], &t2_rows, &[], &route_family_rows);
+        let rows = tier_segment_candidate_rows::tier_segment_candidate_rows(&graph, &[], &t2_rows, &[], &route_family_rows);
         let bundle_ids = rows
             .iter()
             .map(|row| row.segment_bundle_id.as_str())
@@ -7882,7 +7882,7 @@
 
         let rows: Vec<TierPavementDebtBudgetRow> =
             tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &[], &[]);
-        let failures = tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &[], &[]);
+        let failures = tier_pavement_debt_budget_gate_failures::tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &[], &[]);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert_eq!(rows.len(), 2);
@@ -7931,7 +7931,7 @@
 
         let rows = tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &exclusion_rows, &[]);
         let failures =
-            tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &exclusion_rows, &[]);
+            tier_pavement_debt_budget_gate_failures::tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &exclusion_rows, &[]);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert!(rows.is_empty());
@@ -7974,7 +7974,7 @@
 
         let rows = tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &[], &funding_rows);
         let failures =
-            tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &[], &funding_rows);
+            tier_pavement_debt_budget_gate_failures::tier_pavement_debt_budget_gate_failures(&rows, &gap_rows, &[], &funding_rows);
 
         assert!(failures.is_empty(), "{failures:?}");
         assert!(rows.is_empty());
@@ -13060,7 +13060,7 @@ I95,keep,fixture-score-backbone,Fixture route kept by explicit score exception s
         )
         .expect("write exceptions");
 
-        let rows = t1_line_selector_rows(
+        let rows = t1_line_selector_rows::t1_line_selector_rows(
             &tier_path,
             &stops_path,
             &sla_path,

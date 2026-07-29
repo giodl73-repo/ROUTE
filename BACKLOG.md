@@ -19,8 +19,8 @@ Last updated: 2026-07-29
 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
-| S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | Core arms → `commands/{build,score,score_all,map,report,coverage,sim,calibrate}.rs` + `ctx` |
-| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | `optimizer_ledger.rs`, `optimizer_run.rs`; tests → `tests_inline.rs`; main ~55k (was ~74k) |
+| S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | 65 command modules under `commands/*` + `ctx`; thin match arms remain for tail |
+| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | optimizer_* + 8 row/print helpers; tests_inline; main ~51k (was ~74k pre-split) |
 | S3 | Freeze micro-wave creation; use this backlog | open | Process gravity control |
 
 ## Later (product yield)
