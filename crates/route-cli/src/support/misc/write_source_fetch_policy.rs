@@ -1,0 +1,20 @@
+//! Helper `write_source_fetch_policy`.
+#[allow(unused_imports)]
+use crate::*;
+
+pub(crate) fn write_source_fetch_policy(path: &Path, rows: &[SourceFetchPolicyRow]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let mut writer = csv::Writer::from_path(path)?;
+    for row in rows {
+        writer.serialize(row)?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+

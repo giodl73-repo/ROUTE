@@ -7,7 +7,8 @@
 | Layer | Owns | Does not own |
 |-------|------|----------------|
 | `cli.rs` | clap surface (`Cli`, `Commands`, value enums) | business logic |
-| `main.rs` | parse, `Ctx`, `match` → `commands::<domain>::<cmd>::run` | multi-hundred-line arms |
+| `main.rs` | parse, `Ctx`, thin `match` → `commands::<domain>::<cmd>::run` | helpers, types, fat arms |
+| `types/` | shared structs/enums peeled from main | command orchestration |
 | `commands/<domain>/*` | one command = `run(ctx, fields) -> Result<()>` | clap derive |
 | `support/<domain>/*` | row builders, gates, printers, shared helpers | CLI parsing |
 | `game.rs` | game subsystem | new catch-all dumps |
@@ -59,14 +60,16 @@ Commands::Build { .. } => commands::core::build::run(&cmd_ctx, ..)?,
 - Tests stay out of the hot path (`tests_inline.rs` / eventual `tests/`).
 - Empty `design/` stays honest until something is promoted on purpose.
 
-## Snapshot (2026-07-29)
+## Snapshot (2026-07-29, organized)
 
-- ~240 command modules in 15 domains
-- `support/*` holds peeled helpers by domain
-- `main` ~24k; `run_cli` thin dispatch
+- ~240 command modules in **15 domains**
+- `support/{tier,pavement,print,gates,optimizer,network,misc}/` — ~1.2k helper modules
+- `types/` — 243 shared structs/enums
+- `main.rs` ~1.6k: `main` + thin `run_cli` + `tests` include only
+- Crate root: `cli.rs`, `game.rs`, `main.rs`, `tests_inline.rs`, `commands/`, `support/`, `types/`
 
 ## Non-goals
 
 - Perfect taxonomy forever (rename when a better seam appears)
 - Moving clap into each command module
-- Big-bang rewrite of remaining helper soup in one PR
+- Splitting `support/misc` until real seams appear

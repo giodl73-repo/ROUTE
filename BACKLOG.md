@@ -20,7 +20,7 @@ Last updated: 2026-07-29
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
 | S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | ~240 cmds in 15 domains under commands/*; thin dispatch; cli-layout.md |
-| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | support/* ~300 helpers (tier/pavement/print/gates/optimizer/network/misc); main ~24k; cmds dedented |
+| S2 | Shrink/replace god-helpers still in `main.rs` | done 2026-07-29 | main ~1.6k (main+run_cli+tests); types/ 243 items; support/* ~1.2k helpers by domain |
 | S3 | Freeze micro-wave creation; use this backlog | open | Process gravity control |
 
 ## Later (product yield)
