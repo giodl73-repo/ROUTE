@@ -5,6 +5,20 @@ the national road system should promise.
 
 **Series:** [Applied Systems](https://github.com/giodl73-repo/giodl73-repo/blob/main/series/applied-systems.md)
 
+## Show someone (start here)
+
+Hand the repo to a planner/researcher or CLI implementer without a maintainer
+tour:
+
+| Audience | Path | Time |
+|---|---|---|
+| **Planner / researcher** | [SHOWCASE.md](SHOWCASE.md) → [planner brief](docs/show/planner-brief.md) → [public proof](docs/how-to/public-proof.md) | 15–25 min |
+| **CLI implementer** | [SHOWCASE.md](SHOWCASE.md) → [implementer brief](docs/show/implementer-brief.md) → [cli-layout](docs/dev/cli-layout.md) | 15–35 min |
+| **Either, hands-on** | `npm run proof:public` | ~15 min |
+
+Research lab only — not an official plan, not construction-ready, not full map
+publication. I-80 flagship remains **hold and narrow**.
+
 ## Current lab posture
 
 ROUTE is a **research and tooling lab**, not a finished national plan.
