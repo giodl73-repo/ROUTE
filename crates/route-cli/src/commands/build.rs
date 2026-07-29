@@ -1,4 +1,12 @@
-//! `Build` command handler extracted from main.
+//! # `Build` — core pipeline exemplar
+//!
+//! Reference shape for ROUTE CLI command handlers:
+//! - `run(ctx, ...clap fields) -> Result<()>`
+//! - shared paths via `super::ctx::Ctx`
+//! - clap types stay in `cli.rs`; dispatch stays thin in `run_cli`
+//!
+//! See `docs/dev/cli-layout.md`.
+
 use super::super::*;
 
 #[allow(unused_variables)]

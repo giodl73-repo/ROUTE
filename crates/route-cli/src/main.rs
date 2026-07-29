@@ -7,6 +7,8 @@ mod game;
 mod optimizer_ledger;
 mod optimizer_run;
 mod commands;
+mod support;
+pub(crate) use support::*;
 mod t1_line_selector_rows;
 mod national_segment_registry_rows;
 mod t2_route_family_split_rows;
@@ -106,14 +108,7 @@ fn run_cli() -> Result<()> {
     };
 
     match cli.command {
-        Commands::Fetch { force, year: _ } => {
-            println!("route fetch");
-            let manifest = route_data::Manifest::load(&manifest_path)
-                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            println!("  manifest: {} sources", manifest.sources.len());
-            route_data::fetch_all_manifest_sources_with_fletch(&manifest, force)?;
-            println!("fetch complete.");
-        }
+        Commands::Fetch { force, year: _ } => commands::fetch::run(&cmd_ctx, force)?,
 
         Commands::Build {
             all_roads,
@@ -135,13 +130,7 @@ fn run_cli() -> Result<()> {
 
         Commands::ScoreAll { workers } => commands::score_all::run(&cmd_ctx, workers)?,
 
-        Commands::Gap { r#type, slug } => {
-            println!("route gap --type {:?}", r#type);
-            let out_slug = slug.unwrap_or_else(|| gap_type_slug(&r#type).to_string());
-            let out = PathBuf::from(format!("gaps/{out_slug}.md"));
-            write_gap_report(&r#type, &out)?;
-            println!("  wrote gap report → {}", out.display());
-        }
+        Commands::Gap { r#type, slug } => commands::gap::run(&cmd_ctx, r#type, slug)?,
 
         Commands::Map {
             designation,
@@ -153,25 +142,7 @@ fn run_cli() -> Result<()> {
             ledger,
             details,
             gate,
-        } => {
-            let rows = load_map_atlas(&ledger)
-                .with_context(|| format!("loading map atlas {}", ledger.display()))?;
-            print_map_atlas(&rows, details);
-            if gate {
-                let failures = map_atlas_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Map atlas gate: FAIL");
-                    println!("  {} map artifacts failed contract.", failures.len());
-                    for failure in failures.iter().take(12) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("map atlas gate failed");
-                }
-                println!();
-                println!("Map atlas gate: PASS");
-            }
-        }
+        } => commands::map_atlas::run(&cmd_ctx, ledger, details, gate)?,
 
         Commands::MapPublicationReadiness {
             map_atlas,
@@ -188,33 +159,7 @@ fn run_cli() -> Result<()> {
             readiness,
             details,
             gate,
-        } => {
-            println!("route map-publication-inventory");
-            let inventory_rows = load_map_publication_inventory(&inventory)
-                .with_context(|| format!("loading {}", inventory.display()))?;
-            let atlas_rows = load_map_atlas(&map_atlas)
-                .with_context(|| format!("loading map atlas {}", map_atlas.display()))?;
-            let readiness_rows = load_map_publication_readiness(&readiness)
-                .with_context(|| format!("loading {}", readiness.display()))?;
-            print_map_publication_inventory_summary(&inventory, &inventory_rows, details);
-            if gate {
-                let failures = map_publication_inventory_gate_failures(
-                    &inventory_rows,
-                    &atlas_rows,
-                    &readiness_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("map publication inventory gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("map publication inventory gate failed");
-                }
-                println!();
-                println!("map publication inventory gate: PASS");
-            }
-        }
+        } => commands::map_publication_inventory::run(&cmd_ctx, inventory, map_atlas, readiness, details, gate)?,
 
         Commands::BeckT2Diagnostics { output, gate } => commands::beck_t2_diagnostics::run(&cmd_ctx, output, gate)?,
 
@@ -226,31 +171,7 @@ fn run_cli() -> Result<()> {
             output,
             selected_budget,
             gate,
-        } => {
-            println!("route t1-sla-candidate-pairs");
-            let candidate_rows = load_t1_sla_candidate_universe(&candidates)
-                .with_context(|| format!("loading {}", candidates.display()))?;
-            let selected_rows = load_t1_sla_pairs(&selected_pairs)
-                .with_context(|| format!("loading {}", selected_pairs.display()))?;
-            let rows = t1_sla_candidate_pair_rows(&candidate_rows, &selected_rows, selected_budget);
-            write_t1_sla_candidate_pairs(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_sla_candidate_pair_summary(&output, &rows, selected_budget);
-
-            if gate {
-                let failures =
-                    t1_sla_candidate_pair_gate_failures(&rows, &selected_rows, selected_budget);
-                if failures.is_empty() {
-                    println!("T1 SLA candidate pair gate: PASS");
-                } else {
-                    println!("T1 SLA candidate pair gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 SLA candidate pair gate failed");
-                }
-            }
-        }
+        } => commands::t1_sla_candidate_pairs::run(&cmd_ctx, candidates, selected_pairs, output, selected_budget, gate)?,
 
         Commands::T1LineSelector {
             tier_table,
@@ -271,33 +192,7 @@ fn run_cli() -> Result<()> {
             output,
             target_regions,
             gate,
-        } => {
-            println!("route t1-stop-selector");
-            let selector_rows = load_t1_line_selector(&selector)
-                .with_context(|| format!("loading {}", selector.display()))?;
-            let stop_file = std::fs::File::open(&stop_candidates)
-                .with_context(|| format!("opening {}", stop_candidates.display()))?;
-            let stop_rows = parse_stop_candidates(stop_file)
-                .with_context(|| format!("parsing {}", stop_candidates.display()))?;
-            let rows = t1_stop_selector_rows(&selector_rows, &stop_rows, target_regions)?;
-            write_t1_stop_selector(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_stop_selector_summary(&output, &rows);
-
-            if gate {
-                let failures = t1_stop_selector_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 stop selector gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 stop selector gate failed");
-                }
-                println!();
-                println!("T1 stop selector gate: PASS");
-            }
-        }
+        } => commands::t1_stop_selector::run(&cmd_ctx, selector, stop_candidates, output, target_regions, gate)?,
 
         Commands::T1DesignReview {
             tier_table,
@@ -316,107 +211,27 @@ fn run_cli() -> Result<()> {
             design_review,
             output,
             gate,
-        } => {
-            println!("route t1-topology-repairs");
-            let review_rows = load_t1_design_review(&design_review)
-                .with_context(|| format!("loading {}", design_review.display()))?;
-            let rows = t1_topology_repair_rows(&review_rows);
-            write_t1_topology_repairs(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_topology_repair_summary(&output, &rows);
-
-            if gate {
-                let failures = t1_topology_repair_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 topology repair gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 topology repair gate failed");
-                }
-                println!();
-                println!("T1 topology repair gate: PASS");
-            }
-        }
+        } => commands::t1_topology_repairs::run(&cmd_ctx, design_review, output, gate)?,
 
         Commands::T1BeckAlignment {
             stop_selector,
             output,
             gate,
-        } => {
-            println!("route t1-beck-alignment");
-            let stop_rows = load_t1_stop_selector(&stop_selector)
-                .with_context(|| format!("loading {}", stop_selector.display()))?;
-            let rows = t1_beck_alignment_rows(&stop_rows);
-            write_t1_beck_alignment(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_beck_alignment_summary(&output, &rows);
-
-            if gate {
-                let failures = t1_beck_alignment_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 Beck alignment gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 Beck alignment gate failed");
-                }
-                println!();
-                println!("T1 Beck alignment gate: PASS");
-            }
-        }
+        } => commands::t1_beck_alignment::run(&cmd_ctx, stop_selector, output, gate)?,
 
         Commands::T1DesignPolicy {
             review,
             policy,
             details,
             gate,
-        } => {
-            let review_rows = load_t1_design_review(&review)
-                .with_context(|| format!("loading T1 design review {}", review.display()))?;
-            let policy_rows = load_t1_design_policy_actions(&policy)
-                .with_context(|| format!("loading T1 design policy {}", policy.display()))?;
-            print_t1_design_policy(&review_rows, &policy_rows, details);
-            if gate {
-                let failures = t1_design_policy_gate_failures(&review_rows, &policy_rows);
-                if failures.is_empty() {
-                    println!("T1 design policy gate: PASS");
-                } else {
-                    println!("T1 design policy gate: FAIL");
-                    for failure in failures.iter().take(10) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 design policy gate failed");
-                }
-            }
-        }
+        } => commands::t1_design_policy::run(&cmd_ctx, review, policy, details, gate)?,
 
         Commands::T1ScoreExceptions {
             review,
             exceptions,
             details,
             gate,
-        } => {
-            let review_rows = load_t1_design_review(&review)
-                .with_context(|| format!("loading T1 design review {}", review.display()))?;
-            let exception_rows = load_t1_score_exceptions(&exceptions)
-                .with_context(|| format!("loading T1 score exceptions {}", exceptions.display()))?;
-            print_t1_score_exceptions(&review_rows, &exception_rows, details);
-            if gate {
-                let failures = t1_score_exception_gate_failures(&review_rows, &exception_rows);
-                if failures.is_empty() {
-                    println!("T1 score exception gate: PASS");
-                } else {
-                    println!("T1 score exception gate: FAIL");
-                    for failure in failures.iter().take(10) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 score exception gate failed");
-                }
-            }
-        }
+        } => commands::t1_score_exceptions::run(&cmd_ctx, review, exceptions, details, gate)?,
 
         Commands::BeckT2ServiceStandards { output, gate } => commands::beck_t2_service_standards::run(&cmd_ctx, output, gate)?,
 
@@ -436,89 +251,15 @@ fn run_cli() -> Result<()> {
             top,
         } => commands::invest::run(&cmd_ctx, budget, include_upgrades, top)?,
 
-        Commands::FetchAcs => {
-            println!("route fetch-acs — Census ACS 5-year county population");
-            let manifest = route_data::Manifest::load(&manifest_path)
-                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            std::fs::create_dir_all(&manifest.cache_dir)?;
-            let out = manifest.cache_dir.join("acs_county_pop_2022.csv");
-            let api_key = census_api_key()?;
-            route_data::fetch_acs_population(&out, &api_key)?;
-            println!("  saved → {}", out.display());
-            println!("  run `route fetch` to get county gazetteer, then `route coverage` for population-weighted analysis.");
-        }
+        Commands::FetchAcs => commands::fetch_acs::run(&cmd_ctx)?,
 
-        Commands::FetchAcsIncome => {
-            println!("route fetch-acs-income — Census ACS B19013 median household income");
-            let manifest = route_data::Manifest::load(&manifest_path)
-                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            std::fs::create_dir_all(&manifest.cache_dir)?;
-            let out = manifest.cache_dir.join("acs_county_income_2022.csv");
-            let api_key = census_api_key()?;
-            route_data::fetch_acs_income(&out, &api_key)?;
-            println!("  saved → {}", out.display());
-            println!("  national median HHI baseline remains the reviewed 2022 value");
-            println!("  run `route score-all` to apply C3 scores.");
-        }
+        Commands::FetchAcsIncome => commands::fetch_acs_income::run(&cmd_ctx)?,
 
         Commands::FetchFemaD1 => commands::fetch_fema_d1::run(&cmd_ctx)?,
 
-        Commands::FetchFema { output } => {
-            let out = output.unwrap_or_else(|| PathBuf::from("data/cache/fema_sfha_counts.csv"));
-            println!("route fetch-fema → {}", out.display());
-            println!(
-                "  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)"
-            );
-            println!(
-                "  querying {} T1 corridor bounding boxes…",
-                route_data::T1_BBOXES.len()
-            );
+        Commands::FetchFema { output } => commands::fetch_fema::run(&cmd_ctx, output)?,
 
-            std::fs::create_dir_all(out.parent().unwrap_or(std::path::Path::new(".")))?;
-
-            let results = route_data::fetch_all_sfha_counts(&out)?;
-
-            let ok_count = results.iter().filter(|r| r.status == "ok").count();
-            println!("\n  Results:");
-            println!("  {:10}  {:>14}  {}", "Corridor", "SFHA Features", "Status");
-            println!("  {}", "─".repeat(40));
-            for r in &results {
-                println!("  {:10}  {:>14}  {}", r.corridor, r.sfha_count, r.status);
-            }
-            println!(
-                "\n  {}/{} corridors queried successfully",
-                ok_count,
-                results.len()
-            );
-            println!("  saved → {}", out.display());
-            println!("  Use counts as D1 proxy: higher = more flood-exposed corridor.");
-            println!("  Note: counts reflect SFHA polygons in the bounding box, not miles.");
-            println!(
-                "  Run `route score <corridor>` after this to see D1 update (manual join needed)."
-            );
-        }
-
-        Commands::SourceFetchPolicy { output, gate } => {
-            println!("route source-fetch-policy");
-            let rows = source_fetch_policy_rows();
-            write_source_fetch_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_source_fetch_policy_summary(&output, &rows);
-
-            if gate {
-                let failures = source_fetch_policy_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("source fetch policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("source fetch policy gate failed");
-                }
-                println!();
-                println!("source fetch policy gate: PASS");
-            }
-        }
+        Commands::SourceFetchPolicy { output, gate } => commands::source_fetch_policy::run(&cmd_ctx, output, gate)?,
 
         Commands::FletchSources {
             registry,
@@ -526,32 +267,7 @@ fn run_cli() -> Result<()> {
             output,
             details,
             gate,
-        } => {
-            println!("route fletch-sources");
-            let registry_report = route_data::load_fletch_source_registry(&registry)
-                .with_context(|| format!("loading {}", registry.display()))?;
-            let source_policy_rows = route_data::load_route_source_fetch_policy(&source_policy)
-                .with_context(|| format!("loading {}", source_policy.display()))?;
-            let report =
-                route_data::fletch_source_handoff_report(&registry_report, &source_policy_rows);
-            route_data::write_fletch_source_handoff(&output, &report)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_fletch_source_handoff_summary(&output, &report, details);
-
-            if gate {
-                let failures = fletch_source_handoff_gate_failures(&report);
-                if !failures.is_empty() {
-                    println!();
-                    println!("FLETCH source handoff gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("FLETCH source handoff gate failed");
-                }
-                println!();
-                println!("FLETCH source handoff gate: PASS");
-            }
-        }
+        } => commands::fletch_sources::run(&cmd_ctx, registry, source_policy, output, details, gate)?,
 
         Commands::FletchCacheIndex {
             registry,
@@ -569,72 +285,7 @@ fn run_cli() -> Result<()> {
             grid_mode,
         } => commands::coverage::run(&cmd_ctx, threshold, grid, t1_only, top_gaps, grid_mode)?,
 
-        Commands::Standards { tier } => match tier {
-            1 => {
-                println!("=== TIER 1 — Primary Arteries ===");
-                println!("PTI target:           ≤ 1.15 (freight lanes) / ≤ 1.30 (GP)");
-                println!("Express freight lanes: 2 per direction, physically separated");
-                println!("Design speed:         65 mph sustained");
-                println!("EV charging:          ≥150kW DC fast, every 50 miles, 8+ chargers");
-                println!("Truck EV:             ≥350kW at freight terminals");
-                println!("Rest areas:           Every 100 miles, 50+ truck spaces, full service");
-                println!("Transit hub:          8 platforms, 2,000 parking at T1/T1 diamonds");
-                println!("Bus frequency:        ≤ 2 hours per direction");
-                println!("Resilience spurs:     Every 50 miles (rural)");
-                println!("Diamond k-connect:    k ≥ 3 at all T1/T1 intersections");
-                println!("Climate hardening:    Full SFHA protection");
-                println!("Intermodal spurs:     1 per state traversed");
-                println!("Bridge target:        All fair+ by 2030");
-                println!("C-D roads:            Required in all metros >500k");
-            }
-            2 => {
-                println!("=== TIER 2 — Major Connectors ===");
-                println!("PTI target:           ≤ 1.30");
-                println!("Freight lanes:        None — truck-friendly design, no dedicated lanes");
-                println!("Design speed:         65 mph");
-                println!("EV charging:          ≥100kW DC fast, every 75 miles, 4+ chargers");
-                println!("Truck EV:             ≥150kW at fuel stops");
-                println!("Rest areas:           Every 150 miles, 20+ truck spaces, enhanced");
-                println!("Transit stops:        4 platforms, 500 parking at T1/T2 interchanges");
-                println!("Bus frequency:        ≤ 4 hours per direction");
-                println!("Resilience spurs:     Every 75 miles (rural)");
-                println!("Diamond k-connect:    k ≥ 2 at T2/T2 intersections");
-                println!("Bridge target:        All fair+ by 2035");
-                println!("Capacity expansion:   Only where V/C > 0.90 at peak");
-            }
-            3 => {
-                println!("=== TIER 3 — Regional Feeders ===");
-                println!("PTI target:           ≤ 1.50 (functional reliability)");
-                println!("Freight lanes:        None — standard lanes, no corridor restrictions");
-                println!("Design speed:         65 mph (55 mph acceptable mountainous)");
-                println!("EV charging:          ≥50kW DC fast, every 100 miles, 2+ chargers");
-                println!("Rest areas:           Every 200 miles, 10 truck spaces, basic");
-                println!("Transit nodes:        Shelter + demand-responsive, 50-100 parking");
-                println!("Bus:                  Demand-responsive, min 2 round trips/day");
-                println!("Resilience spurs:     Every 100 miles (rural)");
-                println!(
-                    "Rural access spurs:   ≤10mi, for communities >5k pop >30mi from T1/T2/T3"
-                );
-                println!("Bridge target:        All fair+ by 2040");
-                println!("Coverage role:        Fill 30-mile coverage gaps");
-            }
-            4 => {
-                println!("=== TIER 4 — Local Access ===");
-                println!("Standard:             Maintenance and safety only. No expansion.");
-                println!("Pavement:             IRI ≤ 170 (fair) by 2040");
-                println!("Bridges:              All fair+ by 2045");
-                println!(
-                    "Safety:               Standard signing, guardrails, interchange lighting"
-                );
-                println!(
-                    "EV:                   Preserve rest area sites for future; no new requirement"
-                );
-                println!("Transit:              None required");
-                println!("Freight:              Posted restrictions only where bridge-specific");
-            }
-            _ => println!("Error: tier must be 1, 2, 3, or 4"),
-        },
-
+        Commands::Standards { tier } => commands::standards::run(&cmd_ctx, tier)?,
         Commands::StandardsProof {
             ledger,
             tier,
@@ -649,108 +300,28 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_forum_docket(&docket)
-                .with_context(|| format!("loading Forum docket {}", docket.display()))?;
-            print_forum_docket(&rows, blockers, details);
-
-            if gate {
-                let failures = forum_docket_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Forum docket gate: FAIL");
-                    println!("  {} review rows lack complete contracts.", failures.len());
-                    for failure in failures.iter().take(10) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("forum docket gate failed");
-                }
-                println!();
-                println!("Forum docket gate: PASS");
-            }
-        }
+        } => commands::forum::run(&cmd_ctx, docket, blockers, details, gate)?,
 
         Commands::SignificantMoments {
             ledger,
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_significant_moments(&ledger)
-                .with_context(|| format!("loading moments ledger {}", ledger.display()))?;
-            print_significant_moments(&rows, blockers, details);
-
-            if gate {
-                let failures = significant_moment_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Significant moments gate: FAIL");
-                    println!("  {} moment rows lack complete contracts.", failures.len());
-                    for failure in failures.iter().take(12) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("significant moments gate failed");
-                }
-                println!();
-                println!("Significant moments gate: PASS");
-            }
-        }
+        } => commands::significant_moments::run(&cmd_ctx, ledger, blockers, details, gate)?,
 
         Commands::ReleaseManifest {
             manifest,
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_release_manifest(&manifest)
-                .with_context(|| format!("loading release manifest {}", manifest.display()))?;
-            print_release_manifest(&manifest, &rows, blockers, details);
-
-            if gate {
-                let failures = release_manifest_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("release manifest gate: FAIL");
-                    println!("  {} release rows lack complete contracts.", failures.len());
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("release manifest gate failed");
-                }
-                println!();
-                println!("release manifest gate: PASS");
-            }
-        }
+        } => commands::release_manifest::run(&cmd_ctx, manifest, blockers, details, gate)?,
 
         Commands::Blueprint {
             ledger,
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_blueprint_packages(&ledger).with_context(|| {
-                format!("loading Blueprint package ledger {}", ledger.display())
-            })?;
-            print_blueprint_packages(&rows, blockers, details);
-
-            if gate {
-                let failures = blueprint_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Blueprint intake gate: FAIL");
-                    println!(
-                        "  {} package rows violate Forum intake rules.",
-                        failures.len()
-                    );
-                    for failure in failures.iter().take(12) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("blueprint intake gate failed");
-                }
-                println!();
-                println!("Blueprint intake gate: PASS");
-            }
-        }
+        } => commands::blueprint::run(&cmd_ctx, ledger, blockers, details, gate)?,
 
         Commands::BlueprintEvidence {
             ledger,
@@ -767,29 +338,7 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate,
-        } => {
-            let packages = load_blueprint_packages(&ledger).with_context(|| {
-                format!("loading Blueprint package ledger {}", ledger.display())
-            })?;
-            let rows = load_blueprint_cost_ranges(&costs)
-                .with_context(|| format!("loading Blueprint cost ledger {}", costs.display()))?;
-            print_blueprint_cost_ranges(&rows, blockers, details);
-
-            if gate {
-                let failures = blueprint_cost_gate_failures(&rows, &packages);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Blueprint cost gate: FAIL");
-                    println!("  {} cost rows violate range rules.", failures.len());
-                    for failure in failures.iter().take(12) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("blueprint cost gate failed");
-                }
-                println!();
-                println!("Blueprint cost gate: PASS");
-            }
-        }
+        } => commands::blueprint_costs::run(&cmd_ctx, ledger, costs, blockers, details, gate)?,
 
         Commands::StandardsInventory {
             ledger,
@@ -805,29 +354,7 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_pavement_standards(&ledger)
-                .with_context(|| format!("loading pavement standards {}", ledger.display()))?;
-            print_pavement_standards(&rows, blockers, details);
-
-            if gate {
-                let failures = pavement_standard_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Pavement standards gate: FAIL");
-                    println!(
-                        "  {} pavement standard rows lack enforceable contracts.",
-                        failures.len()
-                    );
-                    for failure in failures.iter().take(10) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("pavement standards gate failed");
-                }
-                println!();
-                println!("Pavement standards gate: PASS");
-            }
-        }
+        } => commands::standards_pavement::run(&cmd_ctx, ledger, blockers, details, gate)?,
 
         Commands::TierPavementDocket {
             segments,
@@ -835,66 +362,14 @@ fn run_cli() -> Result<()> {
             output,
             details,
             gate,
-        } => {
-            println!("route tier-pavement-docket");
-            let manifest = route_data::Manifest::load(&manifest_path)
-                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            let graph = load_graph(&manifest)?;
-            let segment_rows = load_tier_segment_candidates(&segments)
-                .with_context(|| format!("loading {}", segments.display()))?;
-            let standard_rows = load_pavement_standards(&standards)
-                .with_context(|| format!("loading {}", standards.display()))?;
-            let rows = tier_pavement_docket_rows(&graph, &segment_rows, &standard_rows);
-            write_tier_pavement_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_docket_summary(&output, &rows, details);
-
-            if gate {
-                let failures = tier_pavement_docket_gate_failures(&rows, &segment_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement docket gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement docket gate failed");
-                }
-                println!();
-                println!("Tier pavement docket gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_docket::run(&cmd_ctx, segments, standards, output, details, gate)?,
 
         Commands::TierPavementSourceGaps {
             docket,
             output,
             details,
             gate,
-        } => {
-            println!("route tier-pavement-source-gaps");
-            let manifest = route_data::Manifest::load(&manifest_path)
-                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-            let graph = load_graph(&manifest)?;
-            let docket_rows = load_tier_pavement_docket(&docket)
-                .with_context(|| format!("loading {}", docket.display()))?;
-            let rows = tier_pavement_source_gap_rows(Some(&graph), &docket_rows);
-            write_tier_pavement_source_gaps(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_source_gap_summary(&output, &rows, details);
-
-            if gate {
-                let failures = tier_pavement_source_gap_gate_failures(&rows, &docket_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement source-gap gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement source-gap gate failed");
-                }
-                println!();
-                println!("Tier pavement source-gap gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_source_gaps::run(&cmd_ctx, docket, output, details, gate)?,
 
         Commands::TierPavementDebtBudget {
             source_gaps,
@@ -910,29 +385,7 @@ fn run_cli() -> Result<()> {
             output,
             details,
             gate,
-        } => {
-            println!("route tier-pavement-acquisition-plan");
-            let gap_rows = load_tier_pavement_source_gaps(&source_gaps)
-                .with_context(|| format!("loading {}", source_gaps.display()))?;
-            let rows = tier_pavement_acquisition_plan_rows(&gap_rows);
-            write_tier_pavement_acquisition_plan(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_acquisition_plan_summary(&output, &rows, details);
-
-            if gate {
-                let failures = tier_pavement_acquisition_plan_gate_failures(&rows, &gap_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement acquisition plan gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement acquisition plan gate failed");
-                }
-                println!();
-                println!("Tier pavement acquisition plan gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_acquisition_plan::run(&cmd_ctx, source_gaps, output, details, gate)?,
 
         Commands::TierPavementAcquisitionDocket {
             acquisition_plan,
@@ -940,93 +393,20 @@ fn run_cli() -> Result<()> {
             priority,
             script,
             gate,
-        } => {
-            println!("route tier-pavement-acquisition-docket");
-            let plan_rows = load_tier_pavement_acquisition_plan(&acquisition_plan)
-                .with_context(|| format!("loading {}", acquisition_plan.display()))?;
-            let rows = tier_pavement_acquisition_docket_rows(&plan_rows);
-            write_tier_pavement_acquisition_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_acquisition_docket_summary(
-                &output,
-                &rows,
-                priority.as_deref(),
-                script,
-            );
-
-            if gate {
-                let failures = tier_pavement_acquisition_docket_gate_failures(&rows, &plan_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement acquisition docket gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement acquisition docket gate failed");
-                }
-                println!();
-                println!("Tier pavement acquisition docket gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_acquisition_docket::run(&cmd_ctx, acquisition_plan, output, priority, script, gate)?,
 
         Commands::TierPavementSourceAccess {
             acquisition_docket,
             output,
             priority,
             gate,
-        } => {
-            println!("route tier-pavement-source-access");
-            let docket_rows = load_tier_pavement_acquisition_docket(&acquisition_docket)
-                .with_context(|| format!("loading {}", acquisition_docket.display()))?;
-            let rows = tier_pavement_source_access_rows(&docket_rows, &priority);
-            write_tier_pavement_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_source_access_summary(&output, &rows, &priority);
-
-            if gate {
-                let failures =
-                    tier_pavement_source_access_gate_failures(&rows, &docket_rows, &priority);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement source access gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement source access gate failed");
-                }
-                println!();
-                println!("Tier pavement source access gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_source_access::run(&cmd_ctx, acquisition_docket, output, priority, gate)?,
 
         Commands::TierPavementSourceFetchAttempt {
             source_access,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-source-fetch-attempt");
-            let source_access_rows = load_tier_pavement_source_access(&source_access)
-                .with_context(|| format!("loading {}", source_access.display()))?;
-            let rows = tier_pavement_source_fetch_attempt_rows(&source_access_rows)?;
-            write_tier_pavement_source_fetch_attempt(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_source_fetch_attempt_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_source_fetch_attempt_gate_failures(&rows, &source_access_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement source fetch attempt gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement source fetch attempt gate failed");
-                }
-                println!();
-                println!("Tier pavement source fetch attempt gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_source_fetch_attempt::run(&cmd_ctx, source_access, output, gate)?,
 
         Commands::TierPavementSourceFetchReview {
             fetch_attempt,
@@ -1050,31 +430,7 @@ fn run_cli() -> Result<()> {
             output,
             functional_systems,
             gate,
-        } => {
-            println!("route tier-pavement-hpms-scope-broadening");
-            let unmatched_join_rows =
-                load_tier_pavement_unmatched_join_review(&unmatched_join_review)
-                    .with_context(|| format!("loading {}", unmatched_join_review.display()))?;
-            let systems = parse_hpms_functional_systems(&functional_systems)?;
-            let rows = tier_pavement_hpms_scope_broadening_rows(&unmatched_join_rows, &systems);
-            write_tier_pavement_hpms_scope_broadening(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_hpms_scope_broadening_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_hpms_scope_broadening_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement HPMS scope broadening gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement HPMS scope broadening gate failed");
-                }
-                println!();
-                println!("Tier pavement HPMS scope broadening gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_hpms_scope_broadening::run(&cmd_ctx, unmatched_join_review, output, functional_systems, gate)?,
 
         Commands::TierPavementRepairDebtReview {
             unmatched_join_review,
@@ -1089,368 +445,73 @@ fn run_cli() -> Result<()> {
             repair_debt_review,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-repair-disposition");
-            let repair_rows = load_tier_pavement_repair_debt_review(&repair_debt_review)
-                .with_context(|| format!("loading {}", repair_debt_review.display()))?;
-            let rows = tier_pavement_repair_disposition_rows(&repair_rows);
-            write_tier_pavement_repair_disposition(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_repair_disposition_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_repair_disposition_gate_failures(&rows, &repair_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement repair disposition gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement repair disposition gate failed");
-                }
-                println!();
-                println!("Tier pavement repair disposition gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_repair_disposition::run(&cmd_ctx, repair_debt_review, output, gate)?,
 
         Commands::TierPavementRepairFundingPackage {
             repair_disposition,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-repair-funding-package");
-            let disposition_rows = load_tier_pavement_repair_disposition(&repair_disposition)
-                .with_context(|| format!("loading {}", repair_disposition.display()))?;
-            let rows = tier_pavement_repair_funding_package_rows(&disposition_rows);
-            write_tier_pavement_repair_funding_package(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_repair_funding_package_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_repair_funding_package_gate_failures(&rows, &disposition_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement repair funding package gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement repair funding package gate failed");
-                }
-                println!();
-                println!("Tier pavement repair funding package gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_repair_funding_package::run(&cmd_ctx, repair_disposition, output, gate)?,
 
         Commands::TierPavementFundingCommitmentReview {
             repair_funding_package,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-commitment-review");
-            let package_rows =
-                load_tier_pavement_repair_funding_package(&repair_funding_package)
-                    .with_context(|| format!("loading {}", repair_funding_package.display()))?;
-            let rows = tier_pavement_funding_commitment_review_rows(&package_rows);
-            write_tier_pavement_funding_commitment_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_commitment_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_commitment_review_gate_failures(&rows, &package_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding commitment review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding commitment review gate failed");
-                }
-                println!();
-                println!("Tier pavement funding commitment review gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_commitment_review::run(&cmd_ctx, repair_funding_package, output, gate)?,
 
         Commands::TierPavementDowngradeExclusionDecision {
             funding_commitment_review,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-downgrade-exclusion-decision");
-            let commitment_rows =
-                load_tier_pavement_funding_commitment_review(&funding_commitment_review)
-                    .with_context(|| format!("loading {}", funding_commitment_review.display()))?;
-            let rows = tier_pavement_downgrade_exclusion_decision_rows(&commitment_rows);
-            write_tier_pavement_downgrade_exclusion_decision(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_downgrade_exclusion_decision_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_downgrade_exclusion_decision_gate_failures(
-                    &rows,
-                    &commitment_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement downgrade/exclusion decision gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement downgrade/exclusion decision gate failed");
-                }
-                println!();
-                println!("Tier pavement downgrade/exclusion decision gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_downgrade_exclusion_decision::run(&cmd_ctx, funding_commitment_review, output, gate)?,
 
         Commands::TierPavementFundingEvidenceContract {
             downgrade_exclusion_decision,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-contract");
-            let decision_rows =
-                load_tier_pavement_downgrade_exclusion_decision(&downgrade_exclusion_decision)
-                    .with_context(|| {
-                        format!("loading {}", downgrade_exclusion_decision.display())
-                    })?;
-            let rows = tier_pavement_funding_evidence_contract_rows(&decision_rows);
-            write_tier_pavement_funding_evidence_contract(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_contract_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_contract_gate_failures(&rows, &decision_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence contract gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence contract gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence contract gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_contract::run(&cmd_ctx, downgrade_exclusion_decision, output, gate)?,
 
         Commands::TierPavementFundingEvidenceSourceCapture {
             funding_evidence_contract,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-source-capture");
-            let contract_rows =
-                load_tier_pavement_funding_evidence_contract(&funding_evidence_contract)
-                    .with_context(|| format!("loading {}", funding_evidence_contract.display()))?;
-            let rows = tier_pavement_funding_evidence_source_capture_rows(&contract_rows);
-            write_tier_pavement_funding_evidence_source_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_source_capture_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_source_capture_gate_failures(
-                    &rows,
-                    &contract_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence source-capture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence source-capture gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence source-capture gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_source_capture::run(&cmd_ctx, funding_evidence_contract, output, gate)?,
 
         Commands::TierPavementFundingEvidenceArtifactAttachment {
             source_capture,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-artifact-attachment");
-            let capture_rows = load_tier_pavement_funding_evidence_source_capture(&source_capture)
-                .with_context(|| format!("loading {}", source_capture.display()))?;
-            let rows = tier_pavement_funding_evidence_artifact_attachment_rows(&capture_rows);
-            write_tier_pavement_funding_evidence_artifact_attachment(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_artifact_attachment_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_artifact_attachment_gate_failures(
-                    &rows,
-                    &capture_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence artifact-attachment gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence artifact-attachment gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence artifact-attachment gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_artifact_attachment::run(&cmd_ctx, source_capture, output, gate)?,
 
         Commands::TierPavementFundingEvidenceReviewDocket {
             artifact_attachment,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-review-docket");
-            let attachment_rows =
-                load_tier_pavement_funding_evidence_artifact_attachment(&artifact_attachment)
-                    .with_context(|| format!("loading {}", artifact_attachment.display()))?;
-            let rows = tier_pavement_funding_evidence_review_docket_rows(&attachment_rows);
-            write_tier_pavement_funding_evidence_review_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_review_docket_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_review_docket_gate_failures(
-                    &rows,
-                    &attachment_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence review-docket gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence review-docket gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence review-docket gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_review_docket::run(&cmd_ctx, artifact_attachment, output, gate)?,
 
         Commands::TierPavementFundingEvidenceAcquisition {
             review_docket,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-acquisition");
-            let review_rows = load_tier_pavement_funding_evidence_review_docket(&review_docket)
-                .with_context(|| format!("loading {}", review_docket.display()))?;
-            let rows = tier_pavement_funding_evidence_acquisition_rows(&review_rows);
-            write_tier_pavement_funding_evidence_acquisition(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_acquisition_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_acquisition_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence acquisition gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence acquisition gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence acquisition gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_acquisition::run(&cmd_ctx, review_docket, output, gate)?,
 
         Commands::TierPavementFundingEvidenceSourceAccess {
             evidence_acquisition,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-source-access");
-            let acquisition_rows =
-                load_tier_pavement_funding_evidence_acquisition(&evidence_acquisition)
-                    .with_context(|| format!("loading {}", evidence_acquisition.display()))?;
-            let rows = tier_pavement_funding_evidence_source_access_rows(&acquisition_rows);
-            write_tier_pavement_funding_evidence_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_source_access_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_source_access_gate_failures(
-                    &rows,
-                    &acquisition_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence source-access gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence source-access gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence source-access gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_source_access::run(&cmd_ctx, evidence_acquisition, output, gate)?,
 
         Commands::TierPavementFundingEvidenceIntake {
             source_access,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-intake");
-            let access_rows = load_tier_pavement_funding_evidence_source_access(&source_access)
-                .with_context(|| format!("loading {}", source_access.display()))?;
-            let rows = tier_pavement_funding_evidence_intake_rows(&access_rows);
-            write_tier_pavement_funding_evidence_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_intake_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_intake_gate_failures(&rows, &access_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence intake gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence intake gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_intake::run(&cmd_ctx, source_access, output, gate)?,
 
         Commands::TierPavementFundingEvidenceMetadataCapture {
             evidence_intake,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-metadata-capture");
-            let intake_rows = load_tier_pavement_funding_evidence_intake(&evidence_intake)
-                .with_context(|| format!("loading {}", evidence_intake.display()))?;
-            let rows = tier_pavement_funding_evidence_metadata_capture_rows(&intake_rows);
-            write_tier_pavement_funding_evidence_metadata_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_metadata_capture_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_metadata_capture_gate_failures(
-                    &rows,
-                    &intake_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence metadata-capture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence metadata-capture gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence metadata-capture gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_metadata_capture::run(&cmd_ctx, evidence_intake, output, gate)?,
 
         Commands::TierPavementFundingEvidenceAcceptedArtifactAttachment {
             metadata_capture,
@@ -1480,67 +541,13 @@ fn run_cli() -> Result<()> {
             accepted_source_access,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-accepted-intake");
-            let access_rows =
-                load_tier_pavement_funding_evidence_accepted_source_access(&accepted_source_access)
-                    .with_context(|| format!("loading {}", accepted_source_access.display()))?;
-            let rows = tier_pavement_funding_evidence_accepted_intake_rows(&access_rows);
-            write_tier_pavement_funding_evidence_accepted_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_accepted_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = tier_pavement_funding_evidence_accepted_intake_gate_failures(
-                    &rows,
-                    &access_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence accepted intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier pavement funding evidence accepted intake gate failed");
-                }
-                println!();
-                println!("Tier pavement funding evidence accepted intake gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_accepted_intake::run(&cmd_ctx, accepted_source_access, output, gate)?,
 
         Commands::TierPavementFundingEvidenceAcceptedMetadataCapture {
             accepted_intake,
             output,
             gate,
-        } => {
-            println!("route tier-pavement-funding-evidence-accepted-metadata-capture");
-            let intake_rows = load_tier_pavement_funding_evidence_accepted_intake(&accepted_intake)
-                .with_context(|| format!("loading {}", accepted_intake.display()))?;
-            let rows = tier_pavement_funding_evidence_accepted_metadata_capture_rows(&intake_rows);
-            write_tier_pavement_funding_evidence_accepted_metadata_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_pavement_funding_evidence_accepted_metadata_capture_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    tier_pavement_funding_evidence_accepted_metadata_capture_gate_failures(
-                        &rows,
-                        &intake_rows,
-                    );
-                if !failures.is_empty() {
-                    println!();
-                    println!("Tier pavement funding evidence accepted metadata-capture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!(
-                        "tier pavement funding evidence accepted metadata-capture gate failed"
-                    );
-                }
-                println!();
-                println!("Tier pavement funding evidence accepted metadata-capture gate: PASS");
-            }
-        }
+        } => commands::tier_pavement_funding_evidence_accepted_metadata_capture::run(&cmd_ctx, accepted_intake, output, gate)?,
 
         Commands::TierPavementFundingEvidenceAcceptedMetadataArtifactAttachment {
             accepted_metadata_capture,
@@ -1589,31 +596,7 @@ fn run_cli() -> Result<()> {
             tier,
             details,
             gate_l1,
-        } => {
-            let routes = load_tier_routes(&tier_table, &tier)
-                .with_context(|| format!("loading tier table {}", tier_table.display()))?;
-            let nbi = load_nbi_bridges();
-            print_bridge_standard_coverage(&tier, &routes, &nbi, details);
-            if gate_l1 {
-                let missing = bridge_standard_missing_routes(&routes, &nbi);
-                if routes.is_empty() || nbi.is_empty() || !missing.is_empty() {
-                    println!();
-                    println!("Bridge standards L1 gate: FAIL");
-                    if routes.is_empty() {
-                        println!("  no routes found for tier {tier}");
-                    }
-                    if nbi.is_empty() {
-                        println!("  no cached NBI bridge summary rows loaded");
-                    }
-                    if !missing.is_empty() {
-                        println!("  missing NBI coverage: {}", missing.join(", "));
-                    }
-                    anyhow::bail!("bridge standards L1 gate failed");
-                }
-                println!();
-                println!("Bridge standards L1 gate: PASS");
-            }
-        }
+        } => commands::standards_bridges::run(&cmd_ctx, tier_table, tier, details, gate_l1)?,
 
         Commands::PressureScenarios {
             ledger,
@@ -1631,64 +614,14 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate,
-        } => {
-            let rows = load_throughput_proof_matrix(&matrix)
-                .with_context(|| format!("loading throughput proof matrix {}", matrix.display()))?;
-            print_throughput_proof_matrix(&rows, blockers, details);
-
-            if gate {
-                let failures = throughput_proof_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("Throughput proof gate: FAIL");
-                    println!(
-                        "  {} proof rows still lack bounded congestion/resilience contracts.",
-                        failures.len()
-                    );
-                    for row in failures.iter().take(10) {
-                        println!(
-                            "  - {} [{} {}]: {}",
-                            row.proof_id, row.binding_type, row.current_status, row.blocking_gap
-                        );
-                    }
-                    anyhow::bail!("throughput proof gate failed");
-                }
-                println!();
-                println!("Throughput proof gate: PASS");
-            }
-        }
+        } => commands::throughput_proof::run(&cmd_ctx, matrix, blockers, details, gate)?,
 
         Commands::T1Failures {
             ledger,
             needs_sources,
             details,
             gate_evidence,
-        } => {
-            let rows = load_t1_failure_ledger(&ledger)
-                .with_context(|| format!("loading T1 failure ledger {}", ledger.display()))?;
-            print_t1_failures(&rows, needs_sources, details);
-
-            if gate_evidence {
-                let failures = t1_failure_evidence_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1/T1 failure evidence gate: FAIL");
-                    println!(
-                        "  {} failure rows are unlabeled or lack evidence next steps.",
-                        failures.len()
-                    );
-                    for row in failures.iter().take(10) {
-                        println!(
-                            "  - {} [{} {}]: {}",
-                            row.site_id, row.source_status, row.confidence, row.blocking_gap
-                        );
-                    }
-                    anyhow::bail!("T1/T1 failure evidence gate failed");
-                }
-                println!();
-                println!("T1/T1 failure evidence gate: PASS");
-            }
-        }
+        } => commands::t1_failures::run(&cmd_ctx, ledger, needs_sources, details, gate_evidence)?,
 
         Commands::T1DiamondValidation {
             ledger,
@@ -1704,41 +637,20 @@ fn run_cli() -> Result<()> {
         Commands::T1FailureSources {
             ledger,
             lookup_needed,
-        } => {
-            let rows = load_t1_failure_source_plan(&ledger)
-                .with_context(|| format!("loading T1 failure source plan {}", ledger.display()))?;
-            print_t1_failure_sources(&rows, lookup_needed);
-        }
+        } => commands::t1_failure_sources::run(&cmd_ctx, ledger, lookup_needed)?,
 
         Commands::T1SourceHealth {
             ledger,
             blockers,
             details,
             gate_ingestion,
-        } => {
-            let rows = load_t1_source_health(&ledger)
-                .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
-            print_t1_source_health(&rows, blockers, details);
-            if gate_ingestion {
-                let blocked = t1_source_health_blockers(&rows);
-                if !blocked.is_empty() {
-                    anyhow::bail!(
-                        "{} T1 source-health blocker(s) remain; run `route t1-source-health --blockers --details`",
-                        blocked.len()
-                    );
-                }
-            }
-        }
+        } => commands::t1_source_health::run(&cmd_ctx, ledger, blockers, details, gate_ingestion)?,
 
         Commands::T1AccessDocket {
             ledger,
             category,
             details,
-        } => {
-            let rows = load_t1_source_health(&ledger)
-                .with_context(|| format!("loading T1 source health {}", ledger.display()))?;
-            print_t1_access_docket(&rows, category.as_deref(), details);
-        }
+        } => commands::t1_access_docket::run(&cmd_ctx, ledger, category, details)?,
 
         Commands::T1SnapshotPlan {
             ledger,
@@ -1746,65 +658,14 @@ fn run_cli() -> Result<()> {
             details,
             script,
             gate_plan,
-        } => {
-            let rows = load_t1_snapshot_plan(&ledger)
-                .with_context(|| format!("loading T1 snapshot plan {}", ledger.display()))?;
-            if script {
-                print_t1_snapshot_script(&rows, priority.as_deref());
-            } else {
-                print_t1_snapshot_plan(&rows, priority.as_deref(), details);
-            }
-
-            if gate_plan {
-                let failures = t1_snapshot_plan_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1/T1 snapshot plan gate: FAIL");
-                    println!("  {} snapshot rows lack executable plans.", failures.len());
-                    for row in failures.iter().take(10) {
-                        println!(
-                            "  - {} [{}]: {}",
-                            row.site_id, row.source_name, row.blocking_gap
-                        );
-                    }
-                    anyhow::bail!("T1/T1 snapshot plan gate failed");
-                }
-                println!();
-                println!("T1/T1 snapshot plan gate: PASS");
-            }
-        }
+        } => commands::t1_snapshot_plan::run(&cmd_ctx, ledger, priority, details, script, gate_plan)?,
 
         Commands::T1EvidenceWindows {
             ledger,
             blockers,
             details,
             gate_windows,
-        } => {
-            let rows = load_t1_evidence_windows(&ledger)
-                .with_context(|| format!("loading T1 evidence windows {}", ledger.display()))?;
-            print_t1_evidence_windows(&rows, blockers, details);
-
-            if gate_windows {
-                let failures = t1_evidence_window_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1/T1 evidence-window gate: FAIL");
-                    println!(
-                        "  {} source-window rows lack metadata or violate promotion rules.",
-                        failures.len()
-                    );
-                    for failure in failures.iter().take(10) {
-                        println!("  - {}", failure);
-                    }
-                    if failures.len() > 10 {
-                        println!("  ... {} more", failures.len() - 10);
-                    }
-                    anyhow::bail!("T1/T1 evidence-window gate failed");
-                }
-                println!();
-                println!("T1/T1 evidence-window gate: PASS");
-            }
-        }
+        } => commands::t1_evidence_windows::run(&cmd_ctx, ledger, blockers, details, gate_windows)?,
 
         Commands::T1FailureEvents {
             events,
@@ -1813,12 +674,7 @@ fn run_cli() -> Result<()> {
             gate_observations,
         } => commands::t1_failure_events::run(&cmd_ctx, events, ledger, write_ledger, gate_observations)?,
 
-        Commands::T1FetchIowa511 { output } => {
-            fetch_iowa511_events(&output)
-                .with_context(|| format!("fetching Iowa 511 events to {}", output.display()))?;
-            println!("route t1-fetch-iowa511");
-            println!("  wrote {}", output.display());
-        }
+        Commands::T1FetchIowa511 { output } => commands::t1_fetch_iowa511::run(&cmd_ctx, output)?,
 
         Commands::T1ImportIowa511 {
             input,
@@ -1827,28 +683,12 @@ fn run_cli() -> Result<()> {
             lat,
             lon,
             radius_miles,
-        } => {
-            let json = std::fs::read_to_string(&input)
-                .with_context(|| format!("reading Iowa 511 JSON {}", input.display()))?;
-            let rows = parse_iowa511_events(&json, &site_id, lat, lon, radius_miles)
-                .with_context(|| format!("normalizing Iowa 511 JSON {}", input.display()))?;
-            write_t1_failure_events(&output, &rows)
-                .with_context(|| format!("writing normalized events {}", output.display()))?;
-            println!("route t1-import-iowa511");
-            println!("  rows: {}", rows.len());
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_import_iowa511::run(&cmd_ctx, input, output, site_id, lat, lon, radius_miles)?,
 
         Commands::T1FetchTdotSmartway {
             output,
             timeout_seconds,
-        } => {
-            fetch_tdot_smartway_events(&output, timeout_seconds).with_context(|| {
-                format!("fetching TDOT SmartWay events to {}", output.display())
-            })?;
-            println!("route t1-fetch-tdot-smartway");
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_fetch_tdot_smartway::run(&cmd_ctx, output, timeout_seconds)?,
 
         Commands::T1ImportTdotSmartway {
             input,
@@ -1857,25 +697,9 @@ fn run_cli() -> Result<()> {
             lat,
             lon,
             radius_miles,
-        } => {
-            let json = std::fs::read_to_string(&input)
-                .with_context(|| format!("reading TDOT SmartWay JSON {}", input.display()))?;
-            let rows = parse_tdot_smartway_events(&json, &site_id, lat, lon, radius_miles)
-                .with_context(|| format!("normalizing TDOT SmartWay JSON {}", input.display()))?;
-            write_t1_failure_events(&output, &rows)
-                .with_context(|| format!("writing normalized events {}", output.display()))?;
-            println!("route t1-import-tdot-smartway");
-            println!("  rows: {}", rows.len());
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_import_tdot_smartway::run(&cmd_ctx, input, output, site_id, lat, lon, radius_miles)?,
 
-        Commands::T1FetchMdotMidrive { output } => {
-            fetch_mdot_midrive_events(&output).with_context(|| {
-                format!("fetching MDOT Mi Drive events to {}", output.display())
-            })?;
-            println!("route t1-fetch-mdot-midrive");
-            println!("  wrote {}", output.display());
-        }
+        Commands::T1FetchMdotMidrive { output } => commands::t1_fetch_mdot_midrive::run(&cmd_ctx, output)?,
 
         Commands::T1ImportMdotMidrive {
             input,
@@ -1885,24 +709,7 @@ fn run_cli() -> Result<()> {
             lon,
             radius_miles,
             observation_year,
-        } => {
-            let json = std::fs::read_to_string(&input)
-                .with_context(|| format!("reading MDOT Mi Drive JSON {}", input.display()))?;
-            let rows = parse_mdot_midrive_events(
-                &json,
-                &site_id,
-                lat,
-                lon,
-                radius_miles,
-                observation_year.unwrap_or_else(current_utc_year),
-            )
-            .with_context(|| format!("normalizing MDOT Mi Drive JSON {}", input.display()))?;
-            write_t1_failure_events(&output, &rows)
-                .with_context(|| format!("writing normalized events {}", output.display()))?;
-            println!("route t1-import-mdot-midrive");
-            println!("  rows: {}", rows.len());
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_import_mdot_midrive::run(&cmd_ctx, input, output, site_id, lat, lon, radius_miles, observation_year)?,
 
         Commands::T1FetchIndotTrafficwise {
             output,
@@ -1911,111 +718,22 @@ fn run_cli() -> Result<()> {
             east,
             west,
             zoom,
-        } => {
-            fetch_indot_trafficwise_events(&output, north, south, east, west, zoom).with_context(
-                || format!("fetching INDOT TrafficWise events to {}", output.display()),
-            )?;
-            println!("route t1-fetch-indot-trafficwise");
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_fetch_indot_trafficwise::run(&cmd_ctx, output, north, south, east, west, zoom)?,
 
         Commands::T1ImportIndotTrafficwise {
             input,
             output,
             site_id,
             observation_year,
-        } => {
-            let json = std::fs::read_to_string(&input)
-                .with_context(|| format!("reading INDOT TrafficWise JSON {}", input.display()))?;
-            let rows = parse_indot_trafficwise_events(
-                &json,
-                &site_id,
-                observation_year.unwrap_or_else(current_utc_year),
-            )
-            .with_context(|| format!("normalizing INDOT TrafficWise JSON {}", input.display()))?;
-            write_t1_failure_events(&output, &rows)
-                .with_context(|| format!("writing normalized events {}", output.display()))?;
-            println!("route t1-import-indot-trafficwise");
-            println!("  rows: {}", rows.len());
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_import_indot_trafficwise::run(&cmd_ctx, input, output, site_id, observation_year)?,
 
         Commands::T1AccumulateEvents {
             events,
             input,
             output,
-        } => {
-            let existing = if events.exists() {
-                load_t1_failure_events(&events)
-                    .with_context(|| format!("loading accumulated events {}", events.display()))?
-            } else {
-                Vec::new()
-            };
-            let incoming = load_t1_failure_events(&input)
-                .with_context(|| format!("loading incoming events {}", input.display()))?;
-            let merged = merge_t1_failure_events(&existing, &incoming);
-            let added = merged.len().saturating_sub(existing.len());
-            write_t1_failure_events(&output, &merged)
-                .with_context(|| format!("writing accumulated events {}", output.display()))?;
-            println!("route t1-accumulate-events");
-            println!("  existing rows: {}", existing.len());
-            println!("  incoming rows: {}", incoming.len());
-            println!("  merged rows: {}", merged.len());
-            println!("  net new rows: {added}");
-            println!("  wrote {}", output.display());
-        }
+        } => commands::t1_accumulate_events::run(&cmd_ctx, events, input, output)?,
 
-        Commands::Game { command } => match command {
-            GameCommand::Scenarios => game::print_scenarios(),
-            GameCommand::Campaign {
-                ledger,
-                map_atlas,
-                gate,
-            } => game::campaign_cli(&ledger, &map_atlas, gate)?,
-            GameCommand::T2Overlays {
-                ledger,
-                standards,
-                map_atlas,
-                gate,
-            } => game::t2_service_overlays_cli(&ledger, &standards, &map_atlas, gate)?,
-            GameCommand::T2Hooks {
-                ledger,
-                campaign,
-                overlays,
-                gate,
-            } => game::t2_scenario_hooks_cli(&ledger, &campaign, &overlays, gate)?,
-            GameCommand::Inspect { scenario } => game::print_inspect(&scenario)?,
-            GameCommand::RunSeason {
-                scenario,
-                season,
-                event,
-                project,
-                state,
-                write_state,
-                append_log,
-            } => game::run_season_cli(
-                &scenario,
-                season,
-                &event,
-                &project,
-                state.as_deref(),
-                write_state.as_deref(),
-                append_log.as_deref(),
-            )?,
-            GameCommand::Score {
-                scenario,
-                log,
-                details,
-                gate_promotion,
-            } => {
-                let engine_facts =
-                    game_engine_facts(&scenario, &manifest_path).with_context(|| {
-                        format!("summarizing ROUTE engine facts for game scenario {scenario}")
-                    })?;
-                game::score_cli(&scenario, &log, details, gate_promotion, engine_facts)?
-            }
-        },
-
+        Commands::Game { command } => commands::game_cmd::run(&cmd_ctx, command)?,
         Commands::Sim { mode } => commands::sim::run(&cmd_ctx, mode)?,
 
         Commands::Diamond { at } => commands::diamond::run(&cmd_ctx, at)?,
@@ -2044,179 +762,40 @@ fn run_cli() -> Result<()> {
             repairs,
             output,
             gate,
-        } => {
-            println!("route tier-contact-witnesses");
-            let repair_rows = load_tier_region_repairs(&repairs)
-                .with_context(|| format!("loading {}", repairs.display()))?;
-            let witness_rows =
-                tier_contact_witness_rows(&repair_rows, &route_map::beck_t2_diagnostics());
-            write_tier_contact_witnesses(&output, &witness_rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_contact_witness_summary(&output, &witness_rows);
-
-            if gate {
-                let failures = tier_contact_witness_gate_failures(&witness_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("tier contact witness gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier contact witness gate failed");
-                }
-                println!();
-                println!("tier contact witness gate: PASS");
-            }
-        }
+        } => commands::tier_contact_witnesses::run(&cmd_ctx, repairs, output, gate)?,
 
         Commands::T2ContactResolutions {
             witnesses,
             exceptions,
             output,
             gate,
-        } => {
-            println!("route t2-contact-resolutions");
-            let witness_rows = load_tier_contact_witnesses(&witnesses)
-                .with_context(|| format!("loading {}", witnesses.display()))?;
-            let exception_rows = load_endpoint_exceptions(&exceptions)
-                .with_context(|| format!("loading {}", exceptions.display()))?;
-            let rows = t2_contact_resolution_rows(&witness_rows, &exception_rows);
-            write_t2_contact_resolutions(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_contact_resolution_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_contact_resolution_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 contact resolution gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 contact resolution gate failed");
-                }
-                println!();
-                println!("T2 contact resolution gate: PASS");
-            }
-        }
+        } => commands::t2_contact_resolutions::run(&cmd_ctx, witnesses, exceptions, output, gate)?,
 
         Commands::T2HeldContactActions {
             resolutions,
             output,
             gate,
-        } => {
-            println!("route t2-held-contact-actions");
-            let resolution_rows = load_t2_contact_resolutions(&resolutions)
-                .with_context(|| format!("loading {}", resolutions.display()))?;
-            let rows = t2_held_contact_action_rows(&resolution_rows);
-            write_t2_held_contact_actions(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_held_contact_action_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_held_contact_action_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 held contact action gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 held contact action gate failed");
-                }
-                println!();
-                println!("T2 held contact action gate: PASS");
-            }
-        }
+        } => commands::t2_held_contact_actions::run(&cmd_ctx, resolutions, output, gate)?,
 
         Commands::T2GraphContactRepairs {
             held_actions,
             output,
             gate,
-        } => {
-            println!("route t2-graph-contact-repairs");
-            let held_rows = load_t2_held_contact_actions(&held_actions)
-                .with_context(|| format!("loading {}", held_actions.display()))?;
-            let rows = t2_graph_contact_repair_rows(&held_rows);
-            write_t2_graph_contact_repairs(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_graph_contact_repair_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_graph_contact_repair_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 graph contact repair gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 graph contact repair gate failed");
-                }
-                println!();
-                println!("T2 graph contact repair gate: PASS");
-            }
-        }
+        } => commands::t2_graph_contact_repairs::run(&cmd_ctx, held_actions, output, gate)?,
 
         Commands::T2ParentContactValidation {
             held_actions,
             witnesses,
             output,
             gate,
-        } => {
-            println!("route t2-parent-contact-validation");
-            let held_rows = load_t2_held_contact_actions(&held_actions)
-                .with_context(|| format!("loading {}", held_actions.display()))?;
-            let witness_rows = load_tier_contact_witnesses(&witnesses)
-                .with_context(|| format!("loading {}", witnesses.display()))?;
-            let rows = t2_parent_contact_validation_rows(&held_rows, &witness_rows);
-            write_t2_parent_contact_validation(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_parent_contact_validation_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_parent_contact_validation_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 parent contact validation gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 parent contact validation gate failed");
-                }
-                println!();
-                println!("T2 parent contact validation gate: PASS");
-            }
-        }
+        } => commands::t2_parent_contact_validation::run(&cmd_ctx, held_actions, witnesses, output, gate)?,
 
         Commands::T2ReliefEvidenceDocket {
             held_actions,
             bottlenecks,
             output,
             gate,
-        } => {
-            println!("route t2-relief-evidence-docket");
-            let held_rows = load_t2_held_contact_actions(&held_actions)
-                .with_context(|| format!("loading {}", held_actions.display()))?;
-            let bottleneck_rows = load_atri_bottlenecks(&bottlenecks)
-                .with_context(|| format!("loading {}", bottlenecks.display()))?;
-            let rows = t2_relief_evidence_rows(&held_rows, &bottleneck_rows);
-            write_t2_relief_evidence_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_relief_evidence_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_relief_evidence_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 relief evidence gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 relief evidence gate failed");
-                }
-                println!();
-                println!("T2 relief evidence gate: PASS");
-            }
-        }
+        } => commands::t2_relief_evidence_docket::run(&cmd_ctx, held_actions, bottlenecks, output, gate)?,
 
         Commands::T2TerminalContactValidation {
             held_actions,
@@ -2224,34 +803,7 @@ fn run_cli() -> Result<()> {
             witnesses,
             output,
             gate,
-        } => {
-            println!("route t2-terminal-contact-validation");
-            let held_rows = load_t2_held_contact_actions(&held_actions)
-                .with_context(|| format!("loading {}", held_actions.display()))?;
-            let exception_rows = load_endpoint_exceptions(&exceptions)
-                .with_context(|| format!("loading {}", exceptions.display()))?;
-            let witness_rows = load_tier_contact_witnesses(&witnesses)
-                .with_context(|| format!("loading {}", witnesses.display()))?;
-            let rows =
-                t2_terminal_contact_validation_rows(&held_rows, &exception_rows, &witness_rows);
-            write_t2_terminal_contact_validation(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_terminal_contact_validation_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_terminal_contact_validation_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 terminal contact validation gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 terminal contact validation gate failed");
-                }
-                println!();
-                println!("T2 terminal contact validation gate: PASS");
-            }
-        }
+        } => commands::t2_terminal_contact_validation::run(&cmd_ctx, held_actions, exceptions, witnesses, output, gate)?,
 
         Commands::T2BlockerClosure {
             graph_repairs,
@@ -2277,93 +829,21 @@ fn run_cli() -> Result<()> {
             witnesses,
             output,
             gate,
-        } => {
-            println!("route t2-graph-contact-validation");
-            let closure_rows = load_t2_blocker_closure(&closure)
-                .with_context(|| format!("loading {}", closure.display()))?;
-            let witness_rows = load_tier_contact_witnesses(&witnesses)
-                .with_context(|| format!("loading {}", witnesses.display()))?;
-            let rows = t2_graph_contact_validation_rows(&closure_rows, &witness_rows);
-            write_t2_graph_contact_validation(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_graph_contact_validation_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_graph_contact_validation_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 graph contact validation gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 graph contact validation gate failed");
-                }
-                println!();
-                println!("T2 graph contact validation gate: PASS");
-            }
-        }
+        } => commands::t2_graph_contact_validation::run(&cmd_ctx, closure, witnesses, output, gate)?,
 
         Commands::T2ContactClosure {
             closure,
             witnesses,
             output,
             gate,
-        } => {
-            println!("route t2-contact-closure");
-            let closure_rows = load_t2_blocker_closure(&closure)
-                .with_context(|| format!("loading {}", closure.display()))?;
-            let witness_rows = load_tier_contact_witnesses(&witnesses)
-                .with_context(|| format!("loading {}", witnesses.display()))?;
-            let rows = t2_contact_closure_rows(&closure_rows, &witness_rows);
-            write_t2_contact_closure(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_contact_closure_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_contact_closure_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 contact closure gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 contact closure gate failed");
-                }
-                println!();
-                println!("T2 contact closure gate: PASS");
-            }
-        }
+        } => commands::t2_contact_closure::run(&cmd_ctx, closure, witnesses, output, gate)?,
 
         Commands::T2EndpointClosure {
             closure,
             exceptions,
             output,
             gate,
-        } => {
-            println!("route t2-endpoint-closure");
-            let closure_rows = load_t2_blocker_closure(&closure)
-                .with_context(|| format!("loading {}", closure.display()))?;
-            let exception_rows = load_endpoint_exceptions(&exceptions)
-                .with_context(|| format!("loading {}", exceptions.display()))?;
-            let rows = t2_endpoint_closure_rows(&closure_rows, &exception_rows);
-            write_t2_endpoint_closure(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_endpoint_closure_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_endpoint_closure_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 endpoint closure gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 endpoint closure gate failed");
-                }
-                println!();
-                println!("T2 endpoint closure gate: PASS");
-            }
-        }
+        } => commands::t2_endpoint_closure::run(&cmd_ctx, closure, exceptions, output, gate)?,
 
         Commands::TierCandidateColumns {
             witnesses,
@@ -2382,117 +862,26 @@ fn run_cli() -> Result<()> {
             candidates,
             output,
             gate,
-        } => {
-            println!("route t2-regionalizer");
-            let candidate_rows = load_tier_candidate_columns(&candidates)
-                .with_context(|| format!("loading {}", candidates.display()))?;
-            let rows = t2_regionalizer_rows(&candidate_rows);
-            write_t2_regionalizer(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_regionalizer_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_regionalizer_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 regionalizer gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 regionalizer gate failed");
-                }
-                println!();
-                println!("T2 regionalizer gate: PASS");
-            }
-        }
+        } => commands::t2_regionalizer::run(&cmd_ctx, candidates, output, gate)?,
 
         Commands::T2ServiceSelection {
             regionalizer,
             output,
             gate,
-        } => {
-            println!("route t2-service-selection");
-            let regionalizer_rows = load_t2_regionalizer(&regionalizer)
-                .with_context(|| format!("loading {}", regionalizer.display()))?;
-            let rows =
-                t2_service_selection_rows(&regionalizer_rows, &route_map::beck_t2_diagnostics());
-            write_t2_service_selection(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_service_selection_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_service_selection_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 service selection gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 service selection gate failed");
-                }
-                println!();
-                println!("T2 service selection gate: PASS");
-            }
-        }
+        } => commands::t2_service_selection::run(&cmd_ctx, regionalizer, output, gate)?,
 
         Commands::T2ServiceDiagnosticQueue {
             service_selection,
             bundles,
             output,
             gate,
-        } => {
-            println!("route t2-service-diagnostic-queue");
-            let service_rows = load_t2_service_selection(&service_selection)
-                .with_context(|| format!("loading {}", service_selection.display()))?;
-            let bundle_rows = load_national_segment_bundles(&bundles)
-                .with_context(|| format!("loading {}", bundles.display()))?;
-            let rows = t2_service_diagnostic_queue_rows(&service_rows, &bundle_rows);
-            write_t2_service_diagnostic_queue(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_service_diagnostic_queue_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_service_diagnostic_queue_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 service diagnostic queue gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 service diagnostic queue gate failed");
-                }
-                println!();
-                println!("T2 service diagnostic queue gate: PASS");
-            }
-        }
+        } => commands::t2_service_diagnostic_queue::run(&cmd_ctx, service_selection, bundles, output, gate)?,
 
         Commands::T2ParallelServiceQueue {
             service_selection,
             output,
             gate,
-        } => {
-            println!("route t2-parallel-service-queue");
-            let service_rows = load_t2_service_selection(&service_selection)
-                .with_context(|| format!("loading {}", service_selection.display()))?;
-            let rows = t2_parallel_service_queue_rows(&service_rows);
-            write_t2_parallel_service_queue(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_parallel_service_queue_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_parallel_service_queue_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 parallel service queue gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 parallel service queue gate failed");
-                }
-                println!();
-                println!("T2 parallel service queue gate: PASS");
-            }
-        }
+        } => commands::t2_parallel_service_queue::run(&cmd_ctx, service_selection, output, gate)?,
 
         Commands::T2BundleOverlays {
             service_selection,
@@ -2500,64 +889,14 @@ fn run_cli() -> Result<()> {
             game_overlays,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-overlays");
-            let service_rows = load_t2_service_selection(&service_selection)
-                .with_context(|| format!("loading {}", service_selection.display()))?;
-            let bundle_rows = load_national_segment_bundles(&bundles)
-                .with_context(|| format!("loading {}", bundles.display()))?;
-            let overlay_rows = load_game_t2_service_overlays(&game_overlays)
-                .with_context(|| format!("loading {}", game_overlays.display()))?;
-            let rows = t2_bundle_overlay_rows(&service_rows, &bundle_rows, &overlay_rows);
-            write_t2_bundle_overlays(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_overlay_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bundle_overlay_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle overlay gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bundle overlay gate failed");
-                }
-                println!();
-                println!("T2 bundle overlay gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_overlays::run(&cmd_ctx, service_selection, bundles, game_overlays, output, gate)?,
 
         Commands::T2BundleRepairQueue {
             candidates,
             blocker_closure,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-repair-queue");
-            let candidate_rows = load_tier_candidate_columns(&candidates)
-                .with_context(|| format!("loading {}", candidates.display()))?;
-            let blocker_rows = load_t2_blocker_closure(&blocker_closure)
-                .with_context(|| format!("loading {}", blocker_closure.display()))?;
-            let rows = t2_bundle_repair_queue_rows(&candidate_rows, &blocker_rows);
-            write_t2_bundle_repair_queue(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_repair_queue_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bundle_repair_queue_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle repair queue gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bundle repair queue gate failed");
-                }
-                println!();
-                println!("T2 bundle repair queue gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_repair_queue::run(&cmd_ctx, candidates, blocker_closure, output, gate)?,
 
         Commands::TierSegmentCandidates {
             t1_selector,
@@ -2584,60 +923,14 @@ fn run_cli() -> Result<()> {
             pressure,
             output,
             gate,
-        } => {
-            println!("route t3-t4-pressure-intake");
-            let pressure_rows = load_lower_tier_pressure_witnesses(&pressure)
-                .with_context(|| format!("loading {}", pressure.display()))?;
-            let rows = t3_t4_pressure_intake_rows(&pressure_rows);
-            write_t3_t4_pressure_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_t4_pressure_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_t4_pressure_intake_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3/T4 pressure intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3/T4 pressure intake gate failed");
-                }
-                println!();
-                println!("T3/T4 pressure intake gate: PASS");
-            }
-        }
+        } => commands::t3_t4_pressure_intake::run(&cmd_ctx, pressure, output, gate)?,
 
         Commands::T3ZoneAccessObligations {
             intake,
             map_atlas,
             output,
             gate,
-        } => {
-            println!("route t3-zone-access-obligations");
-            let intake_rows = load_t3_t4_pressure_intake(&intake)
-                .with_context(|| format!("loading {}", intake.display()))?;
-            let atlas_rows = load_map_atlas(&map_atlas)
-                .with_context(|| format!("loading {}", map_atlas.display()))?;
-            let rows = t3_zone_access_obligation_rows(&intake_rows, &atlas_rows);
-            write_t3_zone_access_obligations(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_zone_access_obligation_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_zone_access_obligation_gate_failures(&rows, &atlas_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 zone access obligation gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 zone access obligation gate failed");
-                }
-                println!();
-                println!("T3 zone access obligation gate: PASS");
-            }
-        }
+        } => commands::t3_zone_access_obligations::run(&cmd_ctx, intake, map_atlas, output, gate)?,
 
         Commands::T3ZoneRouteColumns {
             obligations,
@@ -2652,418 +945,85 @@ fn run_cli() -> Result<()> {
             constraint_budget,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-columns");
-            let intake_rows = load_t3_t4_pressure_intake(&intake)
-                .with_context(|| format!("loading {}", intake.display()))?;
-            let constraint_budget_rows = load_optimizer_constraint_budget(&constraint_budget)
-                .with_context(|| format!("loading {}", constraint_budget.display()))?;
-            let constraint_budget_index =
-                optimizer_constraint_budget_index(&constraint_budget_rows);
-            let rows = t4_terminal_access_column_rows(&intake_rows, &constraint_budget_index);
-            write_t4_terminal_access_columns(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_column_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_column_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access column gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access column gate failed");
-                }
-                println!();
-                println!("T4 terminal access column gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_columns::run(&cmd_ctx, intake, constraint_budget, output, gate)?,
 
         Commands::T4TerminalContactEvidence {
             terminal_columns,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-contact-evidence");
-            let terminal_rows = load_t4_terminal_access_columns(&terminal_columns)
-                .with_context(|| format!("loading {}", terminal_columns.display()))?;
-            let rows = t4_terminal_contact_evidence_rows(&terminal_rows);
-            write_t4_terminal_contact_evidence(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_contact_evidence_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_contact_evidence_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal contact evidence gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal contact evidence gate failed");
-                }
-                println!();
-                println!("T4 terminal contact evidence gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_contact_evidence::run(&cmd_ctx, terminal_columns, output, gate)?,
 
         Commands::T4TerminalAccessEvidenceReview {
             contact_evidence,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-evidence-review");
-            let contact_rows = load_t4_terminal_contact_evidence(&contact_evidence)
-                .with_context(|| format!("loading {}", contact_evidence.display()))?;
-            let rows = t4_terminal_access_evidence_review_rows(&contact_rows);
-            write_t4_terminal_access_evidence_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_evidence_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_access_evidence_review_gate_failures(&rows, &contact_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access evidence review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access evidence review gate failed");
-                }
-                println!();
-                println!("T4 terminal access evidence review gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_evidence_review::run(&cmd_ctx, contact_evidence, output, gate)?,
 
         Commands::T4TerminalAccessProofAcquisition {
             evidence_review,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-acquisition");
-            let review_rows = load_t4_terminal_access_evidence_review(&evidence_review)
-                .with_context(|| format!("loading {}", evidence_review.display()))?;
-            let rows = t4_terminal_access_proof_acquisition_rows(&review_rows);
-            write_t4_terminal_access_proof_acquisition(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_acquisition_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_access_proof_acquisition_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof acquisition gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof acquisition gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof acquisition gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_acquisition::run(&cmd_ctx, evidence_review, output, gate)?,
 
         Commands::T4TerminalAccessProofArtifacts {
             proof_acquisition,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-artifacts");
-            let acquisition_rows = load_t4_terminal_access_proof_acquisition(&proof_acquisition)
-                .with_context(|| format!("loading {}", proof_acquisition.display()))?;
-            let rows = t4_terminal_access_proof_artifact_rows(&acquisition_rows);
-            write_t4_terminal_access_proof_artifacts(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_artifacts_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_access_proof_artifact_gate_failures(&rows, &acquisition_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof artifacts gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof artifacts gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof artifacts gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_artifacts::run(&cmd_ctx, proof_acquisition, output, gate)?,
 
         Commands::T4TerminalAccessProofReview {
             proof_artifacts,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-review");
-            let artifact_rows = load_t4_terminal_access_proof_artifacts(&proof_artifacts)
-                .with_context(|| format!("loading {}", proof_artifacts.display()))?;
-            let rows = t4_terminal_access_proof_review_rows(&artifact_rows);
-            write_t4_terminal_access_proof_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_review_gate_failures(&rows, &artifact_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof review gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof review gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_review::run(&cmd_ctx, proof_artifacts, output, gate)?,
 
         Commands::T4TerminalAccessSourceAccess {
             proof_review,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-source-access");
-            let review_rows = load_t4_terminal_access_proof_review(&proof_review)
-                .with_context(|| format!("loading {}", proof_review.display()))?;
-            let rows = t4_terminal_access_source_access_rows(&review_rows);
-            write_t4_terminal_access_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_source_access_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_source_access_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access source access gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access source access gate failed");
-                }
-                println!();
-                println!("T4 terminal access source access gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_source_access::run(&cmd_ctx, proof_review, output, gate)?,
 
         Commands::T4TerminalAccessProofIntake {
             source_access,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-intake");
-            let access_rows = load_t4_terminal_access_source_access(&source_access)
-                .with_context(|| format!("loading {}", source_access.display()))?;
-            let rows = t4_terminal_access_proof_intake_rows(&access_rows);
-            write_t4_terminal_access_proof_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_intake_gate_failures(&rows, &access_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof intake gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof intake gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_intake::run(&cmd_ctx, source_access, output, gate)?,
 
         Commands::T4TerminalAccessProofSourceCapture {
             proof_intake,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-source-capture");
-            let intake_rows = load_t4_terminal_access_proof_intake(&proof_intake)
-                .with_context(|| format!("loading {}", proof_intake.display()))?;
-            let rows = t4_terminal_access_proof_source_capture_rows(&intake_rows);
-            write_t4_terminal_access_proof_source_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_source_capture_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_access_proof_source_capture_gate_failures(&rows, &intake_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof source capture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof source capture gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof source capture gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_source_capture::run(&cmd_ctx, proof_intake, output, gate)?,
 
         Commands::T4TerminalAccessProofArtifactAttachment {
             source_capture,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-artifact-attachment");
-            let capture_rows = load_t4_terminal_access_proof_source_capture(&source_capture)
-                .with_context(|| format!("loading {}", source_capture.display()))?;
-            let rows = t4_terminal_access_proof_artifact_attachment_rows(&capture_rows);
-            write_t4_terminal_access_proof_artifact_attachment(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_artifact_attachment_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_artifact_attachment_gate_failures(
-                    &rows,
-                    &capture_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof artifact attachment gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof artifact attachment gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof artifact attachment gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_artifact_attachment::run(&cmd_ctx, source_capture, output, gate)?,
 
         Commands::T4TerminalAccessProofAttachmentReview {
             artifact_attachment,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-attachment-review");
-            let attachment_rows =
-                load_t4_terminal_access_proof_artifact_attachment(&artifact_attachment)
-                    .with_context(|| format!("loading {}", artifact_attachment.display()))?;
-            let rows = t4_terminal_access_proof_attachment_review_rows(&attachment_rows);
-            write_t4_terminal_access_proof_attachment_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_attachment_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_attachment_review_gate_failures(
-                    &rows,
-                    &attachment_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof attachment review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof attachment review gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof attachment review gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_attachment_review::run(&cmd_ctx, artifact_attachment, output, gate)?,
 
         Commands::T4TerminalAccessProofArtifactAcquisitionTargets {
             attachment_review,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-artifact-acquisition-targets");
-            let review_rows =
-                load_t4_terminal_access_proof_attachment_review(&attachment_review)
-                    .with_context(|| format!("loading {}", attachment_review.display()))?;
-            let rows = t4_terminal_access_proof_artifact_acquisition_target_rows(&review_rows);
-            write_t4_terminal_access_proof_artifact_acquisition_targets(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_artifact_acquisition_target_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_artifact_acquisition_target_gate_failures(
-                    &rows,
-                    &review_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof artifact acquisition targets gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!(
-                        "T4 terminal access proof artifact acquisition targets gate failed"
-                    );
-                }
-                println!();
-                println!("T4 terminal access proof artifact acquisition targets gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_artifact_acquisition_targets::run(&cmd_ctx, attachment_review, output, gate)?,
 
         Commands::T4TerminalAccessProofArtifactSourceAccess {
             acquisition_targets,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-access-proof-artifact-source-access");
-            let target_rows =
-                load_t4_terminal_access_proof_artifact_acquisition_targets(&acquisition_targets)
-                    .with_context(|| format!("loading {}", acquisition_targets.display()))?;
-            let rows = t4_terminal_access_proof_artifact_source_access_rows(&target_rows);
-            write_t4_terminal_access_proof_artifact_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_access_proof_artifact_source_access_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_access_proof_artifact_source_access_gate_failures(
-                    &rows,
-                    &target_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal access proof artifact source access gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal access proof artifact source access gate failed");
-                }
-                println!();
-                println!("T4 terminal access proof artifact source access gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_access_proof_artifact_source_access::run(&cmd_ctx, acquisition_targets, output, gate)?,
 
         Commands::T4TerminalScenarioReadiness {
             contact_evidence,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-scenario-readiness");
-            let contact_rows = load_t4_terminal_contact_evidence(&contact_evidence)
-                .with_context(|| format!("loading {}", contact_evidence.display()))?;
-            let rows = t4_terminal_scenario_readiness_rows(&contact_rows);
-            write_t4_terminal_scenario_readiness(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_scenario_readiness_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_scenario_readiness_gate_failures(&rows, &contact_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal scenario readiness gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal scenario readiness gate failed");
-                }
-                println!();
-                println!("T4 terminal scenario readiness gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_scenario_readiness::run(&cmd_ctx, contact_evidence, output, gate)?,
 
         Commands::T4TerminalContactSourcePlan {
             contact_evidence,
@@ -3073,207 +1033,45 @@ fn run_cli() -> Result<()> {
             gate,
         } => commands::t4_terminal_contact_source_plan::run(&cmd_ctx, contact_evidence, output, catalog_output, proof_docket_output, gate)?,
 
-        Commands::T4TerminalContactProofArtifactContract { output, gate } => {
-            println!("route t4-terminal-contact-proof-artifact-contract");
-            let rows = t4_terminal_contact_proof_artifact_contract_rows();
-            write_t4_terminal_contact_proof_artifact_contract(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_contact_proof_artifact_contract_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_contact_proof_artifact_contract_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal contact proof artifact contract gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal contact proof artifact contract gate failed");
-                }
-                println!();
-                println!("T4 terminal contact proof artifact contract gate: PASS");
-            }
-        }
+        Commands::T4TerminalContactProofArtifactContract { output, gate } => commands::t4_terminal_contact_proof_artifact_contract::run(&cmd_ctx, output, gate)?,
 
         Commands::T4TerminalContactProofSourceRegistry {
             proof_docket,
             accepted_sources,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-contact-proof-source-registry");
-            let proof_rows = load_t4_terminal_contact_proof_docket(&proof_docket)
-                .with_context(|| format!("loading {}", proof_docket.display()))?;
-            let accepted_source_rows =
-                load_t4_terminal_contact_accepted_proof_sources(&accepted_sources)
-                    .with_context(|| format!("loading {}", accepted_sources.display()))?;
-            let rows =
-                t4_terminal_contact_proof_source_registry_rows(&proof_rows, &accepted_source_rows);
-            write_t4_terminal_contact_proof_source_registry(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_contact_proof_source_registry_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_contact_proof_source_registry_gate_failures(&rows, &proof_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal contact proof source registry gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal contact proof source registry gate failed");
-                }
-                println!();
-                println!("T4 terminal contact proof source registry gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_contact_proof_source_registry::run(&cmd_ctx, proof_docket, accepted_sources, output, gate)?,
 
         Commands::T4TerminalContactDistrictProofImport {
             source_registry,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-contact-district-proof-import");
-            let registry_rows = load_t4_terminal_contact_proof_source_registry(&source_registry)
-                .with_context(|| format!("loading {}", source_registry.display()))?;
-            let rows = t4_terminal_contact_district_proof_import_rows(&registry_rows);
-            write_t4_terminal_contact_district_proof_import(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_contact_district_proof_import_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_contact_district_proof_import_gate_failures(&rows, &registry_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal contact district proof import gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal contact district proof import gate failed");
-                }
-                println!();
-                println!("T4 terminal contact district proof import gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_contact_district_proof_import::run(&cmd_ctx, source_registry, output, gate)?,
 
         Commands::T4TerminalColumbusProofIntake {
             proof_docket,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-columbus-proof-intake");
-            let proof_rows = load_t4_terminal_contact_proof_docket(&proof_docket)
-                .with_context(|| format!("loading {}", proof_docket.display()))?;
-            let rows = t4_terminal_columbus_proof_intake_rows(&proof_rows);
-            write_t4_terminal_columbus_proof_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_columbus_proof_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = t4_terminal_columbus_proof_intake_gate_failures(&rows, &proof_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal Columbus proof intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal Columbus proof intake gate failed");
-                }
-                println!();
-                println!("T4 terminal Columbus proof intake gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_columbus_proof_intake::run(&cmd_ctx, proof_docket, output, gate)?,
 
         Commands::T4TerminalColumbusSourceAccess {
             columbus_intake,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-columbus-source-access");
-            let intake_rows = load_t4_terminal_columbus_proof_intake(&columbus_intake)
-                .with_context(|| format!("loading {}", columbus_intake.display()))?;
-            let rows = t4_terminal_columbus_source_access_rows(&intake_rows);
-            write_t4_terminal_columbus_source_access(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_columbus_source_access_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_columbus_source_access_gate_failures(&rows, &intake_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal Columbus source access gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal Columbus source access gate failed");
-                }
-                println!();
-                println!("T4 terminal Columbus source access gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_columbus_source_access::run(&cmd_ctx, columbus_intake, output, gate)?,
 
         Commands::T4TerminalColumbusProofAttempts {
             source_access,
             output,
             gate,
-        } => {
-            println!("route t4-terminal-columbus-proof-attempts");
-            let source_access_rows = load_t4_terminal_columbus_source_access(&source_access)
-                .with_context(|| format!("loading {}", source_access.display()))?;
-            let rows = t4_terminal_columbus_proof_attempt_rows(&source_access_rows);
-            write_t4_terminal_columbus_proof_attempts(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t4_terminal_columbus_proof_attempt_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t4_terminal_columbus_proof_attempt_gate_failures(&rows, &source_access_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T4 terminal Columbus proof attempts gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T4 terminal Columbus proof attempts gate failed");
-                }
-                println!();
-                println!("T4 terminal Columbus proof attempts gate: PASS");
-            }
-        }
+        } => commands::t4_terminal_columbus_proof_attempts::run(&cmd_ctx, source_access, output, gate)?,
 
         Commands::T3T4AccessGaps {
             route_columns,
             terminal_columns,
             output,
             gate,
-        } => {
-            println!("route t3-t4-access-gaps");
-            let route_rows = load_t3_zone_route_columns(&route_columns)
-                .with_context(|| format!("loading {}", route_columns.display()))?;
-            let terminal_rows = load_t4_terminal_access_columns(&terminal_columns)
-                .with_context(|| format!("loading {}", terminal_columns.display()))?;
-            let rows = t3_t4_access_gap_rows(&route_rows, &terminal_rows);
-            write_t3_t4_access_gaps(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_t4_access_gap_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_t4_access_gap_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3/T4 access gap gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3/T4 access gap gate failed");
-                }
-                println!();
-                println!("T3/T4 access gap gate: PASS");
-            }
-        }
+        } => commands::t3_t4_access_gaps::run(&cmd_ctx, route_columns, terminal_columns, output, gate)?,
 
         Commands::T3ZoneMapDiagnostics {
             route_columns,
@@ -3281,33 +1079,7 @@ fn run_cli() -> Result<()> {
             map_atlas,
             output,
             gate,
-        } => {
-            println!("route t3-zone-map-diagnostics");
-            let route_rows = load_t3_zone_route_columns(&route_columns)
-                .with_context(|| format!("loading {}", route_columns.display()))?;
-            let gap_rows = load_t3_t4_access_gaps(&access_gaps)
-                .with_context(|| format!("loading {}", access_gaps.display()))?;
-            let atlas_rows = load_map_atlas(&map_atlas)
-                .with_context(|| format!("loading {}", map_atlas.display()))?;
-            let rows = t3_zone_map_diagnostic_rows(&route_rows, &gap_rows, &atlas_rows);
-            write_t3_zone_map_diagnostics(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_zone_map_diagnostic_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_zone_map_diagnostic_gate_failures(&rows, &atlas_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 zone map diagnostic gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 zone map diagnostic gate failed");
-                }
-                println!();
-                println!("T3 zone map diagnostic gate: PASS");
-            }
-        }
+        } => commands::t3_zone_map_diagnostics::run(&cmd_ctx, route_columns, access_gaps, map_atlas, output, gate)?,
 
         Commands::T3ZoneRenderBoard {
             diagnostics,
@@ -3323,33 +1095,7 @@ fn run_cli() -> Result<()> {
             stop_candidates,
             output,
             gate,
-        } => {
-            println!("route t3-zone-stop-placement");
-            let board_rows = load_t3_zone_render_board(&render_board)
-                .with_context(|| format!("loading {}", render_board.display()))?;
-            let stop_file = std::fs::File::open(&stop_candidates)
-                .with_context(|| format!("opening {}", stop_candidates.display()))?;
-            let stop_rows = parse_stop_candidates(stop_file)
-                .with_context(|| format!("parsing {}", stop_candidates.display()))?;
-            let rows = t3_zone_stop_placement_rows(&board_rows, &stop_rows);
-            write_t3_zone_stop_placement(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_zone_stop_placement_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_zone_stop_placement_gate_failures(&rows, &board_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 zone stop placement gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 zone stop placement gate failed");
-                }
-                println!();
-                println!("T3 zone stop placement gate: PASS");
-            }
-        }
+        } => commands::t3_zone_stop_placement::run(&cmd_ctx, render_board, stop_candidates, output, gate)?,
 
         Commands::NationalSegmentRegistry {
             render_board,
@@ -3364,57 +1110,13 @@ fn run_cli() -> Result<()> {
             registry,
             output,
             gate,
-        } => {
-            println!("route national-segment-bundles");
-            let registry_rows = load_national_segment_registry(&registry)
-                .with_context(|| format!("loading {}", registry.display()))?;
-            let rows = national_segment_bundle_rows(&registry_rows);
-            write_national_segment_bundles(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_national_segment_bundle_summary(&output, &rows);
-
-            if gate {
-                let failures = national_segment_bundle_gate_failures(&rows, &registry_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("National segment bundle gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("national segment bundle gate failed");
-                }
-                println!();
-                println!("National segment bundle gate: PASS");
-            }
-        }
+        } => commands::national_segment_bundles::run(&cmd_ctx, registry, output, gate)?,
 
         Commands::T2BubbleUpReview {
             intake,
             output,
             gate,
-        } => {
-            println!("route t2-bubble-up-review");
-            let intake_rows = load_t3_t4_pressure_intake(&intake)
-                .with_context(|| format!("loading {}", intake.display()))?;
-            let rows = t2_bubble_up_review_rows(&intake_rows);
-            write_t2_bubble_up_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bubble_up_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bubble_up_review_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bubble-up review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bubble-up review gate failed");
-                }
-                println!();
-                println!("T2 bubble-up review gate: PASS");
-            }
-        }
+        } => commands::t2_bubble_up_review::run(&cmd_ctx, intake, output, gate)?,
 
         Commands::T1FeedbackDocket {
             service_selection,
@@ -3429,48 +1131,9 @@ fn run_cli() -> Result<()> {
             all_tiers,
             output,
             gate,
-        } => {
-            println!("route tier-optimize");
-            let rows = optimizer_run::tier_optimizer_run_rows(all_tiers)?;
-            write_tier_optimizer_runs(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_tier_optimizer_run_summary(&output, &rows);
+        } => commands::tier_optimize::run(&cmd_ctx, all_tiers, output, gate)?,
 
-            if gate {
-                let failures = tier_optimizer_run_gate_failures(all_tiers, &rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("tier optimizer bundle gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("tier optimizer bundle gate failed");
-                }
-                println!();
-                println!("tier optimizer bundle gate: PASS");
-            }
-        }
-
-        Commands::OptimizerManifest { manifest, gate } => {
-            println!("route optimizer-manifest");
-            let rows = load_tier_optimizer_runs(&manifest)
-                .with_context(|| format!("loading {}", manifest.display()))?;
-            print_optimizer_manifest_summary(&manifest, &rows);
-
-            if gate {
-                let failures = optimizer_manifest_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("optimizer manifest gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("optimizer manifest gate failed");
-                }
-                println!();
-                println!("optimizer manifest gate: PASS");
-            }
-        }
+        Commands::OptimizerManifest { manifest, gate } => commands::optimizer_manifest::run(&cmd_ctx, manifest, gate)?,
 
         Commands::OptimizerConstraintLedger {
             pavement_debt_budget,
@@ -3502,213 +1165,45 @@ fn run_cli() -> Result<()> {
             output,
             details,
             gate,
-        } => {
-            println!("route optimizer-constraint-budget");
-            let ledger_rows = load_optimizer_constraint_ledger(&ledger)
-                .with_context(|| format!("loading {}", ledger.display()))?;
-            let rows = optimizer_constraint_budget_rows(&ledger_rows);
-            write_optimizer_constraint_budget(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_optimizer_constraint_budget_summary(&output, &rows, details);
-
-            if gate {
-                let failures = optimizer_constraint_budget_gate_failures(&rows, &ledger_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("optimizer constraint budget gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("optimizer constraint budget gate failed");
-                }
-                println!();
-                println!("optimizer constraint budget gate: PASS");
-            }
-        }
+        } => commands::optimizer_constraint_budget::run(&cmd_ctx, ledger, output, details, gate)?,
 
         Commands::OptimizerResidualBlockerBacklog {
             budget,
             output,
             details,
             gate,
-        } => {
-            println!("route optimizer-residual-blocker-backlog");
-            let budget_rows = load_optimizer_constraint_budget(&budget)
-                .with_context(|| format!("loading {}", budget.display()))?;
-            let rows = optimizer_residual_blocker_backlog_rows(&budget_rows);
-            write_optimizer_residual_blocker_backlog(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_optimizer_residual_blocker_backlog_summary(&output, &rows, details);
-
-            if gate {
-                let failures =
-                    optimizer_residual_blocker_backlog_gate_failures(&rows, &budget_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("optimizer residual blocker backlog gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("optimizer residual blocker backlog gate failed");
-                }
-                println!();
-                println!("optimizer residual blocker backlog gate: PASS");
-            }
-        }
+        } => commands::optimizer_residual_blocker_backlog::run(&cmd_ctx, budget, output, details, gate)?,
 
         Commands::OptimizerClaimReview {
             backlog,
             output,
             gate,
-        } => {
-            println!("route optimizer-claim-review");
-            let backlog_rows = load_optimizer_residual_blocker_backlog(&backlog)
-                .with_context(|| format!("loading {}", backlog.display()))?;
-            let rows = optimizer_claim_review_rows(&backlog_rows);
-            write_optimizer_claim_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_optimizer_claim_review_summary(&output, &rows);
-
-            if gate {
-                let failures = optimizer_claim_review_gate_failures(&rows, &backlog_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("optimizer claim review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("optimizer claim review gate failed");
-                }
-                println!();
-                println!("optimizer claim review gate: PASS");
-            }
-        }
+        } => commands::optimizer_claim_review::run(&cmd_ctx, backlog, output, gate)?,
 
         Commands::T2GamePublicationEvidenceReview {
             claim_review,
             scenario_hooks,
             output,
             gate,
-        } => {
-            println!("route t2-game-publication-evidence-review");
-            let claim_rows = load_optimizer_claim_review(&claim_review)
-                .with_context(|| format!("loading {}", claim_review.display()))?;
-            let hook_rows = load_t2_scenario_hooks(&scenario_hooks)
-                .with_context(|| format!("loading {}", scenario_hooks.display()))?;
-            let rows = t2_game_publication_evidence_review_rows(&claim_rows, &hook_rows);
-            write_t2_game_publication_evidence_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_publication_evidence_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_publication_evidence_review_gate_failures(
-                    &rows,
-                    &claim_rows,
-                    &hook_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game publication evidence review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game publication evidence review gate failed");
-                }
-                println!();
-                println!("T2 game publication evidence review gate: PASS");
-            }
-        }
+        } => commands::t2_game_publication_evidence_review::run(&cmd_ctx, claim_review, scenario_hooks, output, gate)?,
 
         Commands::T2GamePublicationEvidencePolicy {
             review,
             output,
             gate,
-        } => {
-            println!("route t2-game-publication-evidence-policy");
-            let review_rows = load_t2_game_publication_evidence_review(&review)
-                .with_context(|| format!("loading {}", review.display()))?;
-            let rows = t2_game_publication_evidence_policy_rows(&review_rows);
-            write_t2_game_publication_evidence_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_publication_evidence_policy_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_game_publication_evidence_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game publication evidence policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game publication evidence policy gate failed");
-                }
-                println!();
-                println!("T2 game publication evidence policy gate: PASS");
-            }
-        }
+        } => commands::t2_game_publication_evidence_policy::run(&cmd_ctx, review, output, gate)?,
 
         Commands::T2GamePublicationEvidencePolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t2-game-publication-evidence-policy-acceptance");
-            let policy_rows = load_t2_game_publication_evidence_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t2_game_publication_evidence_policy_acceptance_rows(&policy_rows);
-            write_t2_game_publication_evidence_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_publication_evidence_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_publication_evidence_policy_acceptance_gate_failures(
-                    &rows,
-                    &policy_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game publication evidence policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game publication evidence policy acceptance gate failed");
-                }
-                println!();
-                println!("T2 game publication evidence policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t2_game_publication_evidence_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T2GamePublicationEvidenceBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t2-game-publication-evidence-blocker-relief");
-            let acceptance_rows = load_t2_game_publication_evidence_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t2_game_publication_evidence_blocker_relief_rows(&acceptance_rows);
-            write_t2_game_publication_evidence_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_publication_evidence_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_publication_evidence_blocker_relief_gate_failures(
-                    &rows,
-                    &acceptance_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game publication evidence blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game publication evidence blocker relief gate failed");
-                }
-                println!();
-                println!("T2 game publication evidence blocker relief gate: PASS");
-            }
-        }
+        } => commands::t2_game_publication_evidence_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T1SchematicGeometryClaimReview {
             claim_review,
@@ -3722,688 +1217,143 @@ fn run_cli() -> Result<()> {
             claim_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-transfer-complexity-review");
-            let claim_rows = load_optimizer_claim_review(&claim_review)
-                .with_context(|| format!("loading {}", claim_review.display()))?;
-            let diagnostic_rows = route_map::beck_t2_diagnostics();
-            let rows = t2_beck_transfer_complexity_review_rows(&claim_rows, &diagnostic_rows);
-            write_t2_beck_transfer_complexity_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_transfer_complexity_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_transfer_complexity_review_gate_failures(
-                    &rows,
-                    &claim_rows,
-                    &diagnostic_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck transfer complexity review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck transfer complexity review gate failed");
-                }
-                println!();
-                println!("T2 Beck transfer complexity review gate: PASS");
-            }
-        }
+        } => commands::t2_beck_transfer_complexity_review::run(&cmd_ctx, claim_review, output, gate)?,
 
         Commands::T2BeckLabelDensityReview {
             claim_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-label-density-review");
-            let claim_rows = load_optimizer_claim_review(&claim_review)
-                .with_context(|| format!("loading {}", claim_review.display()))?;
-            let diagnostic_rows = route_map::beck_t2_diagnostics();
-            let rows = t2_beck_label_density_review_rows(&claim_rows, &diagnostic_rows);
-            write_t2_beck_label_density_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_label_density_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_label_density_review_gate_failures(
-                    &rows,
-                    &claim_rows,
-                    &diagnostic_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck label density review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck label density review gate failed");
-                }
-                println!();
-                println!("T2 Beck label density review gate: PASS");
-            }
-        }
+        } => commands::t2_beck_label_density_review::run(&cmd_ctx, claim_review, output, gate)?,
 
         Commands::T2BeckLongConnectorReview {
             claim_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-long-connector-review");
-            let claim_rows = load_optimizer_claim_review(&claim_review)
-                .with_context(|| format!("loading {}", claim_review.display()))?;
-            let diagnostic_rows = route_map::beck_t2_diagnostics();
-            let rows = t2_beck_long_connector_review_rows(&claim_rows, &diagnostic_rows);
-            write_t2_beck_long_connector_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_long_connector_review_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_long_connector_review_gate_failures(
-                    &rows,
-                    &claim_rows,
-                    &diagnostic_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck long connector review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck long connector review gate failed");
-                }
-                println!();
-                println!("T2 Beck long connector review gate: PASS");
-            }
-        }
+        } => commands::t2_beck_long_connector_review::run(&cmd_ctx, claim_review, output, gate)?,
 
         Commands::T2BeckLongConnectorPolicy {
             connector_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-long-connector-policy");
-            let review_rows = load_t2_beck_long_connector_review(&connector_review)
-                .with_context(|| format!("loading {}", connector_review.display()))?;
-            let rows = t2_beck_long_connector_policy_rows(&review_rows);
-            write_t2_beck_long_connector_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_long_connector_policy_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_long_connector_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck long connector policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck long connector policy gate failed");
-                }
-                println!();
-                println!("T2 Beck long connector policy gate: PASS");
-            }
-        }
+        } => commands::t2_beck_long_connector_policy::run(&cmd_ctx, connector_review, output, gate)?,
 
         Commands::T2BeckLongConnectorPolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t2-beck-long-connector-policy-acceptance");
-            let policy_rows = load_t2_beck_long_connector_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t2_beck_long_connector_policy_acceptance_rows(&policy_rows);
-            write_t2_beck_long_connector_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_long_connector_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_beck_long_connector_policy_acceptance_gate_failures(&rows, &policy_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck long connector policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck long connector policy acceptance gate failed");
-                }
-                println!();
-                println!("T2 Beck long connector policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t2_beck_long_connector_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T2BeckLongConnectorBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t2-beck-long-connector-blocker-relief");
-            let acceptance_rows = load_t2_beck_long_connector_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t2_beck_long_connector_blocker_relief_rows(&acceptance_rows);
-            write_t2_beck_long_connector_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_long_connector_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_beck_long_connector_blocker_relief_gate_failures(&rows, &acceptance_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck long connector blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck long connector blocker relief gate failed");
-                }
-                println!();
-                println!("T2 Beck long connector blocker relief gate: PASS");
-            }
-        }
+        } => commands::t2_beck_long_connector_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T2BeckLabelDensityPolicy {
             label_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-label-density-policy");
-            let review_rows = load_t2_beck_label_density_review(&label_review)
-                .with_context(|| format!("loading {}", label_review.display()))?;
-            let rows = t2_beck_label_density_policy_rows(&review_rows);
-            write_t2_beck_label_density_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_label_density_policy_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_label_density_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck label density policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck label density policy gate failed");
-                }
-                println!();
-                println!("T2 Beck label density policy gate: PASS");
-            }
-        }
+        } => commands::t2_beck_label_density_policy::run(&cmd_ctx, label_review, output, gate)?,
 
         Commands::T2BeckLabelDensityPolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t2-beck-label-density-policy-acceptance");
-            let policy_rows = load_t2_beck_label_density_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t2_beck_label_density_policy_acceptance_rows(&policy_rows);
-            write_t2_beck_label_density_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_label_density_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_beck_label_density_policy_acceptance_gate_failures(&rows, &policy_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck label density policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck label density policy acceptance gate failed");
-                }
-                println!();
-                println!("T2 Beck label density policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t2_beck_label_density_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T2BeckTransferComplexityPolicy {
             transfer_review,
             output,
             gate,
-        } => {
-            println!("route t2-beck-transfer-complexity-policy");
-            let review_rows = load_t2_beck_transfer_complexity_review(&transfer_review)
-                .with_context(|| format!("loading {}", transfer_review.display()))?;
-            let rows = t2_beck_transfer_complexity_policy_rows(&review_rows);
-            write_t2_beck_transfer_complexity_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_transfer_complexity_policy_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_beck_transfer_complexity_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck transfer complexity policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck transfer complexity policy gate failed");
-                }
-                println!();
-                println!("T2 Beck transfer complexity policy gate: PASS");
-            }
-        }
+        } => commands::t2_beck_transfer_complexity_policy::run(&cmd_ctx, transfer_review, output, gate)?,
 
         Commands::T2BeckTransferComplexityPolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t2-beck-transfer-complexity-policy-acceptance");
-            let policy_rows = load_t2_beck_transfer_complexity_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t2_beck_transfer_complexity_policy_acceptance_rows(&policy_rows);
-            write_t2_beck_transfer_complexity_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_transfer_complexity_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_transfer_complexity_policy_acceptance_gate_failures(
-                    &rows,
-                    &policy_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck transfer complexity policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck transfer complexity policy acceptance gate failed");
-                }
-                println!();
-                println!("T2 Beck transfer complexity policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t2_beck_transfer_complexity_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T1SharedSegmentMapPolicy {
             schematic_review,
             output,
             gate,
-        } => {
-            println!("route t1-shared-segment-map-policy");
-            let schematic_rows = load_t1_schematic_geometry_claim_review(&schematic_review)
-                .with_context(|| format!("loading {}", schematic_review.display()))?;
-            let rows = t1_shared_segment_map_policy_rows(&schematic_rows);
-            write_t1_shared_segment_map_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_shared_segment_map_policy_summary(&output, &rows);
-
-            if gate {
-                let failures = t1_shared_segment_map_policy_gate_failures(&rows, &schematic_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 shared segment map policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 shared segment map policy gate failed");
-                }
-                println!();
-                println!("T1 shared segment map policy gate: PASS");
-            }
-        }
+        } => commands::t1_shared_segment_map_policy::run(&cmd_ctx, schematic_review, output, gate)?,
 
         Commands::T1SharedSegmentPolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t1-shared-segment-policy-acceptance");
-            let policy_rows = load_t1_shared_segment_map_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t1_shared_segment_policy_acceptance_rows(&policy_rows);
-            write_t1_shared_segment_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_shared_segment_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t1_shared_segment_policy_acceptance_gate_failures(&rows, &policy_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 shared segment policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 shared segment policy acceptance gate failed");
-                }
-                println!();
-                println!("T1 shared segment policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t1_shared_segment_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T1SchematicGeometryBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t1-schematic-geometry-blocker-relief");
-            let acceptance_rows = load_t1_shared_segment_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t1_schematic_geometry_blocker_relief_rows(&acceptance_rows);
-            write_t1_schematic_geometry_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t1_schematic_geometry_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t1_schematic_geometry_blocker_relief_gate_failures(&rows, &acceptance_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T1 schematic geometry blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T1 schematic geometry blocker relief gate failed");
-                }
-                println!();
-                println!("T1 schematic geometry blocker relief gate: PASS");
-            }
-        }
+        } => commands::t1_schematic_geometry_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T2BeckTransferComplexityBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t2-beck-transfer-complexity-blocker-relief");
-            let acceptance_rows = load_t2_beck_transfer_complexity_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t2_beck_transfer_complexity_blocker_relief_rows(&acceptance_rows);
-            write_t2_beck_transfer_complexity_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_transfer_complexity_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_beck_transfer_complexity_blocker_relief_gate_failures(
-                    &rows,
-                    &acceptance_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck transfer complexity blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck transfer complexity blocker relief gate failed");
-                }
-                println!();
-                println!("T2 Beck transfer complexity blocker relief gate: PASS");
-            }
-        }
+        } => commands::t2_beck_transfer_complexity_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T2BeckLabelDensityBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t2-beck-label-density-blocker-relief");
-            let acceptance_rows = load_t2_beck_label_density_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t2_beck_label_density_blocker_relief_rows(&acceptance_rows);
-            write_t2_beck_label_density_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_beck_label_density_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_beck_label_density_blocker_relief_gate_failures(&rows, &acceptance_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 Beck label density blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 Beck label density blocker relief gate failed");
-                }
-                println!();
-                println!("T2 Beck label density blocker relief gate: PASS");
-            }
-        }
+        } => commands::t2_beck_label_density_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T3LowerTierFeederGapReview {
             backlog,
             access_gaps,
             output,
             gate,
-        } => {
-            println!("route t3-lower-tier-feeder-gap-review");
-            let backlog_rows = load_optimizer_residual_blocker_backlog(&backlog)
-                .with_context(|| format!("loading {}", backlog.display()))?;
-            let gap_rows = load_t3_t4_access_gaps(&access_gaps)
-                .with_context(|| format!("loading {}", access_gaps.display()))?;
-            let rows = t3_lower_tier_feeder_gap_review_rows(&backlog_rows, &gap_rows);
-            write_t3_lower_tier_feeder_gap_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_lower_tier_feeder_gap_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t3_lower_tier_feeder_gap_review_gate_failures(&rows, &backlog_rows, &gap_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 lower-tier feeder gap review gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 lower-tier feeder gap review gate failed");
-                }
-                println!();
-                println!("T3 lower-tier feeder gap review gate: PASS");
-            }
-        }
+        } => commands::t3_lower_tier_feeder_gap_review::run(&cmd_ctx, backlog, access_gaps, output, gate)?,
 
         Commands::T3LowerTierFeederGapPolicy {
             feeder_review,
             output,
             gate,
-        } => {
-            println!("route t3-lower-tier-feeder-gap-policy");
-            let review_rows = load_t3_lower_tier_feeder_gap_review(&feeder_review)
-                .with_context(|| format!("loading {}", feeder_review.display()))?;
-            let rows = t3_lower_tier_feeder_gap_policy_rows(&review_rows);
-            write_t3_lower_tier_feeder_gap_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_lower_tier_feeder_gap_policy_summary(&output, &rows);
-
-            if gate {
-                let failures = t3_lower_tier_feeder_gap_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 lower-tier feeder gap policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 lower-tier feeder gap policy gate failed");
-                }
-                println!();
-                println!("T3 lower-tier feeder gap policy gate: PASS");
-            }
-        }
+        } => commands::t3_lower_tier_feeder_gap_policy::run(&cmd_ctx, feeder_review, output, gate)?,
 
         Commands::T3LowerTierFeederGapPolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t3-lower-tier-feeder-gap-policy-acceptance");
-            let policy_rows = load_t3_lower_tier_feeder_gap_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t3_lower_tier_feeder_gap_policy_acceptance_rows(&policy_rows);
-            write_t3_lower_tier_feeder_gap_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_lower_tier_feeder_gap_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t3_lower_tier_feeder_gap_policy_acceptance_gate_failures(&rows, &policy_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 lower-tier feeder gap policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 lower-tier feeder gap policy acceptance gate failed");
-                }
-                println!();
-                println!("T3 lower-tier feeder gap policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t3_lower_tier_feeder_gap_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T3LowerTierFeederGapBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t3-lower-tier-feeder-gap-blocker-relief");
-            let acceptance_rows = load_t3_lower_tier_feeder_gap_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t3_lower_tier_feeder_gap_blocker_relief_rows(&acceptance_rows);
-            write_t3_lower_tier_feeder_gap_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t3_lower_tier_feeder_gap_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t3_lower_tier_feeder_gap_blocker_relief_gate_failures(&rows, &acceptance_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T3 lower-tier feeder gap blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T3 lower-tier feeder gap blocker relief gate failed");
-                }
-                println!();
-                println!("T3 lower-tier feeder gap blocker relief gate: PASS");
-            }
-        }
+        } => commands::t3_lower_tier_feeder_gap_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T2GameOpsBindingIntake {
             budget,
             output,
             gate,
-        } => {
-            println!("route t2-game-ops-binding-intake");
-            let budget_rows = load_optimizer_constraint_budget(&budget)
-                .with_context(|| format!("loading {}", budget.display()))?;
-            let rows = t2_game_ops_binding_intake_rows(&budget_rows);
-            write_t2_game_ops_binding_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_ops_binding_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_ops_binding_intake_gate_failures(&rows, &budget_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game/ops binding intake gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game/ops binding intake gate failed");
-                }
-                println!();
-                println!("T2 game/ops binding intake gate: PASS");
-            }
-        }
+        } => commands::t2_game_ops_binding_intake::run(&cmd_ctx, budget, output, gate)?,
 
         Commands::T2GameOpsBindingDecisions {
             intake,
             bundle_overlays,
             output,
             gate,
-        } => {
-            println!("route t2-game-ops-binding-decisions");
-            let intake_rows = load_t2_game_ops_binding_intake(&intake)
-                .with_context(|| format!("loading {}", intake.display()))?;
-            let overlay_rows = load_t2_bundle_overlays(&bundle_overlays)
-                .with_context(|| format!("loading {}", bundle_overlays.display()))?;
-            let rows = t2_game_ops_binding_decision_rows(&intake_rows, &overlay_rows);
-            write_t2_game_ops_binding_decisions(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_ops_binding_decision_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_ops_binding_decision_gate_failures(&rows, &intake_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game/ops binding decisions gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game/ops binding decisions gate failed");
-                }
-                println!();
-                println!("T2 game/ops binding decisions gate: PASS");
-            }
-        }
+        } => commands::t2_game_ops_binding_decisions::run(&cmd_ctx, intake, bundle_overlays, output, gate)?,
 
         Commands::T2BundleOverlayRepairTargets {
             decisions,
             bundle_overlays,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-overlay-repair-targets");
-            let decision_rows = load_t2_game_ops_binding_decisions(&decisions)
-                .with_context(|| format!("loading {}", decisions.display()))?;
-            let overlay_rows = load_t2_bundle_overlays(&bundle_overlays)
-                .with_context(|| format!("loading {}", bundle_overlays.display()))?;
-            let rows = t2_bundle_overlay_repair_target_rows(&decision_rows, &overlay_rows);
-            write_t2_bundle_overlay_repair_targets(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_overlay_repair_target_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bundle_overlay_repair_target_gate_failures(&rows, &decision_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle overlay repair targets gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bundle overlay repair targets gate failed");
-                }
-                println!();
-                println!("T2 bundle overlay repair targets gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_overlay_repair_targets::run(&cmd_ctx, decisions, bundle_overlays, output, gate)?,
 
         Commands::T2ServiceClassRepairDocket {
             targets,
             service_diagnostics,
             output,
             gate,
-        } => {
-            println!("route t2-service-class-repair-docket");
-            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
-                .with_context(|| format!("loading {}", targets.display()))?;
-            let diagnostic_rows = load_t2_service_diagnostic_queue(&service_diagnostics)
-                .with_context(|| format!("loading {}", service_diagnostics.display()))?;
-            let rows = t2_service_class_repair_docket_rows(&target_rows, &diagnostic_rows);
-            write_t2_service_class_repair_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_service_class_repair_docket_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_service_class_repair_docket_gate_failures(&rows, &target_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 service-class repair docket gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 service-class repair docket gate failed");
-                }
-                println!();
-                println!("T2 service-class repair docket gate: PASS");
-            }
-        }
+        } => commands::t2_service_class_repair_docket::run(&cmd_ctx, targets, service_diagnostics, output, gate)?,
 
         Commands::T2GameOpsBundleEvidenceReview {
             decisions,
@@ -4417,92 +1367,19 @@ fn run_cli() -> Result<()> {
             review,
             output,
             gate,
-        } => {
-            println!("route t2-game-ops-bundle-evidence-policy");
-            let review_rows = load_t2_game_ops_bundle_evidence_review(&review)
-                .with_context(|| format!("loading {}", review.display()))?;
-            let rows = t2_game_ops_bundle_evidence_policy_rows(&review_rows);
-            write_t2_game_ops_bundle_evidence_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_ops_bundle_evidence_policy_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_game_ops_bundle_evidence_policy_gate_failures(&rows, &review_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game/ops bundle evidence policy gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game/ops bundle evidence policy gate failed");
-                }
-                println!();
-                println!("T2 game/ops bundle evidence policy gate: PASS");
-            }
-        }
+        } => commands::t2_game_ops_bundle_evidence_policy::run(&cmd_ctx, review, output, gate)?,
 
         Commands::T2GameOpsBundleEvidencePolicyAcceptance {
             policy,
             output,
             gate,
-        } => {
-            println!("route t2-game-ops-bundle-evidence-policy-acceptance");
-            let policy_rows = load_t2_game_ops_bundle_evidence_policy(&policy)
-                .with_context(|| format!("loading {}", policy.display()))?;
-            let rows = t2_game_ops_bundle_evidence_policy_acceptance_rows(&policy_rows);
-            write_t2_game_ops_bundle_evidence_policy_acceptance(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_ops_bundle_evidence_policy_acceptance_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_ops_bundle_evidence_policy_acceptance_gate_failures(
-                    &rows,
-                    &policy_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game/ops bundle evidence policy acceptance gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game/ops bundle evidence policy acceptance gate failed");
-                }
-                println!();
-                println!("T2 game/ops bundle evidence policy acceptance gate: PASS");
-            }
-        }
+        } => commands::t2_game_ops_bundle_evidence_policy_acceptance::run(&cmd_ctx, policy, output, gate)?,
 
         Commands::T2GameOpsBundleEvidenceBlockerRelief {
             acceptance,
             output,
             gate,
-        } => {
-            println!("route t2-game-ops-bundle-evidence-blocker-relief");
-            let acceptance_rows = load_t2_game_ops_bundle_evidence_policy_acceptance(&acceptance)
-                .with_context(|| format!("loading {}", acceptance.display()))?;
-            let rows = t2_game_ops_bundle_evidence_blocker_relief_rows(&acceptance_rows);
-            write_t2_game_ops_bundle_evidence_blocker_relief(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_game_ops_bundle_evidence_blocker_relief_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
-                    &rows,
-                    &acceptance_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 game/ops bundle evidence blocker relief gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 game/ops bundle evidence blocker relief gate failed");
-                }
-                println!();
-                println!("T2 game/ops bundle evidence blocker relief gate: PASS");
-            }
-        }
+        } => commands::t2_game_ops_bundle_evidence_blocker_relief::run(&cmd_ctx, acceptance, output, gate)?,
 
         Commands::T2ServiceOverlayDiagnosticDecisions {
             service_docket,
@@ -4518,90 +1395,19 @@ fn run_cli() -> Result<()> {
             zone_render_board,
             output,
             gate,
-        } => {
-            println!("route t2-local-zone-overlay-handoff");
-            let docket_rows = load_t2_service_class_repair_docket(&service_docket)
-                .with_context(|| format!("loading {}", service_docket.display()))?;
-            let route_rows = load_t3_zone_route_columns(&zone_route_columns)
-                .with_context(|| format!("loading {}", zone_route_columns.display()))?;
-            let board_rows = load_t3_zone_render_board(&zone_render_board)
-                .with_context(|| format!("loading {}", zone_render_board.display()))?;
-            let rows = t2_local_zone_overlay_handoff_rows(&docket_rows, &route_rows, &board_rows);
-            write_t2_local_zone_overlay_handoff(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_local_zone_overlay_handoff_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_local_zone_overlay_handoff_gate_failures(&rows, &docket_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 local-zone overlay handoff gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 local-zone overlay handoff gate failed");
-                }
-                println!();
-                println!("T2 local-zone overlay handoff gate: PASS");
-            }
-        }
+        } => commands::t2_local_zone_overlay_handoff::run(&cmd_ctx, service_docket, zone_route_columns, zone_render_board, output, gate)?,
 
         Commands::T2BundleReadinessDisposition {
             targets,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-readiness-disposition");
-            let target_rows = load_t2_bundle_overlay_repair_targets(&targets)
-                .with_context(|| format!("loading {}", targets.display()))?;
-            let rows = t2_bundle_readiness_disposition_rows(&target_rows);
-            write_t2_bundle_readiness_disposition(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_readiness_disposition_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bundle_readiness_disposition_gate_failures(&rows, &target_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle readiness disposition gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bundle readiness disposition gate failed");
-                }
-                println!();
-                println!("T2 bundle readiness disposition gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_readiness_disposition::run(&cmd_ctx, targets, output, gate)?,
 
         Commands::T2BundleReadinessRepairDocket {
             readiness,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-readiness-repair-docket");
-            let readiness_rows = load_t2_bundle_readiness_disposition(&readiness)
-                .with_context(|| format!("loading {}", readiness.display()))?;
-            let rows = t2_bundle_readiness_repair_docket_rows(&readiness_rows);
-            write_t2_bundle_readiness_repair_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_readiness_repair_docket_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_bundle_readiness_repair_docket_gate_failures(&rows, &readiness_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle readiness repair docket gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("T2 bundle readiness repair docket gate failed");
-                }
-                println!();
-                println!("T2 bundle readiness repair docket gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_readiness_repair_docket::run(&cmd_ctx, readiness, output, gate)?,
 
         Commands::T2BundleReadinessRepairEvidence {
             repair_docket,
@@ -4617,65 +1423,14 @@ fn run_cli() -> Result<()> {
             repair_delta,
             output,
             gate,
-        } => {
-            println!("route t2-bundle-readiness-replay-decisions");
-            let evidence_rows = load_t2_bundle_readiness_repair_evidence(&evidence)
-                .with_context(|| format!("loading {}", evidence.display()))?;
-            let delta_rows = load_t2_bundle_overlay_repair_delta(&repair_delta)
-                .with_context(|| format!("loading {}", repair_delta.display()))?;
-            let rows = t2_bundle_readiness_replay_decision_rows(&evidence_rows, &delta_rows);
-            write_t2_bundle_readiness_replay_decisions(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_bundle_readiness_replay_decision_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_bundle_readiness_replay_decision_gate_failures(
-                    &rows,
-                    &evidence_rows,
-                    &delta_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 bundle readiness replay decision gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 bundle readiness replay decision gate failed");
-                }
-                println!("T2 bundle readiness replay decision gate: PASS");
-            }
-        }
+        } => commands::t2_bundle_readiness_replay_decisions::run(&cmd_ctx, evidence, repair_delta, output, gate)?,
 
         Commands::T2NationalBundleReadinessAudit {
             replay_decisions,
             bundles,
             output,
             gate,
-        } => {
-            println!("route t2-national-bundle-readiness-audit");
-            let replay_rows = load_t2_bundle_readiness_replay_decisions(&replay_decisions)
-                .with_context(|| format!("loading {}", replay_decisions.display()))?;
-            let bundle_rows = load_national_segment_bundles(&bundles)
-                .with_context(|| format!("loading {}", bundles.display()))?;
-            let rows = t2_national_bundle_readiness_audit_rows(&replay_rows, &bundle_rows);
-            write_t2_national_bundle_readiness_audit(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_national_bundle_readiness_audit_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_national_bundle_readiness_audit_gate_failures(&rows, &replay_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 national bundle readiness audit gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 national bundle readiness audit gate failed");
-                }
-                println!("T2 national bundle readiness audit gate: PASS");
-            }
-        }
+        } => commands::t2_national_bundle_readiness_audit::run(&cmd_ctx, replay_decisions, bundles, output, gate)?,
 
         Commands::T2StitchedMemberRegistryHandoff {
             audit,
@@ -4690,316 +1445,68 @@ fn run_cli() -> Result<()> {
             segment_candidates,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-candidate-scope-review");
-            let handoff_rows = load_t2_stitched_member_registry_handoff(&handoff)
-                .with_context(|| format!("loading {}", handoff.display()))?;
-            let candidate_rows = load_tier_segment_candidates(&segment_candidates)
-                .with_context(|| format!("loading {}", segment_candidates.display()))?;
-            let rows =
-                t2_stitched_member_candidate_scope_review_rows(&handoff_rows, &candidate_rows);
-            write_t2_stitched_member_candidate_scope_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_candidate_scope_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_candidate_scope_review_gate_failures(&rows, &handoff_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member candidate scope review gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member candidate scope review gate failed");
-                }
-                println!("T2 stitched member candidate scope review gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_candidate_scope_review::run(&cmd_ctx, handoff, segment_candidates, output, gate)?,
 
         Commands::T2StitchedMemberDecisionDocket {
             scope_review,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-decision-docket");
-            let scope_rows = load_t2_stitched_member_candidate_scope_review(&scope_review)
-                .with_context(|| format!("loading {}", scope_review.display()))?;
-            let rows = t2_stitched_member_decision_docket_rows(&scope_rows);
-            write_t2_stitched_member_decision_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_decision_docket_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_stitched_member_decision_docket_gate_failures(&rows, &scope_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member decision docket gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member decision docket gate failed");
-                }
-                println!("T2 stitched member decision docket gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_decision_docket::run(&cmd_ctx, scope_review, output, gate)?,
 
         Commands::T2StitchedMemberSplitPlan {
             decision_docket,
             segment_candidates,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-split-plan");
-            let decision_rows = load_t2_stitched_member_decision_docket(&decision_docket)
-                .with_context(|| format!("loading {}", decision_docket.display()))?;
-            let candidate_rows = load_tier_segment_candidates(&segment_candidates)
-                .with_context(|| format!("loading {}", segment_candidates.display()))?;
-            let rows = t2_stitched_member_split_plan_rows(&decision_rows, &candidate_rows);
-            write_t2_stitched_member_split_plan(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_split_plan_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_stitched_member_split_plan_gate_failures(&rows, &decision_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member split plan gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member split plan gate failed");
-                }
-                println!("T2 stitched member split plan gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_split_plan::run(&cmd_ctx, decision_docket, segment_candidates, output, gate)?,
 
         Commands::T2StitchedMemberSelectionDocket {
             split_plan,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-selection-docket");
-            let split_rows = load_t2_stitched_member_split_plan(&split_plan)
-                .with_context(|| format!("loading {}", split_plan.display()))?;
-            let rows = t2_stitched_member_selection_docket_rows(&split_rows);
-            write_t2_stitched_member_selection_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_selection_docket_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_selection_docket_gate_failures(&rows, &split_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member selection docket gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member selection docket gate failed");
-                }
-                println!("T2 stitched member selection docket gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_selection_docket::run(&cmd_ctx, split_plan, output, gate)?,
 
         Commands::T2StitchedMemberEvidenceContract {
             selection_docket,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-evidence-contract");
-            let selection_rows = load_t2_stitched_member_selection_docket(&selection_docket)
-                .with_context(|| format!("loading {}", selection_docket.display()))?;
-            let rows = t2_stitched_member_evidence_contract_rows(&selection_rows);
-            write_t2_stitched_member_evidence_contract(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_evidence_contract_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_evidence_contract_gate_failures(&rows, &selection_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member evidence contract gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member evidence contract gate failed");
-                }
-                println!("T2 stitched member evidence contract gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_evidence_contract::run(&cmd_ctx, selection_docket, output, gate)?,
 
         Commands::T2StitchedMemberEvidenceAcquisition {
             evidence_contract,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-evidence-acquisition");
-            let contract_rows = load_t2_stitched_member_evidence_contract(&evidence_contract)
-                .with_context(|| format!("loading {}", evidence_contract.display()))?;
-            let rows = t2_stitched_member_evidence_acquisition_rows(&contract_rows);
-            write_t2_stitched_member_evidence_acquisition(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_evidence_acquisition_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_evidence_acquisition_gate_failures(&rows, &contract_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member evidence acquisition gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member evidence acquisition gate failed");
-                }
-                println!("T2 stitched member evidence acquisition gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_evidence_acquisition::run(&cmd_ctx, evidence_contract, output, gate)?,
 
         Commands::T2StitchedMemberSourceAccessPolicy {
             evidence_acquisition,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-source-access-policy");
-            let acquisition_rows =
-                load_t2_stitched_member_evidence_acquisition(&evidence_acquisition)
-                    .with_context(|| format!("loading {}", evidence_acquisition.display()))?;
-            let rows = t2_stitched_member_source_access_policy_rows(&acquisition_rows);
-            write_t2_stitched_member_source_access_policy(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_source_access_policy_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_source_access_policy_gate_failures(&rows, &acquisition_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member source access policy gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member source access policy gate failed");
-                }
-                println!("T2 stitched member source access policy gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_source_access_policy::run(&cmd_ctx, evidence_acquisition, output, gate)?,
 
         Commands::T2StitchedMemberProofIntake {
             source_access,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-proof-intake");
-            let access_rows = load_t2_stitched_member_source_access_policy(&source_access)
-                .with_context(|| format!("loading {}", source_access.display()))?;
-            let rows = t2_stitched_member_proof_intake_rows(&access_rows);
-            write_t2_stitched_member_proof_intake(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_proof_intake_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_stitched_member_proof_intake_gate_failures(&rows, &access_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member proof intake gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member proof intake gate failed");
-                }
-                println!("T2 stitched member proof intake gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_proof_intake::run(&cmd_ctx, source_access, output, gate)?,
 
         Commands::T2StitchedMemberProofSourceCapture {
             proof_intake,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-proof-source-capture");
-            let intake_rows = load_t2_stitched_member_proof_intake(&proof_intake)
-                .with_context(|| format!("loading {}", proof_intake.display()))?;
-            let rows = t2_stitched_member_proof_source_capture_rows(&intake_rows);
-            write_t2_stitched_member_proof_source_capture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_proof_source_capture_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_proof_source_capture_gate_failures(&rows, &intake_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member proof source capture gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member proof source capture gate failed");
-                }
-                println!("T2 stitched member proof source capture gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_proof_source_capture::run(&cmd_ctx, proof_intake, output, gate)?,
 
         Commands::T2StitchedMemberProofArtifactAttachment {
             source_capture,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-proof-artifact-attachment");
-            let capture_rows = load_t2_stitched_member_proof_source_capture(&source_capture)
-                .with_context(|| format!("loading {}", source_capture.display()))?;
-            let rows = t2_stitched_member_proof_artifact_attachment_rows(&capture_rows);
-            write_t2_stitched_member_proof_artifact_attachment(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_proof_artifact_attachment_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_stitched_member_proof_artifact_attachment_gate_failures(
-                    &rows,
-                    &capture_rows,
-                );
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member proof artifact attachment gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member proof artifact attachment gate failed");
-                }
-                println!("T2 stitched member proof artifact attachment gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_proof_artifact_attachment::run(&cmd_ctx, source_capture, output, gate)?,
 
         Commands::T2StitchedMemberProofReviewDocket {
             artifact_attachment,
             output,
             gate,
-        } => {
-            println!("route t2-stitched-member-proof-review-docket");
-            let attachment_rows =
-                load_t2_stitched_member_proof_artifact_attachment(&artifact_attachment)
-                    .with_context(|| format!("loading {}", artifact_attachment.display()))?;
-            let rows = t2_stitched_member_proof_review_docket_rows(&attachment_rows);
-            write_t2_stitched_member_proof_review_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_stitched_member_proof_review_docket_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_stitched_member_proof_review_docket_gate_failures(&rows, &attachment_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 stitched member proof review docket gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 stitched member proof review docket gate failed");
-                }
-                println!("T2 stitched member proof review docket gate: PASS");
-            }
-        }
+        } => commands::t2_stitched_member_proof_review_docket::run(&cmd_ctx, artifact_attachment, output, gate)?,
 
         Commands::T2BundleOverlayRepairDelta {
             decisions,
@@ -5014,156 +1521,29 @@ fn run_cli() -> Result<()> {
             repair_delta,
             output,
             gate,
-        } => {
-            println!("route t2-overlay-optimizer-action-docket");
-            let delta_rows = load_t2_bundle_overlay_repair_delta(&repair_delta)
-                .with_context(|| format!("loading {}", repair_delta.display()))?;
-            let rows = t2_overlay_optimizer_action_docket_rows(&delta_rows);
-            write_t2_overlay_optimizer_action_docket(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_overlay_optimizer_action_docket_summary(&output, &rows);
-
-            if gate {
-                let failures = t2_overlay_optimizer_action_docket_gate_failures(&rows, &delta_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 overlay optimizer action docket gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 overlay optimizer action docket gate failed");
-                }
-                println!("T2 overlay optimizer action docket gate: PASS");
-            }
-        }
+        } => commands::t2_overlay_optimizer_action_docket::run(&cmd_ctx, repair_delta, output, gate)?,
 
         Commands::T2OverlayP1StructuralReadinessReview {
             action_docket,
             output,
             gate,
-        } => {
-            println!("route t2-overlay-p1-structural-readiness-review");
-            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
-                .with_context(|| format!("loading {}", action_docket.display()))?;
-            let rows = t2_overlay_p1_structural_readiness_review_rows(&action_rows);
-            write_t2_overlay_p1_structural_readiness_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_overlay_p1_structural_readiness_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_overlay_p1_structural_readiness_review_gate_failures(&rows, &action_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 overlay P1 structural readiness review gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 overlay P1 structural readiness review gate failed");
-                }
-                println!("T2 overlay P1 structural readiness review gate: PASS");
-            }
-        }
+        } => commands::t2_overlay_p1_structural_readiness_review::run(&cmd_ctx, action_docket, output, gate)?,
 
         Commands::T2OverlayP2ServiceOverlayReview {
             action_docket,
             output,
             gate,
-        } => {
-            println!("route t2-overlay-p2-service-overlay-review");
-            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
-                .with_context(|| format!("loading {}", action_docket.display()))?;
-            let rows = t2_overlay_p2_service_overlay_review_rows(&action_rows);
-            write_t2_overlay_p2_service_overlay_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_overlay_p2_service_overlay_review_summary(&output, &rows);
-
-            if gate {
-                let failures =
-                    t2_overlay_p2_service_overlay_review_gate_failures(&rows, &action_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 overlay P2 service overlay review gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 overlay P2 service overlay review gate failed");
-                }
-                println!("T2 overlay P2 service overlay review gate: PASS");
-            }
-        }
+        } => commands::t2_overlay_p2_service_overlay_review::run(&cmd_ctx, action_docket, output, gate)?,
 
         Commands::T2OverlayP3LocalZoneOverlayReview {
             action_docket,
             output,
             gate,
-        } => {
-            println!("route t2-overlay-p3-local-zone-overlay-review");
-            let action_rows = load_t2_overlay_optimizer_action_docket(&action_docket)
-                .with_context(|| format!("loading {}", action_docket.display()))?;
-            let rows = t2_overlay_p3_local_zone_overlay_review_rows(&action_rows);
-            write_t2_overlay_p3_local_zone_overlay_review(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_t2_overlay_p3_local_zone_overlay_review_summary(&output, &rows);
+        } => commands::t2_overlay_p3_local_zone_overlay_review::run(&cmd_ctx, action_docket, output, gate)?,
 
-            if gate {
-                let failures =
-                    t2_overlay_p3_local_zone_overlay_review_gate_failures(&rows, &action_rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("T2 overlay P3 local zone overlay review gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("t2 overlay P3 local zone overlay review gate failed");
-                }
-                println!("T2 overlay P3 local zone overlay review gate: PASS");
-            }
-        }
+        Commands::OptimizerMapHooks { output, gate } => commands::optimizer_map_hooks::run(&cmd_ctx, output, gate)?,
 
-        Commands::OptimizerMapHooks { output, gate } => {
-            println!("route optimizer-map-hooks");
-            let rows = optimizer_map_hook_rows();
-            write_optimizer_map_hooks(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_optimizer_map_hook_summary(&output, &rows);
-
-            if gate {
-                let failures = optimizer_map_hook_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("optimizer map hook gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("optimizer map hook gate failed");
-                }
-                println!();
-                println!("optimizer map hook gate: PASS");
-            }
-        }
-
-        Commands::BundleArchitecture { output, gate } => {
-            println!("route bundle-architecture");
-            let rows = bundle_architecture_rows();
-            write_bundle_architecture(&output, &rows)
-                .with_context(|| format!("writing {}", output.display()))?;
-            print_bundle_architecture_summary(&output, &rows);
-
-            if gate {
-                let failures = bundle_architecture_gate_failures(&rows);
-                if !failures.is_empty() {
-                    println!();
-                    println!("bundle architecture gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("bundle architecture gate failed");
-                }
-                println!();
-                println!("bundle architecture gate: PASS");
-            }
-        }
+        Commands::BundleArchitecture { output, gate } => commands::bundle_architecture::run(&cmd_ctx, output, gate)?,
 
         Commands::EndpointExceptions {
             ledger,
@@ -5172,27 +1552,7 @@ fn run_cli() -> Result<()> {
             blockers,
             details,
             gate,
-        } => {
-            println!("route endpoint-exceptions");
-            let rows = load_endpoint_exceptions(&ledger)
-                .with_context(|| format!("loading endpoint exceptions {}", ledger.display()))?;
-            let filtered = filter_endpoint_exceptions(&rows, tier.as_deref(), route.as_deref());
-            print_endpoint_exceptions(&filtered, blockers, details);
-
-            if gate {
-                let failures = endpoint_exception_gate_failures(&filtered, blockers);
-                if !failures.is_empty() {
-                    println!();
-                    println!("endpoint exception gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("endpoint exception gate failed");
-                }
-                println!();
-                println!("endpoint exception gate: PASS");
-            }
-        }
+        } => commands::endpoint_exceptions::run(&cmd_ctx, ledger, tier, route, blockers, details, gate)?,
 
         Commands::StopCandidates {
             ledger,
@@ -5200,59 +1560,14 @@ fn run_cli() -> Result<()> {
             route,
             details,
             gate,
-        } => {
-            println!("route stop-candidates");
-            let file = std::fs::File::open(&ledger)
-                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
-            let rows = parse_stop_candidates(file)
-                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
-            let filtered = filter_stop_candidates(&rows, stop_class.as_deref(), route.as_deref());
-            print_stop_candidates(&filtered, details);
-
-            if gate {
-                let failures = stop_candidate_gate_failures(&filtered);
-                if !failures.is_empty() {
-                    println!();
-                    println!("stop candidate gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("stop candidate gate failed");
-                }
-                println!();
-                println!("stop candidate gate: PASS");
-            }
-        }
+        } => commands::stop_candidates::run(&cmd_ctx, ledger, stop_class, route, details, gate)?,
 
         Commands::StopPlan {
             route,
             ledger,
             details,
             gate,
-        } => {
-            let route = normalise_designation(&route);
-            println!("route stop-plan --route {route}");
-            let file = std::fs::File::open(&ledger)
-                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
-            let rows = parse_stop_candidates(file)
-                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
-            let plan = stop_plan_for_route(&rows, &route);
-            print_stop_plan(&route, &plan, details);
-
-            if gate {
-                let failures = stop_plan_gate_failures(&route, &plan);
-                if !failures.is_empty() {
-                    println!();
-                    println!("stop plan gate: FAIL");
-                    for failure in failures {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("stop plan gate failed");
-                }
-                println!();
-                println!("stop plan gate: PASS");
-            }
-        }
+        } => commands::stop_plan::run(&cmd_ctx, route, ledger, details, gate)?,
 
         Commands::StopCoverage {
             tier_table,
@@ -5260,140 +1575,40 @@ fn run_cli() -> Result<()> {
             tier,
             blockers,
             gate,
-        } => {
-            println!("route stop-coverage --tier {tier}");
-            let routes = load_tier_routes(&tier_table, &tier)
-                .with_context(|| format!("loading {tier} routes from {}", tier_table.display()))?;
-            let file = std::fs::File::open(&ledger)
-                .with_context(|| format!("opening stop candidate ledger {}", ledger.display()))?;
-            let rows = parse_stop_candidates(file)
-                .with_context(|| format!("parsing stop candidate ledger {}", ledger.display()))?;
-            let coverage = stop_coverage_for_routes(&rows, &routes, &tier);
-            print_stop_coverage(&tier, &coverage, blockers);
-
-            if gate {
-                let failures = stop_coverage_gate_failures(&coverage);
-                if !failures.is_empty() {
-                    println!();
-                    println!("stop coverage gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("stop coverage gate failed");
-                }
-                println!();
-                println!("stop coverage gate: PASS");
-            }
-        }
+        } => commands::stop_coverage::run(&cmd_ctx, tier_table, ledger, tier, blockers, gate)?,
 
         Commands::Calibrate => commands::calibrate::run(&cmd_ctx)?,
 
         Commands::Od { corridor, month } => commands::od::run(&cmd_ctx, corridor, month)?,
 
-        Commands::HubStaff { include_proposed } => {
-            let data_dir = std::path::PathBuf::from("data");
-            let confirmed_only = !include_proposed;
-            let hubs = route_sim::load_hubs(&data_dir, confirmed_only);
-            if hubs.is_empty() {
-                eprintln!("No hubs loaded — check data/relay-hubs.toml");
-            } else {
-                println!("Loaded {} hubs from data/relay-hubs.toml", hubs.len());
-            }
-            let net = route_sim::compute_network_summary(&hubs);
-            print_hub_staffing(&net, include_proposed);
-        }
+        Commands::HubStaff { include_proposed } => commands::hub_staff::run(&cmd_ctx, include_proposed)?,
 
         Commands::HubOutage {
             include_proposed,
             outage_hours,
             reserve_driver_fraction,
             adjacent_absorption_fraction,
-        } => {
-            let data_dir = std::path::PathBuf::from("data");
-            let confirmed_only = !include_proposed;
-            let hubs = route_sim::load_hubs(&data_dir, confirmed_only);
-            if hubs.is_empty() {
-                eprintln!("No hubs loaded — check data/relay-hubs.toml");
-            }
-            let net = route_sim::compute_network_summary(&hubs);
-            let config = route_sim::HubOutageConfig {
-                outage_hours,
-                reserve_driver_fraction,
-                adjacent_absorption_fraction,
-            };
-            let summary = route_sim::run_hub_outage_sensitivity(&net.hub_staffings, config);
-            print_hub_outage(&summary, config);
-        }
+        } => commands::hub_outage::run(&cmd_ctx, include_proposed, outage_hours, reserve_driver_fraction, adjacent_absorption_fraction)?,
 
-        Commands::EvAnalysis => {
-            let data_dir = std::path::PathBuf::from("data");
-            print_ev_analysis(&data_dir);
-        }
+        Commands::EvAnalysis => commands::ev_analysis::run(&cmd_ctx)?,
 
         Commands::EvRestOutage {
             outage_station_fraction,
             backup_power_fraction,
             queue_delay_minutes,
-        } => {
-            let data_dir = std::path::PathBuf::from("data");
-            let config = route_sim::EvRestOutageConfig {
-                station_spacing_miles: 50.0,
-                outage_station_fraction,
-                backup_power_fraction,
-                queue_delay_minutes,
-            };
-            print_ev_rest_outage(&data_dir, config);
-        }
+        } => commands::ev_rest_outage::run(&cmd_ctx, outage_station_fraction, backup_power_fraction, queue_delay_minutes)?,
 
-        Commands::PassengerMatrix { trips, seed } => {
-            println!("route passenger-matrix — what I2.0 unlocks for people ({trips} trips)\n");
-            let data_dir = std::path::PathBuf::from("data");
-            print_passenger_matrix::print_passenger_matrix(trips, seed, &data_dir);
-        }
+        Commands::PassengerMatrix { trips, seed } => commands::passenger_matrix::run(&cmd_ctx, trips, seed)?,
 
-        Commands::SlaMatrix { trips, seed } => {
-            println!("route sla-matrix — national SLA commitment windows ({trips} trips)\n");
-            let data_dir = std::path::PathBuf::from("data");
-            print_sla_matrix(trips, seed, &data_dir);
-        }
+        Commands::SlaMatrix { trips, seed } => commands::sla_matrix::run(&cmd_ctx, trips, seed)?,
 
-        Commands::StopSlaSurface { output } => {
-            let csv = route_map::build_beck_stop_sla_csv();
-            if let Some(parent) = output.parent() {
-                std::fs::create_dir_all(parent)
-                    .with_context(|| format!("creating {}", parent.display()))?;
-            }
-            std::fs::write(&output, csv)
-                .with_context(|| format!("writing {}", output.display()))?;
-            println!("route stop-sla-surface — wrote {}", output.display());
-            println!("  source: Beck T1/T2 stops and lines; evidence_status=heuristic-planning");
-        }
+        Commands::StopSlaSurface { output } => commands::stop_sla_surface::run(&cmd_ctx, output)?,
 
         Commands::StopSlaSummary {
             input,
             top,
             gate_max_gap,
-        } => {
-            let file = std::fs::File::open(&input)
-                .with_context(|| format!("reading stop SLA surface {}", input.display()))?;
-            let rows = parse_stop_sla_rows(file)?;
-            print_stop_sla_summary(&rows, top);
-            if let Some(max_gap) = gate_max_gap {
-                let blockers = stop_sla_gap_failures(&rows, max_gap);
-                if blockers.is_empty() {
-                    println!("stop SLA max-gap gate: PASS");
-                } else {
-                    println!("stop SLA max-gap gate: FAIL");
-                    for row in blockers.iter().take(top.max(1)) {
-                        println!(
-                            "  - {}→{} max gap {:.0} mi via {}",
-                            row.origin_id, row.dest_id, row.max_stop_gap_miles, row.route_path
-                        );
-                    }
-                    anyhow::bail!("stop SLA max-gap gate failed");
-                }
-            }
-        }
+        } => commands::stop_sla_summary::run(&cmd_ctx, input, top, gate_max_gap)?,
 
         Commands::StopSlaCandidates {
             input,
@@ -5413,56 +1628,13 @@ fn run_cli() -> Result<()> {
             include_ledger,
             include_alternates,
             gate,
-        } => {
-            println!("route stop-sla-promotions");
-            let file = std::fs::File::open(&input)
-                .with_context(|| format!("opening SLA candidate docket {}", input.display()))?;
-            let docket = parse_stop_sla_candidate_docket(file)
-                .with_context(|| format!("parsing SLA candidate docket {}", input.display()))?;
-            let promotions = stop_sla_promotion_rows(&docket, include_ledger, include_alternates);
-            write_stop_sla_promotions(&output, &promotions)
-                .with_context(|| format!("writing {}", output.display()))?;
-            println!("  source docket: {}", input.display());
-            println!("  promotion rows: {}", promotions.len());
-            println!("  wrote promotion docket: {}", output.display());
-
-            if gate {
-                let refs = promotions.iter().collect::<Vec<_>>();
-                let failures = stop_candidate_gate_failures(&refs);
-                if failures.is_empty() {
-                    println!("stop SLA promotion gate: PASS");
-                } else {
-                    println!("stop SLA promotion gate: FAIL");
-                    for failure in failures.iter().take(20) {
-                        println!("  - {failure}");
-                    }
-                    anyhow::bail!("stop SLA promotion gate failed");
-                }
-            }
-        }
+        } => commands::stop_sla_promotions::run(&cmd_ctx, input, output, include_ledger, include_alternates, gate)?,
 
         Commands::Interventions {
             corridor,
             trips,
             seed,
-        } => {
-            let data_dir = std::path::PathBuf::from("data");
-            let c = match corridor {
-                InterventionCorridorArg::NyLa => route_sim::load_corridor(&data_dir, "ny_la")
-                    .unwrap_or_else(route_sim::ny_la_corridor),
-                InterventionCorridorArg::HouChi => {
-                    route_sim::load_corridor(&data_dir, "hou_chi_current")
-                        .unwrap_or_else(route_sim::hou_chi_current)
-                }
-                InterventionCorridorArg::HouI69 => {
-                    route_sim::load_corridor(&data_dir, "hou_chi_i69")
-                        .unwrap_or_else(route_sim::hou_chi_i69)
-                }
-            };
-            println!("route interventions — {trips} trips per scenario\n");
-            let bench = route_sim::InterventionBenchmark::run(&c, trips, seed);
-            print_intervention_benchmark(&bench);
-        }
+        } => commands::interventions::run(&cmd_ctx, corridor, trips, seed)?,
 
         Commands::StandardsTest { tier, trips, seed } => commands::standards_test::run(&cmd_ctx, tier, trips, seed)?,
     }
@@ -5884,133 +2056,7 @@ fn print_ev_rest_outage(data_dir: &std::path::Path, config: route_sim::EvRestOut
 
 // `print_passenger_matrix` moved to `print_passenger_matrix.rs`
 
-fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Path) {
-    use route_sim::{apply_interventions, run_od_simulation_with_driver, DriverMode, Intervention};
-
-    // All corridors — loaded from od-corridors.toml, falling back to built-ins
-    let corridors = vec![
-        route_sim::load_corridor(data_dir, "mia_nyc").unwrap_or_else(route_sim::mia_nyc),
-        route_sim::load_corridor(data_dir, "atl_chi").unwrap_or_else(route_sim::atl_chi),
-        route_sim::load_corridor(data_dir, "hou_chi_i69").unwrap_or_else(route_sim::hou_chi_i69),
-        route_sim::load_corridor(data_dir, "hou_chi_current")
-            .unwrap_or_else(route_sim::hou_chi_current),
-        route_sim::load_corridor(data_dir, "dal_nyc").unwrap_or_else(route_sim::dal_nyc),
-        route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
-        route_sim::load_corridor(data_dir, "ny_la").unwrap_or_else(route_sim::ny_la_corridor),
-        route_sim::load_corridor(data_dir, "sea_chi").unwrap_or_else(route_sim::sea_chi),
-        route_sim::load_corridor(data_dir, "chi_la").unwrap_or_else(route_sim::chi_la),
-    ];
-
-    let relay_interventions = |c: &route_sim::OdCorridor| {
-        let stations = ((c.total_miles() / 500.0).ceil() as usize).max(1);
-        vec![Intervention::DriverRelay {
-            stations,
-            swap_minutes: 20.0,
-        }]
-    };
-
-    let full_stack = |c: &route_sim::OdCorridor| {
-        let stations = ((c.total_miles() / 500.0).ceil() as usize).max(1);
-        vec![
-            Intervention::ManagedFreightLanes,
-            Intervention::DonnerTunnel,
-            Intervention::DiamondInterchanges,
-            Intervention::IntelligentRouting,
-            Intervention::DriverRelay {
-                stations,
-                swap_minutes: 15.0,
-            },
-        ]
-    };
-
-    println!(
-        "{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
-        "Corridor", "Miles", "Today p95", "Relay only", "Relay+Mgd", "Full I2.0", "SLA unlock"
-    );
-    println!(
-        "{:<38} {:>6}  {:>10}  {:>12}  {:>10}  {:>10}  {:>12}",
-        "", "", "(solo/GP)", "($40M)", "(+$121B)", "(full stk)", ""
-    );
-    println!("{}", "─".repeat(110));
-
-    for c in &corridors {
-        let miles = c.total_miles();
-
-        // 1. Today: solo/GP
-        let today = run_od_simulation_with_driver(c, false, &DriverMode::Solo, trips, seed);
-
-        // 2. Relay only (GP lanes)
-        let relay_only = {
-            let (modified, driver) = apply_interventions(c, &relay_interventions(c));
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 1)
-        };
-
-        // 3. Relay + managed lanes
-        let relay_managed = {
-            let interventions = {
-                let stations = ((miles / 500.0).ceil() as usize).max(1);
-                vec![
-                    Intervention::ManagedFreightLanes,
-                    Intervention::DriverRelay {
-                        stations,
-                        swap_minutes: 20.0,
-                    },
-                ]
-            };
-            let (modified, driver) = apply_interventions(c, &interventions);
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 2)
-        };
-
-        // 4. Full I2.0 stack
-        let full = {
-            let (modified, driver) = apply_interventions(c, &full_stack(c));
-            run_od_simulation_with_driver(&modified, false, &driver, trips, seed + 3)
-        };
-
-        // SLA classification
-        let sla_label = |h: f64| -> &str {
-            if h <= 12.0 {
-                "12h (half-day)"
-            } else if h <= 24.0 {
-                "24h (overnight)"
-            } else if h <= 36.0 {
-                "36h (next-day)"
-            } else if h <= 48.0 {
-                "48h (2-day)"
-            } else if h <= 72.0 {
-                "72h (3-day)"
-            } else {
-                ">3-day"
-            }
-        };
-
-        // Highlight which scenario first achieves a new SLA tier
-        let today_sla = sla_label(today.p95_hours);
-        let full_sla = sla_label(full.p95_hours);
-        let unlock = if full_sla != today_sla {
-            format!("{} → {}", today_sla, full_sla)
-        } else {
-            format!("holds at {}", today_sla)
-        };
-
-        println!(
-            "{:<38} {:>6.0}  {:>8.1}h   {:>10.1}h  {:>9.1}h  {:>9.1}h  {}",
-            c.name,
-            miles,
-            today.p95_hours,
-            relay_only.p95_hours,
-            relay_managed.p95_hours,
-            full.p95_hours,
-            unlock,
-        );
-    }
-
-    println!("\n{}", "─".repeat(110));
-    println!("\nSLA categories: 12h (half-day) | 24h (overnight) | 36h (next-day) | 48h (2-day) | 72h (3-day)");
-    println!("Relay only = $40M per corridor. Relay+Managed = +$121B program. Full stack = +Donner/Diamond/Routing.");
-    println!("\nMarketplace note: relay captures 90%+ of the gain at 0.03% of the cost.");
-    println!("The relay MARKETPLACE (driver matching, HOS handoff, load custody) is the critical enabler.");
-}
+// `print_sla_matrix` moved to support::print::print_sla_matrix
 
 /// Load Amtrak schedules from data/amtrak-schedules.csv.
 /// Returns corridor_slug -> scheduled_hours mapping.
@@ -6085,130 +2131,7 @@ fn load_ev_profiles(data_dir: &std::path::Path) -> Vec<route_sim::EvProfile> {
     ]
 }
 
-fn print_intervention_benchmark(bench: &route_sim::InterventionBenchmark) {
-    let baseline_p95 = bench.baseline.p95_hours;
-    let ff = bench.baseline.free_flow_hours;
-
-    println!("Corridor: {}", bench.corridor_name);
-    println!(
-        "Baseline: Solo/GP lanes  |  free-flow {:.1}h  |  p95 {:.1}h ({:.1} days)\n",
-        ff,
-        baseline_p95,
-        baseline_p95 / 24.0
-    );
-
-    // Header
-    println!(
-        "{:<35} {:>8}  {:>8}  {:>9}  {:>8}  {:>12}  {}",
-        "Intervention", "p50", "p95", "Δp95", "< 48h", "Capex", "48h SLA"
-    );
-    println!("{}", "─".repeat(105));
-
-    // Sort by p95 ascending (best first), keeping baseline at top
-    let mut results: Vec<&route_sim::InterventionResult> = bench.results.iter().collect();
-    results.sort_by(|a, b| a.dist.p95_hours.total_cmp(&b.dist.p95_hours));
-
-    for r in &results {
-        let delta_str = if r.p95_delta_hours.abs() < 0.05 {
-            "  —    ".to_string()
-        } else {
-            format!("{:>+7.1}h", r.p95_delta_hours)
-        };
-        let sla = if r.sla_achieved { "✓ YES" } else { "✗ no " };
-        let marker = if r.sla_achieved { " ←" } else { "" };
-        println!(
-            "{:<35} {:>6.1}h  {:>6.1}h  {}  {:>6.1}%  {:>12}  {}{}",
-            r.label,
-            r.dist.p50_hours,
-            r.dist.p95_hours,
-            delta_str,
-            r.pct_under_48h,
-            r.capex,
-            sla,
-            marker,
-        );
-    }
-
-    println!("\n{}", "─".repeat(105));
-
-    // Summary: rank by marginal impact
-    let mut ranked: Vec<&route_sim::InterventionResult> = bench
-        .results
-        .iter()
-        .filter(|r| {
-            !r.label.contains("stack") && !r.label.contains("+") && !r.label.contains("Baseline")
-        })
-        .collect();
-    ranked.sort_by(|a, b| a.p95_delta_hours.total_cmp(&b.p95_delta_hours));
-
-    println!("\nRanked single interventions by p95 improvement:");
-    println!(
-        "{:<35} {:>9}  {:>14}  {:>12}",
-        "Intervention", "p95 gain", "Cost/hour-saved", "Capex"
-    );
-    println!("{}", "─".repeat(80));
-    for r in &ranked {
-        let gain = baseline_p95 - r.dist.p95_hours;
-        if gain.abs() < 0.1 {
-            continue;
-        }
-        // Rough cost-per-hour-saved: capex / (gain × annual trips estimate)
-        let annual_trips = 8_000.0 * 365.0; // 8k trucks/day on NY-LA
-        let total_hours_saved = gain * annual_trips;
-        // Parse capex to a number for $/hr calculation
-        let cost_per_hour = if r.capex.contains("$0") {
-            0.0
-        } else if r.capex.contains("40M") {
-            40_000_000.0 / total_hours_saved
-        } else if r.capex.contains("200M") {
-            200_000_000.0 / total_hours_saved
-        } else if r.capex.contains("800M") {
-            800_000_000.0 / total_hours_saved
-        } else if r.capex.contains("930M") {
-            930_000_000.0 / total_hours_saved
-        } else if r.capex.contains("$4B") {
-            4_000_000_000.0 / total_hours_saved
-        } else if r.capex.contains("121B") {
-            121_000_000_000.0 / total_hours_saved
-        } else {
-            -1.0
-        };
-        let cost_str = if cost_per_hour <= 0.0 {
-            "free/operational".to_string()
-        } else {
-            format!("${:.2}/hr saved", cost_per_hour)
-        };
-        println!(
-            "{:<35} {:>+8.1}h  {:>14}  {:>12}",
-            r.label, -gain, cost_str, r.capex
-        );
-    }
-
-    // Insight summary
-    println!("\n── Key findings ─────────────────────────────────────────────────────");
-    let achieves_48 = bench
-        .results
-        .iter()
-        .filter(|r| r.sla_achieved && !r.label.contains("Baseline"))
-        .map(|r| r.label.as_str())
-        .collect::<Vec<_>>();
-    if achieves_48.is_empty() {
-        println!("  No single or combination intervention achieves 48h SLA on this corridor.");
-    } else {
-        println!("  48h SLA achieved by:");
-        for label in &achieves_48 {
-            println!("    ✓ {}", label);
-        }
-    }
-    let best_value = ranked.first();
-    if let Some(r) = best_value {
-        let gain = baseline_p95 - r.dist.p95_hours;
-        println!(
-            "  Highest single-intervention impact: {} (−{:.1}h p95)",
-            r.label, gain
-        );
-    }
-}
+// `print_intervention_benchmark` moved to support::print::print_intervention_benchmark
 
 fn pct_under(d: &route_sim::TransitDistribution, threshold_h: f64) -> f64 {
     // We only have percentile snapshots; approximate from distribution shape
@@ -6464,143 +2387,7 @@ fn stop_sla_candidate_recommendations(
         .collect()
 }
 
-fn score_stop_candidates_for_gap(
-    gap: &RecurringStopGap,
-    stop_rows: &[StopCandidateRow],
-    city_rows: &[CitySeedRow],
-    catalog: &std::collections::HashMap<String, route_map::BeckStopCatalogRow>,
-) -> Vec<StopSlaCandidateScore> {
-    let Some((from_id, to_id)) = gap.segment_id.split_once("->") else {
-        return Vec::new();
-    };
-    let (Some(from), Some(to)) = (catalog.get(from_id), catalog.get(to_id)) else {
-        return Vec::new();
-    };
-    let route_set = gap
-        .route_path
-        .split(';')
-        .map(normalise_designation)
-        .filter(|route| !route.is_empty())
-        .collect::<std::collections::BTreeSet<_>>();
-
-    let mut scores = stop_rows
-        .iter()
-        .filter_map(|row| {
-            let lat = parse_coord(&row.lat)?;
-            let lon = parse_coord(&row.lon)?;
-            let candidate_routes = stop_candidate_routes(row);
-            if !route_set.is_empty()
-                && !candidate_routes
-                    .iter()
-                    .any(|route| route_set.contains(route))
-            {
-                return None;
-            }
-            let along = projection_fraction(from.lat, from.lon, to.lat, to.lon, lat, lon);
-            if !(-0.12..=1.12).contains(&along) {
-                return None;
-            }
-            let distance_from_segment =
-                distance_to_geo_segment_miles(from.lat, from.lon, to.lat, to.lon, lat, lon);
-            if distance_from_segment > 90.0 {
-                return None;
-            }
-            let first_gap = geo_distance_miles(from.lat, from.lon, lat, lon);
-            let second_gap = geo_distance_miles(lat, lon, to.lat, to.lon);
-            if first_gap < 45.0 || second_gap < 45.0 {
-                return None;
-            }
-            let largest_resulting_gap = first_gap.max(second_gap);
-            if largest_resulting_gap + 1.0 >= gap.miles {
-                return None;
-            }
-            let spacing_gain = gap.miles - largest_resulting_gap;
-            let intersection_route_count = candidate_routes.len();
-            let intersection_bonus = intersection_route_count.saturating_sub(1) as f64 * 12.0;
-            let class_bonus = match row.requested_class.trim().to_ascii_uppercase().as_str() {
-                "S1" => 30.0,
-                "S2" => 24.0,
-                "S3" => 18.0,
-                "S4" => 10.0,
-                _ => 4.0,
-            };
-            let route_match_bonus = candidate_routes
-                .iter()
-                .filter(|route| route_set.contains(*route))
-                .count() as f64
-                * 10.0;
-            let score = spacing_gain + class_bonus + intersection_bonus + route_match_bonus
-                - distance_from_segment * 0.6;
-            Some(StopSlaCandidateScore {
-                stop_id: row.stop_id.clone(),
-                name: row.name.clone(),
-                lat,
-                lon,
-                requested_class: row.requested_class.clone(),
-                route_refs: row.route_refs.clone(),
-                evidence_status: row.evidence_status.clone(),
-                source_type: "stop-ledger".to_string(),
-                basis: format!(
-                    "ledger candidate; route matches {}; {} route contact(s)",
-                    gap.route_path, intersection_route_count
-                ),
-                spacing_gain_miles: spacing_gain,
-                largest_resulting_gap_miles: largest_resulting_gap,
-                distance_from_segment_miles: distance_from_segment,
-                intersection_route_count,
-                score,
-            })
-        })
-        .collect::<Vec<_>>();
-    scores.extend(city_rows.iter().filter_map(|city| {
-        let along = projection_fraction(from.lat, from.lon, to.lat, to.lon, city.lat, city.lon);
-        if !(-0.08..=1.08).contains(&along) {
-            return None;
-        }
-        let distance_from_segment =
-            distance_to_geo_segment_miles(from.lat, from.lon, to.lat, to.lon, city.lat, city.lon);
-        if distance_from_segment > 75.0 {
-            return None;
-        }
-        let first_gap = geo_distance_miles(from.lat, from.lon, city.lat, city.lon);
-        let second_gap = geo_distance_miles(city.lat, city.lon, to.lat, to.lon);
-        if first_gap < 45.0 || second_gap < 45.0 {
-            return None;
-        }
-        let largest_resulting_gap = first_gap.max(second_gap);
-        if largest_resulting_gap + 1.0 >= gap.miles {
-            return None;
-        }
-        let spacing_gain = gap.miles - largest_resulting_gap;
-        let midpoint_balance_bonus = (1.0 - (along - 0.5).abs() * 2.0).max(0.0) * 18.0;
-        let score = spacing_gain + midpoint_balance_bonus - distance_from_segment * 0.8;
-        Some(StopSlaCandidateScore {
-            stop_id: format!("DRAFT-{}", city.abbr),
-            name: city.name.clone(),
-            lat: city.lat,
-            lon: city.lon,
-            requested_class: "S4?".to_string(),
-            route_refs: gap.route_path.clone(),
-            evidence_status: "draft-city-seed".to_string(),
-            source_type: "city-seed".to_string(),
-            basis: "city seed near segment; requires stop-ledger validation".to_string(),
-            spacing_gain_miles: spacing_gain,
-            largest_resulting_gap_miles: largest_resulting_gap,
-            distance_from_segment_miles: distance_from_segment,
-            intersection_route_count: route_set.len().max(1),
-            score,
-        })
-    }));
-    if scores.is_empty() {
-        scores.push(algorithmic_midpoint_candidate(gap, from, to, &route_set));
-    }
-    scores.sort_by(|a, b| {
-        b.score
-            .total_cmp(&a.score)
-            .then_with(|| a.name.cmp(&b.name))
-    });
-    scores
-}
+// `score_stop_candidates_for_gap` moved to support::misc::score_stop_candidates_for_gap
 
 fn algorithmic_midpoint_candidate(
     gap: &RecurringStopGap,
@@ -16808,125 +12595,7 @@ fn load_t2_scenario_hooks(path: &Path) -> Result<Vec<T2ScenarioHookRow>> {
     Ok(rows)
 }
 
-fn t2_bundle_overlay_rows(
-    service_rows: &[T2ServiceSelectionRow],
-    bundle_rows: &[NationalSegmentBundleRow],
-    overlay_rows: &[GameT2ServiceOverlayRow],
-) -> Vec<T2BundleOverlayRow> {
-    let registry = route_network::BundleRegistry::new(
-        bundle_rows
-            .iter()
-            .map(segment_bundle_from_national_row)
-            .collect(),
-    );
-    let overlay_by_class = overlay_rows
-        .iter()
-        .map(|row| (row.service_class.clone(), row))
-        .collect::<std::collections::BTreeMap<_, _>>();
-    let qualification_effects_by_bundle = bundle_rows
-        .iter()
-        .filter(|row| !row.qualification_effects.trim().is_empty())
-        .map(|row| {
-            (
-                row.segment_bundle_id.clone(),
-                row.qualification_effects.clone(),
-            )
-        })
-        .collect::<std::collections::BTreeMap<_, _>>();
-
-    service_rows
-        .iter()
-        .map(|service| {
-            let route_bundles = registry.by_route_label(&service.route);
-            let bundle = route_bundles.first().copied();
-            let overlay = overlay_by_class.get(&service.beck_service_class);
-            let service_class = if service.beck_service_class.trim().is_empty() {
-                "unclassified".to_string()
-            } else {
-                service.beck_service_class.clone()
-            };
-            let (binding_status, next_artifact, validation_status) = match (bundle, overlay) {
-                (Some(_), _) if service_class == "unclassified" => (
-                    "service-class-held-known",
-                    "data/game/t2-service-overlays.csv",
-                    "review",
-                ),
-                (Some(bundle), Some(_))
-                    if bundle
-                        .validation_statuses
-                        .iter()
-                        .all(|status| status == "pass") =>
-                {
-                    ("bundle-bound", "data/game/t2-scenario-hooks.csv", "pass")
-                }
-                (Some(_), Some(_)) => (
-                    "bundle-bound-review",
-                    "data/national-segment-bundles.csv",
-                    "review",
-                ),
-                (None, Some(_)) => (
-                    "bundle-binding-pending",
-                    "data/national-segment-bundles.csv",
-                    "review",
-                ),
-                (_, None) => (
-                    "service-class-overlay-pending",
-                    "data/game/t2-service-overlays.csv",
-                    "review",
-                ),
-            };
-            T2BundleOverlayRow {
-                tier: service.tier.clone(),
-                region_id: service.region_id.clone(),
-                route: service.route.clone(),
-                segment_bundle_id: bundle
-                    .map(|bundle| bundle.segment_bundle_id.clone())
-                    .unwrap_or_default(),
-                bundle_status: bundle
-                    .map(|bundle| bundle.bundle_status.as_str().to_string())
-                    .unwrap_or_else(|| "missing-bundle".to_string()),
-                service_class,
-                map_id: overlay.map(|row| row.map_id.clone()).unwrap_or_default(),
-                scenario_hook: overlay
-                    .map(|row| row.scenario_hook.clone())
-                    .unwrap_or_default(),
-                incident_lever: overlay
-                    .map(|row| row.incident_lever.clone())
-                    .unwrap_or_default(),
-                upgrade_lever: overlay
-                    .map(|row| row.upgrade_lever.clone())
-                    .unwrap_or_default(),
-                restitch_lever: overlay
-                    .map(|row| row.restitch_lever.clone())
-                    .unwrap_or_default(),
-                release_gate: overlay
-                    .map(|row| row.release_gate.clone())
-                    .unwrap_or_default(),
-                qualification_map_treatment: service.qualification_map_treatment.clone(),
-                qualification_gate_policy: service.qualification_gate_policy.clone(),
-                qualification_game_use: service.qualification_game_use.clone(),
-                qualification_effects: merge_qualification_effects(
-                    &service.qualification_effects,
-                    bundle
-                        .and_then(|bundle| {
-                            qualification_effects_by_bundle.get(&bundle.segment_bundle_id)
-                        })
-                        .map(String::as_str)
-                        .unwrap_or_default(),
-                ),
-                pavement_debt_cost_m: service.pavement_debt_cost_m,
-                pavement_debt_class: service.pavement_debt_class.clone(),
-                pavement_debt_basis: service.pavement_debt_basis.clone(),
-                source_artifacts:
-                    "data/t2-service-selection.csv;data/national-segment-bundles.csv;data/game/t2-service-overlays.csv"
-                        .to_string(),
-                binding_status: binding_status.to_string(),
-                next_artifact: next_artifact.to_string(),
-                validation_status: validation_status.to_string(),
-            }
-        })
-        .collect()
-}
+// `t2_bundle_overlay_rows` moved to support::tier::t2_bundle_overlay_rows
 
 fn segment_bundle_from_national_row(
     row: &NationalSegmentBundleRow,
@@ -20149,127 +15818,7 @@ fn print_t2_game_ops_bundle_evidence_blocker_relief_summary(
     println!("  claim blockers after: {after}");
 }
 
-fn t2_game_ops_bundle_evidence_blocker_relief_gate_failures(
-    rows: &[T2GameOpsBundleEvidenceBlockerReliefRow],
-    acceptance_rows: &[T2GameOpsBundleEvidencePolicyAcceptanceRow],
-) -> Vec<String> {
-    let expected = acceptance_rows
-        .iter()
-        .filter(|row| {
-            row.acceptance_decision == "bundle-evidence-policy-accepted"
-                && row.claim_blocker_delta == 0
-                && row.blocker_count_after > 0
-        })
-        .map(|row| row.acceptance_id.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-    let expected_before = acceptance_rows
-        .iter()
-        .filter(|row| expected.contains(row.acceptance_id.as_str()))
-        .map(|row| row.blocker_count_after)
-        .sum::<usize>();
-    let mut failures = Vec::new();
-    if expected.is_empty() {
-        failures.push(
-            "T2 game/ops bundle evidence blocker relief has no accepted policy rows".to_string(),
-        );
-    }
-    if rows.len() != expected.len() {
-        failures.push(format!(
-            "T2 game/ops bundle evidence blocker relief has {} rows but expected {}",
-            rows.len(),
-            expected.len()
-        ));
-    }
-    let acceptance_by_id = acceptance_rows
-        .iter()
-        .map(|acceptance| (acceptance.acceptance_id.as_str(), acceptance))
-        .collect::<std::collections::BTreeMap<_, _>>();
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.relief_id.trim().is_empty()
-            || row.acceptance_id.trim().is_empty()
-            || row.policy_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.segment_bundle_id.trim().is_empty()
-            || row.accepted_required_evidence.trim().is_empty()
-            || row.relief_decision.trim().is_empty()
-            || row.blocker_claims_before.trim().is_empty()
-            || row.ledger_replay_status.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete relief fields",
-                row.acceptance_id
-            ));
-        }
-        if !seen.insert(row.acceptance_id.clone()) {
-            failures.push(format!("{} appears more than once", row.acceptance_id));
-        }
-        if !expected.contains(row.acceptance_id.as_str()) {
-            failures.push(format!(
-                "{} is not an expected acceptance row",
-                row.acceptance_id
-            ));
-        }
-        if row.relief_decision != "relief-ready-for-constraint-ledger-replay"
-            || row.ledger_replay_status != "pending-optimizer-constraint-ledger-replay"
-            || row.validation_status != "review"
-        {
-            failures.push(format!("{} has invalid relief state", row.acceptance_id));
-        }
-        if !row.blocker_claims_after.is_empty()
-            || row.blocker_count_after != 0
-            || row.claim_blocker_delta != -(row.blocker_count_before as isize)
-        {
-            failures.push(format!(
-                "{} did not reduce blockers to zero",
-                row.acceptance_id
-            ));
-        }
-        if row.next_artifact != "data/optimizer-constraint-ledger.csv" {
-            failures.push(format!(
-                "{} points at wrong next artifact",
-                row.acceptance_id
-            ));
-        }
-        if let Some(acceptance) = acceptance_by_id.get(row.acceptance_id.as_str()) {
-            let acceptance_has_qualification =
-                !acceptance.qualification_gate_policy.trim().is_empty()
-                    || !acceptance.qualification_game_use.trim().is_empty()
-                    || !acceptance.qualification_effects.trim().is_empty();
-            if acceptance_has_qualification
-                && row.qualification_gate_policy.trim().is_empty()
-                && row.qualification_game_use.trim().is_empty()
-                && row.qualification_effects.trim().is_empty()
-            {
-                failures.push(format!(
-                    "{} relief missing qualification semantics",
-                    row.acceptance_id
-                ));
-            }
-        }
-    }
-    for expected_id in expected {
-        if !seen.contains(expected_id) {
-            failures.push(format!("{expected_id} missing from blocker relief"));
-        }
-    }
-    let actual_before = rows
-        .iter()
-        .map(|row| row.blocker_count_before)
-        .sum::<usize>();
-    let actual_after = rows
-        .iter()
-        .map(|row| row.blocker_count_after)
-        .sum::<usize>();
-    if actual_before != expected_before || actual_after != 0 {
-        failures.push(format!(
-            "T2 game/ops bundle evidence relief before/after = {actual_before}/{actual_after}, expected {expected_before}/0"
-        ));
-    }
-    failures
-}
+// `t2_game_ops_bundle_evidence_blocker_relief_gate_failures` moved to support::tier::t2_game_ops_bundle_evidence_blocker_relief_gate_failures
 
 fn t2_service_overlay_diagnostic_decision_rows(
     docket_rows: &[T2ServiceClassRepairDocketRow],
@@ -26353,127 +21902,7 @@ fn print_t1_schematic_geometry_claim_review_summary(
     println!("  claim blockers preserved: {blockers}");
 }
 
-fn t1_schematic_geometry_claim_review_gate_failures(
-    rows: &[T1SchematicGeometryClaimReviewRow],
-    claim_rows: &[OptimizerClaimReviewRow],
-    design_rows: &[T1DesignReviewCsvRow],
-    policy_rows: &[T1DesignPolicyActionRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let Some(claim_row) = claim_rows.iter().find(|row| {
-        row.priority_class == "P1-claim-blocker"
-            && row.tier == "T1"
-            && row.blocker_family.contains("schematic_geometry")
-            && row.total_claim_blockers > 0
-    }) else {
-        failures.push("missing T1 schematic geometry optimizer claim-review row".to_string());
-        return failures;
-    };
-    if !policy_rows
-        .iter()
-        .any(|row| row.action == "resolve-shared-segment-map-policy")
-    {
-        failures.push("missing resolve-shared-segment-map-policy action".to_string());
-    }
-    let expected_routes = claim_row
-        .representative_routes
-        .split(';')
-        .filter(|route| !route.trim().is_empty())
-        .map(|route| route.trim().to_string())
-        .collect::<std::collections::BTreeSet<_>>();
-    let eligible_routes = design_rows
-        .iter()
-        .filter(|row| expected_routes.contains(&row.route))
-        .filter(|row| {
-            row.selected
-                && row.design_status == "policy-review"
-                && row.next_design_action == "resolve-shared-segment-map-policy"
-                && row.beck_review_flag == "overlap-review"
-        })
-        .map(|row| row.route.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-    if eligible_routes.len() != expected_routes.len() {
-        failures.push(format!(
-            "eligible T1 schematic routes = {}, expected {}",
-            eligible_routes.len(),
-            expected_routes.len()
-        ));
-    }
-    if rows.len() != expected_routes.len() {
-        failures.push(format!(
-            "T1 schematic review has {} rows but expected {}",
-            rows.len(),
-            expected_routes.len()
-        ));
-    }
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.schematic_review_id.trim().is_empty()
-            || row.claim_review_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.design_role.trim().is_empty()
-            || row.design_status.trim().is_empty()
-            || row.beck_review_flag.trim().is_empty()
-            || row.overlap_corridors.trim().is_empty()
-            || row.policy_action.trim().is_empty()
-            || row.required_policy.trim().is_empty()
-            || row.design_treatment.trim().is_empty()
-            || row.gate_policy.trim().is_empty()
-            || row.blocker_claims_before.trim().is_empty()
-            || row.blocker_claims_after.trim().is_empty()
-            || row.review_decision.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete schematic review fields",
-                row.route
-            ));
-        }
-        if !seen.insert(row.route.clone()) {
-            failures.push(format!("{} appears more than once", row.route));
-        }
-        if !expected_routes.contains(&row.route) {
-            failures.push(format!(
-                "{} is not in the T1 schematic claim row",
-                row.route
-            ));
-        }
-        if row.claim_review_id != claim_row.claim_review_id
-            || row.policy_action != "resolve-shared-segment-map-policy"
-            || row.review_decision != "shared-segment-map-policy-required"
-            || row.validation_status != "review"
-        {
-            failures.push(format!("{} has invalid schematic review state", row.route));
-        }
-        if row.blocker_claims_before != claim_row.blocked_claims
-            || row.blocker_claims_after != claim_row.blocked_claims
-            || row.blocker_count_before != 2
-            || row.blocker_count_after != 2
-            || row.claim_blocker_delta != 0
-        {
-            failures.push(format!("{} reduced schematic claim blockers", row.route));
-        }
-    }
-    for expected_route in expected_routes {
-        if !seen.contains(&expected_route) {
-            failures.push(format!(
-                "{expected_route} missing from T1 schematic claim review"
-            ));
-        }
-    }
-    let total_after = rows
-        .iter()
-        .map(|row| row.blocker_count_after)
-        .sum::<usize>();
-    if total_after != claim_row.total_claim_blockers {
-        failures.push(format!(
-            "T1 schematic review preserves {total_after} blockers but claim row has {}",
-            claim_row.total_claim_blockers
-        ));
-    }
-    failures
-}
+// `t1_schematic_geometry_claim_review_gate_failures` moved to support::tier::t1_schematic_geometry_claim_review_gate_failures
 
 fn load_t1_schematic_geometry_claim_review(
     path: &Path,
@@ -26799,125 +22228,7 @@ fn print_t2_beck_label_density_review_summary(output: &Path, rows: &[T2BeckLabel
     println!("  claim blockers preserved: {blockers}");
 }
 
-fn t2_beck_label_density_review_gate_failures(
-    rows: &[T2BeckLabelDensityReviewRow],
-    claim_rows: &[OptimizerClaimReviewRow],
-    diagnostics: &[route_map::BeckT2DiagnosticRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let Some(claim_row) = claim_rows.iter().find(|row| {
-        row.priority_class == "P1-claim-blocker"
-            && row.tier == "T2"
-            && row.blocker_family == "beck_label_density"
-            && row.total_claim_blockers > 0
-    }) else {
-        failures.push("missing T2 Beck label-density optimizer claim-review row".to_string());
-        return failures;
-    };
-    let expected_routes = claim_row
-        .representative_routes
-        .split(';')
-        .filter(|route| !route.trim().is_empty())
-        .map(route_display_key)
-        .collect::<std::collections::BTreeSet<_>>();
-    let eligible_routes = diagnostics
-        .iter()
-        .filter(|row| {
-            matches!(
-                row.review_flag,
-                "dense-label-review" | "dense-transfer-review"
-            )
-        })
-        .map(|row| route_display_key(row.corridor))
-        .filter(|route| expected_routes.contains(route))
-        .collect::<std::collections::BTreeSet<_>>();
-    if eligible_routes.len() != expected_routes.len() {
-        failures.push(format!(
-            "eligible T2 label-density routes = {}, expected {}",
-            eligible_routes.len(),
-            expected_routes.len()
-        ));
-    }
-    if rows.len() != expected_routes.len() {
-        failures.push(format!(
-            "T2 label-density review has {} rows but expected {}",
-            rows.len(),
-            expected_routes.len()
-        ));
-    }
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.label_review_id.trim().is_empty()
-            || row.claim_review_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.trunk.trim().is_empty()
-            || row.start_trunk.trim().is_empty()
-            || row.end_trunk.trim().is_empty()
-            || row.service_class.trim().is_empty()
-            || row.service_label.trim().is_empty()
-            || row.review_flag.trim().is_empty()
-            || row.density_basis.trim().is_empty()
-            || row.review_decision.trim().is_empty()
-            || row.blocker_claims_before.trim().is_empty()
-            || row.blocker_claims_after.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete label-density review fields",
-                row.route
-            ));
-        }
-        if !seen.insert(row.route.clone()) {
-            failures.push(format!("{} appears more than once", row.route));
-        }
-        if !expected_routes.contains(&row.route) {
-            failures.push(format!(
-                "{} is not in the T2 label-density claim row",
-                row.route
-            ));
-        }
-        if row.claim_review_id != claim_row.claim_review_id
-            || !matches!(
-                row.review_flag.as_str(),
-                "dense-label-review" | "dense-transfer-review"
-            )
-            || row.review_decision != "label-density-policy-required"
-            || row.validation_status != "review"
-        {
-            failures.push(format!("{} has invalid label-density state", row.route));
-        }
-        if row.blocker_claims_before != claim_row.blocked_claims
-            || row.blocker_claims_after != claim_row.blocked_claims
-            || row.blocker_count_before != 1
-            || row.blocker_count_after != 1
-            || row.claim_blocker_delta != 0
-        {
-            failures.push(format!(
-                "{} reduced label-density claim blockers",
-                row.route
-            ));
-        }
-    }
-    for expected_route in expected_routes {
-        if !seen.contains(&expected_route) {
-            failures.push(format!(
-                "{expected_route} missing from T2 label-density review"
-            ));
-        }
-    }
-    let total_after = rows
-        .iter()
-        .map(|row| row.blocker_count_after)
-        .sum::<usize>();
-    if total_after != claim_row.total_claim_blockers {
-        failures.push(format!(
-            "T2 label-density review preserves {total_after} blockers but claim row has {}",
-            claim_row.total_claim_blockers
-        ));
-    }
-    failures
-}
+// `t2_beck_label_density_review_gate_failures` moved to support::tier::t2_beck_label_density_review_gate_failures
 
 fn load_t2_beck_label_density_review(path: &Path) -> Result<Vec<T2BeckLabelDensityReviewRow>> {
     if !path.exists() {
@@ -31063,140 +26374,7 @@ fn load_tier_pavement_source_fetch_review(
     Ok(rows)
 }
 
-fn tier_pavement_unmatched_join_review_rows(
-    fetch_review_rows: &[TierPavementSourceFetchReviewRow],
-    source_gap_rows: &[TierPavementSourceGapRow],
-    docket_rows: &[TierPavementDocketRow],
-    cache_dir: &Path,
-) -> Result<Vec<TierPavementUnmatchedJoinReviewRow>> {
-    let source_gap_bundles_by_state = source_gap_rows
-        .iter()
-        .flat_map(|row| {
-            row.affected_states
-                .split(';')
-                .map(str::trim)
-                .filter(|state| !state.is_empty())
-                .map(move |state| (state.to_string(), row.segment_bundle_id.clone()))
-        })
-        .fold(
-            std::collections::BTreeMap::<String, std::collections::BTreeSet<String>>::new(),
-            |mut acc, (state, bundle)| {
-                acc.entry(state).or_default().insert(bundle);
-                acc
-            },
-        );
-    let mut rows = Vec::new();
-    for fetch_review in fetch_review_rows {
-        let cache_path = cache_dir.join(format!("hpms_{}.csv", fetch_review.state.to_lowercase()));
-        let hpms_records = route_data::hpms::read_hpms_csv(&cache_path)
-            .with_context(|| format!("loading {}", cache_path.display()))?;
-        let source_gap_bundles = source_gap_bundles_by_state
-            .get(&fetch_review.state)
-            .cloned()
-            .unwrap_or_default();
-        let state_gap_rows = docket_rows
-            .iter()
-            .filter(|row| {
-                row.state == fetch_review.state
-                    && source_gap_bundles.contains(row.segment_bundle_id.as_str())
-                    && row.validation_status == "review"
-            })
-            .collect::<Vec<_>>();
-        let source_needed_rows = state_gap_rows
-            .iter()
-            .copied()
-            .filter(|row| row.pavement_status == "pavement-source-needed")
-            .collect::<Vec<_>>();
-        let repair_required_rows = state_gap_rows
-            .iter()
-            .copied()
-            .filter(|row| row.pavement_status == "pavement-repair-required")
-            .collect::<Vec<_>>();
-        let source_needed_routes = source_needed_rows
-            .iter()
-            .map(|row| row.route.clone())
-            .collect::<std::collections::BTreeSet<_>>();
-        let repair_required_routes = repair_required_rows
-            .iter()
-            .map(|row| row.route.clone())
-            .collect::<std::collections::BTreeSet<_>>();
-        let hpms_records_for_source_needed_routes = hpms_records
-            .iter()
-            .filter(|record| {
-                record.state == fetch_review.state
-                    && source_needed_routes.contains(record.route_id.as_str())
-                    && record.iri.is_some()
-            })
-            .count();
-        let hpms_source_route_coverage = if source_needed_routes.is_empty() {
-            "not-needed"
-        } else if hpms_records_for_source_needed_routes == 0 {
-            "none"
-        } else {
-            let covered_routes = hpms_records
-                .iter()
-                .filter(|record| {
-                    record.state == fetch_review.state
-                        && source_needed_routes.contains(record.route_id.as_str())
-                        && record.iri.is_some()
-                })
-                .map(|record| record.route_id.clone())
-                .collect::<std::collections::BTreeSet<_>>();
-            if covered_routes.len() == source_needed_routes.len() {
-                "complete-route-records"
-            } else {
-                "partial-route-records"
-            }
-        };
-        let join_review_status =
-            if !source_needed_routes.is_empty() && hpms_records_for_source_needed_routes == 0 {
-                "hpms-scope-misses-source-needed-routes"
-            } else if !source_needed_routes.is_empty() {
-                "hpms-route-records-present-join-still-open"
-            } else if !repair_required_routes.is_empty() {
-                "repair-debt-not-source-join"
-            } else {
-                "no-open-priority-a-pavement-gap"
-            };
-        let next_action = match join_review_status {
-            "hpms-scope-misses-source-needed-routes" => {
-                "attach state DOT pavement condition evidence or broaden HPMS fetch scope for source-needed routes before relief"
-            }
-            "hpms-route-records-present-join-still-open" => {
-                "review route-to-member join keys before accepting HPMS pavement evidence"
-            }
-            "repair-debt-not-source-join" => {
-                "route repair debt to pavement repair funding review, not source acquisition"
-            }
-            _ => "no priority-A pavement join action required",
-        };
-        rows.push(TierPavementUnmatchedJoinReviewRow {
-            join_review_id: format!(
-                "PAVEMENTJOINREVIEW-{}",
-                stable_id_fragment(&fetch_review.state)
-            ),
-            state: fetch_review.state.clone(),
-            source_priority: fetch_review.source_priority.clone(),
-            cache_record_count: fetch_review.cache_record_count,
-            source_gap_member_count: state_gap_rows.len(),
-            source_needed_member_count: source_needed_rows.len(),
-            repair_required_member_count: repair_required_rows.len(),
-            source_needed_routes: join_string_set(&source_needed_routes),
-            repair_required_routes: join_string_set(&repair_required_routes),
-            hpms_records_for_source_needed_routes,
-            hpms_source_route_coverage: hpms_source_route_coverage.to_string(),
-            join_review_status: join_review_status.to_string(),
-            evidence_acceptance_status: "not-accepted".to_string(),
-            blocker_claims_before: fetch_review.blocker_claims_before.clone(),
-            blocker_claims_after: fetch_review.blocker_claims_after.clone(),
-            claim_blocker_delta: 0,
-            next_action: next_action.to_string(),
-            next_artifact: "data/tier-pavement-docket.csv".to_string(),
-            validation_status: "review".to_string(),
-        });
-    }
-    Ok(rows)
-}
+// `tier_pavement_unmatched_join_review_rows` moved to support::pavement::tier_pavement_unmatched_join_review_rows
 
 fn write_tier_pavement_unmatched_join_review(
     path: &Path,
@@ -36507,124 +31685,7 @@ fn print_tier_pavement_funding_evidence_accepted_metadata_source_capture_artifac
     }
 }
 
-fn tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_gate_failures(
-    rows: &[TierPavementFundingEvidenceAcceptedMetadataSourceCaptureArtifactAttachmentRow],
-    capture_rows: &[TierPavementFundingEvidenceAcceptedMetadataSourceCaptureRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let expected = capture_rows
-        .iter()
-        .filter(|row| {
-            row.source_capture_status == "source-needed"
-                && row.captured_artifact == "none"
-                && row.captured_source_title == "source-needed"
-                && row.captured_source_url == "source-needed"
-                && row.captured_commitment_amount_m == "source-needed"
-                && row.evidence_review_status == "not-reviewed"
-                && row.accepted_evidence_status == "not-accepted"
-                && row.relief_eligibility == "not-eligible-for-relief"
-                && row.validation_status == "held"
-        })
-        .map(|row| row.accepted_metadata_source_capture_id.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-    if expected.is_empty() {
-        failures.push(
-            "funding evidence accepted metadata source-capture artifact attachment has no held source-capture rows"
-                .to_string(),
-        );
-    }
-    if rows.len() != expected.len() {
-        failures.push(format!(
-            "funding evidence accepted metadata source-capture artifact attachment has {} rows but expected {} source-capture rows",
-            rows.len(),
-            expected.len()
-        ));
-    }
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row
-            .accepted_metadata_source_capture_artifact_attachment_id
-            .trim()
-            .is_empty()
-            || row.accepted_metadata_source_capture_id.trim().is_empty()
-            || row.evidence_contract_id.trim().is_empty()
-            || row.state.trim().is_empty()
-            || row.tier.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.segment_bundle_id.trim().is_empty()
-            || row.required_artifact_type.trim().is_empty()
-            || row.attachment_status.trim().is_empty()
-            || row.attached_artifact.trim().is_empty()
-            || row.captured_source_title.trim().is_empty()
-            || row.captured_source_url.trim().is_empty()
-            || row.captured_commitment_amount_m.trim().is_empty()
-            || row.evidence_review_status.trim().is_empty()
-            || row.accepted_evidence_status.trim().is_empty()
-            || row.relief_eligibility.trim().is_empty()
-            || row.blocked_claims_before.trim().is_empty()
-            || row.blocked_claims_after.trim().is_empty()
-            || row.attachment_blocker.trim().is_empty()
-            || row.next_action.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} {} has incomplete accepted metadata source-capture artifact-attachment row",
-                row.state, row.route
-            ));
-        }
-        if !seen.insert(row.accepted_metadata_source_capture_id.clone()) {
-            failures.push(format!(
-                "{} appears more than once",
-                row.accepted_metadata_source_capture_id
-            ));
-        }
-        if !expected.contains(row.accepted_metadata_source_capture_id.as_str()) {
-            failures.push(format!(
-                "{} is not a held accepted metadata source-capture row",
-                row.accepted_metadata_source_capture_id
-            ));
-        }
-        if row.required_artifact_type != "accepted-full-cost-programming-or-dot-commitment"
-            || row.attachment_status != "source-needed"
-            || row.attached_artifact != "none"
-            || row.captured_source_title != "source-needed"
-            || row.captured_source_url != "source-needed"
-            || row.captured_commitment_amount_m != "source-needed"
-        {
-            failures.push(format!(
-                "{} {} attaches unsupported accepted funding evidence",
-                row.state, row.route
-            ));
-        }
-        if row.evidence_review_status != "not-reviewed"
-            || row.accepted_evidence_status != "not-accepted"
-            || row.relief_eligibility != "not-eligible-for-relief"
-        {
-            failures.push(format!(
-                "{} {} accepts evidence or relief prematurely",
-                row.state, row.route
-            ));
-        }
-        if row.blocked_claims_before != row.blocked_claims_after || row.claim_blocker_delta != 0 {
-            failures.push(format!(
-                "{} {} changes blockers before relief",
-                row.state, row.route
-            ));
-        }
-        if row.validation_status != "held" {
-            failures.push(format!("{} {} is not held", row.state, row.route));
-        }
-    }
-    for expected_id in expected {
-        if !seen.contains(expected_id) {
-            failures.push(format!(
-                "missing accepted metadata source-capture artifact-attachment row for {expected_id}"
-            ));
-        }
-    }
-    failures
-}
+// `tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_gate_failures` moved to support::pavement::tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_gate_failures
 
 fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     let mut reader = csv::Reader::from_path(path)?;
@@ -36635,139 +31696,7 @@ fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>> {
     Ok(rows)
 }
 
-fn lower_tier_pressure_witness_rows(
-    tier_rows: &[TierTableScoreRow],
-    candidate_rows: &[TierCandidateColumnRow],
-    resolution_rows: &[T2ContactResolutionRow],
-    dispositions: &std::collections::HashMap<String, T2ClosureDisposition>,
-) -> Vec<LowerTierPressureWitnessRow> {
-    let mut rows = Vec::new();
-    let tier_row_by_route = tier_rows
-        .iter()
-        .map(|row| (canonical_route_key(&row.route), row))
-        .collect::<std::collections::HashMap<_, _>>();
-
-    for row in candidate_rows
-        .iter()
-        .filter(|row| row.tier == "T2" && row.column_decision == "demote")
-    {
-        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
-        rows.push(LowerTierPressureWitnessRow {
-            route: row.route.clone(),
-            current_tier: row.tier.clone(),
-            current_score: score_row
-                .map(|score_row| score_row.score)
-                .unwrap_or_default(),
-            confidence: score_row
-                .map(|score_row| score_row.confidence)
-                .unwrap_or_default(),
-            confidence_label: score_row
-                .map(|score_row| score_row.confidence_label.clone())
-                .unwrap_or_else(|| "n/a".to_string()),
-            pressure_type: "demotion-pressure".to_string(),
-            witness_action: "demote-to-lower-tier-treatment".to_string(),
-            target_tier: "T3/T4".to_string(),
-            selection_basis: row.repair_basis.clone(),
-            source_artifact: "data/tier-candidate-columns.csv".to_string(),
-            next_artifact: "data/tier-table.csv".to_string(),
-            validation_status: "review".to_string(),
-        });
-    }
-
-    let existing_routes = rows
-        .iter()
-        .map(|row| canonical_route_key(&row.route))
-        .collect::<std::collections::BTreeSet<_>>();
-    for row in resolution_rows
-        .iter()
-        .filter(|row| row.resolution_action == "move-to-lower-tier-pressure")
-        .filter(|row| !existing_routes.contains(&canonical_route_key(&row.route)))
-    {
-        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
-        rows.push(LowerTierPressureWitnessRow {
-            route: row.route.clone(),
-            current_tier: "T2".to_string(),
-            current_score: score_row
-                .map(|score_row| score_row.score)
-                .unwrap_or_default(),
-            confidence: score_row
-                .map(|score_row| score_row.confidence)
-                .unwrap_or_default(),
-            confidence_label: score_row
-                .map(|score_row| score_row.confidence_label.clone())
-                .unwrap_or_else(|| "n/a".to_string()),
-            pressure_type: "demotion-pressure".to_string(),
-            witness_action: "demote-to-lower-tier-treatment".to_string(),
-            target_tier: "T3/T4".to_string(),
-            selection_basis: row.resolution_basis.clone(),
-            source_artifact: "data/t2-contact-resolutions.csv".to_string(),
-            next_artifact: "data/tier-table.csv".to_string(),
-            validation_status: "review".to_string(),
-        });
-    }
-
-    let existing_routes = rows
-        .iter()
-        .map(|row| canonical_route_key(&row.route))
-        .collect::<std::collections::BTreeSet<_>>();
-    let mut closure_pressure_rows = dispositions
-        .values()
-        .filter(|row| row.disposition == "lower-tier-pressure")
-        .filter(|row| !existing_routes.contains(&canonical_route_key(&row.route)))
-        .collect::<Vec<_>>();
-    closure_pressure_rows.sort_by(|a, b| a.route.cmp(&b.route));
-    for row in closure_pressure_rows {
-        let score_row = tier_row_by_route.get(&canonical_route_key(&row.route));
-        rows.push(LowerTierPressureWitnessRow {
-            route: row.route.clone(),
-            current_tier: "T2".to_string(),
-            current_score: score_row
-                .map(|score_row| score_row.score)
-                .unwrap_or_default(),
-            confidence: score_row
-                .map(|score_row| score_row.confidence)
-                .unwrap_or_default(),
-            confidence_label: score_row
-                .map(|score_row| score_row.confidence_label.clone())
-                .unwrap_or_else(|| "n/a".to_string()),
-            pressure_type: "closure-demotion-pressure".to_string(),
-            witness_action: row.action.clone(),
-            target_tier: "T3/T4".to_string(),
-            selection_basis: row.basis.clone(),
-            source_artifact: row.source_artifact.clone(),
-            next_artifact: row.next_artifact.clone(),
-            validation_status: "review".to_string(),
-        });
-    }
-
-    for row in tier_rows {
-        if row.tier == "T3" && row.score >= T2_THRESHOLD - 5.0 {
-            rows.push(lower_tier_score_pressure_row(
-                row,
-                "regional-upgrade-pressure",
-                "evaluate-for-t2-upgrade-candidate",
-                "T2",
-                "score-within-five-points-of-t2-threshold",
-            ));
-        } else if row.tier == "T4" && row.score >= T3_THRESHOLD - 5.0 {
-            rows.push(lower_tier_score_pressure_row(
-                row,
-                "local-upgrade-pressure",
-                "evaluate-for-t3-access-candidate",
-                "T3",
-                "score-within-five-points-of-t3-threshold",
-            ));
-        }
-    }
-
-    rows.sort_by(|a, b| {
-        a.current_tier
-            .cmp(&b.current_tier)
-            .then_with(|| b.current_score.total_cmp(&a.current_score))
-            .then_with(|| a.route.cmp(&b.route))
-    });
-    rows
-}
+// `lower_tier_pressure_witness_rows` moved to support::misc::lower_tier_pressure_witness_rows
 
 fn lower_tier_score_pressure_row(
     row: &TierTableScoreRow,
@@ -40482,139 +35411,7 @@ fn print_t4_terminal_contact_proof_docket_summary(
     }
 }
 
-fn t4_terminal_contact_proof_docket_gate_failures(
-    rows: &[T4TerminalContactProofDocketRow],
-    plan_rows: &[T4TerminalContactSourcePlanRow],
-    catalog_rows: &[T4TerminalContactSourceCatalogRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let expected_ids = plan_rows
-        .iter()
-        .map(|row| row.queue_id.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-    let catalog_districts = catalog_rows
-        .iter()
-        .map(|row| row.terminal_district.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-
-    if rows.is_empty() {
-        failures.push("no terminal contact proof docket rows emitted".to_string());
-        return failures;
-    }
-    if rows.len() != expected_ids.len() {
-        failures.push(format!(
-            "proof docket has {} rows but expected {} source-plan rows",
-            rows.len(),
-            expected_ids.len()
-        ));
-    }
-
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.task_id.trim().is_empty()
-            || row.queue_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.zone_id.trim().is_empty()
-            || row.terminal_district.trim().is_empty()
-            || row.source_family.trim().is_empty()
-            || row.required_proof_field.trim().is_empty()
-            || row
-                .selected_higher_tier_attachment_requirement
-                .trim()
-                .is_empty()
-            || row.proof_status.trim().is_empty()
-            || row.proof_blocker.trim().is_empty()
-            || row.scenario_effect.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete proof docket fields",
-                row.task_id
-            ));
-        }
-        if !seen.insert(row.queue_id.clone()) {
-            failures.push(format!(
-                "{} appears more than once in proof docket",
-                row.queue_id
-            ));
-        }
-        if !expected_ids.contains(row.queue_id.as_str()) {
-            failures.push(format!(
-                "{} does not appear in the source plan",
-                row.queue_id
-            ));
-        }
-        if !catalog_districts.contains(row.terminal_district.as_str()) {
-            failures.push(format!(
-                "{} lacks district source-family catalog row",
-                row.queue_id
-            ));
-        }
-        if row.required_proof_field != "route-to-terminal contact statement" {
-            failures.push(format!(
-                "{} has invalid proof field {}",
-                row.queue_id, row.required_proof_field
-            ));
-        }
-        if !row
-            .selected_higher_tier_attachment_requirement
-            .contains("selected higher-tier attachment")
-        {
-            failures.push(format!(
-                "{} lacks higher-tier attachment requirement",
-                row.queue_id
-            ));
-        }
-        if !matches!(
-            row.proof_status.as_str(),
-            "source-needed" | "source-backed" | "blocked"
-        ) {
-            failures.push(format!(
-                "{} has invalid proof status {}",
-                row.queue_id, row.proof_status
-            ));
-        }
-        if row.proof_status == "source-needed" {
-            if row.contact_proof_source_artifact != "source-needed"
-                || row.validation_status != "review"
-            {
-                failures.push(format!(
-                    "{} source-needed proof task must keep source-needed proof artifact and review status",
-                    row.queue_id
-                ));
-            }
-            if !row.scenario_effect.contains("no scenario-readiness") {
-                failures.push(format!(
-                    "{} source-needed proof task must block scenario-readiness",
-                    row.queue_id
-                ));
-            }
-        }
-        if row.proof_status == "source-backed"
-            && row.contact_proof_source_artifact == "source-needed"
-        {
-            failures.push(format!(
-                "{} source-backed proof task lacks proof artifact",
-                row.queue_id
-            ));
-        }
-        if !matches!(row.validation_status.as_str(), "pass" | "review" | "held") {
-            failures.push(format!(
-                "{} has invalid validation status {}",
-                row.queue_id, row.validation_status
-            ));
-        }
-    }
-
-    for expected_id in expected_ids {
-        if !seen.contains(expected_id) {
-            failures.push(format!("{expected_id} is missing from proof docket"));
-        }
-    }
-
-    failures
-}
+// `t4_terminal_contact_proof_docket_gate_failures` moved to support::tier::t4_terminal_contact_proof_docket_gate_failures
 
 fn t4_terminal_contact_proof_artifact_contract_rows(
 ) -> Vec<T4TerminalContactProofArtifactContractRow> {
@@ -40895,134 +35692,7 @@ fn print_t4_terminal_contact_proof_source_registry_summary(
     }
 }
 
-fn t4_terminal_contact_proof_source_registry_gate_failures(
-    rows: &[T4TerminalContactProofSourceRegistryRow],
-    proof_rows: &[T4TerminalContactProofDocketRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let expected_ids = proof_rows
-        .iter()
-        .map(|row| row.queue_id.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-    if rows.is_empty() {
-        failures.push("no terminal contact proof source registry rows emitted".to_string());
-        return failures;
-    }
-    if rows.len() != expected_ids.len() {
-        failures.push(format!(
-            "terminal contact proof source registry has {} rows but expected {} proof tasks",
-            rows.len(),
-            expected_ids.len()
-        ));
-    }
-
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.registry_id.trim().is_empty()
-            || row.task_id.trim().is_empty()
-            || row.queue_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.terminal_district.trim().is_empty()
-            || row.source_family.trim().is_empty()
-            || row.source_artifact_mode.trim().is_empty()
-            || row.source_title.trim().is_empty()
-            || row.source_url_or_cache_artifact.trim().is_empty()
-            || row.capture_date.trim().is_empty()
-            || row.contact_statement_status.trim().is_empty()
-            || row.selected_higher_tier_attachment_status.trim().is_empty()
-            || row.registry_status.trim().is_empty()
-            || row.proof_source_artifact.trim().is_empty()
-            || row.registry_blocker.trim().is_empty()
-            || row.contract_artifact.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete source registry fields",
-                row.registry_id
-            ));
-        }
-        if !seen.insert(row.queue_id.clone()) {
-            failures.push(format!(
-                "{} appears more than once in terminal contact proof source registry",
-                row.queue_id
-            ));
-        }
-        if !expected_ids.contains(row.queue_id.as_str()) {
-            failures.push(format!(
-                "{} does not appear in terminal contact proof docket",
-                row.queue_id
-            ));
-        }
-        if row.source_family != "public-terminal-contact-proof" {
-            failures.push(format!(
-                "{} has unsupported source family {}",
-                row.queue_id, row.source_family
-            ));
-        }
-        if row
-            .proof_source_artifact
-            .contains("data/intermodal_terminals.csv")
-        {
-            failures.push(format!(
-                "{} cites terminal seed data as proof",
-                row.queue_id
-            ));
-        }
-        match row.registry_status.as_str() {
-            "source-backed" => {
-                if !matches!(
-                    row.source_artifact_mode.as_str(),
-                    "manual-citation" | "cached-source-artifact"
-                ) || row.source_title == "source-needed"
-                    || row.source_url_or_cache_artifact == "source-needed"
-                    || row.capture_date == "source-needed"
-                    || row.contact_statement_status != "source-backed"
-                    || row.selected_higher_tier_attachment_status != "attached"
-                    || row.proof_source_artifact == "source-needed"
-                    || row.validation_status != "pass"
-                {
-                    failures.push(format!(
-                        "{} source-backed registry row lacks accepted proof artifact fields",
-                        row.queue_id
-                    ));
-                }
-            }
-            "source-needed" | "blocked" | "rejected" => {
-                if row.validation_status != "review" && row.validation_status != "held" {
-                    failures.push(format!(
-                        "{} unresolved registry row must remain review or held",
-                        row.queue_id
-                    ));
-                }
-                if row.registry_blocker.trim().is_empty() {
-                    failures.push(format!(
-                        "{} unresolved registry row lacks blocker",
-                        row.queue_id
-                    ));
-                }
-            }
-            other => failures.push(format!(
-                "{} has invalid registry status {}",
-                row.queue_id, other
-            )),
-        }
-        if row.contract_artifact != "data/t4-terminal-contact-proof-artifact-contract.csv" {
-            failures.push(format!(
-                "{} does not reference the proof artifact contract",
-                row.queue_id
-            ));
-        }
-    }
-    for expected_id in expected_ids {
-        if !seen.contains(expected_id) {
-            failures.push(format!(
-                "{expected_id} is missing from terminal contact proof source registry"
-            ));
-        }
-    }
-    failures
-}
+// `t4_terminal_contact_proof_source_registry_gate_failures` moved to support::tier::t4_terminal_contact_proof_source_registry_gate_failures
 
 fn load_t4_terminal_contact_proof_source_registry(
     path: &Path,
@@ -41615,143 +36285,7 @@ fn print_t4_terminal_columbus_source_access_summary(
     }
 }
 
-fn t4_terminal_columbus_source_access_gate_failures(
-    rows: &[T4TerminalColumbusSourceAccessRow],
-    intake_rows: &[T4TerminalColumbusProofIntakeRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let expected_ids = intake_rows
-        .iter()
-        .map(|row| row.queue_id.as_str())
-        .collect::<std::collections::BTreeSet<_>>();
-
-    if rows.is_empty() {
-        failures.push("no Columbus South source access rows emitted".to_string());
-        return failures;
-    }
-    if rows.len() != expected_ids.len() {
-        failures.push(format!(
-            "Columbus source access has {} rows but expected {} intake rows",
-            rows.len(),
-            expected_ids.len()
-        ));
-    }
-
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.access_id.trim().is_empty()
-            || row.intake_id.trim().is_empty()
-            || row.queue_id.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.terminal_district.trim().is_empty()
-            || row.source_family.trim().is_empty()
-            || row.access_mode.trim().is_empty()
-            || row.live_fetch_status.trim().is_empty()
-            || row.required_source_metadata.trim().is_empty()
-            || row.acquisition_status.trim().is_empty()
-            || row.source_access_blocker.trim().is_empty()
-            || row.cache_policy_artifact.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-            || row.validation_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete source access fields",
-                row.access_id
-            ));
-        }
-        if !seen.insert(row.queue_id.clone()) {
-            failures.push(format!(
-                "{} appears more than once in Columbus source access",
-                row.queue_id
-            ));
-        }
-        if row.terminal_district != "Columbus South" {
-            failures.push(format!(
-                "{} is not a Columbus South source access row",
-                row.queue_id
-            ));
-        }
-        if !expected_ids.contains(row.queue_id.as_str()) {
-            failures.push(format!(
-                "{} does not appear in the Columbus proof intake",
-                row.queue_id
-            ));
-        }
-        for required in [
-            "source title",
-            "source url or cached artifact",
-            "capture date",
-            "route",
-            "terminal district",
-            "route-to-terminal contact statement",
-        ] {
-            if !row.required_source_metadata.contains(required) {
-                failures.push(format!(
-                    "{} missing required source metadata {}",
-                    row.queue_id, required
-                ));
-            }
-        }
-        if row.live_fetch_status != "unsupported-no-safe-terminal-fetcher" {
-            failures.push(format!(
-                "{} has unsupported live fetch status {}",
-                row.queue_id, row.live_fetch_status
-            ));
-        }
-        if row.acquisition_status == "source-needed" {
-            if row.contact_proof_source_artifact != "source-needed"
-                || row.validation_status != "review"
-            {
-                failures.push(format!(
-                    "{} source-needed access row must keep source-needed proof artifact and review status",
-                    row.queue_id
-                ));
-            }
-            if !row
-                .source_access_blocker
-                .contains("no safe live terminal-contact fetch command")
-            {
-                failures.push(format!(
-                    "{} source-needed access row lacks live-fetch blocker",
-                    row.queue_id
-                ));
-            }
-        }
-        if row.acquisition_status == "source-backed"
-            && row.contact_proof_source_artifact == "source-needed"
-        {
-            failures.push(format!(
-                "{} source-backed access row lacks proof artifact",
-                row.queue_id
-            ));
-        }
-        if !matches!(
-            row.acquisition_status.as_str(),
-            "source-needed" | "source-backed" | "blocked"
-        ) {
-            failures.push(format!(
-                "{} has invalid acquisition status {}",
-                row.queue_id, row.acquisition_status
-            ));
-        }
-        if !matches!(row.validation_status.as_str(), "pass" | "review" | "held") {
-            failures.push(format!(
-                "{} has invalid validation status {}",
-                row.queue_id, row.validation_status
-            ));
-        }
-    }
-
-    for expected_id in expected_ids {
-        if !seen.contains(expected_id) {
-            failures.push(format!(
-                "{expected_id} is missing from Columbus source access"
-            ));
-        }
-    }
-
-    failures
-}
+// `t4_terminal_columbus_source_access_gate_failures` moved to support::tier::t4_terminal_columbus_source_access_gate_failures
 
 fn load_t4_terminal_columbus_source_access(
     path: &Path,
@@ -43044,129 +37578,7 @@ fn print_t3_zone_stop_placement_summary(output: &Path, rows: &[T3ZoneStopPlaceme
     }
 }
 
-fn t3_zone_stop_placement_gate_failures(
-    rows: &[T3ZoneStopPlacementRow],
-    board_rows: &[T3ZoneRenderBoardRow],
-) -> Vec<String> {
-    let mut failures = Vec::new();
-    let selected_routes = board_rows
-        .iter()
-        .filter(|row| row.board_layer == "selected-route")
-        .map(|row| {
-            (
-                row.zone_id.clone(),
-                normalise_designation(row.route.as_str()),
-            )
-        })
-        .collect::<std::collections::BTreeSet<_>>();
-    if selected_routes.is_empty() {
-        failures
-            .push("no selected T3 render-board routes available for stop placement".to_string());
-        return failures;
-    }
-    let placement_routes = rows
-        .iter()
-        .map(|row| {
-            (
-                row.zone_id.clone(),
-                normalise_designation(row.route.as_str()),
-            )
-        })
-        .collect::<std::collections::BTreeSet<_>>();
-    for route in &selected_routes {
-        if !placement_routes.contains(route) {
-            failures.push(format!(
-                "{} {} missing stop placement row",
-                route.0, route.1
-            ));
-        }
-    }
-
-    let mut seen = std::collections::BTreeSet::<(String, String)>::new();
-    for row in rows {
-        if row.zone_id.trim().is_empty()
-            || row.zone_name.trim().is_empty()
-            || row.route.trim().is_empty()
-            || row.national_segment_id.trim().is_empty()
-            || row.stitch_group_id.trim().is_empty()
-            || row.segment_bundle_id.trim().is_empty()
-            || row.segment_aliases.trim().is_empty()
-            || row.placement_status.trim().is_empty()
-            || row.placement_action.trim().is_empty()
-            || row.source_artifact.trim().is_empty()
-            || row.next_artifact.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} {} has incomplete stop placement fields",
-                row.zone_id, row.route
-            ));
-        }
-        let key = (
-            row.zone_id.clone(),
-            normalise_designation(row.route.as_str()),
-        );
-        if !seen.insert(key) {
-            failures.push(format!(
-                "{} {} has duplicate stop placement row",
-                row.zone_id, row.route
-            ));
-        }
-        if !matches!(row.validation_status.as_str(), "pass" | "review") {
-            failures.push(format!(
-                "{} {} has invalid validation status {}",
-                row.zone_id, row.route, row.validation_status
-            ));
-        }
-        if !row.national_segment_id.starts_with("US.HWYSEG.") {
-            failures.push(format!(
-                "{} {} has non-hierarchical segment id {}",
-                row.zone_id, row.route, row.national_segment_id
-            ));
-        }
-        if !row.stitch_group_id.starts_with("US.HWYSTITCH.") {
-            failures.push(format!(
-                "{} {} has non-hierarchical stitch group {} for segment id {}",
-                row.zone_id, row.route, row.stitch_group_id, row.national_segment_id
-            ));
-        }
-        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
-            failures.push(format!(
-                "{} {} has non-hierarchical bundle id {}",
-                row.zone_id, row.route, row.segment_bundle_id
-            ));
-        }
-        if row.placement_status == "ready-for-stop-layout" {
-            if row.stop_count < 2
-                || row.transfer_grade_stop_count == 0
-                || row.stop_chain.trim().is_empty()
-                || row.state_scope.trim().is_empty()
-            {
-                failures.push(format!(
-                    "{} {} is marked ready without a viable T3 stop chain",
-                    row.zone_id, row.route
-                ));
-            }
-            if row.validation_status != "pass" {
-                failures.push(format!("{} {} ready row must pass", row.zone_id, row.route));
-            }
-        } else {
-            if row.validation_status != "review" {
-                failures.push(format!(
-                    "{} {} gap row must be review",
-                    row.zone_id, row.route
-                ));
-            }
-            if row.next_artifact != "data/tier-stop-candidates.csv" {
-                failures.push(format!(
-                    "{} {} stop gap must return to tier stop candidates",
-                    row.zone_id, row.route
-                ));
-            }
-        }
-    }
-
-    failures
-}
+// `t3_zone_stop_placement_gate_failures` moved to support::tier::t3_zone_stop_placement_gate_failures
 
 fn load_t3_zone_stop_placement(path: &Path) -> Result<Vec<T3ZoneStopPlacementRow>> {
     if !path.exists() {
@@ -43329,133 +37741,7 @@ fn print_national_segment_registry_summary(output: &Path, rows: &[NationalSegmen
     }
 }
 
-fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) -> Vec<String> {
-    let mut failures = Vec::new();
-    if rows.is_empty() {
-        failures.push("no national segment registry rows emitted".to_string());
-        return failures;
-    }
-
-    let mut seen = std::collections::BTreeSet::<String>::new();
-    for row in rows {
-        if row.national_segment_id.trim().is_empty()
-            || row.segment_bundle_id.trim().is_empty()
-            || row.stitch_group_id.trim().is_empty()
-            || row.current_zone_id.trim().is_empty()
-            || row.current_tier.trim().is_empty()
-            || row.segment_aliases.trim().is_empty()
-            || row.bundle_aliases.trim().is_empty()
-            || row.board_layers.trim().is_empty()
-            || row.source_artifacts.trim().is_empty()
-            || row.bundle_role.trim().is_empty()
-            || row.member_segment_ids.trim().is_empty()
-            || row.registry_action.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} has incomplete registry fields",
-                row.national_segment_id
-            ));
-        }
-        if !seen.insert(national_segment_member_key(
-            &row.segment_bundle_id,
-            &row.national_segment_id,
-        )) {
-            failures.push(format!(
-                "{} is duplicated in bundle {}",
-                row.national_segment_id, row.segment_bundle_id
-            ));
-        }
-        if !row.national_segment_id.starts_with("US.HWYSEG.") {
-            failures.push(format!(
-                "{} is not a highway segment id",
-                row.national_segment_id
-            ));
-        }
-        if !row.segment_bundle_id.starts_with("US.HWYBUNDLE.") {
-            failures.push(format!(
-                "{} has invalid bundle id {}",
-                row.national_segment_id, row.segment_bundle_id
-            ));
-        }
-        if !row.stitch_group_id.starts_with("US.HWYSTITCH.") {
-            failures.push(format!(
-                "{} has invalid stitch group {}",
-                row.national_segment_id, row.stitch_group_id
-            ));
-        }
-        if row.national_segment_id.contains("T1")
-            || row.national_segment_id.contains("T2")
-            || row.national_segment_id.contains("T3")
-            || row.national_segment_id.contains("T4")
-            || row.national_segment_id.contains("GREAT")
-            || row.national_segment_id.contains("SOUTHEAST")
-            || row.national_segment_id.contains("MOUNTAIN")
-            || row.national_segment_id.contains("TEXAS")
-        {
-            failures.push(format!(
-                "{} leaks tier or zone semantics into stable segment id",
-                row.national_segment_id
-            ));
-        }
-        if !matches!(row.current_tier.as_str(), "T1" | "T2" | "T3" | "T4") {
-            failures.push(format!(
-                "{} has invalid current tier {}",
-                row.national_segment_id, row.current_tier
-            ));
-        }
-        if row.bundle_role == "single-segment" && row.member_segment_ids != row.national_segment_id
-        {
-            failures.push(format!(
-                "{} single-segment bundle has mismatched members {}",
-                row.national_segment_id, row.member_segment_ids
-            ));
-        }
-        if !row.qualification_effects.trim().is_empty()
-            && (!row.board_layers.contains("tier-segment-candidate")
-                || !row
-                    .source_artifacts
-                    .contains("data/tier-segment-candidates.csv"))
-        {
-            failures.push(format!(
-                "{} carries qualification effects without segment candidate source",
-                row.national_segment_id
-            ));
-        }
-        if row.board_layers.contains("selected-route")
-            && row.stop_placement_status.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} selected route missing stop placement status",
-                row.national_segment_id
-            ));
-        }
-        if matches!(row.current_tier.as_str(), "T1" | "T2")
-            && !row.stop_placement_status.contains("pavement-")
-        {
-            failures.push(format!(
-                "{} {} member lacks pavement readiness status",
-                row.current_tier, row.national_segment_id
-            ));
-        }
-        if row.stop_placement_status.contains("ready-for-stop-layout")
-            && row.evidence_state_scope.trim().is_empty()
-            && row.geometry_state_scope.trim().is_empty()
-        {
-            failures.push(format!(
-                "{} ready route missing state scope",
-                row.national_segment_id
-            ));
-        }
-        if !matches!(row.validation_status.as_str(), "pass" | "review") {
-            failures.push(format!(
-                "{} has invalid validation status {}",
-                row.national_segment_id, row.validation_status
-            ));
-        }
-    }
-
-    failures
-}
+// `national_segment_registry_gate_failures` moved to support::gates::national_segment_registry_gate_failures
 
 fn load_national_segment_registry(path: &Path) -> Result<Vec<NationalSegmentRegistryRow>> {
     if !path.exists() {

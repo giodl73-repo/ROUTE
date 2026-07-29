@@ -1,0 +1,17 @@
+//! tier helpers.
+pub(crate) mod t1_schematic_geometry_claim_review_gate_failures;
+pub(crate) mod t2_beck_label_density_review_gate_failures;
+pub(crate) mod t2_bundle_overlay_rows;
+pub(crate) mod t2_game_ops_bundle_evidence_blocker_relief_gate_failures;
+pub(crate) mod t3_zone_stop_placement_gate_failures;
+pub(crate) mod t4_terminal_columbus_source_access_gate_failures;
+pub(crate) mod t4_terminal_contact_proof_docket_gate_failures;
+pub(crate) mod t4_terminal_contact_proof_source_registry_gate_failures;
+pub(crate) use t1_schematic_geometry_claim_review_gate_failures::*;
+pub(crate) use t2_beck_label_density_review_gate_failures::*;
+pub(crate) use t2_bundle_overlay_rows::*;
+pub(crate) use t2_game_ops_bundle_evidence_blocker_relief_gate_failures::*;
+pub(crate) use t3_zone_stop_placement_gate_failures::*;
+pub(crate) use t4_terminal_columbus_source_access_gate_failures::*;
+pub(crate) use t4_terminal_contact_proof_docket_gate_failures::*;
+pub(crate) use t4_terminal_contact_proof_source_registry_gate_failures::*;

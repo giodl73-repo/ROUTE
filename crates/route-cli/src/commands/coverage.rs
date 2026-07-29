@@ -1,4 +1,5 @@
-//! `Coverage` command handler extracted from main.
+//! `coverage` command handler (same contract as `build` exemplar).
+//! See `commands/build.rs` for the reference shape.
 use super::super::*;
 
 #[allow(unused_variables)]

@@ -19,8 +19,8 @@ Last updated: 2026-07-29
 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
-| S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | 65 command modules under `commands/*` + `ctx`; thin match arms remain for tail |
-| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | optimizer_* + 8 row/print helpers; tests_inline; main ~51k (was ~74k pre-split) |
+| S1 | Split `run_cli` match arms into command modules | done 2026-07-29 | ~240 command modules; run_cli thin dispatch; see docs/dev/cli-layout.md |
+| S2 | Shrink/replace god-helpers still in `main.rs` | partial 2026-07-29 | support/{tier,pavement,print,gates,misc}; optimizer_*; tests_inline; main ~45k |
 | S3 | Freeze micro-wave creation; use this backlog | open | Process gravity control |
 
 ## Later (product yield)
