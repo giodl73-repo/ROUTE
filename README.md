@@ -31,6 +31,10 @@ ROUTE is a **research and tooling lab**, not a finished national plan.
 | Full T1–T4 map publication claims | **Blocked / scoped** — see [`docs/map-publication-scope.md`](docs/map-publication-scope.md) |
 | Milepost “complete” language | Means **internal command/artifact gates**, not external validation |
 
+The repo-local [VERDICT capability assessment](docs/vtrace/CAPABILITY_ASSESSMENT.md)
+scores this analytical program 12/21 while keeping corridor delivery, outcomes,
+competitive lifecycle price, and fiscal authority held.
+
 **15-minute public proof** (no Census key required for the packet check):
 
 ```powershell
