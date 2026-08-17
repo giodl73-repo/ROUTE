@@ -84,6 +84,12 @@ or freight network, start with
 reuse path, first local adaptation steps, contribution targets, and claim
 boundaries.
 
+ROUTE's Rust crates are intentionally specialist internal components, not an
+unclaimed cross-domain library. Reuse the planning method and evidence
+discipline; keep highway semantics and implementation contracts in ROUTE unless
+a named external adopter meets the documented extraction gate. See
+[`docs/adoption/reuse-boundary.md`](docs/adoption/reuse-boundary.md).
+
 ## Media resources
 
 If you are reporting on ROUTE or Interstate 2.0, start with
