@@ -365,16 +365,13 @@ one produces a useful hold, downgrade, or next evidence step.
 
 ## Validation
 
-For docs-only changes:
+Active maintenance owner: `@giodl73-repo`.
 
-```powershell
-git diff --check -- README.md docs
-```
-
-For full repo confidence, use the repo-local command profile in
+Validation commands are consolidated in the repo-local command profile in
 [`docs/vtrace/VERIFICATION.md`](docs/vtrace/VERIFICATION.md). L2 browser/game
 validation currently has a known local Playwright tooling risk recorded in the
-VTRACE evidence ledger.
+VTRACE evidence ledger. This removes the duplicate README-only validation path
+without weakening the authoritative evidence gate.
 
 ## License
 

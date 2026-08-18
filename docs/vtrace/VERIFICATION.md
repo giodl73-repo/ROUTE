@@ -28,7 +28,7 @@ actual results.
 ## Commands
 
 ```powershell
-git diff --check -- docs\vtrace
+git diff --check -- README.md docs
 cargo fmt --check
 cargo test -q --workspace --lib --bins
 cargo test -q
@@ -40,7 +40,7 @@ git status --short
 
 | Level | Purpose | Commands / Evidence | Result |
 |---|---|---|---|
-| L0 | Fast local sanity for active work package. | docs-only: `git diff --check -- docs\vtrace`; Rust/package work: targeted `cargo test -q -p <crate>` or `cargo test -q --workspace --lib --bins`; review work: role matrix inspection | passed |
+| L0 | Fast local sanity for active work package. | docs-only: `git diff --check -- README.md docs`; Rust/package work: targeted `cargo test -q -p <crate>` or `cargo test -q --workspace --lib --bins`; review work: role matrix inspection | passed |
 | L1 | Full repo confidence before push or PR. | `cargo test -q`; VTRACE artifact inspection; role-review evidence for claim changes | pass_with_risk |
 | L2 | Integration/readiness proof before merge, release, or public claim. | `npm run check:l2`; release/review gate; generated artifact inspection | pass_with_risk |
 
