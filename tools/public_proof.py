@@ -23,7 +23,12 @@ def main() -> int:
     run("I-80 flagship packet check", [sys.executable, "tools/build_i80_flagship_packet.py", "--check"])
     run(
         "I-80 no-credential source gate",
-        [sys.executable, "tools/prepare_i80_report_sources.py", "--gate-no-credential"],
+        [
+            sys.executable,
+            "tools/prepare_i80_report_sources.py",
+            "--execute",
+            "--gate-no-credential",
+        ],
     )
 
     packet = ROOT / "docs" / "packets" / "i80-flagship-review-packet.md"
