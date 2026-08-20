@@ -7,9 +7,7 @@ pub(crate) fn moment_artifact_exists(artifact: &str) -> bool {
     if path.exists() {
         return true;
     }
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join(path)
-        .exists()
+    repository_root::repository_root()
+        .map(|root| root.join(path).exists())
+        .unwrap_or(false)
 }
-

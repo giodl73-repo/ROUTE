@@ -7,9 +7,8 @@ pub(crate) fn map_atlas_artifact_path(path: &str) -> PathBuf {
     if direct.exists() || direct.is_absolute() {
         direct
     } else {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
-            .join(path)
+        repository_root::repository_root()
+            .map(|root| root.join(path))
+            .unwrap_or(direct)
     }
 }
-
