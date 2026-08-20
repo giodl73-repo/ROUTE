@@ -7,9 +7,8 @@ pub(crate) fn repo_relative_artifact_path(path: &str) -> PathBuf {
     if direct.exists() || direct.is_absolute() {
         direct
     } else {
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
-            .join(path)
+        repository_root::repository_root()
+            .map(|root| root.join(path))
+            .unwrap_or(direct)
     }
 }
-

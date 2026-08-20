@@ -7,10 +7,7 @@ pub(crate) fn resolve_repo_path(path: &str) -> PathBuf {
     if direct.exists() {
         return direct;
     }
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .map(|workspace| workspace.join(path))
+    repository_root::repository_root()
+        .map(|root| root.join(path))
         .unwrap_or(direct)
 }
-

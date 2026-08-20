@@ -4,12 +4,12 @@ use crate::*;
 
 pub(crate) fn load_hazard_zones() -> std::collections::HashMap<String, HazardZone> {
     let path = std::path::Path::new("data/hazard_zones.csv");
-    let manifest_path =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/hazard_zones.csv");
     let path = if path.exists() {
         path.to_path_buf()
     } else {
-        manifest_path
+        repository_root::repository_root()
+            .map(|root| root.join(path))
+            .unwrap_or_else(|| path.to_path_buf())
     };
     if !path.exists() {
         return std::collections::HashMap::new();
@@ -61,4 +61,3 @@ pub(crate) fn load_hazard_zones() -> std::collections::HashMap<String, HazardZon
     }
     map
 }
-
