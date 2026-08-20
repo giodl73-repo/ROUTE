@@ -1,0 +1,19 @@
+dependency_version: route.reel-dependency.v0.1
+provider:
+  repository: https://github.com/giodl73-repo/REEL
+  revision: 0c1bf6ca793a3298f2c88c1f283ac69830a062ff
+  cli_version: 0.2.45
+contract:
+  manifest_version: reel.manifest.v0.2
+  role: conformed-private-preview
+  acceptance:
+    - animatic-check passes exact artifact and input hashes
+    - motion-check passes the manifest timeline
+consumer_package:
+  manifest: manifest.yaml
+  captions: captions.srt
+  owner_plate: maps/i80.png
+boundary:
+  - ROUTE owns map semantics, waypoint meaning, narration, claim posture, and release authority.
+  - REEL owns timing, interpolation, bounded crop execution, and artifact evidence.
+  - This package does not prove construction, SLA, ROI, terminal access, asset condition, or agency approval.

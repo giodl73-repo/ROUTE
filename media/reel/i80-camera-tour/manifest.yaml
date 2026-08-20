@@ -1,0 +1,152 @@
+manifest_version: reel.manifest.v0.2
+profile: animatic
+timing_status: conformed
+work: route-i80-camera-tour
+title: I-80 structural map - held-claim camera tour
+source_scenario:
+  repo: ROUTE
+  path: gaps/i80-flagship.md
+  id: i80-flagship-held-gap
+  source_commit: ffe1f0a3dbdc5e10e83b2997fbcbf2a32794d286
+format: explainer
+style: animated-diagram
+audience:
+  primary: transportation research reviewers
+  context: private REEL capability proof
+  desired_effect: understand the corridor structure and the evidence hold without inferring a project
+platforms:
+  - name: desktop-review
+    aspect_ratio: "16:9"
+    target_duration_seconds: 18.0
+    sound_optional: true
+    device: desktop
+    hook_deadline_seconds: 3
+continuity:
+  entities: []
+  canon_constraints:
+    - ROUTE remains a research and tooling project, not an adopted plan.
+    - The I-80 map is a structural held-claim surface, not infrastructure evidence.
+scenes:
+  - id: scene-i80
+    duration_seconds: 18.0
+    purpose: Explain the I-80 structural map while preserving its current evidence hold.
+    story_beat: Overview, bounded Des Moines question, then eastern context and non-claim.
+    location: ROUTE I-80 structural map
+    characters: []
+    continuity_notes:
+      - Do not imply construction, treatment selection, SLA, ROI, terminal access, or agency approval.
+shots:
+  - id: shot-i80-tour
+    scene_id: scene-i80
+    start_seconds: 0.0
+    duration_seconds: 18.0
+    camera: overview to west, central evidence question, and eastern context
+    action: Travel across the owner-rendered map without changing its labels or claim posture.
+    visual_prompt: Owner-generated ROUTE structural map; no generative rendering.
+    visual_asset: maps/i80.png
+    media_kind: still
+    camera_track:
+      timing_fps: 24
+      keyframes:
+        - frame: 0
+          center_x: 0.50
+          center_y: 0.50
+          zoom: 1.00
+          curve_to_next: ease-in-out
+        - frame: 72
+          center_x: 0.18
+          center_y: 0.52
+          zoom: 1.45
+          curve_to_next: ease-in-out
+        - frame: 216
+          center_x: 0.50
+          center_y: 0.49
+          zoom: 1.90
+          curve_to_next: ease-in-out
+        - frame: 431
+          center_x: 0.82
+          center_y: 0.47
+          zoom: 1.50
+          curve_to_next: linear
+    style_constraints:
+      - owner-rendered map only
+      - held-claim language remains visible in captions
+    transition_out: cut
+    narration_cue_ids: [cue-overview, cue-des-moines, cue-boundary]
+    source_refs: [map-contract, des-moines-gap, publication-boundary]
+speakers:
+  - id: research-caption
+    display_name: Research caption
+    language: en
+    pronunciation_profile: not-applicable-silent-output
+    performance_direction: precise, restrained, and explicit about claim holds
+    approval_reference: internal-private-preview
+    asset_kind: guide
+narration_cues:
+  - id: cue-overview
+    speaker_id: research-caption
+    text: "ROUTE research-lab schematic: I-80 is shown as a structural service map."
+    source_refs: [map-contract]
+    shot_ids: [shot-i80-tour]
+    start_seconds: 0.0
+    duration_seconds: 6.0
+  - id: cue-des-moines
+    speaker_id: research-caption
+    text: "At Des Moines, the open question is evidence and model alignment - not a proven infrastructure deficiency."
+    source_refs: [des-moines-gap]
+    shot_ids: [shot-i80-tour]
+    start_seconds: 6.0
+    duration_seconds: 6.0
+  - id: cue-boundary
+    speaker_id: research-caption
+    text: "This held-claim surface does not establish construction, SLA, ROI, terminal access, or agency approval."
+    source_refs: [publication-boundary]
+    shot_ids: [shot-i80-tour]
+    start_seconds: 12.0
+    duration_seconds: 6.0
+protected_pauses: []
+source_ranges:
+  - { id: map-contract, start: 10, end: 10, label: I-80 map atlas contract }
+  - { id: des-moines-gap, start: 48, end: 70, label: bounded Des Moines evidence gap }
+  - { id: publication-boundary, start: 41, end: 52, label: held-claim publication boundary }
+omissions: []
+audio:
+  narration_voice: none
+  music_direction: none
+  effects_direction: none
+  silence_notes: intentionally silent private-preview proof
+captions:
+  required: true
+  style: centered-safe-lower-third
+  language: en
+  sound_off_complete: true
+renderer_assumptions:
+  candidates: [ffmpeg]
+  blockers: []
+exports:
+  - id: desktop-review
+    filename: i80-camera-tour.mp4
+    aspect_ratio: "16:9"
+    duration_seconds: 18.0
+lineage:
+  parent_manifest: null
+  root_work: route-i80-camera-tour
+  scene_key: scene-i80
+  transformation_reason: prove reusable still-plate camera motion without changing ROUTE authority
+  changed_dimensions: [frames, captions]
+  review_candidate: true
+  principal_approved: false
+  created_unix: 1787184000
+review:
+  required_roles: [schematic-cartographer, state-dot-planner, scope-keeper, editor, platform-audience]
+  status: private-preview
+  principal_findings: []
+quality_controls:
+  max_uninterrupted_hold_seconds: 18
+  require_focal_points: false
+  require_protected_regions: false
+  no_lip_sync: true
+  ab_outputs: []
+provider_handoff:
+  asset_ids: []
+  text_fields: [shots.action, narration_cues.text]

@@ -1,0 +1,24 @@
+1
+00:00:00,000 --> 00:00:04,000
+ROUTE research-lab schematic.
+I-80 is a structural service map.
+
+2
+00:00:04,000 --> 00:00:08,000
+At Des Moines, evidence and model
+alignment remain an open question.
+
+3
+00:00:08,000 --> 00:00:11,000
+This is not a proven
+infrastructure deficiency.
+
+4
+00:00:11,000 --> 00:00:14,500
+This held-claim surface does not prove
+construction, SLA, or ROI.
+
+5
+00:00:14,500 --> 00:00:18,000
+It does not prove terminal access
+or agency approval.
