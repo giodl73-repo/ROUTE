@@ -138,6 +138,6 @@
     "check:game-browser": "playwright test docs/game/browser/des-moines-browser.spec.js --browser=chromium"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1"
+    "@playwright/test": "1.62.1"
   }
 }
