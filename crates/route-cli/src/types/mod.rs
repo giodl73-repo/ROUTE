@@ -4731,4 +4731,3 @@ pub(crate) struct HazardZone {
     pub(crate) tornado: f32,
     pub(crate) seismic: f32,
 }
-

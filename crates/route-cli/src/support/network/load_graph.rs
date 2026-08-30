@@ -21,4 +21,3 @@ pub(crate) fn load_graph(manifest: &route_data::Manifest) -> Result<route_networ
     let (graph, _) = route_network::build_graph_with_fpm(segments, &hpms, &fpm);
     Ok(graph)
 }
-

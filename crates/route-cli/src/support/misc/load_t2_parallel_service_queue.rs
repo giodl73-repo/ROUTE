@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2ParallelServiceQueueRow>> {
+pub(crate) fn load_t2_parallel_service_queue(
+    path: &Path,
+) -> Result<Vec<T2ParallelServiceQueueRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_parallel_service_queue(path: &Path) -> Result<Vec<T2Parall
     }
     Ok(rows)
 }
-

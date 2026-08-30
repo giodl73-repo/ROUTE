@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_decision_docket(
     writer.flush()?;
     Ok(())
 }
-

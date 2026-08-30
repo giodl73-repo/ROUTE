@@ -10,4 +10,3 @@ pub(crate) fn terminal_contact_basis_for_row(row: &T4TerminalAccessColumnRow) ->
         "source-needed-route-to-terminal-contact".to_string()
     }
 }
-

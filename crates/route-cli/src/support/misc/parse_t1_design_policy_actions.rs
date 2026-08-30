@@ -12,4 +12,3 @@ pub(crate) fn parse_t1_design_policy_actions<R: std::io::Read>(
     }
     Ok(rows)
 }
-

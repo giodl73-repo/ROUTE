@@ -15,4 +15,3 @@ pub(crate) fn load_t2_game_publication_evidence_policy_acceptance(
     }
     Ok(rows)
 }
-

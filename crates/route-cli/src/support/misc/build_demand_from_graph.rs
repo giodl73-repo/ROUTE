@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_sim::demand::DemandMatrix {
+pub(crate) fn build_demand_from_graph(
+    g: &route_network::HighwayGraph,
+) -> route_sim::demand::DemandMatrix {
     use route_sim::demand::{demand_from_aadt, DemandParams};
     let params = DemandParams::default();
     let mut demand = Vec::new();
@@ -39,4 +41,3 @@ pub(crate) fn build_demand_from_graph(g: &route_network::HighwayGraph) -> route_
     }
     demand
 }
-

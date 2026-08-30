@@ -9,4 +9,3 @@ pub(crate) fn t1_diamond_validation_gate_failures(
         .filter(|row| !t1_diamond_validation_row_has_contract(row))
         .collect()
 }
-

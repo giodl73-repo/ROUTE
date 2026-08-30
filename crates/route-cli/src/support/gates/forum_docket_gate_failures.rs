@@ -11,4 +11,3 @@ pub(crate) fn forum_docket_gate_failures(rows: &[ForumDocketRow]) -> Vec<String>
         .filter_map(|row| forum_docket_row_failure(row))
         .collect()
 }
-

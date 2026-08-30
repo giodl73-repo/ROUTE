@@ -11,4 +11,3 @@ pub(crate) fn t2_long_connector_band(schematic_length_px: f64) -> &'static str {
         "moderate-long-connector"
     }
 }
-

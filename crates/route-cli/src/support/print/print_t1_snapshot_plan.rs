@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t1_snapshot_plan(rows: &[T1SnapshotPlanRow], priority: Option<&str>, details: bool) {
+pub(crate) fn print_t1_snapshot_plan(
+    rows: &[T1SnapshotPlanRow],
+    priority: Option<&str>,
+    details: bool,
+) {
     let filtered: Vec<&T1SnapshotPlanRow> = rows
         .iter()
         .filter(|row| {
@@ -48,4 +52,3 @@ pub(crate) fn print_t1_snapshot_plan(rows: &[T1SnapshotPlanRow], priority: Optio
         }
     }
 }
-

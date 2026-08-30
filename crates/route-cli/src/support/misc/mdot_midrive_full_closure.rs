@@ -9,4 +9,3 @@ pub(crate) fn mdot_midrive_full_closure(text: &str) -> bool {
         || text.contains("freeway closed")
         || text.contains("ramp closed")
 }
-

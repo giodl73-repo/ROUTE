@@ -20,4 +20,3 @@ pub(crate) fn write_t2_overlay_optimizer_action_docket(
     writer.flush()?;
     Ok(())
 }
-

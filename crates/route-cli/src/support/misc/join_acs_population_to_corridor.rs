@@ -50,4 +50,3 @@ pub(crate) fn join_acs_population_to_corridor(
     }
     // If counties is None (files not cached), silently leave attrs as-is (None = not scored)
 }
-

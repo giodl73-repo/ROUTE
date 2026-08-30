@@ -19,4 +19,3 @@ pub(crate) fn print_t1_snapshot_script(rows: &[T1SnapshotPlanRow], priority: Opt
         println!();
     }
 }
-

@@ -1,6 +1,6 @@
 //! `T1SlaCandidatePairs` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -8,7 +8,7 @@ pub(crate) fn run(
     selected_pairs: PathBuf,
     output: PathBuf,
     selected_budget: usize,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -25,8 +25,7 @@ pub(crate) fn run(
     print_t1_sla_candidate_pair_summary(&output, &rows, selected_budget);
 
     if gate {
-        let failures =
-            t1_sla_candidate_pair_gate_failures(&rows, &selected_rows, selected_budget);
+        let failures = t1_sla_candidate_pair_gate_failures(&rows, &selected_rows, selected_budget);
         if failures.is_empty() {
             println!("T1 SLA candidate pair gate: PASS");
         } else {
@@ -37,7 +36,6 @@ pub(crate) fn run(
             anyhow::bail!("T1 SLA candidate pair gate failed");
         }
     }
-        
+
     Ok(())
 }
-

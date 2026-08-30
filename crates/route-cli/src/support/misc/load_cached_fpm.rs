@@ -14,4 +14,3 @@ pub(crate) fn load_cached_fpm(manifest: &route_data::Manifest) -> Vec<route_data
     .and_then(|path| route_data::hpms::read_hpms_fpm_csv(&path).ok())
     .unwrap_or_default()
 }
-

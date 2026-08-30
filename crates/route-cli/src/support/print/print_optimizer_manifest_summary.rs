@@ -16,4 +16,3 @@ pub(crate) fn print_optimizer_manifest_summary(path: &Path, rows: &[TierOptimize
         println!("  {gate_status}: {count}");
     }
 }
-

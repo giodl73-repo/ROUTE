@@ -37,4 +37,3 @@ pub(crate) fn t4_terminal_access_proof_source_capture_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

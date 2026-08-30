@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_pavement_standards(rows: &[PavementStandardRow], blockers: bool, details: bool) {
+pub(crate) fn print_pavement_standards(
+    rows: &[PavementStandardRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = pavement_standard_gate_failures(rows);
     let failure_tiers = failures
         .iter()
@@ -44,4 +48,3 @@ pub(crate) fn print_pavement_standards(rows: &[PavementStandardRow], blockers: b
         }
     }
 }
-

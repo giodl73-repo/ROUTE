@@ -10,4 +10,3 @@ pub(crate) fn parse_stop_candidates<R: std::io::Read>(reader: R) -> Result<Vec<S
     }
     Ok(rows)
 }
-

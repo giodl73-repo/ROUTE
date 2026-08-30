@@ -20,4 +20,3 @@ pub(crate) fn write_t2_bundle_readiness_disposition(
     writer.flush()?;
     Ok(())
 }
-

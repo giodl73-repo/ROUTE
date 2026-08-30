@@ -68,4 +68,3 @@ pub(crate) fn national_segment_bundle_rows(
         })
         .collect()
 }
-

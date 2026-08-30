@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_repair_funding_package(
     writer.flush()?;
     Ok(())
 }
-

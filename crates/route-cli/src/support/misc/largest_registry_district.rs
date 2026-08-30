@@ -14,4 +14,3 @@ pub(crate) fn largest_registry_district(
         .max_by(|left, right| left.1.cmp(&right.1).then_with(|| right.0.cmp(&left.0)))
         .map(|(district, _)| district)
 }
-

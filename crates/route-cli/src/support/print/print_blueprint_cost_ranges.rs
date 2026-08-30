@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_blueprint_cost_ranges(rows: &[BlueprintCostRow], blockers: bool, details: bool) {
+pub(crate) fn print_blueprint_cost_ranges(
+    rows: &[BlueprintCostRow],
+    blockers: bool,
+    details: bool,
+) {
     let filtered = if blockers {
         rows.iter()
             .filter(|row| {
@@ -48,4 +52,3 @@ pub(crate) fn print_blueprint_cost_ranges(rows: &[BlueprintCostRow], blockers: b
         }
     }
 }
-

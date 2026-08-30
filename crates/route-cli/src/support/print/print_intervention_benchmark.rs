@@ -126,4 +126,3 @@ pub(crate) fn print_intervention_benchmark(bench: &route_sim::InterventionBenchm
         );
     }
 }
-

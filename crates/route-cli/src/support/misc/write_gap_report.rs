@@ -32,4 +32,3 @@ pub(crate) fn write_gap_report(gap_type: &GapType, output_path: &Path) -> Result
     std::fs::write(output_path, md)
         .with_context(|| format!("writing gap report {}", output_path.display()))
 }
-

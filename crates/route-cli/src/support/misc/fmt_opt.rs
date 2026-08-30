@@ -7,4 +7,3 @@ pub(crate) fn fmt_opt(value: Option<f64>) -> String {
         .map(|v| format!("{v:.3}"))
         .unwrap_or_else(|| "-".to_string())
 }
-

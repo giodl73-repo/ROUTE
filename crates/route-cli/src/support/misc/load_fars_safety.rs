@@ -24,4 +24,3 @@ pub(crate) fn load_fars_safety() -> std::collections::HashMap<String, f32> {
     }
     map
 }
-

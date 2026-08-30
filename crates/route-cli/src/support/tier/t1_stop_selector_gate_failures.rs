@@ -42,4 +42,3 @@ pub(crate) fn t1_stop_selector_gate_failures(rows: &[T1StopSelectorRow]) -> Vec<
     }
     failures
 }
-

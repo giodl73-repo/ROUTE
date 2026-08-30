@@ -11,4 +11,3 @@ pub(crate) fn pad_center(s: &str, width: usize) -> String {
     let right = pad - left;
     format!("{}{}{}", " ".repeat(left), s, " ".repeat(right))
 }
-

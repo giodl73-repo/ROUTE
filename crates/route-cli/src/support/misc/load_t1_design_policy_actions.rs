@@ -6,4 +6,3 @@ pub(crate) fn load_t1_design_policy_actions(path: &Path) -> Result<Vec<T1DesignP
     let file = std::fs::File::open(path)?;
     parse_t1_design_policy_actions(file)
 }
-

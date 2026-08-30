@@ -30,4 +30,3 @@ pub(crate) fn t1_evidence_window_gate_failures(rows: &[T1EvidenceWindowRow]) -> 
     }
     failures
 }
-

@@ -9,4 +9,3 @@ pub(crate) fn stable_id_fragment(value: &str) -> String {
         .collect::<String>()
         .to_ascii_uppercase()
 }
-

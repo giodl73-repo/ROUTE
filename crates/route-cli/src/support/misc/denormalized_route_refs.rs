@@ -20,4 +20,3 @@ pub(crate) fn denormalized_route_refs(routes: &str) -> String {
         .collect::<Vec<_>>()
         .join("; ")
 }
-

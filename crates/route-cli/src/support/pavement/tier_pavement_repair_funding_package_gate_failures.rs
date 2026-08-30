@@ -78,4 +78,3 @@ pub(crate) fn tier_pavement_repair_funding_package_gate_failures(
     }
     failures
 }
-

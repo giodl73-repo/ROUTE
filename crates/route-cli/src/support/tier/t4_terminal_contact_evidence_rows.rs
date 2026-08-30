@@ -38,4 +38,3 @@ pub(crate) fn t4_terminal_contact_evidence_rows(
     });
     rows
 }
-

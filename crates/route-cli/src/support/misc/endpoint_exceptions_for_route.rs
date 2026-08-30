@@ -14,4 +14,3 @@ pub(crate) fn endpoint_exceptions_for_route<'a>(
         .filter(|row| row.requested_tier.trim().eq_ignore_ascii_case(tier.trim()))
         .collect()
 }
-

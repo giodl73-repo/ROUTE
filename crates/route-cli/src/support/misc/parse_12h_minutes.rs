@@ -21,4 +21,3 @@ pub(crate) fn parse_12h_minutes(input: &str) -> Option<i32> {
     }
     Some(hour * 60 + minute)
 }
-

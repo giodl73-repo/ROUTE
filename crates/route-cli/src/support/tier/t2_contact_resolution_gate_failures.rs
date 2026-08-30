@@ -23,4 +23,3 @@ pub(crate) fn t2_contact_resolution_gate_failures(rows: &[T2ContactResolutionRow
     }
     failures
 }
-

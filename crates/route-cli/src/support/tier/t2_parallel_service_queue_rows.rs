@@ -53,4 +53,3 @@ pub(crate) fn t2_parallel_service_queue_rows(
     }
     rows
 }
-

@@ -113,4 +113,3 @@ pub(crate) fn t2_game_ops_binding_decision_rows(
     });
     rows
 }
-

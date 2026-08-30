@@ -54,4 +54,3 @@ pub(crate) fn pavement_standard_gate_failures(rows: &[PavementStandardRow]) -> V
     }
     failures
 }
-

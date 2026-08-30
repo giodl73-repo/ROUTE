@@ -13,4 +13,3 @@ pub(crate) fn load_t3_zone_stop_placement(path: &Path) -> Result<Vec<T3ZoneStopP
     }
     Ok(rows)
 }
-

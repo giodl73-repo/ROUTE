@@ -6,4 +6,3 @@ pub(crate) fn load_t1_design_review(path: &Path) -> Result<Vec<T1DesignReviewCsv
     let file = std::fs::File::open(path)?;
     parse_t1_design_review(file)
 }
-

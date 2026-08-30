@@ -26,4 +26,3 @@ pub(crate) fn load_dcfc_stations() -> Vec<(f64, f64)> {
         })
         .collect()
 }
-

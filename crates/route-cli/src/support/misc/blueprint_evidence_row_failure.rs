@@ -58,4 +58,3 @@ pub(crate) fn blueprint_evidence_row_failure(
         ))
     }
 }
-

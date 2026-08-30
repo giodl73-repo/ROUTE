@@ -17,4 +17,3 @@ pub(crate) fn write_t2_endpoint_closure(path: &Path, rows: &[T2EndpointClosureRo
     writer.flush()?;
     Ok(())
 }
-

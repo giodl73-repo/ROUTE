@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_standards_inventory(rows: &[StandardsInventoryRow], blockers: bool, details: bool) {
+pub(crate) fn print_standards_inventory(
+    rows: &[StandardsInventoryRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = standards_inventory_gate_failures(rows);
     let filtered = if blockers {
         failures.clone()
@@ -41,4 +45,3 @@ pub(crate) fn print_standards_inventory(rows: &[StandardsInventoryRow], blockers
         }
     }
 }
-

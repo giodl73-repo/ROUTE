@@ -22,4 +22,3 @@ pub(crate) fn national_segment_registry_action(
     }
     "complete-terminal-stop-chain"
 }
-

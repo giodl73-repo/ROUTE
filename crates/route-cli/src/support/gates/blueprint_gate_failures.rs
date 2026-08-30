@@ -48,4 +48,3 @@ pub(crate) fn blueprint_gate_failures(rows: &[BlueprintPackageRow]) -> Vec<Strin
     }
     failures
 }
-

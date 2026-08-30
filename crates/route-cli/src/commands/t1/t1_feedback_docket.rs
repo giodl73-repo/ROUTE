@@ -1,6 +1,6 @@
 //! `T1FeedbackDocket` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -9,7 +9,7 @@ pub(crate) fn run(
     intake: PathBuf,
     sla_pairs: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -24,8 +24,7 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", intake.display()))?;
     let sla_rows = load_t1_sla_pairs(&sla_pairs)
         .with_context(|| format!("loading {}", sla_pairs.display()))?;
-    let rows =
-        t1_feedback_docket_rows(&service_rows, &bubble_rows, &intake_rows, &sla_rows);
+    let rows = t1_feedback_docket_rows(&service_rows, &bubble_rows, &intake_rows, &sla_rows);
     write_t1_feedback_docket(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
     print_t1_feedback_docket_summary(&output, &rows);
@@ -43,7 +42,6 @@ pub(crate) fn run(
         println!();
         println!("T1 feedback docket gate: PASS");
     }
-        
+
     Ok(())
 }
-

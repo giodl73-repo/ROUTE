@@ -20,4 +20,3 @@ pub(crate) fn write_t2_national_bundle_readiness_audit(
     writer.flush()?;
     Ok(())
 }
-

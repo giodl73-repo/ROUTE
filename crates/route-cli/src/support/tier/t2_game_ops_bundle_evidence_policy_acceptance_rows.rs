@@ -45,4 +45,3 @@ pub(crate) fn t2_game_ops_bundle_evidence_policy_acceptance_rows(
     });
     rows
 }
-

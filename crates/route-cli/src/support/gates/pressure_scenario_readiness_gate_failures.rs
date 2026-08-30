@@ -9,4 +9,3 @@ pub(crate) fn pressure_scenario_readiness_gate_failures(
         .filter(|row| !pressure_scenario_is_executable(row))
         .collect()
 }
-

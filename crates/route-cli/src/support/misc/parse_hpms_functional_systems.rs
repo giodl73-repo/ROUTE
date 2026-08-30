@@ -25,4 +25,3 @@ pub(crate) fn parse_hpms_functional_systems(value: &str) -> Result<Vec<u8>> {
     }
     Ok(systems)
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn t1_schematic_relief_route_set(
         .map(route_display_key)
         .collect()
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_beck_long_connector_review(path: &Path) -> Result<Vec<T2BeckLongConnectorReviewRow>> {
+pub(crate) fn load_t2_beck_long_connector_review(
+    path: &Path,
+) -> Result<Vec<T2BeckLongConnectorReviewRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_beck_long_connector_review(path: &Path) -> Result<Vec<T2Be
     }
     Ok(rows)
 }
-

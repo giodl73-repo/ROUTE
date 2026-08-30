@@ -35,4 +35,3 @@ pub(crate) fn print_t1_design_policy(
         }
     }
 }
-

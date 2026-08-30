@@ -22,4 +22,3 @@ pub(crate) fn pavement_funded_repair_member_count(
         .map(|row| (row.covered_repair_cost_m / PAVEMENT_REPAIR_COST_PER_MEMBER_M).round() as usize)
         .sum()
 }
-

@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_t2_graph_contact_repairs(path: &Path, rows: &[T2GraphContactRepairRow]) -> Result<()> {
+pub(crate) fn write_t2_graph_contact_repairs(
+    path: &Path,
+    rows: &[T2GraphContactRepairRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_t2_graph_contact_repairs(path: &Path, rows: &[T2GraphContact
     writer.flush()?;
     Ok(())
 }
-

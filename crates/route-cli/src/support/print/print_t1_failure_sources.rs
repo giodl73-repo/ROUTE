@@ -42,4 +42,3 @@ pub(crate) fn print_t1_failure_sources(rows: &[T1FailureSourceRow], lookup_neede
         println!("  notes: {}", row.notes);
     }
 }
-

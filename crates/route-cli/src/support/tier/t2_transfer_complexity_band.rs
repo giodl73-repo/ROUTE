@@ -11,4 +11,3 @@ pub(crate) fn t2_transfer_complexity_band(transfer_stop_count: usize) -> &'stati
         "moderate-transfer-complexity"
     }
 }
-

@@ -1,13 +1,13 @@
 //! `OptimizerResidualBlockerBacklog` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     budget: PathBuf,
     output: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -22,8 +22,7 @@ pub(crate) fn run(
     print_optimizer_residual_blocker_backlog_summary(&output, &rows, details);
 
     if gate {
-        let failures =
-            optimizer_residual_blocker_backlog_gate_failures(&rows, &budget_rows);
+        let failures = optimizer_residual_blocker_backlog_gate_failures(&rows, &budget_rows);
         if !failures.is_empty() {
             println!();
             println!("optimizer residual blocker backlog gate: FAIL");
@@ -35,7 +34,6 @@ pub(crate) fn run(
         println!();
         println!("optimizer residual blocker backlog gate: PASS");
     }
-        
+
     Ok(())
 }
-

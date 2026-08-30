@@ -19,4 +19,3 @@ pub(crate) fn tier_candidate_segment_id(edge: &route_network::HighwayEdge) -> St
         ))
     )
 }
-

@@ -1,13 +1,11 @@
 //! `Calibrate` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     println!("route calibrate — rubric calibration pass (v1.4)");
     let manifest = route_data::Manifest::load(&manifest_path)
@@ -22,11 +20,10 @@ pub(crate) fn run(
     println!("  centrality: {} edges scored", bc_raw.len());
     // Normalize using P95 (not max) to prevent outlier edges from compressing distribution
     // A single hyper-central junction edge can be 100× larger than trunk route edges
-    let mut vals_sorted: Vec<f64> =
-        bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+    let mut vals_sorted: Vec<f64> = bc_raw.values().copied().filter(|v| v.is_finite()).collect();
     vals_sorted.sort_by(f64::total_cmp);
-    let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
-        .min(vals_sorted.len().saturating_sub(1));
+    let p95_idx =
+        ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
     let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
     let bc = bc_raw
         .into_iter()
@@ -107,8 +104,8 @@ pub(crate) fn run(
     // Collect per-dimension scores for all corridors
     const N_DIMS: usize = 16;
     let dim_names = [
-        "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1",
-        "D2", "D3",
+        "A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D1", "D2",
+        "D3",
     ];
     let dim_labels = [
         "Throughput Gap",
@@ -169,12 +166,7 @@ pub(crate) fn run(
             }
             // Join intermodal terminals for D2 hub count
             if !intermodal.is_empty() {
-                join_intermodal_to_corridor(
-                    &graph,
-                    id,
-                    &mut corridor.attributes,
-                    &intermodal,
-                );
+                join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
             }
             // Join FEMA SFHA tile counts for D1 flood-zone scoring
             if !fema_tiles.is_empty() {
@@ -434,17 +426,11 @@ pub(crate) fn run(
         "Dim", "Name", "Risk", "ReviewRisk", "Corridors", "Reviews"
     );
     println!("  {}", "─".repeat(78));
-    for (d, total_risk, review_risk, corridor_count, review_count) in
-        dimension_risks.iter().take(8)
+    for (d, total_risk, review_risk, corridor_count, review_count) in dimension_risks.iter().take(8)
     {
         println!(
             "  {:>2}  {:<28}  {:>9.1}  {:>10.1}  {:>9}  {:>9}",
-            dim_names[*d],
-            dim_labels[*d],
-            total_risk,
-            review_risk,
-            corridor_count,
-            review_count
+            dim_names[*d], dim_labels[*d], total_risk, review_risk, corridor_count, review_count
         );
     }
 

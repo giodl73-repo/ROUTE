@@ -51,4 +51,3 @@ pub(crate) fn print_pressure_standard_coverage(
         println!("  unknown scenario standard refs: {}", unknown.join(", "));
     }
 }
-

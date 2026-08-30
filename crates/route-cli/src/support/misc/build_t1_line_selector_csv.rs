@@ -37,4 +37,3 @@ pub(crate) fn build_t1_line_selector_csv(rows: &[T1LineSelectorRow]) -> String {
     }
     csv
 }
-

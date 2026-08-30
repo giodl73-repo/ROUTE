@@ -18,4 +18,3 @@ pub(crate) fn bridge_components(
         }
     }
 }
-

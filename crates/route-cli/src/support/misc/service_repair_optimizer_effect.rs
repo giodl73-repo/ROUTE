@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn service_repair_optimizer_effect(effect: &str, row: &T2BundleOverlayRepairTargetRow) -> String {
+pub(crate) fn service_repair_optimizer_effect(
+    effect: &str,
+    row: &T2BundleOverlayRepairTargetRow,
+) -> String {
     if row.qualification_effects.trim().is_empty() {
         return effect.to_string();
     }
@@ -11,4 +14,3 @@ pub(crate) fn service_repair_optimizer_effect(effect: &str, row: &T2BundleOverla
         row.qualification_effects
     )
 }
-

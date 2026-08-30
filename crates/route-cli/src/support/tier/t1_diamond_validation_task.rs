@@ -18,4 +18,3 @@ pub(crate) fn t1_diamond_validation_task(
         source_action,
     }
 }
-

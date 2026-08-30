@@ -6,4 +6,3 @@ pub(crate) fn load_t1_evidence_windows(path: &Path) -> Result<Vec<T1EvidenceWind
     let file = std::fs::File::open(path)?;
     parse_t1_evidence_windows(file)
 }
-

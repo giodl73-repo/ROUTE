@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_optimizer_claim_review_summary(output: &Path, rows: &[OptimizerClaimReviewRow]) {
+pub(crate) fn print_optimizer_claim_review_summary(
+    output: &Path,
+    rows: &[OptimizerClaimReviewRow],
+) {
     let blockers = rows
         .iter()
         .map(|row| row.total_claim_blockers)
@@ -14,4 +17,3 @@ pub(crate) fn print_optimizer_claim_review_summary(output: &Path, rows: &[Optimi
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

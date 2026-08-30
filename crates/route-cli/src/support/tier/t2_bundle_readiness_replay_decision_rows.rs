@@ -58,4 +58,3 @@ pub(crate) fn t2_bundle_readiness_replay_decision_rows(
     });
     rows
 }
-

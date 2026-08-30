@@ -79,4 +79,3 @@ pub(crate) fn t4_terminal_access_proof_review_gate_failures(
     }
     failures
 }
-

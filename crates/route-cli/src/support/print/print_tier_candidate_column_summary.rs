@@ -16,4 +16,3 @@ pub(crate) fn print_tier_candidate_column_summary(output: &Path, rows: &[TierCan
         println!("  {decision}: {count}");
     }
 }
-

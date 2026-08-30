@@ -13,4 +13,3 @@ pub(crate) fn load_t2_bubble_up_review(path: &Path) -> Result<Vec<T2BubbleUpRevi
     }
     Ok(rows)
 }
-

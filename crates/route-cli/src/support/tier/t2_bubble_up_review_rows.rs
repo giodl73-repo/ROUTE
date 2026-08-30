@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) -> Vec<T2BubbleUpReviewRow> {
+pub(crate) fn t2_bubble_up_review_rows(
+    intake_rows: &[T3T4PressureIntakeRow],
+) -> Vec<T2BubbleUpReviewRow> {
     intake_rows
         .iter()
         .filter(|row| row.intake_class == "bubble-up-t2-review")
@@ -20,4 +22,3 @@ pub(crate) fn t2_bubble_up_review_rows(intake_rows: &[T3T4PressureIntakeRow]) ->
         })
         .collect()
 }
-

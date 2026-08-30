@@ -17,4 +17,3 @@ pub(crate) fn write_t1_feedback_docket(path: &Path, rows: &[T1FeedbackDocketRow]
     writer.flush()?;
     Ok(())
 }
-

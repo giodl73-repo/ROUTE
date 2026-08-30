@@ -12,4 +12,3 @@ pub(crate) fn t2_game_publication_required_evidence(evidence_hold: &str) -> &'st
         "standards-proof-and-scenario-promotion-record"
     }
 }
-

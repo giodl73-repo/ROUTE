@@ -13,4 +13,3 @@ pub(crate) fn load_t2_contact_resolutions(path: &Path) -> Result<Vec<T2ContactRe
     }
     Ok(rows)
 }
-

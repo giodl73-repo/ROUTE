@@ -15,4 +15,3 @@ pub(crate) fn load_t1_shared_segment_policy_acceptance(
     }
     Ok(rows)
 }
-

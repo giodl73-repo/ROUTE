@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t3_zone_access_obligations(path: &Path) -> Result<Vec<T3ZoneAccessObligationRow>> {
+pub(crate) fn load_t3_zone_access_obligations(
+    path: &Path,
+) -> Result<Vec<T3ZoneAccessObligationRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t3_zone_access_obligations(path: &Path) -> Result<Vec<T3ZoneA
     }
     Ok(rows)
 }
-

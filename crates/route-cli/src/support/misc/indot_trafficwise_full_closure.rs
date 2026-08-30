@@ -10,4 +10,3 @@ pub(crate) fn indot_trafficwise_full_closure(text: &str) -> bool {
         || text.contains("exit ramp closed")
         || text.contains("freeway closed")
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn print_t1_stop_selector_summary(output: &Path, rows: &[T1StopSelect
     );
     println!("  METIS split boundaries: {boundary_count}");
 }
-

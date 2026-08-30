@@ -46,4 +46,3 @@ pub(crate) fn print_tier_pavement_docket_summary(
         }
     }
 }
-

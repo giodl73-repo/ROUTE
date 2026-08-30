@@ -46,4 +46,3 @@ pub(crate) fn recurring_stop_gaps(rows: &[StopSlaRow]) -> Vec<RecurringStopGap> 
     });
     gaps
 }
-

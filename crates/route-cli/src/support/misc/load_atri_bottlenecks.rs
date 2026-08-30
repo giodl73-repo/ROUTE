@@ -13,4 +13,3 @@ pub(crate) fn load_atri_bottlenecks(path: &Path) -> Result<Vec<AtriBottleneckRow
     }
     Ok(rows)
 }
-

@@ -19,4 +19,3 @@ pub(crate) fn print_t2_overlay_optimizer_action_docket_summary(
         println!("  {action}: {count}");
     }
 }
-

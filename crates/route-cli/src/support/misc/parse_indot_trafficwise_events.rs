@@ -81,4 +81,3 @@ pub(crate) fn parse_indot_trafficwise_events(
     }
     Ok(rows)
 }
-

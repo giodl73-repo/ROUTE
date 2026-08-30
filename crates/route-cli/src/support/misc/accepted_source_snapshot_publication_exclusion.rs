@@ -14,4 +14,3 @@ pub(crate) fn accepted_source_snapshot_publication_exclusion(
             && row.preserved_claims_after == "evidence"
     })
 }
-

@@ -81,4 +81,3 @@ pub(crate) fn t2_bundle_repair_queue_rows(
     }
     rows
 }
-

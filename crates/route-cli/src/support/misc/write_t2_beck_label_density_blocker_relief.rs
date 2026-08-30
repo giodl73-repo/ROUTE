@@ -20,4 +20,3 @@ pub(crate) fn write_t2_beck_label_density_blocker_relief(
     writer.flush()?;
     Ok(())
 }
-

@@ -105,4 +105,3 @@ pub(crate) fn t4_terminal_columbus_proof_intake_gate_failures(
 
     failures
 }
-

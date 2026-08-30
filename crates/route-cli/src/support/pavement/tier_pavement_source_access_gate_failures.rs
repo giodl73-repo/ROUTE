@@ -50,4 +50,3 @@ pub(crate) fn tier_pavement_source_access_gate_failures(
     }
     failures
 }
-

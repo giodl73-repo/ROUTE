@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_scenario_readiness(
     writer.flush()?;
     Ok(())
 }
-

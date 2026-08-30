@@ -20,4 +20,3 @@ pub(crate) fn write_t2_local_zone_overlay_handoff(
     writer.flush()?;
     Ok(())
 }
-

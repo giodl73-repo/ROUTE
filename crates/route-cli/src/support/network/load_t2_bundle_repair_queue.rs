@@ -10,4 +10,3 @@ pub(crate) fn load_t2_bundle_repair_queue(path: &Path) -> Result<Vec<T2BundleRep
     }
     Ok(rows)
 }
-

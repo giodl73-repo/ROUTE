@@ -10,4 +10,3 @@ pub(crate) fn stop_sla_gap_failures(rows: &[StopSlaRow], max_gap: f64) -> Vec<&S
     failures.sort_by(|a, b| b.max_stop_gap_miles.total_cmp(&a.max_stop_gap_miles));
     failures
 }
-

@@ -1,6 +1,6 @@
 //! `TierCandidateColumns` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -13,7 +13,7 @@ pub(crate) fn run(
     pavement_debt_budget: PathBuf,
     constraint_budget: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -44,8 +44,7 @@ pub(crate) fn run(
         &blocker_rows,
     );
     let pavement_debt_index = pavement_debt_budget_index(&pavement_debt_rows);
-    let constraint_budget_index =
-        optimizer_constraint_budget_index(&constraint_budget_rows);
+    let constraint_budget_index = optimizer_constraint_budget_index(&constraint_budget_rows);
     let column_rows = tier_candidate_column_rows(
         &witness_rows,
         &dispositions,
@@ -69,7 +68,6 @@ pub(crate) fn run(
         println!();
         println!("tier candidate column gate: PASS");
     }
-        
+
     Ok(())
 }
-

@@ -44,4 +44,3 @@ pub(crate) fn t2_beck_contact_witness(
         validation_status: "pass".to_string(),
     })
 }
-

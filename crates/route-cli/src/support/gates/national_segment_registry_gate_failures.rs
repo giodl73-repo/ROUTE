@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn national_segment_registry_gate_failures(rows: &[NationalSegmentRegistryRow]) -> Vec<String> {
+pub(crate) fn national_segment_registry_gate_failures(
+    rows: &[NationalSegmentRegistryRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no national segment registry rows emitted".to_string());
@@ -129,4 +131,3 @@ pub(crate) fn national_segment_registry_gate_failures(rows: &[NationalSegmentReg
 
     failures
 }
-

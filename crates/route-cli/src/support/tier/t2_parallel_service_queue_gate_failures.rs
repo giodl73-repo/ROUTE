@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_parallel_service_queue_gate_failures(rows: &[T2ParallelServiceQueueRow]) -> Vec<String> {
+pub(crate) fn t2_parallel_service_queue_gate_failures(
+    rows: &[T2ParallelServiceQueueRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no T2 parallel service queue rows emitted".to_string());
@@ -56,4 +58,3 @@ pub(crate) fn t2_parallel_service_queue_gate_failures(rows: &[T2ParallelServiceQ
     }
     failures
 }
-

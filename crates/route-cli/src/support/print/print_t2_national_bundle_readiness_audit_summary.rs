@@ -19,4 +19,3 @@ pub(crate) fn print_t2_national_bundle_readiness_audit_summary(
         println!("  {status}: {count}");
     }
 }
-

@@ -10,4 +10,3 @@ pub(crate) fn t1_diamond_priority_rank(priority: &str) -> usize {
         _ => 99,
     }
 }
-

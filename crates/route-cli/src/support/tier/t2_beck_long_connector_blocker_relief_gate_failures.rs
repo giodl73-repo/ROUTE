@@ -95,4 +95,3 @@ pub(crate) fn t2_beck_long_connector_blocker_relief_gate_failures(
     }
     failures
 }
-

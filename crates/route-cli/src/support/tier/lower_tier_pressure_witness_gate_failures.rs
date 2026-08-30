@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn lower_tier_pressure_witness_gate_failures(rows: &[LowerTierPressureWitnessRow]) -> Vec<String> {
+pub(crate) fn lower_tier_pressure_witness_gate_failures(
+    rows: &[LowerTierPressureWitnessRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no lower-tier pressure witnesses emitted".to_string());
@@ -24,4 +26,3 @@ pub(crate) fn lower_tier_pressure_witness_gate_failures(rows: &[LowerTierPressur
     }
     failures
 }
-

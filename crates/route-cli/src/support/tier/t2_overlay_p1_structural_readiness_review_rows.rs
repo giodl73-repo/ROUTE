@@ -47,4 +47,3 @@ pub(crate) fn t2_overlay_p1_structural_readiness_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

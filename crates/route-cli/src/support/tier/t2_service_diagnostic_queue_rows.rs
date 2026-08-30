@@ -71,4 +71,3 @@ pub(crate) fn t2_service_diagnostic_queue_rows(
     }
     rows
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_columbus_proof_intake(
     writer.flush()?;
     Ok(())
 }
-

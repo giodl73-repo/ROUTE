@@ -13,4 +13,3 @@ pub(crate) fn load_t2_contact_closure(path: &Path) -> Result<Vec<T2ContactClosur
     }
     Ok(rows)
 }
-

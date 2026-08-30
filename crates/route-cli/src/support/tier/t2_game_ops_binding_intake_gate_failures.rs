@@ -92,4 +92,3 @@ pub(crate) fn t2_game_ops_binding_intake_gate_failures(
     }
     failures
 }
-

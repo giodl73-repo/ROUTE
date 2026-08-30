@@ -13,4 +13,3 @@ pub(crate) fn format_count_map(counts: &std::collections::BTreeMap<String, usize
             .join(", ")
     }
 }
-

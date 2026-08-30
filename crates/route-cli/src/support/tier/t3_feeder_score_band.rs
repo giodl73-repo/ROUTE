@@ -11,4 +11,3 @@ pub(crate) fn t3_feeder_score_band(current_score: f64) -> &'static str {
         "out-of-band-feeder"
     }
 }
-

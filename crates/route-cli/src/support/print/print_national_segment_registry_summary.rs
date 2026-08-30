@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_national_segment_registry_summary(output: &Path, rows: &[NationalSegmentRegistryRow]) {
+pub(crate) fn print_national_segment_registry_summary(
+    output: &Path,
+    rows: &[NationalSegmentRegistryRow],
+) {
     let mut by_action = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
         *by_action.entry(row.registry_action.as_str()).or_default() += 1;
@@ -16,4 +19,3 @@ pub(crate) fn print_national_segment_registry_summary(output: &Path, rows: &[Nat
         println!("  {action}: {count}");
     }
 }
-

@@ -15,4 +15,3 @@ pub(crate) fn load_t1_schematic_geometry_claim_review(
     }
     Ok(rows)
 }
-

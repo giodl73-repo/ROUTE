@@ -93,4 +93,3 @@ pub(crate) fn tier_candidate_column_rows(
         })
         .collect()
 }
-

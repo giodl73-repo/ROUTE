@@ -17,4 +17,3 @@ pub(crate) fn write_t2_bubble_up_review(path: &Path, rows: &[T2BubbleUpReviewRow
     writer.flush()?;
     Ok(())
 }
-

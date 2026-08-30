@@ -24,4 +24,3 @@ pub(crate) fn endpoint_exception_summary(
         .collect::<Vec<_>>()
         .join("; ")
 }
-

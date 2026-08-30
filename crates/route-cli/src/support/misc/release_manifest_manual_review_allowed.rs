@@ -21,4 +21,3 @@ pub(crate) fn release_manifest_manual_review_allowed(row: &ReleaseManifestRow) -
         || class.contains("status")
         || class.contains("script")
 }
-

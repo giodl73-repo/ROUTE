@@ -153,4 +153,3 @@ pub(crate) fn tier_segment_candidate_rows(
     });
     rows
 }
-

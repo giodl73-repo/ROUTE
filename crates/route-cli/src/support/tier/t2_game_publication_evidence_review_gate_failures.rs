@@ -99,4 +99,3 @@ pub(crate) fn t2_game_publication_evidence_review_gate_failures(
     }
     failures
 }
-

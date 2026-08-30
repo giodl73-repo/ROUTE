@@ -14,4 +14,3 @@ pub(crate) fn t2_game_ops_bundle_relief_bundle_set(
         .map(|row| row.segment_bundle_id.clone())
         .collect()
 }
-

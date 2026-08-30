@@ -16,4 +16,3 @@ pub(crate) fn print_t2_route_family_split_summary(output: &Path, rows: &[T2Route
         println!("  {action}: {count}");
     }
 }
-

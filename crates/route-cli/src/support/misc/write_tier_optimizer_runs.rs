@@ -17,4 +17,3 @@ pub(crate) fn write_tier_optimizer_runs(path: &Path, rows: &[TierOptimizerRunRow
     writer.flush()?;
     Ok(())
 }
-

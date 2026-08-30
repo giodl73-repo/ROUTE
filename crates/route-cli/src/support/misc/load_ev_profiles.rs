@@ -33,4 +33,3 @@ pub(crate) fn load_ev_profiles(data_dir: &std::path::Path) -> Vec<route_sim::EvP
         route_sim::tesla_semi(),
     ]
 }
-

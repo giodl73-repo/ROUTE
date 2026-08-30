@@ -9,4 +9,3 @@ pub(crate) fn annual_probability_from_rate(rate: f64) -> f64 {
         1.0 - (-rate).exp()
     }
 }
-

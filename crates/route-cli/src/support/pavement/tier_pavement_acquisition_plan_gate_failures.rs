@@ -61,4 +61,3 @@ pub(crate) fn tier_pavement_acquisition_plan_gate_failures(
     }
     failures
 }
-

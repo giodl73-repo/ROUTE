@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn game_engine_facts(scenario_id: &str, manifest_path: &Path) -> Result<Option<game::EngineFacts>> {
+pub(crate) fn game_engine_facts(
+    scenario_id: &str,
+    manifest_path: &Path,
+) -> Result<Option<game::EngineFacts>> {
     if scenario_id != game::DES_MOINES_SCENARIO_ID {
         return Ok(None);
     }
@@ -45,4 +48,3 @@ pub(crate) fn game_engine_facts(scenario_id: &str, manifest_path: &Path) -> Resu
         evidence_level: "Heuristic live ROUTE summary",
     }))
 }
-

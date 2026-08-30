@@ -13,4 +13,3 @@ pub(crate) fn write_t1_failure_events(path: &Path, rows: &[T1FailureEventRow]) -
     wtr.flush()?;
     Ok(())
 }
-

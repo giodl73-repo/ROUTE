@@ -82,4 +82,3 @@ pub(crate) fn t2_bundle_readiness_repair_docket_gate_failures(
     }
     failures
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn print_source_fetch_policy_summary(output: &Path, rows: &[SourceFet
         println!("  {mode}: {count}");
     }
 }
-

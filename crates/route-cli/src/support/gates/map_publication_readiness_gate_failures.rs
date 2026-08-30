@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn map_publication_readiness_gate_failures(rows: &[MapPublicationReadinessRow]) -> Vec<String> {
+pub(crate) fn map_publication_readiness_gate_failures(
+    rows: &[MapPublicationReadinessRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("map publication readiness has no rows".to_string());
@@ -39,4 +41,3 @@ pub(crate) fn map_publication_readiness_gate_failures(rows: &[MapPublicationRead
     }
     failures
 }
-

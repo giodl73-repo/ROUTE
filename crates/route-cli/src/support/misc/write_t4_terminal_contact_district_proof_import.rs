@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_contact_district_proof_import(
     writer.flush()?;
     Ok(())
 }
-

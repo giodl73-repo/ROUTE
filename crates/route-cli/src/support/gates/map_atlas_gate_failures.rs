@@ -43,4 +43,3 @@ pub(crate) fn map_atlas_gate_failures(rows: &[MapAtlasRow]) -> Vec<String> {
     }
     failures
 }
-

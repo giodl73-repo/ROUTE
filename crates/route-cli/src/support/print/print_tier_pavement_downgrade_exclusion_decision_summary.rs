@@ -18,4 +18,3 @@ pub(crate) fn print_tier_pavement_downgrade_exclusion_decision_summary(
         );
     }
 }
-

@@ -12,4 +12,3 @@ pub(crate) fn pressure_standard_coverage_failures<'a>(
         .filter(|row| !scenario_refs.contains_key(row.standard_id.as_str()))
         .collect()
 }
-

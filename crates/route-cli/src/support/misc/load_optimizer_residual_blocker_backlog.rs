@@ -15,4 +15,3 @@ pub(crate) fn load_optimizer_residual_blocker_backlog(
     }
     Ok(rows)
 }
-

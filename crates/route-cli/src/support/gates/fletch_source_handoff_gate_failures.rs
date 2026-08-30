@@ -40,4 +40,3 @@ pub(crate) fn fletch_source_handoff_gate_failures(
     }
     failures
 }
-

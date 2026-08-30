@@ -16,4 +16,3 @@ pub(crate) fn print_t2_contact_closure_summary(output: &Path, rows: &[T2ContactC
         println!("  {action}: {count}");
     }
 }
-

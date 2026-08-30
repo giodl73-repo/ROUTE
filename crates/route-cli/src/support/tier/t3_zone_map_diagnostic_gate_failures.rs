@@ -69,4 +69,3 @@ pub(crate) fn t3_zone_map_diagnostic_gate_failures(
 
     failures
 }
-

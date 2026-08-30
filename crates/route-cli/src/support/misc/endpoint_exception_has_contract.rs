@@ -10,4 +10,3 @@ pub(crate) fn endpoint_exception_has_contract(row: &EndpointExceptionRow) -> boo
         && !row.next_step.trim().is_empty()
         && valid_endpoint_evidence_level(&row.evidence_level)
 }
-

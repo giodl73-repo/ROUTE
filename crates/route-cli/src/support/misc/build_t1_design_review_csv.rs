@@ -27,4 +27,3 @@ pub(crate) fn build_t1_design_review_csv(rows: &[T1DesignReviewRow]) -> String {
     }
     csv
 }
-

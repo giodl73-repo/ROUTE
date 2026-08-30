@@ -10,4 +10,3 @@ pub(crate) fn t1_access_priority_rank(priority: &str) -> u8 {
         _ => 3,
     }
 }
-

@@ -120,4 +120,3 @@ pub(crate) fn tier_pavement_funding_evidence_accepted_metadata_source_capture_ar
     }
     failures
 }
-

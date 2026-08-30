@@ -11,4 +11,3 @@ pub(crate) fn t2_label_density_band(label_density_per_100px: f64) -> &'static st
         "moderate-label-density"
     }
 }
-

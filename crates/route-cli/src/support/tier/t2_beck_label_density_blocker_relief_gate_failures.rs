@@ -95,4 +95,3 @@ pub(crate) fn t2_beck_label_density_blocker_relief_gate_failures(
     }
     failures
 }
-

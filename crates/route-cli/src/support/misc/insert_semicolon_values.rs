@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn insert_semicolon_values(target: &mut std::collections::BTreeSet<String>, value: &str) {
+pub(crate) fn insert_semicolon_values(
+    target: &mut std::collections::BTreeSet<String>,
+    value: &str,
+) {
     for item in value
         .split(';')
         .map(str::trim)
@@ -11,4 +14,3 @@ pub(crate) fn insert_semicolon_values(target: &mut std::collections::BTreeSet<St
         target.insert(item.to_string());
     }
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn print_t2_contact_resolution_summary(output: &Path, rows: &[T2Conta
         println!("  {action}: {count}");
     }
 }
-

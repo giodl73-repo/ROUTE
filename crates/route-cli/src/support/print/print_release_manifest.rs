@@ -2,7 +2,12 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_release_manifest(path: &Path, rows: &[ReleaseManifestRow], blockers: bool, details: bool) {
+pub(crate) fn print_release_manifest(
+    path: &Path,
+    rows: &[ReleaseManifestRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = release_manifest_gate_failures(rows);
     let failure_paths = failures
         .iter()
@@ -58,4 +63,3 @@ pub(crate) fn print_release_manifest(path: &Path, rows: &[ReleaseManifestRow], b
         }
     }
 }
-

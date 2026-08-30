@@ -12,4 +12,3 @@ pub(crate) fn looks_like_iso_date(value: &str) -> bool {
             .enumerate()
             .all(|(idx, byte)| idx == 4 || idx == 7 || byte.is_ascii_digit())
 }
-

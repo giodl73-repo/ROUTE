@@ -13,4 +13,3 @@ pub(crate) fn load_t1_topology_repairs(path: &Path) -> Result<Vec<T1TopologyRepa
     }
     Ok(rows)
 }
-

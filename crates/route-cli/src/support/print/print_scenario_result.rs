@@ -49,4 +49,3 @@ pub(crate) fn print_scenario_result(result: &route_sim::ScenarioResult) {
         }
     }
 }
-

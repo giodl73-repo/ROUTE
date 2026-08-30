@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_evidence_acquisition(
     writer.flush()?;
     Ok(())
 }
-

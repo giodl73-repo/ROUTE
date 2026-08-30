@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn top_constraint_classes(class_counts: &std::collections::BTreeMap<String, usize>) -> String {
+pub(crate) fn top_constraint_classes(
+    class_counts: &std::collections::BTreeMap<String, usize>,
+) -> String {
     let mut classes = class_counts.iter().collect::<Vec<_>>();
     classes.sort_by(|left, right| right.1.cmp(left.1).then_with(|| left.0.cmp(right.0)));
     classes
@@ -12,4 +14,3 @@ pub(crate) fn top_constraint_classes(class_counts: &std::collections::BTreeMap<S
         .collect::<Vec<_>>()
         .join("|")
 }
-

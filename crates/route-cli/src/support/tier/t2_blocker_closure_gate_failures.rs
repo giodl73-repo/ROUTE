@@ -45,4 +45,3 @@ pub(crate) fn t2_blocker_closure_gate_failures(rows: &[T2BlockerClosureRow]) -> 
     }
     failures
 }
-

@@ -39,4 +39,3 @@ pub(crate) fn t4_terminal_columbus_proof_intake_rows(
     });
     rows
 }
-

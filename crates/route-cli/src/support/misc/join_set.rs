@@ -9,4 +9,3 @@ pub(crate) fn join_set(values: &std::collections::BTreeSet<&str>) -> String {
         values.iter().copied().collect::<Vec<_>>().join(", ")
     }
 }
-

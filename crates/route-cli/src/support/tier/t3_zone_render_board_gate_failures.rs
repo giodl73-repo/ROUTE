@@ -112,4 +112,3 @@ pub(crate) fn t3_zone_render_board_gate_failures(
 
     failures
 }
-

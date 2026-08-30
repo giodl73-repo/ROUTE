@@ -61,4 +61,3 @@ pub(crate) fn t3_zone_access_obligation_gate_failures(
     }
     failures
 }
-

@@ -12,4 +12,3 @@ pub(crate) fn load_t2_overlay_optimizer_action_docket(
     }
     Ok(rows)
 }
-

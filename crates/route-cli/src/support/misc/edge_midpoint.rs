@@ -11,4 +11,3 @@ pub(crate) fn edge_midpoint(edge: &route_network::HighwayEdge) -> Option<(f64, f
     let coord = coords[idx];
     Some((coord.y, coord.x))
 }
-

@@ -74,4 +74,3 @@ pub(crate) fn tier_pavement_source_fetch_review_gate_failures(
     }
     failures
 }
-

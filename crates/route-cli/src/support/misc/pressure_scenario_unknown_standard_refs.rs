@@ -18,4 +18,3 @@ pub(crate) fn pressure_scenario_unknown_standard_refs(
     unknown.sort();
     unknown
 }
-

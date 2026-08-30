@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_registry_handoff(
     writer.flush()?;
     Ok(())
 }
-

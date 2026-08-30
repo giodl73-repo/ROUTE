@@ -8,4 +8,3 @@ pub(crate) fn push_unique_neighbor(neighbors: &mut Vec<usize>, neighbor: usize) 
         neighbors.sort_unstable();
     }
 }
-

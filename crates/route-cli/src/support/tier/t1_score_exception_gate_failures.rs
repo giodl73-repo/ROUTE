@@ -66,4 +66,3 @@ pub(crate) fn t1_score_exception_gate_failures(
 
     failures
 }
-

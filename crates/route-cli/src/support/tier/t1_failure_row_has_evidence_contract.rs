@@ -19,4 +19,3 @@ pub(crate) fn t1_failure_row_has_evidence_contract(row: &T1FailureRow) -> bool {
         && !row.next_evidence_step.trim().is_empty()
         && source_needed_has_gap
 }
-

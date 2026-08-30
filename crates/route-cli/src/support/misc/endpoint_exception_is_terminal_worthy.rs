@@ -24,4 +24,3 @@ pub(crate) fn endpoint_exception_is_terminal_worthy(row: &EndpointExceptionRow) 
     );
     terminal_role && terminal_exception
 }
-

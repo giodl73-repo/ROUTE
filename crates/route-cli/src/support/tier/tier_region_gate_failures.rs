@@ -49,4 +49,3 @@ pub(crate) fn tier_region_gate_failures(
     }
     failures
 }
-

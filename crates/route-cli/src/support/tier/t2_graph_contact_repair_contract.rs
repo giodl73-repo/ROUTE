@@ -33,4 +33,3 @@ pub(crate) fn t2_graph_contact_repair_contract(
         )
     }
 }
-

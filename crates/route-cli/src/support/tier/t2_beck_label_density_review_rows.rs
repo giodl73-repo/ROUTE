@@ -58,4 +58,3 @@ pub(crate) fn t2_beck_label_density_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

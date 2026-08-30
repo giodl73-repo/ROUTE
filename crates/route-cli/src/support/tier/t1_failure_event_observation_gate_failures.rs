@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t1_failure_event_observation_gate_failures(rows: &[T1FailureEventRow]) -> Vec<String> {
+pub(crate) fn t1_failure_event_observation_gate_failures(
+    rows: &[T1FailureEventRow],
+) -> Vec<String> {
     if rows.is_empty() {
         return vec!["event ledger has no observation rows".to_string()];
     }
@@ -28,4 +30,3 @@ pub(crate) fn t1_failure_event_observation_gate_failures(rows: &[T1FailureEventR
 
     failures
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_unmatched_join_review(
     writer.flush()?;
     Ok(())
 }
-

@@ -24,4 +24,3 @@ pub(crate) fn print_t4_terminal_contact_evidence_summary(
         println!("  {decision}: {count}");
     }
 }
-

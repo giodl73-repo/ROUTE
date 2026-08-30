@@ -17,4 +17,3 @@ pub(crate) fn print_t2_beck_transfer_complexity_policy_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

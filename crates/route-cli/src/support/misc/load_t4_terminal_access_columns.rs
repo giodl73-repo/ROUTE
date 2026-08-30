@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t4_terminal_access_columns(path: &Path) -> Result<Vec<T4TerminalAccessColumnRow>> {
+pub(crate) fn load_t4_terminal_access_columns(
+    path: &Path,
+) -> Result<Vec<T4TerminalAccessColumnRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t4_terminal_access_columns(path: &Path) -> Result<Vec<T4Termi
     }
     Ok(rows)
 }
-

@@ -118,4 +118,3 @@ pub(crate) fn t2_closure_dispositions(
 
     dispositions
 }
-

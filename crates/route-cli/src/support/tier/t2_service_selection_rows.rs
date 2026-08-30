@@ -97,4 +97,3 @@ pub(crate) fn t2_service_selection_rows(
         })
         .collect()
 }
-

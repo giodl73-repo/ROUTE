@@ -36,4 +36,3 @@ pub(crate) fn t1_schematic_geometry_blocker_relief_rows(
     rows.sort_by(|left, right| left.route_pair.cmp(&right.route_pair));
     rows
 }
-

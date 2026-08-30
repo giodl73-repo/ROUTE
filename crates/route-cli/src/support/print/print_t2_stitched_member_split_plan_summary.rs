@@ -19,4 +19,3 @@ pub(crate) fn print_t2_stitched_member_split_plan_summary(
         println!("  {route}: {count}");
     }
 }
-

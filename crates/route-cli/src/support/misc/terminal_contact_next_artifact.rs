@@ -10,4 +10,3 @@ pub(crate) fn terminal_contact_next_artifact(zone_id: &str) -> String {
         _ => "waves/2026-05-13-t4-terminal-contact-evidence/plans/pulse-03.md".to_string(),
     }
 }
-

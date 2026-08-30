@@ -15,4 +15,3 @@ pub(crate) fn distance_to_geo_segment_miles(
     let lon = a_lon + (b_lon - a_lon) * t;
     geo_distance_miles(lat, lon, p_lat, p_lon)
 }
-

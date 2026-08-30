@@ -1,12 +1,12 @@
 //! `TierPavementFundingEvidenceAcceptedMetadataIntake` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     accepted_metadata_source_access: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -23,25 +23,21 @@ pub(crate) fn run(
     print_tier_pavement_funding_evidence_accepted_metadata_intake_summary(&output, &rows);
 
     if gate {
-        let failures =
-            tier_pavement_funding_evidence_accepted_metadata_intake_gate_failures(
-                &rows,
-                &access_rows,
-            );
+        let failures = tier_pavement_funding_evidence_accepted_metadata_intake_gate_failures(
+            &rows,
+            &access_rows,
+        );
         if !failures.is_empty() {
             println!();
             println!("Tier pavement funding evidence accepted metadata intake gate: FAIL");
             for failure in failures.iter().take(20) {
                 println!("  - {failure}");
             }
-            anyhow::bail!(
-                "tier pavement funding evidence accepted metadata intake gate failed"
-            );
+            anyhow::bail!("tier pavement funding evidence accepted metadata intake gate failed");
         }
         println!();
         println!("Tier pavement funding evidence accepted metadata intake gate: PASS");
     }
-        
+
     Ok(())
 }
-

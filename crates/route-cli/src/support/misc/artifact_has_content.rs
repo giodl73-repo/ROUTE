@@ -7,4 +7,3 @@ pub(crate) fn artifact_has_content(path: &str) -> bool {
         .map(|metadata| metadata.is_file() && metadata.len() > 0)
         .unwrap_or(false)
 }
-

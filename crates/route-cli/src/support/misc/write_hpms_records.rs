@@ -52,4 +52,3 @@ pub(crate) fn write_hpms_records(path: &Path, records: &[route_data::HpmsRecord]
     replace_with_atomic_write(&tmp, path)?;
     Ok(())
 }
-

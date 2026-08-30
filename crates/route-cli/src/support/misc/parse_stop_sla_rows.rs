@@ -8,4 +8,3 @@ pub(crate) fn parse_stop_sla_rows<R: std::io::Read>(reader: R) -> Result<Vec<Sto
         .collect::<std::result::Result<Vec<_>, _>>()
         .context("parsing stop SLA surface")
 }
-

@@ -19,4 +19,3 @@ pub(crate) fn print_t2_overlay_p3_local_zone_overlay_review_summary(
         println!("  {decision}: {count}");
     }
 }
-

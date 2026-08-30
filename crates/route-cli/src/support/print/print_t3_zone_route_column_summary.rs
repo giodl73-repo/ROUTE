@@ -21,4 +21,3 @@ pub(crate) fn print_t3_zone_route_column_summary(output: &Path, rows: &[T3ZoneRo
         println!("  {decision}: {count}");
     }
 }
-

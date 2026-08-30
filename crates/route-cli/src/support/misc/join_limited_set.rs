@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn join_limited_set(values: &std::collections::BTreeSet<String>, limit: usize) -> String {
+pub(crate) fn join_limited_set(
+    values: &std::collections::BTreeSet<String>,
+    limit: usize,
+) -> String {
     values
         .iter()
         .take(limit)
@@ -10,4 +13,3 @@ pub(crate) fn join_limited_set(values: &std::collections::BTreeSet<String>, limi
         .collect::<Vec<_>>()
         .join(";")
 }
-

@@ -11,4 +11,3 @@ pub(crate) fn missing_moment_artifacts(primary_artifacts: &str) -> Vec<String> {
         .map(str::to_string)
         .collect()
 }
-

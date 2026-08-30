@@ -10,4 +10,3 @@ pub(crate) fn selector_signal_score(value: &str) -> u16 {
         _ => 0,
     }
 }
-

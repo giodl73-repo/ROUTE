@@ -16,4 +16,3 @@ pub(crate) fn print_t2_bubble_up_review_summary(output: &Path, rows: &[T2BubbleU
         println!("  {action}: {count}");
     }
 }
-

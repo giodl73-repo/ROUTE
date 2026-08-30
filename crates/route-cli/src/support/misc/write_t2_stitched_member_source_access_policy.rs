@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_source_access_policy(
     writer.flush()?;
     Ok(())
 }
-

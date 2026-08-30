@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_service_class_repair_docket(path: &Path) -> Result<Vec<T2ServiceClassRepairDocketRow>> {
+pub(crate) fn load_t2_service_class_repair_docket(
+    path: &Path,
+) -> Result<Vec<T2ServiceClassRepairDocketRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_service_class_repair_docket(path: &Path) -> Result<Vec<T2S
     }
     Ok(rows)
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn write_t2_blocker_closure(path: &Path, rows: &[T2BlockerClosureRow]
     writer.flush()?;
     Ok(())
 }
-

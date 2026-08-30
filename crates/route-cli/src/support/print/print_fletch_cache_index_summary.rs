@@ -36,4 +36,3 @@ pub(crate) fn print_fletch_cache_index_summary(
         }
     }
 }
-

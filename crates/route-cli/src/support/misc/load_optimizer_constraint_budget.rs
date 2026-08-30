@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_optimizer_constraint_budget(path: &Path) -> Result<Vec<OptimizerConstraintBudgetRow>> {
+pub(crate) fn load_optimizer_constraint_budget(
+    path: &Path,
+) -> Result<Vec<OptimizerConstraintBudgetRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_optimizer_constraint_budget(path: &Path) -> Result<Vec<Optimi
     }
     Ok(rows)
 }
-

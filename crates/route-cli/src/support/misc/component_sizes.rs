@@ -9,4 +9,3 @@ pub(crate) fn component_sizes(component_ids: &[usize], component_count: usize) -
     }
     sizes
 }
-

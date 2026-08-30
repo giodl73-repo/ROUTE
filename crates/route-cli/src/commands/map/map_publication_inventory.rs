@@ -1,6 +1,6 @@
 //! `MapPublicationInventory` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -8,7 +8,7 @@ pub(crate) fn run(
     map_atlas: PathBuf,
     readiness: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -23,11 +23,8 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", readiness.display()))?;
     print_map_publication_inventory_summary(&inventory, &inventory_rows, details);
     if gate {
-        let failures = map_publication_inventory_gate_failures(
-            &inventory_rows,
-            &atlas_rows,
-            &readiness_rows,
-        );
+        let failures =
+            map_publication_inventory_gate_failures(&inventory_rows, &atlas_rows, &readiness_rows);
         if !failures.is_empty() {
             println!();
             println!("map publication inventory gate: FAIL");
@@ -39,7 +36,6 @@ pub(crate) fn run(
         println!();
         println!("map publication inventory gate: PASS");
     }
-        
+
     Ok(())
 }
-

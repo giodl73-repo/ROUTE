@@ -8,4 +8,3 @@ pub(crate) fn standards_evidence_level_is_allowed(level: &str) -> bool {
         "implemented" | "heuristic" | "stub" | "planned" | "deprecated"
     )
 }
-

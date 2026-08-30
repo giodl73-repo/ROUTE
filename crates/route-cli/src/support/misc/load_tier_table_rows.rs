@@ -10,4 +10,3 @@ pub(crate) fn load_tier_table_rows(path: &Path) -> Result<Vec<TierTableScoreRow>
     }
     Ok(rows)
 }
-

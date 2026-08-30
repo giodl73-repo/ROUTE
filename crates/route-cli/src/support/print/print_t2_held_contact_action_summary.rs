@@ -16,4 +16,3 @@ pub(crate) fn print_t2_held_contact_action_summary(output: &Path, rows: &[T2Held
         println!("  {action}: {count}");
     }
 }
-

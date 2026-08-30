@@ -60,4 +60,3 @@ pub(crate) fn print_t1_failures(rows: &[T1FailureRow], needs_sources: bool, deta
         }
     }
 }
-

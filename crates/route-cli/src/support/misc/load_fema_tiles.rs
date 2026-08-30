@@ -14,4 +14,3 @@ pub(crate) fn load_fema_tiles() -> Vec<FemaTile> {
     };
     parse_fema_tiles(file)
 }
-

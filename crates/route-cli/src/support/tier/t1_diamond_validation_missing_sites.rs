@@ -11,4 +11,3 @@ pub(crate) fn t1_diamond_validation_missing_sites(rows: &[T1DiamondValidationRow
         .map(|site_id| (*site_id).to_string())
         .collect()
 }
-

@@ -6,4 +6,3 @@ pub(crate) fn load_significant_moments(path: &Path) -> Result<Vec<SignificantMom
     let file = std::fs::File::open(path)?;
     parse_significant_moments(file)
 }
-

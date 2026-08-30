@@ -62,4 +62,3 @@ pub(crate) fn print_standards_proof(
         }
     }
 }
-

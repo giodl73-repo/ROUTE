@@ -3,9 +3,9 @@
 //! Layout: see `docs/dev/cli-layout.md`.
 //! Contract: each leaf is `pub(crate) fn run(ctx, ...fields) -> Result<()>`.
 //! Exemplar: [`core::build`].
-pub(crate) mod ctx;
 pub(crate) mod analysis;
 pub(crate) mod core;
+pub(crate) mod ctx;
 pub(crate) mod data;
 pub(crate) mod game;
 pub(crate) mod governance;

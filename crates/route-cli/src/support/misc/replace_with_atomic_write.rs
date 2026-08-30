@@ -11,4 +11,3 @@ pub(crate) fn replace_with_atomic_write(tmp: &Path, path: &Path) -> Result<()> {
         .with_context(|| format!("replacing {} with {}", path.display(), tmp.display()))?;
     Ok(())
 }
-

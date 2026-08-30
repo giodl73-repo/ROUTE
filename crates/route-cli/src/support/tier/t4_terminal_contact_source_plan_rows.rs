@@ -39,4 +39,3 @@ pub(crate) fn t4_terminal_contact_source_plan_rows(
     });
     rows
 }
-

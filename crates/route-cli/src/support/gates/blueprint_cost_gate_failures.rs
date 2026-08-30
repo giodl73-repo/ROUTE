@@ -32,4 +32,3 @@ pub(crate) fn blueprint_cost_gate_failures(
 
     failures
 }
-

@@ -31,4 +31,3 @@ pub(crate) fn parse_fema_tiles(reader: impl std::io::Read) -> Vec<FemaTile> {
         })
         .collect()
 }
-

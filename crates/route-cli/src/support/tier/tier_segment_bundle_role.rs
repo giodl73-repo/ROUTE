@@ -9,4 +9,3 @@ pub(crate) fn tier_segment_bundle_role(row: &TierSegmentCandidateRow) -> &'stati
         "single-segment"
     }
 }
-

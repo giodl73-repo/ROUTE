@@ -49,4 +49,3 @@ pub(crate) fn write_score_dimension_gap_section(
     md.push_str("\nInterpretation: confidence labels describe source/model support for this dimension, not the importance of the corridor. Low or Medium claims need source review before being promoted to project recommendations.\n");
     Ok(())
 }
-

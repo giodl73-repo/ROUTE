@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn national_bundle_matches_route(bundle: &NationalSegmentBundleRow, route: &str) -> bool {
+pub(crate) fn national_bundle_matches_route(
+    bundle: &NationalSegmentBundleRow,
+    route: &str,
+) -> bool {
     let key = canonical_route_key(route);
     bundle
         .route_labels
@@ -14,4 +17,3 @@ pub(crate) fn national_bundle_matches_route(bundle: &NationalSegmentBundleRow, r
         }))
         .any(|candidate| canonical_route_key(candidate) == key)
 }
-

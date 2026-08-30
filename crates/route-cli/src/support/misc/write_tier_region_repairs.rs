@@ -17,4 +17,3 @@ pub(crate) fn write_tier_region_repairs(path: &Path, rows: &[TierRegionRepairRow
     writer.flush()?;
     Ok(())
 }
-

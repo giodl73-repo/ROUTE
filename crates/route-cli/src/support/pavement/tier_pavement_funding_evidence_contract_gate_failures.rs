@@ -76,4 +76,3 @@ pub(crate) fn tier_pavement_funding_evidence_contract_gate_failures(
     }
     failures
 }
-

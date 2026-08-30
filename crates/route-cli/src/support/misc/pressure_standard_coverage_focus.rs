@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn pressure_standard_coverage_focus(standards: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
+pub(crate) fn pressure_standard_coverage_focus(
+    standards: &[StandardsProofRow],
+) -> Vec<&StandardsProofRow> {
     standards
         .iter()
         .filter(|row| {
@@ -12,4 +14,3 @@ pub(crate) fn pressure_standard_coverage_focus(standards: &[StandardsProofRow]) 
         })
         .collect()
 }
-

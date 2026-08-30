@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_access_source_access(
     writer.flush()?;
     Ok(())
 }
-

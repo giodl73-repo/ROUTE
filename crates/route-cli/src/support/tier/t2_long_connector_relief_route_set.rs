@@ -14,4 +14,3 @@ pub(crate) fn t2_long_connector_relief_route_set(
         .map(|row| route_display_key(&row.route))
         .collect()
 }
-

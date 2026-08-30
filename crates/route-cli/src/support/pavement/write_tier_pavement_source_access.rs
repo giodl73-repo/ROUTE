@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_source_access(
     writer.flush()?;
     Ok(())
 }
-

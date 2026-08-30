@@ -85,4 +85,3 @@ pub(crate) fn map_publication_readiness_rows(
         validation_status: validation_status.to_string(),
     }]
 }
-

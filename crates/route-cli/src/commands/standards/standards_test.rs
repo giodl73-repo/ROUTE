@@ -1,13 +1,8 @@
 //! `StandardsTest` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    tier: u8,
-    trips: usize,
-    seed: u64
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, tier: u8, trips: usize, seed: u64) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -76,17 +71,12 @@ pub(crate) fn run(
     println!();
 
     if pti_met {
-        println!(
-            "  ✓ Tier {tier} PTI standard is achievable under these simulation conditions."
-        );
+        println!("  ✓ Tier {tier} PTI standard is achievable under these simulation conditions.");
         println!("  ✓ Managed lanes + Donner tunnel remove the primary variance sources.");
     } else {
-        println!(
-            "  ✗ Tier {tier} PTI target NOT met at current demand/incident parameters."
-        );
+        println!("  ✗ Tier {tier} PTI target NOT met at current demand/incident parameters.");
         println!("  → Primary variance sources: see segment breakdown above.");
     }
-        
+
     Ok(())
 }
-

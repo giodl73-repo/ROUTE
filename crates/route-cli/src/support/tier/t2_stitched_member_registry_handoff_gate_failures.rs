@@ -87,4 +87,3 @@ pub(crate) fn t2_stitched_member_registry_handoff_gate_failures(
     }
     failures
 }
-

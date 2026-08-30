@@ -65,4 +65,3 @@ pub(crate) fn write_stop_sla_candidate_recommendations(
     writer.flush()?;
     Ok(())
 }
-

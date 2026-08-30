@@ -16,4 +16,3 @@ pub(crate) fn print_t1_feedback_docket_summary(output: &Path, rows: &[T1Feedback
         println!("  {class}: {count}");
     }
 }
-

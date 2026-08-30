@@ -9,4 +9,3 @@ pub(crate) fn stop_candidate_routes(row: &StopCandidateRow) -> Vec<String> {
         .filter(|route| !route.is_empty())
         .collect()
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn write_t1_stop_selector(path: &Path, rows: &[T1StopSelectorRow]) ->
     writer.flush()?;
     Ok(())
 }
-

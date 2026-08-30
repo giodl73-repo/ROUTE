@@ -21,4 +21,3 @@ pub(crate) fn tier_region_repair_rows(rows: &[TierRegionWorkloadRow]) -> Vec<Tie
         })
         .collect()
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_t2_overlay_p2_service_overlay_review(
     writer.flush()?;
     Ok(())
 }
-

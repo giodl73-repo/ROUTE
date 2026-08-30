@@ -19,4 +19,3 @@ pub(crate) fn print_t2_stitched_member_decision_docket_summary(
         println!("  {decision}: {count}");
     }
 }
-

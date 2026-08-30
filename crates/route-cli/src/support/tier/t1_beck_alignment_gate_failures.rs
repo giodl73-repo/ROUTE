@@ -18,4 +18,3 @@ pub(crate) fn t1_beck_alignment_gate_failures(rows: &[T1BeckAlignmentRow]) -> Ve
     }
     failures
 }
-

@@ -31,4 +31,3 @@ pub(crate) fn load_railroad_parallels() -> std::collections::HashMap<String, Str
     }
     map
 }
-

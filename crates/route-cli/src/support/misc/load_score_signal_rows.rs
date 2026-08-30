@@ -2,7 +2,8 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_score_signal_rows() -> Result<std::collections::HashMap<String, ScoreSignalRow>> {
+pub(crate) fn load_score_signal_rows() -> Result<std::collections::HashMap<String, ScoreSignalRow>>
+{
     let mut rdr = csv::Reader::from_path("data/scores-all.csv").context("reading scores-all")?;
     let headers = rdr.headers()?.clone();
     let route_idx = headers.iter().position(|h| h == "route").unwrap_or(0);
@@ -23,4 +24,3 @@ pub(crate) fn load_score_signal_rows() -> Result<std::collections::HashMap<Strin
     }
     Ok(rows)
 }
-

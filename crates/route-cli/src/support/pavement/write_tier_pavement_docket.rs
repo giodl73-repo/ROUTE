@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_tier_pavement_docket(path: &Path, rows: &[TierPavementDocketRow]) -> Result<()> {
+pub(crate) fn write_tier_pavement_docket(
+    path: &Path,
+    rows: &[TierPavementDocketRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_tier_pavement_docket(path: &Path, rows: &[TierPavementDocket
     writer.flush()?;
     Ok(())
 }
-

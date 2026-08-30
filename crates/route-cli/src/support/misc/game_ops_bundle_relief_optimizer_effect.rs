@@ -30,4 +30,3 @@ pub(crate) fn game_ops_bundle_relief_optimizer_effect(
     }
     format!("{base}; {}", parts.join("; "))
 }
-

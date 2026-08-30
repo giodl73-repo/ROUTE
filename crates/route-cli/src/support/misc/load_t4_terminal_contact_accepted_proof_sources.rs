@@ -15,4 +15,3 @@ pub(crate) fn load_t4_terminal_contact_accepted_proof_sources(
     }
     Ok(rows)
 }
-

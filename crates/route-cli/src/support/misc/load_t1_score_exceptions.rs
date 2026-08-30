@@ -6,4 +6,3 @@ pub(crate) fn load_t1_score_exceptions(path: &Path) -> Result<Vec<T1ScoreExcepti
     let file = std::fs::File::open(path)?;
     parse_t1_score_exceptions(file)
 }
-

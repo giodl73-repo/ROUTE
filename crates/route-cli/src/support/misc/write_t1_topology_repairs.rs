@@ -17,4 +17,3 @@ pub(crate) fn write_t1_topology_repairs(path: &Path, rows: &[T1TopologyRepairRow
     writer.flush()?;
     Ok(())
 }
-

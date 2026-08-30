@@ -1,18 +1,17 @@
 //! `map` command handler (same contract as `build` exemplar).
 //! See `commands/build.rs` for the reference shape.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     designation: String,
     output: Option<PathBuf>,
-    color_by: Option<String>
+    color_by: Option<String>,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     let norm = normalise_designation(&designation);
     let out = output.unwrap_or_else(|| {
@@ -67,15 +66,13 @@ pub(crate) fn run(
     }
 
     if norm.starts_with("T3Z") {
-        let manifest = route_data::Manifest::load(&manifest_path).with_context(|| {
-            format!("loading manifest from {}", manifest_path.display())
-        })?;
+        let manifest = route_data::Manifest::load(&manifest_path)
+            .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
         let graph = load_graph(&manifest)?;
-        let scores =
-            route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"))
-                .into_iter()
-                .map(|(route, score)| (route, score as f32))
-                .collect::<std::collections::HashMap<_, _>>();
+        let scores = route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"))
+            .into_iter()
+            .map(|(route, score)| (route, score as f32))
+            .collect::<std::collections::HashMap<_, _>>();
         let stop_file = std::fs::File::open("data/tier-stop-candidates.csv")
             .context("reading data/tier-stop-candidates.csv")?;
         let stop_rows = parse_stop_candidates(stop_file)?;
@@ -98,28 +95,23 @@ pub(crate) fn run(
         route_map::svg_to_png(&svg, &out, 1800, 1000)?;
         let board_csv = route_map::build_t3_zone_board_csv(&norm)?;
         let board_out = out.with_extension("board.csv");
-        std::fs::write(&board_out, board_csv).with_context(|| {
-            format!("writing T3 board manifest {}", board_out.display())
-        })?;
+        std::fs::write(&board_out, board_csv)
+            .with_context(|| format!("writing T3 board manifest {}", board_out.display()))?;
         println!(
             "  rendered T3 Beck zone schematic: {} (1800x1000)",
             out.display()
         );
-        println!(
-            "  regional Beck schematic · stops define endpoints, bends, and transfers"
-        );
+        println!("  regional Beck schematic · stops define endpoints, bends, and transfers");
         println!("  wrote T3 game board manifest: {}", board_out.display());
         return Ok(());
     }
 
     // Mega-map: all tiers at once
     if norm == "ALL" {
-        let manifest = route_data::Manifest::load(&manifest_path).with_context(|| {
-            format!("loading manifest from {}", manifest_path.display())
-        })?;
+        let manifest = route_data::Manifest::load(&manifest_path)
+            .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
         let graph = load_graph(&manifest)?;
-        let scores =
-            route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
+        let scores = route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
         println!(
             "  building tier mega-map ({} routes, {} score entries)…",
             graph.route_ids().len(),
@@ -139,8 +131,7 @@ pub(crate) fn run(
 
     // T1 primary corridors get a regional map showing T2/T3/T4 feeders.
     if route_network::T1_BACKBONE_ROUTES.contains(&norm.as_str()) {
-        let tier_scores =
-            route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
+        let tier_scores = route_map::load_tier_scores(std::path::Path::new("data/scores-all.csv"));
         // Convert f64 scores to f32 for the T1 corridor map API.
         let scores_f32: std::collections::HashMap<String, f32> = tier_scores
             .iter()

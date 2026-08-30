@@ -78,4 +78,3 @@ pub(crate) fn ensure_reviewed_report_sources(
         missing.join(", ")
     )
 }
-

@@ -19,4 +19,3 @@ pub(crate) fn print_t2_service_overlay_diagnostic_decision_summary(
         println!("  {decision}: {count}");
     }
 }
-

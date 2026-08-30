@@ -17,4 +17,3 @@ pub(crate) fn pavement_gap_has_accepted_route_state_exclusion(
                 .any(|state| state == &exclusion.state)
     })
 }
-

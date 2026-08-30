@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t4_terminal_access_column_summary(output: &Path, rows: &[T4TerminalAccessColumnRow]) {
+pub(crate) fn print_t4_terminal_access_column_summary(
+    output: &Path,
+    rows: &[T4TerminalAccessColumnRow],
+) {
     let mut by_decision = std::collections::BTreeMap::<&str, usize>::new();
     let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
@@ -21,4 +24,3 @@ pub(crate) fn print_t4_terminal_access_column_summary(output: &Path, rows: &[T4T
         println!("  {decision}: {count}");
     }
 }
-

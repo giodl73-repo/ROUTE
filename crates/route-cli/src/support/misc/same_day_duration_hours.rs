@@ -11,4 +11,3 @@ pub(crate) fn same_day_duration_hours(start: &str, end: &str) -> Option<f64> {
         None
     }
 }
-

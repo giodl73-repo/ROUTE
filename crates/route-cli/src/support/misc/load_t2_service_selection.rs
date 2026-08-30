@@ -13,4 +13,3 @@ pub(crate) fn load_t2_service_selection(path: &Path) -> Result<Vec<T2ServiceSele
     }
     Ok(rows)
 }
-

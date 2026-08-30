@@ -24,4 +24,3 @@ pub(crate) fn t2_endpoint_closure_gate_failures(rows: &[T2EndpointClosureRow]) -
     }
     failures
 }
-

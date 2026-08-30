@@ -23,4 +23,3 @@ pub(crate) fn print_t1_sla_candidate_pair_summary(
     println!("  dropped candidate rows: {dropped}");
     println!("  first dropped by rank: {cutline}");
 }
-

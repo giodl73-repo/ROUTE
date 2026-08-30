@@ -49,4 +49,3 @@ pub(crate) fn print_t1_source_health(rows: &[T1SourceHealthRow], blockers: bool,
         }
     }
 }
-

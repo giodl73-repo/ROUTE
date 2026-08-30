@@ -2,6 +2,7 @@
 #[allow(unused_imports)]
 use crate::*;
 
+#[cfg(test)]
 pub(crate) fn optimizer_constraint_ledger_rows(
     pavement_rows: &[TierPavementDebtBudgetRow],
     t2_asset_condition_map_publication_exclusion_rows: &[T2AssetConditionMapPublicationExclusionRow],
@@ -47,4 +48,3 @@ pub(crate) fn optimizer_constraint_ledger_rows(
         bundle_overlay_rows,
     )
 }
-

@@ -13,4 +13,3 @@ pub(crate) fn iowa511_is_t1_relevant(route: &str, text: &str) -> bool {
             .iter()
             .any(|needle| text_norm.contains(needle))
 }
-

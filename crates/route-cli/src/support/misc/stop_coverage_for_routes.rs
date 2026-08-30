@@ -36,4 +36,3 @@ pub(crate) fn stop_coverage_for_routes(
         })
         .collect()
 }
-

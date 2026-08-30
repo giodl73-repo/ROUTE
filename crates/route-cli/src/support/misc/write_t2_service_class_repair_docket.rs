@@ -20,4 +20,3 @@ pub(crate) fn write_t2_service_class_repair_docket(
     writer.flush()?;
     Ok(())
 }
-

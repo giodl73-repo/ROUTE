@@ -22,4 +22,3 @@ pub(crate) fn print_t1_schematic_geometry_blocker_relief_summary(
     println!("  claim blockers before: {before}");
     println!("  claim blockers after: {after}");
 }
-

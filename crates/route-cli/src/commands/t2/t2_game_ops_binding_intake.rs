@@ -1,13 +1,8 @@
 //! `T2GameOpsBindingIntake` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    budget: PathBuf,
-    output: PathBuf,
-    gate: bool
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, budget: PathBuf, output: PathBuf, gate: bool) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -33,7 +28,6 @@ pub(crate) fn run(
         println!();
         println!("T2 game/ops binding intake gate: PASS");
     }
-        
+
     Ok(())
 }
-

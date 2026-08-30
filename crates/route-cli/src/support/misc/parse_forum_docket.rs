@@ -10,4 +10,3 @@ pub(crate) fn parse_forum_docket<R: std::io::Read>(reader: R) -> Result<Vec<Foru
     }
     Ok(rows)
 }
-

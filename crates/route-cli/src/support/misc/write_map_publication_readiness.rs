@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_map_publication_readiness(path: &Path, rows: &[MapPublicationReadinessRow]) -> Result<()> {
+pub(crate) fn write_map_publication_readiness(
+    path: &Path,
+    rows: &[MapPublicationReadinessRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_map_publication_readiness(path: &Path, rows: &[MapPublicatio
     writer.flush()?;
     Ok(())
 }
-

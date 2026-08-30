@@ -20,4 +20,3 @@ pub(crate) fn write_t2_beck_transfer_complexity_review(
     writer.flush()?;
     Ok(())
 }
-

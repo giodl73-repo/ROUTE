@@ -10,4 +10,3 @@ pub(crate) fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64
         + lat1.to_radians().cos() * lat2.to_radians().cos() * (dlon / 2.0).sin().powi(2);
     2.0 * r * a.sqrt().asin()
 }
-

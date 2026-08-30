@@ -44,4 +44,3 @@ pub(crate) fn load_nbi_bridges() -> std::collections::HashMap<String, NbiBridgeR
     }
     map
 }
-

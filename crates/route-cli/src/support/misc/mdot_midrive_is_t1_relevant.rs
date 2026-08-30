@@ -18,4 +18,3 @@ pub(crate) fn mdot_midrive_is_t1_relevant(text: &str) -> bool {
             .iter()
             .any(|needle| text.to_ascii_uppercase().contains(needle))
 }
-

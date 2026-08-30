@@ -17,4 +17,3 @@ pub(crate) fn standards_inventory_row_has_contract(row: &StandardsInventoryRow) 
         && !row.blocking_gap.trim().is_empty()
         && !row.next_step.trim().is_empty()
 }
-

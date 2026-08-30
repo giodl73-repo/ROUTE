@@ -86,4 +86,3 @@ pub(crate) fn t2_local_zone_overlay_handoff_rows(
     });
     rows
 }
-

@@ -123,4 +123,3 @@ pub(crate) fn t1_schematic_geometry_claim_review_gate_failures(
     }
     failures
 }
-

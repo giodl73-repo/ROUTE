@@ -105,4 +105,3 @@ pub(crate) fn tier_pavement_funding_evidence_accepted_artifact_acquisition_gate_
     }
     failures
 }
-

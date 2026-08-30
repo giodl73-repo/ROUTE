@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_national_segment_bundle_summary(output: &Path, rows: &[NationalSegmentBundleRow]) {
+pub(crate) fn print_national_segment_bundle_summary(
+    output: &Path,
+    rows: &[NationalSegmentBundleRow],
+) {
     let mut by_status = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
         *by_status.entry(row.bundle_status.as_str()).or_default() += 1;
@@ -16,4 +19,3 @@ pub(crate) fn print_national_segment_bundle_summary(output: &Path, rows: &[Natio
         println!("  {status}: {count}");
     }
 }
-

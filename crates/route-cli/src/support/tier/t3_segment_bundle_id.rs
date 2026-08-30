@@ -12,4 +12,3 @@ pub(crate) fn t3_segment_bundle_id(zone_id: &str, route: &str) -> String {
         ))
     )
 }
-

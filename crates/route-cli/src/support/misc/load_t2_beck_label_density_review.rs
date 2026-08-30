@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_beck_label_density_review(path: &Path) -> Result<Vec<T2BeckLabelDensityReviewRow>> {
+pub(crate) fn load_t2_beck_label_density_review(
+    path: &Path,
+) -> Result<Vec<T2BeckLabelDensityReviewRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_beck_label_density_review(path: &Path) -> Result<Vec<T2Bec
     }
     Ok(rows)
 }
-

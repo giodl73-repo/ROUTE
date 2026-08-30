@@ -33,4 +33,3 @@ pub(crate) fn t2_route_family_split_gate_failures(rows: &[T2RouteFamilySplitRow]
     }
     failures
 }
-

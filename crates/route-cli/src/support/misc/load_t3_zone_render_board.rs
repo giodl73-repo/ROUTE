@@ -13,4 +13,3 @@ pub(crate) fn load_t3_zone_render_board(path: &Path) -> Result<Vec<T3ZoneRenderB
     }
     Ok(rows)
 }
-

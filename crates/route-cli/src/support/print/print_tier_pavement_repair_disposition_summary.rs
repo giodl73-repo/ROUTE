@@ -23,4 +23,3 @@ pub(crate) fn print_tier_pavement_repair_disposition_summary(
         );
     }
 }
-

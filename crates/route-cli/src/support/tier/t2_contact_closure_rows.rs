@@ -89,4 +89,3 @@ pub(crate) fn t2_contact_closure_rows(
     }
     rows
 }
-

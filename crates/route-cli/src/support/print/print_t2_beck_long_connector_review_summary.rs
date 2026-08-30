@@ -17,4 +17,3 @@ pub(crate) fn print_t2_beck_long_connector_review_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

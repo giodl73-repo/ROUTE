@@ -16,4 +16,3 @@ pub(crate) fn print_t3_zone_stop_placement_summary(output: &Path, rows: &[T3Zone
         println!("  {status}: {count}");
     }
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_bundle_overlay_repair_delta(path: &Path) -> Result<Vec<T2BundleOverlayRepairDeltaRow>> {
+pub(crate) fn load_t2_bundle_overlay_repair_delta(
+    path: &Path,
+) -> Result<Vec<T2BundleOverlayRepairDeltaRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_bundle_overlay_repair_delta(path: &Path) -> Result<Vec<T2B
     }
     Ok(rows)
 }
-

@@ -15,4 +15,3 @@ pub(crate) fn load_t2_beck_long_connector_policy_acceptance(
     }
     Ok(rows)
 }
-

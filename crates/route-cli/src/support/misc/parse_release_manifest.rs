@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn parse_release_manifest<R: std::io::Read>(reader: R) -> Result<Vec<ReleaseManifestRow>> {
+pub(crate) fn parse_release_manifest<R: std::io::Read>(
+    reader: R,
+) -> Result<Vec<ReleaseManifestRow>> {
     let mut rdr = csv::Reader::from_reader(reader);
     let mut rows = Vec::new();
     for result in rdr.deserialize() {
@@ -10,4 +12,3 @@ pub(crate) fn parse_release_manifest<R: std::io::Read>(reader: R) -> Result<Vec<
     }
     Ok(rows)
 }
-

@@ -9,4 +9,3 @@ pub(crate) fn canonical_route_key(route: &str) -> String {
         .flat_map(|ch| ch.to_uppercase())
         .collect()
 }
-

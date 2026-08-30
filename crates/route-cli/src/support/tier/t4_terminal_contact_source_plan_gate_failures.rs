@@ -109,4 +109,3 @@ pub(crate) fn t4_terminal_contact_source_plan_gate_failures(
 
     failures
 }
-

@@ -1,6 +1,6 @@
 //! `BlueprintEvidence` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -9,24 +9,22 @@ pub(crate) fn run(
     standards_ledger: PathBuf,
     blockers: bool,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-    let packages = load_blueprint_packages(&ledger).with_context(|| {
-        format!("loading Blueprint package ledger {}", ledger.display())
-    })?;
+    let packages = load_blueprint_packages(&ledger)
+        .with_context(|| format!("loading Blueprint package ledger {}", ledger.display()))?;
     let standards = load_standards_proof_ledger(&standards_ledger).with_context(|| {
         format!(
             "loading standards proof ledger {}",
             standards_ledger.display()
         )
     })?;
-    let rows = load_blueprint_evidence_map(&evidence_map).with_context(|| {
-        format!("loading Blueprint evidence map {}", evidence_map.display())
-    })?;
+    let rows = load_blueprint_evidence_map(&evidence_map)
+        .with_context(|| format!("loading Blueprint evidence map {}", evidence_map.display()))?;
     print_blueprint_evidence_map(&rows, blockers, details);
 
     if gate {
@@ -46,7 +44,6 @@ pub(crate) fn run(
         println!();
         println!("Blueprint evidence gate: PASS");
     }
-        
+
     Ok(())
 }
-

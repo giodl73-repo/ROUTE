@@ -13,4 +13,3 @@ pub(crate) fn t2_game_publication_policy_treatment(required_evidence: &str) -> &
         _ => "require standards proof and scenario promotion record before scenario publication",
     }
 }
-

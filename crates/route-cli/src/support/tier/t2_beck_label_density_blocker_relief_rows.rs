@@ -33,4 +33,3 @@ pub(crate) fn t2_beck_label_density_blocker_relief_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

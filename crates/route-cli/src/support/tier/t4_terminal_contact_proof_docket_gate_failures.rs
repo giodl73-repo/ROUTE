@@ -135,4 +135,3 @@ pub(crate) fn t4_terminal_contact_proof_docket_gate_failures(
 
     failures
 }
-

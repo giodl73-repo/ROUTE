@@ -9,4 +9,3 @@ pub(crate) fn standards_inventory_gate_failures(
         .filter(|row| !standards_inventory_row_has_contract(row))
         .collect()
 }
-

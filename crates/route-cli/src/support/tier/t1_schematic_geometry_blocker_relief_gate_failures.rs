@@ -96,4 +96,3 @@ pub(crate) fn t1_schematic_geometry_blocker_relief_gate_failures(
     }
     failures
 }
-

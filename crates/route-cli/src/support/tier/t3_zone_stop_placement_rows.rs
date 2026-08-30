@@ -63,4 +63,3 @@ pub(crate) fn t3_zone_stop_placement_rows(
     });
     rows
 }
-

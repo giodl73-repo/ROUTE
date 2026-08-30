@@ -17,4 +17,3 @@ pub(crate) fn write_t2_contact_closure(path: &Path, rows: &[T2ContactClosureRow]
     writer.flush()?;
     Ok(())
 }
-

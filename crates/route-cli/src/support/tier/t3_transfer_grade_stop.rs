@@ -8,4 +8,3 @@ pub(crate) fn t3_transfer_grade_stop(stop: &StopCandidateRow) -> bool {
         "S1" | "S2" | "S3"
     )
 }
-

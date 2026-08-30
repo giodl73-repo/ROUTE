@@ -73,4 +73,3 @@ pub(crate) fn t2_stitched_member_registry_handoff_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

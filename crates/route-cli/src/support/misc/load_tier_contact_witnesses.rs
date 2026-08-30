@@ -10,4 +10,3 @@ pub(crate) fn load_tier_contact_witnesses(path: &Path) -> Result<Vec<TierContact
     }
     Ok(rows)
 }
-

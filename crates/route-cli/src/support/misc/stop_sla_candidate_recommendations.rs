@@ -23,4 +23,3 @@ pub(crate) fn stop_sla_candidate_recommendations(
         })
         .collect()
 }
-

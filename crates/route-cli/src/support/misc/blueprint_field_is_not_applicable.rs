@@ -8,4 +8,3 @@ pub(crate) fn blueprint_field_is_not_applicable(value: &str) -> bool {
         "" | "n/a" | "not_applicable" | "none"
     )
 }
-

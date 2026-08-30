@@ -1,12 +1,12 @@
 //! `TierPavementFundingEvidenceContract` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     downgrade_exclusion_decision: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -15,17 +15,14 @@ pub(crate) fn run(
     println!("route tier-pavement-funding-evidence-contract");
     let decision_rows =
         load_tier_pavement_downgrade_exclusion_decision(&downgrade_exclusion_decision)
-            .with_context(|| {
-                format!("loading {}", downgrade_exclusion_decision.display())
-            })?;
+            .with_context(|| format!("loading {}", downgrade_exclusion_decision.display()))?;
     let rows = tier_pavement_funding_evidence_contract_rows(&decision_rows);
     write_tier_pavement_funding_evidence_contract(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
     print_tier_pavement_funding_evidence_contract_summary(&output, &rows);
 
     if gate {
-        let failures =
-            tier_pavement_funding_evidence_contract_gate_failures(&rows, &decision_rows);
+        let failures = tier_pavement_funding_evidence_contract_gate_failures(&rows, &decision_rows);
         if !failures.is_empty() {
             println!();
             println!("Tier pavement funding evidence contract gate: FAIL");
@@ -37,7 +34,6 @@ pub(crate) fn run(
         println!();
         println!("Tier pavement funding evidence contract gate: PASS");
     }
-        
+
     Ok(())
 }
-

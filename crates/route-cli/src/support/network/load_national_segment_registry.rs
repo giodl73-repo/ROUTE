@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_national_segment_registry(path: &Path) -> Result<Vec<NationalSegmentRegistryRow>> {
+pub(crate) fn load_national_segment_registry(
+    path: &Path,
+) -> Result<Vec<NationalSegmentRegistryRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_national_segment_registry(path: &Path) -> Result<Vec<National
     }
     Ok(rows)
 }
-

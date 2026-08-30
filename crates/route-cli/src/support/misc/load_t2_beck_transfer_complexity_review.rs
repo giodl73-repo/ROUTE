@@ -15,4 +15,3 @@ pub(crate) fn load_t2_beck_transfer_complexity_review(
     }
     Ok(rows)
 }
-

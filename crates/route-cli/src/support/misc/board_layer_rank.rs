@@ -12,4 +12,3 @@ pub(crate) fn board_layer_rank(board_layer: &str) -> u8 {
         _ => 5,
     }
 }
-

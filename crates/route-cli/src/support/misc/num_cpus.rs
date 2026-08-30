@@ -7,4 +7,3 @@ pub(crate) fn num_cpus() -> usize {
         .map(|n| n.get())
         .unwrap_or(4)
 }
-

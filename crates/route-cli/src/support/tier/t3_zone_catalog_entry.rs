@@ -12,4 +12,3 @@ pub(crate) fn t3_zone_catalog_entry(zone_id: &str) -> Option<(&'static str, &'st
         _ => None,
     }
 }
-

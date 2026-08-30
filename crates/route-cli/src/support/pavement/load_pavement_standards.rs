@@ -10,4 +10,3 @@ pub(crate) fn load_pavement_standards(path: &Path) -> Result<Vec<PavementStandar
     }
     Ok(rows)
 }
-

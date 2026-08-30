@@ -11,4 +11,3 @@ pub(crate) fn t1_sla_candidate_pair_score(row: &T1SlaCandidateUniverseRow) -> f6
         + row.evidence_score
         - row.budget_penalty
 }
-

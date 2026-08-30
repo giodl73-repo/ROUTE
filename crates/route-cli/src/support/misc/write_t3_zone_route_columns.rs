@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_t3_zone_route_columns(path: &Path, rows: &[T3ZoneRouteColumnRow]) -> Result<()> {
+pub(crate) fn write_t3_zone_route_columns(
+    path: &Path,
+    rows: &[T3ZoneRouteColumnRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_t3_zone_route_columns(path: &Path, rows: &[T3ZoneRouteColumn
     writer.flush()?;
     Ok(())
 }
-

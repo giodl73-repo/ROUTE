@@ -60,4 +60,3 @@ pub(crate) fn print_bridge_standard_coverage(
         }
     }
 }
-

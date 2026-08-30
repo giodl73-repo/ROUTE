@@ -20,4 +20,3 @@ pub(crate) fn write_t1_schematic_geometry_blocker_relief(
     writer.flush()?;
     Ok(())
 }
-

@@ -1,6 +1,6 @@
 //! `T4TerminalContactSourcePlan` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -8,7 +8,7 @@ pub(crate) fn run(
     output: PathBuf,
     catalog_output: PathBuf,
     proof_docket_output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -31,8 +31,7 @@ pub(crate) fn run(
     print_t4_terminal_contact_proof_docket_summary(&proof_docket_output, &proof_rows);
 
     if gate {
-        let mut failures =
-            t4_terminal_contact_source_plan_gate_failures(&rows, &contact_rows);
+        let mut failures = t4_terminal_contact_source_plan_gate_failures(&rows, &contact_rows);
         failures.extend(t4_terminal_contact_source_catalog_gate_failures(
             &catalog_rows,
             &rows,
@@ -53,7 +52,6 @@ pub(crate) fn run(
         println!();
         println!("T4 terminal contact source plan gate: PASS");
     }
-        
+
     Ok(())
 }
-

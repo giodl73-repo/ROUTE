@@ -30,4 +30,3 @@ pub(crate) fn filter_stop_candidates<'a>(
         })
         .collect()
 }
-

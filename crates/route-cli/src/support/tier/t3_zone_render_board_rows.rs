@@ -153,4 +153,3 @@ pub(crate) fn t3_zone_render_board_rows(
     });
     rows
 }
-

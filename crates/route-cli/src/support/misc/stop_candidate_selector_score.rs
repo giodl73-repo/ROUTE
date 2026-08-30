@@ -10,4 +10,3 @@ pub(crate) fn stop_candidate_selector_score(row: &StopCandidateRow) -> u16 {
         + selector_signal_score(&row.land_ops_feasibility) * 4
         + selector_signal_score(&row.equity_community)
 }
-

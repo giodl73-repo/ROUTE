@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_optimizer_constraint_ledger(path: &Path) -> Result<Vec<OptimizerConstraintLedgerRow>> {
+pub(crate) fn load_optimizer_constraint_ledger(
+    path: &Path,
+) -> Result<Vec<OptimizerConstraintLedgerRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_optimizer_constraint_ledger(path: &Path) -> Result<Vec<Optimi
     }
     Ok(rows)
 }
-

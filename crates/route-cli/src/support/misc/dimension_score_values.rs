@@ -22,4 +22,3 @@ pub(crate) fn dimension_score_values(scores: &route_score::DimensionScores) -> [
         scores.d3.score,
     ]
 }
-

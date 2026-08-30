@@ -13,4 +13,3 @@ pub(crate) fn load_t2_graph_contact_repairs(path: &Path) -> Result<Vec<T2GraphCo
     }
     Ok(rows)
 }
-

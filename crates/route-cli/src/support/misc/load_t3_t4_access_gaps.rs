@@ -13,4 +13,3 @@ pub(crate) fn load_t3_t4_access_gaps(path: &Path) -> Result<Vec<T3T4AccessGapRow
     }
     Ok(rows)
 }
-

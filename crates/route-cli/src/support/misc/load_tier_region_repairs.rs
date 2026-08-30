@@ -10,4 +10,3 @@ pub(crate) fn load_tier_region_repairs(path: &Path) -> Result<Vec<TierRegionRepa
     }
     Ok(rows)
 }
-

@@ -80,4 +80,3 @@ pub(crate) fn t2_overlay_p3_local_zone_overlay_review_gate_failures(
     }
     failures
 }
-

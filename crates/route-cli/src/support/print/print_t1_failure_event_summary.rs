@@ -72,4 +72,3 @@ pub(crate) fn print_t1_failure_event_summary(rows: &[T1FailureEventRow]) {
         );
     }
 }
-

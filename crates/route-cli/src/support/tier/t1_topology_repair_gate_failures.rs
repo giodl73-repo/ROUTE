@@ -17,4 +17,3 @@ pub(crate) fn t1_topology_repair_gate_failures(rows: &[T1TopologyRepairRow]) -> 
     }
     failures
 }
-

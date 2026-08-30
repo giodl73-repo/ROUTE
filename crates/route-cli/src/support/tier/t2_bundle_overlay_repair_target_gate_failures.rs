@@ -105,4 +105,3 @@ pub(crate) fn t2_bundle_overlay_repair_target_gate_failures(
     }
     failures
 }
-

@@ -22,4 +22,3 @@ pub(crate) fn t2_bundle_repair_queue_action(bundle_status: &str) -> (&'static st
         ),
     }
 }
-

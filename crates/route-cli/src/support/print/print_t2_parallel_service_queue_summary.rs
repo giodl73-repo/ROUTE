@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t2_parallel_service_queue_summary(output: &Path, rows: &[T2ParallelServiceQueueRow]) {
+pub(crate) fn print_t2_parallel_service_queue_summary(
+    output: &Path,
+    rows: &[T2ParallelServiceQueueRow],
+) {
     let mut counts = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
         *counts.entry(row.validation_status.as_str()).or_default() += 1;
@@ -16,4 +19,3 @@ pub(crate) fn print_t2_parallel_service_queue_summary(output: &Path, rows: &[T2P
         println!("  {status}: {count}");
     }
 }
-

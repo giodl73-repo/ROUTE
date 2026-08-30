@@ -222,4 +222,3 @@ pub(crate) fn t1_line_selector_rows(
     }
     Ok(rows)
 }
-

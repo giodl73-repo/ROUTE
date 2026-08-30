@@ -6,4 +6,3 @@ pub(crate) fn load_blueprint_evidence_map(path: &Path) -> Result<Vec<BlueprintEv
     let file = std::fs::File::open(path)?;
     parse_blueprint_evidence_map(file)
 }
-

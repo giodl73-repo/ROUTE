@@ -17,4 +17,3 @@ pub(crate) fn write_source_fetch_policy(path: &Path, rows: &[SourceFetchPolicyRo
     writer.flush()?;
     Ok(())
 }
-

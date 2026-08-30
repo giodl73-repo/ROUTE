@@ -20,4 +20,3 @@ pub(crate) fn t1_design_review_gate_failures(rows: &[T1DesignReviewRow]) -> Vec<
     }
     failures
 }
-

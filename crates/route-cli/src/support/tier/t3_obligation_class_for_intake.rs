@@ -9,4 +9,3 @@ pub(crate) fn t3_obligation_class_for_intake(intake_class: &str) -> &'static str
         _ => "regional-feeder-access",
     }
 }
-

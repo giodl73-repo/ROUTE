@@ -43,4 +43,3 @@ pub(crate) fn print_tier_pavement_source_gap_summary(
         }
     }
 }
-

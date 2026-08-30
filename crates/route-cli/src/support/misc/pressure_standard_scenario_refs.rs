@@ -20,4 +20,3 @@ pub(crate) fn pressure_standard_scenario_refs(
     }
     refs
 }
-

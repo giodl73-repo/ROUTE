@@ -81,4 +81,3 @@ pub(crate) fn stop_candidate_gate_failures(rows: &[&StopCandidateRow]) -> Vec<St
     }
     failures
 }
-

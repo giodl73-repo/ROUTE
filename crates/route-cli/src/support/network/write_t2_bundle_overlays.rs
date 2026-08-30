@@ -17,4 +17,3 @@ pub(crate) fn write_t2_bundle_overlays(path: &Path, rows: &[T2BundleOverlayRow])
     writer.flush()?;
     Ok(())
 }
-

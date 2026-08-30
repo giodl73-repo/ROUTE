@@ -21,4 +21,3 @@ pub(crate) fn filter_endpoint_exceptions<'a>(
         })
         .collect()
 }
-

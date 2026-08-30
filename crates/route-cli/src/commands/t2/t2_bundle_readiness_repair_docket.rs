@@ -1,12 +1,12 @@
 //! `T2BundleReadinessRepairDocket` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     readiness: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -21,8 +21,7 @@ pub(crate) fn run(
     print_t2_bundle_readiness_repair_docket_summary(&output, &rows);
 
     if gate {
-        let failures =
-            t2_bundle_readiness_repair_docket_gate_failures(&rows, &readiness_rows);
+        let failures = t2_bundle_readiness_repair_docket_gate_failures(&rows, &readiness_rows);
         if !failures.is_empty() {
             println!();
             println!("T2 bundle readiness repair docket gate: FAIL");
@@ -34,7 +33,6 @@ pub(crate) fn run(
         println!();
         println!("T2 bundle readiness repair docket gate: PASS");
     }
-        
+
     Ok(())
 }
-

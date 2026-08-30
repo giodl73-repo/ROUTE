@@ -17,4 +17,3 @@ pub(crate) fn standards_pressure_row_has_contract(row: &StandardsProofRow) -> bo
         && !row.next_command_or_test.trim().is_empty()
         && !row.owner_track.trim().is_empty()
 }
-

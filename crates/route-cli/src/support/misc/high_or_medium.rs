@@ -8,4 +8,3 @@ pub(crate) fn high_or_medium(value: &str) -> bool {
         "high" | "medium" | "met"
     )
 }
-

@@ -93,4 +93,3 @@ pub(crate) fn t2_beck_label_density_policy_gate_failures(
     }
     failures
 }
-

@@ -13,4 +13,3 @@ pub(crate) fn load_t3_t4_pressure_intake(path: &Path) -> Result<Vec<T3T4Pressure
     }
     Ok(rows)
 }
-

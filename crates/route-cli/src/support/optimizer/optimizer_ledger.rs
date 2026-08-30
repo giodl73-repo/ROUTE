@@ -1118,4 +1118,3 @@ pub(crate) fn optimizer_constraint_ledger_rows_with_terminal_proof(
     });
     rows
 }
-

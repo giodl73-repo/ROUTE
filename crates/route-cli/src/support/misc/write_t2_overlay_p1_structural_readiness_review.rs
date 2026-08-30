@@ -20,4 +20,3 @@ pub(crate) fn write_t2_overlay_p1_structural_readiness_review(
     writer.flush()?;
     Ok(())
 }
-

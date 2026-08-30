@@ -20,4 +20,3 @@ pub(crate) fn write_optimizer_residual_blocker_backlog(
     writer.flush()?;
     Ok(())
 }
-

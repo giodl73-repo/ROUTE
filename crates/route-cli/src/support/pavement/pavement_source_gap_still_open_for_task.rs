@@ -21,4 +21,3 @@ pub(crate) fn pavement_source_gap_still_open_for_task(
                 .any(|state| state == docket_row.state)
     })
 }
-

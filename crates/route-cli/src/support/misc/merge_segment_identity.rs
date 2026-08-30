@@ -26,4 +26,3 @@ pub(crate) fn merge_segment_identity(
         builder.route = route.to_string();
     }
 }
-

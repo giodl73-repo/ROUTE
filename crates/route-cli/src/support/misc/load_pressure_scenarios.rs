@@ -6,4 +6,3 @@ pub(crate) fn load_pressure_scenarios(path: &Path) -> Result<Vec<PressureScenari
     let file = std::fs::File::open(path)?;
     parse_pressure_scenarios(file)
 }
-

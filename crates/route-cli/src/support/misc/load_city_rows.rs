@@ -9,4 +9,3 @@ pub(crate) fn load_city_rows(path: &Path) -> Result<Vec<CitySeedRow>> {
         serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
     Ok(file.cities)
 }
-

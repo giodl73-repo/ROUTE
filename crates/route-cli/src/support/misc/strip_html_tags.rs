@@ -25,4 +25,3 @@ pub(crate) fn strip_html_tags(input: &str) -> String {
         .replace("&#39;", "'")
         .replace("&quot;", "\"")
 }
-

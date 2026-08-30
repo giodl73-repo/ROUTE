@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn summarize_t1_failure_events(rows: &[T1FailureEventRow]) -> Vec<T1FailureEventSummary> {
+pub(crate) fn summarize_t1_failure_events(
+    rows: &[T1FailureEventRow],
+) -> Vec<T1FailureEventSummary> {
     let mut by_site: std::collections::BTreeMap<&str, Vec<&T1FailureEventRow>> =
         std::collections::BTreeMap::new();
     for row in rows.iter().filter(|row| row.freight_relevant) {
@@ -55,4 +57,3 @@ pub(crate) fn summarize_t1_failure_events(rows: &[T1FailureEventRow]) -> Vec<T1F
         })
         .collect()
 }
-

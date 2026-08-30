@@ -1,11 +1,8 @@
 //! `Diamond` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    at: String
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, at: String) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -51,11 +48,12 @@ pub(crate) fn run(
     } else {
         // Analyze one specific intersection
         println!("route diamond {at}");
-        let intersection = route_network::find_intersection(&graph, &at)
-            .ok_or_else(|| anyhow::anyhow!(
+        let intersection = route_network::find_intersection(&graph, &at).ok_or_else(|| {
+            anyhow::anyhow!(
                 "No T1/T1 intersection found matching '{}'. Try 'route diamond all' to list all.",
                 at
-            ))?;
+            )
+        })?;
         println!(
             "  Found: {} ({:.2}°N {:.2}°W)",
             intersection.name, intersection.lat, -intersection.lon
@@ -107,7 +105,6 @@ pub(crate) fn run(
             );
         }
     }
-        
+
     Ok(())
 }
-

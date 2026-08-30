@@ -10,4 +10,3 @@ pub(crate) fn validate_census_api_key(value: Option<String>) -> Result<String> {
     }
     Ok(key.to_string())
 }
-

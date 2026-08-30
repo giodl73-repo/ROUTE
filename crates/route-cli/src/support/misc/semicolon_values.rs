@@ -10,4 +10,3 @@ pub(crate) fn semicolon_values(value: &str) -> Vec<String> {
         .map(ToString::to_string)
         .collect()
 }
-

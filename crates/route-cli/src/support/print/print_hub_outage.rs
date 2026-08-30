@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_hub_outage(summary: &route_sim::HubOutageSummary, config: route_sim::HubOutageConfig) {
+pub(crate) fn print_hub_outage(
+    summary: &route_sim::HubOutageSummary,
+    config: route_sim::HubOutageConfig,
+) {
     println!("route hub-outage — relay hub outage sensitivity\n");
     println!(
         "Model: {:.1}h outage, {:.0}% reserve-driver absorption, {:.0}% adjacent-hub absorption of remaining swaps.\n",
@@ -52,4 +55,3 @@ pub(crate) fn print_hub_outage(summary: &route_sim::HubOutageSummary, config: ro
         "  Gate interpretation: this is a heuristic L2 outage bound; publication-grade proof still needs actual adjacent-hub capacity, driver reserve rosters, and dispatch recovery rules."
     );
 }
-

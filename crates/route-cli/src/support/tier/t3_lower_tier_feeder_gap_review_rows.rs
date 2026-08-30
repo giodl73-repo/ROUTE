@@ -53,4 +53,3 @@ pub(crate) fn t3_lower_tier_feeder_gap_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

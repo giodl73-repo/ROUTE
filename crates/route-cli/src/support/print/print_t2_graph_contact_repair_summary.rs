@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t2_graph_contact_repair_summary(output: &Path, rows: &[T2GraphContactRepairRow]) {
+pub(crate) fn print_t2_graph_contact_repair_summary(
+    output: &Path,
+    rows: &[T2GraphContactRepairRow],
+) {
     let mut counts = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
         *counts.entry(row.repair_class.as_str()).or_default() += 1;
@@ -16,4 +19,3 @@ pub(crate) fn print_t2_graph_contact_repair_summary(output: &Path, rows: &[T2Gra
         println!("  {repair_class}: {count}");
     }
 }
-

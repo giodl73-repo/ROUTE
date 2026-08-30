@@ -19,4 +19,3 @@ pub(crate) fn print_t2_bundle_overlay_repair_target_summary(
         println!("  {class}: {count}");
     }
 }
-

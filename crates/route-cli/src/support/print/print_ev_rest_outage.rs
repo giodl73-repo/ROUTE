@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_ev_rest_outage(data_dir: &std::path::Path, config: route_sim::EvRestOutageConfig) {
+pub(crate) fn print_ev_rest_outage(
+    data_dir: &std::path::Path,
+    config: route_sim::EvRestOutageConfig,
+) {
     let corridors = vec![
         route_sim::load_corridor(data_dir, "ny_chi").unwrap_or_else(route_sim::ny_chi),
         route_sim::load_corridor(data_dir, "la_sea").unwrap_or_else(route_sim::la_sea),
@@ -57,4 +60,3 @@ pub(crate) fn print_ev_rest_outage(data_dir: &std::path::Path, config: route_sim
         "  Gate interpretation: this is a heuristic L2 outage bound; publication-grade proof still needs station inventory, grid outage distributions, and observed queue data."
     );
 }
-

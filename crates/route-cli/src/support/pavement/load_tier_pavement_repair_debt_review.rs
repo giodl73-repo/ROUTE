@@ -12,4 +12,3 @@ pub(crate) fn load_tier_pavement_repair_debt_review(
     }
     Ok(rows)
 }
-

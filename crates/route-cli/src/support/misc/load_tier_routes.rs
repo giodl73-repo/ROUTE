@@ -32,4 +32,3 @@ pub(crate) fn load_tier_routes(path: &Path, tier: &str) -> Result<Vec<String>> {
     routes.dedup();
     Ok(routes)
 }
-

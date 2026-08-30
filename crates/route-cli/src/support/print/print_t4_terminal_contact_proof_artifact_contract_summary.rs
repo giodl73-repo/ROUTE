@@ -12,4 +12,3 @@ pub(crate) fn print_t4_terminal_contact_proof_artifact_contract_summary(
         output.display()
     );
 }
-

@@ -24,4 +24,3 @@ pub(crate) fn t1_topology_repair_rows(rows: &[T1DesignReviewCsvRow]) -> Vec<T1To
         })
         .collect()
 }
-

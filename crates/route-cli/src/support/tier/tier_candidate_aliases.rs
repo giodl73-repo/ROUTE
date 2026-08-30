@@ -2,7 +2,12 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str, bundle_scope: &str) -> String {
+pub(crate) fn tier_candidate_aliases(
+    tier: &str,
+    region_id: &str,
+    route: &str,
+    bundle_scope: &str,
+) -> String {
     let mut aliases = vec![
         format!("current-tier:{tier}"),
         format!("current-zone:{region_id}"),
@@ -15,4 +20,3 @@ pub(crate) fn tier_candidate_aliases(tier: &str, region_id: &str, route: &str, b
     }
     aliases.join(";")
 }
-

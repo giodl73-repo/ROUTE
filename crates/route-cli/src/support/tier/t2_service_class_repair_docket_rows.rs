@@ -67,4 +67,3 @@ pub(crate) fn t2_service_class_repair_docket_rows(
     });
     rows
 }
-

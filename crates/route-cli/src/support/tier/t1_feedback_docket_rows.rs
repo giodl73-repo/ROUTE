@@ -101,4 +101,3 @@ pub(crate) fn t1_feedback_docket_rows(
     });
     rows
 }
-

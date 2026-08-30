@@ -72,4 +72,3 @@ pub(crate) fn t3_zone_map_diagnostic_rows(
     rows.sort_by(|a, b| a.zone_id.cmp(&b.zone_id));
     rows
 }
-

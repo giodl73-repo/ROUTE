@@ -14,4 +14,3 @@ pub(crate) fn tdot_smartway_event_type(text: &str) -> &'static str {
         "incident"
     }
 }
-

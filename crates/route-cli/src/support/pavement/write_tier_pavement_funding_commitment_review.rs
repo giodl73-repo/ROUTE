@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_funding_commitment_review(
     writer.flush()?;
     Ok(())
 }
-

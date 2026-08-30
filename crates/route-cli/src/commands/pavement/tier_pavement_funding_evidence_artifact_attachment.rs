@@ -1,12 +1,12 @@
 //! `TierPavementFundingEvidenceArtifactAttachment` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     source_capture: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -21,10 +21,8 @@ pub(crate) fn run(
     print_tier_pavement_funding_evidence_artifact_attachment_summary(&output, &rows);
 
     if gate {
-        let failures = tier_pavement_funding_evidence_artifact_attachment_gate_failures(
-            &rows,
-            &capture_rows,
-        );
+        let failures =
+            tier_pavement_funding_evidence_artifact_attachment_gate_failures(&rows, &capture_rows);
         if !failures.is_empty() {
             println!();
             println!("Tier pavement funding evidence artifact-attachment gate: FAIL");
@@ -36,7 +34,6 @@ pub(crate) fn run(
         println!();
         println!("Tier pavement funding evidence artifact-attachment gate: PASS");
     }
-        
+
     Ok(())
 }
-

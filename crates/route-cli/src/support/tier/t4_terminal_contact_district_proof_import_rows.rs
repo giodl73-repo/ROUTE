@@ -61,4 +61,3 @@ pub(crate) fn t4_terminal_contact_district_proof_import_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

@@ -21,4 +21,3 @@ pub(crate) fn print_t4_terminal_columbus_proof_attempt_summary(
         println!("  {status}: {count}");
     }
 }
-

@@ -26,4 +26,3 @@ pub(crate) fn tier_candidate_column_decision(
         _ => "blocked",
     }
 }
-

@@ -11,4 +11,3 @@ pub(crate) fn merge_qualification_effects(left: &str, right: &str) -> String {
     }
     join_pipe_set(&values)
 }
-

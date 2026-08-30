@@ -11,4 +11,3 @@ pub(crate) fn bottleneck_signal_label(row: &ScoreSignalRow) -> &'static str {
         "capacity_needs_flow"
     }
 }
-

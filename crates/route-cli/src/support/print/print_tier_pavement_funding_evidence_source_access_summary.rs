@@ -18,4 +18,3 @@ pub(crate) fn print_tier_pavement_funding_evidence_source_access_summary(
         );
     }
 }
-

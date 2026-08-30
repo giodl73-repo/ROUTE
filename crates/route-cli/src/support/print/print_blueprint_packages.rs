@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_blueprint_packages(rows: &[BlueprintPackageRow], blockers: bool, details: bool) {
+pub(crate) fn print_blueprint_packages(
+    rows: &[BlueprintPackageRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = blueprint_gate_failures(rows);
     let filtered = if blockers {
         rows.iter()
@@ -69,4 +73,3 @@ pub(crate) fn print_blueprint_packages(rows: &[BlueprintPackageRow], blockers: b
         }
     }
 }
-

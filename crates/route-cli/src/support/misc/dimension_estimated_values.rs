@@ -22,4 +22,3 @@ pub(crate) fn dimension_estimated_values(scores: &route_score::DimensionScores) 
         scores.d3.estimated,
     ]
 }
-

@@ -58,4 +58,3 @@ pub(crate) fn t4_terminal_access_decision(
         )
     }
 }
-

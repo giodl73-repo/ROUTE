@@ -38,4 +38,3 @@ pub(crate) fn tier_pavement_downgrade_exclusion_decision_rows(
         })
         .collect()
 }
-

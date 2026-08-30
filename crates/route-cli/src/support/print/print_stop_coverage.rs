@@ -33,4 +33,3 @@ pub(crate) fn print_stop_coverage(tier: &str, rows: &[StopCoverageRow], blockers
         );
     }
 }
-

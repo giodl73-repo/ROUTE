@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_t3_t4_pressure_intake(path: &Path, rows: &[T3T4PressureIntakeRow]) -> Result<()> {
+pub(crate) fn write_t3_t4_pressure_intake(
+    path: &Path,
+    rows: &[T3T4PressureIntakeRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_t3_t4_pressure_intake(path: &Path, rows: &[T3T4PressureIntak
     writer.flush()?;
     Ok(())
 }
-

@@ -14,4 +14,3 @@ pub(crate) fn combine_iowa_date_time(issue_date: &str, time: &str) -> String {
         time.trim()
     )
 }
-

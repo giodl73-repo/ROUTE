@@ -62,8 +62,8 @@ pub(crate) fn bundle_architecture_rows() -> Vec<BundleArchitectureRow> {
             "route-cli",
             "bundle-orchestration",
             "route national-segment-bundles --gate",
-            "crates/route-cli/src/main.rs",
-            "NationalSegmentBundles;route_network::build_segment_bundles;BundleArchitecture",
+            "crates/route-cli/src/support/network/national_segment_bundle_rows.rs",
+            "route_network::build_segment_bundles",
             "bundle-native",
             "orchestrate gates while moving identity policy into library crates",
         ),
@@ -103,4 +103,3 @@ pub(crate) fn bundle_architecture_rows() -> Vec<BundleArchitectureRow> {
     )
     .collect()
 }
-

@@ -67,4 +67,3 @@ pub(crate) fn t2_stitched_member_candidate_scope_review_gate_failures(
     }
     failures
 }
-

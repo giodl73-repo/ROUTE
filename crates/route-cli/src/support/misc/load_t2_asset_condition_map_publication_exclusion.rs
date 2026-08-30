@@ -15,4 +15,3 @@ pub(crate) fn load_t2_asset_condition_map_publication_exclusion(
     }
     Ok(rows)
 }
-

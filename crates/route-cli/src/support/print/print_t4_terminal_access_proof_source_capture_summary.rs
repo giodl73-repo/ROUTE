@@ -19,4 +19,3 @@ pub(crate) fn print_t4_terminal_access_proof_source_capture_summary(
         println!("  {status}: {count}");
     }
 }
-

@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t1_evidence_windows(rows: &[T1EvidenceWindowRow], blockers: bool, details: bool) {
+pub(crate) fn print_t1_evidence_windows(
+    rows: &[T1EvidenceWindowRow],
+    blockers: bool,
+    details: bool,
+) {
     let filtered: Vec<&T1EvidenceWindowRow> = rows
         .iter()
         .filter(|row| !blockers || !row.promotion_eligible)
@@ -52,4 +56,3 @@ pub(crate) fn print_t1_evidence_windows(rows: &[T1EvidenceWindowRow], blockers: 
         }
     }
 }
-

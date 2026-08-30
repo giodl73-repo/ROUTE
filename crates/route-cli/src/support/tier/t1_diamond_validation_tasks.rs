@@ -70,4 +70,3 @@ pub(crate) fn t1_diamond_validation_tasks(
     });
     tasks
 }
-

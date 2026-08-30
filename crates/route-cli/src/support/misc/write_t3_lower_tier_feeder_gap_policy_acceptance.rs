@@ -20,4 +20,3 @@ pub(crate) fn write_t3_lower_tier_feeder_gap_policy_acceptance(
     writer.flush()?;
     Ok(())
 }
-

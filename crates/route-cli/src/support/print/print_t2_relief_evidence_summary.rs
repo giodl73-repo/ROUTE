@@ -16,4 +16,3 @@ pub(crate) fn print_t2_relief_evidence_summary(output: &Path, rows: &[T2ReliefEv
         println!("  {action}: {count}");
     }
 }
-

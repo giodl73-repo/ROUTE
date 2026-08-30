@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_significant_moments(rows: &[SignificantMomentRow], blockers: bool, details: bool) {
+pub(crate) fn print_significant_moments(
+    rows: &[SignificantMomentRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = significant_moment_gate_failures(rows);
     let failure_ids = failures
         .iter()
@@ -50,4 +54,3 @@ pub(crate) fn print_significant_moments(rows: &[SignificantMomentRow], blockers:
         }
     }
 }
-

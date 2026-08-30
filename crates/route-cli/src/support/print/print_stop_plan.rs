@@ -60,4 +60,3 @@ pub(crate) fn print_stop_plan(route: &str, stops: &[&StopCandidateRow], details:
         println!("  no stop candidates touch {route}");
     }
 }
-

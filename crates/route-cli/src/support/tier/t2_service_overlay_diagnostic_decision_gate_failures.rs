@@ -86,4 +86,3 @@ pub(crate) fn t2_service_overlay_diagnostic_decision_gate_failures(
     }
     failures
 }
-

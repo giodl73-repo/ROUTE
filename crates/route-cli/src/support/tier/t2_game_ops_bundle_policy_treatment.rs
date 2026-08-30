@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_game_ops_bundle_policy_treatment(row: &T2GameOpsBundleEvidenceReviewRow) -> &'static str {
+pub(crate) fn t2_game_ops_bundle_policy_treatment(
+    row: &T2GameOpsBundleEvidenceReviewRow,
+) -> &'static str {
     match row.repair_class.as_str() {
         "service-class" if row.service_repair_class == "local-zone" => {
             "hold game/ops claims until local-zone overlay handoff is accepted or explicitly carried"
@@ -18,4 +20,3 @@ pub(crate) fn t2_game_ops_bundle_policy_treatment(row: &T2GameOpsBundleEvidenceR
         _ => "hold game/ops claims until bundle-binding repair evidence is accepted",
     }
 }
-

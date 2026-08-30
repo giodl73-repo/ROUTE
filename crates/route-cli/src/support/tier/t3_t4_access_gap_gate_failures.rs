@@ -54,4 +54,3 @@ pub(crate) fn t3_t4_access_gap_gate_failures(rows: &[T3T4AccessGapRow]) -> Vec<S
     }
     failures
 }
-

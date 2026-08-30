@@ -17,4 +17,3 @@ pub(crate) fn t1_failure_event_has_observation_contract(row: &T1FailureEventRow)
         && confidence_is_labeled
         && has_timing
 }
-

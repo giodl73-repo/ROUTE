@@ -12,4 +12,3 @@ pub(crate) fn print_t1_topology_repair_summary(output: &Path, rows: &[T1Topology
         println!("  {repair_type}: {count}");
     }
 }
-

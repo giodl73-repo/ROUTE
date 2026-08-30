@@ -10,4 +10,3 @@ pub(crate) fn load_tier_segment_candidates(path: &Path) -> Result<Vec<TierSegmen
     }
     Ok(rows)
 }
-

@@ -69,4 +69,3 @@ pub(crate) fn t2_bundle_overlay_repair_delta_gate_failures(
     }
     failures
 }
-

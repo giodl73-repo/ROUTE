@@ -19,4 +19,3 @@ pub(crate) fn print_t2_service_class_repair_docket_summary(
         println!("  {class}: {count}");
     }
 }
-

@@ -15,4 +15,3 @@ pub(crate) fn load_t4_terminal_columbus_proof_intake(
     }
     Ok(rows)
 }
-

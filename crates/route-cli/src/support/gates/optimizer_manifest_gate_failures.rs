@@ -89,4 +89,3 @@ pub(crate) fn optimizer_manifest_gate_failures(rows: &[TierOptimizerRunRow]) -> 
     }
     failures
 }
-

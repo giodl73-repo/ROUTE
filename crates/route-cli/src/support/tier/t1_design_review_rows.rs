@@ -86,4 +86,3 @@ pub(crate) fn t1_design_review_rows(selector_rows: &[T1LineSelectorRow]) -> Vec<
         })
         .collect()
 }
-

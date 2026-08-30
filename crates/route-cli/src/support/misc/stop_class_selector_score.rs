@@ -12,4 +12,3 @@ pub(crate) fn stop_class_selector_score(value: &str) -> u16 {
         _ => 0,
     }
 }
-

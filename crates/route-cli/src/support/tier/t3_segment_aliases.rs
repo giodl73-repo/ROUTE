@@ -16,4 +16,3 @@ pub(crate) fn t3_segment_aliases(zone_id: &str, route: &str, layer: &str) -> Str
     }
     aliases.join(";")
 }
-

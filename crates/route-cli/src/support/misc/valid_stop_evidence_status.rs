@@ -14,4 +14,3 @@ pub(crate) fn valid_stop_evidence_status(status: &str) -> bool {
             | "missing_graph_data"
     )
 }
-

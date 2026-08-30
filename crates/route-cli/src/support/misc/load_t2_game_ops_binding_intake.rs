@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_game_ops_binding_intake(path: &Path) -> Result<Vec<T2GameOpsBindingIntakeRow>> {
+pub(crate) fn load_t2_game_ops_binding_intake(
+    path: &Path,
+) -> Result<Vec<T2GameOpsBindingIntakeRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_game_ops_binding_intake(path: &Path) -> Result<Vec<T2GameO
     }
     Ok(rows)
 }
-

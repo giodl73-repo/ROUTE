@@ -69,4 +69,3 @@ pub(crate) fn tier_contact_witness_rows(
         })
         .collect()
 }
-

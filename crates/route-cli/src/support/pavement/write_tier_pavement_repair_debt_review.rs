@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_repair_debt_review(
     writer.flush()?;
     Ok(())
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn write_t2_regionalizer(path: &Path, rows: &[T2RegionalizerRow]) -> 
     writer.flush()?;
     Ok(())
 }
-

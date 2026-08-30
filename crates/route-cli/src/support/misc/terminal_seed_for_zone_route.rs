@@ -40,4 +40,3 @@ pub(crate) fn terminal_seed_for_zone_route(zone_id: &str, route: &str) -> Option
     };
     Some(district.to_string())
 }
-

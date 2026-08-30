@@ -10,4 +10,3 @@ pub(crate) fn route_render_action(row: &T3ZoneRouteColumnRow) -> String {
         _ => "hold route outside rendered zone board".to_string(),
     }
 }
-

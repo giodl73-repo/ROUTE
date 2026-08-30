@@ -72,4 +72,3 @@ pub(crate) fn tier_pavement_repair_disposition_gate_failures(
     }
     failures
 }
-

@@ -19,4 +19,3 @@ pub(crate) fn tier_candidate_column_required_artifact(
         _ => row.required_artifact.clone(),
     }
 }
-

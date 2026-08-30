@@ -19,4 +19,3 @@ pub(crate) fn print_t2_overlay_p1_structural_readiness_review_summary(
         println!("  {decision}: {count}");
     }
 }
-

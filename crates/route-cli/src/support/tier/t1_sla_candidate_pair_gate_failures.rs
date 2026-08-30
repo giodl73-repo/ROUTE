@@ -71,4 +71,3 @@ pub(crate) fn t1_sla_candidate_pair_gate_failures(
     }
     failures
 }
-

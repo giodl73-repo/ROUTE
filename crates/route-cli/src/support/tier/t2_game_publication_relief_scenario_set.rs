@@ -14,4 +14,3 @@ pub(crate) fn t2_game_publication_relief_scenario_set(
         .map(|row| row.scenario_id.clone())
         .collect()
 }
-

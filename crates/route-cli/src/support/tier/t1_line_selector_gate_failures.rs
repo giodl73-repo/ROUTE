@@ -77,4 +77,3 @@ pub(crate) fn t1_line_selector_gate_failures(
     }
     failures
 }
-

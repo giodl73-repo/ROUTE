@@ -13,4 +13,3 @@ pub(crate) fn load_tier_pavement_source_gaps(path: &Path) -> Result<Vec<TierPave
     }
     Ok(rows)
 }
-

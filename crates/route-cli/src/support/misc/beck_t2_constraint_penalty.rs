@@ -16,4 +16,3 @@ pub(crate) fn beck_t2_constraint_penalty(row: &route_map::BeckT2DiagnosticRow) -
         _ => 1.0,
     }
 }
-

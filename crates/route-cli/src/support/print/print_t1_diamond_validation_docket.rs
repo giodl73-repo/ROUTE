@@ -37,4 +37,3 @@ pub(crate) fn print_t1_diamond_validation_docket(
         }
     }
 }
-

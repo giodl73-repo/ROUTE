@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_hpms_scope_broadening(
     writer.flush()?;
     Ok(())
 }
-

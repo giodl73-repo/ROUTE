@@ -14,4 +14,3 @@ pub(crate) fn mdot_midrive_event_type(text: &str) -> &'static str {
         "incident"
     }
 }
-

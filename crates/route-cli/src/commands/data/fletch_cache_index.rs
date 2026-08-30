@@ -1,6 +1,6 @@
 //! `FletchCacheIndex` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -8,7 +8,7 @@ pub(crate) fn run(
     cache_manifest: Option<PathBuf>,
     output: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -18,13 +18,12 @@ pub(crate) fn run(
     let route_manifest = route_data::Manifest::load(&manifest_path)
         .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
     let cache_root = route_manifest.cache_dir.join(".fletch");
-    let cache_manifest_path = cache_manifest
-        .unwrap_or_else(|| route_data::fletch_cache_manifest_path(&cache_root));
+    let cache_manifest_path =
+        cache_manifest.unwrap_or_else(|| route_data::fletch_cache_manifest_path(&cache_root));
     let registry_report = route_data::load_fletch_source_registry(&registry)
         .with_context(|| format!("loading {}", registry.display()))?;
-    let cache_manifest =
-        route_data::read_fletch_cache_manifest(&cache_manifest_path, &cache_root)
-            .with_context(|| format!("loading {}", cache_manifest_path.display()))?;
+    let cache_manifest = route_data::read_fletch_cache_manifest(&cache_manifest_path, &cache_root)
+        .with_context(|| format!("loading {}", cache_manifest_path.display()))?;
     let report = route_data::fletch_cache_index_report(&registry_report, &cache_manifest);
     route_data::write_fletch_cache_index(&output, &report)
         .with_context(|| format!("writing {}", output.display()))?;
@@ -43,7 +42,6 @@ pub(crate) fn run(
         println!();
         println!("FLETCH cache-index gate: PASS");
     }
-        
+
     Ok(())
 }
-

@@ -1,21 +1,20 @@
 //! `T2StitchedMemberSourceAccessPolicy` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     evidence_acquisition: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
     println!("route t2-stitched-member-source-access-policy");
-    let acquisition_rows =
-        load_t2_stitched_member_evidence_acquisition(&evidence_acquisition)
-            .with_context(|| format!("loading {}", evidence_acquisition.display()))?;
+    let acquisition_rows = load_t2_stitched_member_evidence_acquisition(&evidence_acquisition)
+        .with_context(|| format!("loading {}", evidence_acquisition.display()))?;
     let rows = t2_stitched_member_source_access_policy_rows(&acquisition_rows);
     write_t2_stitched_member_source_access_policy(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
@@ -34,7 +33,6 @@ pub(crate) fn run(
         }
         println!("T2 stitched member source access policy gate: PASS");
     }
-        
+
     Ok(())
 }
-

@@ -23,4 +23,3 @@ pub(crate) fn pavement_acquisition_action(
         )
     }
 }
-

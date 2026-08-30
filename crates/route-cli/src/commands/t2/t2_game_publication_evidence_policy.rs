@@ -1,13 +1,8 @@
 //! `T2GamePublicationEvidencePolicy` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    review: PathBuf,
-    output: PathBuf,
-    gate: bool
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, review: PathBuf, output: PathBuf, gate: bool) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -21,8 +16,7 @@ pub(crate) fn run(
     print_t2_game_publication_evidence_policy_summary(&output, &rows);
 
     if gate {
-        let failures =
-            t2_game_publication_evidence_policy_gate_failures(&rows, &review_rows);
+        let failures = t2_game_publication_evidence_policy_gate_failures(&rows, &review_rows);
         if !failures.is_empty() {
             println!();
             println!("T2 game publication evidence policy gate: FAIL");
@@ -34,7 +28,6 @@ pub(crate) fn run(
         println!();
         println!("T2 game publication evidence policy gate: PASS");
     }
-        
+
     Ok(())
 }
-

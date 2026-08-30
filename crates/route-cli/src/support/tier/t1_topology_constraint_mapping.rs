@@ -36,4 +36,3 @@ pub(crate) fn t1_topology_constraint_mapping(
         ),
     }
 }
-

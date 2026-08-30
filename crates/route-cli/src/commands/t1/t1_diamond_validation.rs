@@ -1,6 +1,6 @@
 //! `T1DiamondValidation` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -11,23 +11,23 @@ pub(crate) fn run(
     with_access: bool,
     source_health: PathBuf,
     details: bool,
-    gate_catalog: bool
+    gate_catalog: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-    let rows = load_t1_diamond_validation(&ledger).with_context(|| {
-        format!("loading T1 diamond validation ledger {}", ledger.display())
-    })?;
+    let rows = load_t1_diamond_validation(&ledger)
+        .with_context(|| format!("loading T1 diamond validation ledger {}", ledger.display()))?;
     if docket {
-        let source_rows = if with_access {
-            Some(load_t1_source_health(&source_health).with_context(|| {
-                format!("loading T1 source health {}", source_health.display())
-            })?)
-        } else {
-            None
-        };
+        let source_rows =
+            if with_access {
+                Some(load_t1_source_health(&source_health).with_context(|| {
+                    format!("loading T1 source health {}", source_health.display())
+                })?)
+            } else {
+                None
+            };
         print_t1_diamond_validation_docket(
             &rows,
             priority.as_deref(),
@@ -62,7 +62,6 @@ pub(crate) fn run(
         println!();
         println!("T1/T1 diamond validation catalog gate: PASS");
     }
-        
+
     Ok(())
 }
-

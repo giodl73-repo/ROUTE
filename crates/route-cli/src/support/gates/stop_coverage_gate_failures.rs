@@ -8,4 +8,3 @@ pub(crate) fn stop_coverage_gate_failures(rows: &[StopCoverageRow]) -> Vec<Strin
         .map(|row| format!("{}: {}", row.route, row.failures.join("; ")))
         .collect()
 }
-

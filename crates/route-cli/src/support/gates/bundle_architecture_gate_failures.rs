@@ -44,4 +44,3 @@ pub(crate) fn bundle_architecture_gate_failures(rows: &[BundleArchitectureRow]) 
     }
     failures
 }
-

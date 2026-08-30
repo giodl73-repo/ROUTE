@@ -1,24 +1,22 @@
 //! `Report` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     designation: String,
     output: Option<PathBuf>,
-    allow_partial: bool
+    allow_partial: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-
     let norm = normalise_designation(&designation);
     println!("route report {norm}");
     let manifest = route_data::Manifest::load(&manifest_path)
         .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
-    let canonical_output =
-        PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
+    let canonical_output = PathBuf::from(format!("corpus/existing/{}.md", norm.to_lowercase()));
     let output_path = output.unwrap_or_else(|| canonical_output.clone());
     ensure_reviewed_report_sources(
         &canonical_output,
@@ -28,11 +26,10 @@ pub(crate) fn run(
     )?;
     let mut graph = load_graph(&manifest)?;
     let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
-    let mut vals_sorted: Vec<f64> =
-        bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+    let mut vals_sorted: Vec<f64> = bc_raw.values().copied().filter(|v| v.is_finite()).collect();
     vals_sorted.sort_by(f64::total_cmp);
-    let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
-        .min(vals_sorted.len().saturating_sub(1));
+    let p95_idx =
+        ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
     let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
     let bc = bc_raw
         .into_iter()
@@ -40,14 +37,13 @@ pub(crate) fn run(
         .collect();
     graph.edge_betweenness = Some(bc);
 
-    let mut corridor =
-        route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
-            anyhow::anyhow!(
-                "Route '{}' not found in graph. Available: {:?}",
-                norm,
-                &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
-            )
-        })?;
+    let mut corridor = route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Route '{}' not found in graph. Available: {:?}",
+            norm,
+            &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
+        )
+    })?;
 
     let excluded_sources = if norm == "I80" {
         load_excluded_i80_sources(Path::new("data/i80-report-source-contract.csv"))?
@@ -81,13 +77,7 @@ pub(crate) fn run(
     let hazard_zones = load_hazard_zones();
 
     if acs_counties.is_some() {
-        join_acs_population_to_corridor(
-            &manifest,
-            &graph,
-            &norm,
-            &mut corridor.attributes,
-            false,
-        );
+        join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes, false);
     }
     if !ports.is_empty() {
         join_port_access_to_corridor(&graph, &norm, &mut corridor.attributes, &ports);
@@ -132,8 +122,7 @@ pub(crate) fn run(
         manifest_path: manifest_path.display().to_string(),
         scoring_config_path: scoring_config_path.display().to_string(),
     };
-    let annotation_path =
-        PathBuf::from(format!("corpus/annotations/{}.toml", norm.to_lowercase()));
+    let annotation_path = PathBuf::from(format!("corpus/annotations/{}.toml", norm.to_lowercase()));
     route_report::write_corpus_entry_with_provenance_and_annotations(
         &corridor,
         &scores,

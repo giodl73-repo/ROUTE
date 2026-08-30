@@ -23,4 +23,3 @@ pub(crate) fn route_exception_allows_connectivity_gate(
         }
     }
 }
-

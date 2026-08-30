@@ -1,13 +1,13 @@
 //! `T1FailureEvents` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     events: PathBuf,
     ledger: PathBuf,
     write_ledger: Option<PathBuf>,
-    gate_observations: bool
+    gate_observations: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -45,7 +45,6 @@ pub(crate) fn run(
         println!();
         println!("  updated ledger -> {}", output.display());
     }
-        
+
     Ok(())
 }
-

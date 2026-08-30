@@ -9,4 +9,3 @@ pub(crate) fn is_three_digit_interstate(route: &str) -> bool {
         .map(|number| number >= 100)
         .unwrap_or_default()
 }
-

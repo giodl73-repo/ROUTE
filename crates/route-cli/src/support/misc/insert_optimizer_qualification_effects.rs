@@ -16,4 +16,3 @@ pub(crate) fn insert_optimizer_qualification_effects(
         }
     }
 }
-

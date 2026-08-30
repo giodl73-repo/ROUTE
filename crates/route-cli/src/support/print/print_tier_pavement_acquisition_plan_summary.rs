@@ -42,4 +42,3 @@ pub(crate) fn print_tier_pavement_acquisition_plan_summary(
         }
     }
 }
-

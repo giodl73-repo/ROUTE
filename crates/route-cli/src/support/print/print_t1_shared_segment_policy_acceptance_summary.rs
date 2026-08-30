@@ -17,4 +17,3 @@ pub(crate) fn print_t1_shared_segment_policy_acceptance_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

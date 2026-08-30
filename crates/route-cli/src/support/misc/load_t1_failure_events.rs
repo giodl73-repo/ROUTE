@@ -6,4 +6,3 @@ pub(crate) fn load_t1_failure_events(path: &Path) -> Result<Vec<T1FailureEventRo
     let file = std::fs::File::open(path)?;
     parse_t1_failure_events(file)
 }
-

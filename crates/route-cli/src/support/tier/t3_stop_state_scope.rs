@@ -13,4 +13,3 @@ pub(crate) fn t3_stop_state_scope(stops: &[&StopCandidateRow]) -> String {
         .collect::<Vec<_>>()
         .join(";")
 }
-

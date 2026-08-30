@@ -20,4 +20,3 @@ pub(crate) fn write_t2_service_overlay_diagnostic_decisions(
     writer.flush()?;
     Ok(())
 }
-

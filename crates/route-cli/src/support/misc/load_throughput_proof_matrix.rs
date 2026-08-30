@@ -6,4 +6,3 @@ pub(crate) fn load_throughput_proof_matrix(path: &Path) -> Result<Vec<Throughput
     let file = std::fs::File::open(path)?;
     parse_throughput_proof_matrix(file)
 }
-

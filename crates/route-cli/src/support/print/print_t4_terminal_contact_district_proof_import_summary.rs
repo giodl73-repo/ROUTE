@@ -19,4 +19,3 @@ pub(crate) fn print_t4_terminal_contact_district_proof_import_summary(
         println!("  {status}: {count}");
     }
 }
-

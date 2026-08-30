@@ -40,4 +40,3 @@ pub(crate) fn t1_topology_repair_contract(
         )
     }
 }
-

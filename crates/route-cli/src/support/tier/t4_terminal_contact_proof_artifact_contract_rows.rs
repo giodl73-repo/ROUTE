@@ -30,4 +30,3 @@ pub(crate) fn t4_terminal_contact_proof_artifact_contract_rows(
         validation_status: "pass".to_string(),
     }]
 }
-

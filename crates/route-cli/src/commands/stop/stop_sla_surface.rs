@@ -1,11 +1,8 @@
 //! `StopSlaSurface` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    output: PathBuf
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, output: PathBuf) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -15,11 +12,9 @@ pub(crate) fn run(
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating {}", parent.display()))?;
     }
-    std::fs::write(&output, csv)
-        .with_context(|| format!("writing {}", output.display()))?;
+    std::fs::write(&output, csv).with_context(|| format!("writing {}", output.display()))?;
     println!("route stop-sla-surface — wrote {}", output.display());
     println!("  source: Beck T1/T2 stops and lines; evidence_status=heuristic-planning");
-        
+
     Ok(())
 }
-

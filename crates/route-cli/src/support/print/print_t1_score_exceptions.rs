@@ -39,4 +39,3 @@ pub(crate) fn print_t1_score_exceptions(
         }
     }
 }
-

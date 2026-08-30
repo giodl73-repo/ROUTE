@@ -18,4 +18,3 @@ pub(crate) fn push_csv_line(csv: &mut String, cells: &[&str]) {
     }
     csv.push('\n');
 }
-

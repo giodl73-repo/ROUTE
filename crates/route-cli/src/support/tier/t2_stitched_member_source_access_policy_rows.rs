@@ -48,4 +48,3 @@ pub(crate) fn t2_stitched_member_source_access_policy_rows(
     });
     rows
 }
-

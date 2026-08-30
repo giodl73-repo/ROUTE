@@ -47,4 +47,3 @@ pub(crate) fn print_optimizer_constraint_ledger_summary(
         }
     }
 }
-
