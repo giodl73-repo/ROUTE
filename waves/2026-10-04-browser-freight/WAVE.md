@@ -2,7 +2,7 @@
 name: Browser freight workbench
 slug: browser-freight-workbench
 type: plan
-status: draft
+status: done
 rubric_version: v1.0
 author: Codex with Gio Della-Libera
 created: 2026-10-04
@@ -10,6 +10,7 @@ updated: 2026-10-04
 sources: []
 wave: browser-freight
 date_open: 2026-10-04
+date_close: 2026-10-04
 ---
 
 # Browser Freight Workbench
@@ -30,13 +31,17 @@ The user authorized implementation, publication, and TRACKER snapshotting. A tea
 |---|---|---|
 | 01 — Portable kernel and bounded adapter | done | route-kernel; route-web; native re-exports |
 | 02 — Interactive page and browser checks | done | web; tools/build-pages.py; tests/browser |
-| 03 — Review, publish, and snapshot | active | CI; Pages; TRACKER |
+| 03 — Review, publish, and snapshot handoff | done | PR #21; hosted workflow 37255171471; CLOSE.md |
 
 ## Done criteria
 - Native and WASM use one implementation of the extracted calculations.
 - Baseline comparison, keyboard controls, sharing, and JSON export work with real WASM.
 - Rust and browser checks pass; review findings are resolved.
-- Master is published and verified; TRACKER records its pushed SHA.
+- Master is published and verified; its pushed SHA and receipt are available for the TRACKER-owned snapshot.
 
 ## Non-goals
 No national routing, new empirical traffic data, capital recommendations, coupled delivery simulation, or research-claim promotion.
+
+## Close evidence
+
+See [CLOSE.md](CLOSE.md). Child implementation and publication are complete; TRACKER owns the final clean default-branch snapshot. No next wave is opened automatically.

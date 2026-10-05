@@ -247,4 +247,4 @@ non-destructive reproduction and comparison command.
 5. Close a wave only after the wave card, pulse statuses, gates, and commit list
    agree.
 
-| 2026-10-04 | [Browser Freight Workbench](2026-10-04-browser-freight/WAVE.md) | Shared portable Rust calculations and synthetic interactive Pages scenarios. | active |
+| 2026-10-04 | [Browser Freight Workbench](2026-10-04-browser-freight/WAVE.md) | Shared portable Rust calculations and synthetic interactive Pages scenarios. | done |
