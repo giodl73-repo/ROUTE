@@ -32,3 +32,22 @@ test('invalid shared scenarios fall back safely and broken worker disables expor
  await page.goto('/ROUTE/?capacity_pct=0&corridor=99');await expect(page.locator('#status')).toContainText('Ready');await expect(page.locator('#capacity')).toHaveValue('100');
  await page.route('**/pkg/route_web_bg.wasm',route=>route.abort());await page.reload();await expect(page.locator('#status')).toContainText(/could not load|Failed|fetch/i);await expect(page.locator('#download')).toBeDisabled();
 });
+
+test('whole trip comparison uses WASM, reconciles totals and survives sharing',async({page})=>{
+ await page.goto('/ROUTE/?corridor=2&demand_pct=200&capacity_pct=25');
+ await expect(page.locator('#status')).toContainText('Ready');
+ await expect(page.locator('#trips tr')).toHaveCount(3);
+ await expect(page.locator('#trips tr').first()).toContainText('10 h');
+ await expect(page.locator('.timebar')).toHaveCount(3);
+ const rows=await page.locator('#trips').textContent();
+ await page.reload();await expect(page.locator('#status')).toContainText('Ready');
+ await expect(page.locator('#trips')).toHaveText(rows);
+ await page.setViewportSize({width:390,height:844});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('trip breakdown widths represent hours and omit zero durations',async({page})=>{
+ await page.goto('/ROUTE/');await expect(page.locator('#status')).toContainText('Ready');
+ const bars=await page.locator('.timebar').evaluateAll(bars=>bars.map(bar=>Array.from(bar.children).map(part=>({hours:Number(part.dataset.hours),width:part.getBoundingClientRect().width}))));
+ for(const parts of bars){const totalHours=parts.reduce((a,p)=>a+p.hours,0),totalWidth=parts.reduce((a,p)=>a+p.width,0);for(const part of parts){expect(part.hours).toBeGreaterThan(0);expect(Math.abs(part.width/totalWidth-part.hours/totalHours)).toBeLessThan(0.003);}}
+});

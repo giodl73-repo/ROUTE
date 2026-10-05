@@ -38,7 +38,14 @@ pub struct Leg {
     pub hours: f64,
 }
 #[derive(Debug, Serialize)]
+pub struct TripComparison {
+    pub mode: &'static str,
+    pub typical: route_kernel::od::TripResult,
+    pub delayed: route_kernel::od::TripResult,
+}
+#[derive(Debug, Serialize)]
 pub struct Run {
+    pub trips: Vec<TripComparison>,
     pub hours: f64,
     pub delay_hours: f64,
     pub target_gap_hours: f64,
@@ -130,7 +137,52 @@ fn run(i: &Input) -> Run {
             adjacent_absorption_fraction: i.adjacent_pct / 100.,
         },
     );
+    use route_kernel::od::{sample_trip_comparison, CorridorSegment, DriverMode, OdCorridor};
+    let corridor = OdCorridor {
+        name: "Synthetic fixed corridor".into(),
+        origin: "West".into(),
+        destination: "East".into(),
+        hos_driving_hours: 11.,
+        hos_rest_hours: 10.,
+        fixed_overhead_hours: 2.,
+        segments: legs
+            .iter()
+            .map(|leg| CorridorSegment {
+                name: leg.name.into(),
+                miles: leg.miles,
+                base_vc: leg.vc_ratio,
+                free_flow_mph: 65.,
+                incident_prob: 0.1,
+                incident_delay_mean_hours: 1.,
+                incident_delay_std_hours: 0.5,
+                managed_lane_bypasses_incident: false,
+                managed_lane_vc: leg.vc_ratio,
+            })
+            .collect(),
+    };
+    let trips = [
+        ("Solo", DriverMode::Solo),
+        ("Team", DriverMode::Team),
+        (
+            "Relay",
+            DriverMode::Relay {
+                stations: 2,
+                swap_minutes: 20.,
+            },
+        ),
+    ]
+    .iter()
+    .map(|(mode, driver)| {
+        let (typical, delayed) = sample_trip_comparison(&corridor, driver);
+        TripComparison {
+            mode,
+            typical,
+            delayed,
+        }
+    })
+    .collect();
     Run {
+        trips,
         hours,
         delay_hours: hours - free_hours,
         target_gap_hours: (hours - i.target_hours).max(0.),
@@ -172,6 +224,39 @@ pub fn evaluate_json(json: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn trip_comparison_is_reproducible_and_accounts_for_all_time() {
+        let input = Input {
+            corridor: 2,
+            demand_pct: 200.,
+            capacity_pct: 25.,
+            ..Input::default()
+        };
+        let a = evaluate(input.clone()).unwrap();
+        let b = evaluate(input).unwrap();
+        for (left, right) in a.scenario.trips.iter().zip(&b.scenario.trips) {
+            assert_eq!(left.typical.elapsed_hours, right.typical.elapsed_hours);
+            assert!(left.delayed.elapsed_hours >= left.typical.elapsed_hours);
+            for trip in [&left.typical, &left.delayed] {
+                assert!(
+                    (trip.elapsed_hours
+                        - trip.driving_hours
+                        - trip.rest_swap_hours
+                        - trip.delay_hours
+                        - trip.fixed_overhead_hours)
+                        .abs()
+                        < 1e-9
+                );
+            }
+        }
+        assert!(a.scenario.trips[0].typical.rest_swap_hours >= 10.);
+        assert!(
+            a.scenario.trips[1].typical.elapsed_hours < a.scenario.trips[0].typical.elapsed_hours
+        );
+        assert!(
+            a.scenario.trips[2].typical.elapsed_hours < a.scenario.trips[0].typical.elapsed_hours
+        );
+    }
     #[test]
     fn baseline_and_sensitivity() {
         let default = evaluate(Input::default()).unwrap();
