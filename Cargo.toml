@@ -7,6 +7,8 @@ members = [
     "crates/route-report",
     "crates/route-sim",
     "crates/route-cli",
+    "crates/route-kernel",
+    "crates/route-web",
 ]
 resolver = "2"
 
