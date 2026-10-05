@@ -5,3 +5,4 @@ edition.workspace = true
 license.workspace = true
 [dependencies]
 serde = { workspace = true }
+rand = { version = "0.8", default-features = false, features = ["std_rng"] }

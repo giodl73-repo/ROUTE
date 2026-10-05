@@ -248,3 +248,5 @@ non-destructive reproduction and comparison command.
    agree.
 
 | 2026-10-04 | [Browser Freight Workbench](2026-10-04-browser-freight/WAVE.md) | Shared portable Rust calculations and synthetic interactive Pages scenarios. | done |
+
+| 2026-10-05 | Browser Whole-Trip Comparison | Share native OD simulation with Pages and compare solo, team and relay time. | done |
