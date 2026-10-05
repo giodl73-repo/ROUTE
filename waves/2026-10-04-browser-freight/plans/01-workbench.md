@@ -2,7 +2,7 @@
 name: Browser freight workbench
 slug: browser-freight-workbench
 type: plan
-status: draft
+status: validated
 rubric_version: v1.0
 author: Codex with Gio Della-Libera
 created: 2026-10-04
@@ -17,7 +17,7 @@ sources: []
 - [x] Add responsive UI, worker, sharing, export, and explicit model limits.
 - [x] Validate native regression tests, adapter, WASM, keyboard, export, sharing, and mobile.
 - [x] Run release/optimizer gates and milepost bundle; record any existing blockers without erasing them.
-- [ ] Resolve code review and publish master; verify live deployment.
+- [x] Resolve code review and publish master; verify live deployment.
 
 The CLI workspace package is `route` in crates/route-cli. Formatting/test scope includes route-kernel, route-web, and route-sim; the existing milepost bundle exercises the CLI release gates.
 
