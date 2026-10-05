@@ -89,4 +89,3 @@ pub(crate) fn t2_national_bundle_readiness_audit_gate_failures(
     }
     failures
 }
-

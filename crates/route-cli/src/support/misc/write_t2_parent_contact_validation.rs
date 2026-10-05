@@ -20,4 +20,3 @@ pub(crate) fn write_t2_parent_contact_validation(
     writer.flush()?;
     Ok(())
 }
-

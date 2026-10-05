@@ -1,13 +1,13 @@
 //! `T4TerminalAccessColumns` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     intake: PathBuf,
     constraint_budget: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -18,8 +18,7 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", intake.display()))?;
     let constraint_budget_rows = load_optimizer_constraint_budget(&constraint_budget)
         .with_context(|| format!("loading {}", constraint_budget.display()))?;
-    let constraint_budget_index =
-        optimizer_constraint_budget_index(&constraint_budget_rows);
+    let constraint_budget_index = optimizer_constraint_budget_index(&constraint_budget_rows);
     let rows = t4_terminal_access_column_rows(&intake_rows, &constraint_budget_index);
     write_t4_terminal_access_columns(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
@@ -38,7 +37,6 @@ pub(crate) fn run(
         println!();
         println!("T4 terminal access column gate: PASS");
     }
-        
+
     Ok(())
 }
-

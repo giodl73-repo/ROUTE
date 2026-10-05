@@ -16,4 +16,3 @@ pub(crate) fn planned_standard_inventory_missing<'a>(
         .filter(|row| !covered.contains(row.standard_id.as_str()))
         .collect()
 }
-

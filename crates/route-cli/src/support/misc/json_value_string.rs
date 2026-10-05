@@ -10,4 +10,3 @@ pub(crate) fn json_value_string(value: &serde_json::Value, key: &str) -> String 
         .trim()
         .to_string()
 }
-

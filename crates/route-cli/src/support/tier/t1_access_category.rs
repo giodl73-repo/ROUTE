@@ -14,4 +14,3 @@ pub(crate) fn t1_access_category(row: &T1SourceHealthRow) -> &'static str {
         _ => "monitoring",
     }
 }
-

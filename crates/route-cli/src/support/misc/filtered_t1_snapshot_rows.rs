@@ -14,4 +14,3 @@ pub(crate) fn filtered_t1_snapshot_rows<'a>(
         })
         .collect()
 }
-

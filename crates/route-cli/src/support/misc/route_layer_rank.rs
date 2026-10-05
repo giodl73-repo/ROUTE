@@ -10,4 +10,3 @@ pub(crate) fn route_layer_rank(column_decision: &str) -> u8 {
         _ => 3,
     }
 }
-

@@ -4,7 +4,10 @@ use crate::*;
 
 /// Estimate A2 freight value from representative HPMS daily truck crossings.
 /// Uses p90 AADT when available, then mean AADT as the secondary A2 path.
-pub(crate) fn join_a2_freight_proxy(attrs: &mut route_network::CorridorAttributes, _corridor_miles: f64) {
+pub(crate) fn join_a2_freight_proxy(
+    attrs: &mut route_network::CorridorAttributes,
+    _corridor_miles: f64,
+) {
     if attrs.annual_freight_value_b.is_some() {
         return;
     }
@@ -17,4 +20,3 @@ pub(crate) fn join_a2_freight_proxy(attrs: &mut route_network::CorridorAttribute
     attrs.annual_freight_value_b = Some(freight_b);
     attrs.freight_value_is_hpms_proxy = true;
 }
-

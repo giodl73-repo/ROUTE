@@ -19,4 +19,3 @@ pub(crate) fn print_t4_terminal_contact_proof_docket_summary(
         println!("  {status}: {count}");
     }
 }
-

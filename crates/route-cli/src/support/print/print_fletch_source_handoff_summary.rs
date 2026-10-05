@@ -50,4 +50,3 @@ pub(crate) fn print_fletch_source_handoff_summary(
         }
     }
 }
-

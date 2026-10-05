@@ -56,4 +56,3 @@ pub(crate) fn write_stop_sla_promotions(output: &Path, rows: &[StopCandidateRow]
     writer.flush()?;
     Ok(())
 }
-

@@ -1,13 +1,13 @@
 //! `T2NationalBundleReadinessAudit` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     replay_decisions: PathBuf,
     bundles: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -24,8 +24,7 @@ pub(crate) fn run(
     print_t2_national_bundle_readiness_audit_summary(&output, &rows);
 
     if gate {
-        let failures =
-            t2_national_bundle_readiness_audit_gate_failures(&rows, &replay_rows);
+        let failures = t2_national_bundle_readiness_audit_gate_failures(&rows, &replay_rows);
         if !failures.is_empty() {
             println!();
             println!("T2 national bundle readiness audit gate: FAIL");
@@ -36,7 +35,6 @@ pub(crate) fn run(
         }
         println!("T2 national bundle readiness audit gate: PASS");
     }
-        
+
     Ok(())
 }
-

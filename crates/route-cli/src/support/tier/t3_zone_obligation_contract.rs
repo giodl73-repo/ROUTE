@@ -26,4 +26,3 @@ pub(crate) fn t3_zone_obligation_contract(
         ),
     }
 }
-

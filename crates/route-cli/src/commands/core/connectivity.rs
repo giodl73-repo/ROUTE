@@ -1,11 +1,8 @@
 //! `Connectivity` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    all_pairs: bool
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, all_pairs: bool) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -84,13 +81,9 @@ pub(crate) fn run(
             report.isolated_terminals.join(", ")
         );
         println!("\n  → These gaps are I2.0 missing link targets:");
-        println!(
-            "    A new T1 corridor filling each gap would close the structural disconnect."
-        );
+        println!("    A new T1 corridor filling each gap would close the structural disconnect.");
         println!("    Example: I-40/I-70 western endpoint → I-5 requires I-15 (T2).");
-        println!(
-            "    A Pacific extension of I-40/I-70 (via US-50 alignment) would close it."
-        );
+        println!("    A Pacific extension of I-40/I-70 (via US-50 alignment) would close it.");
     }
 
     if all_pairs {
@@ -122,7 +115,6 @@ pub(crate) fn run(
             );
         }
     }
-        
+
     Ok(())
 }
-

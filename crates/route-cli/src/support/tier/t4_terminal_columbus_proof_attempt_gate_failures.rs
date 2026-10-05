@@ -119,4 +119,3 @@ pub(crate) fn t4_terminal_columbus_proof_attempt_gate_failures(
 
     failures
 }
-

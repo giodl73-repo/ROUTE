@@ -16,4 +16,3 @@ pub(crate) fn print_t2_endpoint_closure_summary(output: &Path, rows: &[T2Endpoin
         println!("  {action}: {count}");
     }
 }
-

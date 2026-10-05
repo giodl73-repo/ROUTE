@@ -29,4 +29,3 @@ pub(crate) fn load_ports() -> Vec<PortLocation> {
         })
         .collect()
 }
-

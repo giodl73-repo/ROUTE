@@ -9,4 +9,3 @@ pub(crate) fn count_csv_records(path: &Path) -> Result<usize> {
     let mut reader = csv::Reader::from_path(path)?;
     Ok(reader.records().count())
 }
-

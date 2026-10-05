@@ -26,4 +26,3 @@ pub(crate) fn t2_blocker_bundle_fields(
             )
         })
 }
-

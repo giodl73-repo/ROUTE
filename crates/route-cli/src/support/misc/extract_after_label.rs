@@ -11,4 +11,3 @@ pub(crate) fn extract_after_label(text: &str, label: &str) -> Option<String> {
         Some(value)
     }
 }
-

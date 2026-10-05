@@ -1,12 +1,12 @@
 //! `T4TerminalAccessProofArtifactSourceAccess` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     acquisition_targets: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -22,10 +22,8 @@ pub(crate) fn run(
     print_t4_terminal_access_proof_artifact_source_access_summary(&output, &rows);
 
     if gate {
-        let failures = t4_terminal_access_proof_artifact_source_access_gate_failures(
-            &rows,
-            &target_rows,
-        );
+        let failures =
+            t4_terminal_access_proof_artifact_source_access_gate_failures(&rows, &target_rows);
         if !failures.is_empty() {
             println!();
             println!("T4 terminal access proof artifact source access gate: FAIL");
@@ -37,7 +35,6 @@ pub(crate) fn run(
         println!();
         println!("T4 terminal access proof artifact source access gate: PASS");
     }
-        
+
     Ok(())
 }
-

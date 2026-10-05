@@ -10,4 +10,3 @@ pub(crate) fn geo_distance_miles(a_lat: f64, a_lon: f64, b_lat: f64, b_lon: f64)
         + a_lat.to_radians().cos() * b_lat.to_radians().cos() * (dlon / 2.0).sin().powi(2);
     2.0 * earth_radius_miles * h.sqrt().asin() * 1.18
 }
-

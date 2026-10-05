@@ -62,36 +62,55 @@ if (-not $SkipTests) {
     Invoke-Checked "Rust workspace tests" { cargo test --workspace }
 }
 
+# Build once: every following gate runs the same native CLI and reads its data
+# at runtime. Repeated cargo run calls can invalidate a large build between gates.
+$script:RouteBinary = $null
+Invoke-Checked "Build Rust CLI" {
+    cargo build --locked -p route --message-format=json-render-diagnostics | ForEach-Object {
+        $artifact = $_ | ConvertFrom-Json
+        if ($artifact.reason -eq "compiler-message" -and $artifact.message.rendered) {
+            Write-Host $artifact.message.rendered
+        }
+        if ($artifact.reason -eq "compiler-artifact" -and $artifact.target.name -eq "route" -and $artifact.executable) {
+            $script:RouteBinary = $artifact.executable
+        }
+    }
+    if ($LASTEXITCODE -ne 0) { throw "Rust CLI build failed" }
+    if (-not $script:RouteBinary -or -not (Test-Path -LiteralPath $script:RouteBinary)) {
+        throw "Cargo did not report a built ROUTE executable"
+    }
+}
+
 Invoke-Checked "Release manifest path check" { Test-ReleaseManifestPaths }
-Invoke-Checked "Release manifest metadata gate" { cargo run -q -p route -- release-manifest --gate }
-Invoke-Checked "Source fetch cache policy gate" { cargo run -q -p route -- source-fetch-policy --gate }
-Invoke-Checked "Optimizer manifest gate" { cargo run -q -p route -- optimizer-manifest --gate }
+Invoke-Checked "Release manifest metadata gate" { & $script:RouteBinary release-manifest --gate }
+Invoke-Checked "Source fetch cache policy gate" { & $script:RouteBinary source-fetch-policy --gate }
+Invoke-Checked "Optimizer manifest gate" { & $script:RouteBinary optimizer-manifest --gate }
 Invoke-Checked "Forum docket path check" { Test-ForumDocketPaths }
-Invoke-Checked "Map atlas gate" { cargo run -q -p route -- map-atlas --gate }
-Invoke-Checked "T1 line selector gate" { cargo run -q -p route -- t1-line-selector --gate }
-Invoke-Checked "T1 design review gate" { cargo run -q -p route -- t1-design-review --gate }
-Invoke-Checked "T1 design policy gate" { cargo run -q -p route -- t1-design-policy --gate }
-Invoke-Checked "T1 score exception gate" { cargo run -q -p route -- t1-score-exceptions --gate }
-Invoke-Checked "Beck T2 service standards gate" { cargo run -q -p route -- beck-t2-service-standards --gate }
-Invoke-Checked "Beck T2 qualification actions gate" { cargo run -q -p route -- beck-t2-qualification-actions --gate }
-Invoke-Checked "Game T2 service overlay gate" { cargo run -q -p route -- game t2-overlays --gate }
-Invoke-Checked "Game T2 scenario hook gate" { cargo run -q -p route -- game t2-hooks --gate }
-Invoke-Checked "Standards pressure proof gate" { cargo run -q -p route -- standards-proof --gate-pressure }
-Invoke-Checked "Standards inventory source gate" { cargo run -q -p route -- standards-inventory --gate --gate-planned }
-Invoke-Checked "Pressure scenario L2 readiness gate" { cargo run -q -p route -- pressure-scenarios --gate-l2 --gate-readiness }
-Invoke-Checked "Pressure scenario standards coverage gate" { cargo run -q -p route -- pressure-scenarios --coverage --gate-coverage }
-Invoke-Checked "Throughput proof gate" { cargo run -q -p route -- throughput-proof --gate }
-Invoke-Checked "T1/T1 failure evidence gate" { cargo run -q -p route -- t1-failures --gate-evidence }
-Invoke-Checked "T1/T1 event observation gate" { cargo run -q -p route -- t1-failure-events --gate-observations }
-Invoke-Checked "T1/T1 evidence-window gate" { cargo run -q -p route -- t1-evidence-windows --gate-windows }
-Invoke-Checked "T1/T1 snapshot plan gate" { cargo run -q -p route -- t1-snapshot-plan --gate-plan --script --priority A }
-Invoke-Checked "Game campaign gate" { cargo run -q -p route -- game campaign --gate }
+Invoke-Checked "Map atlas gate" { & $script:RouteBinary map-atlas --gate }
+Invoke-Checked "T1 line selector gate" { & $script:RouteBinary t1-line-selector --gate }
+Invoke-Checked "T1 design review gate" { & $script:RouteBinary t1-design-review --gate }
+Invoke-Checked "T1 design policy gate" { & $script:RouteBinary t1-design-policy --gate }
+Invoke-Checked "T1 score exception gate" { & $script:RouteBinary t1-score-exceptions --gate }
+Invoke-Checked "Beck T2 service standards gate" { & $script:RouteBinary beck-t2-service-standards --gate }
+Invoke-Checked "Beck T2 qualification actions gate" { & $script:RouteBinary beck-t2-qualification-actions --gate }
+Invoke-Checked "Game T2 service overlay gate" { & $script:RouteBinary game t2-overlays --gate }
+Invoke-Checked "Game T2 scenario hook gate" { & $script:RouteBinary game t2-hooks --gate }
+Invoke-Checked "Standards pressure proof gate" { & $script:RouteBinary standards-proof --gate-pressure }
+Invoke-Checked "Standards inventory source gate" { & $script:RouteBinary standards-inventory --gate --gate-planned }
+Invoke-Checked "Pressure scenario L2 readiness gate" { & $script:RouteBinary pressure-scenarios --gate-l2 --gate-readiness }
+Invoke-Checked "Pressure scenario standards coverage gate" { & $script:RouteBinary pressure-scenarios --coverage --gate-coverage }
+Invoke-Checked "Throughput proof gate" { & $script:RouteBinary throughput-proof --gate }
+Invoke-Checked "T1/T1 failure evidence gate" { & $script:RouteBinary t1-failures --gate-evidence }
+Invoke-Checked "T1/T1 event observation gate" { & $script:RouteBinary t1-failure-events --gate-observations }
+Invoke-Checked "T1/T1 evidence-window gate" { & $script:RouteBinary t1-evidence-windows --gate-windows }
+Invoke-Checked "T1/T1 snapshot plan gate" { & $script:RouteBinary t1-snapshot-plan --gate-plan --script --priority A }
+Invoke-Checked "Game campaign gate" { & $script:RouteBinary game campaign --gate }
 Invoke-Checked "Des Moines browser fixture gate" { powershell -ExecutionPolicy Bypass -File docs/game/browser/check-des-moines-browser.ps1 }
-Invoke-Checked "Forum docket gate" { cargo run -q -p route -- forum --gate }
-Invoke-Checked "Significant moments gate" { cargo run -q -p route -- significant-moments --gate }
-Invoke-Checked "Blueprint package gate" { cargo run -q -p route -- blueprint --gate }
-Invoke-Checked "Blueprint evidence gate" { cargo run -q -p route -- blueprint-evidence --gate }
-Invoke-Checked "Blueprint cost gate" { cargo run -q -p route -- blueprint-costs --gate }
+Invoke-Checked "Forum docket gate" { & $script:RouteBinary forum --gate }
+Invoke-Checked "Significant moments gate" { & $script:RouteBinary significant-moments --gate }
+Invoke-Checked "Blueprint package gate" { & $script:RouteBinary blueprint --gate }
+Invoke-Checked "Blueprint evidence gate" { & $script:RouteBinary blueprint-evidence --gate }
+Invoke-Checked "Blueprint cost gate" { & $script:RouteBinary blueprint-costs --gate }
 Invoke-Checked "Git whitespace check" { git diff --check }
 
 Write-Host ""

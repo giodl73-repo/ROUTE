@@ -74,4 +74,3 @@ pub(crate) fn t4_terminal_contact_proof_source_registry_rows(
     });
     rows
 }
-

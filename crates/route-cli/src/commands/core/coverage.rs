@@ -1,7 +1,7 @@
 //! `coverage` command handler (same contract as `build` exemplar).
 //! See `commands/build.rs` for the reference shape.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -9,12 +9,11 @@ pub(crate) fn run(
     grid: f64,
     t1_only: bool,
     top_gaps: usize,
-    grid_mode: bool
+    grid_mode: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     println!(
         "route coverage --threshold {threshold}mi{}{}",
@@ -80,8 +79,7 @@ pub(crate) fn run(
             false
         };
 
-        let result =
-            route_network::compute_pop_coverage(&graph, &counties, filter, threshold);
+        let result = route_network::compute_pop_coverage(&graph, &counties, filter, threshold);
         let tc = result.total_counties as f64;
         let tp = result.total_population as f64;
         let tl = result.total_land_sqmi;
@@ -242,8 +240,7 @@ pub(crate) fn run(
             grid
         );
         println!("  NOTE: includes ocean cells; county centroid mode is more accurate");
-        let result =
-            route_network::coverage::compute_coverage(&graph, filter, grid, threshold);
+        let result = route_network::coverage::compute_coverage(&graph, filter, grid, threshold);
         println!(
             "  cells: {} total, {:.1}% within 30mi, max gap {:.1}mi",
             result.total_cells, result.pct_within_30mi, result.max_gap_miles

@@ -15,4 +15,3 @@ pub(crate) fn load_t2_game_ops_bundle_evidence_policy(
     }
     Ok(rows)
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_amtrak_schedules(data_dir: &std::path::Path) -> std::collections::HashMap<String, f64> {
+pub(crate) fn load_amtrak_schedules(
+    data_dir: &std::path::Path,
+) -> std::collections::HashMap<String, f64> {
     let path = data_dir.join("amtrak-schedules.csv");
     let mut map = std::collections::HashMap::new();
     let Ok(file) = std::fs::File::open(&path) else {
@@ -22,4 +24,3 @@ pub(crate) fn load_amtrak_schedules(data_dir: &std::path::Path) -> std::collecti
     }
     map
 }
-

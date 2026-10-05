@@ -54,4 +54,3 @@ pub(crate) fn optimizer_map_hook_gate_failures(rows: &[OptimizerMapHookRow]) -> 
     }
     failures
 }
-

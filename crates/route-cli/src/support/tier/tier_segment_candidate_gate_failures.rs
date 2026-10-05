@@ -97,4 +97,3 @@ pub(crate) fn tier_segment_candidate_gate_failures(
 
     failures
 }
-

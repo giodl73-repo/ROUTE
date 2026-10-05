@@ -27,4 +27,3 @@ pub(crate) fn print_map_publication_readiness_summary(
         }
     }
 }
-

@@ -26,4 +26,3 @@ pub(crate) fn merge_t1_failure_events(
     });
     rows
 }
-

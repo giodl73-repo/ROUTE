@@ -23,4 +23,3 @@ pub(crate) fn source_fetch_policy_row(
         validation_status: "pass".to_string(),
     }
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn print_bundle_architecture_summary(output: &Path, rows: &[BundleArc
         println!("  {status}: {count}");
     }
 }
-

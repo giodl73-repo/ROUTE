@@ -46,4 +46,3 @@ pub(crate) fn print_stop_sla_candidate_recommendations(
         println!();
     }
 }
-

@@ -9,4 +9,3 @@ pub(crate) fn current_utc_year() -> u16 {
         .unwrap_or(0);
     epoch_millis_year(millis).unwrap_or(1970)
 }
-

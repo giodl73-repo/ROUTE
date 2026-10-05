@@ -17,4 +17,3 @@ pub(crate) fn known_source_fetch_commands() -> &'static [&'static str] {
         "route t1-fetch-indot-trafficwise",
     ]
 }
-

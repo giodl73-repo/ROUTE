@@ -74,4 +74,3 @@ pub(crate) fn print_stop_sla_summary(rows: &[StopSlaRow], top: usize) {
         );
     }
 }
-

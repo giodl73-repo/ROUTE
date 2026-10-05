@@ -69,4 +69,3 @@ pub(crate) fn t4_terminal_access_column_rows(
     });
     rows
 }
-

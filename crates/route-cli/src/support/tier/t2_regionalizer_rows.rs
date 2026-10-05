@@ -49,4 +49,3 @@ pub(crate) fn t2_regionalizer_rows(rows: &[TierCandidateColumnRow]) -> Vec<T2Reg
         })
         .collect()
 }
-

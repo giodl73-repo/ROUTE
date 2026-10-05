@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t1_shared_segment_map_policy(path: &Path) -> Result<Vec<T1SharedSegmentMapPolicyRow>> {
+pub(crate) fn load_t1_shared_segment_map_policy(
+    path: &Path,
+) -> Result<Vec<T1SharedSegmentMapPolicyRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t1_shared_segment_map_policy(path: &Path) -> Result<Vec<T1Sha
     }
     Ok(rows)
 }
-

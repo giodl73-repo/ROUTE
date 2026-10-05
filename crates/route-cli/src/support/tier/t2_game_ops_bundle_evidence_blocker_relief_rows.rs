@@ -43,4 +43,3 @@ pub(crate) fn t2_game_ops_bundle_evidence_blocker_relief_rows(
     });
     rows
 }
-

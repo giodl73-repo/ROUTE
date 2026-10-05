@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_lower_tier_pressure_witnesses(path: &Path) -> Result<Vec<LowerTierPressureWitnessRow>> {
+pub(crate) fn load_lower_tier_pressure_witnesses(
+    path: &Path,
+) -> Result<Vec<LowerTierPressureWitnessRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_lower_tier_pressure_witnesses(path: &Path) -> Result<Vec<Lowe
     }
     Ok(rows)
 }
-

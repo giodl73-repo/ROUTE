@@ -12,4 +12,3 @@ pub(crate) fn t1_source_health_is_blocked(row: &T1SourceHealthRow) -> bool {
         ("live", "implemented", "snapshot_only") | ("live", "documented", "historical_method")
     )
 }
-

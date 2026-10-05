@@ -13,4 +13,3 @@ pub(crate) fn load_game_t2_service_overlays(path: &Path) -> Result<Vec<GameT2Ser
     }
     Ok(rows)
 }
-

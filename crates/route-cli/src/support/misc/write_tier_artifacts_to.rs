@@ -67,4 +67,3 @@ pub(crate) fn write_tier_artifacts_to(score_rows: &[ScoreAllRow], output_dir: &P
     println!("  wrote tier table markdown → {}", md_path.display());
     Ok(())
 }
-

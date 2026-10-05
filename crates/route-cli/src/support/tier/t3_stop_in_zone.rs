@@ -14,4 +14,3 @@ pub(crate) fn t3_stop_in_zone(stop: &StopCandidateRow, zone_id: &str) -> bool {
     };
     (min_lat..=max_lat).contains(&lat) && (min_lon..=max_lon).contains(&lon)
 }
-

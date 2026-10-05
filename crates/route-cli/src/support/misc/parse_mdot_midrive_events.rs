@@ -66,4 +66,3 @@ pub(crate) fn parse_mdot_midrive_events(
     }
     Ok(rows)
 }
-

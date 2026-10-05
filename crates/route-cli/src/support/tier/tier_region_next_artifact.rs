@@ -14,4 +14,3 @@ pub(crate) fn tier_region_next_artifact(repair_action: &str) -> &'static str {
         _ => "data/tier-region-repairs.csv",
     }
 }
-

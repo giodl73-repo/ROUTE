@@ -21,4 +21,3 @@ pub(crate) fn print_t4_terminal_columbus_source_access_summary(
         println!("  {status}: {count}");
     }
 }
-

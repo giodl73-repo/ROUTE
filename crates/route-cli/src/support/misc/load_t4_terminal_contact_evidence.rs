@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t4_terminal_contact_evidence(path: &Path) -> Result<Vec<T4TerminalContactEvidenceRow>> {
+pub(crate) fn load_t4_terminal_contact_evidence(
+    path: &Path,
+) -> Result<Vec<T4TerminalContactEvidenceRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t4_terminal_contact_evidence(path: &Path) -> Result<Vec<T4Ter
     }
     Ok(rows)
 }
-

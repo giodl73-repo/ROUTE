@@ -1,6 +1,6 @@
 //! `FletchSources` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -8,7 +8,7 @@ pub(crate) fn run(
     source_policy: PathBuf,
     output: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -19,8 +19,7 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", registry.display()))?;
     let source_policy_rows = route_data::load_route_source_fetch_policy(&source_policy)
         .with_context(|| format!("loading {}", source_policy.display()))?;
-    let report =
-        route_data::fletch_source_handoff_report(&registry_report, &source_policy_rows);
+    let report = route_data::fletch_source_handoff_report(&registry_report, &source_policy_rows);
     route_data::write_fletch_source_handoff(&output, &report)
         .with_context(|| format!("writing {}", output.display()))?;
     print_fletch_source_handoff_summary(&output, &report, details);
@@ -38,7 +37,6 @@ pub(crate) fn run(
         println!();
         println!("FLETCH source handoff gate: PASS");
     }
-        
+
     Ok(())
 }
-

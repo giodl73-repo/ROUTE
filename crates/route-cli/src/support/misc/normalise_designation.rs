@@ -10,4 +10,3 @@ pub(crate) fn normalise_designation(input: &str) -> String {
         .collect::<String>()
         .to_uppercase()
 }
-

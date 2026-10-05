@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn optimizer_backlog_family(row: &OptimizerConstraintBudgetRow) -> (String, String, String) {
+pub(crate) fn optimizer_backlog_family(
+    row: &OptimizerConstraintBudgetRow,
+) -> (String, String, String) {
     let classes = row.top_constraint_classes.as_str();
     if row.hard_blocker_count > 0 {
         return (
@@ -54,4 +56,3 @@ pub(crate) fn optimizer_backlog_family(row: &OptimizerConstraintBudgetRow) -> (S
         "optimizer-review-docket".to_string(),
     )
 }
-

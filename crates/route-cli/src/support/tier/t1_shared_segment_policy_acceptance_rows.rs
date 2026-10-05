@@ -37,4 +37,3 @@ pub(crate) fn t1_shared_segment_policy_acceptance_rows(
     rows.sort_by(|left, right| left.route_pair.cmp(&right.route_pair));
     rows
 }
-

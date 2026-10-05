@@ -13,4 +13,3 @@ pub(crate) fn load_t2_blocker_closure(path: &Path) -> Result<Vec<T2BlockerClosur
     }
     Ok(rows)
 }
-

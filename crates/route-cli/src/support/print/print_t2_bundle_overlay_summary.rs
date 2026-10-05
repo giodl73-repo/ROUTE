@@ -16,4 +16,3 @@ pub(crate) fn print_t2_bundle_overlay_summary(output: &Path, rows: &[T2BundleOve
         println!("  {status}: {count}");
     }
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn merge_hpms_state_records(
     });
     existing
 }
-

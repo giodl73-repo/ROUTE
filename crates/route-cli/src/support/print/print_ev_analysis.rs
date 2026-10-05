@@ -110,4 +110,3 @@ pub(crate) fn print_ev_analysis(data_dir: &std::path::Path) {
         a2.overnight_note
     );
 }
-

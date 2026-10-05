@@ -110,4 +110,3 @@ pub(crate) fn t2_game_ops_binding_decision_gate_failures(
     }
     failures
 }
-

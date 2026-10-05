@@ -22,4 +22,3 @@ pub(crate) fn load_intermodal_terminals() -> Vec<(f64, f64)> {
         })
         .collect()
 }
-

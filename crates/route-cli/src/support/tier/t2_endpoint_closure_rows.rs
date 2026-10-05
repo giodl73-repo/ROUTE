@@ -77,4 +77,3 @@ pub(crate) fn t2_endpoint_closure_rows(
     }
     rows
 }
-

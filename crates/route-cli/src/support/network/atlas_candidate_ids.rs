@@ -9,4 +9,3 @@ pub(crate) fn atlas_candidate_ids(graph: &route_network::HighwayGraph) -> Vec<St
     ids.dedup();
     ids
 }
-

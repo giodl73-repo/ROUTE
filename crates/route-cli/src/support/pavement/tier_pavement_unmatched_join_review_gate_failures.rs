@@ -70,4 +70,3 @@ pub(crate) fn tier_pavement_unmatched_join_review_gate_failures(
     }
     failures
 }
-

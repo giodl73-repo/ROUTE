@@ -11,4 +11,3 @@ pub(crate) fn insert_pipe_values(target: &mut std::collections::BTreeSet<String>
         target.insert(item.to_string());
     }
 }
-

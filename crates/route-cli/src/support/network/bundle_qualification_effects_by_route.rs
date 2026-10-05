@@ -25,4 +25,3 @@ pub(crate) fn bundle_qualification_effects_by_route(
         .map(|(route, effects)| (route, join_pipe_set(&effects)))
         .collect()
 }
-

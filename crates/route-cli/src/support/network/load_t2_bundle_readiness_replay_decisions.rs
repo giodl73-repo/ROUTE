@@ -15,4 +15,3 @@ pub(crate) fn load_t2_bundle_readiness_replay_decisions(
     }
     Ok(rows)
 }
-

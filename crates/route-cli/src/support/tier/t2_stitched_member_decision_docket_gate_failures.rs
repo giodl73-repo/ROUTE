@@ -78,4 +78,3 @@ pub(crate) fn t2_stitched_member_decision_docket_gate_failures(
     }
     failures
 }
-

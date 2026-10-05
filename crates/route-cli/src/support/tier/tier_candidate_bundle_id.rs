@@ -15,4 +15,3 @@ pub(crate) fn tier_candidate_bundle_id(
     };
     format!("US.HWYBUNDLE.{:016X}", stable_segment_hash(&identity))
 }
-

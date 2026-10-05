@@ -14,4 +14,3 @@ pub(crate) fn atomic_write_text(path: &Path, text: impl AsRef<str>) -> Result<()
     std::fs::write(&tmp, text.as_ref()).with_context(|| format!("writing {}", tmp.display()))?;
     replace_with_atomic_write(&tmp, path)
 }
-

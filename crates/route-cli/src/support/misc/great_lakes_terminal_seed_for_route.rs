@@ -17,4 +17,3 @@ pub(crate) fn great_lakes_terminal_seed_for_route(route: &str) -> Option<String>
     };
     Some(district.to_string())
 }
-

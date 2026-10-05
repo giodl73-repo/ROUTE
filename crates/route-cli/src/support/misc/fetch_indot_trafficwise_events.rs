@@ -62,4 +62,3 @@ query MapFeatures($input: MapFeaturesArgs!) {
     atomic_write_text(output, text)?;
     Ok(())
 }
-

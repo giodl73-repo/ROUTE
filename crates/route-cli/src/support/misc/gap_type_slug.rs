@@ -10,4 +10,3 @@ pub(crate) fn gap_type_slug(gap_type: &GapType) -> &'static str {
         GapType::Intermodal => "intermodal",
     }
 }
-

@@ -1,12 +1,12 @@
 //! `FetchHpms` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     output: Option<PathBuf>,
     states: Option<String>,
-    functional_systems: String
+    functional_systems: String,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -89,7 +89,6 @@ pub(crate) fn run(
         route_data::fetch_all_hpms(&out)?;
     }
     println!("fetch-hpms complete. Run `route build` to join.");
-        
+
     Ok(())
 }
-

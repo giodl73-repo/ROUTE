@@ -8,4 +8,3 @@ pub(crate) fn pressure_scenario_is_executable(row: &PressureScenarioRow) -> bool
         "implemented" | "heuristic"
     )
 }
-

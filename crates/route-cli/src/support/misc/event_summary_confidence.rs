@@ -20,4 +20,3 @@ pub(crate) fn event_summary_confidence(rows: &[&T1FailureEventRow]) -> String {
         "medium".to_string()
     }
 }
-

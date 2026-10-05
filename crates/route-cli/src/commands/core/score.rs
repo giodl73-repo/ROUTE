@@ -1,17 +1,16 @@
 //! `Score` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     designation: String,
     estimated: bool,
-    proposed: bool
+    proposed: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     let norm = normalise_designation(&designation);
     println!("route score {}", norm);
@@ -28,14 +27,13 @@ pub(crate) fn run(
     );
 
     // Extract corridor
-    let mut corridor =
-        route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
-            anyhow::anyhow!(
-                "Route '{}' not found in graph. Available: {:?}",
-                norm,
-                &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
-            )
-        })?;
+    let mut corridor = route_network::aggregate_corridor(&graph, &norm).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Route '{}' not found in graph. Available: {:?}",
+            norm,
+            &graph.interstate_ids()[..graph.interstate_ids().len().min(20)]
+        )
+    })?;
 
     println!(
         "  corridor: {} ({:.0} miles, {} segments)",
@@ -43,13 +41,7 @@ pub(crate) fn run(
     );
 
     // Join ACS population for C1/C3 dimensions (if cached data is available)
-    join_acs_population_to_corridor(
-        &manifest,
-        &graph,
-        &norm,
-        &mut corridor.attributes,
-        true,
-    );
+    join_acs_population_to_corridor(&manifest, &graph, &norm, &mut corridor.attributes, true);
     let ports = load_ports();
     if !ports.is_empty() {
         join_port_access_to_corridor(&graph, &norm, &mut corridor.attributes, &ports);

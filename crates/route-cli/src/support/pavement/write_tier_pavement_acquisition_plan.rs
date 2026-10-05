@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_acquisition_plan(
     writer.flush()?;
     Ok(())
 }
-

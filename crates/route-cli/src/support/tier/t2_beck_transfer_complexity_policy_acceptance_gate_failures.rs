@@ -97,4 +97,3 @@ pub(crate) fn t2_beck_transfer_complexity_policy_acceptance_gate_failures(
     }
     failures
 }
-

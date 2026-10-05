@@ -15,4 +15,3 @@ pub(crate) fn tier_candidate_stitch_group_id(
     };
     format!("US.HWYSTITCH.{:016X}", stable_segment_hash(&identity))
 }
-

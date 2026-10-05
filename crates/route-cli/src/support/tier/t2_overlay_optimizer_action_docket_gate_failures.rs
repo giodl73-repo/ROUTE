@@ -76,4 +76,3 @@ pub(crate) fn t2_overlay_optimizer_action_docket_gate_failures(
     }
     failures
 }
-

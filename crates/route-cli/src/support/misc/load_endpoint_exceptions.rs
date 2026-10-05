@@ -6,4 +6,3 @@ pub(crate) fn load_endpoint_exceptions(path: &Path) -> Result<Vec<EndpointExcept
     let file = std::fs::File::open(path)?;
     parse_endpoint_exceptions(file)
 }
-

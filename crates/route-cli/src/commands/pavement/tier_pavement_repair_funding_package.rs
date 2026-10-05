@@ -1,12 +1,12 @@
 //! `TierPavementRepairFundingPackage` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     repair_disposition: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -21,8 +21,7 @@ pub(crate) fn run(
     print_tier_pavement_repair_funding_package_summary(&output, &rows);
 
     if gate {
-        let failures =
-            tier_pavement_repair_funding_package_gate_failures(&rows, &disposition_rows);
+        let failures = tier_pavement_repair_funding_package_gate_failures(&rows, &disposition_rows);
         if !failures.is_empty() {
             println!();
             println!("Tier pavement repair funding package gate: FAIL");
@@ -34,7 +33,6 @@ pub(crate) fn run(
         println!();
         println!("Tier pavement repair funding package gate: PASS");
     }
-        
+
     Ok(())
 }
-

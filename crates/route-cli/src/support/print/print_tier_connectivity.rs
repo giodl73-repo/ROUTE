@@ -68,4 +68,3 @@ pub(crate) fn print_tier_connectivity(
         );
     }
 }
-

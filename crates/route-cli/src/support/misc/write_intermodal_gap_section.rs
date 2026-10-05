@@ -40,4 +40,3 @@ pub(crate) fn write_intermodal_gap_section(md: &mut String) -> Result<()> {
     md.push_str("\nInterpretation: these are port/border-adjacent corridors whose multimodal support is weak under the current source model; validate terminal and connector data before elevating them to projects.\n");
     Ok(())
 }
-

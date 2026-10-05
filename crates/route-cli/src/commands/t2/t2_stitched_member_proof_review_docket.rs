@@ -1,21 +1,20 @@
 //! `T2StitchedMemberProofReviewDocket` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     artifact_attachment: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
     println!("route t2-stitched-member-proof-review-docket");
-    let attachment_rows =
-        load_t2_stitched_member_proof_artifact_attachment(&artifact_attachment)
-            .with_context(|| format!("loading {}", artifact_attachment.display()))?;
+    let attachment_rows = load_t2_stitched_member_proof_artifact_attachment(&artifact_attachment)
+        .with_context(|| format!("loading {}", artifact_attachment.display()))?;
     let rows = t2_stitched_member_proof_review_docket_rows(&attachment_rows);
     write_t2_stitched_member_proof_review_docket(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
@@ -34,7 +33,6 @@ pub(crate) fn run(
         }
         println!("T2 stitched member proof review docket gate: PASS");
     }
-        
+
     Ok(())
 }
-

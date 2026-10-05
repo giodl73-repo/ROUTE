@@ -58,4 +58,3 @@ pub(crate) fn tier_pavement_source_gap_gate_failures(
     }
     failures
 }
-

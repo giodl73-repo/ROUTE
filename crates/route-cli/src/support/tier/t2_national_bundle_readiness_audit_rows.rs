@@ -72,4 +72,3 @@ pub(crate) fn t2_national_bundle_readiness_audit_rows(
     });
     rows
 }
-

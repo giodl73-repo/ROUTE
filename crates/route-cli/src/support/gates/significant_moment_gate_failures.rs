@@ -29,4 +29,3 @@ pub(crate) fn significant_moment_gate_failures(rows: &[SignificantMomentRow]) ->
 
     failures
 }
-

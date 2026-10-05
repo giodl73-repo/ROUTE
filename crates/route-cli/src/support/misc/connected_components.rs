@@ -23,4 +23,3 @@ pub(crate) fn connected_components(adjacency: &[Vec<usize>]) -> (Vec<usize>, usi
     }
     (component_ids, component_count)
 }
-

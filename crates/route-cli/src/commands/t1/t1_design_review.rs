@@ -1,6 +1,6 @@
 //! `T1DesignReview` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -13,7 +13,7 @@ pub(crate) fn run(
     route_budget: usize,
     city_budget: usize,
     stop_budget: usize,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -39,8 +39,7 @@ pub(crate) fn run(
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating {}", parent.display()))?;
     }
-    std::fs::write(&output, csv)
-        .with_context(|| format!("writing {}", output.display()))?;
+    std::fs::write(&output, csv).with_context(|| format!("writing {}", output.display()))?;
     let selected = rows.iter().filter(|row| row.selected).count();
     let policy_reviews = rows
         .iter()
@@ -78,7 +77,6 @@ pub(crate) fn run(
             anyhow::bail!("T1 design review gate failed");
         }
     }
-        
+
     Ok(())
 }
-

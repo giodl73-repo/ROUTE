@@ -1,12 +1,12 @@
 //! `T1SchematicGeometryBlockerRelief` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     acceptance: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -21,8 +21,7 @@ pub(crate) fn run(
     print_t1_schematic_geometry_blocker_relief_summary(&output, &rows);
 
     if gate {
-        let failures =
-            t1_schematic_geometry_blocker_relief_gate_failures(&rows, &acceptance_rows);
+        let failures = t1_schematic_geometry_blocker_relief_gate_failures(&rows, &acceptance_rows);
         if !failures.is_empty() {
             println!();
             println!("T1 schematic geometry blocker relief gate: FAIL");
@@ -34,7 +33,6 @@ pub(crate) fn run(
         println!();
         println!("T1 schematic geometry blocker relief gate: PASS");
     }
-        
+
     Ok(())
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t3_lower_tier_feeder_gap_policy(path: &Path) -> Result<Vec<T3LowerTierFeederGapPolicyRow>> {
+pub(crate) fn load_t3_lower_tier_feeder_gap_policy(
+    path: &Path,
+) -> Result<Vec<T3LowerTierFeederGapPolicyRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t3_lower_tier_feeder_gap_policy(path: &Path) -> Result<Vec<T3
     }
     Ok(rows)
 }
-

@@ -96,4 +96,3 @@ pub(crate) fn print_hub_staffing(net: &route_sim::NetworkSummary, proposed: bool
     println!("  Relay driver works 1 truck leg, drives back or takes hub bus home");
     println!("  The operational model is identical. The regulation is the gap.");
 }
-

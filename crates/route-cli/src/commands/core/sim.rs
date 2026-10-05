@@ -1,15 +1,11 @@
 //! `Sim` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    mode: SimMode
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, mode: SimMode) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     match mode {
         SimMode::List => {
@@ -44,18 +40,14 @@ pub(crate) fn run(
                 "route sim bind --route {norm} --lat {lat:.5} --lon {lon:.5} --radius {radius:.1}"
             );
 
-            let manifest =
-                route_data::Manifest::load(&manifest_path).with_context(|| {
-                    format!("loading manifest from {}", manifest_path.display())
-                })?;
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
 
             let candidates = scenario_edge_candidates(&graph, &norm, lat, lon, radius, top);
             if candidates.is_empty() {
                 println!("  no {norm} edges found within {radius:.1} miles");
-                println!(
-                    "  tip: increase --radius or verify the route exists in the graph"
-                );
+                println!("  tip: increase --radius or verify the route exists in the graph");
             } else {
                 println!(
                     "  {} candidate edge IDs for scenario affected_edges:",
@@ -91,13 +83,15 @@ pub(crate) fn run(
                 if intervention { " --intervention" } else { "" }
             );
 
-            let toml_str = route_sim::scenarios::load_scenario(&name)
-                .ok_or_else(|| anyhow::anyhow!(
-                    "Unknown scenario '{}'. Run `route sim list` to see available scenarios.", name
-                ))?;
+            let toml_str = route_sim::scenarios::load_scenario(&name).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Unknown scenario '{}'. Run `route sim list` to see available scenarios.",
+                    name
+                )
+            })?;
 
-            let mut scenario: route_sim::Scenario = toml::from_str(toml_str)
-                .with_context(|| format!("parsing scenario {name}"))?;
+            let mut scenario: route_sim::Scenario =
+                toml::from_str(toml_str).with_context(|| format!("parsing scenario {name}"))?;
 
             if !intervention {
                 scenario.intervention = None;
@@ -112,10 +106,8 @@ pub(crate) fn run(
                 println!();
             }
 
-            let manifest =
-                route_data::Manifest::load(&manifest_path).with_context(|| {
-                    format!("loading manifest from {}", manifest_path.display())
-                })?;
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
 
             // Use AADT-based demand proxy (FAF5 not yet joined)
@@ -138,10 +130,8 @@ pub(crate) fn run(
                 if t1_only { " --t1-only" } else { "" }
             );
 
-            let manifest =
-                route_data::Manifest::load(&manifest_path).with_context(|| {
-                    format!("loading manifest from {}", manifest_path.display())
-                })?;
+            let manifest = route_data::Manifest::load(&manifest_path)
+                .with_context(|| format!("loading manifest from {}", manifest_path.display()))?;
             let graph = load_graph(&manifest)?;
             let demand = build_demand_from_graph(&graph);
 

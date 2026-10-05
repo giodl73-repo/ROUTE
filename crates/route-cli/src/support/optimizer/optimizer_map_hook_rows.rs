@@ -91,4 +91,3 @@ pub(crate) fn optimizer_map_hook_rows() -> Vec<OptimizerMapHookRow> {
     )
     .collect()
 }
-

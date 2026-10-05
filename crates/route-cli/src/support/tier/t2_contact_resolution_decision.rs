@@ -111,4 +111,3 @@ pub(crate) fn t2_contact_resolution_decision(
         ),
     }
 }
-

@@ -21,4 +21,3 @@ pub(crate) fn t3_t4_pressure_intake_gate_failures(rows: &[T3T4PressureIntakeRow]
     }
     failures
 }
-

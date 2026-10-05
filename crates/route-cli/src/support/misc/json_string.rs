@@ -10,4 +10,3 @@ pub(crate) fn json_string(attrs: &serde_json::Map<String, serde_json::Value>, ke
         .trim()
         .to_string()
 }
-

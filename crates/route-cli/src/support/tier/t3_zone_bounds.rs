@@ -12,4 +12,3 @@ pub(crate) fn t3_zone_bounds(zone_id: &str) -> Option<(f64, f64, f64, f64)> {
         _ => None,
     }
 }
-

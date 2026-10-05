@@ -74,4 +74,3 @@ pub(crate) fn t2_bundle_repair_queue_gate_failures(rows: &[T2BundleRepairQueueRo
     }
     failures
 }
-

@@ -82,4 +82,3 @@ pub(crate) fn t4_terminal_scenario_readiness_gate_failures(
     }
     failures
 }
-

@@ -27,4 +27,3 @@ pub(crate) fn join_d3_iri_proxy(attrs: &mut route_network::CorridorAttributes) {
     let iri_proxy = (iri / 170.0).min(0.30);
     attrs.pct_bridges_poor = Some(iri_proxy);
 }
-

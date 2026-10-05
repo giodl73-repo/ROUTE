@@ -1,6 +1,6 @@
 //! `StopSlaCandidates` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -12,7 +12,7 @@ pub(crate) fn run(
     candidates_per_gap: usize,
     output: Option<PathBuf>,
     gate: bool,
-    gate_no_algorithmic: bool
+    gate_no_algorithmic: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -35,11 +35,7 @@ pub(crate) fn run(
     });
     let recommendations =
         stop_sla_candidate_recommendations(&rows, &stop_rows, &city_rows, target_gap, top);
-    print_stop_sla_candidate_recommendations(
-        &recommendations,
-        target_gap,
-        candidates_per_gap,
-    );
+    print_stop_sla_candidate_recommendations(&recommendations, target_gap, candidates_per_gap);
     if let Some(output) = output {
         write_stop_sla_candidate_recommendations(&output, &recommendations)
             .with_context(|| format!("writing {}", output.display()))?;
@@ -81,7 +77,6 @@ pub(crate) fn run(
             anyhow::bail!("stop SLA named-candidate gate failed");
         }
     }
-        
+
     Ok(())
 }
-

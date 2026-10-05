@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t3_zone_access_obligation_summary(output: &Path, rows: &[T3ZoneAccessObligationRow]) {
+pub(crate) fn print_t3_zone_access_obligation_summary(
+    output: &Path,
+    rows: &[T3ZoneAccessObligationRow],
+) {
     let mut by_zone = std::collections::BTreeMap::<&str, usize>::new();
     let mut by_class = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
@@ -22,4 +25,3 @@ pub(crate) fn print_t3_zone_access_obligation_summary(output: &Path, rows: &[T3Z
         println!("  {class}: {count}");
     }
 }
-

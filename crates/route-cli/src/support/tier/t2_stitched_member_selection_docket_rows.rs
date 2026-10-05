@@ -42,4 +42,3 @@ pub(crate) fn t2_stitched_member_selection_docket_rows(
     });
     rows
 }
-

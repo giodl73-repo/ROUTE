@@ -1,6 +1,6 @@
 //! `T1ImportMdotMidrive` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -10,7 +10,7 @@ pub(crate) fn run(
     lat: f64,
     lon: f64,
     radius_miles: f64,
-    observation_year: Option<u16>
+    observation_year: Option<u16>,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -32,7 +32,6 @@ pub(crate) fn run(
     println!("route t1-import-mdot-midrive");
     println!("  rows: {}", rows.len());
     println!("  wrote {}", output.display());
-        
+
     Ok(())
 }
-

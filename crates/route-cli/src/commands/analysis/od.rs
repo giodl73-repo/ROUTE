@@ -1,19 +1,14 @@
 //! `Od` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    corridor: OdCorridorCmd,
-    month: Option<u8>
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, corridor: OdCorridorCmd, month: Option<u8>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
     let data_dir = std::path::PathBuf::from("data");
-    let (corridors, trips, seed): (Vec<route_sim::OdCorridor>, usize, u64) = match corridor
-    {
+    let (corridors, trips, seed): (Vec<route_sim::OdCorridor>, usize, u64) = match corridor {
         OdCorridorCmd::NyLa { trips, seed } => {
             let c = route_sim::load_corridor(&data_dir, "ny_la")
                 .unwrap_or_else(route_sim::ny_la_corridor);
@@ -51,8 +46,7 @@ pub(crate) fn run(
     };
 
     let month_names = [
-        "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov",
-        "Dec",
+        "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
     let season_note = match month {
         Some(m @ 1..=12) => {
@@ -83,7 +77,6 @@ pub(crate) fn run(
         print_od_comparison(&cmp);
         println!();
     }
-        
+
     Ok(())
 }
-

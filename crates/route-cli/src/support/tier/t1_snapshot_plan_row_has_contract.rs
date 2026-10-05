@@ -24,4 +24,3 @@ pub(crate) fn t1_snapshot_plan_row_has_contract(row: &T1SnapshotPlanRow) -> bool
         && !row.blocking_gap.trim().is_empty()
         && !row.next_step.trim().is_empty()
 }
-

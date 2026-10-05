@@ -13,4 +13,3 @@ pub(crate) fn load_t3_zone_map_diagnostics(path: &Path) -> Result<Vec<T3ZoneMapD
     }
     Ok(rows)
 }
-

@@ -12,4 +12,3 @@ pub(crate) fn load_tier_pavement_funding_evidence_metadata_capture(
     }
     Ok(rows)
 }
-

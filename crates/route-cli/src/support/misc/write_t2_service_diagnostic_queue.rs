@@ -20,4 +20,3 @@ pub(crate) fn write_t2_service_diagnostic_queue(
     writer.flush()?;
     Ok(())
 }
-

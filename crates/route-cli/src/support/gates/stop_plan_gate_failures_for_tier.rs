@@ -47,4 +47,3 @@ pub(crate) fn stop_plan_gate_failures_for_tier(
     failures.extend(stop_candidate_gate_failures(stops));
     failures
 }
-

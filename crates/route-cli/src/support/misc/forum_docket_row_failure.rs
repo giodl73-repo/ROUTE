@@ -35,4 +35,3 @@ pub(crate) fn forum_docket_row_failure(row: &ForumDocketRow) -> Option<String> {
         None
     }
 }
-

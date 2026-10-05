@@ -90,4 +90,3 @@ pub(crate) fn parse_tdot_smartway_events(
     }
     Ok(rows)
 }
-

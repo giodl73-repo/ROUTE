@@ -1,12 +1,12 @@
 //! `EvRestOutage` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     outage_station_fraction: f64,
     backup_power_fraction: f64,
-    queue_delay_minutes: f64
+    queue_delay_minutes: f64,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -20,7 +20,6 @@ pub(crate) fn run(
         queue_delay_minutes,
     };
     print_ev_rest_outage(&data_dir, config);
-        
+
     Ok(())
 }
-

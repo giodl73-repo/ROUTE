@@ -19,4 +19,3 @@ pub(crate) fn print_t2_bundle_overlay_repair_delta_summary(
         println!("  {decision}: {count}");
     }
 }
-

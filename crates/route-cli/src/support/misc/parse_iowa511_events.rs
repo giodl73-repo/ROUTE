@@ -90,4 +90,3 @@ pub(crate) fn parse_iowa511_events(
     }
     Ok(rows)
 }
-

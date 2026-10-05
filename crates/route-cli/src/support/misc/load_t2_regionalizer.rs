@@ -10,4 +10,3 @@ pub(crate) fn load_t2_regionalizer(path: &Path) -> Result<Vec<T2RegionalizerRow>
     }
     Ok(rows)
 }
-

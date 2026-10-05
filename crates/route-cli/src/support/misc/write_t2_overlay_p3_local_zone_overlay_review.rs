@@ -20,4 +20,3 @@ pub(crate) fn write_t2_overlay_p3_local_zone_overlay_review(
     writer.flush()?;
     Ok(())
 }
-

@@ -96,4 +96,3 @@ pub(crate) fn t2_beck_transfer_complexity_blocker_relief_gate_failures(
     }
     failures
 }
-

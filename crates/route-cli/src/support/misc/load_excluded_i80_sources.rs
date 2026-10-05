@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_excluded_i80_sources(path: &std::path::Path) -> Result<std::collections::BTreeSet<String>> {
+pub(crate) fn load_excluded_i80_sources(
+    path: &std::path::Path,
+) -> Result<std::collections::BTreeSet<String>> {
     let mut reader = csv::Reader::from_path(path)
         .with_context(|| format!("reading I-80 source contract {}", path.display()))?;
     let mut excluded = std::collections::BTreeSet::new();
@@ -14,4 +16,3 @@ pub(crate) fn load_excluded_i80_sources(path: &std::path::Path) -> Result<std::c
     }
     Ok(excluded)
 }
-

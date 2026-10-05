@@ -17,4 +17,3 @@ pub(crate) fn print_t1_schematic_geometry_claim_review_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

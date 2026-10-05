@@ -10,4 +10,3 @@ pub(crate) fn json_scalar_to_string(value: &serde_json::Value) -> String {
         .or_else(|| value.as_u64().map(|value| value.to_string()))
         .unwrap_or_default()
 }
-

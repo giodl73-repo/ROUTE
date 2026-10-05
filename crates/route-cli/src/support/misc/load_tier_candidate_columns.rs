@@ -10,4 +10,3 @@ pub(crate) fn load_tier_candidate_columns(path: &Path) -> Result<Vec<TierCandida
     }
     Ok(rows)
 }
-

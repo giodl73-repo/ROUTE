@@ -76,4 +76,3 @@ pub(crate) fn dual_route_adjacency(
         .collect::<Vec<_>>();
     (adjacency, contact_counts)
 }
-

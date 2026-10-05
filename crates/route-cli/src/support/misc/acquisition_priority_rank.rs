@@ -10,4 +10,3 @@ pub(crate) fn acquisition_priority_rank(priority: &str) -> u8 {
         _ => 3,
     }
 }
-

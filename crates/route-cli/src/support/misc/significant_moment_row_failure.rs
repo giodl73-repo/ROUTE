@@ -47,4 +47,3 @@ pub(crate) fn significant_moment_row_failure(row: &SignificantMomentRow) -> Opti
         None
     }
 }
-

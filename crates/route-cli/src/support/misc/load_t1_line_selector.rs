@@ -10,4 +10,3 @@ pub(crate) fn load_t1_line_selector(path: &Path) -> Result<Vec<T1LineSelectorInp
     }
     Ok(rows)
 }
-

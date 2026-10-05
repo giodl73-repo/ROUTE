@@ -111,4 +111,3 @@ pub(crate) fn t4_terminal_contact_proof_artifact_contract_gate_failures(
     }
     failures
 }
-

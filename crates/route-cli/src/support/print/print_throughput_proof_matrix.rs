@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_throughput_proof_matrix(rows: &[ThroughputProofRow], blockers: bool, details: bool) {
+pub(crate) fn print_throughput_proof_matrix(
+    rows: &[ThroughputProofRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = throughput_proof_gate_failures(rows);
     let filtered = if blockers {
         failures.clone()
@@ -42,4 +46,3 @@ pub(crate) fn print_throughput_proof_matrix(rows: &[ThroughputProofRow], blocker
         }
     }
 }
-

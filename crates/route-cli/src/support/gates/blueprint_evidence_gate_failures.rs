@@ -49,4 +49,3 @@ pub(crate) fn blueprint_evidence_gate_failures(
 
     failures
 }
-

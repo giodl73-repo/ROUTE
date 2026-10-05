@@ -16,4 +16,3 @@ pub(crate) fn append_artifact(existing: &str, artifact: &Path) -> String {
         format!("{}; {}", existing.trim(), artifact)
     }
 }
-

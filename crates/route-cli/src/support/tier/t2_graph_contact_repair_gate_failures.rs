@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepairRow]) -> Vec<String> {
+pub(crate) fn t2_graph_contact_repair_gate_failures(
+    rows: &[T2GraphContactRepairRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.len() == 1 && rows[0].route == "__all_t2_graph_contact_repairs__" {
         let row = &rows[0];
@@ -25,4 +27,3 @@ pub(crate) fn t2_graph_contact_repair_gate_failures(rows: &[T2GraphContactRepair
     }
     failures
 }
-

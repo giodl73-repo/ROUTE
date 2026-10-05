@@ -16,4 +16,3 @@ pub(crate) fn print_t3_zone_map_diagnostic_summary(output: &Path, rows: &[T3Zone
         println!("  {readiness}: {count}");
     }
 }
-

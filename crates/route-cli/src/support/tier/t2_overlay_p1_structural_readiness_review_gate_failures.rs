@@ -78,4 +78,3 @@ pub(crate) fn t2_overlay_p1_structural_readiness_review_gate_failures(
     }
     failures
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_t2_beck_long_connector_blocker_relief(
     writer.flush()?;
     Ok(())
 }
-

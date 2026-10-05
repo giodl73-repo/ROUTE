@@ -16,4 +16,3 @@ pub(crate) fn t2_qualification_action_for(
                     .any(|basis| *basis == qualification_basis)
         })
 }
-

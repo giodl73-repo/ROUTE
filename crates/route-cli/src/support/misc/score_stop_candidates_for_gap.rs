@@ -139,4 +139,3 @@ pub(crate) fn score_stop_candidates_for_gap(
     });
     scores
 }
-

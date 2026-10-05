@@ -154,4 +154,3 @@ pub(crate) fn t2_blocker_closure_rows(
     });
     rows
 }
-

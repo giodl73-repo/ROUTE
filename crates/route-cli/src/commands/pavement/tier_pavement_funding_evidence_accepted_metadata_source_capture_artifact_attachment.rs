@@ -1,12 +1,12 @@
 //! `TierPavementFundingEvidenceAcceptedMetadataSourceCaptureArtifactAttachment` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     accepted_metadata_source_capture: PathBuf,
     output: PathBuf,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -15,13 +15,10 @@ pub(crate) fn run(
     println!(
         "route tier-pavement-funding-evidence-accepted-metadata-source-capture-artifact-attachment"
     );
-    let capture_rows =
-        load_tier_pavement_funding_evidence_accepted_metadata_source_capture(
-            &accepted_metadata_source_capture,
-        )
-        .with_context(|| {
-            format!("loading {}", accepted_metadata_source_capture.display())
-        })?;
+    let capture_rows = load_tier_pavement_funding_evidence_accepted_metadata_source_capture(
+        &accepted_metadata_source_capture,
+    )
+    .with_context(|| format!("loading {}", accepted_metadata_source_capture.display()))?;
     let rows =
         tier_pavement_funding_evidence_accepted_metadata_source_capture_artifact_attachment_rows(
             &capture_rows,
@@ -57,7 +54,6 @@ pub(crate) fn run(
             "Tier pavement funding evidence accepted metadata source capture artifact attachment gate: PASS"
         );
     }
-        
+
     Ok(())
 }
-

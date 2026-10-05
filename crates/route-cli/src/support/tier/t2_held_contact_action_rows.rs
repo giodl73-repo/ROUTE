@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_held_contact_action_rows(rows: &[T2ContactResolutionRow]) -> Vec<T2HeldContactActionRow> {
+pub(crate) fn t2_held_contact_action_rows(
+    rows: &[T2ContactResolutionRow],
+) -> Vec<T2HeldContactActionRow> {
     rows.iter()
         .filter(|row| row.validation_status == "review")
         .map(|row| {
@@ -21,4 +23,3 @@ pub(crate) fn t2_held_contact_action_rows(rows: &[T2ContactResolutionRow]) -> Ve
         })
         .collect()
 }
-

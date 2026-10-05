@@ -38,4 +38,3 @@ pub(crate) fn print_map_atlas(rows: &[MapAtlasRow], details: bool) {
         }
     }
 }
-

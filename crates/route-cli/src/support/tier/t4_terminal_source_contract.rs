@@ -30,4 +30,3 @@ pub(crate) fn t4_terminal_source_contract(zone_id: &str) -> (&'static str, &'sta
         ),
     }
 }
-

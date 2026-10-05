@@ -10,4 +10,3 @@ pub(crate) fn write_t1_failure_ledger(path: &Path, rows: &[T1FailureRow]) -> Res
     wtr.flush()?;
     Ok(())
 }
-

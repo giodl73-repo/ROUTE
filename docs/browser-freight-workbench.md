@@ -35,3 +35,5 @@ npm run test:pages
 For Windows with installed Chromium, set `ROUTE_BROWSER_PATH` to its executable. Pages CI validates the native shared model and bounded adapter, compiles real WASM, runs Chromium checks, and deploys only master. Output must be inside dist and is capped at 5 MB. The toolchain, npm dependency, and wasm-bindgen versions are pinned.
 
 The page includes the repository LICENSE notice: software is MIT; original non-software content is CC BY-NC 4.0 unless otherwise stated. Synthetic fixtures are software test/demo inputs, not copied external datasets.
+
+The broader native release checks are `cargo test --locked --workspace` and `./scripts/check-mileposts.ps1 -SkipTests`. The latter builds ROUTE once and runs every data gate against Cargo's reported native executable.

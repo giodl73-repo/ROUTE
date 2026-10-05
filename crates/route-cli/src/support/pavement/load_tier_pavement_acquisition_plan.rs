@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_tier_pavement_acquisition_plan(path: &Path) -> Result<Vec<TierPavementAcquisitionPlanRow>> {
+pub(crate) fn load_tier_pavement_acquisition_plan(
+    path: &Path,
+) -> Result<Vec<TierPavementAcquisitionPlanRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_tier_pavement_acquisition_plan(path: &Path) -> Result<Vec<Tie
     }
     Ok(rows)
 }
-

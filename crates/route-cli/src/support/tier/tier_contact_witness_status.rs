@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn tier_contact_witness_status(repair_action: &str) -> (&'static str, &'static str, &'static str) {
+pub(crate) fn tier_contact_witness_status(
+    repair_action: &str,
+) -> (&'static str, &'static str, &'static str) {
     match repair_action {
         "keep-for-regionalizer" => ("regionalizer-ready", "accepted", "pass"),
         "keep-with-parent-region-review" => ("parent-region-review", "review", "review"),
@@ -14,4 +16,3 @@ pub(crate) fn tier_contact_witness_status(repair_action: &str) -> (&'static str,
         _ => ("unknown-repair-action", "source-needed", "review"),
     }
 }
-

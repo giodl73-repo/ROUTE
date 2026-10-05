@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_game_ops_bundle_required_evidence(row: &T2GameOpsBundleEvidenceReviewRow) -> &'static str {
+pub(crate) fn t2_game_ops_bundle_required_evidence(
+    row: &T2GameOpsBundleEvidenceReviewRow,
+) -> &'static str {
     match row.repair_class.as_str() {
         "service-class" if row.service_repair_class == "local-zone" => {
             "accepted-local-zone-overlay-handoff"
@@ -14,4 +16,3 @@ pub(crate) fn t2_game_ops_bundle_required_evidence(row: &T2GameOpsBundleEvidence
         _ => "accepted-bundle-binding-repair-evidence",
     }
 }
-

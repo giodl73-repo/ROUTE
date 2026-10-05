@@ -12,4 +12,3 @@ pub(crate) fn load_t2_stitched_member_decision_docket(
     }
     Ok(rows)
 }
-

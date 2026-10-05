@@ -21,4 +21,3 @@ pub(crate) fn print_t3_t4_access_gap_summary(output: &Path, rows: &[T3T4AccessGa
         println!("  {surface}: {count}");
     }
 }
-

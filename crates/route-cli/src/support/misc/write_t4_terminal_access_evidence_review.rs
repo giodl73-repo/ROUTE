@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_access_evidence_review(
     writer.flush()?;
     Ok(())
 }
-

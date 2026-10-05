@@ -10,4 +10,3 @@ pub(crate) fn load_t2_held_contact_actions(path: &Path) -> Result<Vec<T2HeldCont
     }
     Ok(rows)
 }
-

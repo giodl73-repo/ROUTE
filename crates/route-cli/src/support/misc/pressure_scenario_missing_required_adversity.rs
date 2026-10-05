@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn pressure_scenario_missing_required_adversity(rows: &[PressureScenarioRow]) -> Vec<&'static str> {
+pub(crate) fn pressure_scenario_missing_required_adversity(
+    rows: &[PressureScenarioRow],
+) -> Vec<&'static str> {
     const REQUIRED: &[(&str, &[&str])] = &[
         ("T1/T1 closure", &["t1/t1"]),
         ("corridor segment closure", &["corridor segment", "closure"]),
@@ -28,4 +30,3 @@ pub(crate) fn pressure_scenario_missing_required_adversity(rows: &[PressureScena
         })
         .collect()
 }
-

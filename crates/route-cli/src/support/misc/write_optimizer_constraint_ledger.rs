@@ -20,4 +20,3 @@ pub(crate) fn write_optimizer_constraint_ledger(
     writer.flush()?;
     Ok(())
 }
-

@@ -42,4 +42,3 @@ pub(crate) fn optimizer_constraint_budget_index(
     }
     index
 }
-

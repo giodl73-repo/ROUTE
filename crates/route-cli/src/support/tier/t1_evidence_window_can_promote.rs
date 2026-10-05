@@ -10,4 +10,3 @@ pub(crate) fn t1_evidence_window_can_promote(row: &T1EvidenceWindowRow) -> bool 
         && !row.observation_end.trim().is_empty()
         && row.event_count > 0
 }
-

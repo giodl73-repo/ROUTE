@@ -19,4 +19,3 @@ pub(crate) fn print_t2_game_ops_bundle_evidence_review_summary(
         println!("  {class}: {count}");
     }
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_t2_bundle_overlay_repair_delta(
     writer.flush()?;
     Ok(())
 }
-

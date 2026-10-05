@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t4_terminal_access_column_gate_failures(rows: &[T4TerminalAccessColumnRow]) -> Vec<String> {
+pub(crate) fn t4_terminal_access_column_gate_failures(
+    rows: &[T4TerminalAccessColumnRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no T4 terminal access columns emitted".to_string());
@@ -66,4 +68,3 @@ pub(crate) fn t4_terminal_access_column_gate_failures(rows: &[T4TerminalAccessCo
     }
     failures
 }
-

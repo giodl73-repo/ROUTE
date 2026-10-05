@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_endpoint_exceptions(rows: &[&EndpointExceptionRow], blockers: bool, details: bool) {
+pub(crate) fn print_endpoint_exceptions(
+    rows: &[&EndpointExceptionRow],
+    blockers: bool,
+    details: bool,
+) {
     let visible = rows
         .iter()
         .copied()
@@ -53,4 +57,3 @@ pub(crate) fn print_endpoint_exceptions(rows: &[&EndpointExceptionRow], blockers
         }
     }
 }
-

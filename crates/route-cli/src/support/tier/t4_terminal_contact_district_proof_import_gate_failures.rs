@@ -116,4 +116,3 @@ pub(crate) fn t4_terminal_contact_district_proof_import_gate_failures(
     }
     failures
 }
-

@@ -77,4 +77,3 @@ pub(crate) fn t2_bundle_readiness_disposition_rows(
     });
     rows
 }
-

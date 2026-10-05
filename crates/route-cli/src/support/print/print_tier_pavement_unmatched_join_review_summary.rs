@@ -22,4 +22,3 @@ pub(crate) fn print_tier_pavement_unmatched_join_review_summary(
         );
     }
 }
-

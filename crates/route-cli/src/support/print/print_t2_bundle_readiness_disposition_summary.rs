@@ -19,4 +19,3 @@ pub(crate) fn print_t2_bundle_readiness_disposition_summary(
         println!("  {disposition}: {count}");
     }
 }
-

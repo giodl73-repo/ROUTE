@@ -16,4 +16,3 @@ pub(crate) fn print_t3_t4_pressure_intake_summary(output: &Path, rows: &[T3T4Pre
         println!("  {intake_class}: {count}");
     }
 }
-

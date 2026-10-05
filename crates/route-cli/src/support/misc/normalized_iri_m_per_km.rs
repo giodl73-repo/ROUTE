@@ -11,4 +11,3 @@ pub(crate) fn normalized_iri_m_per_km(raw_iri: Option<f32>) -> Option<f32> {
         }
     })
 }
-

@@ -26,4 +26,3 @@ pub(crate) fn projection_fraction(
         ((px - ax) * dx + (py - ay) * dy) / len2
     }
 }
-

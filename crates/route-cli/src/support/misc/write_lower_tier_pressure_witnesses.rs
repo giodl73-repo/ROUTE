@@ -20,4 +20,3 @@ pub(crate) fn write_lower_tier_pressure_witnesses(
     writer.flush()?;
     Ok(())
 }
-

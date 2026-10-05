@@ -16,4 +16,3 @@ pub(crate) fn print_t3_zone_render_board_summary(output: &Path, rows: &[T3ZoneRe
         println!("  {layer}: {count}");
     }
 }
-

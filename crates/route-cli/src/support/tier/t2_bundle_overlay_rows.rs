@@ -121,4 +121,3 @@ pub(crate) fn t2_bundle_overlay_rows(
         })
         .collect()
 }
-

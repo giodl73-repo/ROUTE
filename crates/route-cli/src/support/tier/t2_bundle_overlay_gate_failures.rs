@@ -77,4 +77,3 @@ pub(crate) fn t2_bundle_overlay_gate_failures(rows: &[T2BundleOverlayRow]) -> Ve
     }
     failures
 }
-

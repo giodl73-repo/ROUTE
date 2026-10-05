@@ -59,4 +59,3 @@ pub(crate) fn join_fema_d1_to_corridor(
     // Proxy: 70% of total is consecutive for coastal/valley corridors
     attrs.max_consecutive_sfha_miles = Some((sfha_miles * 0.7) as f32);
 }
-

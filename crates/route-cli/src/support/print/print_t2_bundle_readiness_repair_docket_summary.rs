@@ -19,4 +19,3 @@ pub(crate) fn print_t2_bundle_readiness_repair_docket_summary(
         println!("  {readiness_class}: {count}");
     }
 }
-

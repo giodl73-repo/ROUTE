@@ -15,4 +15,3 @@ pub(crate) fn load_t2_bundle_overlay_repair_targets(
     }
     Ok(rows)
 }
-

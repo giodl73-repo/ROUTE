@@ -1,6 +1,6 @@
 //! `PressureScenarios` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -11,15 +11,14 @@ pub(crate) fn run(
     standards_ledger: PathBuf,
     gate_l2: bool,
     gate_readiness: bool,
-    gate_coverage: bool
+    gate_coverage: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
-    let rows = load_pressure_scenarios(&ledger).with_context(|| {
-        format!("loading pressure scenario ledger {}", ledger.display())
-    })?;
+    let rows = load_pressure_scenarios(&ledger)
+        .with_context(|| format!("loading pressure scenario ledger {}", ledger.display()))?;
     print_pressure_scenarios(&rows, blockers, details);
     let standards_rows = if coverage || gate_coverage {
         Some(
@@ -99,10 +98,7 @@ pub(crate) fn run(
                     for row in failures.iter().take(10) {
                         println!(
                             "  - {} [{} {}]: {}",
-                            row.standard_id,
-                            row.tier,
-                            row.standard_family,
-                            row.primary_stressor
+                            row.standard_id, row.tier, row.standard_family, row.primary_stressor
                         );
                     }
                 }
@@ -115,7 +111,6 @@ pub(crate) fn run(
             println!("Pressure standard coverage gate: PASS");
         }
     }
-        
+
     Ok(())
 }
-

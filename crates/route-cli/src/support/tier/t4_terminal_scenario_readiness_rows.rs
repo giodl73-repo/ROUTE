@@ -67,4 +67,3 @@ pub(crate) fn t4_terminal_scenario_readiness_rows(
     });
     rows
 }
-

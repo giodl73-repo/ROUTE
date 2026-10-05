@@ -99,4 +99,3 @@ pub(crate) fn t4_terminal_access_proof_artifact_acquisition_target_gate_failures
     }
     failures
 }
-

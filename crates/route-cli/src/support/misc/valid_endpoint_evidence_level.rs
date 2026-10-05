@@ -8,4 +8,3 @@ pub(crate) fn valid_endpoint_evidence_level(level: &str) -> bool {
         "validated" | "heuristic" | "planned" | "missing_graph_data" | "demote"
     )
 }
-

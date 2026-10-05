@@ -83,4 +83,3 @@ pub(crate) fn release_manifest_gate_failures(rows: &[ReleaseManifestRow]) -> Vec
     }
     failures
 }
-

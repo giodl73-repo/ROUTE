@@ -84,4 +84,3 @@ pub(crate) fn t2_relief_evidence_rows(
     }
     rows
 }
-

@@ -31,4 +31,3 @@ pub(crate) fn t1_diamond_validation_row_has_contract(row: &T1DiamondValidationRo
         && !row.next_validation_step.trim().is_empty()
         && (validation == "validated" || !row.blocking_gap.trim().is_empty())
 }
-

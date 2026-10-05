@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn indot_trafficwise_event_millis(feature: &serde_json::Value, key: &str) -> Option<i64> {
+pub(crate) fn indot_trafficwise_event_millis(
+    feature: &serde_json::Value,
+    key: &str,
+) -> Option<i64> {
     feature
         .get("_eventReport")
         .and_then(|value| value.get(key))
@@ -28,4 +31,3 @@ pub(crate) fn indot_trafficwise_event_millis(feature: &serde_json::Value, key: &
                 .and_then(json_value_i64)
         })
 }
-

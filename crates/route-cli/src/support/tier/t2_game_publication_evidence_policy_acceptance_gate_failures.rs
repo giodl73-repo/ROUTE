@@ -98,4 +98,3 @@ pub(crate) fn t2_game_publication_evidence_policy_acceptance_gate_failures(
     }
     failures
 }
-

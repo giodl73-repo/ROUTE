@@ -19,4 +19,3 @@ pub(crate) fn print_t2_stitched_member_proof_artifact_attachment_summary(
         println!("  {status}: {count}");
     }
 }
-

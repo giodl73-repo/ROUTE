@@ -19,4 +19,3 @@ pub(crate) fn print_t2_bundle_readiness_replay_decision_summary(
         println!("  {decision}: {count}");
     }
 }
-

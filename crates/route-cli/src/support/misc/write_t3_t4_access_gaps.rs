@@ -17,4 +17,3 @@ pub(crate) fn write_t3_t4_access_gaps(path: &Path, rows: &[T3T4AccessGapRow]) ->
     writer.flush()?;
     Ok(())
 }
-

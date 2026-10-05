@@ -11,4 +11,3 @@ pub(crate) fn tier_pavement_route_state_scope(
         .map(|corridor| corridor.states.join(";"))
         .unwrap_or_default()
 }
-

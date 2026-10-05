@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_national_segment_bundles(path: &Path, rows: &[NationalSegmentBundleRow]) -> Result<()> {
+pub(crate) fn write_national_segment_bundles(
+    path: &Path,
+    rows: &[NationalSegmentBundleRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_national_segment_bundles(path: &Path, rows: &[NationalSegmen
     writer.flush()?;
     Ok(())
 }
-

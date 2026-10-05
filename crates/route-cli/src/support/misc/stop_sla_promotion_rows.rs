@@ -20,4 +20,3 @@ pub(crate) fn stop_sla_promotion_rows(
     }
     rows
 }
-

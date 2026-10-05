@@ -10,4 +10,3 @@ pub(crate) fn temp_path_for_atomic_write(path: &Path) -> PathBuf {
     file_name.push(format!(".{}.tmp", std::process::id()));
     path.with_file_name(file_name)
 }
-

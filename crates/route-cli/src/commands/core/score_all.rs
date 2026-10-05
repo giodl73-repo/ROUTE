@@ -1,16 +1,12 @@
 //! `score_all` command handler (same contract as `build` exemplar).
 //! See `commands/build.rs` for the reference shape.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    workers: Option<usize>
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, workers: Option<usize>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     println!("route score-all");
     let manifest = route_data::Manifest::load(&manifest_path)
@@ -23,11 +19,10 @@ pub(crate) fn run(
     let bc_raw = route_network::centrality::compute_edge_betweenness(&graph);
     println!("  centrality: {} edges scored", bc_raw.len());
     // Normalize using P95 to prevent outlier junction edges from compressing the distribution
-    let mut vals_sorted: Vec<f64> =
-        bc_raw.values().copied().filter(|v| v.is_finite()).collect();
+    let mut vals_sorted: Vec<f64> = bc_raw.values().copied().filter(|v| v.is_finite()).collect();
     vals_sorted.sort_by(f64::total_cmp);
-    let p95_idx = ((vals_sorted.len() as f64 * 0.95) as usize)
-        .min(vals_sorted.len().saturating_sub(1));
+    let p95_idx =
+        ((vals_sorted.len() as f64 * 0.95) as usize).min(vals_sorted.len().saturating_sub(1));
     let bc_norm = vals_sorted.get(p95_idx).cloned().unwrap_or(1.0).max(1.0);
     let bc = bc_raw
         .into_iter()
@@ -104,12 +99,7 @@ pub(crate) fn run(
                 );
             }
             if !intermodal.is_empty() {
-                join_intermodal_to_corridor(
-                    &graph,
-                    id,
-                    &mut corridor.attributes,
-                    &intermodal,
-                );
+                join_intermodal_to_corridor(&graph, id, &mut corridor.attributes, &intermodal);
             }
             if !fema_tiles.is_empty() {
                 join_fema_d1_to_corridor(&graph, id, &mut corridor.attributes, &fema_tiles);
@@ -174,9 +164,8 @@ pub(crate) fn run(
     ];
     header.extend(DIMENSION_CODES);
     header.extend([
-        "A1_conf", "A2_conf", "A3_conf", "A4_conf", "A5_conf", "B1_conf", "B2_conf",
-        "B3_conf", "B4_conf", "C1_conf", "C2_conf", "C3_conf", "C4_conf", "D1_conf",
-        "D2_conf", "D3_conf",
+        "A1_conf", "A2_conf", "A3_conf", "A4_conf", "A5_conf", "B1_conf", "B2_conf", "B3_conf",
+        "B4_conf", "C1_conf", "C2_conf", "C3_conf", "C4_conf", "D1_conf", "D2_conf", "D3_conf",
     ]);
     wtr.write_record(header)?;
     for row in &score_rows {

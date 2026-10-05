@@ -108,4 +108,3 @@ pub(crate) fn t3_t4_access_gap_rows(
     });
     rows
 }
-

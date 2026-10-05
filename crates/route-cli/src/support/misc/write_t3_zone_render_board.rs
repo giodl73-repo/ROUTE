@@ -17,4 +17,3 @@ pub(crate) fn write_t3_zone_render_board(path: &Path, rows: &[T3ZoneRenderBoardR
     writer.flush()?;
     Ok(())
 }
-

@@ -53,4 +53,3 @@ pub(crate) fn print_forum_docket(rows: &[ForumDocketRow], blockers: bool, detail
         }
     }
 }
-

@@ -10,4 +10,3 @@ pub(crate) fn parse_stop_sla_candidate_docket<R: std::io::Read>(
         .collect::<std::result::Result<Vec<_>, _>>()
         .context("parsing stop SLA candidate docket")
 }
-

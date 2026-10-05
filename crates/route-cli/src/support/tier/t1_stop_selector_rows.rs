@@ -77,4 +77,3 @@ pub(crate) fn t1_stop_selector_rows(
     }
     Ok(rows)
 }
-

@@ -27,4 +27,3 @@ pub(crate) fn pavement_gap_has_accepted_repair_funding(
             && funding.covered_repair_cost_m + 1e-6 >= estimated_repair_cost_m
     })
 }
-

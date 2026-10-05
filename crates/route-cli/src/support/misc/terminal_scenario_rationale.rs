@@ -8,4 +8,3 @@ pub(crate) fn terminal_scenario_rationale(row: &T4TerminalContactEvidenceRow) ->
         row.route, row.terminal_district_seed
     )
 }
-

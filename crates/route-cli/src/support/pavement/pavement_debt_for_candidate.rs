@@ -35,4 +35,3 @@ pub(crate) fn pavement_debt_for_candidate(
         String::new(),
     )
 }
-

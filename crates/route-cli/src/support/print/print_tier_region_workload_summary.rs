@@ -31,4 +31,3 @@ pub(crate) fn print_tier_region_workload_summary(
     }
     println!("  wrote repair docket: {}", repairs.display());
 }
-

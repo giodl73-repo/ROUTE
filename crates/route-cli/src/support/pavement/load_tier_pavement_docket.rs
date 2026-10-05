@@ -13,4 +13,3 @@ pub(crate) fn load_tier_pavement_docket(path: &Path) -> Result<Vec<TierPavementD
     }
     Ok(rows)
 }
-

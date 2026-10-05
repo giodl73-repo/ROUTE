@@ -3,15 +3,15 @@ use clap::Parser;
 use std::path::{Path, PathBuf};
 
 mod cli;
-mod game;
 mod commands;
+mod game;
 mod support;
 mod types;
-pub(crate) use types::*;
 pub(crate) use support::*;
+pub(crate) use types::*;
 
 use cli::{
-    Cli, Commands, GapType, GameCommand, InterventionCorridorArg, OdCorridorCmd, SimMode,
+    Cli, Commands, GameCommand, GapType, InterventionCorridorArg, OdCorridorCmd, SimMode,
     TierRegionGraphArg,
 };
 
@@ -1637,4 +1637,3 @@ const EXPECTED_T1_DIAMOND_SITES: &[&str] = &[
 mod tests {
     include!("tests_inline.rs");
 }
-

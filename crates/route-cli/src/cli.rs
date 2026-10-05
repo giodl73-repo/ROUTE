@@ -5879,4 +5879,3 @@ pub enum GameCommand {
         gate_promotion: bool,
     },
 }
-

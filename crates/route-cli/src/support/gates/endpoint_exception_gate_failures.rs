@@ -32,4 +32,3 @@ pub(crate) fn endpoint_exception_gate_failures(
     }
     failures
 }
-

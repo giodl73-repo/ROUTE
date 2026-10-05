@@ -18,4 +18,3 @@ pub(crate) fn ensure_no_graphql_errors(json: &str) -> Result<()> {
     }
     Ok(())
 }
-

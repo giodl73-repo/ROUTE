@@ -19,4 +19,3 @@ pub(crate) fn print_t2_local_zone_overlay_handoff_summary(
         println!("  {decision}: {count}");
     }
 }
-

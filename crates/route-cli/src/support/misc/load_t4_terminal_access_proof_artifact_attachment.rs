@@ -15,4 +15,3 @@ pub(crate) fn load_t4_terminal_access_proof_artifact_attachment(
     }
     Ok(rows)
 }
-

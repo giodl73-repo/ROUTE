@@ -16,4 +16,3 @@ pub(crate) fn print_tier_contact_witness_summary(output: &Path, rows: &[TierCont
         println!("  {witness_type}: {count}");
     }
 }
-

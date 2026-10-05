@@ -12,4 +12,3 @@ pub(crate) fn load_tier_pavement_acquisition_docket(
     }
     Ok(rows)
 }
-
