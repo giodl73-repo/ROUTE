@@ -76,4 +76,3 @@ pub(crate) fn t2_stitched_member_candidate_scope_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

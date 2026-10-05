@@ -71,4 +71,3 @@ pub(crate) fn t2_bundle_readiness_repair_evidence_gate_failures(
     }
     failures
 }
-

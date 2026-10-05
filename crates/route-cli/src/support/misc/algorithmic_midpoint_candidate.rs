@@ -34,4 +34,3 @@ pub(crate) fn algorithmic_midpoint_candidate(
         score: gap.miles - midpoint_gap,
     }
 }
-

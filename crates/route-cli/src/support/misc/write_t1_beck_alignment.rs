@@ -17,4 +17,3 @@ pub(crate) fn write_t1_beck_alignment(path: &Path, rows: &[T1BeckAlignmentRow]) 
     writer.flush()?;
     Ok(())
 }
-

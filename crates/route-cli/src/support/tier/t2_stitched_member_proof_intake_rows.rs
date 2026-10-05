@@ -46,4 +46,3 @@ pub(crate) fn t2_stitched_member_proof_intake_rows(
     });
     rows
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn print_t2_bundle_repair_queue_summary(output: &Path, rows: &[T2Bund
         println!("  {status}: {count}");
     }
 }
-

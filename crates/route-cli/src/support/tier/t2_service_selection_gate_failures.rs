@@ -76,4 +76,3 @@ pub(crate) fn t2_service_selection_gate_failures(rows: &[T2ServiceSelectionRow])
     }
     failures
 }
-

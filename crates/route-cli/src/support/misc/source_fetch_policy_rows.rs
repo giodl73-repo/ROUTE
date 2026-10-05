@@ -60,4 +60,3 @@ pub(crate) fn source_fetch_policy_rows() -> Vec<SourceFetchPolicyRow> {
         ),
     ]
 }
-

@@ -27,4 +27,3 @@ pub(crate) fn t3_zone_for_route(route: &str) -> Option<(&'static str, &'static s
     };
     t3_zone_catalog_entry(zone_id)
 }
-

@@ -14,4 +14,3 @@ pub(crate) fn accepted_t4_terminal_proof_route_set(
         .map(|row| route_display_key(&row.route))
         .collect()
 }
-

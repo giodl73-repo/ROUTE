@@ -27,4 +27,3 @@ pub(crate) fn t2_relief_evidence_gate_failures(rows: &[T2ReliefEvidenceRow]) -> 
     }
     failures
 }
-

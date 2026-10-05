@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t1_beck_alignment_rows(stop_rows: &[T1StopSelectorInputRow]) -> Vec<T1BeckAlignmentRow> {
+pub(crate) fn t1_beck_alignment_rows(
+    stop_rows: &[T1StopSelectorInputRow],
+) -> Vec<T1BeckAlignmentRow> {
     let diagnostics = route_map::beck_t1_diagnostics()
         .into_iter()
         .map(|row| (normalise_designation(row.corridor), row))
@@ -74,4 +76,3 @@ pub(crate) fn t1_beck_alignment_rows(stop_rows: &[T1StopSelectorInputRow]) -> Ve
         })
         .collect()
 }
-

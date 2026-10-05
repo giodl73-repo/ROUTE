@@ -13,4 +13,3 @@ pub(crate) fn truncate_for_table(value: &str, width: usize) -> String {
             + "…"
     }
 }
-

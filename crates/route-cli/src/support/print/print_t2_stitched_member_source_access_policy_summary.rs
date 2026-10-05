@@ -19,4 +19,3 @@ pub(crate) fn print_t2_stitched_member_source_access_policy_summary(
         println!("  {mode}: {count}");
     }
 }
-

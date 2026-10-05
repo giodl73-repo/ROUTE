@@ -1,12 +1,12 @@
 //! `Invest` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     budget: f64,
     include_upgrades: bool,
-    top: usize
+    top: usize,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -49,9 +49,7 @@ pub(crate) fn run(
 
     let plan = route_network::allocate_investment(&candidates, budget);
 
-    println!(
-        "\n┌─────────────────────────────────────────────────────────────────────────┐"
-    );
+    println!("\n┌─────────────────────────────────────────────────────────────────────────┐");
     println!("│  Investment Plan — ${:.0}B budget", budget);
     println!("├─────────────────────────────────────────────────────────────────────────┤");
     println!(
@@ -91,10 +89,11 @@ pub(crate) fn run(
         );
     }
     println!("└──────┴───────────────┴───────────┴──────────────┴───────────────────────┘");
-    println!("\n  Costs: widen=$10M/mi, US→Int=$30M/mi, SR→Int=$40M/mi, new=$75M/mi (rough FHWA ranges)");
+    println!(
+        "\n  Costs: widen=$10M/mi, US→Int=$30M/mi, SR→Int=$40M/mi, new=$75M/mi (rough FHWA ranges)"
+    );
     println!("  † Upgrade costs and throughput gains are order-of-magnitude estimates.");
     println!("  † Run `route score-all` to improve gain estimates with real AADT data.");
-        
+
     Ok(())
 }
-

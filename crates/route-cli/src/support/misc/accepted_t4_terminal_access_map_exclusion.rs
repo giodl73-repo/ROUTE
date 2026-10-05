@@ -15,4 +15,3 @@ pub(crate) fn accepted_t4_terminal_access_map_exclusion(
             && !row.preserved_claims_after.trim().is_empty()
     })
 }
-

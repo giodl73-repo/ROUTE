@@ -10,4 +10,3 @@ pub(crate) fn load_tier_optimizer_runs(path: &Path) -> Result<Vec<TierOptimizerR
     }
     Ok(rows)
 }
-

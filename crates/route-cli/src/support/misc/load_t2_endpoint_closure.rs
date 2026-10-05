@@ -13,4 +13,3 @@ pub(crate) fn load_t2_endpoint_closure(path: &Path) -> Result<Vec<T2EndpointClos
     }
     Ok(rows)
 }
-

@@ -51,4 +51,3 @@ pub(crate) fn t2_service_diagnostic_contract(
         "holds bundle-ready T2 route until Beck diagnostic review is resolved",
     )
 }
-

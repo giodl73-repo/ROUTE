@@ -7,4 +7,3 @@ pub(crate) fn shared_segment_pair_id(route: &str, overlap_route: &str) -> String
     routes.sort();
     routes.join("-")
 }
-

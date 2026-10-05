@@ -1,13 +1,8 @@
 //! `T2BeckTransferComplexityPolicyAcceptance` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    policy: PathBuf,
-    output: PathBuf,
-    gate: bool
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, policy: PathBuf, output: PathBuf, gate: bool) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -21,10 +16,8 @@ pub(crate) fn run(
     print_t2_beck_transfer_complexity_policy_acceptance_summary(&output, &rows);
 
     if gate {
-        let failures = t2_beck_transfer_complexity_policy_acceptance_gate_failures(
-            &rows,
-            &policy_rows,
-        );
+        let failures =
+            t2_beck_transfer_complexity_policy_acceptance_gate_failures(&rows, &policy_rows);
         if !failures.is_empty() {
             println!();
             println!("T2 Beck transfer complexity policy acceptance gate: FAIL");
@@ -36,7 +29,6 @@ pub(crate) fn run(
         println!();
         println!("T2 Beck transfer complexity policy acceptance gate: PASS");
     }
-        
+
     Ok(())
 }
-

@@ -37,4 +37,3 @@ pub(crate) fn t4_terminal_contact_source_catalog_rows(
         })
         .collect()
 }
-

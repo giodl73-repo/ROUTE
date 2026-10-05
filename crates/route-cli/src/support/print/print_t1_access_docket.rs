@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t1_access_docket(rows: &[T1SourceHealthRow], category: Option<&str>, details: bool) {
+pub(crate) fn print_t1_access_docket(
+    rows: &[T1SourceHealthRow],
+    category: Option<&str>,
+    details: bool,
+) {
     let mut docket = rows
         .iter()
         .filter(|row| t1_source_health_is_blocked(row))
@@ -52,4 +56,3 @@ pub(crate) fn print_t1_access_docket(rows: &[T1SourceHealthRow], category: Optio
         }
     }
 }
-

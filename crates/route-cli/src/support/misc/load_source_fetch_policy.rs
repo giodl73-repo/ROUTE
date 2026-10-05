@@ -13,4 +13,3 @@ pub(crate) fn load_source_fetch_policy(path: &Path) -> Result<Vec<SourceFetchPol
     }
     Ok(rows)
 }
-

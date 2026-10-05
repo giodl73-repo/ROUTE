@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_candidate_scope_review(
     writer.flush()?;
     Ok(())
 }
-

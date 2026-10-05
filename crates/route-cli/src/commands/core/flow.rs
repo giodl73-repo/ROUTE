@@ -1,11 +1,8 @@
 //! `Flow` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    designation: String
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, designation: String) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -69,9 +66,10 @@ pub(crate) fn run(
     println!("\n  {} vpd = vehicles per day", "vpd");
     if !lane_note.is_empty() {
         println!("  {lane_note}");
-        println!("  Run `route fetch-hpms --states <state>` then `route build` for real lane counts.");
+        println!(
+            "  Run `route fetch-hpms --states <state>` then `route build` for real lane counts."
+        );
     }
-        
+
     Ok(())
 }
-

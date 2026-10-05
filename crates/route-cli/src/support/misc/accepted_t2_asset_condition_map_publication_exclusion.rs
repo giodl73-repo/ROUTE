@@ -14,4 +14,3 @@ pub(crate) fn accepted_t2_asset_condition_map_publication_exclusion(
             && row.preserved_claims_after == "sla|transit|upgrade"
     })
 }
-

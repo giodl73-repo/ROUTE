@@ -12,4 +12,3 @@ pub(crate) fn t3_stitch_group_id(zone_id: &str, route: &str) -> String {
         ))
     )
 }
-

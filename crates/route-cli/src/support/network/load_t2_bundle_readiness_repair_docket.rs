@@ -15,4 +15,3 @@ pub(crate) fn load_t2_bundle_readiness_repair_docket(
     }
     Ok(rows)
 }
-

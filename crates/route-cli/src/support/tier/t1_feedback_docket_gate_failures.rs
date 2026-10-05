@@ -39,4 +39,3 @@ pub(crate) fn t1_feedback_docket_gate_failures(rows: &[T1FeedbackDocketRow]) -> 
     }
     failures
 }
-

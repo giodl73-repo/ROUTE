@@ -28,4 +28,3 @@ pub(crate) fn ensure_no_arcgis_error(json: &str) -> Result<()> {
     }
     Ok(())
 }
-

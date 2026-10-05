@@ -28,4 +28,3 @@ pub(crate) fn release_manifest_verification_command_allowed(row: &ReleaseManifes
         ["score-all"] | ["beck-t1-diagnostics"] | ["gap", "--type", _]
     )
 }
-

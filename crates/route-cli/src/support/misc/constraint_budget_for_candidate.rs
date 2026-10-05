@@ -42,4 +42,3 @@ pub(crate) fn constraint_budget_for_candidate(
         String::new(),
     )
 }
-

@@ -6,4 +6,3 @@ pub(crate) fn load_t1_diamond_validation(path: &Path) -> Result<Vec<T1DiamondVal
     let file = std::fs::File::open(path)?;
     parse_t1_diamond_validation(file)
 }
-

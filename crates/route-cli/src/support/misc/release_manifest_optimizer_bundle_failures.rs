@@ -23,4 +23,3 @@ pub(crate) fn release_manifest_optimizer_bundle_failures() -> Vec<String> {
         })
         .collect()
 }
-

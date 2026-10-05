@@ -47,4 +47,3 @@ pub(crate) fn optimizer_constraint_ledger_rows(
         bundle_overlay_rows,
     )
 }
-

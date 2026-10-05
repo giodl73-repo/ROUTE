@@ -9,4 +9,3 @@ pub(crate) fn t3_zone_map_ids(atlas_rows: &[MapAtlasRow]) -> std::collections::B
         .map(|row| row.map_id.clone())
         .collect()
 }
-

@@ -45,4 +45,3 @@ pub(crate) fn tier_pavement_source_fetch_attempt_gate_failures(
     }
     failures
 }
-

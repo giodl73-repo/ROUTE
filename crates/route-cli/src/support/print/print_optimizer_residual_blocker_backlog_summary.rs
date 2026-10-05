@@ -47,4 +47,3 @@ pub(crate) fn print_optimizer_residual_blocker_backlog_summary(
         }
     }
 }
-

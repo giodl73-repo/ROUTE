@@ -42,4 +42,3 @@ pub(crate) fn t1_design_policy_gate_failures(
     }
     failures
 }
-

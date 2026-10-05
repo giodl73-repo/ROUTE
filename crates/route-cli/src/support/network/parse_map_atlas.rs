@@ -10,4 +10,3 @@ pub(crate) fn parse_map_atlas<R: std::io::Read>(reader: R) -> Result<Vec<MapAtla
     }
     Ok(rows)
 }
-

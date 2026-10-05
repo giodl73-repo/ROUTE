@@ -31,4 +31,3 @@ pub(crate) fn t1_feedback_bubble_decision(
         "review",
     )
 }
-

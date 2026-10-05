@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn validate_region_assignment(assignment: &[usize], requested_regions: usize) -> Result<()> {
+pub(crate) fn validate_region_assignment(
+    assignment: &[usize],
+    requested_regions: usize,
+) -> Result<()> {
     let mut counts = vec![0usize; requested_regions];
     for &region in assignment {
         if region >= requested_regions {
@@ -17,4 +20,3 @@ pub(crate) fn validate_region_assignment(assignment: &[usize], requested_regions
     }
     Ok(())
 }
-

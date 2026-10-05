@@ -15,4 +15,3 @@ pub(crate) fn load_t2_national_bundle_readiness_audit(
     }
     Ok(rows)
 }
-

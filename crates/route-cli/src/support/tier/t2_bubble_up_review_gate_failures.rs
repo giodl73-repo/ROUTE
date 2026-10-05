@@ -20,4 +20,3 @@ pub(crate) fn t2_bubble_up_review_gate_failures(rows: &[T2BubbleUpReviewRow]) ->
     }
     failures
 }
-

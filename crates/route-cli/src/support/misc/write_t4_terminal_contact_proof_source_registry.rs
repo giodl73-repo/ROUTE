@@ -20,4 +20,3 @@ pub(crate) fn write_t4_terminal_contact_proof_source_registry(
     writer.flush()?;
     Ok(())
 }
-

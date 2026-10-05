@@ -13,4 +13,3 @@ pub(crate) fn load_t2_relief_evidence_docket(path: &Path) -> Result<Vec<T2Relief
     }
     Ok(rows)
 }
-

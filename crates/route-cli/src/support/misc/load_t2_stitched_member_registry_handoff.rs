@@ -15,4 +15,3 @@ pub(crate) fn load_t2_stitched_member_registry_handoff(
     }
     Ok(rows)
 }
-

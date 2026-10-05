@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn optimizer_constraint_ledger_gate_failures(rows: &[OptimizerConstraintLedgerRow]) -> Vec<String> {
+pub(crate) fn optimizer_constraint_ledger_gate_failures(
+    rows: &[OptimizerConstraintLedgerRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no optimizer constraint ledger rows emitted".to_string());
@@ -83,4 +85,3 @@ pub(crate) fn optimizer_constraint_ledger_gate_failures(rows: &[OptimizerConstra
     }
     failures
 }
-

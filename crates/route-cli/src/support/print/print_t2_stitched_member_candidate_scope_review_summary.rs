@@ -19,4 +19,3 @@ pub(crate) fn print_t2_stitched_member_candidate_scope_review_summary(
         println!("  {decision}: {count}");
     }
 }
-

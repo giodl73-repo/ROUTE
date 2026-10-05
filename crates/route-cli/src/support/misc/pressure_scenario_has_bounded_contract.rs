@@ -21,4 +21,3 @@ pub(crate) fn pressure_scenario_has_bounded_contract(row: &PressureScenarioRow) 
 
     has_identity && has_test_scope && has_artifact && has_next_step && status_is_labeled
 }
-

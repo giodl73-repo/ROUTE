@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_lower_tier_pressure_witness_summary(output: &Path, rows: &[LowerTierPressureWitnessRow]) {
+pub(crate) fn print_lower_tier_pressure_witness_summary(
+    output: &Path,
+    rows: &[LowerTierPressureWitnessRow],
+) {
     let mut counts = std::collections::BTreeMap::<&str, usize>::new();
     for row in rows {
         *counts.entry(row.pressure_type.as_str()).or_default() += 1;
@@ -16,4 +19,3 @@ pub(crate) fn print_lower_tier_pressure_witness_summary(output: &Path, rows: &[L
         println!("  {pressure_type}: {count}");
     }
 }
-

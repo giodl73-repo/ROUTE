@@ -21,4 +21,3 @@ pub(crate) fn pct_under(d: &route_sim::TransitDistribution, threshold_h: f64) ->
     }
     0.0
 }
-

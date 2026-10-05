@@ -20,4 +20,3 @@ pub(crate) fn write_t1_shared_segment_policy_acceptance(
     writer.flush()?;
     Ok(())
 }
-

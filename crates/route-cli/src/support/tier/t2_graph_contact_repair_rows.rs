@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_graph_contact_repair_rows(rows: &[T2HeldContactActionRow]) -> Vec<T2GraphContactRepairRow> {
+pub(crate) fn t2_graph_contact_repair_rows(
+    rows: &[T2HeldContactActionRow],
+) -> Vec<T2GraphContactRepairRow> {
     let mut repairs = rows
         .iter()
         .filter(|row| row.held_action_type == "graph-contact-repair")
@@ -35,4 +37,3 @@ pub(crate) fn t2_graph_contact_repair_rows(rows: &[T2HeldContactActionRow]) -> V
     }
     repairs
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnosticQueueRow]) -> Vec<String> {
+pub(crate) fn t2_service_diagnostic_queue_gate_failures(
+    rows: &[T2ServiceDiagnosticQueueRow],
+) -> Vec<String> {
     let mut failures = Vec::new();
     if rows.is_empty() {
         failures.push("no T2 service diagnostic queue rows emitted".to_string());
@@ -67,4 +69,3 @@ pub(crate) fn t2_service_diagnostic_queue_gate_failures(rows: &[T2ServiceDiagnos
     }
     failures
 }
-

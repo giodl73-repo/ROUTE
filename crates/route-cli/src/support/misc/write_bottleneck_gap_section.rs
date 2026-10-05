@@ -38,4 +38,3 @@ pub(crate) fn write_bottleneck_gap_section(md: &mut String) -> Result<()> {
     md.push_str("\nInterpretation: ATRI bottlenecks are observed freight congestion seeds. `corridor_stress` means A1/A3 confirms broad congestion or reliability stress; `topology_chokepoint` means the route is central but the congestion is likely local/interchange-specific; `capacity_needs_flow` needs `route flow` or segment-level validation before being labeled structural capacity.\n");
     Ok(())
 }
-

@@ -17,4 +17,3 @@ pub(crate) fn print_t3_lower_tier_feeder_gap_policy_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

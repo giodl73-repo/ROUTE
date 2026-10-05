@@ -66,4 +66,3 @@ pub(crate) fn join_port_access_to_corridor(
         attrs.nearest_top25_port_miles = Some(min_dist as f32);
     }
 }
-

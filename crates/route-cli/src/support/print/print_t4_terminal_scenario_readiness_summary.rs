@@ -21,4 +21,3 @@ pub(crate) fn print_t4_terminal_scenario_readiness_summary(
         println!("  {decision}: {count}");
     }
 }
-

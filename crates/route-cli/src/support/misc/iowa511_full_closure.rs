@@ -12,4 +12,3 @@ pub(crate) fn iowa511_full_closure(text: &str) -> bool {
         || text.contains("entrance ramp closed")
         || text.contains(": closed")
 }
-

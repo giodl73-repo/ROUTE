@@ -10,4 +10,3 @@ pub(crate) fn stable_segment_hash(value: &str) -> u64 {
     }
     hash
 }
-

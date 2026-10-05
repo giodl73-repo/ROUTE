@@ -384,3 +384,7 @@ Third-party material remains under its own terms.
 Source data and derived data artifacts carry no blanket license and
 retain their source-specific rights.
 See [LICENSE](./LICENSE) for the complete notice.
+
+## Interactive freight workbench
+
+[Try ROUTE in your browser](https://giodl73-repo.github.io/ROUTE/): adjust traffic demand, road capacity, and relay-outage assumptions in synthetic examples; compare the baseline and download the result. Runs locally with the same Rust kernel as the native simulator. See [model scope and build instructions](docs/browser-freight-workbench.md). This sandbox does not promote held corridor proposals.

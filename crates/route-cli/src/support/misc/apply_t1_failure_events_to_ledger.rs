@@ -30,4 +30,3 @@ pub(crate) fn apply_t1_failure_events_to_ledger(
         })
         .collect()
 }
-

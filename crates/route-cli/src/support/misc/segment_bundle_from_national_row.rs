@@ -23,4 +23,3 @@ pub(crate) fn segment_bundle_from_national_row(
         bundle_status: route_network::BundleStatus::from_label(&row.bundle_status),
     }
 }
-

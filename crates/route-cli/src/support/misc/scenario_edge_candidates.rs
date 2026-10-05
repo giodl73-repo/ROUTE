@@ -39,4 +39,3 @@ pub(crate) fn scenario_edge_candidates(
     candidates.truncate(top);
     candidates
 }
-

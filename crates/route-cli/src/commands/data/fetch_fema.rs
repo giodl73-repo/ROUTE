@@ -1,20 +1,15 @@
 //! `FetchFema` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    output: Option<PathBuf>
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, output: Option<PathBuf>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
 
     let out = output.unwrap_or_else(|| PathBuf::from("data/cache/fema_sfha_counts.csv"));
     println!("route fetch-fema → {}", out.display());
-    println!(
-        "  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)"
-    );
+    println!("  source: FEMA NFHL ArcGIS REST — Layer 28 (Flood Hazard Zones / SFHA A-zones)");
     println!(
         "  querying {} T1 corridor bounding boxes…",
         route_data::T1_BBOXES.len()
@@ -39,10 +34,7 @@ pub(crate) fn run(
     println!("  saved → {}", out.display());
     println!("  Use counts as D1 proxy: higher = more flood-exposed corridor.");
     println!("  Note: counts reflect SFHA polygons in the bounding box, not miles.");
-    println!(
-        "  Run `route score <corridor>` after this to see D1 update (manual join needed)."
-    );
-        
+    println!("  Run `route score <corridor>` after this to see D1 update (manual join needed).");
+
     Ok(())
 }
-

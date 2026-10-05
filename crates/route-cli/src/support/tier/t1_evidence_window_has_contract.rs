@@ -19,4 +19,3 @@ pub(crate) fn t1_evidence_window_has_contract(row: &T1EvidenceWindowRow) -> bool
         && !row.next_step.trim().is_empty()
         && !row.review_artifact.trim().is_empty()
 }
-

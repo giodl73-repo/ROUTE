@@ -23,4 +23,3 @@ pub(crate) fn t1_sla_pairs_by_route(
     }
     pairs_by_route
 }
-

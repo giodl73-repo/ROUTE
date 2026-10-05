@@ -7,19 +7,18 @@
 //!
 //! See `docs/dev/cli-layout.md`.
 
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     all_roads: bool,
     hpms_path: Option<PathBuf>,
-    fpm_path: Option<PathBuf>
+    fpm_path: Option<PathBuf>,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
-
 
     println!("route build{}", if all_roads { " --all-roads" } else { "" });
     let manifest = route_data::Manifest::load(&manifest_path)

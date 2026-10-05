@@ -15,4 +15,3 @@ pub(crate) fn load_t4_terminal_contact_district_proof_import(
     }
     Ok(rows)
 }
-

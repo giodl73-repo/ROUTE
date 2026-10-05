@@ -54,4 +54,3 @@ pub(crate) fn tier_candidate_column_gate_failures(rows: &[TierCandidateColumnRow
     }
     failures
 }
-

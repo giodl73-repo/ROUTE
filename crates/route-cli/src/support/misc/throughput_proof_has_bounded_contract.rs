@@ -17,4 +17,3 @@ pub(crate) fn throughput_proof_has_bounded_contract(row: &ThroughputProofRow) ->
         && standards_evidence_level_is_allowed(&row.current_status)
         && !row.next_evidence_step.trim().is_empty()
 }
-

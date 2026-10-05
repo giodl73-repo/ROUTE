@@ -85,4 +85,3 @@ pub(crate) fn tier_pavement_funding_evidence_source_capture_gate_failures(
     }
     failures
 }
-

@@ -31,4 +31,3 @@ pub(crate) fn t4_terminal_access_proof_acquisition_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

@@ -116,4 +116,3 @@ pub(crate) fn t2_beck_transfer_complexity_review_gate_failures(
     }
     failures
 }
-

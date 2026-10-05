@@ -62,4 +62,3 @@ pub(crate) fn t1_schematic_geometry_claim_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

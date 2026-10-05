@@ -14,4 +14,3 @@ pub(crate) fn t3_zone_stop_plan_for_route<'a>(
     sort_stops_for_route(&mut stops);
     stops
 }
-

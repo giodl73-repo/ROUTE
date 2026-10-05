@@ -21,4 +21,3 @@ pub(crate) fn print_tier_pavement_hpms_scope_broadening_summary(
         );
     }
 }
-

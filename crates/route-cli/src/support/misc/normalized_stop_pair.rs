@@ -9,4 +9,3 @@ pub(crate) fn normalized_stop_pair(a: &str, b: &str) -> String {
         format!("{b}->{a}")
     }
 }
-

@@ -14,4 +14,3 @@ pub(crate) fn join_nbi_to_corridor(
         attrs.bridge_count = rec.bridge_count as usize;
     }
 }
-

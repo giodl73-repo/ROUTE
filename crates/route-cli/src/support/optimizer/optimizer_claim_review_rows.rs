@@ -40,4 +40,3 @@ pub(crate) fn optimizer_claim_review_rows(
     });
     rows
 }
-

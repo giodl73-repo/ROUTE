@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_tier_segment_candidate_summary(output: &Path, rows: &[TierSegmentCandidateRow]) {
+pub(crate) fn print_tier_segment_candidate_summary(
+    output: &Path,
+    rows: &[TierSegmentCandidateRow],
+) {
     let mut by_tier = std::collections::BTreeMap::<&str, usize>::new();
     let mut bundles = std::collections::BTreeSet::<&str>::new();
     for row in rows {
@@ -19,4 +22,3 @@ pub(crate) fn print_tier_segment_candidate_summary(output: &Path, rows: &[TierSe
         println!("  {tier}: {count}");
     }
 }
-

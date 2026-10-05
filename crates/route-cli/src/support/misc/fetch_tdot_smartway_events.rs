@@ -15,4 +15,3 @@ pub(crate) fn fetch_tdot_smartway_events(output: &Path, timeout_seconds: u64) ->
     atomic_write_text(output, body)?;
     Ok(())
 }
-

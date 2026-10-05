@@ -21,4 +21,3 @@ pub(crate) fn print_t2_overlay_p2_service_overlay_review_summary(
         println!("  {decision}: {count}");
     }
 }
-

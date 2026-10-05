@@ -1,6 +1,6 @@
 //! `TierPavementDebtBudget` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -9,7 +9,7 @@ pub(crate) fn run(
     repair_funding_acceptance: PathBuf,
     output: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -20,14 +20,10 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", source_gaps.display()))?;
     let exclusion_rows = load_tier_pavement_route_state_exclusions(&route_state_exclusions)
         .with_context(|| format!("loading {}", route_state_exclusions.display()))?;
-    let funding_rows =
-        load_tier_pavement_repair_funding_acceptance(&repair_funding_acceptance)
-            .with_context(|| format!("loading {}", repair_funding_acceptance.display()))?;
-    let rows = tier_pavement_debt_budget_rows_with_exclusions(
-        &gap_rows,
-        &exclusion_rows,
-        &funding_rows,
-    );
+    let funding_rows = load_tier_pavement_repair_funding_acceptance(&repair_funding_acceptance)
+        .with_context(|| format!("loading {}", repair_funding_acceptance.display()))?;
+    let rows =
+        tier_pavement_debt_budget_rows_with_exclusions(&gap_rows, &exclusion_rows, &funding_rows);
     write_tier_pavement_debt_budget(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
     print_tier_pavement_debt_budget_summary(&output, &rows, details);
@@ -50,7 +46,6 @@ pub(crate) fn run(
         println!();
         println!("Tier pavement debt budget gate: PASS");
     }
-        
+
     Ok(())
 }
-

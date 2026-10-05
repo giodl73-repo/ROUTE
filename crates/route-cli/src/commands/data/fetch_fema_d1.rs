@@ -1,10 +1,8 @@
 //! `FetchFemaD1` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -30,8 +28,7 @@ pub(crate) fn run(
         ("MS-valley".to_string(), -91.0, 32.0, -90.0, 33.0),
         ("AR-flood".to_string(), -91.5, 33.5, -90.5, 34.5),
     ];
-    let fema_url =
-        "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
+    let fema_url = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query";
 
     let mut results: Vec<(String, u32, String)> = Vec::new();
     for (name, xmin, ymin, xmax, ymax) in &state_tiles {
@@ -86,7 +83,6 @@ pub(crate) fn run(
     let total: u32 = results.iter().map(|(_, count, _)| count).sum();
     println!("  Total SFHA features across flood-exposed tiles: {total}");
     println!("  Next: wire tile counts into corridor D1 scoring via bbox intersection");
-        
+
     Ok(())
 }
-

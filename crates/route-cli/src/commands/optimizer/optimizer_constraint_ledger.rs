@@ -1,6 +1,6 @@
 //! `OptimizerConstraintLedger` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
@@ -25,7 +25,7 @@ pub(crate) fn run(
     t2_bundle_overlays: PathBuf,
     output: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -91,34 +91,29 @@ pub(crate) fn run(
             t2_game_ops_bundle_evidence_blocker_relief.display()
         )
     })?;
-    let t3_feeder_relief_rows = load_t3_lower_tier_feeder_gap_blocker_relief(
-        &t3_lower_tier_feeder_gap_blocker_relief,
-    )
-    .with_context(|| {
-        format!(
-            "loading {}",
-            t3_lower_tier_feeder_gap_blocker_relief.display()
-        )
-    })?;
+    let t3_feeder_relief_rows =
+        load_t3_lower_tier_feeder_gap_blocker_relief(&t3_lower_tier_feeder_gap_blocker_relief)
+            .with_context(|| {
+                format!(
+                    "loading {}",
+                    t3_lower_tier_feeder_gap_blocker_relief.display()
+                )
+            })?;
     let parallel_rows = load_t2_parallel_service_queue(&t2_parallel_service_queue)
         .with_context(|| format!("loading {}", t2_parallel_service_queue.display()))?;
     let access_gap_rows = load_t3_t4_access_gaps(&t3_t4_access_gaps)
         .with_context(|| format!("loading {}", t3_t4_access_gaps.display()))?;
     let t4_terminal_access_map_exclusion_rows =
         load_t4_terminal_access_map_exclusion(&t4_terminal_access_map_exclusion)
-            .with_context(|| {
-                format!("loading {}", t4_terminal_access_map_exclusion.display())
-            })?;
+            .with_context(|| format!("loading {}", t4_terminal_access_map_exclusion.display()))?;
     let t4_terminal_contact_district_proof_import_rows =
-        load_t4_terminal_contact_district_proof_import(
-            &t4_terminal_contact_district_proof_import,
-        )
-        .with_context(|| {
-            format!(
-                "loading {}",
-                t4_terminal_contact_district_proof_import.display()
-            )
-        })?;
+        load_t4_terminal_contact_district_proof_import(&t4_terminal_contact_district_proof_import)
+            .with_context(|| {
+                format!(
+                    "loading {}",
+                    t4_terminal_contact_district_proof_import.display()
+                )
+            })?;
     let t4_terminal_contact_rejected_proof_source_rows =
         load_t4_terminal_contact_rejected_proof_sources(
             &t4_terminal_contact_rejected_proof_sources,
@@ -146,29 +141,30 @@ pub(crate) fn run(
         .with_context(|| format!("loading {}", t2_scenario_hooks.display()))?;
     let bundle_overlay_rows = load_t2_bundle_overlays(&t2_bundle_overlays)
         .with_context(|| format!("loading {}", t2_bundle_overlays.display()))?;
-    let rows = support::optimizer::optimizer_ledger::optimizer_constraint_ledger_rows_with_terminal_proof(
-        &pavement_rows,
-        &t2_asset_condition_map_publication_exclusion_rows,
-        &topology_rows,
-        &schematic_relief_rows,
-        &t2_transfer_relief_rows,
-        &t2_label_relief_rows,
-        &t2_long_relief_rows,
-        &t2_game_relief_rows,
-        &t2_game_ops_bundle_relief_rows,
-        &t3_feeder_relief_rows,
-        &parallel_rows,
-        &access_gap_rows,
-        &t4_terminal_access_map_exclusion_rows,
-        &t4_terminal_contact_district_proof_import_rows,
-        &t4_terminal_contact_rejected_proof_source_rows,
-        &route_map::beck_t1_diagnostics(),
-        &route_map::beck_t2_diagnostics(),
-        &source_policy_rows,
-        &source_snapshot_publication_exclusion_rows,
-        &scenario_hook_rows,
-        &bundle_overlay_rows,
-    );
+    let rows =
+        support::optimizer::optimizer_ledger::optimizer_constraint_ledger_rows_with_terminal_proof(
+            &pavement_rows,
+            &t2_asset_condition_map_publication_exclusion_rows,
+            &topology_rows,
+            &schematic_relief_rows,
+            &t2_transfer_relief_rows,
+            &t2_label_relief_rows,
+            &t2_long_relief_rows,
+            &t2_game_relief_rows,
+            &t2_game_ops_bundle_relief_rows,
+            &t3_feeder_relief_rows,
+            &parallel_rows,
+            &access_gap_rows,
+            &t4_terminal_access_map_exclusion_rows,
+            &t4_terminal_contact_district_proof_import_rows,
+            &t4_terminal_contact_rejected_proof_source_rows,
+            &route_map::beck_t1_diagnostics(),
+            &route_map::beck_t2_diagnostics(),
+            &source_policy_rows,
+            &source_snapshot_publication_exclusion_rows,
+            &scenario_hook_rows,
+            &bundle_overlay_rows,
+        );
     write_optimizer_constraint_ledger(&output, &rows)
         .with_context(|| format!("writing {}", output.display()))?;
     print_optimizer_constraint_ledger_summary(&output, &rows, details);
@@ -186,7 +182,6 @@ pub(crate) fn run(
         println!();
         println!("optimizer constraint ledger gate: PASS");
     }
-        
+
     Ok(())
 }
-

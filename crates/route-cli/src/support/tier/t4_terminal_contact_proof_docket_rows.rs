@@ -49,4 +49,3 @@ pub(crate) fn t4_terminal_contact_proof_docket_rows(
     });
     rows
 }
-

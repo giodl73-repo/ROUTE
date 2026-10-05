@@ -28,4 +28,3 @@ pub(crate) fn print_chaos_result(result: &route_sim::ChaosResult) {
         );
     }
 }
-

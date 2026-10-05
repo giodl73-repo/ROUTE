@@ -1,13 +1,13 @@
 //! `T1EvidenceWindows` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     ledger: PathBuf,
     blockers: bool,
     details: bool,
-    gate_windows: bool
+    gate_windows: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -37,7 +37,6 @@ pub(crate) fn run(
         println!();
         println!("T1/T1 evidence-window gate: PASS");
     }
-        
+
     Ok(())
 }
-

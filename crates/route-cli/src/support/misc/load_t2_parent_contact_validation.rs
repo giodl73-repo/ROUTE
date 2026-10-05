@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn load_t2_parent_contact_validation(path: &Path) -> Result<Vec<T2ParentContactValidationRow>> {
+pub(crate) fn load_t2_parent_contact_validation(
+    path: &Path,
+) -> Result<Vec<T2ParentContactValidationRow>> {
     if !path.exists() {
         return Ok(Vec::new());
     }
@@ -13,4 +15,3 @@ pub(crate) fn load_t2_parent_contact_validation(path: &Path) -> Result<Vec<T2Par
     }
     Ok(rows)
 }
-

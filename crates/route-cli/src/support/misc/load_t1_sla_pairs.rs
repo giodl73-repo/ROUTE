@@ -10,4 +10,3 @@ pub(crate) fn load_t1_sla_pairs(path: &Path) -> Result<Vec<T1SlaPairRow>> {
     }
     Ok(rows)
 }
-

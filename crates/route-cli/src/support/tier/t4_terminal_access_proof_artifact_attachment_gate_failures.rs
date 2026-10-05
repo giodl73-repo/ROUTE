@@ -83,4 +83,3 @@ pub(crate) fn t4_terminal_access_proof_artifact_attachment_gate_failures(
     }
     failures
 }
-

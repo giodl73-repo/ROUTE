@@ -77,4 +77,3 @@ pub(crate) fn tier_pavement_hpms_scope_broadening_gate_failures(
     }
     failures
 }
-

@@ -75,4 +75,3 @@ pub(crate) fn optimizer_claim_review_gate_failures(
     }
     failures
 }
-

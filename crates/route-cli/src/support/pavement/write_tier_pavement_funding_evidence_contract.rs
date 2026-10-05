@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_funding_evidence_contract(
     writer.flush()?;
     Ok(())
 }
-

@@ -102,4 +102,3 @@ pub(crate) fn print_od_comparison(cmp: &route_sim::OdComparison) {
         net.total_capex_m / 253_000.0 * 100.0
     );
 }
-

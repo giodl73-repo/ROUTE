@@ -48,4 +48,3 @@ pub(crate) fn stop_sla_promotion_row(row: &StopSlaCandidateDocketRow) -> StopCan
         next_step,
     }
 }
-

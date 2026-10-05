@@ -11,4 +11,3 @@ pub(crate) fn png_dimensions(path: &Path) -> Option<(u32, u32)> {
     let height = u32::from_be_bytes(bytes[20..24].try_into().ok()?);
     Some((width, height))
 }
-

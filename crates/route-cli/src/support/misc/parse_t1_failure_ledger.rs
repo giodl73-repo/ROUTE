@@ -10,4 +10,3 @@ pub(crate) fn parse_t1_failure_ledger<R: std::io::Read>(reader: R) -> Result<Vec
     }
     Ok(rows)
 }
-

@@ -42,4 +42,3 @@ pub(crate) fn load_acs_counties_for_scoring(
 
     Some(counties)
 }
-

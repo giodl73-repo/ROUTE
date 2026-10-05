@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_downgrade_exclusion_decision(
     writer.flush()?;
     Ok(())
 }
-

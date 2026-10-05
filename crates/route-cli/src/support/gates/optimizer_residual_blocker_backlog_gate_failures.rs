@@ -72,4 +72,3 @@ pub(crate) fn optimizer_residual_blocker_backlog_gate_failures(
     }
     failures
 }
-

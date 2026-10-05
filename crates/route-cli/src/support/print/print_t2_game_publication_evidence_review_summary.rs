@@ -17,4 +17,3 @@ pub(crate) fn print_t2_game_publication_evidence_review_summary(
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

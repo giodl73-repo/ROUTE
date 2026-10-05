@@ -19,4 +19,3 @@ pub(crate) fn tier_candidate_column_evidence_status(
         _ => row.evidence_status.clone(),
     }
 }
-

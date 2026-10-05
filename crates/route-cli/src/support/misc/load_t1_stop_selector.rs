@@ -10,4 +10,3 @@ pub(crate) fn load_t1_stop_selector(path: &Path) -> Result<Vec<T1StopSelectorInp
     }
     Ok(rows)
 }
-

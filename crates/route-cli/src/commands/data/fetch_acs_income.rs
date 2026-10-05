@@ -1,10 +1,8 @@
 //! `FetchAcsIncome` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -19,7 +17,6 @@ pub(crate) fn run(
     println!("  saved → {}", out.display());
     println!("  national median HHI baseline remains the reviewed 2022 value");
     println!("  run `route score-all` to apply C3 scores.");
-        
+
     Ok(())
 }
-

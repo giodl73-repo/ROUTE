@@ -38,4 +38,3 @@ pub(crate) fn t2_held_contact_action_contract(
         ),
     }
 }
-

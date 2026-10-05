@@ -17,4 +17,3 @@ pub(crate) fn write_bundle_architecture(path: &Path, rows: &[BundleArchitectureR
     writer.flush()?;
     Ok(())
 }
-

@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> PavementDebtBudgetIndex {
+pub(crate) fn pavement_debt_budget_index(
+    rows: &[TierPavementDebtBudgetRow],
+) -> PavementDebtBudgetIndex {
     let mut index = PavementDebtBudgetIndex::default();
     for row in rows {
         index
@@ -21,4 +23,3 @@ pub(crate) fn pavement_debt_budget_index(rows: &[TierPavementDebtBudgetRow]) -> 
     }
     index
 }
-

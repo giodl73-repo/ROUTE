@@ -19,4 +19,3 @@ pub(crate) fn print_t2_parent_contact_validation_summary(
         println!("  {action}: {count}");
     }
 }
-

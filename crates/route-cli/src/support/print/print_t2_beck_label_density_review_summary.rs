@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t2_beck_label_density_review_summary(output: &Path, rows: &[T2BeckLabelDensityReviewRow]) {
+pub(crate) fn print_t2_beck_label_density_review_summary(
+    output: &Path,
+    rows: &[T2BeckLabelDensityReviewRow],
+) {
     let blockers = rows
         .iter()
         .map(|row| row.blocker_count_after)
@@ -14,4 +17,3 @@ pub(crate) fn print_t2_beck_label_density_review_summary(output: &Path, rows: &[
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

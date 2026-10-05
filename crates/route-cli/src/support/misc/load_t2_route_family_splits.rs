@@ -13,4 +13,3 @@ pub(crate) fn load_t2_route_family_splits(path: &Path) -> Result<Vec<T2RouteFami
     }
     Ok(rows)
 }
-

@@ -1,12 +1,8 @@
 //! `BeckT2QualificationActions` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
-pub(crate) fn run(
-    ctx: &ctx::Ctx<'_>,
-    output: PathBuf,
-    gate: bool
-) -> Result<()> {
+pub(crate) fn run(ctx: &ctx::Ctx<'_>, output: PathBuf, gate: bool) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
     let scoring_config_path = ctx.scoring_config_path.to_path_buf();
@@ -21,8 +17,7 @@ pub(crate) fn run(
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating {}", parent.display()))?;
     }
-    std::fs::write(&output, csv)
-        .with_context(|| format!("writing {}", output.display()))?;
+    std::fs::write(&output, csv).with_context(|| format!("writing {}", output.display()))?;
     println!("  qualification actions: {}", rows.len());
     println!("  wrote actions: {}", output.display());
     println!("  {:<20} {:<42} Gate", "Action", "Map treatment");
@@ -51,8 +46,7 @@ pub(crate) fn run(
             .iter()
             .filter(|row| {
                 !action_rows.contains(row.service_action)
-                    || !covered_pairs
-                        .contains(&(row.service_action, row.qualification_basis))
+                    || !covered_pairs.contains(&(row.service_action, row.qualification_basis))
             })
             .map(|row| {
                 format!(
@@ -71,7 +65,6 @@ pub(crate) fn run(
             anyhow::bail!("Beck T2 qualification actions gate failed");
         }
     }
-        
+
     Ok(())
 }
-

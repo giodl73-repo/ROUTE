@@ -22,4 +22,3 @@ pub(crate) fn print_tier_pavement_repair_debt_review_summary(
         );
     }
 }
-

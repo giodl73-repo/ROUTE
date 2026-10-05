@@ -12,4 +12,3 @@ pub(crate) fn load_t2_stitched_member_proof_intake(
     }
     Ok(rows)
 }
-

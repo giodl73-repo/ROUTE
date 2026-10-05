@@ -31,4 +31,3 @@ pub(crate) fn t1_access_docket_item(row: &T1SourceHealthRow) -> T1AccessDocketIt
         action,
     }
 }
-

@@ -117,4 +117,3 @@ pub(crate) fn t2_beck_long_connector_review_gate_failures(
     }
     failures
 }
-

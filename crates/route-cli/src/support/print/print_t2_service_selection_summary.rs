@@ -16,4 +16,3 @@ pub(crate) fn print_t2_service_selection_summary(output: &Path, rows: &[T2Servic
         println!("  {action}: {count}");
     }
 }
-

@@ -79,4 +79,3 @@ pub(crate) fn tier_pavement_funding_commitment_review_gate_failures(
     }
     failures
 }
-

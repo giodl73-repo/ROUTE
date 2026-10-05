@@ -45,4 +45,3 @@ pub(crate) fn blueprint_cost_row_failure(
         ))
     }
 }
-

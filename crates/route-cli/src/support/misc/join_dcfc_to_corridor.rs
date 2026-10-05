@@ -57,4 +57,3 @@ pub(crate) fn join_dcfc_to_corridor(
         attrs.dcfc_per_100mi = Some(dcfc_per_100 as f32);
     }
 }
-

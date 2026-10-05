@@ -16,4 +16,3 @@ pub(crate) fn print_t2_blocker_closure_summary(output: &Path, rows: &[T2BlockerC
         println!("  {blocker_class}: {count}");
     }
 }
-

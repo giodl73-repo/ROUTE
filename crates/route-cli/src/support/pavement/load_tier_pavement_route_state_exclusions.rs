@@ -15,4 +15,3 @@ pub(crate) fn load_tier_pavement_route_state_exclusions(
     }
     Ok(rows)
 }
-

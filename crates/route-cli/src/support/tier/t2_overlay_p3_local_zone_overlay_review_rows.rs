@@ -32,4 +32,3 @@ pub(crate) fn t2_overlay_p3_local_zone_overlay_review_rows(
     rows.sort_by(|left, right| left.route.cmp(&right.route));
     rows
 }
-

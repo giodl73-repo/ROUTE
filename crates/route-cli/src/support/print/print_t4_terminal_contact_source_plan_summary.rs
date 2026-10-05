@@ -28,4 +28,3 @@ pub(crate) fn print_t4_terminal_contact_source_plan_summary(
         println!("  {status}: {count}");
     }
 }
-

@@ -34,4 +34,3 @@ pub(crate) fn sort_stops_for_route(stops: &mut [&StopCandidateRow]) {
         stops.sort_by(|a, b| coord_or_default(&a.lon).total_cmp(&coord_or_default(&b.lon)));
     }
 }
-

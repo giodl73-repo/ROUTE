@@ -9,4 +9,3 @@ pub(crate) fn parse_coord(value: &str) -> Option<f64> {
         .ok()
         .filter(|value| value.is_finite())
 }
-

@@ -28,4 +28,3 @@ pub(crate) fn lower_tier_score_pressure_row(
         validation_status: "review".to_string(),
     }
 }
-

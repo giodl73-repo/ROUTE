@@ -11,4 +11,3 @@ pub(crate) fn t1_source_health_by_site(
     }
     by_site
 }
-

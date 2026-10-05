@@ -17,4 +17,3 @@ pub(crate) fn write_optimizer_map_hooks(path: &Path, rows: &[OptimizerMapHookRow
     writer.flush()?;
     Ok(())
 }
-

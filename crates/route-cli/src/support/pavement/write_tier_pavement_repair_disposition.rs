@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_repair_disposition(
     writer.flush()?;
     Ok(())
 }
-

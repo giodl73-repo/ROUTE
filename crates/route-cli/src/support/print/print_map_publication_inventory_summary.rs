@@ -23,4 +23,3 @@ pub(crate) fn print_map_publication_inventory_summary(
         }
     }
 }
-

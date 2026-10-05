@@ -40,4 +40,3 @@ pub(crate) fn write_missing_link_gap_section(md: &mut String) -> Result<()> {
     md.push_str("\nInterpretation: `candidate_access_gap` rows are not automatic construction recommendations; they are counties whose Census internal point is beyond the threshold after separating non-CONUS and large-county centroid-risk rows.\n");
     Ok(())
 }
-

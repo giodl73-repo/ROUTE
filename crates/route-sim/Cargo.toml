@@ -7,6 +7,7 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+route-kernel = { path = "../route-kernel" }
 route-network = { path = "../route-network" }
 route-data    = { path = "../route-data" }
 petgraph      = { workspace = true }

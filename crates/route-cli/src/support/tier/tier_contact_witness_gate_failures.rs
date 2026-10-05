@@ -22,4 +22,3 @@ pub(crate) fn tier_contact_witness_gate_failures(rows: &[TierContactWitnessRow])
     }
     failures
 }
-

@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_pressure_scenarios(rows: &[PressureScenarioRow], blockers: bool, details: bool) {
+pub(crate) fn print_pressure_scenarios(
+    rows: &[PressureScenarioRow],
+    blockers: bool,
+    details: bool,
+) {
     let failures = pressure_scenario_gate_failures(rows);
     let filtered = if blockers {
         failures.clone()
@@ -45,4 +49,3 @@ pub(crate) fn print_pressure_scenarios(rows: &[PressureScenarioRow], blockers: b
         }
     }
 }
-

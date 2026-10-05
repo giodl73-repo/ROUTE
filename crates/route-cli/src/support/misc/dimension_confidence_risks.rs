@@ -9,4 +9,3 @@ pub(crate) fn dimension_confidence_risks(scores: &[f64; 16], confidences: &[f32;
     }
     risks
 }
-

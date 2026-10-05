@@ -17,4 +17,3 @@ pub(crate) fn t2_regionalizer_gate_failures(rows: &[T2RegionalizerRow]) -> Vec<S
     }
     failures
 }
-

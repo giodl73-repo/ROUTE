@@ -6,4 +6,3 @@ pub(crate) fn load_release_manifest(path: &Path) -> Result<Vec<ReleaseManifestRo
     let file = std::fs::File::open(path)?;
     parse_release_manifest(file)
 }
-

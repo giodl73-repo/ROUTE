@@ -13,4 +13,3 @@ pub(crate) fn load_t2_bundle_overlays(path: &Path) -> Result<Vec<T2BundleOverlay
     }
     Ok(rows)
 }
-

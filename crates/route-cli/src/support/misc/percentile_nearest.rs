@@ -10,4 +10,3 @@ pub(crate) fn percentile_nearest(sorted_values: &[f64], p: f64) -> Option<f64> {
     let idx = ((sorted_values.len() - 1) as f64 * p).round() as usize;
     sorted_values.get(idx).copied()
 }
-

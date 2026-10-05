@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_t1_shared_segment_map_policy_summary(output: &Path, rows: &[T1SharedSegmentMapPolicyRow]) {
+pub(crate) fn print_t1_shared_segment_map_policy_summary(
+    output: &Path,
+    rows: &[T1SharedSegmentMapPolicyRow],
+) {
     let blockers = rows
         .iter()
         .map(|row| row.blocker_count_after)
@@ -14,4 +17,3 @@ pub(crate) fn print_t1_shared_segment_map_policy_summary(output: &Path, rows: &[
     );
     println!("  claim blockers preserved: {blockers}");
 }
-

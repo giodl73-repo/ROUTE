@@ -6,4 +6,3 @@ pub(crate) fn load_standards_proof_ledger(path: &Path) -> Result<Vec<StandardsPr
     let file = std::fs::File::open(path)?;
     parse_standards_proof_ledger(file)
 }
-

@@ -20,4 +20,3 @@ pub(crate) fn write_tier_pavement_funding_evidence_accepted_artifact_acquisition
     writer.flush()?;
     Ok(())
 }
-

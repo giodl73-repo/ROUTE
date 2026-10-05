@@ -21,4 +21,3 @@ pub(crate) fn tier_contact_witness_is_unresolved_blocker(
         "data/tier-candidate-columns.csv" | "data/tier-table.csv"
     )
 }
-

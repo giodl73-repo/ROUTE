@@ -15,4 +15,3 @@ pub(crate) fn load_source_snapshot_publication_exclusion(
     }
     Ok(rows)
 }
-

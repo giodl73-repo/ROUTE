@@ -2,7 +2,10 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn write_t2_contact_resolutions(path: &Path, rows: &[T2ContactResolutionRow]) -> Result<()> {
+pub(crate) fn write_t2_contact_resolutions(
+    path: &Path,
+    rows: &[T2ContactResolutionRow],
+) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -17,4 +20,3 @@ pub(crate) fn write_t2_contact_resolutions(path: &Path, rows: &[T2ContactResolut
     writer.flush()?;
     Ok(())
 }
-

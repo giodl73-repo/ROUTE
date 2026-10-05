@@ -20,4 +20,3 @@ pub(crate) fn t2_held_contact_action_gate_failures(rows: &[T2HeldContactActionRo
     }
     failures
 }
-

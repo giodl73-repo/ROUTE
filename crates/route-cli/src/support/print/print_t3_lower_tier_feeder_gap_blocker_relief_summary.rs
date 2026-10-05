@@ -22,4 +22,3 @@ pub(crate) fn print_t3_lower_tier_feeder_gap_blocker_relief_summary(
     println!("  claim blockers before: {before}");
     println!("  claim blockers after: {after}");
 }
-

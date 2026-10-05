@@ -100,4 +100,3 @@ pub(crate) fn t2_terminal_contact_validation_rows(
     }
     rows
 }
-

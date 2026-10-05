@@ -30,4 +30,3 @@ pub(crate) fn endpoint_exception_failure_reason(
 
     "endpoint exception is not terminal-worthy for requested tier".to_string()
 }
-

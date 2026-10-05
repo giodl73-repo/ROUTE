@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn print_blueprint_evidence_map(rows: &[BlueprintEvidenceRow], blockers: bool, details: bool) {
+pub(crate) fn print_blueprint_evidence_map(
+    rows: &[BlueprintEvidenceRow],
+    blockers: bool,
+    details: bool,
+) {
     let filtered = if blockers {
         rows.iter()
             .filter(|row| {
@@ -53,4 +57,3 @@ pub(crate) fn print_blueprint_evidence_map(rows: &[BlueprintEvidenceRow], blocke
         }
     }
 }
-

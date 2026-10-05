@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn standards_blueprint_gate_failures(rows: &[StandardsProofRow]) -> Vec<&StandardsProofRow> {
+pub(crate) fn standards_blueprint_gate_failures(
+    rows: &[StandardsProofRow],
+) -> Vec<&StandardsProofRow> {
     rows.iter()
         .filter(|row| {
             !standards_evidence_level_is_allowed(&row.evidence_level)
@@ -11,4 +13,3 @@ pub(crate) fn standards_blueprint_gate_failures(rows: &[StandardsProofRow]) -> V
         })
         .collect()
 }
-

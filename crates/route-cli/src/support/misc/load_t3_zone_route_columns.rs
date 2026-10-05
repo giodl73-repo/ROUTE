@@ -13,4 +13,3 @@ pub(crate) fn load_t3_zone_route_columns(path: &Path) -> Result<Vec<T3ZoneRouteC
     }
     Ok(rows)
 }
-

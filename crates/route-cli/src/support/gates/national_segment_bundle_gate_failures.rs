@@ -114,4 +114,3 @@ pub(crate) fn national_segment_bundle_gate_failures(
 
     failures
 }
-

@@ -16,4 +16,3 @@ pub(crate) fn print_t2_regionalizer_summary(output: &Path, rows: &[T2Regionalize
         println!("  {status}: {count}");
     }
 }
-

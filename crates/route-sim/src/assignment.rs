@@ -22,23 +22,7 @@ use petgraph::visit::EdgeRef; // needed for .id(), .source(), .target() on EdgeR
 use route_network::HighwayGraph;
 use std::collections::HashMap;
 
-/// BPR (Bureau of Public Roads) travel time function parameters.
-#[derive(Debug, Clone)]
-pub struct BprParams {
-    /// Typically 0.15
-    pub alpha: f64,
-    /// Typically 4.0
-    pub beta: f64,
-}
-
-impl Default for BprParams {
-    fn default() -> Self {
-        BprParams {
-            alpha: 0.15,
-            beta: 4.0,
-        }
-    }
-}
+pub use route_kernel::{bpr_travel_time, BprParams};
 
 /// Current flow state: vehicles per hour on each edge.
 #[derive(Debug, Clone)]
@@ -83,19 +67,6 @@ pub fn edge_capacity_vph(g: &HighwayGraph, ei: EdgeIndex) -> f64 {
     let edge = &g.graph[ei];
     let lanes = edge.lane_count.unwrap_or(4) as f64; // default 4 lanes (2+2)
     lanes / 2.0 * 1_900.0 // lanes per direction × peak capacity per lane
-}
-
-/// BPR travel time in hours for an edge given current flow.
-pub fn bpr_travel_time(
-    free_flow_hours: f64,
-    flow_vph: f64,
-    capacity_vph: f64,
-    params: &BprParams,
-) -> f64 {
-    if capacity_vph <= 0.0 {
-        return free_flow_hours * 10.0;
-    } // blocked
-    free_flow_hours * (1.0 + params.alpha * (flow_vph / capacity_vph).powf(params.beta))
 }
 
 /// Free-flow travel time in hours: length_miles / speed_mph.

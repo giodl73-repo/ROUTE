@@ -75,4 +75,3 @@ pub(crate) fn optimizer_constraint_budget_gate_failures(
     }
     failures
 }
-

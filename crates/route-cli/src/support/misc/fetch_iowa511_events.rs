@@ -12,4 +12,3 @@ pub(crate) fn fetch_iowa511_events(output: &Path) -> Result<()> {
     atomic_write_text(output, body)?;
     Ok(())
 }
-

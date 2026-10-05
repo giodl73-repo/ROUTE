@@ -33,4 +33,3 @@ pub(crate) fn confidence_risk_dimensions(scores: &[f64; 16], confidences: &[f32;
         .collect::<Vec<_>>()
         .join(";")
 }
-

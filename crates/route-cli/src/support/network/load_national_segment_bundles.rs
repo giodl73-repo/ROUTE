@@ -13,4 +13,3 @@ pub(crate) fn load_national_segment_bundles(path: &Path) -> Result<Vec<NationalS
     }
     Ok(rows)
 }
-

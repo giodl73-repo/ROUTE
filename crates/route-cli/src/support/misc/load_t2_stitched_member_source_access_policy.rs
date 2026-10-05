@@ -12,4 +12,3 @@ pub(crate) fn load_t2_stitched_member_source_access_policy(
     }
     Ok(rows)
 }
-

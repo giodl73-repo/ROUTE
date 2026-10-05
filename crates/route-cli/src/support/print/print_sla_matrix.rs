@@ -129,4 +129,3 @@ pub(crate) fn print_sla_matrix(trips: usize, seed: u64, data_dir: &std::path::Pa
     println!("\nMarketplace note: relay captures 90%+ of the gain at 0.03% of the cost.");
     println!("The relay MARKETPLACE (driver matching, HOS handoff, load custody) is the critical enabler.");
 }
-

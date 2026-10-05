@@ -22,4 +22,3 @@ pub(crate) fn print_t2_beck_long_connector_blocker_relief_summary(
     println!("  claim blockers before: {before}");
     println!("  claim blockers after: {after}");
 }
-

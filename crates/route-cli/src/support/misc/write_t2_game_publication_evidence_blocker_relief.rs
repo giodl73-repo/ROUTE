@@ -20,4 +20,3 @@ pub(crate) fn write_t2_game_publication_evidence_blocker_relief(
     writer.flush()?;
     Ok(())
 }
-

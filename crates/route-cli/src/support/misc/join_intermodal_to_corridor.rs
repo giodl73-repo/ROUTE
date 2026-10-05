@@ -48,4 +48,3 @@ pub(crate) fn join_intermodal_to_corridor(
         .count();
     attrs.intermodal_hub_count = count.min(255) as u8;
 }
-

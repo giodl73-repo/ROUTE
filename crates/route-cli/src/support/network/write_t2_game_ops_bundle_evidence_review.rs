@@ -20,4 +20,3 @@ pub(crate) fn write_t2_game_ops_bundle_evidence_review(
     writer.flush()?;
     Ok(())
 }
-

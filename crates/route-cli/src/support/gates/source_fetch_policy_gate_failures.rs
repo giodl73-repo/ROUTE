@@ -68,4 +68,3 @@ pub(crate) fn source_fetch_policy_gate_failures(rows: &[SourceFetchPolicyRow]) -
     }
     failures
 }
-

@@ -11,4 +11,3 @@ pub(crate) fn beck_t2_diagnostics_gate_failure(review_flag: &str) -> bool {
             | "dense-label-review"
     )
 }
-

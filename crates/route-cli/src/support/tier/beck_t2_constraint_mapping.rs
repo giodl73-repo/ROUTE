@@ -2,7 +2,9 @@
 #[allow(unused_imports)]
 use crate::*;
 
-pub(crate) fn beck_t2_constraint_mapping(review_flag: &str) -> (&'static str, &'static str, &'static str) {
+pub(crate) fn beck_t2_constraint_mapping(
+    review_flag: &str,
+) -> (&'static str, &'static str, &'static str) {
     match review_flag {
         "unstopped-t1-contact-review" => (
             "beck_unstopped_contact",
@@ -46,4 +48,3 @@ pub(crate) fn beck_t2_constraint_mapping(review_flag: &str) -> (&'static str, &'
         ),
     }
 }
-

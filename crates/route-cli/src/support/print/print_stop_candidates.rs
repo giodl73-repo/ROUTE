@@ -53,4 +53,3 @@ pub(crate) fn print_stop_candidates(rows: &[&StopCandidateRow], details: bool) {
         }
     }
 }
-

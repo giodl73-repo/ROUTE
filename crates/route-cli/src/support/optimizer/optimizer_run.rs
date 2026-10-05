@@ -1327,4 +1327,3 @@ pub(crate) fn tier_optimizer_run_rows(all_tiers: bool) -> Result<Vec<TierOptimiz
         )
         .collect()
 }
-

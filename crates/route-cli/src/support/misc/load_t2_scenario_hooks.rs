@@ -13,4 +13,3 @@ pub(crate) fn load_t2_scenario_hooks(path: &Path) -> Result<Vec<T2ScenarioHookRo
     }
     Ok(rows)
 }
-

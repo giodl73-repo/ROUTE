@@ -20,4 +20,3 @@ pub(crate) fn pavement_excluded_repair_member_count(
         .map(|row| row.excluded_member_count)
         .sum()
 }
-

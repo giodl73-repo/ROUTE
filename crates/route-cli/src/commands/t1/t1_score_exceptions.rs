@@ -1,13 +1,13 @@
 //! `T1ScoreExceptions` command handler extracted from main.
-use crate::*;
 use crate::commands::ctx;
+use crate::*;
 #[allow(unused_variables)]
 pub(crate) fn run(
     ctx: &ctx::Ctx<'_>,
     review: PathBuf,
     exceptions: PathBuf,
     details: bool,
-    gate: bool
+    gate: bool,
 ) -> Result<()> {
     let manifest_path = ctx.manifest_path.to_path_buf();
     let scoring_cfg = ctx.scoring_cfg;
@@ -30,7 +30,6 @@ pub(crate) fn run(
             anyhow::bail!("T1 score exception gate failed");
         }
     }
-        
+
     Ok(())
 }
-

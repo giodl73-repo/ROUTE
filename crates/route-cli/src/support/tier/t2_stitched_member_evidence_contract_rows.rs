@@ -45,4 +45,3 @@ pub(crate) fn t2_stitched_member_evidence_contract_rows(
     });
     rows
 }
-

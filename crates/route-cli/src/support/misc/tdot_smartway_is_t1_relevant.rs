@@ -17,4 +17,3 @@ pub(crate) fn tdot_smartway_is_t1_relevant(road_names: &str, text: &str) -> bool
             .iter()
             .any(|needle| text.to_ascii_uppercase().contains(needle))
 }
-

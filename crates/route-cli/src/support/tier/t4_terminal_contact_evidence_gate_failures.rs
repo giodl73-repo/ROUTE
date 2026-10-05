@@ -117,4 +117,3 @@ pub(crate) fn t4_terminal_contact_evidence_gate_failures(
     }
     failures
 }
-

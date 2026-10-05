@@ -15,4 +15,3 @@ pub(crate) fn load_t1_schematic_geometry_blocker_relief(
     }
     Ok(rows)
 }
-

@@ -6,4 +6,3 @@ pub(crate) fn load_standards_inventory(path: &Path) -> Result<Vec<StandardsInven
     let file = std::fs::File::open(path)?;
     parse_standards_inventory(file)
 }
-

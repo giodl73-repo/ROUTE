@@ -54,4 +54,3 @@ pub(crate) fn blueprint_row_contract_failure(row: &BlueprintPackageRow) -> Optio
         ))
     }
 }
-

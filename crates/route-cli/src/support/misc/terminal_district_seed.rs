@@ -8,4 +8,3 @@ pub(crate) fn terminal_district_seed(terminal_obligation: &str) -> String {
         .map(|(_, seed)| seed.to_string())
         .unwrap_or_else(|| terminal_obligation.to_string())
 }
-

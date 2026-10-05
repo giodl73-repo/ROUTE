@@ -20,4 +20,3 @@ pub(crate) fn mdot_midrive_lanes_closed(text: &str) -> Option<u8> {
         None
     }
 }
-

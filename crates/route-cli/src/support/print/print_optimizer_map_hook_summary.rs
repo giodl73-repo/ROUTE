@@ -16,4 +16,3 @@ pub(crate) fn print_optimizer_map_hook_summary(output: &Path, rows: &[OptimizerM
         println!("  {consumer_type}: {count}");
     }
 }
-

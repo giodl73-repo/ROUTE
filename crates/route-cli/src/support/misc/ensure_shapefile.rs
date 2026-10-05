@@ -17,4 +17,3 @@ pub(crate) fn ensure_shapefile(manifest: &route_data::Manifest) -> Result<std::p
     println!("  extracting shapefile…");
     route_data::fetch::extract_shp(&zip_path, &extract_dir)
 }
-

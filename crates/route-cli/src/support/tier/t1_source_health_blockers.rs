@@ -7,4 +7,3 @@ pub(crate) fn t1_source_health_blockers(rows: &[T1SourceHealthRow]) -> Vec<&T1So
         .filter(|row| t1_source_health_is_blocked(row))
         .collect()
 }
-

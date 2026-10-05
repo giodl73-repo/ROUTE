@@ -20,4 +20,3 @@ pub(crate) fn write_t2_stitched_member_proof_intake(
     writer.flush()?;
     Ok(())
 }
-

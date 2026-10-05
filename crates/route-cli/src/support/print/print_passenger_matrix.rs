@@ -175,4 +175,3 @@ pub(crate) fn print_passenger_matrix(trips: usize, seed: u64, data_dir: &std::pa
     println!();
     println!("  AV managed lane is the return of the overnight sleeper — in your own car.");
 }
-

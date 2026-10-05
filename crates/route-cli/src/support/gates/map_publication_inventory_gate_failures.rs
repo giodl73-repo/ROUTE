@@ -119,4 +119,3 @@ pub(crate) fn map_publication_inventory_gate_failures(
 
     failures
 }
-

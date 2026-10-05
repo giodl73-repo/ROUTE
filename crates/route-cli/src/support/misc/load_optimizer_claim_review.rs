@@ -13,4 +13,3 @@ pub(crate) fn load_optimizer_claim_review(path: &Path) -> Result<Vec<OptimizerCl
     }
     Ok(rows)
 }
-

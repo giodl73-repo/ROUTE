@@ -20,4 +20,3 @@ pub(crate) fn write_t1_shared_segment_map_policy(
     writer.flush()?;
     Ok(())
 }
-

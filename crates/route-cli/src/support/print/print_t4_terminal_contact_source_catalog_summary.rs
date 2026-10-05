@@ -18,4 +18,3 @@ pub(crate) fn print_t4_terminal_contact_source_catalog_summary(
         );
     }
 }
-
