@@ -139,6 +139,6 @@
     "test:pages": "playwright test --config playwright.pages.config.js"
   },
   "devDependencies": {
-    "@playwright/test": "1.61.1"
+    "@playwright/test": "1.63.0"
   }
 }
