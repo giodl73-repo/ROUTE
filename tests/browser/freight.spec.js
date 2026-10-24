@@ -17,7 +17,7 @@ test('real WASM responds to keyboard and exports a reproducible scenario',async(
  await expect(page.locator('#hours')).toHaveText(hours);await expect(page.locator('#outage')).toHaveValue('8');
  await page.getByRole('button',{name:'Reset',exact:true}).click();await expect(page.locator('#capacity')).toHaveValue('100');await expect(page.locator('#outage')).toHaveValue('0');
  await expect(page.locator('#taxlane')).toHaveAttribute('href','https://giodl73-repo.github.io/TAXLANE/#evidence-transportation');
- const provenance=await (await page.request.get('/ROUTE/provenance.json')).json();expect(provenance.commit).toMatch(/^[0-9a-f]{40}$/);expect((await page.request.get('/ROUTE/THIRD-PARTY-LICENSES.txt')).ok()).toBe(true);
+ const provenance=await (await page.request.get('/ROUTE/provenance.json')).json();expect(provenance.commit).toMatch(/^[0-9a-f]{40}$/);expect(provenance.dirty).toBe(false);expect((await page.request.get('/ROUTE/THIRD-PARTY-LICENSES.txt')).ok()).toBe(true);
  expect(errors).toEqual([]);
 });
 test('alternate corridor, invalid target, mobile and model notice',async({page})=>{
