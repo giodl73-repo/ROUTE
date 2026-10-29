@@ -3,6 +3,7 @@ import argparse
 import csv
 import hashlib
 import io
+import math
 import json
 import shutil
 import subprocess
@@ -21,6 +22,22 @@ def canonical_blob(path):
     if (ROOT / path).read_bytes().replace(b"\r\n", b"\n") != blob:
         raise ValueError("Uncommitted input differs from Git blob: " + path)
     return blob
+
+
+def same_results(actual, expected):
+    """Preserve structure exactly; bound existing cross-target libm differences."""
+    if isinstance(actual, float) or isinstance(expected, float):
+        assert math.isclose(actual, expected, rel_tol=1e-12, abs_tol=1e-12)
+    elif isinstance(actual, dict):
+        assert actual.keys() == expected.keys()
+        for key in actual:
+            same_results(actual[key], expected[key])
+    elif isinstance(actual, list):
+        assert len(actual) == len(expected)
+        for a, e in zip(actual, expected, strict=True):
+            same_results(a, e)
+    else:
+        assert actual == expected
 
 
 def source_evidence(output):
@@ -43,9 +60,14 @@ def source_evidence(output):
         references.append({"input": fixture.read_text(encoding="utf-8").strip(), "canonical": canonical})
     assert json.loads(references[0]["canonical"])["selected_rows"] == recorded["rows"]
     legacy = [json.loads(line) for line in subprocess.check_output(["cargo", "run", "--quiet", "--locked", "-p", "route-web", "--example", "legacy_reference"], cwd=ROOT, text=True, encoding="utf-8").splitlines()]
-    assert legacy == json.loads((ROOT / "fixtures/pre-checklist-legacy.json").read_text(encoding="utf-8"))["queries"]
+    baseline = json.loads((ROOT / "fixtures/pre-checklist-legacy.json").read_text(encoding="utf-8"))["queries"]
+    wasm_baseline = json.loads((ROOT / "fixtures/pre-checklist-wasm-legacy.json").read_text(encoding="utf-8"))["queries"]
+    for actual, native, wasm in zip(legacy, baseline, wasm_baseline, strict=True):
+        assert actual["input"] == native["input"] == wasm["input"]
+        same_results(json.loads(actual["canonical"]), json.loads(native["canonical"]))
+        same_results(json.loads(actual["canonical"]), json.loads(wasm["canonical"]))
     (ROOT / ".cache").mkdir(exist_ok=True)
-    (ROOT / ".cache/source-checklist-references.json").write_text(json.dumps({"queries": references, "legacy": legacy}, indent=2), encoding="utf-8")
+    (ROOT / ".cache/source-checklist-references.json").write_text(json.dumps({"queries": references, "legacy": legacy, "legacy_wasm": wasm_baseline}, indent=2), encoding="utf-8")
     sources = output / "sources"
     sources.mkdir(exist_ok=True)
     artifacts = []

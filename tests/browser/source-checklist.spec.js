@@ -4,10 +4,10 @@ import crypto from 'node:crypto';
 const referencePath=process.env.ROUTE_SOURCE_REFERENCES||'.cache/source-checklist-references.json';
 async function ready(page){await page.goto('/ROUTE/#source-checklist');await expect(page.locator('#checklist-status')).toContainText('Ready');}
 async function download(page){const pending=page.waitForEvent('download');await page.locator('#checklist-download').click();return JSON.parse(await fs.readFile(await(await pending).path(),'utf8'));}
-test('source checklist actual WASM matches four native queries and four pre-change freight results',async({page})=>{
+test('source checklist actual WASM matches four native queries and four published pre-change WASM freight results',async({page})=>{
  await ready(page);const refs=JSON.parse(await fs.readFile(referencePath,'utf8'));
- const actual=await page.evaluate(async refs=>{const m=await import('./pkg/route_web.js');await m.default();return {queries:refs.queries.map(q=>m.inspect_source_checklist_json(q.input)),legacy:refs.legacy.map(q=>m.evaluate_json(q.input))};},refs);
- expect(actual.queries).toEqual(refs.queries.map(q=>q.canonical));expect(actual.legacy).toEqual(refs.legacy.map(q=>q.canonical));
+ const actual=await page.evaluate(async refs=>{const m=await import('./pkg/route_web.js');await m.default();return {queries:refs.queries.map(q=>m.inspect_source_checklist_json(q.input)),legacy:refs.legacy_wasm.map(q=>m.evaluate_json(q.input))};},refs);
+ expect(actual.queries).toEqual(refs.queries.map(q=>q.canonical));expect(actual.legacy).toEqual(refs.legacy_wasm.map(q=>q.canonical));
 });
 test('recorded status filters preserve original row parity, fixed partition and held vintage',async({page})=>{
  await ready(page);const original=await(await page.request.get('/ROUTE/sources/recorded-checklist.json')).json();

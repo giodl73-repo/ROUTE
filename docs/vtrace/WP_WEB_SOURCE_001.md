@@ -120,3 +120,14 @@ environmental/community-health lenses retain their distinct delivery, access,
 rights and outcome unknowns with these deferrals. No unresolved blocking
 actionable finding remains. Repeat all twelve lenses at exit. Rollback: revert
 new adapter/UI/evidence wording and redeploy prior artifacts; retain records.
+
+## Cross-target regression boundary
+
+Four recorded Windows-native results remain byte-identical locally. Existing
+native/WASM logarithm/exponential calculations can differ in their last bit;
+no math or dependency is changed to suppress that difference. Build validation
+compares all structure/non-numeric values exactly and numeric values with both
+absolute/relative tolerance 1e-12 across targets. Four pre-change published WASM
+results captured at a055dbfd3f8dfd1a5c020a67cb56c8fda652063c are compared byte-for-byte
+to the new WASM. The four new checklist native/WASM results have exact canonical
+string parity. Do not describe the legacy cross-target check as byte parity.

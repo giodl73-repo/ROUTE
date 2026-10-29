@@ -50,4 +50,15 @@ route-source-checklist -- fixtures/source-checklist-all.json`. Only optional
 status null/ready/blocked/excluded is accepted. Unknown fields/states and queries
 above 64 KiB fail closed. Build validation independently matches every original
 CSV contract row, three original-artifact hashes, full captured-row projection,
-four native/WASM query strings and four pre-change synthetic canonical results.
+four native/WASM checklist strings and four pre-change published WASM canonical results.
+
+## Cross-target regression boundary
+
+Four recorded Windows-native results remain byte-identical locally. Existing
+native/WASM logarithm/exponential calculations can differ in their last bit;
+no math or dependency is changed to suppress that difference. Build validation
+compares all structure/non-numeric values exactly and numeric values with both
+absolute/relative tolerance 1e-12 across targets. Four pre-change published WASM
+results captured at a055dbfd3f8dfd1a5c020a67cb56c8fda652063c are compared byte-for-byte
+to the new WASM. The four new checklist native/WASM results have exact canonical
+string parity. Do not describe the legacy cross-target check as byte parity.
