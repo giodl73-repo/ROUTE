@@ -34,3 +34,31 @@ absolute/relative tolerance 1e-12 across targets. Four pre-change published WASM
 results captured at a055dbfd3f8dfd1a5c020a67cb56c8fda652063c are compared byte-for-byte
 to the new WASM. The four new checklist native/WASM results have exact canonical
 string parity. Do not describe the legacy cross-target check as byte parity.
+
+## Pulse 01 local exit
+
+Pinned 1.95.0 fmt/check (kernel/web/sim), 29 selected native tests, strict
+kernel/web all-target Clippy and web WASM Clippy pass. Original packet --check
+passes unchanged. Nine ROUTE and five TAXLANE browser cases pass without retries.
+Four checklist native/WASM canonical strings and four published legacy WASM
+canonical strings match exactly; four Windows-native results retain old bytes.
+Independent build checks compare all twelve captured contracts to the unchanged
+CSV, all captured rows to Rust output and original contract/script/packet hashes.
+Three download hashes use canonical committed LF Git blobs, not CRLF checkouts.
+The artifact is below 5 MB; raw publisher files remain absent.
+
+All twelve implementing-agent lenses repeated at exit (no named-person
+participation or independent endorsement): Eisenhower retains no national benefit;
+Moses retains no buildability; Foxx retains missing demographic/incidence evidence;
+Freight Economist retains unlike count units/no ROI; Traffic Engineer retains
+explicit unresolved 2023/2018 conflict/no AADT inference; Climate Engineer retains
+FEMA exclusion/no hazard conclusion; Rural Advocate retains RUCC context without
+access delivery; Optimization Methodologist retains fixed partition/strict input;
+Schematic Cartographer retains no maps/service geography; Citation Auditor retains
+dated metadata custody/no raw-byte verification; Scope Keeper retains held packet
+and separate simulations; Numeracy Checker retains source-entry totals/no count
+summation. All pass bounded scope with original deferrals; none promotes a design.
+State DOT, operations, rural/agriculture, transit and community-health outcome
+questions remain deferred as recorded in the accepted package. No unresolved
+blocking finding remains for this metadata inspector. Hosted default gates,
+exact artifact/live hashes and navigation are required before TRACKER snapshot.
