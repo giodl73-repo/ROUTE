@@ -252,3 +252,9 @@ non-destructive reproduction and comparison command.
 | 2026-10-05 | Browser Whole-Trip Comparison | Share native OD simulation with Pages and compare solo, team and relay time. | done |
 
 | 2026-10-23 | [Browser release custody](2026-10-23-pages-release-custody/WAVE.md) | Provenance, notices and TAXLANE return navigation; unchanged domain core. | implementation complete; release verification pending |
+
+## Browser source checklist
+
+2026-10-29-i80-source-checklist: accepted separate metadata wave under
+docs/vtrace/WP_WEB_SOURCE_001.md. No prior I-80 disposition or acquisition scope
+is reopened; its local-cache observation is frozen, not a new source gate.

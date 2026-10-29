@@ -1,4 +1,5 @@
 //! Bounded, synthetic fixed-route examples; no national routing or SLA certification.
+pub mod source_checklist;
 use route_kernel::{
     bpr_travel_time, run_hub_outage_sensitivity, BprParams, HubOutageConfig, RelayHub,
 };
@@ -313,4 +314,10 @@ mod tests {
         assert_eq!(b.scenario.missed_swaps, b.scenario.daily_swaps as f64);
         assert_eq!(b.scenario.affected_retention, 0.);
     }
+}
+
+#[cfg(feature = "wasm")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn inspect_source_checklist_json(input: &str) -> Result<String, String> {
+    source_checklist::evaluate(input)
 }

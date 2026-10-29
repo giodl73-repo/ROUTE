@@ -19,6 +19,21 @@ tour:
 Research lab only — not an official plan, not construction-ready, not full map
 publication. I-80 flagship remains **hold and narrow**.
 
+## Inspect the recorded I-80 sources
+
+The [browser source checklist](https://giodl73-repo.github.io/ROUTE/#source-checklist)
+replays a dated 2026-10-29 local-cache observation: **4 ready / 2 blocked /
+6 excluded** source entries. Ready is not current cache readiness, primary-byte
+verification or packet regeneration. Contract gaps and observed blockers stay
+separate; artifact counts have unlike units and are not traffic totals.
+
+The historical packet says **HPMS 2023**, while the source contract/acquisition
+code specify **2018**. This discrepancy remains unresolved; original values are
+unchanged and the packet remains **Hold and narrow**. The inspector is independent
+of the synthetic freight/relay/whole-trip workbench. Download its original
+metadata and SHA custody in the browser; raw publisher files are absent.
+[Scope](docs/browser-source-note.md) · [Accepted work package](docs/vtrace/WP_WEB_SOURCE_001.md).
+
 ## Current lab posture
 
 ROUTE is a **research and tooling lab**, not a finished national plan.
