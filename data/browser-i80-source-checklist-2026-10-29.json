@@ -1,0 +1,368 @@
+{
+  "schema": "route.i80-recorded-cache-checklist.v1",
+  "recorded_at_utc": "2026-10-29T23:23:10.168933+00:00",
+  "origin_commit": "a055dbfd3f8dfd1a5c020a67cb56c8fda652063c",
+  "capture_mode": "existing local cache inspection; attempts={} through unchanged native Python readiness_rows",
+  "acquisition_performed": false,
+  "primary_hashes_reverified": false,
+  "raw_primary_bytes_in_bundle": false,
+  "contract_sha256": "5ee22e4eb5bd79e3161001b1fc5458bd691dce4603fd8d5fa8a8760a9dc73262",
+  "preparation_script_sha256": "256194d7abfcd891218516e2148e3a6a7d15767f2352a54a84289cd106529bd3",
+  "reviewed_packet_sha256": "b065a5414e1c7ad14bf1a06497aa2b01bdaa4faffa44ce30895e659a055ce838",
+  "vintage_discrepancy": {
+    "packet_hpms_label": "HPMS 2023",
+    "contract_hpms_year": "2018",
+    "status": "unresolved",
+    "packet_values_relinked": false
+  },
+  "rows": [
+    {
+      "contract": {
+        "source_id": "SRC-I80-TIGER",
+        "artifact": "data/cache/tl_2023_us_primaryroads.zip",
+        "publisher": "U.S. Census Bureau",
+        "current_source_year": "2023",
+        "candidate_source_year": "2025",
+        "acquisition_status": "automated",
+        "credential_mode": "no-credential",
+        "current_command": "route fetch",
+        "authoritative_url": "https://www2.census.gov/geo/tiger/TIGER2025/PRIMARYROADS/",
+        "local_parser_status": "implemented-shapefile-parser",
+        "blocking_gap": "Manifest is pinned to 2023 while 2025 is available",
+        "next_action": "Test 2025 schema before updating manifest year and filename"
+      },
+      "observation": {
+        "source_id": "SRC-I80-TIGER",
+        "artifact": "data/cache/tl_2023_us_primaryroads.zip",
+        "current_source_year": "2023",
+        "acquisition_status": "automated",
+        "attempt_status": "not-attempted",
+        "readiness_status": "ready",
+        "evidence_count": "7",
+        "evidence_detail": "zip members=7",
+        "attempt_detail": "",
+        "blocking_gap": "",
+        "next_action": "Test 2025 schema before updating manifest year and filename"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-GAZETTEER",
+        "artifact": "data/cache/2023_Gaz_counties_national.txt",
+        "publisher": "U.S. Census Bureau",
+        "current_source_year": "2023",
+        "candidate_source_year": "2025",
+        "acquisition_status": "automated-download-partial-extract",
+        "credential_mode": "no-credential",
+        "current_command": "route fetch",
+        "authoritative_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/",
+        "local_parser_status": "implemented-text-parser",
+        "blocking_gap": "Report loader requires extracted text but manifest fetch leaves a zip until another command extracts it",
+        "next_action": "Add deterministic extraction and test the 2025 delimiter/schema before upgrade"
+      },
+      "observation": {
+        "source_id": "SRC-I80-GAZETTEER",
+        "artifact": "data/cache/2023_Gaz_counties_national.txt",
+        "current_source_year": "2023",
+        "acquisition_status": "automated-download-partial-extract",
+        "attempt_status": "not-attempted",
+        "readiness_status": "ready",
+        "evidence_count": "3223",
+        "evidence_detail": "nonempty lines=3223",
+        "attempt_detail": "",
+        "blocking_gap": "",
+        "next_action": "Add deterministic extraction and test the 2025 delimiter/schema before upgrade"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-HPMS",
+        "artifact": "data/cache/hpms_2018.csv",
+        "publisher": "FHWA",
+        "current_source_year": "2018",
+        "candidate_source_year": "",
+        "acquisition_status": "automated-partial",
+        "credential_mode": "no-credential",
+        "current_command": "route fetch-hpms --states CA,NV,UT,WY,NE,IA,IL,IN,OH,PA,NJ",
+        "authoritative_url": "https://data.transportation.gov/Roadways-and-Bridges/Highway-Performance-Monitoring-System-HPMS-/jc5k-rzm8",
+        "local_parser_status": "implemented-ArcGIS-parser-and-scoped-merge",
+        "blocking_gap": "The command uses state-hosted 2018 services and the filename can be mistaken for current national HPMS",
+        "next_action": "Keep 2018 explicit and research a current-year national or state endpoint before renaming"
+      },
+      "observation": {
+        "source_id": "SRC-I80-HPMS",
+        "artifact": "data/cache/hpms_2018.csv",
+        "current_source_year": "2018",
+        "acquisition_status": "automated-partial",
+        "attempt_status": "not-attempted",
+        "readiness_status": "ready",
+        "evidence_count": "42970",
+        "evidence_detail": "I80 records=42970 states=11/11",
+        "attempt_detail": "",
+        "blocking_gap": "",
+        "next_action": "Keep 2018 explicit and research a current-year national or state endpoint before renaming"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-ACS-POP",
+        "artifact": "data/cache/acs_county_pop_2022.csv",
+        "publisher": "U.S. Census Bureau",
+        "current_source_year": "2022",
+        "candidate_source_year": "2024",
+        "acquisition_status": "credential-supported",
+        "credential_mode": "census-api-key",
+        "current_command": "route fetch-acs",
+        "authoritative_url": "https://api.census.gov/data/2022/acs/acs5",
+        "local_parser_status": "implemented-keyed-JSON-parser",
+        "blocking_gap": "CENSUS_API_KEY must be present in the environment",
+        "next_action": "Run the source bundle with CENSUS_API_KEY and retain the explicit 2022 report vintage"
+      },
+      "observation": {
+        "source_id": "SRC-I80-ACS-POP",
+        "artifact": "data/cache/acs_county_pop_2022.csv",
+        "current_source_year": "2022",
+        "acquisition_status": "credential-supported",
+        "attempt_status": "not-attempted",
+        "readiness_status": "blocked",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "CENSUS_API_KEY must be present in the environment",
+        "next_action": "Run the source bundle with CENSUS_API_KEY and retain the explicit 2022 report vintage"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-ACS-INCOME",
+        "artifact": "data/cache/acs_county_income_2022.csv",
+        "publisher": "U.S. Census Bureau",
+        "current_source_year": "2022",
+        "candidate_source_year": "2024",
+        "acquisition_status": "credential-supported",
+        "credential_mode": "census-api-key",
+        "current_command": "route fetch-acs-income",
+        "authoritative_url": "https://api.census.gov/data/2022/acs/acs5",
+        "local_parser_status": "implemented-keyed-JSON-parser",
+        "blocking_gap": "CENSUS_API_KEY must be present in the environment",
+        "next_action": "Run the source bundle with CENSUS_API_KEY and retain the explicit 2022 report vintage"
+      },
+      "observation": {
+        "source_id": "SRC-I80-ACS-INCOME",
+        "artifact": "data/cache/acs_county_income_2022.csv",
+        "current_source_year": "2022",
+        "acquisition_status": "credential-supported",
+        "attempt_status": "not-attempted",
+        "readiness_status": "blocked",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "CENSUS_API_KEY must be present in the environment",
+        "next_action": "Run the source bundle with CENSUS_API_KEY and retain the explicit 2022 report vintage"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-RUCC",
+        "artifact": "data/cache/rucc_2023.csv",
+        "publisher": "USDA Economic Research Service",
+        "current_source_year": "2023",
+        "candidate_source_year": "2023",
+        "acquisition_status": "automated",
+        "credential_mode": "no-credential",
+        "current_command": "npm run prepare:i80:sources",
+        "authoritative_url": "https://www.ers.usda.gov/media/5768/2023-rural-urban-continuum-codes.csv?v=66892",
+        "local_parser_status": "implemented-download-normalization-and-CSV-join",
+        "blocking_gap": "",
+        "next_action": "Retain 2023 as the canonical RUCC vintage"
+      },
+      "observation": {
+        "source_id": "SRC-I80-RUCC",
+        "artifact": "data/cache/rucc_2023.csv",
+        "current_source_year": "2023",
+        "acquisition_status": "automated",
+        "attempt_status": "not-attempted",
+        "readiness_status": "ready",
+        "evidence_count": "3233",
+        "evidence_detail": "csv records=3233",
+        "attempt_detail": "",
+        "blocking_gap": "",
+        "next_action": "Retain 2023 as the canonical RUCC vintage"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-DCFC",
+        "artifact": "data/cache/dcfc_stations.csv",
+        "publisher": "DOE Alternative Fuels Data Center / NLR",
+        "current_source_year": "",
+        "candidate_source_year": "",
+        "acquisition_status": "credential-adapter-deferred-excluded",
+        "credential_mode": "api-key",
+        "current_command": "",
+        "authoritative_url": "https://developer.nlr.gov/docs/transportation/alt-fuel-stations-v1/",
+        "local_parser_status": "cache-loader-only",
+        "blocking_gap": "No reviewed cache or key-backed adapter exists",
+        "next_action": "Exclude the DCFC component from reviewed regeneration until a fixture-tested NLR adapter is implemented"
+      },
+      "observation": {
+        "source_id": "SRC-I80-DCFC",
+        "artifact": "data/cache/dcfc_stations.csv",
+        "current_source_year": "",
+        "acquisition_status": "credential-adapter-deferred-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "No reviewed cache or key-backed adapter exists",
+        "next_action": "Exclude the DCFC component from reviewed regeneration until a fixture-tested NLR adapter is implemented"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-FEMA",
+        "artifact": "data/cache/fema_sfha_tile_counts.csv",
+        "publisher": "FEMA",
+        "current_source_year": "2024",
+        "candidate_source_year": "",
+        "acquisition_status": "endpoint-blocked-excluded",
+        "credential_mode": "no-credential",
+        "current_command": "",
+        "authoritative_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+        "local_parser_status": "legacy-query-builder-not-I80-ready",
+        "blocking_gap": "The legacy endpoint did not sustain corridor-scale tile queries and the existing tile plan does not cover I-80",
+        "next_action": "Exclude FEMA from reviewed regeneration until a bounded replacement source and coverage adapter are selected"
+      },
+      "observation": {
+        "source_id": "SRC-I80-FEMA",
+        "artifact": "data/cache/fema_sfha_tile_counts.csv",
+        "current_source_year": "2024",
+        "acquisition_status": "endpoint-blocked-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "I80 tiles=0/49 healthy=0 positive_tiles=0",
+        "attempt_detail": "",
+        "blocking_gap": "The legacy endpoint did not sustain corridor-scale tile queries and the existing tile plan does not cover I-80",
+        "next_action": "Exclude FEMA from reviewed regeneration until a bounded replacement source and coverage adapter are selected"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-NBI",
+        "artifact": "data/cache/nbi_bridges.csv",
+        "publisher": "FHWA",
+        "current_source_year": "2023",
+        "candidate_source_year": "2025",
+        "acquisition_status": "adapter-deferred-excluded",
+        "credential_mode": "no-credential",
+        "current_command": "",
+        "authoritative_url": "https://www.fhwa.dot.gov/bridge/nbi/ascii2025.cfm",
+        "local_parser_status": "summary-loader-only",
+        "blocking_gap": "No reviewed raw-to-route-summary adapter exists",
+        "next_action": "Exclude NBI bridge measures from reviewed regeneration until the 2025 delimited adapter has fixture and route-coverage evidence"
+      },
+      "observation": {
+        "source_id": "SRC-I80-NBI",
+        "artifact": "data/cache/nbi_bridges.csv",
+        "current_source_year": "2023",
+        "acquisition_status": "adapter-deferred-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "No reviewed raw-to-route-summary adapter exists",
+        "next_action": "Exclude NBI bridge measures from reviewed regeneration until the 2025 delimited adapter has fixture and route-coverage evidence"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-FARS",
+        "artifact": "data/cache/fars_2022_routes.csv",
+        "publisher": "NHTSA",
+        "current_source_year": "2022",
+        "candidate_source_year": "",
+        "acquisition_status": "adapter-deferred-excluded",
+        "credential_mode": "no-credential",
+        "current_command": "",
+        "authoritative_url": "https://static.nhtsa.gov/nhtsa/downloads/FARS/2022/National/FARS2022NationalCSV.zip",
+        "local_parser_status": "summary-loader-only",
+        "blocking_gap": "No reviewed national-download to route-rate adapter exists",
+        "next_action": "Exclude A5 FARS measures from reviewed regeneration until route normalization and VMT denominator evidence pass"
+      },
+      "observation": {
+        "source_id": "SRC-I80-FARS",
+        "artifact": "data/cache/fars_2022_routes.csv",
+        "current_source_year": "2022",
+        "acquisition_status": "adapter-deferred-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "No reviewed national-download to route-rate adapter exists",
+        "next_action": "Exclude A5 FARS measures from reviewed regeneration until route normalization and VMT denominator evidence pass"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-FAF5",
+        "artifact": "data/cache/faf5_5_6.csv",
+        "publisher": "BTS / FHWA",
+        "current_source_year": "2022",
+        "candidate_source_year": "",
+        "acquisition_status": "claim-reference-excluded",
+        "credential_mode": "no-credential",
+        "current_command": "",
+        "authoritative_url": "https://ops.fhwa.dot.gov/freight/freight_analysis/faf/",
+        "local_parser_status": "partial-CSV-parser-and-incomplete-zone-table",
+        "blocking_gap": "The unconditional reviewed-report citation was removed because I-80 A2 uses an HPMS cargo-value proxy",
+        "next_action": "Implement source-backed FAF routing before restoring a FAF5 citation"
+      },
+      "observation": {
+        "source_id": "SRC-I80-FAF5",
+        "artifact": "data/cache/faf5_5_6.csv",
+        "current_source_year": "2022",
+        "acquisition_status": "claim-reference-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "The unconditional reviewed-report citation was removed because I-80 A2 uses an HPMS cargo-value proxy",
+        "next_action": "Implement source-backed FAF routing before restoring a FAF5 citation"
+      }
+    },
+    {
+      "contract": {
+        "source_id": "SRC-I80-BEA",
+        "artifact": "data/cache/CAINC4.zip",
+        "publisher": "U.S. Bureau of Economic Analysis",
+        "current_source_year": "2022",
+        "candidate_source_year": "",
+        "acquisition_status": "claim-reference-excluded",
+        "credential_mode": "no-credential",
+        "current_command": "",
+        "authoritative_url": "https://apps.bea.gov/regional/zip/CAINC4.zip",
+        "local_parser_status": "no-clean-clone-fetch-or-join",
+        "blocking_gap": "The unconditional reviewed-report citation was removed because no BEA cache produced the current C3 output",
+        "next_action": "Implement a BEA download and county join before restoring a BEA citation"
+      },
+      "observation": {
+        "source_id": "SRC-I80-BEA",
+        "artifact": "data/cache/CAINC4.zip",
+        "current_source_year": "2022",
+        "acquisition_status": "claim-reference-excluded",
+        "attempt_status": "not-attempted",
+        "readiness_status": "excluded",
+        "evidence_count": "0",
+        "evidence_detail": "artifact missing",
+        "attempt_detail": "",
+        "blocking_gap": "The unconditional reviewed-report citation was removed because no BEA cache produced the current C3 output",
+        "next_action": "Implement a BEA download and county join before restoring a BEA citation"
+      }
+    }
+  ]
+}

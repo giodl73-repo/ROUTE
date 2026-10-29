@@ -339,3 +339,9 @@ Before implementation starts, confirm:
 - [x] Every work package has V closure rows or explicit package-closeout closure rules.
 - [x] Every required assurance/security review lane is named or accepted with rationale.
 - [x] No work package is only cleanup without parent IDs or discovery status.
+
+## WP-WEB-SOURCE-001: I-80 recorded source checklist
+
+Accepted 2026-10-29. [Contract, assurance and role fixed point](WP_WEB_SOURCE_001.md).
+Independent source-metadata inspection; existing source/data/score/simulation
+contracts remain unchanged and held.
