@@ -249,7 +249,7 @@ fn score_a1(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                 "90th-percentile segment AADT {aadt:.0} vehicles/day (mean: {:.0}).",
                 attrs.mean_aadt.unwrap_or(0.0)
             ),
-            sources: vec!["FHWA HPMS 2023".into()],
+            sources: vec!["FHWA HPMS (input source year unverified)".into()],
             confidence: 0.90,
             estimated: false,
         },
@@ -270,7 +270,7 @@ fn score_a2(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                          (16 tons/truck × $1,000/ton); mean truck share {:.0}%.",
                         attrs.mean_pct_truck.unwrap_or(0.0) * 100.0
                     ),
-                    vec!["FHWA HPMS 2023 truck AADT".into()],
+                    vec!["FHWA HPMS (input source year unverified) truck AADT".into()],
                 )
             } else {
                 (
@@ -327,7 +327,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                  PTI = 1 + 0.15×(V/C×1.15)^4. Better than IRI proxy but still estimated.",
                 attrs.vc_ratio_p90.unwrap_or(0.0)
             ),
-            sources: vec!["FHWA HPMS 2023 (AADT + lanes)".into()],
+            sources: vec!["FHWA HPMS (input source year unverified) (AADT + lanes)".into()],
             confidence: 0.55,
             estimated: true,
         }
@@ -341,7 +341,7 @@ fn score_a3(attrs: &CorridorAttributes, cfg: &ScoringConfig) -> ScoredDimension 
                  Fetch HPMS for BPR-estimated PTI.",
                 cfg.a3.iri_fallback_max
             ),
-            sources: vec!["FHWA HPMS 2023".into()],
+            sources: vec!["FHWA HPMS (input source year unverified)".into()],
             confidence: 0.25,
             estimated: true,
         }
@@ -847,6 +847,39 @@ fn format_pop(pop: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hpms_inputs_without_year_do_not_acquire_a_2023_citation() {
+        let attrs = CorridorAttributes {
+            p90_aadt: Some(11344.0),
+            mean_aadt: Some(11344.0),
+            mean_pct_truck: Some(0.24),
+            annual_freight_value_b: Some(1.0),
+            freight_value_is_hpms_proxy: true,
+            pti_bpr_estimate: Some(1.2),
+            ..Default::default()
+        };
+        let scores = score_corridor(&attrs, &cfg());
+        for dim in [&scores.a1, &scores.a2, &scores.a3] {
+            assert!(dim
+                .sources
+                .iter()
+                .any(|s| s.contains("source year unverified")));
+            assert!(dim
+                .sources
+                .iter()
+                .all(|s| !s.contains("2023") && !s.contains("2018")));
+        }
+        let fallback = score_a3(
+            &CorridorAttributes {
+                mean_iri: Some(2.0),
+                ..Default::default()
+            },
+            &cfg(),
+        );
+        assert!(fallback.sources[0].contains("source year unverified"));
+        assert!(scores.a1.justification.contains("11344"));
+    }
 
     fn cfg() -> ScoringConfig {
         ScoringConfig::default_config()

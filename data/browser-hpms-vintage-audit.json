@@ -1,0 +1,128 @@
+{
+  "schema": "route.hpms-label-origin-audit.v1",
+  "recorded_at_utc": "2026-10-30T05:36:24.860487+00:00",
+  "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+  "label_mechanism": "verified code behavior: report/scorer hardcode HPMS 2023; packet copies corpus facts",
+  "historical_execution_attested": false,
+  "configured_acquisition_year": 2018,
+  "packet_claimed_year": 2023,
+  "matched_packet_input_year": null,
+  "packet_values_relinked": false,
+  "raw_publisher_bytes_verified": false,
+  "historical_packet_changed": false,
+  "historical_checklist_changed": false,
+  "default_join": "route-level upper-median AADT and mean truck proportion assigned to every matched graph edge, not independent matched segment observations",
+  "local_normalized_cache_observation": {
+    "scope": "dated local normalized cache metadata only; no publisher response or capture manifest; not historical input custody or current traffic",
+    "sha256": "f4cd0c5bb98bd62c9280c41de8c4cd7af8f4c86c455e7413ecdc9325392153d4",
+    "bytes": 4917842,
+    "csv_rows": 165873,
+    "i80_rows": 42970,
+    "i80_states": [
+      "CA",
+      "IA",
+      "IL",
+      "IN",
+      "NE",
+      "NJ",
+      "NV",
+      "OH",
+      "PA",
+      "UT",
+      "WY"
+    ],
+    "has_year_column": false,
+    "i80_upper_median_aadt": 22400,
+    "packet_reported_graph_mean_aadt": 11344,
+    "estimators_or_populations_matched": false,
+    "raw_rows_published": false,
+    "acquisition_performed": false
+  },
+  "evidence": [
+    {
+      "path": "crates/route-report/src/lib.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "58ab1c7f2f3e672333eec8d2b39228fc29ae1c63b3a1a93be26a0d656bf13222",
+      "start_line": 204,
+      "end_line": 206,
+      "excerpt": "    md.push_str(\"sources:\\n\");\n    md.push_str(\"  - \\\"FHWA HPMS 2023\\\"\\n\");\n    md.push_str(\"  - \\\"Census ACS 2022\\\"\\n\");\n",
+      "excerpt_sha256": "10173b9bc260b2c25cddb27eff00c121dea90edf0e44d4abdc9f4cb392458e67",
+      "frozen_copy": "data/source-evidence/hpms-vintage/report-before.rs.txt"
+    },
+    {
+      "path": "crates/route-score/src/score.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "86b25497ec8aa6942c8f6cc21270baf4a45aff9387e371e1d2478160064847c5",
+      "start_line": 251,
+      "end_line": 253,
+      "excerpt": "            ),\n            sources: vec![\"FHWA HPMS 2023\".into()],\n            confidence: 0.90,\n",
+      "excerpt_sha256": "00a432a20892c0a932e20763b48e4bd4179a7fad67976be6f0ca6e938938eedf",
+      "frozen_copy": "data/source-evidence/hpms-vintage/score-before.rs.txt"
+    },
+    {
+      "path": "crates/route-data/src/hpms_fetch.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "d60d5fb4120bfd12e468ff1e285ad744a3e5c62343c0ffe704d03b657a31ff9b",
+      "start_line": 11,
+      "end_line": 14,
+      "excerpt": "\nconst BASE_URL: &str =\n    \"https://geo.dot.gov/server/rest/services/Hosted/{STATE}_2018_PR/FeatureServer/0/query\";\n\n",
+      "excerpt_sha256": "92d0c321c4ff9c99815ac9ac3729ce0137cf8aac0547c38d0eae1f05f29b6554"
+    },
+    {
+      "path": "crates/route-network/src/build.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "a505dfc5e46bed77c2a10a2fa90a9c96d38a4eff77926cd0255d2be72ef09347",
+      "start_line": 23,
+      "end_line": 28,
+      "excerpt": "\n    // Build HPMS lookup: route_id \u2192 aggregated values across all states\n    // TIGER national file has no state field, so join by route_id only.\n    // Aggregate: median AADT (not mean \u2014 avoids outlier states skewing), median IRI,\n    // modal lane count, mean pct_truck, modal speed_limit.\n    let hpms_map: HashMap<String, HpmsAgg> = aggregate_hpms_by_route(hpms);\n",
+      "excerpt_sha256": "0f4a44c40f92a74e2c866f0a993d20425a6bbec976afb98abc1378773891b89b"
+    },
+    {
+      "path": "crates/route-network/src/build.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "a505dfc5e46bed77c2a10a2fa90a9c96d38a4eff77926cd0255d2be72ef09347",
+      "start_line": 161,
+      "end_line": 196,
+      "excerpt": "/// Uses median AADT (robust to outlier states), mean pct_truck, modal lane_count.\npub fn aggregate_hpms_by_route(hpms: &[route_data::HpmsRecord]) -> HashMap<String, HpmsAgg> {\n    // Group records by normalised route_id\n    let mut groups: HashMap<String, Vec<&route_data::HpmsRecord>> = HashMap::new();\n    for r in hpms {\n        let id = normalise_route_id(&r.route_id);\n        groups.entry(id).or_default().push(r);\n    }\n\n    groups\n        .into_iter()\n        .map(|(id, records)| {\n            let aadts: Vec<u32> = records.iter().filter_map(|r| r.aadt).collect();\n            let pcts: Vec<f32> = records.iter().filter_map(|r| r.pct_truck).collect();\n            let lanes: Vec<u8> = records.iter().filter_map(|r| r.lane_count).collect();\n            let iris: Vec<f32> = records.iter().filter_map(|r| r.iri).collect();\n            let speeds: Vec<u8> = records.iter().filter_map(|r| r.speed_limit).collect();\n\n            let agg = HpmsAgg {\n                aadt: median_u32(&aadts),\n                pct_truck: mean_f32(&pcts),\n                lane_count: mode_u8(&lanes),\n                iri: median_f32(&iris),\n                speed_limit: mode_u8(&speeds),\n            };\n            (id, agg)\n        })\n        .collect()\n}\n\n/// Aggregate FPM records by route_id across all states or reporting slices.\n/// Uses mean TTI and median PTI to keep route-level reliability robust to outliers.\npub fn aggregate_fpm_by_route(fpm: &[route_data::HpmsFpmRecord]) -> HashMap<String, FpmAgg> {\n    let mut groups: HashMap<String, Vec<&route_data::HpmsFpmRecord>> = HashMap::new();\n    for r in fpm {\n        let id = normalise_route_id(&r.route_id);\n",
+      "excerpt_sha256": "4ad34b73cc6e8839c3e0d69101ccf4450336f56f1136abeec4c118614a30970d"
+    },
+    {
+      "path": "crates/route-data/src/hpms.rs",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "b1bba0801f823c06be1aaab671628937ef99c54a020542e2b7fe1e04216cbc41",
+      "start_line": 7,
+      "end_line": 30,
+      "excerpt": "#[derive(Debug, Clone, Deserialize)]\npub struct HpmsRecord {\n    #[serde(rename = \"STATE\")]\n    pub state: String,\n    #[serde(rename = \"ROUTE_ID\")]\n    pub route_id: String,\n    /// Annual Average Daily Traffic (vehicles/day)\n    #[serde(rename = \"AADT\")]\n    pub aadt: Option<u32>,\n    /// Truck proportion 0.0\u20131.0 (aadt_combination / aadt)\n    #[serde(rename = \"PCT_TRUCK\", deserialize_with = \"deserialize_pct\")]\n    pub pct_truck: Option<f32>,\n    /// Lane count (both directions combined)\n    #[serde(rename = \"LANE_COUNT\")]\n    pub lane_count: Option<u8>,\n    /// International Roughness Index source value; HPMS cache values are commonly inches/mile.\n    #[serde(rename = \"IRI\")]\n    pub iri: Option<f32>,\n    /// Posted speed limit (mph)\n    #[serde(rename = \"SPEED_LIMIT\", default)]\n    pub speed_limit: Option<u8>,\n}\n\n/// FHWA Freight Performance Measures \u2014 Travel Time reliability by route.\n",
+      "excerpt_sha256": "a86c3394ddbaaed017f75fec6c943b2f98eb8344a8b4c9eb3228fbca2407bab9"
+    },
+    {
+      "path": "tools/build_i80_flagship_packet.py",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "d2654be9fa6cdccf6d551dedbcc711c657c5ec6d1463c044c6d4c24c5aa21702",
+      "start_line": 95,
+      "end_line": 97,
+      "excerpt": "\n{section(corpus, \"Key Facts\")}\n\n",
+      "excerpt_sha256": "a38dd96037290fc0a9e5f71f70b47fe21039e89d3bdb1f8575072ecf01e4df35"
+    },
+    {
+      "path": "corpus/existing/i80.md",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "b290d1373433f1bef8575b8f8f43449921ead4f215fa576bf625a6e673937550",
+      "start_line": 66,
+      "end_line": 68,
+      "excerpt": "| Total miles | 2917 | NHS shapefile |\n| Mean AADT across matched segments | 11344 | HPMS 2023; unweighted segment mean |\n| Mean truck % across matched segments | 24% | HPMS 2023; unweighted segment mean |\n",
+      "excerpt_sha256": "d6a37e62914529ebd7de0e4be6e14f6b967f9aa8d2181c00f6005fbd638f9434"
+    },
+    {
+      "path": "docs/packets/i80-flagship-review-packet.md",
+      "baseline_commit": "05776cd594aa5a6d45be38d85453060693b65408",
+      "blob_sha256": "b065a5414e1c7ad14bf1a06497aa2b01bdaa4faffa44ce30895e659a055ce838",
+      "start_line": 53,
+      "end_line": 55,
+      "excerpt": "| Total miles | 2917 | NHS shapefile |\n| Mean AADT across matched segments | 11344 | HPMS 2023; unweighted segment mean |\n| Mean truck % across matched segments | 24% | HPMS 2023; unweighted segment mean |\n",
+      "excerpt_sha256": "d6a37e62914529ebd7de0e4be6e14f6b967f9aa8d2181c00f6005fbd638f9434"
+    }
+  ],
+  "disposition": "Hold and narrow; unsupported 2023 label origin traced, historical input vintage unverified; do not relabel packet 2018 or promote values",
+  "next_evidence": "Recover the historical normalized input hash and raw publisher response/capture manifest; reproduce the exact join, filters, population and estimator before year/value attribution."
+}

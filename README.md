@@ -403,3 +403,12 @@ See [LICENSE](./LICENSE) for the complete notice.
 ## Interactive freight workbench
 
 [Try ROUTE in your browser](https://giodl73-repo.github.io/ROUTE/): adjust traffic demand, road capacity, and relay-outage assumptions in synthetic examples; compare the baseline and download the result. Runs locally with the same Rust kernel as the native simulator. See [model scope and build instructions](docs/browser-freight-workbench.md). This sandbox does not promote held corridor proposals.
+
+## Inspect HPMS label provenance
+
+The [WASM source checklist](https://giodl73-repo.github.io/ROUTE/#source-checklist)
+now links an [offline label-origin audit](docs/hpms-vintage-audit.md). Original
+code hardcoded 2023 while acquisition configures 2018; neither proves the
+historical input year. Future native output uses unverified-year wording.
+Historical packet/checklist bytes and all numeric behavior remain unchanged.
+Verify repository evidence: `python tools/verify_hpms_vintage_audit.py`.

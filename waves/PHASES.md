@@ -230,7 +230,11 @@ reviews, close notes, and the commits that changed the system.
 
 ## Next Active Wave
 
-No wave is active. `2026-07-11-i80-clean-clone-source-reproducibility` closed
+Implementation complete: [HPMS label-origin trace](2026-10-30-hpms-vintage-trace/WAVE.md),
+pulse 01 is locally verified; hosted/publication proof belongs to the separate
+TRACKER release receipt. Historical publisher-byte/packet attribution stays held.
+
+`2026-07-11-i80-clean-clone-source-reproducibility` closed
 with 4 ready, 6 excluded, and 2 credential-blocked sources plus a
 non-destructive reproduction and comparison command.
 

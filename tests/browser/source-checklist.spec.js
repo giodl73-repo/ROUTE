@@ -37,3 +37,15 @@ test('mobile keyboard, three committed artifact hashes, no publisher requests an
  expect(requests).toEqual([]);
  await page.route('**/checklist-worker.js',r=>r.abort());await page.reload();await expect(page.locator('#checklist-status')).toContainText(/could not load|timed out/);await expect(page.locator('#checklist-download')).toBeDisabled();await expect(page.locator('#checklist-results')).toBeHidden();await expect(page.locator('#status')).toContainText('Ready');
 });
+
+test('label-origin trace preserves unverified vintage and exact offline code evidence',async({page})=>{
+ await ready(page);await page.locator('#vintage-audit summary').focus();await page.keyboard.press('Enter');
+ await expect(page.locator('#vintage-audit')).toContainText('Matched packet vintage remains unverified');
+ await expect(page.locator('#vintage-audit')).toContainText('not independent measured segment counts');
+ const pending=page.waitForEvent('download');await page.locator('#vintage-json').click();const d=JSON.parse(await fs.readFile(await(await pending).path(),'utf8'));
+ expect(d.matched_packet_input_year).toBeNull();expect(d.packet_values_relinked).toBe(false);expect(d.configured_acquisition_year).toBe(2018);expect(d.packet_claimed_year).toBe(2023);expect(d.evidence).toHaveLength(9);
+ for(const e of d.evidence){expect(crypto.createHash('sha256').update(e.excerpt).digest('hex')).toBe(e.excerpt_sha256);expect(e.end_line-e.start_line+1).toBe(e.excerpt.split('\n').length-1);}
+ expect(d.local_normalized_cache_observation.raw_rows_published).toBe(false);expect(d.local_normalized_cache_observation.estimators_or_populations_matched).toBe(false);
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await expect(page.locator('#checklist-status')).toContainText('Ready');await expect(page.locator('.source-entry')).toHaveCount(12);
+});
