@@ -262,3 +262,5 @@ non-destructive reproduction and comparison command.
 2026-10-29-i80-source-checklist: accepted separate metadata wave under
 docs/vtrace/WP_WEB_SOURCE_001.md. No prior I-80 disposition or acquisition scope
 is reopened; its local-cache observation is frozen, not a new source gate.
+
+2026-10-30-self-service-links: HTML-only compiled module download; implementation complete, hosted release verification pending. No prior corridor wave reopened.
