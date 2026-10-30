@@ -9,6 +9,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from verify_hpms_vintage_audit import verify as verify_vintage_audit
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -101,6 +103,9 @@ def main():
     def capture(*args):
         return subprocess.check_output(args, cwd=ROOT, text=True, encoding="utf-8").strip()
     source_evidence(output)
+    verify_vintage_audit()
+    (output / "sources/vintage-audit.json").write_bytes(canonical_blob("data/browser-hpms-vintage-audit.json"))
+    (output / "sources/vintage-audit.md").write_bytes(canonical_blob("docs/hpms-vintage-audit.md"))
     provenance = {"commit": capture("git", "rev-parse", "HEAD"), "dirty": bool(capture("git", "status", "--porcelain")), "rust": capture("rustc", "--version"), "bindings": version, "source": "https://github.com/giodl73-repo/ROUTE"}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2), encoding="utf-8")
     (output / ".nojekyll").touch()

@@ -34,10 +34,10 @@ jobs:
           npx playwright install chromium
       - name: Validate Rust
         run: |
-          cargo fmt -p route-kernel -p route-web -p route-sim --check
-          cargo check --locked -p route-kernel -p route-web -p route-sim --all-targets
-          cargo test --locked -p route-kernel -p route-web -p route-sim
-          cargo clippy --locked -p route-kernel -p route-web --all-targets -- -D warnings
+          cargo fmt -p route-kernel -p route-web -p route-sim -p route-score -p route-report --check
+          cargo check --locked -p route-kernel -p route-web -p route-sim -p route-score -p route-report --all-targets
+          cargo test --locked -p route-kernel -p route-web -p route-sim -p route-score -p route-report
+          cargo clippy --locked -p route-kernel -p route-web -p route-score -p route-report --all-targets -- -D warnings
           cargo clippy --locked -p route-web --lib --features wasm --target wasm32-unknown-unknown -- -D warnings
           python tools/build_i80_flagship_packet.py --check
       - name: Build Pages and test browser

@@ -202,7 +202,7 @@ fn format_corpus_entry_with_annotations(
     md.push_str(&format!("created: {today}\n"));
     md.push_str(&format!("updated: {today}\n"));
     md.push_str("sources:\n");
-    md.push_str("  - \"FHWA HPMS 2023\"\n");
+    md.push_str("  - \"FHWA HPMS (input source year unverified)\"\n");
     md.push_str("  - \"Census ACS 2022\"\n");
     if let Some(annotations) = annotations {
         for source in &annotations.sources {
@@ -264,6 +264,12 @@ fn format_corpus_entry_with_annotations(
         ),
     }
 
+    md.push_str(
+        "HPMS input source year is unverified: the aggregate inputs carry no source year. ",
+    );
+    md.push_str("The default HPMS join assigns a route-level median AADT and mean truck proportion to graph edges; ");
+    md.push_str("edge summaries are not independent matched segment counts.\n\n");
+
     // Key facts
     md.push_str("## Key Facts\n\n");
     md.push_str("| Fact | Value | Source |\n|---|---|---|\n");
@@ -272,14 +278,14 @@ fn format_corpus_entry_with_annotations(
         corridor.total_miles
     ));
     md.push_str(&format!(
-        "| Mean AADT across matched segments | {} | HPMS 2023; unweighted segment mean |\n",
+        "| Mean AADT across matched segments | {} | HPMS (input source year unverified); unweighted graph-attribute mean |\n",
         attrs
             .mean_aadt
             .map(|v| format!("{v:.0}"))
             .unwrap_or("N/A".into())
     ));
     md.push_str(&format!(
-        "| Mean truck % across matched segments | {} | HPMS 2023; unweighted segment mean |\n",
+        "| Mean truck % across matched segments | {} | HPMS (input source year unverified); unweighted graph-attribute mean |\n",
         attrs
             .mean_pct_truck
             .map(|v| format!("{:.0}%", v * 100.0))
@@ -512,6 +518,27 @@ mod tests {
                 ..Default::default()
             },
         }
+    }
+
+    #[test]
+    fn report_cannot_invent_hpms_year_from_aggregate_values() {
+        let corridor = corridor();
+        let scores = score_corridor(
+            &corridor.attributes,
+            &route_score::ScoringConfig::default_config(),
+        );
+        let md = format_corpus_entry_with_annotations(
+            &corridor,
+            &scores,
+            &CorpusProvenance::default(),
+            None,
+        );
+        assert!(md.contains("HPMS (input source year unverified)"));
+        assert!(!md.contains("HPMS 2023"));
+        assert!(!md.contains("HPMS 2018"));
+        assert!(md.contains("not independent matched segment counts"));
+        assert!(md.contains("| Mean AADT across matched segments | 60000 |"));
+        assert!(md.contains("| Mean truck % across matched segments | 22% |"));
     }
 
     #[test]
