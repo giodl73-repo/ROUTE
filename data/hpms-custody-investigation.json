@@ -1,0 +1,218 @@
+{
+  "schema": "route.hpms-custody-investigation.v1",
+  "recorded_at_utc": "2026-10-30T21:20:22.177546+00:00",
+  "baseline_commit": "ae858ef592aa182f1d647d93fc871dd1e977df08",
+  "historical_input_recovered": false,
+  "historical_publisher_capture_recovered": false,
+  "packet_or_cache_regenerated": false,
+  "historical_snapshots": [
+    {
+      "commit": "ae858ef592aa182f1d647d93fc871dd1e977df08",
+      "path": "docs/handoff/2026-05-07-post-b1-review.md",
+      "frozen_path": "data/source-evidence/hpms-custody/handoff-ae858ef592aa.md.txt",
+      "bytes": 5278,
+      "sha256": "0e5c917557195a376f62ee45252577a4bb139a8cde9fb334e71238625c5d3436",
+      "relevant_lines": [
+        "2. HPMS data fetched from geo.dot.gov (160,969 records, 28/50 states)",
+        "- `data/cache/hpms_2018.csv` \u2014 160,969 HPMS interstate records (28 states)"
+      ]
+    },
+    {
+      "commit": "6cc218e287067b3fec2444934f7669dcbb3be5a0",
+      "path": "corpus/existing/i80.md",
+      "frozen_path": "data/source-evidence/hpms-custody/i80-6cc218e28706.md.txt",
+      "bytes": 2757,
+      "sha256": "0da73ef9b2717c0d8bb944966c4a71dee55e1dd7a9c1a0ddebff68be47e8698b",
+      "relevant_lines": [
+        "| Mean AADT | 11344 | HPMS 2023 |",
+        "| Mean truck % | 0% | HPMS 2023 |"
+      ]
+    },
+    {
+      "commit": "904091fbc127954e56582e82a9346474c1999db0",
+      "path": "corpus/existing/i80.md",
+      "frozen_path": "data/source-evidence/hpms-custody/i80-904091fbc127.md.txt",
+      "bytes": 2676,
+      "sha256": "75a7bf069c7bd54c198ad6985e9cd1e64aacdabe198f02fcac0a46acaa636170",
+      "relevant_lines": [
+        "| Mean AADT | 32000 | HPMS 2023 |",
+        "| Mean truck % | 0% | HPMS 2023 |"
+      ]
+    },
+    {
+      "commit": "a958711e6752998ba69ce4925adc0c9c97ffa824",
+      "path": "corpus/existing/i80.md",
+      "frozen_path": "data/source-evidence/hpms-custody/i80-a958711e6752.md.txt",
+      "bytes": 4437,
+      "sha256": "2c78d619ae00bebda4cfc774ce9872ad07f95e44accdbc299ce7f83a0f67ea87",
+      "relevant_lines": [
+        "| Mean AADT | 11344 | HPMS 2023 |",
+        "| Mean truck % | 24% | HPMS 2023 |"
+      ]
+    }
+  ],
+  "handoff_reported_input": {
+    "rows": 160969,
+    "states": 28,
+    "raw_csv_recovered": false,
+    "input_hash": null,
+    "counts_independently_verified": false
+  },
+  "available_normalized_candidate": {
+    "sha256": "f4cd0c5bb98bd62c9280c41de8c4cd7af8f4c86c455e7413ecdc9325392153d4",
+    "bytes": 4917842,
+    "rows": 165873,
+    "states": [
+      "CA",
+      "IA",
+      "IL",
+      "IN",
+      "NE",
+      "NJ",
+      "NV",
+      "OH",
+      "PA",
+      "UT",
+      "WY"
+    ],
+    "columns": [
+      "STATE",
+      "ROUTE_ID",
+      "AADT",
+      "PCT_TRUCK",
+      "LANE_COUNT",
+      "IRI",
+      "SPEED_LIMIT"
+    ],
+    "historical_linkage_attested": false,
+    "locations": [
+      "canonical checkout ignored data/cache/hpms_2018.csv",
+      "C:/src/ROUTE/data/cache/hpms_2018.csv (read-only prior checkout)"
+    ],
+    "independent_captures": false,
+    "scope": "Two byte-identical normalized files, not independent publisher captures; filenames/timestamps do not establish vintage"
+  },
+  "local_manifest_observation": {
+    "sha256": "9a3ac74f083518f316c2f0257ac9dfdebb994f881238786610ec9211d6d61b3f",
+    "bytes": 1506,
+    "dataset_ids": [
+      "route.manifest.census-gazetteer-counties",
+      "route.manifest.tiger-primary-roads"
+    ],
+    "hpms_capture_entry_present": false,
+    "scope": "Prior checkout current FLETCH manifest only; entries concern Census sources, not historical HPMS custody"
+  },
+  "publisher_observation": {
+    "scope": "New bounded publisher observation at the recorded UTC times; source-side CA predicate is not normalized Rust output, not I-80-only, not a historical execution replay",
+    "captures": [
+      {
+        "name": "publisher-page",
+        "url": "https://www.fhwa.dot.gov/policyinformation/hpms/shapefiles.cfm",
+        "final_url": "https://www.fhwa.dot.gov/policyinformation/hpms/shapefiles.cfm",
+        "status": 200,
+        "content_type": "text/html;charset=UTF-8",
+        "bytes": 35352,
+        "sha256": "63efae69b8565f2a23404deb34e6cd5650064c4f8f87369615afd660121ed06a",
+        "retrieved_at_utc": "2026-10-30T21:08:02.638371+00:00"
+      },
+      {
+        "name": "california-service",
+        "url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0?f=pjson",
+        "final_url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0?f=pjson",
+        "status": 200,
+        "content_type": "text/plain; charset=UTF-8",
+        "bytes": 20957,
+        "sha256": "a201754978732c10efaa229225105c30646e479b32bda41a98368eb5aa2752ca",
+        "retrieved_at_utc": "2026-10-30T21:08:03.492900+00:00"
+      },
+      {
+        "name": "california-count",
+        "url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&returnCountOnly=true",
+        "final_url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&returnCountOnly=true",
+        "status": 200,
+        "content_type": "text/plain; charset=UTF-8",
+        "bytes": 19,
+        "sha256": "0d408dfb410c267af1126778b09cbf516af26928f2e2d2bca0b0fedfbb8134bd",
+        "retrieved_at_utc": "2026-10-30T21:10:22.391830+00:00"
+      },
+      {
+        "name": "california-years",
+        "url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&outFields=year_record&returnDistinctValues=true",
+        "final_url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&outFields=year_record&returnDistinctValues=true",
+        "status": 200,
+        "content_type": "text/plain; charset=UTF-8",
+        "bytes": 286,
+        "sha256": "49233bdaa8a4c8daf445d7738fcc76bd3fcc41d359a6cd4d94c21af0c63d9f24",
+        "retrieved_at_utc": "2026-10-30T21:10:23.359309+00:00"
+      },
+      {
+        "name": "california-sample",
+        "url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&outFields=objectid%2Cyear_record%2Cstate_code%2Croute_id%2Croute_number%2Croute_name%2Croute_signing%2Caadt%2Caadt_combination%2Ciri%2Cthrough_lanes%2Cspeed_limit%2Cf_system&orderByFields=objectid+ASC&resultRecordCount=5&resultOffset=0",
+        "final_url": "https://geo.dot.gov/server/rest/services/Hosted/California_2018_PR/FeatureServer/0/query?where=f_system+%3D+1+AND+aadt+IS+NOT+NULL&f=pjson&returnGeometry=false&outFields=objectid%2Cyear_record%2Cstate_code%2Croute_id%2Croute_number%2Croute_name%2Croute_signing%2Caadt%2Caadt_combination%2Ciri%2Cthrough_lanes%2Cspeed_limit%2Cf_system&orderByFields=objectid+ASC&resultRecordCount=5&resultOffset=0",
+        "status": 200,
+        "content_type": "text/plain; charset=UTF-8",
+        "bytes": 3344,
+        "sha256": "fc8f9268b86e2ec849ef1b4caf91f28b23ce1534ad7519965c95933a7c76247c",
+        "retrieved_at_utc": "2026-10-30T21:10:24.103983+00:00"
+      }
+    ],
+    "summary": {
+      "state": "CA",
+      "predicate": "f_system = 1 AND aadt IS NOT NULL",
+      "population": "Current service-side California predicate, before Rust route filtering; not I-80-only",
+      "source_side_count": 35095,
+      "distinct_reported_years": [
+        2018
+      ],
+      "distinct_year_query_complete": true,
+      "sample_rows": 5,
+      "sample_complete": false,
+      "historical_packet_input_hash": null,
+      "historical_packet_input_year": null,
+      "historical_execution_attested": false,
+      "normalization_or_packet_replay_performed": false
+    },
+    "raw_bodies_committed": false,
+    "raw_bodies_local_custody": ".cache/hpms-custody/observation-20261030T211024Z",
+    "raw_body_verification_performed_locally": true,
+    "source_year_scope": "Complete distinct-year query for this current California predicate only; no claim for other rows/states or past executions"
+  },
+  "preserved_artifacts": [
+    {
+      "path": "corpus/existing/i80.md",
+      "sha256": "b290d1373433f1bef8575b8f8f43449921ead4f215fa576bf625a6e673937550"
+    },
+    {
+      "path": "docs/packets/i80-flagship-review-packet.md",
+      "sha256": "b065a5414e1c7ad14bf1a06497aa2b01bdaa4faffa44ce30895e659a055ce838"
+    },
+    {
+      "path": "data/browser-i80-source-checklist-2026-10-29.json",
+      "sha256": "008dd9f1c487c58fa1d29dd8963f343814a69c74c158c86b3d9bcf6b3a896fed"
+    },
+    {
+      "path": "data/browser-hpms-vintage-audit.json",
+      "sha256": "5ae7cbb59491a13aba9813774071ad366db964995c4c3685dce2d0597d7560dc"
+    }
+  ],
+  "normalizer_sources": [
+    {
+      "path": "crates/route-data/src/hpms_fetch.rs",
+      "sha256": "d60d5fb4120bfd12e468ff1e285ad744a3e5c62343c0ffe704d03b657a31ff9b"
+    },
+    {
+      "path": "crates/route-data/src/hpms.rs",
+      "sha256": "b1bba0801f823c06be1aaab671628937ef99c54a020542e2b7fe1e04216cbc41"
+    },
+    {
+      "path": "crates/route-cli/src/support/misc/write_hpms_records.rs",
+      "sha256": "3072b66b9b66edb41fab451a4b567ee55fa0ae4d5cc5de7a45831db23adeca6c"
+    }
+  ],
+  "next_required_evidence": [
+    "Original normalized CSV/hash or execution manifest from the historical report run, distinct from the later eleven-state candidate",
+    "Matched raw publisher responses/query captures, complete pagination and extraction revision",
+    "Exact route normalization/filter/join/population/estimator replay before year/value attribution"
+  ],
+  "disposition": "Historical input chain unresolved; current reported year observations do not relabel or promote the reviewed packet."
+}

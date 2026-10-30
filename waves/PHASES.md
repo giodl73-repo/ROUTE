@@ -264,3 +264,12 @@ docs/vtrace/WP_WEB_SOURCE_001.md. No prior I-80 disposition or acquisition scope
 is reopened; its local-cache observation is frozen, not a new source gate.
 
 2026-10-30-self-service-links: HTML-only compiled module download; implementation complete, hosted release verification pending. No prior corridor wave reopened.
+
+
+## HPMS historical custody follow-up
+
+| 2026-10-30 | [HPMS historical custody recovery](2026-10-30-hpms-custody-recovery/WAVE.md) | Inventory historical inputs and pin bounded current publisher observations without relabeling the packet. | paused at owner direction |
+
+Current pulse: 01, candidate/history inventory and prospective capture receipt.
+Top gate: no historical normalized-input hash or matched publisher manifest is
+available yet. Old source-checklist, packet and source-label release holds remain.
