@@ -76,3 +76,11 @@ no new native execution interface, secret, network acquisition, person data or
 unsafe FFI. Local canonical cache/ignored Cargo overrides remain untouched;
 implementation uses an isolated child worktree. Rollback: revert the child
 release and restore the preceding Pages artifact, retaining historical receipts.
+
+## Native lint profile
+
+Use the existing flagship CI profile for route-score/report: strict Clippy
+with --no-deps. A broader transitive lint invocation encountered five existing
+route-data warnings (range loop, Vec arguments and needless borrow); that crate
+is unchanged and its tests still run. Kernel/web retain their original strict
+profile. This follows ci.yml; no warning suppression is added to product code.
