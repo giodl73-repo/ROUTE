@@ -81,6 +81,10 @@ release and restore the preceding Pages artifact, retaining historical receipts.
 
 Use the existing flagship CI profile for route-score/report: strict Clippy
 with --no-deps. A broader transitive lint invocation encountered five existing
-route-data warnings (range loop, Vec arguments and needless borrow); that crate
+route-data warnings (range check, Vec arguments and needless borrow); that crate
 is unchanged and its tests still run. Kernel/web retain their original strict
 profile. This follows ci.yml; no warning suppression is added to product code.
+
+Local implementation exit: 443 native tests and ten actual-WASM browser cases
+pass; see the active wave for precise profiles, preserved regressions and
+publication handoff. Historical input vintage remains unverified.

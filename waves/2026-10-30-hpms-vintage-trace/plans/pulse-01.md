@@ -14,10 +14,12 @@ sources:
 ---
 # Pulse 01: label-origin trace and future citation guard
 
-- [ ] Freeze committed-artifact trace and separate dated local cache observation.
-- [ ] Correct future native citations without assigning an unverified year.
-- [ ] Show/download trace beside unchanged WASM checklist.
-- [ ] Offline, native, packet and actual-WASM/browser gates.
-- [ ] Hosted PR/default, artifact/live and TAXLANE roundtrip.
+- [x] Freeze committed-artifact trace and separate dated local cache observation.
+- [x] Correct future native citations without assigning an unverified year.
+- [x] Show/download trace beside unchanged WASM checklist.
+- [x] Offline, native, packet and actual-WASM/browser gates.
+Publication gate: hosted PR/default, artifact/live and TAXLANE roundtrip are
+recorded separately by the coordinating TRACKER release receipt. This child
+pulse records implementation/local exit, not a premature live claim.
 
 Governing roles, non-goals, affected artifacts and gates: WP-WEB-SOURCE-002.
