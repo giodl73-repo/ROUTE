@@ -21,7 +21,7 @@ test('recorded status filters preserve original row parity, fixed partition and 
  await page.locator('#checklist-reset').click();await expect(page.locator('#checklist-status')).toContainText('Ready');await expect(page.locator('[data-source-id="SRC-I80-TIGER"]')).toContainText('Contract gap');await expect(page.locator('[data-source-id="SRC-I80-TIGER"]')).toContainText('Observed blocker');
 });
 test('invalid edits clear stale output, reject unsupported queries and reset independently',async({page})=>{
- await ready(page);const hours=await page.locator('#hours').textContent();
+ await ready(page);await expect(page.locator('#status')).toContainText('Ready');const hours=await page.locator('#hours').textContent();
  for(const query of ['{"status":"current"}','{"status":"ready","source_id":"SRC-I80-HPMS"}','{"date":"2026-10-29"}','{"corridor":0}','x'.repeat(65537)]){
   await page.locator('#checklist-query').fill(query);await expect(page.locator('#checklist-download')).toBeDisabled();await expect(page.locator('#checklist-results')).toBeHidden();
   await page.getByRole('button',{name:'Inspect recorded entries',exact:true}).click();await expect(page.locator('#checklist-status')).toContainText('Invalid checklist query');await expect(page.locator('#checklist-download')).toBeDisabled();
